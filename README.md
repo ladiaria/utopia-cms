@@ -81,7 +81,7 @@ To get a local copy up and running follow these simple example steps.
 
 1. Clone the repo
    ```sh
-   git clone git@github.com:utopia/utopia-cms.git
+   git clone git@github.com:ladiaria/utopia-cms.git
    ```
 2. Follow our [INSTALL](INSTALL) instructions in this repository to install requirements, setup the database and modify configuration.
 
