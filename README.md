@@ -144,6 +144,6 @@ Utopía was one of the selected projects by Google News Initiative in Latin Amer
 [issues-shield]: https://img.shields.io/github/issues/ladiaria/utopia-cms.svg?style=for-the-badge
 [issues-url]: https://github.com/ladiaria/utopia-cms/issues
 [license-shield]: https://img.shields.io/github/license/ladiaria/utopia-cms.svg?style=for-the-badge
-[license-url]: https://github.com/ladiaria/utopia-cms/blob/main/LICENSE.txt
+[license-url]: https://github.com/ladiaria/utopia-cms/blob/main/LICENSE
 [product-screenshot1]: docs/images/screenshot1.png
 [product-screenshot2]: docs/images/screenshot2.png
