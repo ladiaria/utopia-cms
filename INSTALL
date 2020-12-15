@@ -42,9 +42,6 @@ This will install all required dependencies in the virtualenv_name enviroment.
 
 ## Install requirements
 
-``pip install -r requirements.txt``
-
-
 - System packages, names can vary by OS/distribution:
 
   mariadb nginx libtiff libtiff-devel giflib giflib-devel python-pillow MySQL-python python-dateutil python-vobject python-oauth2 pyPdf python-openid pytz pycrypto python-memcached python-requests-oauthlib python-requests rubygem-sass npm gcc libmaxminddb-devel
