@@ -20,8 +20,6 @@
     <em>Content Management System</em> tool that multiple teams in a newsroom can use to manage publishing.
     <br />
     <br />
-    <a href="https://github.com/ladiaria/utopia-cms">View Demo</a>
-    ·
     <a href="https://github.com/ladiaria/utopia-cms/issues">Report Bug</a>
     ·
     <a href="https://github.com/ladiaria/utopia-cms/issues">Request Feature</a>
