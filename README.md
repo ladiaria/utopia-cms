@@ -79,22 +79,7 @@ To get a local copy up and running follow these simple example steps.
 
 ### Installation
 
-1. Clone the repo
-   ```sh
-   git clone git@github.com:ladiaria/utopia-cms.git
-   ```
-2. Follow our [INSTALL](INSTALL) instructions in this repository to install requirements, setup the database and modify configuration.
-
-3. Start the server by running
-   ```sh
-   python manage.py runserver
-   ```
-
-4. Go to the following URL in your browser
-
-  ```sh
-  http://127.0.0.1:8000/
-  ```
+Follow our [INSTALL](INSTALL.md) instructions in this repository to install requirements, setup the database and modify configuration.
 
 
 ## Usage

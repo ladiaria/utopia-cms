@@ -1,12 +1,8 @@
-====================================================
-Utopia Content Management System Installation
-====================================================
+# Utopia Content Management System Installation
 
 Documentation about installing Utopia's CMS.
 
-===============
-Code repository
-===============
+## Code repository
 
 Obtain the code from GitHub with:
 
@@ -16,9 +12,7 @@ and change to that folder
 
 ``cd utopia-cms``
 
-=========================================================
-Create a virtual environment and install CRM dependencies
-=========================================================
+## Create a virtual environment and install CRM dependencies
 
 virtualenv is a tool to create an isolated Python enviroment, refer to: https://virtualenv.pypa.io/en/latest/ for installation.
 
