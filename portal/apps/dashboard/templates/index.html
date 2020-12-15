@@ -17,7 +17,7 @@
     <link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
 
     <!-- Boostrap table -->
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+    <script src="{% static 'js/jquery.min.js' %}" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.css">
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/locale/bootstrap-table-es-ES.min.js"></script>
@@ -97,8 +97,8 @@
               {% endif %}
             {% endif %}
             <li class="nav-item">
-              <a class="embed nav-link" id="cards" data-toggle="tab" href="audio_statistics/" role="tab" aria-controls="cards" aria-selected="false">
-                <span data-feather="credit-card"></span>
+              <a class="embed nav-link" id="cards" href="audio_statistics/">
+                <span data-feather="headphones"></span>
                 Estadísticas de audio
               </a>
             </li>
