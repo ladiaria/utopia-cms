@@ -8,7 +8,7 @@ Utopía offers a technological package that sustains the media practice by paid 
 
 Allows creation of print and digital subscriptions, add different payment methods, collect statistics and maintain relationships with readers.
 
-[![Back-end Screen Shot][product-screenshot2]](https://utopia.ladiaria.com.uy)
+[![Back-end Screen Shot][../product-screenshot2]](https://utopia.ladiaria.com.uy)
 
 ### Paywall
 
