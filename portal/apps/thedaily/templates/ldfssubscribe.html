@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static core_tags crispy_forms_tags %}
+
+{% block page_title %}la diaria fin de semana gratis{% endblock %}
+
+{% block css %}
+  <style>
+    legend{font-weight: bold;}
+  </style>
+{% endblock %}
+
+{% block body_class %}subscribe{% endblock %}
+
+{% block javascript %}
+  <script type="text/javascript" src="{% static "js/thedaily.js" %}"></script>
+{% endblock %}
+
+{% block content %}
+  <h2>la diaria fin de semana gratis</h2>
+  <p>
+    Recibí la diaria fin de semana gratis por un mes en tu casa.
+  </p>
+  {% if is_sub %}
+    <p>Según nuestros registros ya estás suscripto a <em>la diaria de fin de semana</em>, por lo que no te correspondería esta promoción.</p>
+  {% else %}
+    {% crispy subscription_form %}
+  {% endif %}
+  <hr>
+  <p>¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.</p>
+{% endblock %}

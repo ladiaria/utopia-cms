@@ -1,0 +1,95 @@
+# -*- coding: utf-8 -*-
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Fieldset, Field, HTML
+
+from django.conf import settings
+from django import forms
+from django.core.mail import mail_managers
+from django.contrib.auth.models import User
+
+from thedaily.models import Subscriber
+from thedaily.forms import RE_ALPHANUM
+
+
+class ProfileForm(forms.ModelForm):
+    helper = FormHelper()
+    helper.form_tag = False
+    helper.form_class = 'form-horizontal'
+    helper.label_class = 'col-sm-2'
+    helper.field_class = 'col-sm-8'
+    helper.help_text_inline = True
+    helper.error_text_inline = True
+    helper.layout = Layout(
+        Fieldset(u'Datos de suscriptor', 'document', 'phone'),
+        Fieldset(u'Ubicación', 'country', 'province', 'city', 'address'),
+        HTML('</div>'),     # close div opened in edit_profile.html
+        HTML('{% include "profile/submit.html" %}'),
+        HTML('{%% include "%s" %%}' % getattr(settings, 'THEDAILY_SUBSRIPTIONS_TEMPLATE', 'profile/suscripciones.html')),
+        Field('newsletters', template='profile/newsletters.html'),
+        Field(
+            'category_newsletters',
+            template='profile/category_newsletters.html'),
+        HTML('''
+            <section id="ld-comunicaciones" class="ld-block section scrollspy">
+              <h2 class="ld-title ld-title--underlined">Comunicaciones</h2>
+        '''),
+        Field('allow_promotions', template='profile/allow_promotions.html'),
+        Field('allow_polls', template='profile/allow_polls.html'),
+        HTML('</section>'))
+
+    class Meta:
+        model = Subscriber
+        exclude = (
+            'costumer_id', 'user', 'name', 'downloads', 'profile_photo',
+            'days', 'pdf', 'ruta', 'lento_pdf')
+
+
+class UserForm(forms.ModelForm):
+    helper = FormHelper()
+    helper.form_tag = False
+    helper.form_class = 'form-horizontal'
+    helper.label_class = 'col-sm-2'
+    helper.field_class = 'col-sm-8'
+    helper.help_text_inline = True
+    helper.error_text_inline = True
+    helper.layout = Layout(
+        Fieldset(u'Datos personales', 'first_name', 'last_name', 'email'))
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email')
+
+    def clean(self):
+        cleaned_data = super(UserForm, self).clean()
+        email = cleaned_data.get('email')
+
+        if User.objects.filter(email__iexact=email).exclude(
+                id=self.instance.id).exists():
+            msg = u'El email ingresado ya posee una cuenta de usuario.'
+            msg += u' <a href="/usuarios/entrar">Ingresar</a>.'
+            self._errors['email'] = self.error_class([msg])
+            raise forms.ValidationError(msg)
+
+        if User.objects.filter(username__iexact=email).exclude(
+                id=self.instance.id).exists():
+            mail_managers("Multiple username in users", email)
+            msg = u'El email ingresado no puede ser utilizado.'
+            self._errors['email'] = self.error_class([msg])
+            raise forms.ValidationError(msg)
+
+        return cleaned_data
+
+    def clean_first_name(self):
+        first_name = self.cleaned_data.get('first_name')
+        if not RE_ALPHANUM.match(first_name):
+            raise forms.ValidationError(
+                u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, '
+                u'espacios, guiones y puntos.')
+        return first_name
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if not email:
+            raise forms.ValidationError(
+                u'La dirección de correo electrónico no puede ser vacia.')
+        return email

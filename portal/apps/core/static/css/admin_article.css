@@ -1,0 +1,19 @@
+.markdown-help{
+	border: solid 1px;
+    display: inline-block;
+    padding: 12px;
+    margin-left: 12px;
+    width: 400px;
+}
+
+.field-main_section{
+    display: none;
+}
+
+.field-main li{
+    list-style-type: none;
+}
+
+.row-articlerel-selected{
+    border: 2px solid #F2A60D;
+}

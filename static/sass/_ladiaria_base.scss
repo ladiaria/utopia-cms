@@ -1,0 +1,395 @@
+/* Base styles */
+@include typi-init;
+
+h1 {
+  @include typi('h1');
+}
+
+h2 {
+  @include typi('h2');
+}
+
+h3 {
+  @include typi('h3');
+}
+
+h4 {
+  @include typi('h4');
+}
+
+h5 {
+  @include typi('h5');
+}
+
+html {
+  font-family: $serif-body;
+  color: $off-black;
+}
+
+html, body {
+  overflow-x: hidden !important; /* Prevent scrollbar */
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-weight: bold;
+}
+
+a {
+  color: $link-color;
+
+
+  &:hover {
+    color: $link-color-hover;
+  }
+}
+
+strong {
+  font-weight: 900;
+}
+
+sup {
+  top: -.6em;
+}
+
+blockquote {
+  margin: 20px 0;
+  padding-left: 1.5rem;
+  border-left: 5px solid $off-black;
+}
+
+
+.align-left {
+  text-align: left;
+}
+
+.align-right {
+  text-align: right;
+}
+
+.align-center {
+  text-align: center;
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+figure {
+  margin: 0;
+}
+
+.soft {
+  filter: alpha(opacity=0.5);
+  opacity: 0.5;
+}
+
+.small {
+  font-size: 16px;
+}
+
+.medium {
+  @include typi('medium');
+}
+
+.large {
+  @include typi('large');
+}
+// helpers
+.inline {
+  > li {
+    display: inline-block;
+  }
+}
+
+.ld-print {
+  display: none;
+  @media print {
+    display: block;
+  }
+}
+
+
+label {
+  color: $grey;
+}
+
+[type='checkbox'] + label {
+  padding-left: 30px;
+}
+
+.ld-title-huge {
+  font-size: 36px;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
+  line-height: 1.1;
+  color: $off-black;
+  font-weight: bold;
+  margin: 0 0 30px 0;
+
+  @media (min-width: 769px) {
+    font-size: 50px;
+  }
+}
+
+.ld-title-big {
+  font-size: 28px;
+  font-family: 'Roboto', sans-serif;
+  line-height: 1.1;
+  color: $off-black;
+  font-weight: 500;
+  margin: 0 0 30px 0;
+
+  @media (min-width: 769px) {
+    font-size: 38px;
+  }
+}
+
+.ld-bold-chbx {
+   font-weight: bold;
+   padding-left: 10px;
+}
+
+
+.ld-rcorners {
+  border-radius: 5px;
+  border: 3px solid #F1F1F1;
+}
+
+.ld-chbx-mrg {
+  margin-top: 15px;
+}
+
+.ld-chbx-label {
+  display: block;
+  font-size: 16px;
+  color: $off-black;
+  padding: 15px;
+  cursor: pointer;
+}
+
+.ld-chbx-section-text {
+  padding-left: 24px;
+  display: block;
+  font-size: 14px;
+}
+
+.ld-pago-select {
+     border-color: $off-black !important;
+}
+
+.ld-chbx-force {
+    position: relative !important;
+    left: 0px !important;
+    opacity: 1 !important;
+    vertical-align: middle;
+}
+
+// Basic paddded content for <main> or main content divs.
+.ld-content {
+  padding-top: 50px;
+}
+
+// Utility classes
+
+.u-mt-20 {
+  margin-top: 20px !important;
+}
+
+.u-mt-30 {
+  margin-top: 30px !important;
+}
+
+.u-mt-40 {
+  margin-top: 40px !important;
+}
+
+.u-mt-50 {
+  margin-top: 50px !important;
+}
+
+.u-mb-20 {
+  margin-bottom: 20px !important;
+}
+
+.u-mb-30 {
+  margin-bottom: 30px !important;
+}
+
+.u-mb-40 {
+  margin-bottom: 40px !important;
+}
+
+.u-mb-50 {
+  margin-bottom: 50px !important;
+}
+
+.u-mb-60 {
+  margin-bottom: 60px !important;
+}
+
+
+// Skip to content
+
+a.skip-main {
+  left: -999px;
+  position: absolute;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: -999;
+}
+
+a.skip-main:focus,
+a.skip-main:active {
+  color: #fff;
+  background-color: #262626;
+  left: 15px;
+  top: 9px;
+  max-width: 92px;
+  overflow: auto;
+  margin: 0;
+  border-radius: 3px;
+  text-align: left;
+  z-index: 999;
+  width: auto;
+  height: 42px;
+  text-transform: uppercase;
+  font-size: 12px;
+  padding: 4px;
+  border: 1px solid white;
+
+  @media (min-width: 601px) {
+    left: 145px;
+  }
+}
+.underlined {
+  text-decoration: underline;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.ld-text-med {
+  font-size: 18px;
+}
+
+.show-on-extra-large {
+  display: none;
+
+  @media #{$extra-large-and-up} {
+    display: inline-block !important;
+  }
+}
+
+article a {
+  text-decoration: underline;
+}
+p {
+  a {
+    text-decoration: underline;
+
+    &:hover {
+        text-decoration: none;
+    }
+  }
+}
+// form error messages
+.input-field {
+  .error {
+    position: relative;
+    top: -20px;
+  }
+
+}
+
+// Forms
+input:not([type]),
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="url"],
+input[type="time"],
+input[type="date"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="tel"],
+input[type="number"],
+input[type="search"],
+textarea.materialize-textarea {
+  border-bottom-color: $grey;
+  padding: .8rem 0 .8rem 0;
+  box-sizing: border-box;
+  min-height: 45px;
+  margin-top: 8px;
+
+}
+
+input:not([type]), input[type=text]:not(.browser-default),
+input[type=password]:not(.browser-default),
+input[type=email]:not(.browser-default),
+input[type=url]:not(.browser-default),
+input[type=time]:not(.browser-default),
+input[type=date]:not(.browser-default),
+input[type=datetime]:not(.browser-default),
+input[type=datetime-local]:not(.browser-default),
+input[type=tel]:not(.browser-default),
+input[type=number]:not(.browser-default),
+input[type=search]:not(.browser-default),
+textarea.materialize-textarea{
+  border-bottom-color: $grey;
+}
+
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+
+  legend {
+    display: none;
+  }
+}
+
+.navbar-search .input-field {
+  label i {
+    color: $off-black;
+  }
+}
+
+.toggle-password {
+  width: 20px;
+  height: 20px;
+  background-image:url(../img/icon-visibility_off.svg);
+  background-size: cover;
+  background-repeat: no-repeat;
+  display: block;
+  position: absolute;
+  top:15px;
+  right:20px;
+  cursor: pointer;
+
+  &.visibility-on {
+    background-image:url(../img/icon-visibility_on.svg);
+  }
+}
+
+/* Checked checkboxes bg color */
+[type="checkbox"].filled-in:checked + label:after {
+    background-color: $off-black;
+    border-color: $off-black;
+  }
+
+// Tabs
+.tabs {
+  li.tab {
+    font-weight: bold;
+    .active {
+      font-size: 125%;
+    }
+  }
+}

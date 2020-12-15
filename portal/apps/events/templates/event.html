@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load events_tags thumbnail %}
+
+{% block page_title %}{{ event.title }} - Café{% endblock %}
+{% block body_class %}events{% endblock %}
+
+{% block content %}
+    <div class="titlebar">
+        <h2>
+            Evento
+        </h2>
+    </div>
+    <h1>
+        {{ event.title }}
+    </h1>
+    <div>
+        <p>
+         {{ event.date }} - {{ event.location.name }} ({{ event.location.address }})
+        </p>
+    </div>
+        <div class="hr"></div>
+    {% if event.image %}
+    <div class="centrado">
+        {% thumbnail event.image "700x500" as im %}
+        <img alt="{{ event.title }}" src="{{ im.url }}">
+        {% endthumbnail %}
+    </div>
+    {% endif %}
+    <div>
+        {{ event.description|linebreaks }}
+    </div>
+
+    <div class="hr"></div>
+        <a href="{% url 'events-calendar' %}" class="more" title="Cartelera">Ver cartelera</a>
+
+{% endblock %}

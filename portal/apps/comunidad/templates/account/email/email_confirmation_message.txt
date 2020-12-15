@@ -1,0 +1,8 @@
+Estimado lector, 
+
+Ha registrado correctamente y activado la invitación de {{ user }}.
+
+Durante un mes podrá acceder a todos los beneficios de los Suscriptores Web. Luego de este tiempo su cuenta pasará a ser solo para comentar y tendrá la opción de Suscribirte para continuar participando de la comunidad web.
+
+Atte.
+La Diaria

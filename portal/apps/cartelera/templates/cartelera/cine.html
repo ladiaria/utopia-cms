@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>{{ cine.nombre }}</h2>
+
+<h3>Peliculas</h3>
+<ul>
+    {% for horario in cine.horarios.all %}
+    {% with pelicula=horario.pelicula %}
+    <li>
+    	<h4><a href="{{ obrateatro.get_absolute_url }}" class="poster">{{ pelicula }}</a></h4>
+    	<div>
+    		{{ pelicula.description }}
+    	</div>
+    	<h5>Horarios</h5>
+		<div>
+		{{ horario.horarios }}
+		</div>
+    </li>
+    {% endwith %}
+    {% endfor %}
+</ul>
+
+{% endblock %}

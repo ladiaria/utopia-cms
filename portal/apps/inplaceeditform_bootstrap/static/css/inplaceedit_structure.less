@@ -1,0 +1,39 @@
+@red: #d9534f;
+@green: #5cb85c;
+
+.inplaceeditform {
+    .form-group {
+        margin-bottom: 0;
+        display: inline;
+        input, textarea, select {
+            min-width: 150px;
+            display: inline;
+        }
+    }
+    .errors {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        color: @red;
+    }
+    .apply, .cancel, .applyFile {
+        display: inline-block;
+        margin-left: 5px;
+        text-decoration: none;
+    }
+    .glyphicon-ok {
+        color: @green;
+    }
+    .glyphicon-remove {
+        color: @red;
+    }
+}
+.inplaceedit {
+    cursor: pointer;
+    .success {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        color: @green;
+    }
+}

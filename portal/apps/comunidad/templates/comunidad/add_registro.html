@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}Confirmación de asistencia{% endblock %}
+
+{% block content %}
+
+    <h1>Confirmación de asistencia</h1>
+	{% if not error %}
+        <div class="alert-success col-xs-12">
+            Gracias por confirmar tu asistencia.
+        </div>
+    {% else %}
+        <p>{{ error }}</p>
+    {% endif %}
+
+{% endblock %}

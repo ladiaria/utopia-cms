@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}Panel de opciones | la diaria{% endblock %}
+{% block body_class %}thedaily ld-profile-edit{% endblock %}
+
+{% block page_header %}
+  <div class="main nav-extended">
+    <div class="container container--narrow">
+      <h1 class="nav-extended__title">Opciones</h1>
+      <div class="nav-extended__tagline">Panel de opciones de tu suscripción.</div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <div class="user-form">
+    <form action="" method="post" class="form-horizontal" id="edit-profile-form">
+      <section class="ld-block">
+        <div id="datos" class="section scrollspy">
+        <h2 class="ld-title ld-title--underlined ">Tus datos</h2>
+        {% crispy user_form %}
+        {% crispy profile_form %}
+        {% include "profile/submit.html" %}
+      </section>
+    </form>
+
+    {% block extra_content %}{% endblock %}
+
+    <section class="ld-block section scrollspy" id="google">
+      <h2 class="ld-title ld-title--underlined">Ingreso con Google</h2>
+      {% if google_oauth2_assoc %}
+        {% if google_oauth2_allow_disconnect %}
+          <form action="{% url 'social:disconnect_individual' backend='google-oauth2' association_id=google_oauth2_assoc.id %}" method="post">
+            {% csrf_token %}
+            <input class="ld-btn ld-btn-solid-dark" type="submit" id="desconectar" value="desconectar" name="desconectar"/>
+          </form>
+        {% else %}
+          <div>Tu cuenta de usuario está asociada a tu cuenta de Google</div>
+        {% endif %}
+      {% else %}
+        <a class="ld-btn ld-btn-solid-dark" href="{% url 'social:begin' backend='google-oauth2' %}" title="Conectá tu cuenta de Google">
+          conectar
+        </a>
+      {% endif %}
+    </section>
+
+    {% comment 'disabled waiting for Almacen re-launch' %}
+      {% if community_coupon %}
+        <section class="ld-block">
+          <h2 class="ld-title ld-title--underlined">Almacén</h2>
+          <div>Almacén es una tienda online de productos, como suscriptor de la diaria tenés descuentos.</div>
+          <h3 class="ld-title-second">Cupón de descuento</h3>
+          <div>Ingresá este cupón al comprar los productos para recibir tu descuento</div>
+          <code>{{ community_coupon }}</code>
+        </section>
+      {% endif %}
+    {% endcomment %}
+
+    <section class="ld-block section scrollspy" id="seguridad">
+      <h2 class="ld-title ld-title--underlined">Seguridad</h2>
+      <p><a href="{% url 'account-password_change' %}">Cambiar contraseña</a></p>
+    </section>
+
+    <section class="ld-block section scrollspy" id="accesibilidad">
+      <h2 class="ld-title ld-title--underlined">Accesibilidad</h2>
+      <p>Queremos tener un sitio web accesible para todas las personas.</p>
+      <p>
+        Si encontrás alguna dificultad para utilizarlo podés reportar el problema y obtener ayuda escribiendo a <a href="mailto:ayuda@ladiaria.com.uy">ayuda@ladiaria.com.uy</a>.
+      </p>
+      <p>
+        ¡Gracias!
+      </p>
+    </section>
+
+    <section class="ld-block section scrollspy" id="ayuda">
+      <h2 class="ld-title ld-title--underlined">Ayuda</h2>
+      <div class="row ld-profile-row">
+        <div class="col">
+          <h3 class="ld-title-second">Centro de ayuda</h3>
+          <p>Información sobre nuestros productos y preguntas frecuentes.</p>
+          <p><a href="/ayuda/">Ir al centro de ayuda</a></p>
+        </div>
+      </div>
+      <div class="row ld-profile-row">
+        <div class="col m8">
+          <h3 class="ld-title-second">Contacto</h3>
+          <p><a href="https://ayuda.ladiaria.com.uy/contacto/">Formulario de contacto</a></p>
+          <p>Email: <a href="mailto:ayuda@ladiaria.com.uy">ayuda@ladiaria.com.uy</a></p>
+          <p>Mensajes WhatsApp: <a href="https://wa.me/59899128821">099 128 821</a></p>
+          <p>Teléfono fijo: <a href="tel:+59829000808">2900 08 08</a> (lunes a viernes de 9:00 a 17:00 y sábados de 9:00 a 13:00)</p>
+        </div>
+      </div>
+
+      {% if poll_url %}
+        <div class="row ld-profile-row">
+          <div class="col">
+            <h3 class="ld-title-second">Danos tu opinión</h3>
+            <p>Queremos obtener información sobre tu experiencia con la suscripción.</p>
+            <p>Esta pequeña encuesta nos va a servir para evaluar y aplicar cambios en base a tus opiniones y necesidades.</p>
+            <p><a href="{{ poll_url }}">Completar encuesta</a></p>
+          </div>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+  <div class="col table-col hide-on-med-and-down">
+    <ul class="section table-of-contents">
+      <li><span class="table-title">Contenidos</span></li>
+      <li><a href="#datos">Tus datos</a></li>
+      <li><a href="#suscripciones">Suscripciones</a></li>
+      <li><a href="#newsletters">Newsletters</a></li>
+      <li><a href="#ld-comunicaciones">Comunicaciones</a></li>
+      {% block right_menu_extra %}{% endblock %}
+      <li><a href="#google">Ingreso con Google</a></li>
+      <li><a href="#seguridad">Seguridad</a></li>
+      <li><a href="#accesibilidad">Accesibilidad</a></li>
+      <li><a href="#ayuda">Ayuda</a></li>
+    </ul>
+  </div>
+
+{% endblock %}
+
+{% block footer_scripts %}
+  <script>
+    $(document).ready(function(){
+      $('.scrollspy').scrollSpy();
+      var footerHeight = $('.footer-portada').height();
+      var mainHeight = $('#main-content').height();
+      var tableHeight = $('.table-of-contents').height();
+      var bottomOffset = mainHeight - footerHeight -tableHeight;
+      $('.table-of-contents').pushpin({
+        offset: 75,
+        top: 320,
+        bottom: bottomOffset,
+        scrollOffset: 0
+      });
+    });
+  </script>
+{% endblock %}

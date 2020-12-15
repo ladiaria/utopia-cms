@@ -1,0 +1,8 @@
+¡Hola Suscriptor!
+
+Gracias {{ subscription.first_name }} por suscribirte a <em>la diaria</em>.
+
+Estamos procesando tu solicitud y en breve nos contactaremos contigo. 
+
+--
+http://{{ domain }}/

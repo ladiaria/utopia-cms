@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load core_tags inplace_edit tagging_tags %}
+
+{% block page_title %}Noticias de {% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %} | {{ site.name }} | {{ country_name }}{% endblock %}
+
+{% block meta_og_title %}
+  <!-- Open Graph (http://ogp.me) -->
+  <meta property="og:title" content="Noticias de {% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %} | {{ site.name }} | {{ country_name }}" />
+{% endblock %}
+{% block meta %}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="la diaria" />
+  <meta property="og:url" content="https://piques.uy/tags/{{ tags.0 }}" />
+  <meta property="og:image" content="https://piques.uy/static/meta/la-diaria-1000x1000.png" />
+  <!-- End Open Graph (http://ogp.me) -->
+{% endblock %}
+
+{% block json_ld %}
+  <script type='application/ld+json'>
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://ladiaria.com.uy/",
+          "url": "https://ladiaria.com.uy/",
+          "name": "la diaria",
+          "inLanguage": "es"
+        },
+        {
+          "@type": "CollectionPage",
+          "@id": "https://ladiaria.com.uy/tags/{{ tags.0 }}",
+          "url": "https://ladiaria.com.uy/tags/{{ tags.0 }}",
+          "name": "Noticias de {{ tags.0 }}",
+          "isPartOf": {
+            "@id": "https://ladiaria.com.uy/"
+          },
+          "inLanguage": "es"
+        }
+      ]
+    }
+  </script>
+{% endblock %}
+
+{% block page_header %}
+  <div class="section_background">
+    <div class="container container--narrow">
+      <div class="section-detail__head">
+        <h1 class="section-detail__title">{% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 0 and not forloop.last %}, {% endif %}{% endfor %}</h1>
+        <p class="section-detail__description">Listado cronológico de artículos con el tema "{% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %}".</p>
+      </div>
+      </div>
+    </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+  <section class="section_module container--narrow">
+
+    {% for article in articles.object_list %}
+      {% render_article_card article=article media=article.home_display card_size="FD" %}
+    {% endfor %}
+
+    {% if articles.has_other_pages %}
+      {% with articles as pager %}
+        {% include "pagination.html" %}
+      {% endwith %}
+    {% endif %}
+
+  </section>
+{% endblock %}

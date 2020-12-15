@@ -1,0 +1,51 @@
+body.events .month, body.events .cal th, body.events .cal td {
+    text-align:center;
+}
+body.events .prev, body.events .current {
+    margin-right:24px;
+}
+body.events table.cal {
+    width:528px;
+    margin:24px 0 24px 3px;
+}
+body.events .cal th {
+    padding:6px 0;
+    width:109px;
+}
+body.events .cal td {
+    padding:6px 0;
+    border:1px solid black;
+    width:109px;
+}
+body.events .cal td.today {
+    background-color:#DDE9F7;
+    font-weight:bold;
+}
+body.events .cal td.outside {
+    color:#CCC;
+}
+body.events .princiapl {
+    font-size:0.9em;
+    padding:12px;
+    height:80px;
+}
+body.events .fecha {
+    margin-top:12px;
+    font-weight:bold;
+}
+body.events dl dd .description {
+    padding-left:12px;
+}
+div.hr {
+    margin-top:6px;
+}
+
+.unit1{
+    float:left;
+    margin-right:12px;
+}
+
+.unit2{
+    float:left;
+    width:420px;
+}

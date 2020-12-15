@@ -1,0 +1,25 @@
+@import url("article.css");
+@import url("edition.css");
+@import url("section.css");
+@import url("supplement.css");
+body.article #body p, body.article p.body, body.section p.lead {
+    color:#292929;
+    font-family:georgia,"times new roman",times,serif;
+}
+ul.list {
+    background:#FFF url(../../img/dotted.gif) repeat-y center top;
+    margin-bottom:12px;
+    overflow:auto;
+    padding-bottom:2px;
+}
+li.item {
+	background:transparent url(../../img/dotted.gif) repeat-x 12px 0;
+    float:left;
+    margin:0 12px;
+    padding:12px 0;
+    text-align:center;
+    width:360px;
+}
+ul.list li.nobg {
+    background:none;
+}

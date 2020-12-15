@@ -1,0 +1,18 @@
+{% load shorturl %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL shortener</title>
+</head>
+<body>
+    <div style="text-align:center;margin-top:2em;">
+        {{ URL_SCHEME }}://{{ site.domain }}{% shorturl object %}
+    </div>
+    <div style="text-align:center;padding:2em;border-bottom:1px solid #ddd;">
+        <a href="//{{ site.domain }}{% shorturl object %}">probar</a>
+    </div>
+    <div style="text-align:center;color:#333;margin:1em;">
+        {{ site.name }} - URL versión corta para {{ object }}
+    </div>
+</body>
+</html>

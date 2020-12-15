@@ -1,0 +1,29 @@
+.materialboxed {
+  &:hover {
+    opacity: 1 !important;
+    &:not(.active) {
+      opacity: 1;
+    }
+  }
+  &.active {
+    // cursor: zoom-out;
+    // background-size: contain !important;
+    // background-repeat: no-repeat !important;
+    // top: 0px !important;
+    // height: 90vh;
+    // &::after {
+    //   background: none !important;
+    // }
+  }
+}
+.material-placeholder{
+  // top: -$line-height !important;
+  // height: 100vh;
+}
+#materialbox-overlay {
+  background-color: $off-black;
+}
+
+.materialbox-caption {
+    // height: 10vh;
+}

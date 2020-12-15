@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags static %}
+
+{% block page_title %}Suscripción digital gratuita{% endblock %}
+{% block body_class %}thedaily subscribe hide-mobile-nav {% endblock %}
+
+{% block navbar %}
+  <div id="main-header">
+    <nav class="subscription_black">
+      <a class="header-logo emergentes" href="{% url 'home' %}">
+        <img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}">
+      </a>
+    </nav>
+  </div>
+{% endblock %}
+
+{% block content %}
+  <main class="ld-content">
+    <div class="row">
+
+      <div class="subscribe-header center-align">
+        <h1 class="ld-title-big">Suscripción digital gratuita</h1>
+        <div class="price">$0/mes</div>
+        <span class="ld-text-secondary">
+          10 artículos gratuitos al mes y newsletters.<br/>
+          Para acceso ilimitado <a href="{% url 'subscribe' planslug='DDIGM' %}">suscribite a digital ilimitada</a>.
+        </span>
+      </div>
+
+      <div class="col s12 m8 offset-m2">
+
+        <div class="row">
+          <h2 class="center-align u-mt-50">Creá tu cuenta</h2>
+          <div class="col s12 align-center ld-block--sm">
+            <a href="{% url 'social:begin' backend='google-oauth2' %}?next={{ signup_form.next_page.value }}" class="ld-btn-google">con Google</a>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col s12 align-center">
+            <span class="ld-text-secondary">O con tu email</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col s12">
+            <div class="row">
+              {% crispy signup_form %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+{% endblock %}
+
+{% block footer_block %}
+  <footer class="ld-footer-simple">
+    <div class="row ld-text-secondary align-center">
+      <div class="col s12">
+        <div>
+          {% if not user.is_authenticated %}
+          ¿Ya tenés suscripción? <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
+          {% endif %}
+          <br />
+          ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="/contacto/">contactanos</a>.
+        </div>
+      </div>
+    </div>
+  </footer>
+{% endblock footer_block %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block body_class %}comunidad{% endblock %}
+{% block content %}
+
+    <h1>Comunidad</h1>
+
+    <div class="row">
+
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <p>Para ingresar a la comunidad de la diaria debes ser Suscriptor. <a href="{% url 'subscribe_landing' %}" class="btn strong">Suscribirte!</a> o si ya sos Suscriptor, podes <a href="{% url 'account-login' %}" class="btn strong">ingresar</a>.</p>
+    </div>
+
+{% endblock %}

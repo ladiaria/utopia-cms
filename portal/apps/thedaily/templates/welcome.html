@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block page_title %}¡Bienvenido/a!{% endblock %}
+{% block body_class %}subscribe{% endblock %}
+
+{% block content %}
+  {{ form_data }}
+  <div class="main ld-content">
+    <div class="titlebar">
+      {% if signup or subscribed %}
+        <h1 class="ld-title-huge align-center">Cuenta activada</h1>
+      {% endif %}
+      {% if signup_mail %}
+        <h1 class="ld-title-huge align-center">Suscripción completa</h1>
+      {% endif %}
+    </div>
+    {% if signup_mail %}
+      <p>Gracias por suscribirte.</p>
+      <p>
+        Una vez que tu cuenta esté activada podrás empezar a usar tu suscripción.
+      </p>
+      <p>
+        Para activar tu cuenta seguí las instrucciones del email que te acabamos de enviar a {{ signup_mail }}
+      </p>
+    {% endif %}
+    {% if signup or subscribed %}
+      <p>
+        {% if signup %}
+          Ya podés acceder.
+        {% else %}
+          Tu usuario ya posee los permisos de acceso para el tipo de suscripción que elegiste.
+        {% endif %}
+      </p>
+      <p>
+        <a href="{% url 'home' %}" class="ld-btn-default">ir a la portada</a>
+      </p>
+      <p>
+        <a href="{% url 'edit-profile' %}#id_newsletters_wrapper" class="ld-btn-default">configurar newsletters</a>
+      </p>
+      <footer class="ld-footer-simple">
+        <div class="row ld-text-secondary align-center">
+          <div class="col s12">
+            <div>
+              <br>
+              ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
+            </div>
+          </div>
+        </div>
+      </footer>
+    {% endif %}
+  </div>
+{% endblock %}

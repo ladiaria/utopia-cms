@@ -1,0 +1,15 @@
+{% extends 'article/article_card.html' %}
+{% load core_tags ldml %}
+
+{% block class %}{% endblock %}
+
+<div class="card-stacked">
+  {% block header %}{% endblock %}
+  {% block headline %}
+    <h2 class="article-title">
+      <a href="{{ article.get_absolute_url }}">
+        {{ article.headline|ldmarkup:article.id|removetags:"p" }}
+      </a>
+    </h2>
+  {% endblock %}
+</div>

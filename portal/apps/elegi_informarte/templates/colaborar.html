@@ -1,0 +1,204 @@
+{% spaceless %}
+{% load static %}
+{% load core_tags %}
+{% load compress %}
+{% load pwa %}
+{% endspaceless %}<!doctype html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="es-UY"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="es-UY"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang="es-UY"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html lang="es-UY">
+<!--<![endif]-->
+  <head>
+    {% include '_gtm.html' %}
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Elegí Informarte | Colaborá</title>
+    <meta name="description" content="Apoyá la suscripción gratuita para quienes votan por primera vez." />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {% include '_favicon.html' %}
+
+    {% progressive_web_app_meta %}
+
+    <meta name="author" content="la diaria" />
+    <meta name="robots" content="All" />
+
+    <link rel="icon" href="{% static 'elegi-informarte/img/favicon.ico' %}">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:400,400i,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Source+Serif+Pro:600" rel="stylesheet">
+
+
+    {% compress css %}
+      <link href="{% static 'sass/_elegi-informarte.scss' %}" rel="stylesheet" type="text/x-scss" charset="utf-8">
+    {% endcompress %}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Elegí Informarte | Colaborá"/>
+    <meta property="og:description" content="Apoyá la suscripción gratuita para quienes votan por primera vez." />
+    <meta property="og:image" content="{{ SITE_URL }}static/elegi-informarte/img/share.jpg" />
+    <meta property="og:site_name" content="la diaria" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@ladiaria" />
+
+    {% block json_ld %}
+    <script type='application/ld+json'>
+        {
+          "@context": "http://www.schema.org",
+          "@type": "NewsMediaOrganization",
+          "name": "la diaria",
+          "url": "{{ SITE_URL }}",
+          "logo": "{{ SITE_URL }}static/meta/la-diaria-1000x1000.png",
+          "description": "Publicación periodística uruguaya.",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Treinta y Tres 1479",
+            "addressLocality": "Montevideo",
+            "addressRegion": "Montevideo",
+            "postalCode": "11000",
+            "addressCountry": "Uruguay"
+          },
+          "email":"contacto@ladiaria.com.uy",
+          "telephone":"+598 29000 808",
+          "sameAs": [
+            "https://www.facebook.com/ladiaria",
+            "https://twitter.com/ladiaria",
+            "https://www.instagram.com/ladiaria",
+            "https://www.youtube.com/channel/UCu0rrtxKLExB_fNSAJ_SU9A",
+            "https://www.linkedin.com/company/ladiaria",
+            "https://soundcloud.com/ladiaria",
+            "https://es.wikipedia.org/wiki/La_Diaria"
+          ]
+        }
+    </script>
+    {% endblock %}
+    {% if not debug %}
+      {% if user.is_authenticated %}
+        <script type='text/javascript'>
+          LDUser = {};
+          LDUser.id = {{ user.id }};
+          LDUser.subscriber = {{ is_subscriber|lower }};
+          LDUser.firstName = "{{ user.first_name }}";
+          LDUser.lastName = "{{ user.last_name }}";
+        </script>
+      {% endif %}
+    {% endif %}
+
+  </head>
+  <body class="eli colaborador">
+    {% include '_gtm-script.html'  %}
+    <header class="eli-header">
+      <div class="eli-logo">
+        <a href="/elegi-informarte" class="eli-logo-link">
+          {% include "logo.html" %}
+        </a>
+      </div>
+      <nav class="eli-nav">
+        <a href="/elegi-informarte/">Proyecto</a>
+        <a href="/elegi-informarte/suscripcion">Soy nuevo votante</a>
+        <a href="/elegi-informarte/colaborar" class="active" >Quiero colaborar</a>
+      </nav>
+    </header>
+
+      <div class="eli-wrap">
+        <main class="eli-container">
+          <div class="eli-row">
+            <div class="eli-col eli-col--md">
+
+              {% if ready %}
+                <h1 class="eli-title">
+                  ¡Gracias por querer colaborar!
+                </h1>
+                <div class="eli-intro">
+                  <p>
+                    La información de calidad es fundamental al momento de elegir el destino de un país.
+                  </p>
+                  <p>
+                    Gracias por colaborar a que nuevos votantes estén informados.
+                  </p>
+                  <p>
+                    Nos comunicaremos contigo para coordinar la colaboración.
+                  </p>
+                </div>
+              {% else %}
+                <h1 class="eli-title">
+                  Apoyá la suscripción gratuita para quienes votan por primera vez
+                </h1>
+                <div class="eli-intro">
+                  <p>
+                    En un año especial para Uruguay y la región, en la diaria nos proponemos hacer más y mejor periodismo de cara a las Elecciones Nacionales 2019.
+                  </p>
+                  <p>
+                    Además queremos que nuestros contenidos lleguen especialmente a quienes votan por primera vez, obsequiandoles la suscripción digital durante toda la campaña electoral.
+                  </p>
+                  <p>
+                    Para que esto sea posible te invitamos a vos, que ya tenés una suscripción a la diaria, a que realices un aporte económico que nos permita subsidiar en parte las suscripciones de las y los nuevos votantes.
+                  </p>
+                </div>
+              {% endif %}
+
+            </div>
+
+            <div class="eli-col eli-col--sm">
+              <img src="{% static 'elegi-informarte/img/ilustracion-2.png' %}" alt="Ilustración" class="eli-drawing">
+            </div>
+          </div>
+
+          {% if not ready %}
+            <div class="eli-row">
+              <div class="eli-col eli-col--md">
+                <div class="eli-intro">
+                  <p style="font-size: 20px;font-weight: bold;">
+                    El proyecto Elegí Informarte concluyó.<br>
+                    ¡Gracias a quienes participaron!
+                  </p>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="align-center">
+            <a href="/elegi-informarte/preguntas" class="eli-faq-link">Preguntas frecuentes</a>
+          </div>
+
+        </main>
+
+        {% include '_shares.html' %}
+
+      </div>
+
+      <footer class="eli-footer">
+        <p>Elegí informarte es un proyecto de <em>la diaria</em>.</p>
+        <a href="{{ SITE_URL }}"><img src="{% static 'img/logo-dark.svg' %}" alt="la diaria"></a>
+      </footer>
+
+
+    <script type="text/javascript" src="{% static 'js/vendor/jquery-3.4.1.min.js' %}"></script>
+    {# jQuery fallback #}
+    <script>
+      window.jQuery || document.write('<script src="{% static 'js/vendor/jquery-3.4.1.min.js' %}"><\/script>');
+    </script>
+
+    <script>
+
+      $('#amount').on('keyup blur', function(event) {
+        $(".amount input").prop("checked", false)
+      });
+
+      $('.amount input').change(function(){
+          $('#amount').val('')
+      });
+
+
+    </script>
+
+    <!--[if lt IE 9]>
+    <p class="browserupgrade">
+      Estás utilizando una versión <strong>desactualizada</strong> de su navegador de internet.
+      <a href="https://browsehappy.com/?locale=es">Actualiza tu navegador</a>
+      para una mejor experiencia de usuario.
+    </p>
+    <![endif]-->
+  </body>
+</html>

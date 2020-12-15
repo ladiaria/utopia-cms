@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load core_tags homev3_tags thumbnail %}
+
+{% block page_title %}{{ site.name }} | Noticias de Uruguay y el mundo{% endblock %}
+
+{% block page_description %}{{ site_description }}{% endblock %}
+
+{% block meta_og_title %}
+  <!-- Open Graph (http://ogp.me) -->
+  <meta property="og:title" content="{{ site.name }} | Noticias de Uruguay y el mundo" />
+{% endblock %}
+
+{% block json_ld_extra %}
+  "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://ladiaria.com.uy/buscar/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+  },
+{% endblock %}
+
+{% block header_scripts %}
+  <script type="text/javascript">
+    $(function(){
+      $('#mas-leidos-content').load("{% url 'mas_leidos_content' %}", function(){
+        $('ul.tablist').tabs();
+      });
+      $('#header-pub').load("{% url 'adzone_ad_content' %}", function(){
+        $('img.lazyload', this).lazyload();
+      });
+      $('#bn-module').load("{% url 'bn-content' %}?publication={{ publication.slug }}", function(response){
+        if(response){
+          $('.breaking-notice').find('.btn-close').click(function(){
+            var notification = $(this).parent().parent();
+            $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
+              notification.toggle();
+            });
+          });
+        }
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block body_class %}frontpage{% endblock %}
+
+{% block content %}
+
+  {% render_cover %}
+  {% if fcategory %}{% include 'category_grid.html' %}{% endif %}
+  {% render_section 'carnaval-2020' None None %}
+
+  {% for publication_slug in home_publications %}
+    {% render_publication_row publication_slug %}
+  {% endfor %}
+
+  {% if featured_publications.0 %}{% render_publication_grid featured_publications.0 %}{% endif %}
+
+  {% render_section 'fotografia' None None %}
+
+  {% if featured_publications.1 %}{% render_publication_grid featured_publications.1 %}{% endif %}
+
+  {% render_section 'humor' None None %}
+
+  {# news wall commented out due to performance issues #}
+  {# include 'news_wall.html' #}
+
+  {% include 'bigphoto.html' %}
+
+  {# other custom components can be included also like this commented includes: #}
+  {# include 'components.html' #}
+
+  {# include 'footer_popover.html' #}
+
+{% endblock %}

@@ -1,0 +1,30 @@
+{% load i18n homev3_tags core_tags %}
+
+{% comment %}
+var enabledEditText = "{% trans "Enable edit inline" %}";
+var disabledEditText = "{% trans "Disable edit inline" %}"; 
+{% endcomment %}
+var enabledEditText = "Editar";
+var disabledEditText = "Finalizar edición";
+var toggleInplaceEdit = function () {
+    var trigger = $(this);
+    if (trigger.hasClass('active')) {
+        inplaceManager.disable();
+        trigger.removeClass('active');
+        trigger.html(enabledEditText);
+    } else {
+        inplaceManager.enable();
+        trigger.addClass('active');
+        trigger.html(disabledEditText);
+    }
+};
+
+            
+
+var toolbar = $("<div id=\"toolbar-inplace-edit\" class=\"navbar\"></div>").prependTo("body");
+toolbar.append("<ul class=\"toolbarActions nav\"></ul>");
+var actions = toolbar.find(".toolbarActions");
+actions.append("<li class=\"toolbarAction\" id=\"ActivateInplaceEdit\"><a href=\"#inplaceedit\">" + enabledEditText + "</a></li>");
+actions.append("<li class=\"toolbarAction\" id=\"ActivateInplaceEdit\"><a href=\"/admin\">Admin</a></li>");
+
+$("#ActivateInplaceEdit").click(toggleInplaceEdit);

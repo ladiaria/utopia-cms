@@ -1,0 +1,6 @@
+SOURCE_DIR=""
+DEST_DIR=""
+DB_USER=""
+DB_NAME=""
+DB_PASSWD=""
+DB_TABLES=""

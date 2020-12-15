@@ -1,0 +1,9 @@
+<strong>{{ field.label }}</strong><br>
+<div id="box-tel-div" class="ld-rcorners ld-chbx-mrg {% ifequal field.value 'tel' %} ld-pago-select{% endifequal %}">
+  <div id="chkbx-tel-div">
+    <label class="ld-chbx-label">
+      <input id="chkbx-tel" class="ld-chbx-force" type="radio" name="{{ field.html_name }}" value="tel"{% ifequal field.value "tel" %} checked="checked"{% endifequal %}>
+      <span class="ld-bold-chbx">{{ field.field.choices.0.1 }}</span>
+    </label>
+  </div>
+<!-- </div> is outside template in preferred_time.html -->

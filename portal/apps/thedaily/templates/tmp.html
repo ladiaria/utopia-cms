@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load core_tags crispy_forms_tags %}
+
+{% block page_title %}¡Bienvenido/a!{% endblock %}
+{% block javascript %}
+    <script type="text/javascript">
+        // CompleteRegistration
+        // Track when a registration form is completed (ex. complete subscription, sign up for a service)
+        fbq('track', 'CompleteRegistration');
+        _gaq.push(['_trackEvent', 'RegistrationFrom', 'CompleteRegistration']);
+    </script>
+{% endblock %}
+{% block body_class %}subscribe{% endblock %}
+
+{% block content %}
+    {{ form_data }}
+    <div class="main">
+        <div class="titlebar">
+            <h1>
+                Suscripción iniciada
+            </h1>
+        </div>
+        <p>
+            Nos vamos a comunicar contigo en las próximas horas{% if telephone %} al {{ telephone }}{% elif user.is_active %} al {{ user.subscriber.phone }}{% endif %} para coordinar el pago, luego tu suscripción quedará activada.
+        </p>
+        <p>
+            {% if user.is_active %}
+                ¿Querés que te llamemos a otro teléfono? Cambialo en <a href="{% url edit-profile %}">tu perfil</a>.
+            {% else %}
+                Revisá tu email y clickeá en Activar cuenta en el mensaje que te acabamos de enviar a {{ email }} para ir adelantando el proceso.
+            {% endif %}
+        </p>
+        <p>
+            Gracias por formar parte,<br>
+            El equipo de <em>la diaria</em>.
+        </p>
+        <p>
+            ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
+        </p>
+    </div>
+{% endblock %}
+
+{% block footer_scripts %}
+<!-- Google Code for Se suscriben Conversion Page -->
+<script type="text/javascript">
+/* <![CDATA[ */
+var google_conversion_id = 859919571;
+var google_conversion_language = "en";
+var google_conversion_format = "3";
+var google_conversion_color = "ffffff";
+var google_conversion_label = "pULvCKj48W4Q06mFmgM";
+var google_remarketing_only = false;
+/* ]]> */
+</script>
+<script type="text/javascript" src="//www.googleadservices.com/pagead/conversion.js">
+</script>
+<noscript>
+<div style="display:inline;">
+<img height="1" width="1" style="border-style:none;" alt="" src="//www.googleadservices.com/pagead/conversion/859919571/?label=pULvCKj48W4Q06mFmgM&amp;guid=ON&amp;script=0"/>
+</div>
+</noscript>
+{% endblock %}

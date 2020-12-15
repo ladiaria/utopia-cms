@@ -1,0 +1,901 @@
+{% extends "base.html" %}
+{% load core_tags ldml cartelera_tags adzone_tags tagging_tags crispy_forms_tags videologue_tags inplace_edit markup %}
+
+{% block page_title %}{{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endblock %}
+
+{% block page_description %}
+  {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
+{% endblock %}
+
+{% block page_keywords %}
+  {{ article.tags }}
+{% endblock %}
+
+{% block robots %}{% ifequal section.slug "humor" %}noindex{% else %}{{ block.super }}{% endifequal %}{% endblock %}
+
+{% block meta_og_title %}
+  <!-- Open Graph (http://ogp.me) -->
+  <meta property="og:title" content="{{ article.headline|remove_markup }}" />
+{% endblock %}
+{% block meta %}
+  <meta property="og:type" content="article">
+  <meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ site.name }}{% endif %}" />
+  <meta property="og:description" content="{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}" />
+  <meta property="og:locale" content="es_UY" />
+  <meta property="og:site_name" content="{{ site.name }}" />
+  <meta property="og:url" content="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" />
+  <meta property="article:section" content="{{ section }}" />
+  <meta property="article:publisher" content="https://www.facebook.com/ladiaria/" />
+  <meta property="article:published_time" content="{{ article.date_published|date:"c"|capfirst }}" />
+  {% if publication == garra_pub %}
+  <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}/static/img/garra-social-sq.png{% endif %}" />
+  {% elif publication == lento_pub %}
+  <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}/static/img/lento-social-sq.png{% endif %}" />
+  {% else %}
+    {% ifequal section.slug 'humor' %}
+      <meta property="og:image" content="{{ SITE_URL }}static/img/humor-social.png" />
+    {% else %}
+      <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}/static/meta/la-diaria-1000x1000.png{% endif %}" />
+    {% endifequal %}
+  {% endif %}
+  <!-- End Open Graph (http://ogp.me) -->
+  <!-- Meta tags Google -->
+  <meta name="robots" content="max-image-preview:large">
+  <!-- End Meta tags Google -->
+  <!-- Meta tags Twitter -->
+  <meta name="twitter:card" content="{% if article.photo %}summary_large_image{% else %}summary{% endif %}">
+  <meta name="twitter:site" content="@ladiaria" />
+  {% if article.photo %}
+  <meta name="twitter:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}/static/meta/la-diaria-1000x1000.png{% endif %}" />
+  <meta name="twitter:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+  <meta property="og:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" />
+  {% endif %}
+  <!-- End Meta tags Twitter -->
+
+  <!-- AMP -->
+  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
+  <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
+  <!-- End AMP -->
+{% endblock %}
+
+{% block json_ld %}
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  {% ifequal section.slug 'humor' %}
+    "@type": "SatiricalArticle",
+  {% else %}
+    "@type": "NewsArticle",
+  {% endifequal %}
+  "mainEntityOfPage": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}",
+  "headline": "{{ article.headline|remove_markup|truncatewords:25 }}",
+  "datePublished": "{{ article.date_published|date:"c" }}",
+  "dateModified": "{{ article.date_published|date:"c" }}",
+  "description": "{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
+  {% if article.public %}
+  "isAccessibleForFree": "True",
+  {% else %}
+  "isAccessibleForFree": "False",
+  {% endif %}
+  "hasPart":
+    {
+    "@type": "WebPageElement",
+    {% if article.public %}
+    "isAccessibleForFree": "True",
+    {% else %}
+    "isAccessibleForFree": "False",
+    {% endif %}
+    "cssSelector" : ".paywalled-content"
+  },
+  "isPartOf": {
+    "@type": ["CreativeWork"],
+    "name" : "{{ site.name }}"
+  },
+  {% if article.get_authors %}
+      "author":
+      {% if article.get_authors|length > 1 %} [ {% endif %}
+      {% for author in article.get_authors %}
+      {
+        "@type": "Person",
+        "name": "{{ author.name }}"
+    }{% if not forloop.last or article.get_authors|length == 1 %}, {% endif %}
+      {% endfor %}
+      {% if article.get_authors|length > 1 %} ], {% endif %}
+  {% else %}
+      "author": {
+          "@type": "Organization",
+          "name": "{{ site.name }}"
+      },
+  {% endif %}{# TODO post release: eliminate custom pubs, use utopia assets in "else" #}
+  "publisher": {
+      "@type": "Organization",
+      "name": "{{ site.name }}",
+      "logo": {
+        "@type": "ImageObject",
+        {% if publication == garra_pub %}
+        "url": "https://ladiaria.com.uy/static/img/garra-publisher-img.png",
+        "width": "152",
+        "height": "60"
+        {% elif publication == lento_pub %}
+        "url": "https://ladiaria.com.uy/static/img/lento-publisher-img.png",
+        "width": "84",
+        "height": "60"
+        {% else %}
+        "url": "https://ladiaria.com.uy/static/meta/la-diaria-205x60.png",
+        "width": "205",
+        "height": "60"
+        {% endif %}
+    }
+  },
+  {% if article.photo %}
+  "image": {
+      "@type": "ImageObject",
+      "url": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_1200w_url }}",
+      "width": "1200"
+  }
+  {% else %}
+  "image": {
+      "@type": "ImageObject",
+      "url": "https://ladiaria.com.uy/static/meta/la-diaria-1000x1000.png",
+      "width": "1000",
+      "height" : "1000"
+  }
+  {% endif %}
+}
+</script>
+
+{% endblock %}
+
+{% block header_scripts %}
+  <script type="text/javascript">
+    $(function(){
+      $('#mas-leidos-content').load("{% url 'mas_leidos_content' %}", function(){
+        $('ul.tablist').tabs();
+      });
+      $('#bn-module').load("{% url 'bn-content' %}", function(response){
+        if(response){
+          $('.breaking-notice').find('.btn-close').click(function(){
+            var notification = $(this).parent().parent();
+            $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
+              notification.toggle();
+            });
+          });
+        }
+      });
+      $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}", function() {
+        $('img.lazyload', this).lazyload();
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block body_class %}
+  article
+  {% if article.public %}is-public{% endif %}
+  {% if publication %}{{ publication.slug }}-pub{% endif %}
+  {% if article.is_suscriber_article %}
+    comunidad
+  {% elif article.type == 'LI' %}
+    losinformantes
+  {% elif article.type == 'EF' %}
+    elfaro
+  {% endif %}
+  {{ header_display }}
+  article-section-{{ section.slug }}
+  {% if not article.is_published %}draft{% endif %}
+{% endblock %}
+
+{% block main_open %}{% endblock %}
+
+{% block page_header %}
+  <div id="bn-module"></div>
+  {% render_live_embed_event_notification %}
+{% endblock %}
+
+{% block content %}
+<main>
+  <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
+    {% if article.photo %}
+    {% if header_display == 'FW' %}
+    <div class="fullwidth-container">
+    <div class="main-photo">
+      <div>
+        <figure class="js-figure principal {{ card_size }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                data-src="{{ article.photo.get_1200w_url }}">
+          <picture>
+            <!--[if IE 9]><video style="display: none;"><![endif]-->
+            <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+            <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+            <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
+            <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+            <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+            <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+            <!--[if IE 9]></video><![endif]-->
+            <img
+            class="ld-article__main-photo materialboxed responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
+            data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+            alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+          </picture>
+          <figcaption class="caption">
+            {% if article.photo.caption %}<p>{{ article.photo.caption }}</p>{% endif %}
+            {% if article.photo.extended.photographer %}
+                <p>{{ article.photo.extended.type_verbose }}:
+                {{ article.photo.extended.photographer.name }}</p>
+            {% endif %}
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+    {% else %}
+    <div class="container-photo photo{% if card_size %} {{ card_size }}{% else %} BG{% endif %}
+    {% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}">
+      <figure class="principal">
+        <picture class="materialboxed">
+            <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+            <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
+            <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
+            <img class="ld-article__main-photo responsive-img lazyload{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+            alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" />
+        </picture>
+        <figcaption class="article-caption container ld-caption">
+          <p>{{ article.photo.caption }}</p>
+          {% if article.photo.extended.photographer %}
+            <p>{{ article.photo.extended.type_verbose }}:
+            {{ article.photo.extended.photographer.name }}</p>
+          {% endif %}
+        </figcaption>
+      </figure>
+    </div>
+
+    {% endif %}
+    {% endif %}
+    <div class="article-header">
+      {% ifequal section.slug 'humor' %}
+        <div class="align-center">
+          <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
+        </div>
+      {% endifequal %}
+      <h1 class="article-title after_foto">
+          {{ article.headline|ldmarkup:article.id|removetags:"p" }}
+      </h1>
+
+      <div class="article-date-author">
+      {% if article.date_published %}
+          <span class="date small"><time datetime="{{ article.date_published|date:"c" }}">{{ article.date_published|date:"j \d\e F \d\e Y"|lower }}</time> · </span>
+      {% endif %}
+      {% if article.has_byline %}
+        Escribe
+        {% for author in article.get_authors %}
+          <span class="small"><a href="{{ author.get_absolute_url }}">
+            {{ author.name }}</a></span>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+        {% if section %} <span class="small">en </span>{% endif %}
+      {% endif %}
+      {% if section %}
+        <span class="small">
+          {% if 'elecciones' in article.get_categories_slugs %}
+            {% with 'apuntes-de-campana datos-elecciones-2019' as special_sections %}
+              {% if section.slug in special_sections.split %}
+                <a href="{{ section.get_absolute_url }}">{{ section }}</a>
+              {% else %}
+                <a href="{% url 'section_detail' section_slug='elecciones-2019' %}">{{ section.category }}</a>
+              {% endif %}
+            {% endwith %}
+          {% else %}
+            <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
+          {% endif %}
+        </span>
+      {% endif %}
+
+      </div>
+      <div class="reading-time"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/></svg> <span class="eta">{{ article.reading_time }}</span> de lectura</div>
+    </div>
+
+    {% if header_display == 'FW' %}
+    </div>
+    {% endif %}
+      {% if article.has_deck or article.has_lead %}
+        {% if article.has_deck %}
+          <h2 class="article-deck article__deck">
+            {{ article.deck|ldmarkup:article.id|removetags:'p' }}
+          </h2>
+        {% endif %}
+        {% if article.has_lead %}
+          <p class="article-lead">
+            {{ article.get_lead|urlize|ldmarkup:article.id|removetags:'p' }}
+          </p>
+        {% endif %}
+      {% endif %}
+
+    {% if article.audio %}
+      {% include 'article/audio.html' %}
+    {% endif %}
+
+    {# signupwall #}
+
+    {% if not user.is_authenticated %}
+
+      {% if not request.signupwall %}
+        {# Soft wall: Registro|Suscripción #}
+
+        {% if not article.public %}
+          <div class="ld-snackbar ld-snackbar--active js-ld-snackbar">
+            <div class="ld-snackbar__title">
+              {% if request.credits > 0 %}
+                Suscribite o ingresá
+              {% else %}
+                Suscribite o ingresá
+              {% endif %}
+              <button class="js-close-ld-snackbar ld-snackbar__close ld-snackbar__close-top" type="button" aria-pressed="false" aria-label="Cerrar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path fill="#fff" d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/></svg>
+              </button>
+            </div>
+            <div class="ld-snackbar__body ld-snackbar__body-sm">
+              <p class="desc">Accedé a 10 artículos gratis por mes con la suscripción gratuita.</p>
+              <a href="{% url 'account-signup' %}" class="ld-btn-regular ld-snackbar__btn--white ld-snackbar__btn">
+                Suscribite gratis
+              </a>
+              <p class="desc">¿Ya tenés suscripción?</p>
+              <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn bordered">Ingresá</a>
+            </div>
+            <div class="ld-snackbar__body ld-snackbar__body-lg">
+              <div class="container">
+                <div class="row">
+                  <div class="ld-snackbar--option">
+                    <div class="ld-snackbar__text ld-snackbar__block">
+                      Accedé a 10 artículos gratis por mes con la suscripción gratuita.
+                    </div>
+                    <div class="ld-snackbar__block">
+                      <a href="{% url 'account-signup' %}" class="ld-btn-default">Suscribite gratis</a>
+                    </div>
+                  </div>
+                  <div class="ld-snackbar--option">
+                    <div class="ld-snackbar__text ld-snackbar__block">
+                      ¿Ya tenés suscripción?
+                    </div>
+                    <div class="ld-snackbar__block">
+                      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn bordered">Ingresá</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% else %} {# signupwall raised #}
+        <!-- Hard wall -->
+        {# Hard wall -> Registro|Suscripción #}
+        <div class="article-body article-body--faded">
+          {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
+        </div>
+
+        <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
+          <div class="ld-snackbar__title">
+            Para seguir leyendo suscribite o ingresá
+          </div>
+          <div class="ld-snackbar__body ld-snackbar__body-sm">
+            <p class="desc">Accedé a 10 artículos gratis por mes con la suscripción gratuita.</p>
+            <a href="{% url 'account-signup' %}"  class="ld-btn-regular ld-snackbar__btn--white ld-snackbar__btn">Suscribite gratis</a>
+              <p class="desc">¿Ya tenés suscripción?</p>
+              <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn bordered">Ingresá</a>
+          </div>
+          <div class="ld-snackbar__body ld-snackbar__body-lg">
+              <div class="container">
+                <div class="row">
+                  <div class="ld-snackbar--option">
+                    <div class="ld-snackbar__text ld-snackbar__block">
+                      Accedé a 10 artículos gratis por mes con la suscripción gratuita.
+                    </div>
+                    <div class="ld-snackbar__block">
+                      <a href="{% url 'account-signup' %}" class="ld-btn-default">Suscribite gratis</a>
+                    </div>
+                  </div>
+                  <div class="ld-snackbar--option">
+                      <div class="ld-snackbar__text ld-snackbar__block">
+                        ¿Ya tenés suscripción?
+                      </div>
+                      <div class="ld-snackbar__block">
+                        <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn bordered">Ingresá</a>
+                      </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+      {% endif %}
+
+    {# Usuario Registrado #}
+    {% else %}
+
+      <!-- user is authenticated -->
+      {# Usuario Registrado, No-Suscriptor #}
+      {% if not is_subscriber %}
+      <!-- not is_subscriber -->
+        {% if not request.signupwall %}
+          {# Soft wall: Suscripción #}
+
+          {% if not article.public %}
+            <div class="ld-snackbar ld-snackbar--active ld-snackbar--narrow js-ld-snackbar">
+              <div class="ld-snackbar__title">
+                {# show credits popup only if signupwall is enabled #}
+                {% if signupwall_enabled %}
+                  {% if request.credits %}
+                    {% if request.credits > 1 %}
+                      Te quedan {{ request.credits }} artículos gratuitos
+                    {% else %}
+                      Te queda {{ request.credits }} artículo gratuito
+                    {% endif %}
+                  {% else %}
+                    Este es tu último artículo gratuito
+                  {% endif %}
+                {% endif %}
+                <button class="js-close-ld-snackbar ld-snackbar__close ld-snackbar__close-top" type="button" aria-pressed="false" aria-label="Cerrar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path fill="#fff" d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/></svg>
+                </button>
+              </div>
+              <div class="ld-snackbar__body ld-snackbar__body-sm">
+                <p class="desc">Pasate a suscripción ilimitada para lectura sin límites y más beneficios.</p>
+                <a href="{% url 'subscribe' planslug='DDIGM' %}"
+                   class="ld-btn-default ld-snackbar__btn--white ld-snackbar__btn">
+                  Pasate a ilimitada
+                </a>
+              </div>
+              <div class="ld-snackbar__body ld-snackbar__body-lg">
+                <div class="container">
+                  <div class="row">
+                    <div class="ld-snackbar--option">
+                      <div class="ld-snackbar__text ld-snackbar__block">
+                        Pasate a suscripción ilimitada para lectura sin límites y más beneficios.
+                      </div>
+                      <div class="ld-snackbar__block">
+                        <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-default">Pasate a ilimitada</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        {% else %} {# signupwall raised #}
+          {# Hard wall -> Suscripción #}
+          <!-- Hard wall / suscripción-->
+          <div class="article-body article-body--faded">
+            {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
+          </div>
+
+          <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static ld-snackbar--narrow">
+            <div class="ld-snackbar__title">
+              Llegaste al límite de artículos gratuitos
+            </div>
+            <div class="ld-snackbar__body ld-snackbar__body-sm">
+              <p class="desc">Pasate a suscripción ilimitada para lectura sin límites y más beneficios.</p>
+              <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-default ld-snackbar__btn--white ld-snackbar__btn">
+                Pasate a ilimitada
+              </a>
+            </div>
+            <div class="ld-snackbar__body ld-snackbar__body-lg">
+              <div class="container">
+                <div class="row">
+                  <div class="ld-snackbar--option">
+                    <div class="ld-snackbar__text ld-snackbar__block">
+                      Pasate a suscripción ilimitada para lectura sin límites y más beneficios.
+                    </div>
+                    <div class="ld-snackbar__block">
+                      <a href="{% url 'subscribe' planslug='DDIGM' %}"
+                         class="ld-btn-regular">Pasate a ilimitada</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        {% endif %}
+      {% else %}
+      <!-- is_subscriber == true -->
+      {% endif %}
+
+    {% endif %}
+
+    {# END signupwall #}
+
+  {% if not request.signupwall %}
+    <div class="article-body paywalled-content">
+      {{ article.body|ldmarkup:article.id }}
+    </div>
+
+    {% if article.type == "PA" or article.gallery.photos %}
+      <div class="thumbnails container gallery-wrap">
+        <div id="galeriadefotos" class="responsive-images">
+          <div class="row">
+            {% for photo in article.gallery.photos.all %}
+            <div data-responsive="{{ photo.get_400w_url }} 400px,
+                                  {{ photo.get_700w_url }} 700px,
+                                  {{ photo.get_900w_url }} 1000px"
+                 data-src="{{ photo.get_1200w_url }}"
+                 data-sub-html="{{ photo.caption }}"
+                 class="col s4 m4 l4 gallery_thumb">
+              <a href="{{ photo.get_1200w_url }}" class="item img-{{ forloop.counter }}" data-sub-html=".caption">
+                <img src="{{ photo.get_article_thumb_url }}" alt="{{ photo.caption }}"  class="gallery_thumb">
+                <div class="caption hide">
+                  {{ photo.caption }}
+                  {% if article.photo.extended.photographer %}
+                  <span class="small soft">{{ article.photo.extended.type_verbose }}:
+                    {{ article.photo.extended.photographer.name }}</span>
+                  {% endif %}
+                </div>
+              </a>
+            </div>
+              {% if forloop.counter|divisibleby:3 %}
+            </div>
+          <div class="row">
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if article.attachments.count %}
+      <div class="container">
+        <div class="row">
+          <div id="video" class="center col s12">
+            <ul class="center">
+              <li><span class="icon-paper-clip gray"></span> Adjuntos:</li>
+              {% for att in article.attachments.all %}
+                  {% if att.is_image %}
+                    <img src="{{ att.file.url }}" alt="{{ att.name }}" >
+                  {% else %}
+                    <a href="{{ att.file.url }}">{{ att.name }}</a>
+                  {% endif %}
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if article.video %}
+    <div class="container">
+      <div class="row">
+        <div id="video" class="center col s12">
+          <video controls width="560" height="315">
+            <source type="video/mp4" src="{{ article.video.file.url }}">
+          </video>
+          <div class="caption">
+            {% if article.video.caption %}
+              <div class="caption small soft">{{ article.video.caption }}</div>
+            {% endif %}
+            {% if article.video.byline %}
+              <div class="byline small">Video: {{ article.video.byline }}</div>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if article.youtube_video %}
+    <div class="container">
+      <div class="row">
+        <div id="external_video" class="center col s12">
+          {{ article.youtube_video|render_video }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# custom map hardcoded article id for rio abierto special articles #}
+    {% if article.id == 39530 or article.id == 39619 %}
+      <div class="center">
+        <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1yCIvghAEJrDn5eBechdeHvFR1iVgsQi-" width="720" height="600"></iframe>
+      </div>
+    {% endif %}
+
+    <div class="ld-fin ld-block"></div>
+
+    {% with 'ciencia educacion salud feminismos trabajo garra lento economia justicia' as nls %}
+      {% if publication.slug in nls.split %}
+        {% if publication.slug in user.subscriber.get_newsletters %}
+          {# Already subscribed to publication newsletter #}
+        {% else %}
+          {% include 'article/subscribe_box.html' %}
+        {% endif %}
+      {% elif section.category.slug == 'coronavirus' or 'coronavirus' in article.get_categories_slugs %}
+        {% if 'coronavirus' in user.subscriber.get_newsletters %}
+          {# Already subscribed to coronavirus newsletter #}
+        {% else %}
+          {% include 'article/subscribe_box_coronavirus.html' %}
+        {% endif %}
+      {% endif %}
+    {% endwith %}
+
+    {% if tag_list %}
+      <div class="article-tags align-center">
+        <span class="title">Temas en este artículo</span>
+        {% for tag in tag_list %}
+          {% if forloop.counter < 4 %}
+            <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if tag_list|length > 3 %}
+          <a href="#" class="tag expand" title="Desplegar más temas"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="6" viewBox="0 0 28 6"><g transform="translate(-684 -4183)"><circle cx="3" cy="3" r="3" transform="translate(706 4183)" fill="#262626"/><circle cx="3" cy="3" r="3" transform="translate(695 4183)" fill="#262626"/><circle cx="3" cy="3" r="3" transform="translate(684 4183)" fill="#262626"/></g><title>Desplegar más temas</title></svg></a>
+        {% endif %}
+        <div class="more-tags hidden">
+          {% for tag in tag_list %}
+            {% if forloop.counter > 3 %}
+              <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+  </article>
+</main>
+
+<aside>
+  {% if article.public %}
+
+    <section class="ld-is-public align-center ld-block">
+      <span class="ld-public-pill" aria-label="Artículo libre">Artículo libre</span>
+      <span class="ld-info-tooltip">
+        <span class="ld-info-tooltip-content">
+          Artículo de acceso libre a todo público.
+          Es posible gracias a quienes financian nuestro trabajo con su suscripción de pago.
+        </span>
+      </span>
+    </section>
+
+  {% endif %}
+
+  {% if TALK_URL and article.allow_comments %}
+    <div id="comentarios">
+      <div class="container">
+
+        <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}" data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}" data-article-url="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-login-url="{{ URL_SCHEME }}://{{ site.domain }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
+          <span class="title">Comentar este artículo</span>
+          <button class="ld-btn-inverted--sm">
+            {% if comments_count > 0 %}{{ comments_count }} comentario{{comments_count|pluralize:"s"}}{% else %}Comentar{% endif %}
+          </button>
+        </section>
+
+        <div class="talk-login align-center display-hidden">
+          {% if user.is_authenticated %}
+            {% if not is_subscriber %}
+              <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ld-btn-inverted--sm ld-btn-subscribe-to-comment">Pasate a Ilimitada para comentar</a>
+            {% endif %}
+          {% else %}
+            <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ld-btn-inverted--sm ld-btn-subscribe-to-comment">Suscribite a Ilimitada para comentar</a>
+            <span class="ld-caption ld-caption-subscribe-to-comment">
+              ¿Ya tenés suscripción?
+              <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
+            </span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <section class="col s12 center ld-share-widget ld-block">
+    <span class="small ld-share-widget__title" aria-label="Compartir">Compartir este artículo</span>
+    <ul class="inline share ld-share-widget__list">
+      <li class="whatsapp">
+        <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }}%20{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}"
+           data-action="share/whatsapp/share">
+          <span class="sr-only">Compartir en WhatsApp</span>
+          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#262626"/>
+          </svg>
+        </a>
+      </li>
+      <li>
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" target="_blank" rel="noopener">
+          <span class="sr-only">Compartir en Facebook</span>
+          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#262626"/>
+          </svg>
+        </a>
+      </li>
+      <li>
+        <a href="https://twitter.com/intent/tweet?original_referer={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related=ladiaria&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&via={% if publication == garra_pub %}GarraUY{% elif publication == lento_pub %}RevistaLento{% else %}ladiaria{% endif %}" target="_blank" rel="noopener">
+          <span class="sr-only">Compartir en Twitter</span>
+          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#262626"/>
+          </svg>
+        </a>
+      </li>
+      <li>
+        <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
+          <span class="sr-only">Compartir vía email</span>
+          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M29 5H5C4.20695 5.00397 3.44774 5.32179 2.88837 5.88397C2.329 6.44615 2.01499 7.20694 2.015 8L2 26C2.00237 26.7949 2.31921 27.5566 2.8813 28.1187C3.4434 28.6808 4.20508 28.9976 5 29H29C29.7949 28.9976 30.5566 28.6808 31.1187 28.1187C31.6808 27.5566 31.9976 26.7949 32 26V8C31.9976 7.20508 31.6808 6.4434 31.1187 5.8813C30.5566 5.31921 29.7949 5.00237 29 5ZM28.4 11.375L17.8 18C17.5609 18.1471 17.2857 18.225 17.005 18.225C16.7243 18.225 16.4491 18.1471 16.21 18L5.6 11.375C5.45357 11.2886 5.32591 11.1737 5.22456 11.0372C5.12321 10.9007 5.05022 10.7452 5.00988 10.5801C4.96954 10.4149 4.96268 10.2433 4.98969 10.0754C5.0167 9.90755 5.07704 9.74679 5.16716 9.6026C5.25728 9.45841 5.37534 9.33372 5.5144 9.23588C5.65347 9.13804 5.81071 9.06902 5.97686 9.0329C6.14301 8.99678 6.31471 8.99428 6.48184 9.02555C6.64897 9.05683 6.80815 9.12124 6.95 9.215L17 15.5L27.05 9.215C27.1918 9.12124 27.351 9.05683 27.5182 9.02555C27.6853 8.99428 27.857 8.99678 28.0231 9.0329C28.1893 9.06902 28.3465 9.13804 28.4856 9.23588C28.6247 9.33372 28.7427 9.45841 28.8328 9.6026C28.923 9.74679 28.9833 9.90755 29.0103 10.0754C29.0373 10.2433 29.0305 10.4149 28.9901 10.5801C28.9498 10.7452 28.8768 10.9007 28.7754 11.0372C28.6741 11.1737 28.5464 11.2886 28.4 11.375Z" fill="#262626"/>
+          </svg>
+        </a>
+      </li>
+      <li class="hide-on-med-and-down">
+        <span class="sr-only">Imprimir artículo</span>
+        <span class="a cur-p" onclick="window.print()"><svg class="share-print-icon"  width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M28.3075 10.5395H5.6945C5.05786 10.5386 4.42729 10.6633 3.83893 10.9065C3.25057 11.1497 2.71598 11.5066 2.26581 11.9568C1.81563 12.407 1.45871 12.9416 1.2155 13.5299C0.972295 14.1183 0.847579 14.7489 0.848501 15.3855V21.8465C0.851138 22.7023 1.19229 23.5224 1.79746 24.1275C2.40263 24.7327 3.22266 25.0739 4.0785 25.0765H7.3085V28.3065C7.31114 29.1623 7.65229 29.9824 8.25746 30.5875C8.86263 31.1927 9.68266 31.5339 10.5385 31.5365H23.4615C24.3173 31.5339 25.1374 31.1927 25.7425 30.5875C26.3477 29.9824 26.6889 29.1623 26.6915 28.3065V25.0765H29.9215C30.7773 25.0739 31.5974 24.7327 32.2025 24.1275C32.8077 23.5224 33.1489 22.7023 33.1515 21.8465V15.3855C33.1524 14.749 33.0278 14.1186 32.7847 13.5304C32.5416 12.9422 32.1849 12.4077 31.7349 11.9575C31.2849 11.5074 30.7506 11.1504 30.1625 10.9071C29.5743 10.6638 28.944 10.5388 28.3075 10.5395ZM21.8485 28.3065H12.1545C11.7266 28.3052 11.3166 28.1346 11.014 27.832C10.7114 27.5294 10.5408 27.1194 10.5395 26.6915V20.2305H23.4615V26.6915C23.4602 27.1191 23.2899 27.5288 22.9877 27.8313C22.6856 28.1338 22.2761 28.3047 21.8485 28.3065ZM28.3095 17.0005C27.9901 17.0005 27.6778 16.9058 27.4123 16.7283C27.1467 16.5509 26.9397 16.2986 26.8174 16.0035C26.6952 15.7084 26.6632 15.3837 26.7255 15.0704C26.7878 14.7572 26.9417 14.4694 27.1675 14.2435C27.3934 14.0177 27.6812 13.8638 27.9944 13.8015C28.3077 13.7392 28.6324 13.7712 28.9275 13.8934C29.2226 14.0157 29.4749 14.2227 29.6523 14.4883C29.8298 14.7538 29.9245 15.0661 29.9245 15.3855C29.9232 15.8138 29.7523 16.2241 29.4493 16.5267C29.1463 16.8294 28.7358 16.9997 28.3075 17.0005H28.3095ZM25.0765 2.4635H8.9245C8.49658 2.46482 8.08657 2.63539 7.78398 2.93798C7.48139 3.24057 7.31082 3.65058 7.3095 4.0785V7.3085C7.31082 7.73642 7.48139 8.14644 7.78398 8.44902C8.08657 8.75161 8.49658 8.92218 8.9245 8.9235H25.0765C25.5044 8.92218 25.9144 8.75161 26.217 8.44902C26.5196 8.14644 26.6902 7.73642 26.6915 7.3085V4.0785C26.6902 3.65058 26.5196 3.24057 26.217 2.93798C25.9144 2.63539 25.5044 2.46482 25.0765 2.4635Z" fill="#262626"/>
+        </svg></span>
+      </li>
+    </ul>
+  </section>
+
+  {% if article.show_related_articles %}
+    {% render_related article %}
+  {% endif %}
+
+  {% if keep_reading %}
+    <section class="seguir-leyendo article-list visible-desktop ld-block">
+      <h5 aria-label="Seguí leyendo sobre esto"  aria-label="Seguí leyendo sobre esto">Seguí leyendo sobre esto</h5>
+
+      {% for next in keep_reading %}
+        <article class="{% if next.photo %}has_foto {% endif %}row lead">
+          {% if next.photo %}
+            <figure class="col s3">
+              <a href="{{ next.get_absolute_url }}" class="media-object related_thumb"><img rel="tooltip" src="{{ next.photo.get_article_thumb_url }}" alt="{% if next.photo.caption %}{{ next.photo.caption }}{% endif %}"></a>
+            </figure>
+          {% endif %}
+          <header class="{% if next.photo %}col s9{% else %}col s12{% endif %}">
+            {% if next.date_published %}
+              {% if next.edition %}
+                <a href="{{ next.edition.get_absolute_url }}" class="date"> {{ next.date_published|date:"l d \• N \• y"|upper }}</a>
+              {% else %}
+                <span class="date">{{ next.date_published|date:"j.n.y" }}</span>
+              {% endif %}
+            {% endif %}
+            {% if next.get_keywords %}
+              <div class="keywords-style">{{ next.keywords }}</div>
+            {% endif %}
+            <h1><a href="{{ next.get_absolute_url }}">{{ next.headline|ldmarkup:article.id|removetags:"p" }}</a></h1>
+          </header>
+        </article>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <section id="header-pub" class="col s12 center-align article__bottom-ad ld-block">
+      <div id="ad-container" class="container"></div>
+    </section>
+
+    <section id="mas-leidos" class="col s12 ld-block">
+      <div id="mas-leidos-content" class="container"></div>
+    </section>
+
+  {% endif %}
+
+  <div id="article-share-full">
+    <a href="#!" class="right modal-close"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z" fill="#fff"/></svg></a>
+  	<div class="modal-content">
+  		<div class="row">
+        <div class="col s12 center">
+          <h3 class="title">Compartir este artículo</h3>
+          <ul class="inline share">
+            <li class="whatsapp">
+              <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }}%20{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}"
+                 data-action="share/whatsapp/share">
+                <span class="sr-only">Compartir en WhatsApp</span>
+                <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#595959"/>
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://www.facebook.com/sharer/sharer.php?u={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" target="_blank" rel="noopener">
+                <span class="sr-only">Compartir en Facebook</span>
+                <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#595959"/>
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://twitter.com/intent/tweet?original_referer={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url|urlencode }}&ref_src=twsrc%5Etfw&related=ladiaria&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&via={% if publication == garra_pub %}GarraUY{% elif publication == lento_pub %}RevistaLento{% else %}ladiaria{% endif %}"
+                 target="_blank" rel="noopener">
+                <span class="sr-only">Compartir en Twitter</span>
+                <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#595959"/>
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
+                <span class="sr-only">Compartir vía email</span>
+                <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M29 5H5C4.20695 5.00397 3.44774 5.32179 2.88837 5.88397C2.329 6.44615 2.01499 7.20694 2.015 8L2 26C2.00237 26.7949 2.31921 27.5566 2.8813 28.1187C3.4434 28.6808 4.20508 28.9976 5 29H29C29.7949 28.9976 30.5566 28.6808 31.1187 28.1187C31.6808 27.5566 31.9976 26.7949 32 26V8C31.9976 7.20508 31.6808 6.4434 31.1187 5.8813C30.5566 5.31921 29.7949 5.00237 29 5ZM28.4 11.375L17.8 18C17.5609 18.1471 17.2857 18.225 17.005 18.225C16.7243 18.225 16.4491 18.1471 16.21 18L5.6 11.375C5.45357 11.2886 5.32591 11.1737 5.22456 11.0372C5.12321 10.9007 5.05022 10.7452 5.00988 10.5801C4.96954 10.4149 4.96268 10.2433 4.98969 10.0754C5.0167 9.90755 5.07704 9.74679 5.16716 9.6026C5.25728 9.45841 5.37534 9.33372 5.5144 9.23588C5.65347 9.13804 5.81071 9.06902 5.97686 9.0329C6.14301 8.99678 6.31471 8.99428 6.48184 9.02555C6.64897 9.05683 6.80815 9.12124 6.95 9.215L17 15.5L27.05 9.215C27.1918 9.12124 27.351 9.05683 27.5182 9.02555C27.6853 8.99428 27.857 8.99678 28.0231 9.0329C28.1893 9.06902 28.3465 9.13804 28.4856 9.23588C28.6247 9.33372 28.7427 9.45841 28.8328 9.6026C28.923 9.74679 28.9833 9.90755 29.0103 10.0754C29.0373 10.2433 29.0305 10.4149 28.9901 10.5801C28.9498 10.7452 28.8768 10.9007 28.7754 11.0372C28.6741 11.1737 28.5464 11.2886 28.4 11.375Z" fill="#595959"/>
+                </svg>
+              </a>
+            </li>
+          </ul>
+        </div>
+  		</div>
+  	</div>
+  </div>
+
+</aside>
+{% endblock %}
+
+{% block footer_scripts %}
+  <script>
+    $(document).ready(function(){
+      $("p.atitlelist a").click(function(){
+        ga('send', 'event', 'masleidos', 'Click', 'Article_viewpayw');
+      });
+      {% if request.signupwall %}
+        $('#subscribe-popup').modal();
+        $('#subscribe-popup').on('hidden.bs.modal', function (e) {
+          $('#signupwall').toggle();
+        });
+      {% endif %}
+
+        // getCookie for csrf token
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        var csrftoken = getCookie('csrftoken');
+
+        function csrfSafeMethod(method) {
+          // these HTTP methods do not require CSRF protection
+          return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
+        // audio progress
+        var act_time = -1;
+
+        $(".ld-audio__audio").bind('timeupdate', function(){
+            var track_length = $(".ld-audio__audio")[0].duration;
+            var secs = $(".ld-audio__audio")[0].currentTime;
+            var percent = (secs/track_length) * 100;
+            var progress = Math.floor(percent);
+            var rounded_pct = '0'
+            if (progress > act_time && !(progress % 5)){
+                act_time = progress
+                if (act_time > 70){
+                    rounded_pct = '75'
+                } else if (act_time > 45){
+                    rounded_pct = '50'
+                } else if (act_time > 20){
+                    rounded_pct = '25'
+                }
+                $.ajax({
+                    beforeSend: function(xhr, settings) {
+                      if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                      }
+                    },
+                    method: "POST",
+                    url: "/dashboard/audio_statistics_api/",
+                    data: { audio_id: "{{ article.audio.id }}", subscriber_id: "{{user.subscriber.id}}", percentage: rounded_pct }
+                });
+            }
+        });
+
+    });
+  </script>
+
+  {% if user.is_staff %}
+    {% if not article.is_published %}
+    <span class="ld-tag-draft">Borrador</span>
+    {% endif %}
+    <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/"
+       class="ld-btn-default ld-btn-default--sm ld-admin-edit">
+      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M3 17.46v3.04c0 .28.22.5.5.5h3.04c.13 0 .26-.05.35-.15L17.81 9.94l-3.75-3.75L3.15 17.1c-.1.1-.15.22-.15.36zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg> Editar
+    </a>
+  {% endif %}
+
+{% endblock %}
+
+{% block main_close %}{% endblock %}

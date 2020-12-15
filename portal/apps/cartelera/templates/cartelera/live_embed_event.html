@@ -1,0 +1,36 @@
+<section class="section-live">
+    <div class="container">
+        <div class="section-live__head">
+            <span class="now">Transmitiendo ahora</span>
+            <h1 class="section-live__title">{{ event.title }}</h1>
+        </div>
+        <div class="row">
+            {% if event.embed_chat %}
+            <div class="col s12 xl8">
+                <div class="embed">
+                    {{ event.embed_content|safe }}
+                </div>
+            </div>
+            <div class="col s12 xl4">
+                <div class="embed">
+                {{ event.embed_chat|safe }}
+                </div>
+            </div>
+            {% else %}
+            <div class="col s12 m12">
+                <div class="embed">
+                    {{ event.embed_content|safe }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="section-live__actions align-center">
+            <a href="https://eventos.ladiaria.com.uy " class="ld-btn btn bordered">Ver agenda de eventos</a>
+        </div>
+    </div>
+    {% if not is_portada %}
+        <div class="section-live__footer align-center">
+            <a href="{% url 'home' %}" class="home-link">Ir a la portada de {{ site.name }}</a>
+        </div>
+    {% endif %}
+</section>

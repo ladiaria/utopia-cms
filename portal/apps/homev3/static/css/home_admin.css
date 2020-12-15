@@ -1,0 +1,12 @@
+.layout_picker{
+	width: 100%;
+}
+tbody.page{
+	clear: both;
+	margin-top: 24px;
+	margin-left: 12px;
+	width: auto;
+}
+.inline-group .tabular td.original p{
+	left: 12px;
+}

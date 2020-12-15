@@ -1,0 +1,60 @@
+{% extends 'article/article_card.html' %}
+{% load core_tags ldml %}
+
+{% block image %}
+
+<div class="fullwidth-container">
+<div class="main-photo">
+    <div>
+      <figure class="principal {{ card_size }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" >
+        <picture>
+          <!--[if IE 9]><video style="display: none;"><![endif]-->
+          <source srcset="{{ article.photo.get_1600w_url }}" media="(min-width: 1200px)">
+          <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+          <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+          <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
+          <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+          <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 0px)">
+          <!--[if IE 9]></video><![endif]-->
+          <img id="main-photo"
+          class="responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
+          data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+          alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+        </picture>
+        <figcaption class="caption">
+          {% if article.photo.caption %} {{ article.photo.caption }}{% endif %}
+        </figcaption>
+      </figure>
+    </div>
+</div>
+{% endblock %}
+{% block header %}
+  <div class="article-header">
+    <h1 class="article-title">
+      <a href="{{ article.get_absolute_url }}">{{article.headline|ldmarkup:article.id|removetags:"p" }}</a>
+    </h1>
+    {% if not article.is_published %}
+      <div style="color:red;font-weight:bold;text-align:right;">(NO PUBLICADO)</div>
+    {% endif %}
+    <div class="article-date-author">
+      {% if article.date_published %}
+        <span class="date small">{{ article.date_published|date:"d \• N \• o"|capfirst }}</span>
+      {% endif %}
+      {% if article.has_byline %}
+        {% for author in authors %}
+          <span class="small">
+            <a href="{% url 'journalist_detail' journalist_slug=article.author.slug %}" title="Ver más artículos de {{ article.author.name }}">{{ author.name }}</a>
+          </span>
+        {% endfor %}
+      {% endif %}
+      {% if article.section %}
+        <span class="small">
+          en
+          <a class="{{ article.publication.slug }}" href="{% url 'section_detail' section_slug=article.section.slug %}" title="Más artículos en {{ article.section }}">{{ article.section }}</a>
+        </span>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+{% block headline %}{% endblock %}
+{% block footer %}{% endblock %}

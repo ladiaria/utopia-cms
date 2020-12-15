@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}Utilización de beneficios{% endblock %}
+
+{% block javascript %}
+{% if success %}
+<script type="text/javascript">
+    $(function() {
+    	$("#id_document").val("");
+    });
+</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+    <h1>Utilización de beneficios</h1>
+	{% if success %}
+        <div class="alert-success col-xs-12">
+            Utilización de beneficio registrada, gracias.
+        </div>
+    {% endif %}
+	{% crispy form %}
+
+{% endblock %}

@@ -1,0 +1,7 @@
+Para descargar la diaria hacé click en este enlace:
+  http://{{ site.domain }}{{ validation_url }}
+
+Acordate que este link es válido por una sola descarga. Para bajarlo nuevamente tenés que ingresar al sitio y solicitar que se te envíe uno nuevo.
+
+--
+El equipo de {{ site.domain }}

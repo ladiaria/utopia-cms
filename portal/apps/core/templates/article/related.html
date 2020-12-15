@@ -1,0 +1,15 @@
+{% load core_tags %}
+<section class="ld-block ld-related">
+<div class="container container--wide container--padded">
+
+    <div class="section-detail__head">
+      <h3 class="section-detail__title">Más de {{ section }}</h3>
+    </div>
+
+    <div class="ld-grid-simple">
+    {% for article in articles %}
+        {% render_article_card article=article media=article.home_display card_size="FD" %}
+    {% endfor %}
+    </div>
+</div>
+</section>

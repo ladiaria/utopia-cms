@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page_title %}Suscribite por teléfono{% endblock %}
+{% block body_class %}thedaily subscribe hide-mobile-nav{% endblock %}
+
+{% block meta %}
+  <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block navbar %}
+  <div id="main-header">
+    <nav class="subscription_black">
+      <a class="header-logo emergentes" href="{% url 'home' %}">
+        <img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}">
+      </a>
+    </nav>
+  </div>
+{% endblock %}
+
+{% block content %}
+  <main class="ld-content">
+    <div class="center-align">
+      <h1 class="ld-title-big">Recibimos tu información</h1>
+      <p>Te llamaremos en las próximas 48 horas para realizar la suscripción.</p>
+      {% if display %}
+        <div class="center-align">
+          <p>
+            Mientras tanto, te enviamos un email a {{ email }} para que vayas validando tu cuenta.
+            Revisá tu bandeja de entrada y seguí los pasos (si no te llega el email, revisá la carpeta Spam).
+          </p>
+        </div>
+      {% endif %}
+      <p class="ld-text-secondary align-center"><a href='/'>Ir a la portada</a></p>
+    </div>
+  </main>
+{% endblock %}
+
+{% block footer_block %}
+  <footer class="ld-footer-simple">
+    <div class="row ld-text-secondary align-center">
+      <div class="col s12">
+          ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="/contacto/">contactanos</a>.
+      </div>
+    </div>
+  </footer>
+{% endblock footer_block %}

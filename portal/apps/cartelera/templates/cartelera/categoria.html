@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>{{ categoria|capfirst }}</h1>
+
+<div class="eventos-lista row">
+    {% for evento in categoria.current_events %}
+    	{{ evento.render }}
+    {% endfor %}
+</div>
+
+{% endblock %}

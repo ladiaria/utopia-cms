@@ -1,0 +1,50 @@
+paths:
+    tests: tests
+    output: tests/_output
+    data: tests/_data
+    support: tests/_support
+    envs: tests/_envs
+actor_suffix: Tester
+extensions:
+    enabled:
+        - Codeception\Extension\RunFailed
+env:
+  dev:
+    modules:
+      config:
+        WebDriver:
+          browser: chrome
+          port: 9515
+          window_size: false
+          url: https://hexxie.com/
+          restart: true
+          capabilities:
+            chromeOptions:
+              args: ["--headless", "--disable-gpu", "window-size=1024x768"]
+              binary: "/bin/google-chrome-stable"
+  test:
+    modules:
+      config:
+        WebDriver:
+          browser: chrome
+          port: 9515
+          window_size: false
+          url: https://<user>:<pass>@piques.uy/
+          restart: true
+          capabilities:
+            chromeOptions:
+              args: ["--headless", "--disable-gpu", "window-size=1024x768"]
+              binary: "/bin/google-chrome-stable"
+  prod:
+    modules:
+      config:
+        WebDriver:
+          browser: chrome
+          port: 9515
+          window_size: false
+          url: https://ladiaria.com.uy/
+          restart: true
+          capabilities:
+            chromeOptions:
+              args: ["--headless", "--disable-gpu", "window-size=1024x768"]
+              binary: "/bin/google-chrome-stable"

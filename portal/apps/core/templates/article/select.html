@@ -1,0 +1,11 @@
+{% load ldml %}
+{% if articles %}
+    <select name="{{ select_name }}" id="id_{{ select_name }}" class="article">
+        <option value="">-- Ninguno --</option>
+        {% for article in articles %}
+            <option value="{{ article.id }}">{{ article.headline|ldmarkup:article.id|removetags:"p" }}</option>
+        {% endfor %}
+    </select>
+{% else %}
+    <span class="error">NO HAY ARTÍCULOS.</span>
+{% endif %}

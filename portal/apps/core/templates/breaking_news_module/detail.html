@@ -1,0 +1,225 @@
+{% if notify_only %}
+  <div class="breaking-notice">
+    <div class="container">
+      <span class="msg-title">{{ bn_mod.headline|capfirst }}:</span>
+      {% if bn_mod.notification_url %}
+        <a class="msg-link" href="{{ bn_mod.notification_url }}">{{ bn_mod.notification_text }}</a>
+      {% else %}
+        {{ bn_mod.notification_text }}
+      {% endif %}
+      <span class="btn-close" data-object="bn" data-id="{{ bn_mod.id }}">&times;</span>
+    </div>
+  </div>
+{% else %}
+  <section class="frontpage-section frontpage-section--padding live">
+    <div class="container">
+      <div class="ld-card breaking">
+        <div class="ld-card__body">
+          <h3 class="ld-card__subtitle">{{ bn_mod.headline }}</h3>
+          {% if bn_mod.deck %}
+            <h2 class="ld-card__title">{{ bn_mod.deck }}</h2>
+          {% endif %}
+          {% if bn_mod.articles %}
+            <ul class="newslist">
+              {% for article in bn_mod.articles.all %}
+                <li class="newslist__item">
+                  <a href="{{ article.get_absolute_url }}">{{ article }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      </div>
+      {% if bn_mod.has_embeds12 or bn_mod.has_embeds34 or bn_mod.has_embeds56 or bn_mod.has_embeds78 %}
+        {% if bn_mod.embeds_headline %}
+          <h3 class="section-detail__title">{{ bn_mod.embeds_headline }}</h3>
+          {% if bn_mod.embeds_description %}
+            <h4 class="section-detail__subtitle">{{ bn_mod.embeds_description }}</h4>
+          {% endif %}
+        {% endif %}
+        {% if bn_mod.has_embeds12 %}
+          <div class="row">
+            <div class="col s12 m12 l{% if bn_mod.has_embed2 %}6{% else %}12{% endif %}">
+              <div class="ld-card">
+                <div class="ld-card__body">
+                  {% if bn_mod.embed1_title %}
+                    <h3 class="ld-card__title">{{ bn_mod.embed1_title }}</h3>
+                  {% endif %}
+                  {{ bn_mod.embed1_content|safe }}
+                </div>
+              </div>
+            </div>
+            {% if bn_mod.has_embed2 %}
+              <div class="col s12 m12 l6">
+                <div class="ld-card">
+                  <div class="ld-card__body">
+                    {% if bn_mod.embed2_title %}
+                      <h3 class="ld-card__title">{{ bn_mod.embed2_title }}</h3>
+                    {% endif %}
+                    {{ bn_mod.embed2_content|safe }}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+        {% if bn_mod.has_embeds34 %}
+          <div class="row">
+            <div class="col s12 m12 l{% if bn_mod.has_embed4 %}6{% else %}12{% endif %}">
+              <div class="ld-card">
+                <div class="ld-card__body">
+                  {% if bn_mod.embed3_title %}
+                    <h3 class="ld-card__title">{{ bn_mod.embed3_title }}</h3>
+                  {% endif %}
+                  {{ bn_mod.embed3_content|safe }}
+                </div>
+              </div>
+            </div>
+            {% if bn_mod.has_embed4 %}
+              <div class="col s12 m12 l6">
+                <div class="ld-card">
+                  <div class="ld-card__body">
+                    {% if bn_mod.embed4_title %}
+                      <h3 class="ld-card__title">{{ bn_mod.embed4_title }}</h3>
+                    {% endif %}
+                    {{ bn_mod.embed4_content|safe }}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+        {% if bn_mod.has_embeds56 %}
+          <div class="row">
+            <div class="col s12 m12 l6">
+              <div class="ld-card">
+                <div class="ld-card__body">
+                  {% if bn_mod.embed5_title %}
+                    <h3 class="ld-card__title">{{ bn_mod.embed5_title }}</h3>
+                  {% endif %}
+                  {{ bn_mod.embed5_content|safe }}
+                </div>
+              </div>
+            </div>
+            {% if bn_mod.has_embed6 %}
+              <div class="col s12 m12 l6">
+                <div class="ld-card">
+                  <div class="ld-card__body">
+                    {% if bn_mod.embed6_title %}
+                      <h3 class="ld-card__title">{{ bn_mod.embed6_title }}</h3>
+                    {% endif %}
+                    {{ bn_mod.embed6_content|safe }}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+        {% if bn_mod.has_embeds78 %}
+          <div class="row">
+            <div class="col s12 m12 l6">
+              <div class="ld-card">
+                <div class="ld-card__body">
+                  {% if bn_mod.embed7_title %}
+                    <h3 class="ld-card__title">{{ bn_mod.embed7_title }}</h3>
+                  {% endif %}
+                  {{ bn_mod.embed7_content|safe }}
+                </div>
+              </div>
+            </div>
+            {% if bn_mod.has_embed8 %}
+              <div class="col s12 m12 l6">
+                <div class="ld-card">
+                  <div class="ld-card__body">
+                    {% if bn_mod.embed8_title %}
+                      <h3 class="ld-card__title">{{ bn_mod.embed8_title }}</h3>
+                    {% endif %}
+                    {{ bn_mod.embed8_content|safe }}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+        {% if bn_mod.has_embeds910 %}
+          <div class="row">
+            <div class="col s12 m12 l6">
+              <div class="ld-card">
+                <div class="ld-card__body">
+                  {% if bn_mod.embed9_title %}
+                    <h3 class="ld-card__title">{{ bn_mod.embed9_title }}</h3>
+                  {% endif %}
+                  {{ bn_mod.embed9_content|safe }}
+                </div>
+              </div>
+            </div>
+            {% if bn_mod.has_embed10 %}
+              <div class="col s12 m12 l6">
+                <div class="ld-card">
+                  <div class="ld-card__body">
+                    {% if bn_mod.embed10_title %}
+                      <h3 class="ld-card__title">{{ bn_mod.embed10_title }}</h3>
+                    {% endif %}
+                    {{ bn_mod.embed10_content|safe }}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+        {% if bn_mod.has_embeds1112 %}
+          <div class="row">
+            <div class="col s12 m12 l6">
+              <div class="ld-card">
+                <div class="ld-card__body">
+                  {% if bn_mod.embed11_title %}
+                    <h3 class="ld-card__title">{{ bn_mod.embed11_title }}</h3>
+                  {% endif %}
+                  {{ bn_mod.embed11_content|safe }}
+                </div>
+              </div>
+            </div>
+            {% if bn_mod.has_embed12 %}
+              <div class="col s12 m12 l6">
+                <div class="ld-card">
+                  <div class="ld-card__body">
+                    {% if bn_mod.embed12_title %}
+                      <h3 class="ld-card__title">{{ bn_mod.embed12_title }}</h3>
+                    {% endif %}
+                    {{ bn_mod.embed12_content|safe }}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+        {% if bn_mod.has_embeds1314 %}
+          <div class="row">
+            <div class="col s12 m12 l6">
+              <div class="ld-card">
+                <div class="ld-card__body">
+                  {% if bn_mod.embed13_title %}
+                    <h3 class="ld-card__title">{{ bn_mod.embed13_title }}</h3>
+                  {% endif %}
+                  {{ bn_mod.embed13_content|safe }}
+                </div>
+              </div>
+            </div>
+            {% if bn_mod.has_embed14 %}
+              <div class="col s12 m12 l6">
+                <div class="ld-card">
+                  <div class="ld-card__body">
+                    {% if bn_mod.embed14_title %}
+                      <h3 class="ld-card__title">{{ bn_mod.embed14_title }}</h3>
+                    {% endif %}
+                    {{ bn_mod.embed14_content|safe }}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </section>
+{% endif %}

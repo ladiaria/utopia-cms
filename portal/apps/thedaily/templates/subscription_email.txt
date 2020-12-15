@@ -1,0 +1,7 @@
+¡Nuevo suscriptor!
+
+{{ subscription.get_full_name }} se ha suscripto a la diaria. Puede ver los datos de esta persona accediendo al siguiente enlace:
+  https://{{ domain }}/admin/thedaily/subscription/{{ subscription.id }}/
+
+--
+http://{{ domain }}/

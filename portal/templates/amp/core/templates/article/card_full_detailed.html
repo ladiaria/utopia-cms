@@ -1,0 +1,50 @@
+{% load static %}
+{% load core_tags ldml activity_tags adzone_tags tagging_tags crispy_forms_tags videologue_tags inplace_edit markup %}
+<div class="ld-grid-simple__area">
+  <div class="ld-card ld-card--reg">
+  {% render_toolbar_for article %}
+    {% if article.photo and article.photo_image_file_exists %}
+      <a href="{{ article.get_absolute_url }}">
+        <amp-img height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" layout="responsive" id="main-photo-related" src="{{ article.photo.get_700w_url }}" alt="{{ article.photo.caption }}" title="{{ article.photo.caption }}"/>
+      </a>
+    {% endif %}
+
+    <div class="ld-card__body">
+      <h3 class="ld-card__title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
+        <a href="{{article.get_absolute_url}}">{{ article.headline|ldmarkup:article.id|removetags:"p" }}</a>
+      </h3>
+      {% if article.home_lead %}
+        <div class="ld-card__intro">
+          {{ article.home_lead|ldmarkup:article.id|removetags:'p' }}
+        </div>
+      {% endif %}
+
+      <div class="ld-card__byline-wrap">
+        <h4 class="ld-card__byline">
+        {% if article.has_byline  %}
+          {% for author in article.get_authors %}
+            <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+          en
+        {% endif %}
+        {% publication_section article %}
+        </h4>
+
+        {% if article.photo.photographer %}
+        <h4 class="ld-card__byline">
+          {{ article.photo.type_verbose }}: {{ article.photo.photographer.name }}
+        </h4>
+        {% endif %}
+      </div>
+
+      {% if verbose_date %}
+        <div class="ld-card__byline ld-card__date">{{verbose_date}}</div>
+      {% else %}
+        <div class="ld-card__byline ld-card__date">{{article.date_published|date:"j \d\e F \d\e o"|lower}}</div>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>

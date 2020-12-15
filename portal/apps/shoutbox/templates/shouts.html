@@ -1,0 +1,15 @@
+{% load i18n %}
+{% if shouts %}
+    <ul>
+        {% for shout in shouts %}
+            <li class="shout">
+                <div class="name">
+                    {{ shout.user.get_full_name }} dice:
+                </div>
+                <div class="message">
+                    {{ shout.message|urlize }}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}

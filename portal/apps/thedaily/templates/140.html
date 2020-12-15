@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block page_title %}140{% endblock %}
+{% block javascript %}
+    <script type="text/javascript">
+        $(function(){
+            $('#id_{{ form.h40.name }}').keyup(function(){
+                var counter = 140 - $(this).val().length;
+                $('#counter').text(counter);
+                if(counter >= 0)
+                    $('#counter').css('color', 'green');
+                else
+                    $('#counter').css('color', 'red');
+            });
+        });
+    </script>
+{% endblock %}
+{% block body_class %}thedaily{% endblock %}
+
+{% block content %}
+    <div class="titlebar">
+        <h2>140 caracteres por suscriptor</h2>
+    </div>
+    <p>
+       Es el espacio que le damos a los suscriptores para que comuniquen lo que
+       hacen o necesitan. La información será publicada en el encarte de
+       comunidad la diaria que editamos mensualmente.
+    </p>
+    <p>
+       Sólo tenés que poner tus datos y completar el formulario que sigue a
+       continuación. Empezamos con 140 caracteres, terminamos donde vos quieras.
+    </p>
+    <form method="post">
+        <div class="twocolumns">
+            <div class="first">
+                {{ form.name.errors }}
+                <label for="id_{{ form.name.name }}">{{ form.name.label }}:</label>{{ form.name }}
+            </div>
+        </div>
+        {% if form.document %}
+            <div class="twocolumns">
+                <div class="first">
+                    {{ form.document.errors }}
+                    <label for="id_{{ form.document.name }}">{{ form.document.label }}:</label>{{ form.document }}
+                </div>
+            </div>
+        {% endif %}
+        {{ form.h40.errors }}
+        <label for="id_{{ form.h40.name }}">Texto (<span id="counter" style="color:green;">140</span> caracteres):</label>{{ form.h40 }}
+        <div class="twocolumns" style="padding-top:10px;">
+            {% if form.captcha.errors %}
+                <ul class="errorlist">
+                    <li>Los caracteres no coinciden</li>
+                </ul>
+            {% endif %}
+            <div class="first">
+                <label for="id_{{ form.captcha.name }}">{{ form.captcha.label }}:</label>{{ form.captcha }}
+            </div>
+            <div class="second">
+                <button type="submit" class="submit">Enviar</button>
+            </div>
+        </div>
+    </form>
+    {% if success %}
+        <p><br/>Gracias por participar, tu texto fue enviado.</p>
+    {% endif %}
+{% endblock %}

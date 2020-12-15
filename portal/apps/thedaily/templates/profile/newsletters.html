@@ -1,0 +1,72 @@
+{% load crispy_forms_filters %}
+{% load l10n %}
+
+<div id="newsletters" class="section scrollspy">
+<div id="{{ field.auto_id }}_wrapper" class="col s12">
+  <section id="ld-newsletters" class="ld-block ld-section-newsletters">
+    <h2 class="ld-title ld-title--underlined">Newsletters</h2>
+    <p class="u-mb-30">Recibí contenidos en tu email. Elegí los newsletters que quieras recibir y apretá el botón "Guardar cambios".</p>
+    {% for choice in field.field.choices %}
+        {% comment %} This acts as an anchor to account for the topbar padding. {% endcomment %}
+        <div id="newsletter-{{choice.1|slugify}}" class="item-newsletter__anchor"></div>
+        <div class="item-newsletter item-newsletter--{{choice.1|slugify}} profile-check">
+            <input class="filled-in" type="checkbox"{% if choice.0 in field.value or choice.0|stringformat:"s" in field.value or choice.0|stringformat:"s" == field.value|stringformat:"s" %} checked="checked"{% endif %} name="{{ field.html_name }}" id="id_{{ field.html_name }}_{{ forloop.counter }}" value="{{ choice.0|unlocalize }}"/>
+            <label for="id_{{ field.html_name}}_{{ forloop.counter }}"{% if flat_attrs %} {{ flat_attrs|safe }}{% endif %}>
+            {% if choice.1 == 'la diaria' %}
+                <h3 class="ld-title-second">6 AM + Apuntes del día</h3>
+                <div>Empezá tu día con toda la información + la columna <i>Apuntes del día</i> de Marcelo Pereira.</div>
+                <h4 class="ld-caption">Periodicidad: de lunes a viernes.</h4>
+            {% elif choice.1 == 'Fin de semana' %}
+                <h3 class="ld-title-second">Fin de semana</h3>
+                <div>Los mejores contenidos para el fin de semana.</div>
+                <h4 class="ld-caption">Periodicidad: todos los sábados.</h4>
+            {% elif choice.1 == 'Ciencia' %}
+                <h3 class="ld-title-second">Ciencia</h3>
+                <div>Publicación especializada en ciencia</div>
+                <h4 class="ld-caption">Periodicidad: Cada dos viernes.</h4>
+            {% elif choice.1 == 'Dínamo' %}
+                <h3 class="ld-title-second">Dínamo</h3>
+                <div>Espacio dedicado al debate de ideas</div>
+                <h4 class="ld-caption">Periodicidad: mensual.</h4>
+            {% elif choice.1 == 'Educación' %}
+                <h3 class="ld-title-second">Educación</h3>
+                <div>Publicación especializada en temas educativos.</div>
+                <h4 class="ld-caption">Periodicidad: todos los jueves.</h4>
+            {% elif choice.1 == 'Feminismos' %}
+                <h3 class="ld-title-second">Feminismos</h3>
+                <div>Publicación especializada en feminismos.</div>
+                <h4 class="ld-caption">Periodicidad: todos los miércoles.</h4>
+            {% elif choice.1 == 'Salud' %}
+                <h3 class="ld-title-second">Salud</h3>
+                <div>Publicación especializada en salud.</div>
+                <h4 class="ld-caption">Periodicidad: todos los martes.</h4>
+            {% elif choice.1 == 'Trabajo' %}
+                <h3 class="ld-title-second">Trabajo</h3>
+                <div>Publicación especializada en el mundo del trabajo.</div>
+                <h4 class="ld-caption">Periodicidad: todos los jueves.</h4>
+            {% elif choice.1 == 'Garra' %}
+                <h3 class="ld-title-second">Garra (Deportes)</h3>
+                <div>Los mejores contenidos publicados en el portal deportivo.</div>
+                <h4 class="ld-caption">Periodicidad: todos los domingos de noche.</h4>
+            {% elif choice.1 == 'Lento' %}
+                <h3 class="ld-title-second">Lento</h3>
+                <div>Revista de periodismo narrativo y ficción.</div>
+                <h4 class="ld-caption">Periodicidad: primer sábado de cada mes.</h4>
+            {% elif choice.1 == 'Río Abierto' %}
+                <h3 class="ld-title-second">Río Abierto</h3>
+                <div>Publicación especializada en la calidad del agua</div>
+                <h4 class="ld-caption">Periodicidad: mensual.</h4>
+            {% elif choice.1 == 'Economía' %}
+                <h3 class="ld-title-second">Economía</h3>
+                <div>Publicación especializada en economía.</div>
+                <h4 class="ld-caption">Periodicidad: todos los lunes.</h4>
+            {% elif choice.1 == 'Justicia' %}
+                <h3 class="ld-title-second">Justicia</h3>
+                <div>Publicación especializada en justicia.</div>
+                <h4 class="ld-caption">Periodicidad: todos los lunes.</h4>
+            {% endif %}
+            </label>
+      </div>
+    {% endfor %}
+  </section>
+</div>

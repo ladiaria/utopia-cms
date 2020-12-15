@@ -1,0 +1,19 @@
+{% extends "notifications/signup.html" %}
+
+{% block body %}
+  <p>Te damos la bienvenida.</p>
+  <p>Activá tu cuenta para completar el registro:</p>
+  <p>
+    <a href="https://{{ site.domain }}{{ validation_url }}" style="background-color: #6ef9ff; color: #262626; padding: 10px 20px 10px 20px; text-decoration: none; text-transform: uppercase; line-height: 30px; height: 30px; font-size: 14px; font-weight: bold; letter-spacing: .5px; vertical-align: middle; border-radius:100px">activar cuenta</a>
+  </p>
+  <div style="color: #A4A4A4; font-size: 12px;">
+    <hr>
+    <p>
+      Alternativamente, tal vez necesites copiar y pegar esta url en tu navegador:<br>
+      <a href="https://{{ site.domain }}{{ validation_url }}" style="color: #0a0a0a;">https://{{ site.domain }}{{ validation_url }}</a>
+    </p>
+    <p>
+      ¿Tenés consultas? Visitá nuestro <a href="https://{{ site.domain }}/ayuda/" style="color: #0a0a0a;">centro de ayuda</a> o <a href="https://{{ site.domain }}/contacto/" style="color: #0a0a0a;">contactanos</a>.
+    </p>
+  </div>
+{% endblock %}

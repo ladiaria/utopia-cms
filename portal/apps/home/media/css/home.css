@@ -1,0 +1,96 @@
+body.home .articles {
+}
+body.home .article {
+}
+body.home .article p.lead_ld {
+    color:#292929;
+    font-family:georgia,"times new roman",times,serif;
+}
+body.home .articles .contentbar {
+    position:relative;
+    top:0;
+}
+body.home .article .section,
+body.home .article .date,
+body.home #feizbuk_module .section,
+body.home #feizbuk_module .date {
+    font-size:0.8em;
+}
+body.home #cover {
+    padding:0;
+}
+body.home h1 {
+    position:absolute;
+    left:-1000px;
+}
+body.home h2 {
+    margin:6px 0 6px;
+    line-height:1em;
+}
+body.home .contentbar li {
+    background:transparent url(../../img/dotted.gif) repeat-x 0 bottom;
+    padding-bottom:12px;
+    padding-top:5px;
+}
+body.home .contentbar li.last {
+    background:none;
+}
+body.home .contentbar h3 {
+    font-size:1em;
+}
+body.home #cover div.photo {
+}
+body.home div.caption {
+    font-size:0.9em;
+    color:#666;
+    margin-bottom:12px;
+    text-align:right;
+}
+
+body.home div.caption-portail {
+    font-size:0.9em;
+    color:#666;
+    margin-bottom:12px;
+    text-align:left;
+    margin-top:109px;
+}
+
+body.home .module div.caption {
+}
+body.home .module {
+    background:transparent url(../../img/dotted.gif) repeat-x left top;
+}
+.module .one, .module .two, .module .three, .module .four {
+    
+}
+.module .two .article, .module .four .article {
+    margin: 0 12px 0 0;
+}
+.module .one .article, .module .three .article {
+    margin: 0 12px;
+}
+.module .three .article, .module .four .article {
+    background:transparent url(../../img/dotted.gif) repeat-x 12px 0;
+    padding-top: 12px;
+    margin-top:12px;
+    margin-bottom:12px;
+}
+.module .three {
+}
+.module .vertical {
+    background:transparent url(../../img/dotted.gif) repeat-y center 0;
+    margin-bottom: 12px;
+    margin-top: 12px;
+}
+/* Portrait */
+body.home #cover .portraitphoto {
+}
+body.home #cover .portrait {
+    margin-left: 12px;
+}
+/* Recent news */
+body.recent #recentnews h2 {
+    font-size:1em;
+}
+body.recent #recentnews h3 {
+}

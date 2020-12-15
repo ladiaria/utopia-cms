@@ -1,0 +1,48 @@
+{% spaceless %}
+{% load static compress %}
+{% endspaceless %}<!doctype html>
+{% block html %}
+<html lang="es-UY">
+{% endblock %}
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Desuscripción a newsletter</title>
+  <meta name="description" content="Desuscripción." />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% compress css %}
+    <link href="{{ STATIC_URL }}sass/main.scss" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {% endcompress %}
+</head>
+<body class="nlunsubscribe ld-notice">
+  <div id="main-header">
+    <nav class="subscription_black">
+      <a href="{% url 'home' %}">
+        <img class="logo_ladiaria" src="{% static logo %}" alt="Logo de {{ site.name }}">
+      </a>
+    </nav>
+  </div>
+  <div class="ld-subscribe-box">
+    <h4 class="ld-subscribe-box__title">
+      {% if error %}
+        {{ error }}.
+      {% else %}
+        Ya no recibirás la newsletter de {{ publication }}.
+      {% endif %}
+    </h4>
+    <div class="ld-subscribe-box__info ld-caption">
+      <p>
+        <a href="{% url 'edit-profile' %}#ld-newsletters">Configurar todos tus newsletters</a>
+      </p>
+      <p>
+        <a href="/">Ir a la portada</a>
+      </p>
+    </div>
+  </div>
+  <div class="ld-text-secondary nlunsubscribe__info">
+    <div class="container">
+      Esta acción no cancela tu suscripción a la diaria,
+      para cancelar tu suscripción <a href="https://ayuda.ladiaria.com.uy/contacto/">comunicate con atención al cliente</a>.
+    </div>
+  </div>
+</body>

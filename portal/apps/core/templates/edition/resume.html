@@ -1,0 +1,118 @@
+{% load homev3_tags %}
+
+<div class="today col s12 l4ths">
+  {% if is_subscriber_any %}
+    <div class="ld-main-menu__block">
+      <span class="ld-main-menu__title">tu cuenta</span>
+      <ul class="navmenu-list  ld-menu-list">
+        <li class="ld-main-menu__item small">
+          <a href="{% url 'edit-profile' %}">Opciones</a>
+        </li>
+        {% if user.is_staff %}
+          <li class="ld-main-menu__item small">
+            <a href="//{{ site.domain }}/admin/">Admin</a>
+          </li>
+        {% endif %}
+        {% if poll_url %}
+          <li class="ld-main-menu__item small"><a href="{{ poll_url }}" target="_blank">Danos tu opinión</a></li>
+        {% endif %}
+        <li class="ld-main-menu__item small">
+          <a href="/ayuda/">Ayuda</a>
+        </li>
+        <li class="ld-main-menu__item small">
+          <a href="{% url 'account-logout' %}">Cerrar sesión</a>
+        </li>
+      </ul>
+    </div>
+  {% elif user.is_authenticated %}
+    <div class="ld-main-menu__block">
+      <span class="ld-main-menu__title">tu cuenta</span>
+      <ul class="navmenu-list ">
+        <li class="ld-main-menu__item small">
+          <a href="{% url 'edit-profile' %}">Opciones</a>
+        </li>
+        {% if not is_subscriber_any %}
+          <li class="ld-main-menu__item small">
+            <a href="{% url 'subscribe' planslug='DDIGM' %}">Pasate a ilimitada</a>
+          </li>
+        {% endif %}
+        {% if poll_url %}
+          <li class="ld-main-menu__item small"><a href="{{ poll_url }}" target="_blank">Danos tu opinión</a></li>
+        {% endif %}
+        <li class="ld-main-menu__item small">
+          <a href="/ayuda/">Ayuda</a>
+        </li>
+        <li class="ld-main-menu__item small ld-main-menu__item-btn">
+          <a href="{% url 'account-logout' %}">Cerrar sesión</a>
+        </li>
+      </ul>
+    </div>
+  {% else %}
+    <div class="ld-main-menu__block ld-main-menu__block--padded">
+      <ul>
+        <li class="ld-main-menu__item--btn">
+          <a class="ld-btn ld-btn--whiteoutline uppercase" href="{% url 'account-login' %}?next={% ifequal request.path '/usuarios/salir/' %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endifequal %}">Ingresá</a>
+        </li>
+        <li class="ld-main-menu__item--btn">
+          <a class="ld-btn ld-btn--whiteoutline uppercase" href="{% url 'subscribe_landing' %}">Suscribite</a>
+        </li>
+      </ul>
+    </div>
+  {% endif %}
+</div>
+<div class="col s12 l4ths">
+<div class="ld-main-menu__block">
+  <span class="ld-main-menu__title">Inicio</span>
+  <ul class="navmenu-list">
+    <li class="ld-main-menu__item">
+      <a href="{{ default_pub.get_absolute_url }}">Portada</a>
+    </li>
+  </ul>
+  </div>
+  <div class="ld-main-menu__block">
+    {% if MENU_CATEGORIES %}
+      <span class="ld-main-menu__title">Áreas</span>
+      <ul class="navmenu-list">
+        {% for category in MENU_CATEGORIES %}
+          <li class="ld-main-menu__item">
+            <a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+  <div class="ld-main-menu__block">
+    {% if "no-menu" != MENU_PUBLICATIONS and MENU_PUBLICATIONS|length > 1 %}
+      <span class="ld-main-menu__title">Emergentes</span>
+      <ul class="navmenu-list">
+        {% for pub in MENU_PUBLICATIONS %}
+          {% ifnotequal pub default_pub %}
+            <li class="ld-main-menu__item">
+              <a href="{{ pub.get_absolute_url }}">{{ pub }}</a>
+            </li>
+          {% endifnotequal %}
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+</div>
+
+<div class="col s12 l4ths">
+
+  <div class="ld-main-menu__block">
+    <span class="ld-main-menu__title">Más</span>
+    <ul class="navmenu-list">
+      <li class="ld-main-menu__item"><a href="{% url 'search' %}">Buscar</a></li>
+      {% if MENU_LATEST_ARTICLE_SECTION_SLUG %}
+        <li class="ld-main-menu__item">
+          <a href="{% url 'section-latest-article' section_slug=MENU_LATEST_ARTICLE_SECTION_SLUG %}">{{ MENU_LATEST_ARTICLE_LINK_TEXT_L }}</a>
+        </li>
+      {% endif %}
+      <li class="ld-main-menu__item ld-main-menu__divider"><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
+      {% block more_extra %}{% endblock %}
+    </ul>
+  </div>
+
+</div>
+
+{% block custom_extra %}{% endblock %}

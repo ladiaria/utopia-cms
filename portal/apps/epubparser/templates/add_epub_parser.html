@@ -1,0 +1,123 @@
+{% extends "base_epub_parser.html" %}
+
+{% block page_title %}Nuevo Epub{% endblock %}
+
+{% block content %}
+
+{% if form.non_field_errors %}
+<div class="panel">
+  {{ form.non_field_errors }}
+</div>
+{% endif %}
+
+<form action="{% url 'epub-add' %}" method="post" enctype="multipart/form-data">
+  <fieldset>
+    <legend>Sección</legend>
+    {{ form.section }}
+     {% if form.section.errors%}
+      <small class="error">{{ form.section.errors.as_text }}</small>
+      {% endif %}
+  </fieldset>
+
+  <fieldset>
+    <legend>Nuevo Archivo Epub</legend>
+
+    <div class="large-12 columns">
+      <div class="row" id="file_container">
+        {% if form.f.errors%}
+        <input name="f" type="file" id="file" class="error" />
+        {% else %}
+        <input name="f" type="file" id="file" />
+        {% endif %}
+      </div>
+    </div>
+
+  </fieldset>
+  <input type="submit" id="submit" class="large button expand" value="Subir Epub">
+  {% csrf_token %}
+</form>
+
+{% endblock %}
+
+{% block extra_head %}
+  <style>
+  .listeningFile {
+    position: absolute;
+    left:-9999px;
+  }
+  </style>
+{% endblock %}
+
+{% block javascript %}
+
+<script>
+function epub_select(jQuery) {
+  // Adapted from code by Cedric Ruiz
+  // http://www.onextrapixel.com/2012/12/10/how-to-create-a-custom-file-input-with-jquery-css3-and-php/
+  //
+  // Move and hide ugly file input
+  var file = $('#file');
+  file.addClass('listeningFile');
+  var has_error = file.hasClass('error');
+  var isIE = /msie/i.test( navigator.userAgent );
+  //
+  // Build pretty file selector from parts
+  var div_text = $('<div class="small-10 columns">');
+  if (has_error){
+    var input_txt = $('<input type="text" placeholder="Nombre del Archivo" class="error" /><small class="error">{{ form.f.errors.as_text }}</small>');
+  }
+  else{
+    var input_txt = $('<input type="text" placeholder="Nombre del Archivo" />');
+  }
+  var div_button = $('<div class="small-2 columns">');
+  var button = $('<button type="button" class="prefix">');
+  var file_container = $('#file_container');
+  file_container.addClass('collapse');
+  file.after(div_text);
+  div_text.html(input_txt);
+  div_text.after(div_button);
+  div_button.html(button);
+  button.text('Elegir Archivo');
+  //
+  // Wiring
+  button.attr('tabIndex', -1);
+  button.click(function(){
+    file.focus().click();
+  });
+  file.attr('tabIndex', -1);
+  file.change(function(){
+    var filename = file.val().split('\\').pop();
+    input_txt.val(filename)
+        .attr('title', filename)
+        .focus();
+  });
+  input_txt.on({
+    blur: function(){file.trigger('blur');},
+    keydown: function(key){
+      if (key.which === 13){
+        if (!isIE){file.trigger('click');}
+      }
+      else if (key.which === 8 || key.which === 46 ){
+        // Backspace & Del
+        // On some browsers the value is read-only
+        // with this trick we remove the old input and add
+        // a clean clone with all the original events attached
+        file.replaceWith(file = file.clone(true));
+        file.trigger('change');
+        input_txt.val('');
+      }
+      else if (key.which === 9){
+        // TAB
+        return;
+      }
+      else{
+        // All other keys
+        return false;
+      }
+    }
+  });
+}
+$(document).ready(epub_select);
+</script>
+
+{% endblock %}

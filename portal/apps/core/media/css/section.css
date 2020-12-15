@@ -1,0 +1,27 @@
+body.section #articles {
+    background:transparent url(../../img/dotted.gif) repeat-y center 0;
+    margin-bottom:12px;
+    overflow:auto;
+}
+body.section #articles li.article {
+    background:transparent url(../../img/dotted.gif) repeat-x 12px 0;
+    float:left;
+    margin:0 12px;
+    padding:12px 0;
+    width:360px;
+}
+body.section #articles li.nobg {
+    background:none;
+}
+body.section span.contact {
+    float:right;
+}
+body.section .date, body.section .byline {
+    font-size:0.9em;
+}
+body.section .byline:before {
+    content:" - ";
+}
+body.section span.byline {
+    white-space:normal;
+}

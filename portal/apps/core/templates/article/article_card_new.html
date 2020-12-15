@@ -1,0 +1,42 @@
+{% load core_tags ldml %}
+
+<div class="ld-card" data-id="{{ article.id }}" data-template="article_card_new">
+  {% block image %}
+    {% if article.photo and card_type != 'OP' %}
+      <a href="{{ article.get_absolute_url }}">
+        <img class="ld-card__img lazyload"
+             src="{{ article.photo.get_thumbnail_url }}"
+             {% spaceless %}
+               data-srcset="{{ article.photo.get_700w_url }} 320w"
+             {% endspaceless %}
+             data-sizes="auto"
+             title="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+             alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+      </a>
+    {% endif %}
+  {% endblock %}
+  <div class="ld-card__body">
+    <h3 class="ld-card__title {% if not article.home_lead and not article.lead %}ld-card__title--mb{% endif %}">
+      <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|removetags:"p"}}</a>
+    </h3>
+    {% if article.home_lead %}
+      <div class="ld-card__intro ld-card__intro--home_lead">{{ article.home_lead|ldmarkup:article.id|removetags:'p' }}</div>
+    {% elif article.lead %}
+      <div class="ld-card__intro ld-card__intro--lead">{{ article.lead|ldmarkup:article.id|removetags:'p' }}</div>
+    {% endif %}
+
+    {% ifnotequal card_type 'AC' %}
+      <h4 class="ld-card__byline">
+        {% if article.has_byline %}
+          {% for author in article.get_authors %}
+            <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+          en
+        {% endif %}
+        {% publication_section article %}
+      </h4>
+    {% endifnotequal %}
+    {% block footer %}{% endblock %}
+  </div>
+  {% render_toolbar_for article %}
+</div>

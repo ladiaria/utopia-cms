@@ -1,0 +1,43 @@
+.nlunsubscribe {
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100%;
+  background-color: $color-light-blue;
+
+  .ld-subscribe-box__info {
+    margin: 0;
+  }
+
+  #main-header > nav.subscription_black {
+    padding-top: 9px;
+    height: 60px;
+  }
+
+  #main-header > nav.subscription_black .logo_ladiaria {
+    margin: 0 auto;
+    display: block;
+    height: 30px;
+    margin-top: 8px;
+  }
+
+  .nlunsubscribe__info {
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .ld-subscribe-box {
+    margin-bottom: 24px;
+      a, a:visited {
+        color: $off-black;
+        font-weight: normal;
+        text-decoration: underline;
+      }
+      a:hover {
+        color: $off-black-3;
+      }
+  }
+
+}

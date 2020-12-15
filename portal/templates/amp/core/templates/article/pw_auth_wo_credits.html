@@ -1,0 +1,31 @@
+{% load ldml core_tags %}
+
+<div class="article-body article-body--faded">
+  {{ article.body|amp_ldmarkup:article.id|truncatehtml:100 }}
+</div>
+
+<div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static ld-snackbar--narrow">
+  <div class="ld-snackbar__title">
+    Llegaste al límite de artículos gratuitos
+  </div>
+  <div class="ld-snackbar__body ld-snackbar__body-sm">
+    <p class="desc">Pasate a suscripción ilimitada para lectura sin límites y más beneficios.</p>
+    <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-regular ld-snackbar__btn--white ld-snackbar__btn">
+      Pasate a ilimitada
+    </a>
+  </div>
+  <div class="ld-snackbar__body ld-snackbar__body-lg">
+    <div class="container">
+      <div class="row">
+        <div class="col s12 ld-snackbar__col">
+          <div class="ld-snackbar__text ld-snackbar__block">
+            Pasate a suscripción ilimitada para lectura sin límites y más beneficios.
+          </div>
+          <div class="ld-snackbar__block">
+            <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-default">Pasate a ilimitada</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

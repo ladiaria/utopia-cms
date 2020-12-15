@@ -1,0 +1,505 @@
+@import 'ladiaria_mixins';
+
+$color-votante: #3560BE;
+$color-colaborador: #E78E00;
+
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+%shadow {
+  text-shadow: white 10px 0px 30px, white -10px 0px 30px, white 0px 10px 30px, white 0px -10px 30px;
+  background-color: white;
+  background-color: rgba(255, 255, 255, 0.98);
+}
+
+.faq-shadows {
+  @extend %shadow;
+}
+
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #F2F2F2;
+  font-family: 'Poppins', sans-serif;
+  color: #000;
+  font-size: 15px;
+}
+
+.align-center{
+  text-align: center;
+}
+
+.eli-container {
+  padding: 0 27px;
+  padding: 0 15px;
+  max-width: 1080px;
+  margin: 0 auto;
+
+  &--narrow {
+    max-width: 500px;
+  }
+
+  @media (min-width: 798px) {
+    &--home{
+      max-width: 750px;
+      text-align: center;
+    }
+  }
+
+  @media (min-width: 1180px) {
+    padding: 0;
+    &--main {
+      padding-top: 40px;
+      padding-bottom: 60px;
+    }
+
+    &--narrow {
+      padding-top: 40px;
+      padding-bottom: 60px;
+      max-width: 500px;
+    }
+  }
+
+}
+
+.eli-wrap {
+  background-image: url(../elegi-informarte/img/bg.png);
+  background-repeat: repeat;
+  overflow-x: hidden;
+}
+
+.eli-col {
+  float: left;
+}
+
+.eli-row {
+  @extend %clearfix;
+}
+
+.eli-col--md {
+  @media (min-width: 768px) {
+    padding-left: 30px;
+    width: 65%;
+    padding-right: 30px;
+    max-width: 640px;
+  }
+}
+
+.eli-col--sm {
+  width: 100%;
+  @media (min-width: 768px) {
+    width: 35%;
+    padding-left: 30px;
+    float: right;
+  }
+
+}
+
+.eli-logo {
+  padding: 26px 0;
+  svg {
+    max-width: 298px;
+    margin: 0 auto;
+    display: block;
+  }
+}
+
+.eli-nav {
+  background: white;
+  width: 100%;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  padding: 8px 0 15px 0;
+
+  a {
+    text-align: center;
+    padding: 10px 0 4px 0;
+    margin: 0 10px;
+    font-size: 14px;
+    color: #000;
+    display: block;
+    text-decoration: none;
+    @media (min-width: 415px) {
+      display: inline-block;
+    }
+
+    &.active {
+      border-bottom: 3px solid $color-votante;
+
+      .colaborador & {
+        border-bottom: 3px solid $color-colaborador;
+      }
+
+      .eli-home & {
+        border-bottom: 3px solid #F80E01;
+      }
+    }
+  }
+}
+
+.eli-title {
+  @extend %shadow;
+  font-family: 'Source Serif Pro', serif;
+  font-size: 36px;
+  margin: 30px 0 30px;
+  text-align: left;
+
+  .eli-home & {
+    text-align: center;
+  }
+
+  .preguntas & {
+    text-align: center;
+    margin-top: 56px;
+
+  }
+}
+
+.preguntas .eli-container a {
+  color: black;
+}
+
+.eli-subtitle {
+  font-family: 'Source Serif Pro', serif;
+  font-size: 28px;
+  line-height: 33px;
+  color: #000000;
+  margin-top: 87px;
+  margin-bottom: 28px;
+
+}
+
+h3 {
+  font-size: 15px;
+  margin-bottom: 0;
+}
+
+.eli-answer {
+  font-size: 15px;
+  margin-bottom: 40px;
+}
+
+.eli-answer p:first-child {
+  margin-top: 0;
+}
+
+.eli-drawing {
+  display: block;
+  max-width: 100%;
+  margin: 30px auto 40px;
+}
+
+.eli-footer {
+  width: 100%;
+  border-top: 1px solid #cecece;
+  padding: 16px;
+  color: #595959;
+  background: white;
+  text-align: center;
+  font-size: 13px;
+  box-shadow: 0px -2px 4px rgba(0, 0, 0, 0.25);
+
+  a {
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  p {
+    margin: 0 0 10px 0;
+    color: #595959;
+  }
+  img {
+    opacity: .7;
+    width: 84px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+}
+
+.eli-header {
+  background-color: white;
+  position: relative;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
+
+  @media (min-width: 768px) {
+    display: flex;
+    align-items: center;
+    padding: 0 22px;
+    .eli-nav {
+      text-align: right;
+    }
+  }
+}
+
+
+.eli-form {
+  border-radius: 5px;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  max-width: 320px;
+  margin: 40px auto ;
+  background-color: white;
+  font-size: 15px;
+  border: 2px solid $color-votante;
+
+  .colaborador & {
+    border: 2px solid $color-colaborador;
+  }
+
+  label {
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 15px;
+    line-height: 25px;
+    color: rgba(0, 0, 0, 0.89);
+    cursor: default;
+  }
+
+  .eli-form-help {
+    cursor: default;
+    text-transform: uppercase;
+    font-size: 11px;
+    color: #595959;
+    margin-top: 3px;
+    display: block;
+    a {
+      color: #595959;
+    }
+  }
+
+  &__line {
+    margin-bottom: 24px;
+  }
+
+  input[type="text"], input[type="email"], input[type="number"]{
+    padding: 8px;
+    width: 100%;
+    border: 1px solid #CBCBCB;
+    box-sizing: border-box;
+    border-radius: 3px;
+  }
+
+}
+
+.eli-form__body {
+  padding: 33px 28px;
+}
+
+input[type="submit"], .eli-btn {
+  text-shadow: none;
+  transition: all .15s ease;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 5px;
+  background-color: $color-votante;
+  border: none;
+  font-family: 'Poppins', sans-serif;
+  text-transform: uppercase;
+  font-weight: bold;
+  display: block;
+  color: white;
+  box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.25);
+  min-width: 230px;
+  max-width: 260px;
+  margin: 0 auto;
+  text-decoration: none;
+  padding: 12px;
+  text-align: center;
+  position: relative;
+  .colaborador &, .eli-option--colaborador & {
+    background-color: $color-colaborador;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 7px 14px rgba(50,50,93,.1), 0 3px 6px rgba(0,0,0,.08);
+  }
+}
+
+#cred-serie {
+  width: 25%;
+  margin-right: 5%;
+  float: left;
+  text-transform: uppercase;
+}
+
+#cred-numero {
+  width: 70%;
+}
+
+.eli-faq-link {
+  @extend %shadow;
+  font-size: 15px;
+  text-align: center;
+  display: inline-block;
+  margin: 0 auto 40px auto;
+  color: #000;
+}
+
+
+/* Radio buttons */
+
+.amounts {
+  @extend %clearfix;
+}
+
+.amount {
+  padding: 6px;
+  width: 25%;
+  float: left;
+}
+
+.amounts input[type="radio"] {
+  display: none;
+}
+
+.amounts label {
+  user-select: none;
+  width: 100%;
+  cursor: pointer;
+  display:inline-block;
+  padding: 10px 0;
+  text-align: center;
+  display: inline-block;
+  font-size: 13px;
+  border: 1px solid #CBCBCB;
+  border-radius: 3px;
+}
+
+.amounts input[type="radio"]:checked + label {
+  background-color: $color-colaborador;
+  color: white;
+  border: 1px solid $color-colaborador;
+}
+
+.eli-shares {
+  background-color: #F7F7F5;
+  padding: 36px 0;
+  margin-bottom: 60px;
+  text-align: center;
+}
+
+.eli-shares__title {
+  font-family: 'Source Serif Pro', serif;
+  font-size: 22px;
+  line-height: 26px;
+  text-align: center;
+  color: #231B14;
+  margin: 0 0 36px;
+}
+
+.eli-shares__icon {
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+.eli-intro {
+  margin-bottom: 60px;
+  @extend %shadow;
+}
+
+.eli-options {
+  @media (min-width: 768px) {
+    display: flex;
+    justify-content: center;
+    margin: 0 -30px;
+  }
+}
+
+.eli-option{
+  background: #FFFFFF;
+  box-sizing: border-box;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
+  max-width: 350px;
+  margin: 0 auto 60px auto;
+  padding: 20px;
+  text-align: center;
+  font-size: 14px;
+  position: relative;
+
+  img {
+    margin: 0 0 30px;
+    max-width: 186px;
+    height: auto;
+    display: inline-block;
+    margin: 0 auto;
+  }
+
+  &--suscriptor { border: 2px solid $color-votante; }
+  &--colaborador { border: 2px solid $color-colaborador; }
+
+  .eli-btn {
+    display: inline-block;
+  }
+}
+
+.eli-option__title {
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 600;
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+
+.eli-option__intro {
+  margin-bottom: 64px;
+}
+
+.eli-option__btn-wrap {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.eli-form-head {
+  background-color: $color-votante;
+  padding: 15px 15px 15px 55px;
+  color: white;
+  font-weight: normal;
+  font-size: 17px;
+  position: relative;
+
+  .colaborador & {
+    background-color: $color-colaborador;
+  }
+
+}
+
+.eli-form-head__btn {
+  padding: 13px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  width: 52px;
+  color: white;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: 21px;
+  transition: 200ms ease;
+  &:hover {
+    transform: translateX(-2px);
+  }
+}

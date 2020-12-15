@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+{{ wizard.form.media }}
+{% endblock %}
+
+{% block content %}
+<p>Paso {{ wizard.steps.step1 }} of {{ wizard.steps.count }}</p>
+{{ wizard.steps.step1 }}
+
+<form action="" method="post">
+{{ wizard.management_form }}
+{% if wizard.form.forms %}
+    {{ wizard.form.management_form }}
+    {% for form in wizard.form.forms %}
+        {% crispy form %}
+    {% endfor %}
+{% else %}
+    {% crispy wizard.form %}
+{% endif %}
+<input type="submit" value="Continuar" />
+</form>
+{% endblock %}
+

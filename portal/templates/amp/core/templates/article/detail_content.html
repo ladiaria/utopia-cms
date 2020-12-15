@@ -1,0 +1,56 @@
+{% load core_tags ldml videologue_tags inplace_edit markup %}
+
+<div class="article-body paywalled-content">
+  <p amp-access="edit" amp-access-hide>
+    <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="edit-link">Editar</a>
+  </p>
+  {{ article.body|amp_ldmarkup:article.id }}
+</div>
+
+{% if article.type == "PA" or article.gallery %}
+  <amp-image-lightbox id="lightbox1" layout="nodisplay"></amp-image-lightbox>
+  <div class="gallery-wrap">
+    {% for photo in article.gallery_photos %}
+      <figure class="amp-img-block">
+        <amp-img on="tap:lightbox1" tabindex="0" role="button" src="{{ photo.get_900w_url }}"
+                 alt="{{ photo.caption }}" title="{{ photo.caption }} - Ver"
+                 layout="responsive"
+                 width="{{ photo.image.width }}" height="{{ photo.image.height }}"/>
+        <figcaption class="ld-caption">{{ photo.caption }}</figcaption>
+      </figure>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if article.attachments.count %}
+  <ul class="center">
+    <li><span class="icon-paper-clip gray"></span> Adjuntos:</li>
+    {% for att in article.attachments.all %}
+      {% if att.is_image %}
+        <amp-img layout="responsive" src="{{ att.file.url }}" alt="{{ att.name }}" title="{{ att.name }}"/>
+      {% else %}
+        <a href="{{ att.file.url }}">{{ att.name }}</a>
+      {% endif %}
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if article.video %}
+  <div id="video">
+    <video controls width="560" height="315">
+      <source type="video/mp4" src="{{ article.video.file.url }}">
+    </video>
+    <div class="caption">
+      {% if article.video.caption %}
+        <span class="caption">{{ article.video.caption }}</span>
+      {% endif %}
+      {% if article.video.byline %}
+        <span class="byline">Video: {{ article.video.byline }}</span>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+{% if article.youtube_video %}
+  <amp-youtube data-videoid="{{ article.youtube_video.yt_id }}" class="amp-youtube" layout="responsive" width="480" height="270"></amp-youtube>
+{% endif %}

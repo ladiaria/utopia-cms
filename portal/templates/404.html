@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block page_title %}Página no encontrada{% endblock %}
+{% block body_class %}error{% endblock %}
+
+{% block content %}
+
+  <div class="ld-content">
+    <div class="row u-mb-50">
+      <div class="col s12">
+        <h1 class="ld-title-huge align-center">Página no encontrada</h1>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="row">
+    <div class="col s12 m6 offset-m3">
+      <p class="center-align">
+        <span class="small">Tal vez puedas encontrar lo que buscabas</span>
+      </p>
+      <form action="{% url 'search' %}" method="get" class="search">
+        <label for="id_q">Buscar:</label>
+        <input type="text" name="q" id="id_q" value="{{ token }}">
+        {{ form.q.errors }}
+        <div class="row">
+          <div class="col m12">
+            <p class="center-align">
+              <button class="ld-btn-regular" type="submit" name="action" id="submit-search" value="  ave_changes">Buscar</button>
+            </p>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+{% endblock %}

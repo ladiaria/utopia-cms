@@ -1,0 +1,29 @@
+a.player {
+    border:1px solid black;
+    display:block;
+}
+div.videologue p {
+    color:#292929;
+    font-family:georgia,"times new roman",times,serif;
+}
+div.videologue h2{
+    background:none;
+    padding: 0;
+}
+/* article_detail */
+#video, #video a.player {
+    height:250px;
+    margin-top:24px;
+    width:400px;
+}
+#video .caption {
+    width:400px;
+}
+/* home */
+div.video, div.video a.player {
+    height:225px;
+    width:360px;
+}
+div.video, #video {
+    margin:0 auto 3em;
+}

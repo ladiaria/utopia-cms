@@ -1,0 +1,147 @@
+{% load static %}
+{% load core_tags ldml activity_tags tagging_tags crispy_forms_tags videologue_tags inplace_edit markup %}
+
+<div class="container">
+  <section class="ld-grid-main">
+
+    <div class="ld-grid-area area-main">
+
+      <div class="ld-card ld-card--big">
+        {% render_toolbar_for article %}
+        {% block image %}
+          {% if article.photo %}
+            <a href="{{ article.get_absolute_url }}">
+            <picture>
+                <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 700px)">
+                <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0)">
+              <img class="ld-card__img lazyload"
+                   data-sizes="auto"
+                   title="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                   alt="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}">
+            </picture>
+            </a>
+          {% endif %}
+        {% endblock %}
+        <div class="ld-card__body">
+          <h1 class="ld-card__title home-title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
+            <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|removetags:"p" }}</a>
+          </h1>
+          {% if article.home_lead %}
+            <div class="ld-card__intro">{{ article.home_lead|ldmarkup:article.id|removetags:'p' }}</div>
+          {% endif %}
+          <h4 class="ld-card__byline">
+            {% if article.has_byline  %}
+              {% for author in article.get_authors %}
+                <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              en
+            {% endif %}
+            {% publication_section article %}
+          </h4>
+          {% if article.photo.extended.photographer %}
+            <h4 class="ld-card__byline">
+              {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
+            </h4>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="ld-grid-area area-second">
+
+      {% for a in destacados|slice:":2" %}
+        <div class="ld-card ld-card--reg">
+          {% render_toolbar_for a %}
+          {% if a.photo %}
+            <a href="{{ a.get_absolute_url }}">
+              <img class="ld-card__img lazyload" src="{{ a.photo.get_700w_url }}"
+                   title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                   alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}">
+            </a>
+          {% endif %}
+          <div class="ld-card__body">
+            <h3 class="ld-card__title ld-card__title--mb">
+              <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|removetags:"p" }}</a>
+            </h3>
+            {% if a.deck %}
+            <div class="ld-card__intro hide-on-med-and-up">
+              {{ a.deck|ldmarkup:a.id|removetags:"p" }}
+            </div>
+            {% endif %}
+            <h4 class="ld-card__byline">
+              {% if a.has_byline  %}
+                {% for author in a.get_authors %}
+                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                en
+              {% endif %}
+              {% publication_section a %}
+            </h4>
+            {% if a.photo.extended.photographer %}
+              <h4 class="ld-card__byline">
+                {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}
+              </h4>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+    </div>
+
+    <div class="ld-grid-area area-third">
+
+      {% for a in destacados|slice:"2:7" %}
+        <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}">
+          {% render_toolbar_for a %}
+
+          {% if a.photo %}
+            <a href="{{ a.get_absolute_url }}" class="ld-card__img-link">
+              <img class="ld-card__img lazyload" src="{{ a.photo.get_700w_url }}"
+                   title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                   alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}">
+            </a>
+          {% endif %}
+          <div class="ld-card__body">
+            <h4 class="ld-card__title ld-card__title--mb">
+              <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|removetags:"p" }}</a>
+            </h4>
+            {% if a.home_lead or a.deck %}
+              <div class="ld-card__intro hide-on-med-and-up">
+                {{ a.home_lead|default:a.deck|ldmarkup:a.id|removetags:"p" }}
+              </div>
+            {% endif %}
+            <h4 class="ld-card__byline">
+              {% if a.has_byline  %}
+                {% for author in a.get_authors %}
+                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                en
+              {% endif %}
+              {% publication_section a %}
+            </h4>
+          </div>
+          {% if a.photo.extended.square_version %}
+            <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
+              <img class="ld-card__img lazyload"
+                    src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}"
+                    title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                    alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}">
+            </a>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+    </div>
+
+    <div class="ld-grid-clear"></div>
+
+      {% for a in destacados|slice:"7:11" %}
+        <div class="ld-grid-area ld-grid-area-col area-col-{% cycle 'a' 'b' 'c' 'd' %}">
+          {% include 'article/card_top_article_abcd.html' %}
+        </div>
+      {% endfor %}
+
+    <div class="ld-grid-clear"></div>
+
+  </section>
+</div>

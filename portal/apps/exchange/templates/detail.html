@@ -1,0 +1,30 @@
+<table id="exchange">
+    <thead>
+        <tr>
+            <th>
+                {{ date|date:"j.n.y" }}
+            </th>
+            <th>
+                Compra
+            </th>
+            <th>
+                Venta
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for exchange in exchange_list %}
+            <tr>
+                <td>
+                    {{ exchange.currency.name }}
+                </td>
+                <td>
+                    {{ exchange.buy|floatformat:2 }}
+                </td>
+                <td>
+                    {{ exchange.sale|floatformat:2 }}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

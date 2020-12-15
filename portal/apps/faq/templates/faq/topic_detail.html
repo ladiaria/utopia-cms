@@ -1,0 +1,23 @@
+{% extends "faq/base.html" %}
+{% load markup %}
+
+{% block content2 %}
+  <h2>Categoría: {{ topic.title }}</h2>
+  <div>
+  <p>{{ topic.description }}</p>
+  </div>
+  <dl>
+    {% for question in question_list %}
+      <dt id="{{ question.slug }}">
+          {{ question.question }}
+          <a href="#{{ question.slug }}">∞</a>
+      </dt>
+      <dd>
+        {{ question.answer|safe }}
+      </dd>
+    {% endfor %}
+  </dl>
+    <div>
+        <a href="{% url 'faq-topic-list' %}">Atrás</a>
+    </div>
+{% endblock %}

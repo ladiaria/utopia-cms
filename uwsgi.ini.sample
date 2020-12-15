@@ -1,0 +1,13 @@
+[uwsgi]
+single-interpreter=true
+chdir=/srv/utopia-cms
+module=wsgi:application
+master=true
+socket=/var/local/utopia-cms.sock
+pidfile=/var/local/utopia-cms.pid
+vacuum=true
+max-requests=2000
+processes=4
+home=/opt/venv/utopiacms
+daemonize=/var/log/uwsgi/utopia-cms.log
+harakiri=360

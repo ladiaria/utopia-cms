@@ -1,0 +1,17 @@
+{% load core_tags %}
+
+<div class="module">
+    <div class="vertical">
+        <div class="one">
+            {% render_article_short with article=module.first_article media=module.first_article.display %}
+        </div>
+        <div class="two">
+            {% render_article_short with article=module.second_article media=module.second_article.display %}
+        </div>
+        {% if module.third_article %}
+            <div class="three">
+                {% render_article_short with article=module.third_article media=module.third_article.display %}
+            </div>
+        {% endif %}
+    </div>
+</div>

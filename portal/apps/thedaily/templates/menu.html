@@ -1,0 +1,82 @@
+{% load core_tags %}
+
+<ul class="main-menu center hide-on-small-and-down{% ifnotequal publication default_pub %} {{ publication.slug }}{% endifnotequal %}">
+
+  {% for category in MENU_CATEGORIES %}
+    <li class="nav-menu__{{ category.slug }}">
+      <a href="{% url 'home' domain_slug=category.slug %}">
+        <span class="inner">{{ category|capfirst }}</span>
+      </a>
+    </li>
+  {% endfor %}
+  {% if "no-menu" != MENU_PUBLICATIONS and MENU_PUBLICATIONS|length > 1 %}
+    <li>
+      <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="emergentes-dropdown">
+        <span class="inner">Emergentes
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z" class="nav-fill" fill="#a4a4a4"/></svg>
+        </span>
+      </a>
+    </li>
+  {% endif %}
+
+  {% if MENU_LATEST_ARTICLE_SECTION_SLUG %}
+    <li class="nav-menu__apuntes">
+      <a href="{% url 'section-latest-article' section_slug=MENU_LATEST_ARTICLE_SECTION_SLUG %}">
+        <span class="inner">{{ MENU_LATEST_ARTICLE_LINK_TEXT_S }}</span>
+      </a>
+    </li>
+  {% endif %}
+
+	<li>
+		<a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="more-dropdown">
+      <span class="inner">Más
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z"  class="nav-fill" fill="#a4a4a4"/></svg>
+      </span>
+		</a>
+	</li>
+	<li>
+    <a href="{% url 'search' %}">
+      <span class="inner inner-search">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+          <path class="nav-fill" fill="#a4a4a4" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          <path d="M0 0h24v24H0z" fill="none"/>
+        </svg>
+        <span class="sr-only">Buscar</span>
+      </span>
+    </a>
+	</li>
+</ul>
+
+{% with 'ciencia economia educacion feminismos justicia salud trabajo' as emergentes %}
+  {% if publication != default_pub and publication not in emergentes.split %}
+    <ul id="secciones-dropdown" class="dropdown-content hide-on-small-and-down">
+      {% for section in publication.primary_sections %}
+        <li>
+          <a href="{% url 'section_detail' section_slug=section.slug %}" class="{{ section.slug }}">{{ section }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <ul id="secciones-dropdown2" class="dropdown-content hide-on-small-and-down">
+      {% for section in publication.secondary_sections %}
+        <li>
+          <a href="{% url 'section_detail' section_slug=section.slug %}" class="{{ section.slug }}">{{ section }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+{% if "no-menu" != MENU_PUBLICATIONS and MENU_PUBLICATIONS|length > 1 %}
+  <ul id="emergentes-dropdown" class="dropdown-content hide-on-small-and-down">
+    {% for pub in MENU_PUBLICATIONS %}
+      {% ifnotequal pub default_pub %}
+        <li><a href="{{ pub.get_absolute_url }}">{{ pub }}</a></li>
+      {% endifnotequal %}
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<ul id="more-dropdown" class="dropdown-content hide-on-small-and-down">
+  <li class="divider"><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
+  {% block more_extra %}{% endblock %}
+</ul>

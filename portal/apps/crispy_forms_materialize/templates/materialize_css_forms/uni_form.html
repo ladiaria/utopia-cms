@@ -1,0 +1,22 @@
+{% if form_show_errors %}
+    {% include "materialize_css_forms/errors.html" %}
+{% endif %}
+
+{% if form_style == "" or form_style %}
+    <fieldset class="{{ form_style }}">
+        <legend></legend>
+{% endif %}
+
+{% for field in form %}
+
+        {% cycle '<div class="row">' '' %}
+
+            {% include "materialize_css_forms/field.html" %}
+
+        {% cycle '' '</div>' %}
+
+{% endfor %}
+
+{% if form_style == "" or form_style %}
+    </fieldset>
+{% endif %}

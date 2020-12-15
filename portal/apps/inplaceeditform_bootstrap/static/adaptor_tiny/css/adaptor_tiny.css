@@ -1,0 +1,4 @@
+.tinyForm a.apply,
+.tinyForm a.cancel {
+    display: none;
+}

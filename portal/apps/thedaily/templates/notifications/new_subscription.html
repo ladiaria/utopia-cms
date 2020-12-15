@@ -1,0 +1,39 @@
+{% extends "notifications/signup.html" %}
+
+{% block body %}
+  <p>
+    Gracias por suscribirte a digital ilimitada. El periodismo que hacemos existe porque hay gente como vos que lo hace posible.
+  </p>
+  <p>
+    <span style="font-weight: bold;">Contenidos</span><br>
+    Ahora tendrás acceso ilimitado a todos los contenidos digitales, ingresá con tu cuenta y disfrutá la experiencia completa.
+  </p>
+  <p>
+    <a style="padding: 12px 15px; border-radius: 100px; background-color: #6ef9ff; color: #262626; text-transform: uppercase; font-weight: bold; text-decoration: none; display: inline-block; font-size: 14px;" href="{{ SITE_URL }}usuarios/entrar/">
+      ingresar
+    </a>
+  </p>
+{% endblock %}
+{% block extra_body %}
+  <p>
+    <span style="font-weight: bold;">Newsletters</span><br>
+    Recibí en tu email contenidos según tus intereses.<br>
+  </p>
+  <p>
+    <a style="padding: 12px 15px; border-radius: 100px; background-color: #6ef9ff; color: #262626; text-transform: uppercase; font-weight: bold; text-decoration: none; display: inline-block; font-size: 14px;" href="{{ SITE_URL }}usuarios/perfil/editar/#ld-newsletters">configurar newsletters</a>
+  </p>
+  <p>
+    <strong>Comentarios</strong><br>
+    Involucrate en el contenido y participá comentando artículos.<br>
+    <a href="https://ayuda.ladiaria.com.uy/que-son-los-comentarios-en-articulos/" style="color: #0a0a0a;">Saber más</a>.
+  </p>
+  <p>
+    <strong>Sin publicidad</strong><br>
+    Navegá el sitio web sin espacios publicitarios.
+  </p>
+  {% if seller_email %}
+    <p>
+      Si tenés consultas contactate directamente conmigo a <a href="mailto:{{ seller_email }}" style="color: #0a0a0a;">{{ seller_email }}</a>
+    </p>
+  {% endif %}
+{% endblock %}

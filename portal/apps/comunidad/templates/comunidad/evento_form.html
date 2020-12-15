@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block css %}
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/datetimepicker.css">
+{% endblock %}
+
+{% block javascript %}
+
+<script type="text/javascript" src="{{ JS_URL }}bootstrap-datetimepicker.min.js"></script>
+
+<script type="text/javascript">
+jQuery(document).ready(function ($) {
+    $(function () {
+
+        /*
+         * DATEPICKER BOOTSTRAP
+         */
+
+        ;(function($){
+            $.fn.datetimepicker.dates['es'] = {
+                days: ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
+                daysShort: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
+                daysMin: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"],
+                months: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+                monthsShort: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+                today: "Hoy",
+                suffix: [],
+                meridiem: []
+            };
+        }(jQuery));
+
+        $('.datepicker').datetimepicker({ format: 'dd/mm/yyyy hh:ii', language: 'es'});
+         
+        var start = $('#id_start');
+        var end = $('#id_end');
+
+        var checkin = start.on('changeDate', function(ev) {
+	        end.datetimepicker('setStartDate', ev.date);
+	        if (  (new Date(end.date)).valueOf() < ev.date.valueOf() )
+		        end.datetimepicker('update', ev.date);
+	        checkin.hide();
+	        end[0].focus();
+        }).data('datetimepicker');
+        var checkout = end.on('changeDate', function(ev) {
+       		start.datetimepicker('setEndDate', ev.date);
+       		checkout.hide();
+        }).data('datetimepicker');
+    });
+});
+</script>
+
+{% endblock %}
+
+{% block content %}
+{% if evento %}
+    <h1>Editar evento {{ evento }}</h1>
+{% else %}
+    <h1>Crear nuevo evento</h1>
+{% endif %}
+
+{% comment %}
+<form action="" method="POST" class="form-horizontal">
+    {% csrf_token %}
+    {{ form|as_bootstrap }}
+    <input type="submit" name="submit" value="Enviar" class="btn">
+</form>
+{% endcomment %}
+
+{% crispy form %}
+
+{% endblock %}

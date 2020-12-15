@@ -1,0 +1,88 @@
+{% load static homev3_tags %}
+
+<div class="ld-print print-header">
+  <img src="{% static HOMEV3_LOGO_PRINTABLE %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" style="height:30px">
+</div>
+
+<div id="main-header" class="navbar-fixed nav-down{% if user.is_authenticated %} logged-in{% endif %}{% block header_extra_class %}{% if publication.is_emergente %} emergente{% endif %}{% endblock %}">
+    <div class="nav-wrapper ">
+        {% spaceless %}
+        <a class="header-logo emergentes" href="{% url 'home' %}"><img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}"></a>
+        {% block header_pill %}
+        {% endblock %}
+        {% endspaceless %}
+        <div id="nav-principal">
+            <nav>
+            {% block menu %}
+                {% include "menu.html" %}
+            {% endblock %}
+            <ul class="navbar-right-tools right">
+                {% if user.is_authenticated %}
+                    <li class="hide-on-med-and-down">
+                        <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="user-dropdown">
+                        <span class="inner">tu cuenta
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z"  class="nav-fill" fill="#a4a4a4"/></svg></span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li>
+                        <a href="{% url 'account-login' %}?next={% ifequal request.path '/usuarios/salir/' %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endifequal %}" class="btn ingresar">ingresá</a>
+                    </li>
+                    <li class="hide-on-small-only"><a class="btn suscribirse right" href="{% url 'subscribe_landing' %}">suscribite</a></li>
+                {% endif %}
+                <li class="hide-on-small-and-down">
+                    <button class="nav-menu-button right js-ld-main-menu-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="17" viewBox="0 0 30 17"><g transform="translate(-2004.711 -1047.227)"><rect width="30" height="3" rx="1.5" transform="translate(2004.711 1047.227)" fill="#fff"/><rect width="30" height="3" rx="1.5" transform="translate(2004.711 1054.227)" fill="#fff"/><rect width="30" height="3" rx="1.5" transform="translate(2004.711 1061.227)" fill="#fff"/></g></svg>
+                        <span>Menú</span>
+                    </button>
+                </li>
+            </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+{% if is_subscriber %}
+    <ul id="user-dropdown" class="dropdown-content hide-on-med-and-down">
+        <li><a href="{% url 'edit-profile' %}">Opciones</a></li>
+        {% if poll_url %}
+            <li><a href="{{ poll_url }}" target="_blank">Danos tu opinión</a></li>
+        {% endif %}
+        {% if user.is_staff %}
+            <li><a href="//{{ site.domain }}/admin/">Admin</a></li>
+        {% endif %}
+        <li><a href="https://ayuda.ladiaria.com.uy/">Ayuda</a></li>
+        <li><a href="{% url 'account-logout' %}">Cerrar sesión</a></li>
+    </ul>
+{% elif user.is_authenticated %}
+    <ul id="user-dropdown" class="dropdown-content hide-on-med-and-down">
+        <li><a href="{% url 'edit-profile' %}">Opciones</a></li>
+        {% if not is_subscriber_any %}
+            <li><a href="{% url 'subscribe' planslug='DDIGM' %}">Pasate a ilimitada</a></li>
+        {% endif %}
+        {% if poll_url %}
+            <li><a href="{{ poll_url }}" target="_blank">Danos tu opinión</a></li>
+        {% endif %}
+        <li><a href="https://ayuda.ladiaria.com.uy/">Ayuda</a></li>
+        <li><a href="{% url 'account-logout' %}" class="logout btn-logout">cerrar sesión</a></li>
+    </ul>
+{% endif %}
+
+<div id="nav-principal-full" class="full ld-main-menu js-ld-main-menu">
+    <button class="right ld-main-menu__close js-ld-main-menu-toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/></svg>
+    </button>
+    <div class="modal-content">
+        <nav class="ld-main-menu__wrap fullnav">
+            <div class="row">
+                {% block resume %}
+                    {% include 'core/templates/edition/resume.html' %}
+                {% endblock %}
+            </div>
+        </nav>
+    </div>
+</div>
+
+{% if extra_header_template %}
+    {% include extra_header_template %}
+{% endif %}

@@ -1,0 +1,285 @@
+{% load static %}
+<script>
+  $('.date-picker').datepicker({
+    format: "mm/yyyy",
+    startDate: "10/2018",
+    startView: 1,
+    minViewMode: 1
+  });
+</script>
+{% if table_id == 'articles' %}
+  <script>
+    $('#table-score').bootstrapTable();
+    $('#articles-date').click(function(){
+      var date = $('.date-picker').val();
+      var month = date.split('/')[0];
+      var year = date.split('/')[1];
+      $('#inner-content').load('/dashboard/table/articles/?month=' + month + "&year=" + year);
+    });
+  </script>
+  <div class="tab-pane fade show active" id="score" role="tabpanel" aria-labelledby="score-tab">
+    <div role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <h4>
+          Puntaje de notas desde el 1° de {{ date_start|date:"m/Y" }} hasta el {{ date_end|date:"d/m/Y" }}
+        </h4>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group mr-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="location.href='export/articles/'">Exportar</button>
+          </div>
+          <input class="date-picker" data-date-format="mm/yyyy">
+          <button class="btn btn-sm btn-outline-secondary" id="articles-date">Ir</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table id="table-score" class="table table-striped table-sm">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Artículo</th>
+              <th data-sortable="true">Visitas</th>
+              <th>Publicado en</th>
+              <th data-sortable="true">Puntaje</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rank, article_url, views, published, score in rows %}
+              <tr>
+                <td>{{ rank }}</td>
+                <td><a href="{{ article_url }}">{{ article_url }}</a></td>
+                <td>{{ views }}</td>
+                <td>{{ published }}</td>
+                <td>{{ score }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% elif table_id == 'subscribers' %}
+  <script>
+    $('#table-subscribers-score').bootstrapTable();
+  </script>
+  <div class="tab-pane fade show active" id="subscribers-score" role="tabpanel" aria-labelledby="subscribers-score-tab">
+    <div role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <h1 class="h2">Visitas de suscriptores</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group mr-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="location.href='export/subscribers/'">Exportar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table id="table-subscribers-score" class="table table-striped table-sm">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Artículo</th>
+              <th data-sortable="true">Visitas</th>
+              <th>Publicado en</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rank, date, article_url, views, published in rows %}
+              <tr>
+                <td>{{ rank }}</td>
+                <td class="text-nowrap">{{ date }}</td>
+                <td><a href="{{ article_url }}">{{ article_url }}</a></td>
+                <td>{{ views }}</td>
+                <td>{{ published }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% elif table_id == 'subscribers_sections' %}
+  <script>
+    $('#table-subscribers-sections').bootstrapTable();
+  </script>
+  <div class="tab-pane fade show" id="subscribers-sections" role="tabpanel" aria-labelledby="subscribers-sections">
+    <div role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <h1 class="h2">Visitas de suscriptores a secciones</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group mr-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="location.href='export/subscribers_sections/'">Exportar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table id="table-subscribers-sections" class="table table-striped table-sm">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th data-sortable="true">Año</th>
+              <th data-sortable="true">Publicación</th>
+              <th data-sortable="true">Sección</th>
+              <th data-sortable="true">Visitas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rank, year, publication, section, views in rows %}
+              <tr>
+                <td>{{ rank }}</td>
+                <td>{{ year }}</td>
+                <td>{{ publication }}</td>
+                <td>{{ section }}</td>
+                <td>{{ views }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% elif table_id == 'sections' %}
+  <script>
+    $('#table-sections').bootstrapTable();
+    $('#sections-date').click(function(){
+      var date = $('.date-picker').val();
+      var month = date.split('/')[0];
+      var year = date.split('/')[1];
+      $('#inner-content').load('/dashboard/table/sections/?month=' + month + "&year=" + year);
+    });
+  </script>
+  <div class="tab-pane fade show" id="sections" role="tabpanel" aria-labelledby="sections-tab">
+    <div role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <h4>
+          Puntaje de secciones desde el 1° de {{ date_start|date:"m/Y" }} hasta el {{ date_end|date:"d/m/Y" }}
+        </h4>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group mr-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="location.href='export/sections/'">Exportar</button>
+          </div>
+          <input class="date-picker" data-date-format="mm/yyyy" data-provide="datepicker">
+          <button class="btn btn-sm btn-outline-secondary" id="sections-date">Ir</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table id="table-sections" class="table table-striped table-sm">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th data-sortable="true">Publicación</th>
+              <th data-sortable="true">Sección</th>
+              <th data-sortable="true">Puntaje</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rank, publication, section, score in rows %}
+              <tr>
+                <td>{{ rank }}</td>
+                <td>{{ publication }}</td>
+                <td>{{ section }}</td>
+                <td>{{ score }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% elif table_id == 'activity' %}
+  <script>
+    $('#table-activity').bootstrapTable();
+    $('#activity-date').click(function(){
+      var date = $('.date-picker').val();
+      var month = date.split('/')[0];
+      var year = date.split('/')[1];
+      $('#inner-content').load('/dashboard/table/activity/?month=' + month + "&year=" + year);
+    });
+  </script>
+  <div class="tab-pane fade show" id="activity" role="tabpanel" aria-labelledby="activity-tab">
+    <div role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <h1 class="h2">Actividad {% if month and year %}- {{ month }}/{{ year }}{% endif %}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group mr-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="location.href='export/activity/'">Exportar</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table id="table-activity" class="table table-striped table-sm" style="font-size: .7rem;" data-sort-name="last-activity" data-sort-order="asc">
+          <thead>
+            <tr>
+              {# TODO 2nd release: remove custom "la diaria" columns #}
+              <th data-sortable="true">Usuario</th>
+              <th data-sortable="true">Email</th>
+              <th data-sortable="true">Creado</th>
+              <th data-sortable="true">Activo</th>
+              <th data-sortable="true">la diaria</th>
+              <th data-sortable="true">digital</th>
+              <th data-sortable="true">Lento</th>
+              <th data-sortable="true">FS</th>
+              <th data-sortable="true" data-field='last-activity'>Últ. actividad</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                {% for item in row %}
+                  <td>{{ item }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% elif table_id == 'activity_only_digital' %}
+  <script>
+    $('#table-activity-only-digital').bootstrapTable();
+    $('#activity-only-digital-date').click(function(){
+      var date = $('.date-picker').val();
+      var month = date.split('/')[0];
+      var year = date.split('/')[1];
+      $('#inner-content').load('/dashboard/table/activity/?month=' + month + "&year=" + year);
+    });
+  </script>
+  <div class="tab-pane fade show" id="activity-only-digital" role="tabpanel" aria-labelledby="activity-only-digital-tab">
+    <div role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <h1 class="h2">Actividad {% if month and year %}- {{ month }}/{{ year }}{% endif %}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group mr-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="location.href='export/activity_only_digital/'">Exportar</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table id="table-activity-only-digital" class="table table-striped table-sm" style="font-size: .7rem;" data-sort-name="last-activity" data-sort-order="asc">
+          <thead>
+            <tr>
+              <th data-sortable="true">Usuario</th>
+              <th data-sortable="true">Email</th>
+              <th data-sortable="true">Creado</th>
+              <th data-sortable="true" data-field='last-activity'>Últ. actividad</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                {% for item in row %}
+                  <td>{{ item }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% block extra_tables %}{% endblock %}

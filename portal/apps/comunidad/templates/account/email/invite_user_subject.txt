@@ -1,0 +1,1 @@
+{{ user.get_full_name|capfirst }} te invita a ladiaria.com.uy

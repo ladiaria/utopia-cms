@@ -1,0 +1,9 @@
+#shoutbox li.shout {
+    margin-bottom:12px;
+}
+#shoutbox .message {
+    margin-left:12px;
+}
+form#ishout input#message {
+    width:170px;
+}

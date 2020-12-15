@@ -1,0 +1,21 @@
+{% load i18n %}
+{% block form %}
+    <form class="inplaceeditform {% block formclass %}{% endblock %}{{ class_inplace }}" action="{{ inplace_save_url }}" enctype=multipart/form-data>
+        <div class="form-group">
+            {{ field }}
+        </div>
+        <span class="field_id" style="display:none">{{ field.auto_id }}</span>
+        {% block actions %}
+            {% block apply %}
+                <a href="#" class="apply {% block classapply %}{% endblock %}" title="{% trans "Apply change" %}">
+                    <span class="fa fa-check-circle"></span>
+                </a>
+            {% endblock %}
+            {% block cancel %}
+                <a href="#" class="cancel {% block classcancel %}{% endblock %}" title="{% trans "Cancel change" %}">
+                    <span class="fa fa-times-circle"></span>
+                </a>
+            {% endblock %}
+        {% endblock %}
+    </form>
+{% endblock %}

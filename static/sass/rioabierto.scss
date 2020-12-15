@@ -1,0 +1,44 @@
+// Estilos para marca Rio Abierto
+
+#rioabierto {
+    .description {
+        padding: 40px 40px 0 135px;
+    }
+
+    .section-title {
+        padding: 40px 135px 0 40px;
+    }
+
+    .section-title,
+    .description {
+        @media #{$medium-and-down} {
+        padding: 5vh 135px;
+        }
+
+        @media #{$small-and-down} {
+        padding: 5vh 5vw;
+        }
+    }
+
+    .apoyos {
+        margin-left: 10px;
+        vertical-align: baseline;
+    }
+}
+
+.rioabierto-pub #main-header .nav-menu-button:hover {
+    background: rgba($color: black, $alpha: 0.2) !important;
+}
+
+// new subheader
+#subheader-rioabierto {
+  background: $rio-abierto-primary-color;
+  .submenu  {  
+    li, a {
+      color: white;
+    }
+    .nav-fill {
+      fill: white;      
+    }
+  }
+}

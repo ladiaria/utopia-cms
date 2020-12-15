@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block page_title %}Regalá la diaria{% endblock %}
+{% block body_class %}thedaily{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div>
+            <table style='table-layout: fixed'>
+                <h3>Regalá la diaria</h3>
+                <p>
+                    Completá con datos de las personas a las que quieras regalarle la diaria. Los contactaremos para coordinar y enviarle gratis la edición impresa durante una semana.<br>
+                    Gracias por ayudarnos a encontrar más gente que haga posible la existencia de la diaria.
+                </p>
+                <form method="post">{% csrf_token %}
+                <tr>
+                    <td style="width:5%">1.</td>
+                    <td>
+                        <input id="ref1_name" type="text" class="textinput textInput" name="ref1_name">
+                        <label for="ref1_name">Nombre</label>
+                    </td>
+                    <td>
+                        <input id="ref1_tel" type="text" class="textinput textInput" name="ref1_tel">
+                        <label for="ref1_tel">Teléfono</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width:5%">2.</td>
+                    <td>
+                        <input id="ref2_name" type="text" class="textinput textInput" name="ref2_name">
+                        <label for="ref2_name">Nombre</label>
+                    </td>
+                    <td>
+                        <input id="ref2_tel" type="text" class="textinput textInput" name="ref2_tel">
+                        <label for="ref2_tel">Teléfono</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width:5%">3.</td>
+                    <td>
+                        <input id="ref3_name" type="text" class="textinput textInput" name="ref3_name">
+                        <label for="ref3_name">Nombre</label>
+                    </td>
+                    <td>
+                        <input id="ref3_tel" type="text" class="textinput textInput" name="ref3_tel">
+                        <label for="ref3_tel">Telefono</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="submit" name="save" value="Enviar" class="ld-btn-default" id="submit-id-save">
+                    </td>
+                </tr>
+                </form>
+            </table>
+        </div>
+    </div>
+{% endblock %}

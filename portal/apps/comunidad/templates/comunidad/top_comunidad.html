@@ -1,0 +1,25 @@
+{% load core_tags %}
+
+<div class="wrapper_col">
+	<h2><a href="{% url 'comunidad' %}">Comunidad</a></h2>
+	{% for article in articles %}
+	<article class="art_{{article.top_position}}">
+		<header>
+			{% if article.article.get_keywords %}
+			<div class="keywords-style">{{ article.article.get_keywords }}</div>
+			{% endif %}
+			<h2>
+				<a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
+			</h2>
+			<p class="deck">{{ article.deck }}</p>
+		</header>
+		<span class="section">ARTÍCULO</span>
+		{% if article.section %}
+		<span class="section">Artílculo {{ article.section|upper }}</span>
+		{% endif %}
+		{% if not ignore_toolbar %}
+		<footer> {% render_toolbar_for article %} </footer>
+		{% endif %}
+	</article>
+	{% endfor %}
+</div>

@@ -1,0 +1,275 @@
+// Bottom notices / "Snackbars", used for paywall notices.
+
+$paddingDefault: 25px;
+$extraPadding: $paddingDefault + 20px;
+$minWidth: 1040px;
+
+@keyframes ld-slideDown {
+  0% {
+    transform: translate3d(-50%, $extraPadding, 0);
+  }
+
+  25% {
+    transform: translate3d(-50%, $paddingDefault, 0);
+  }
+
+  100% {
+    transform: translate3d(-50%, 100%, 0);
+  }
+}
+
+.ld-snackbar {
+  font-size: 16px;
+  text-align: center;
+  background-color: white;
+  bottom: 0;
+  color: white;
+  font-family: "Roboto", sans-serif;
+  left: 0;
+  position: fixed;
+  width: 99%;
+  z-index: 1010;
+  font-weight: 400;
+  box-shadow: rgba(0,0,0,0.16) 0 -2px 13px 2px;
+  overflow: hidden;
+  padding-top: 0;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+
+  -webkit-backface-visibility: hidden;
+
+  left: 50%;
+
+  border-bottom: 45px solid white;
+  transform: translate3d(-50%, $extraPadding, 0);
+
+  animation-duration: 400ms;
+  animation-name: ld-slideDown;
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(0.33, 0.07, 0, 0.98);
+
+  @media (min-width: $minWidth){
+    // Adds some extra height for dismiss effect (goes up a bit)
+    border-bottom: $extraPadding solid white;
+    background-color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    box-shadow: rgba(0,0,0,0.16) 0 -2px 13px 2px;
+    padding-top: 0;
+    max-width: 700px;
+  }
+
+
+  &--static{
+    position: static;
+    animation: none;
+    transform: none;
+    margin: 0 auto;
+    border-radius: 10px;
+    border-bottom: 0;
+    padding-bottom: $paddingDefault;
+    max-width: 90%;
+    margin-bottom: 90px;
+    box-shadow: rgba(0,0,0,0.16) 0 0 13px 2px;
+
+    @media (min-width: $minWidth){
+      max-width: 700px;
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .ld-snackbar__col{
+      padding-bottom: 40px;
+    }
+  }
+
+
+  &--narrow{
+
+    @media (min-width: $minWidth){
+      max-width: 700px;
+    }
+
+    .ld-snackbar__text{
+      max-width: 450px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+
+  &--active{
+    animation: none;
+  }
+
+  &__body{
+    padding: 0 $paddingDefault;
+    @media (min-width: $minWidth){
+      background-color: white;
+      color: #262626;
+    }
+
+    .container{
+      width: 100% !important;
+    }
+  }
+
+  &__block{
+    margin-bottom: 20px;
+
+    &:last-of-type{
+      margin-bottom: 0;
+    }
+  }
+
+  &__body-lg{
+    display: none;
+    @media (min-width: $minWidth){
+      display: block;
+    }
+  }
+
+  &__body-sm{
+    padding-top: $paddingDefault;
+    padding-bottom: $paddingDefault;
+
+
+    @media (min-width: $minWidth) {
+      display: none;
+    }
+  }
+
+  &__col{
+    padding: (60px - $paddingDefault) 20px 40px 20px !important;
+    margin: 0;
+    &--bordered{
+      border-left: 1px solid #dadada;
+    }
+  }
+
+
+  &__title{
+    background-color: $off-black;
+    text-align: center;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  &__cross{
+    display: none;
+    @include hide-text;
+  }
+
+  &__benefit {
+    margin-bottom: 25px;
+    font-size: 15px;
+  }
+
+  &__login-area{
+    color: $off-black;
+
+    a{
+      color: $off-black;
+      text-decoration: underline;
+    }
+    @media (min-width: $minWidth) {
+      color: $grey;
+      font-size: 16px;
+      padding: 5px 0;
+      a { color: $grey }
+    }
+  }
+
+  &__btn{
+    margin: 0 auto 10px auto;
+    max-width: 320px;
+    font-size: 18px !important;
+    min-width: 170px;
+
+    &--white.ld-snackbar__btn{
+      display: inline-block;
+    }
+  }
+
+  strong{
+    font-weight: 500;
+  }
+
+  &__close{
+    display: block;
+    text-align: center;
+    margin: 0 auto;
+    padding: 0;
+    text-decoration: none;
+    background: none !important;
+    outline: 0;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    border: none;
+    border-radius: 36px;
+    vertical-align: middle;
+    width: 36px;
+    height: 36px;
+
+    i{
+      line-height: 34px;
+      height: 36px;
+      vertical-align: middle;
+    }
+
+    @media (min-width: $minWidth){
+      right: 15px;
+      border: none;
+      i{
+        font-size: 32px;
+      }
+    }
+  }
+
+  .row{
+    margin-bottom: 0;
+  }
+  &--option {
+    margin: 25px 0 30px;
+  }
+  .btn.bordered {
+    font-size: 18px;
+    text-transform: uppercase;
+    padding: 14px 23px 13px;
+    line-height: 1;
+    height: auto;
+    border-color: $off-black !important;
+    color: $off-black !important;
+
+    &:hover {
+      color: white !important;
+    }
+  }
+
+
+  .desc {
+    color: $off-black;
+    font-family: "Roboto", sans-serif;
+    font-size: 16px;
+    margin-bottom: 15px;
+    margin-top: 15px;
+  }
+  .desc:first-child{
+    margin-top:0;
+  }
+}
+
+.ld-paywall-ending {
+    margin-bottom: 30vh;
+  }
+// Paywall
+#paywall {
+  &.card {
+    font-family: $sans !important;
+    background: $primary-color;
+    color: white;
+    text-align: center;
+    border: none;
+  }
+}

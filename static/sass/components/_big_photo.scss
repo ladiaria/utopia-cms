@@ -1,0 +1,65 @@
+.section-big-photo {
+  figure {
+    font-size: 0;
+  }
+}
+
+.section-big-photo--category figure {
+  background:none;
+}
+
+body.frontpage:not(.section-detail) .section-big-photo figcaption .container {
+  max-width: 700px;
+}
+
+.big-photo {
+  &__img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 12px;
+  }
+
+  &__caption {
+    text-align: center;
+  }
+
+  &__description {
+    margin-bottom: 6px;
+  }
+
+  &__icon-camera {
+    visibility: baseline;
+    width: 18px;
+    height: auto;
+    display: inline-block;
+    margin-right: 10px;
+  }
+}
+
+.section-big-photo,
+#home-section-fotografia {
+
+  .footer-section {
+    .ld-btn {
+
+      margin-right: 0;
+
+      @media (min-width: 365px) and (max-width:391px) {
+          margin-left: 10px;
+          margin-right: 10px;
+      }
+
+      + .ld-btn {
+        margin-top:20px;
+
+        @media (min-width: 392px) {
+          margin-left: 10px;
+          margin-top: 0;
+        }
+      }
+
+    }
+  }
+
+}

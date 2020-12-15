@@ -1,0 +1,48 @@
+{% load core_tags %}
+
+<div class="card-title">
+  <h2 class="card-title" aria-label="Lo más leído ">Lo más leído <span class="ico"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M16.85 6.85l1.44 1.44-4.88 4.88-3.29-3.29c-.39-.39-1.02-.39-1.41 0l-6 6.01c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L9.41 12l3.29 3.29c.39.39 1.02.39 1.41 0l5.59-5.58 1.44 1.44c.31.31.85.09.85-.35V6.5c.01-.28-.21-.5-.49-.5h-4.29c-.45 0-.67.54-.36.85z"/></svg></span></h2>
+</div>
+<div id="mas_vistos_seccion">
+  <ul class="tablist" role="tablist">
+    <li class="tab" role="tab"><a href="#ml_dia" title="Artículos más leidos el día de hoy" class="active">Hoy</a></li>
+    <li class="tab" role="tab"><a href="#ml_semana" title="Artículos más leidos de la semana">Semana</a></li>
+    <li class="tab" role="tab"><a href="#ml_mes" title="Artículos más leidos del mes">Mes</a></li>
+  </ul>
+  <!-- by day -->
+  <div class="card-content active" id="ml_dia" role="tabpanel">
+    <div class="row">
+      <div class="col s12 m12">
+        <ul>
+        {% for masv in masleidos_cover_daily %}
+          {% render_article_media with article=masv media=masv.home_display %}
+        {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!-- by week -->
+  <div class="card-content" id="ml_semana" role="tabpanel">
+    <div class="row">
+      <div class="col s12 m12">
+        <ul>
+        {% for masv in masleidos_cover_weekly %}
+          {% render_article_media with article=masv media=masv.home_display %}
+        {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!-- by month -->
+  <div class="card-content" id="ml_mes" role="tabpanel">
+    <div class="row">
+      <div class="col s12 m12">
+        <ul>
+        {% for masv in masleidos_cover_monthly %}
+          {% render_article_media with article=masv media=masv.home_display %}
+        {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,139 @@
+// Estilos para marca Lento
+
+.color-lento,
+a.color-lento {
+  color: $lento-primary-color;
+
+  &:hover {
+    color: lighten($lento-primary-color, 10%);
+  }
+}
+
+#subscribe-footer {
+    &.lento-pub {
+        background: $off-black;
+
+        .btn:hover {
+            background: $lento-primary-color;
+        }
+    }
+}
+
+.ld-fin {
+    .lento-pub & {
+        background-image: url(../img/fin-lento.svg);
+    }
+}
+
+// styles for lento publication
+
+.lento-pub {
+    a.lento {
+      color: $lento-primary-color;
+    }
+
+    .btn {
+      background-color: $lento-primary-color;
+      color: white;
+    }
+
+    .btn.bordered.white {
+      color: white !important;
+    }
+
+
+    .recordar {
+      &.selected {
+        color: $lento-secondary-color !important;
+      }
+    }
+
+    .btn.bordered {
+      border-color: $lento-primary-color !important;
+      color: $lento-primary-color !important;
+
+      &:hover {
+        background: $lento-primary-color !important;
+        color: white !important;
+        border-color: $lento-primary-color !important;
+      }
+
+      &.white {
+        border-color: white !important;
+      }
+    }
+
+    .section-title h2 {
+      background: $lento-primary-color !important;
+      color: white;
+    }
+
+
+
+    #portada.FW {
+      figure {
+        height: calc(100vh - 106px);
+      }
+    }
+    // Paywall
+    #paywall {
+      &.card {
+        background: $lento-primary-color;
+      }
+    }
+
+    a.journalist,
+    .article-date-author a {
+      color: $lento-primary-color;
+    }
+
+    .ld-snackbar .btn.bordered {
+      color: $off-black !important;
+      border-color: $off-black !important;
+
+      &:hover {
+        background: $off-black !important;
+        color: white !important;
+      }
+    }
+  }
+
+// new subheader
+#subheader-lento {
+  background: $lento-primary-color;
+  .submenu  {
+    li, a {
+      color: white;
+    }
+    .nav-fill {
+      fill: white;
+    }
+  }
+}
+
+// lento component in home
+.frontpage-section--lento {
+  background: $lento-primary-color;
+  padding-top: 40px;
+
+  .btn.bordered {
+    border-color: white;
+    color: white;
+
+    &:hover {
+      background-color: white !important;
+      color: $lento-primary-color;
+    }
+  }
+  .ld-card {
+    border-color: $lento-primary-color;
+  }
+}
+.frontpage-section-lento {
+  &__subtitle {
+    color: white;
+    margin: 8px 0 0;
+    font-weight: bold;
+    font-size: 18px;
+  }
+}

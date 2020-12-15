@@ -1,0 +1,121 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'favicon.ico' %}">
+
+    <title>Panel de estadísticas de usuarios</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
+
+    <!-- Boostrap table -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.css">
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/locale/bootstrap-table-es-ES.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/js/bootstrap-datepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker.min.css">
+    <script>
+      $(function(){
+        $(document).ready(function(){
+          $('#inner-content').html("<img style='top:20%;left:50%; position:absolute;' src='{% static 'images/loading.gif' %}'>");
+          $('#inner-content').load('/dashboard/table/articles/');
+        });
+        $('a.embed').click(function(){
+          $('#inner-content').html("<img style='top:20%;left:50%; position:absolute;' src='{% static 'images/loading.gif' %}'>");
+          $('#inner-content').load('/dashboard/table/' + this.id + '/');
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">{{ site.name }}</a>
+      <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="/admin/">Salir</a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="container-fluid">
+
+      <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+        <div class="sidebar-sticky">
+          <ul class="nav flex-column" id="sidebar" role="tablist">
+            <li class="nav-item">
+              <a class="embed nav-link" id="articles" data-toggle="tab" href="#" role="tab" aria-controls="score" aria-selected="true">
+                <span data-feather="file"></span>
+                Puntaje <span class="sr-only">(current)</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="embed nav-link" id="sections" data-toggle="tab" href="#" role="tab" aria-controls="sections" aria-selected="false">
+                <span data-feather="file"></span>
+                Secciones
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="embed nav-link" id="subscribers" data-toggle="tab" href="#" role="tab" aria-controls="subscribers" aria-selected="false">
+                <span data-feather="file"></span>
+                Visitas de suscriptores (artículos)
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="embed nav-link" id="subscribers_sections" data-toggle="tab" href="#" role="tab" aria-controls="subscribers_sections" aria-selected="false">
+                <span data-feather="file"></span>
+                Visitas de suscriptores (secciones)
+              </a>
+            </li>
+            {% if activity_rows %}
+            <li class="nav-item">
+              <a class="embed nav-link" id="activity" data-toggle="tab" href="#" role="tab" aria-controls="activity" aria-selected="false">
+                <span data-feather="users"></span>
+                Actividad
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="embed nav-link" id="activity_only_digital" data-toggle="tab" href="#" role="tab" aria-controls="activity" aria-selected="false">
+                <span data-feather="users"></span>
+                Actividad (sólo digitales)
+              </a>
+            </li>
+            {% endif %}
+            {% if is_financial %}
+              {# No financial options yet, but you can define yours in this included template defined in settings #}
+              {% if financial_extra_items_template %}
+                {% include financial_extra_items_template %}
+              {% endif %}
+            {% endif %}
+            <li class="nav-item">
+              <a class="embed nav-link" id="cards" data-toggle="tab" href="audio_statistics/" role="tab" aria-controls="cards" aria-selected="false">
+                <span data-feather="credit-card"></span>
+                Estadísticas de audio
+              </a>
+            </li>
+        </div>
+      </nav>
+
+      <main role="main" class="tab-content" id="myTabContent">
+        <div id="inner-content"></div>
+      </main>{# tab-content #}
+
+    </div>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+    <script>
+      feather.replace()
+    </script>
+
+  </body>
+</html>

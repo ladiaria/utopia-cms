@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}Validar{% endblock %}
+{% block body_class %}thedaily{% endblock %}
+
+{% block content %}
+    <h1>
+        Activá tu suscripción web
+    </h1>
+    <div class="row">
+        <p class="col-xs-6 col-sm-6 col-md-6" style="border-right: dotted 1px">
+            Si ya eres suscriptor de <em>la diaria</em> puedes registrarte aquí
+            con tus datos para activar tu suscripción Web para leer y participar en <em>{{ site.domain }}</em>.
+        </p>
+        <p class="col-xs-6 col-sm-6 col-md-6">
+            Si aún no eres suscriptor de <em>la diaria</em> podés
+            <a href="{% url 'subscribe' %}" class="btn strong">suscribirte</a> para tener acceso a todos
+            los beneficios del <em>{{ site.domain }}</em>.
+        </p>
+    </div>
+
+    {% crispy validar_form %}
+
+{% endblock %}

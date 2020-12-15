@@ -1,0 +1,378 @@
+{% spaceless %}
+{% load static inplace_edit core_tags homev3_tags adzone_tags compress %}
+{% endspaceless %}<!doctype html>
+{% block html %}
+<!-- Legacy browsers support  -->
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="es-UY"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="es-UY"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang="es-UY"> <![endif]-->
+<!-- End legacy browsers support  -->
+<html class="no-js" lang="es-UY">
+{% endblock %}
+  <head>
+    {% block head_first_content %}{% endblock %}
+    {% if not debug and GTM_CONTAINER_ID %}
+      <!-- Google Tag Manager -->
+      <script>
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','{{ GTM_CONTAINER_ID }}');
+      </script>
+      <!-- End Google Tag Manager -->
+    {% endif %}
+
+    <!-- Title and description -->
+    <title>{% block page_title %}{% endblock %}</title>
+    <meta name="description" content="{% block page_description %}{{ site_description }}{% endblock %}">
+    <!-- End Title and description -->
+
+    <!-- Meta tags base -->
+    <meta charset="utf-8">
+    {% block meta_viewport %}
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% endblock %}
+    <!-- End Meta tags base -->
+
+    <!-- RSS feed -->
+    <link rel="alternate" type="application/rss+xml" href="{{ URL_SCHEME }}://{{ site.domain }}{% url 'ultimos-articulos-rss' %}" />
+    <!-- End RSS feed -->
+
+    <!-- Robots -->
+    <meta name="robots" content="{% block robots %}{{ meta_robots_content }}{% endblock %}">
+    <!-- End Robots -->
+
+    <!-- Icons -->
+    {% if publication.slug in custom_icons_publications %}
+      <link rel="icon" href="{% static publication.icon %}">
+      <link rel="icon" type="image/png" href="{% static publication.icon_png %}">
+      <link rel="apple-touch-icon" sizes="180x180" href="{% static publication.apple_touch_icon_180 %}">
+    {% else %}
+      {% if default_pub.icon %}<link rel="icon" href="{% static default_pub.icon %}">{% endif %}
+      {% if default_pub.apple_touch_icon_512 %}
+        <link rel="apple-touch-icon" sizes="512x512" href="{% static default_pub.apple_touch_icon_512 %}">
+      {% endif %}
+      {% if default_pub.apple_touch_icon_192 %}
+        <link rel="apple-touch-icon" sizes="192x192" href="{% static default_pub.apple_touch_icon_192 %}">
+      {% endif %}
+      {% if default_pub.apple_touch_icon_180 %}
+        <link rel="apple-touch-icon" sizes="180x180" href="{% static default_pub.apple_touch_icon_180 %}">
+      {% endif %}
+      {% if default_pub.icon_png_32 %}
+        <link rel="icon" type="image/png" sizes="32x32" href="{% static default_pub.icon_png_32 %}">
+      {% endif %}
+      {% if default_pub.icon_png_16 %}
+        <link rel="icon" type="image/png" sizes="16x16" href="{% static default_pub.icon_png_16 %}">
+      {% endif %}
+    {% endif %}
+    <meta name="theme-color" content="#F2F2F2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="la diaria">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <!-- End Icons -->
+
+    {% ifequal category.slug 'elecciones' %}
+      <link href="https://fonts.googleapis.com/css?family=Poppins:400,400i,700" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css?family=Source+Serif+Pro:600" rel="stylesheet">
+    {% endifequal %}
+
+    <!-- CSS -->
+    <link type="text/x-scss" rel="stylesheet" href="{% static 'lightGallery/dist/css/lightgallery.css' %}">
+    {% compress css %}
+      <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+    {% endcompress %}
+
+    {% compress css %}
+      <link href="{% static 'sass/print.scss' %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
+    {% endcompress %}
+
+    {% if user.is_staff %}
+      {% compress css %}
+        <link href="{% static 'sass/admin.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+      {% endcompress %}
+    {% endif %}
+    <!-- End CSS -->
+
+    {% block meta_og_title %}
+      <!-- Open Graph (http://ogp.me) -->
+      <meta property="og:title" content="la diaria">
+    {% endblock %}
+
+    {% block meta %}
+      <meta property="og:type" content="website">
+      <meta property="og:title" content="la diaria">
+      <meta property="og:description" content="{{ site_description }}">
+      <meta property="og:locale" content="es_UY">
+      <meta property="og:site_name" content="la diaria">
+      <meta property="og:url" content="https://ladiaria.com.uy/">
+      {% if publication.slug in custom_icons_publications %}
+        <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static publication.open_graph_image %}">
+      {% elif default_pub.open_graph_image %}
+        <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}">
+      {% endif %}
+      <!-- End Open Graph (http://ogp.me) -->
+
+      <!-- Meta tags Twitter -->
+      <meta name="twitter:card" content="summary">
+      <meta name="twitter:site" content="@ladiaria">
+      <!-- End Meta tags Twitter -->
+    {% endblock %}
+
+    <!-- Schema (https://schema.org) -->
+    {% block json_ld %}
+      <script type='application/ld+json'>
+        {
+          "@context": "http://www.schema.org",
+          {% if journalist %}
+            "@type": "Person",
+            "name": "{{ journalist.name }}",
+            "worksFor": "https://ladiaria.com.uy",
+            "jobTitle": "{{ journalist.get_job_display }}"
+          {% else %}
+            "@type": "Organization",
+            "name": "la diaria",
+            "url": "https://ladiaria.com.uy/",
+            {% block json_ld_extra %}{% endblock %}
+            {% if publication.slug in custom_icons_publications %}
+              "logo": "{{ URL_SCHEME }}://{{ site.domain }}{% static publication.open_graph_image %}",
+            {% elif default_pub.open_graph_image %}
+              "logo": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}",
+            {% endif %}
+            "description": "{{ site_description }}",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Treinta y Tres 1479",
+              "addressLocality": "Montevideo",
+              "addressRegion": "Montevideo",
+              "postalCode": "11000",
+              "addressCountry": "Uruguay"
+            },
+            "email":"contacto@ladiaria.com.uy",
+            "telephone":"+59829000808",
+            "sameAs": [
+              "https://www.facebook.com/ladiaria",
+              "https://twitter.com/ladiaria",
+              "https://www.instagram.com/ladiaria",
+              "https://www.youtube.com/channel/UCu0rrtxKLExB_fNSAJ_SU9A",
+              "https://www.linkedin.com/company/ladiaria",
+              "https://soundcloud.com/ladiaria",
+              "https://es.wikipedia.org/wiki/La_Diaria"
+            ]
+          {% endif %}
+        }
+      </script>
+    {% endblock %}
+    <!-- End Schema (https://schema.org) -->
+
+    <!-- Legacy browsers support  -->
+    <!--[if lt IE 9]>
+      <script src="{% static 'js/vendor/html5shiv.min.js' %}"></script>
+    <![endif]-->
+    <!-- End legacy browsers support  -->
+
+    {% if not debug %}
+      {% if user.is_authenticated %}
+        <!-- User data -->
+        <script>
+          LDUser = {};
+          LDUser.id = {{ user.id }};
+          LDUser.subscriber = {{ is_subscriber|lower }};
+          LDUser.firstName = "{{ user.first_name }}";
+          LDUser.lastName = "{{ user.last_name }}";
+        </script>
+        <!-- End user data -->
+      {% endif %}
+    {% endif %}
+
+    {% compress css %}
+      {% block css %}{% endblock %}
+    {% endcompress %}
+
+   <!-- JavaScript -->
+    <script src="{% static 'js/vendor/jquery-3.4.1.min.js' %}"></script>
+    <script type="text/javascript">
+      $(function(){
+        $('.btn-close').click(function(){
+          var notification = $(this).parent().parent();
+          $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
+            notification.toggle();
+          });
+        });
+      });
+    </script>
+    {% block header_scripts %}{% endblock %}
+    <!-- End JavaScript -->
+
+  </head>
+  <body class="{% if user.is_authenticated %}logged-in{% endif %} {% if is_portada %}frontpage {% else %}interior {% endif %}{% block body_class %}{% endblock %} {{ publication.slug|default:DEFAULT_PUB }}-pub">
+    <a class="skip-main" href="#main-content">Saltar a contenido</a>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript>
+      <iframe src="https://www.googletagmanager.com/ns.html?id={{ GTM_CONTAINER_ID }}"
+              height="0" width="0" style="display:none;visibility:hidden"></iframe>
+    </noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <!-- Legacy browser alert -->
+    <!--[if lte IE 11]>
+      <p class="browserupgrade">El sitio web de la diaria no funciona apropiadamente en Internet Explorer. Para una experiencia óptima te recomendamos instalar un navegador moderno como <a href="https://www.mozilla.org/firefox">Firefox</a>, <a href="https://www.google.com/chrome">Chrome</a> o <a href="https://microsoft.com/edge">Edge</a>.</p>
+    <![endif]-->
+    <!-- End legacy browser alert -->
+
+    <!-- cabezal -->
+    {% block navbar %}
+      <header>
+        {% render_header %}
+      </header>
+    {% endblock %}
+
+    <!-- Main -->
+    {% block main_open %}<main class="main" id="main-content">{% endblock %}
+      {% if messages %}
+        <ul class="messages unstyled ld-messages">
+          {% for message in messages %}
+            <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
+              {{ message }}
+              <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <!-- /container -->
+
+      {% block page_header %}{% endblock %}
+      {% if user_form %}
+        <div class="profile-container">
+      {% elif not is_portada and not is_detail %}
+        <div class="container">
+      {% endif %}
+      {% block content_pre %}{% endblock %}
+      {% block content %}{% endblock %}
+      {% block content_pos %}{% endblock %}
+      {% if not is_portada and not is_detail %}
+        </div>
+      {% endif %}
+
+      {% block footer_block %}
+        <footer class="footer-portada">
+          {% include "footer.html" %}
+        </footer>
+      {% endblock footer_block %}
+
+      <!-- Modal Structure -->
+      <div id="nav-mobile" class="nav-mobile navbar-fixed">
+        <nav>
+          <div class="nav-wrapper">
+            <ul class="center row">
+              <li class="col s{{ mobile_nav_ths }}ths">
+                <a class="nav-menu-button" href="{% url 'home' %}">
+                  <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="#262626"/></svg>
+                  <span class="nav-mobile__icon-text">Portada</span>
+                </a>
+              </li>
+              <li class="col s{{ mobile_nav_ths }}ths">
+                {% if not is_detail %}
+                  <a class="nav-menu-button" href="{% url 'search' %}">
+                    <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="#262626"/></svg>
+                    <span class="nav-mobile__icon-text">Buscar</span>
+                  </a>
+                {% else %}
+                  <a class="nav-menu-button js-nav-menu__share" href="#">
+                    <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92 0-1.61-1.31-2.92-2.92-2.92z" fill="#262626"/></svg>
+                    <span class="nav-mobile__icon-text">Compartir</span>
+                  </a>
+                {% endif %}
+              </li>
+              <li class="col s{{ mobile_nav_ths }}ths">
+                <a class="nav-menu-button" href="{% url 'mas_leidos' %}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M20.114,7.042,21.88,8.808,15.9,14.792l-4.034-4.034a1.221,1.221,0,0,0-1.729,0L2.776,18.127a1.223,1.223,0,0,0,1.729,1.729l6.487-6.5,4.034,4.034a1.221,1.221,0,0,0,1.729,0l6.854-6.842,1.766,1.766a.612.612,0,0,0,1.042-.429V6.613a.59.59,0,0,0-.6-.613h-5.26a.613.613,0,0,0-.441,1.042Z" transform="translate(-2.417 -1.19)" fill="#262626"/></svg>
+                  <span class="nav-mobile__icon-text">Lo más leído</span>
+                </a>
+              </li>
+              {% if MOBILE_NAV_EXTRA_TEMPLATE %}
+                {% include MOBILE_NAV_EXTRA_TEMPLATE %}
+              {% endif %}
+              {% if MENU_LATEST_ARTICLE_SECTION_SLUG %}
+                <li class="col s{{ mobile_nav_ths }}ths">
+                  <a class="nav-menu-button" href="{% url 'section-latest-article' section_slug=MENU_LATEST_ARTICLE_SECTION_SLUG %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M3,17.46V20.5a.5.5,0,0,0,.5.5H6.54a.469.469,0,0,0,.35-.15L17.81,9.94,14.06,6.19,3.15,17.1a.491.491,0,0,0-.15.36ZM20.71,7.04a1,1,0,0,0,0-1.41L18.37,3.29a1,1,0,0,0-1.41,0L15.13,5.12l3.75,3.75,1.83-1.83Z" fill="#262626"/></svg>
+                    <span class="nav-mobile__icon-text">{{ MENU_LATEST_ARTICLE_LINK_TEXT_S }}</span>
+                  </a>
+                </li>
+              {% endif %}
+              <li class="col s{{ mobile_nav_ths }}ths">
+                <a href="#" class="nav-menu-button right nav-menu-button-toggle js-ld-main-menu-toggle">
+                  <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 18h16c.55 0 1-.45 1-1s-.45-1-1-1H4c-.55 0-1 .45-1 1s.45 1 1 1zm0-5h16c.55 0 1-.45 1-1s-.45-1-1-1H4c-.55 0-1 .45-1 1s.45 1 1 1zM3 7c0 .55.45 1 1 1h16c.55 0 1-.45 1-1s-.45-1-1-1H4c-.55 0-1 .45-1 1z" fill="#262626"/></svg>
+                  <span class="nav-mobile__icon-text">Menú</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+
+      <div id="alert_placeholder"></div>
+
+      <script src="{% static 'jquery_lazyload/lazyload.min.js' %}"></script>
+
+      <script src="{% static 'materialize/js/initial.js' %}"></script>
+      <script src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
+      <script src="{% static 'materialize/js/animation.js' %}"></script>
+      <script src="{% static 'materialize/js/velocity.min.js' %}"></script>
+      <script src="{% static 'materialize/js/hammer.min.js' %}"></script>
+      <script src="{% static 'materialize/js/jquery.hammer.js' %}"></script>
+      <script src="{% static 'materialize/js/global.js' %}"></script>
+      <script src="{% static 'materialize/js/dropdown.js' %}"></script>
+      <script src="{% static 'materialize/js/modal.js' %}"></script>
+      <script src="{% static 'materialize/js/materialbox.js' %}"></script>
+      <script src="{% static 'materialize/js/tabs.js' %}"></script>
+      <script src="{% static 'materialize/js/tooltip.js' %}"></script>
+      <script src="{% static 'materialize/js/toasts.js' %}"></script>
+      <script src="{% static 'materialize/js/forms.js' %}"></script>
+      <script src="{% static 'materialize/js/slider.js' %}"></script>
+      <script src="{% static 'materialize/js/cards.js' %}"></script>
+      <script src="{% static 'materialize/js/buttons.js' %}"></script>
+      <script src="{% static 'materialize/js/transitions.js' %}"></script>
+      <script src="{% static 'materialize/js/date_picker/picker.js' %}"></script>
+      <script src="{% static 'materialize/js/date_picker/picker.date.js' %}"></script>
+      <script src="{% static 'materialize/js/tapTarget.js' %}"></script>
+      <script src="{% static 'materialize/js/collapsible.js' %}"></script>
+      <script src="{% static 'materialize/js/scrollspy.js' %}"></script>
+      <script src="{% static 'materialize/js/pushpin.js' %}"></script>
+
+      <!-- JS ladiaria.uy -->
+      <script src="{% static 'js/ld.js' %}"></script>
+      <script src="{% static 'js/vendor/jquery.matchHeight.js' %}" ></script>
+      <script src="{% static 'js/resizeSubnav.js' %}" ></script>
+
+      {# Modernizr - Detect CSS Grid #}
+      <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
+
+      {# cookie (for modal popup) #}
+      <script src="{% static 'js/vendor/js.cookie.js' %}"></script>
+
+      {# picturefill #}
+      <script>
+        // Picture element HTML5 shiv
+        document.createElement("picture");
+      </script>
+      <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
+
+      {# new universal image gallery #}
+      <script src="{% static 'lightGallery/src/js/lightgallery.js' %}"></script>
+      <script src="{% static 'lightGallery/modules/lg-pager.js' %}"></script>
+      <script src="{% static 'lightGallery/modules/lg-video.js' %}"></script>
+      <script src="{% static 'lightGallery/modules/lg-ladiaria.js' %}"></script>
+
+      {% comment "bottom subscribe popover temporarely disabled" %}
+        {% if not user.is_authenticated %}
+          <script src="{% static 'js/ld-footer-subscribe.js' %}"></script>
+        {% endif %}
+      {% endcomment %}
+
+      {% block javascript %}{% endblock %}
+      {% block footer_scripts %}{% endblock %}
+    {% block main_close %}</main>{% endblock %}
+  </body>
+</html>

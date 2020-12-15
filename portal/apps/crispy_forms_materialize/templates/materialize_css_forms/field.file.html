@@ -1,0 +1,27 @@
+{% load crispy_forms_field %}
+
+{% if field.is_hidden %}
+    {{ field }}
+{% else %}
+    <div id="div_{{ field.auto_id }}" class="file-field input-field col s6{% if field.errors and form_show_errors %} error{% endif %}{% if field|is_checkbox %} checkbox{% endif %}{% if field.css_classes %} {{ field.css_classes }}{% endif %}">{% spaceless %}
+
+        <input class="file-path validate" type="text"/>
+        <div class="btn">
+            <span>{{ field.label }}</span>
+            {% crispy_field field %}
+        </div>
+
+        {% if form_show_errors %}
+            {% for error in field.errors %}
+                <small id="error_{{ forloop.counter }}_{{ field.auto_id }}" class="error red-text {% if not forloop.last %}compact{% endif %}">
+                    {{ error }}
+                </small>
+            {% endfor %}
+        {% endif %}
+
+        {% if field.help_text %}
+            <div id="hint_{{ field.auto_id }}" class="hint grey-text lighten-1">{{ field.help_text|safe }}</div>
+        {% endif %}
+
+    {% endspaceless %}</div>
+{% endif %}

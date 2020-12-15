@@ -1,0 +1,71 @@
+// Estilos para marca Garra
+
+// Grilla de Garra en la portada.
+
+.grid-garra-home {
+    &__logo {
+      img {
+        width: 100%;
+        max-width: 270px;
+      }
+      margin-bottom: 24px;
+    }
+  }
+
+.frontpage-section--garra {
+    background-color: $garra-primary-color;
+    padding-top: 40px;
+
+    .ld-card {
+        border: none;
+    }
+
+    .btn.bordered,
+    .bordered.btn-large {
+        border-color: #000000;
+        color: #000000;
+
+        &:hover {
+        color: white;
+        background-color: #000000 !important;
+        }
+    }
+}
+
+.frontpage-section-garra {
+    &__logo {
+      width: 127px;
+      height: 44px;
+      opacity: 1;
+      transition: .2s ease-out;
+
+      &:hover {
+        opacity: .65;
+        transition: .2s ease-out;
+      }
+    }
+
+    &__cobertura {
+      display: block;
+      margin: 0 auto;
+      margin-bottom: 30px;
+      max-width: 213px;
+
+      @media (min-width: 850px) {
+        float: left;
+        padding-top: 12px;
+      }
+    }
+  }
+
+// new subheader
+#subheader-garra {
+  background: $garra-primary-color;
+
+    .submenu  {
+        a:hover {
+        color: $off-black;
+        }
+
+    }
+}

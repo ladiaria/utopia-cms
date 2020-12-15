@@ -1,0 +1,103 @@
+// Iconos
+$ladiaria-font-path: "/static/fonts/ladiaria" !default;
+
+$icon-portada: "\e88a";
+$icon-compartir: "\e80d";
+$icon-trending_up: "\e8e5";
+$icon-ahora: "\e3e7";
+$icon-search: "\e8b6";
+$icon-email: "\e0be";
+$icon-expand_more: "\e5cf";
+$icon-turned_in_not: "\e8e7";
+$icon-ig: "\e904";
+$icon-tw: "\e905";
+$icon-fb: "\e906";
+$icon-wa: "\e900";
+
+// Icons
+
+i.ld-icons, i.material-icons {
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  vertical-align: text-bottom;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  // for some mobile phones
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'liga';
+}
+
+i.material-icons {
+  font-family: "Material Icons" !important;
+}
+
+.icon-portada {
+  &:before {
+    content: $icon-portada;
+  }
+}
+.icon-compartir {
+  &:before {
+    content: $icon-compartir;
+  }
+}
+.icon-lo_mas_leido {
+  &:before {
+    content: $icon-trending_up;
+  }
+}
+.icon-ahora {
+  &:before {
+    content: $icon-ahora;
+  }
+}
+.icon-search {
+  &:before {
+    content: $icon-search;
+  }
+}
+.icon-email {
+  &:before {
+    content: $icon-email;
+  }
+}
+.icon-marcar {
+  &:before {
+    content: $icon-turned_in_not;
+  }
+}
+.icon-expand_more {
+  &:before {
+    content: $icon-expand_more;
+  }
+}
+
+// sociales
+
+.icon-ig {
+  &:before {
+    content: $icon-ig;
+  }
+}
+.icon-tw {
+  &:before {
+    content: $icon-tw;
+  }
+}
+.icon-fb {
+  &:before {
+    content: $icon-fb;
+  }
+}
+.icon-wa {
+  &:before {
+    content: $icon-wa;
+  }
+}

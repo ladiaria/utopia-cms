@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}Registrarse{% endblock %}
+{% block body_class %}thedaily{% endblock %}
+
+{% block content %}
+    <h1>
+        Registrate en <em>{{ site.domain }}</em>
+    </h1>
+    <p>
+        Si ya eres suscriptor de <em>la diaria</em> edición Papel podes <a href="{% url 'account-signup' %}" class="btn">validar tu suscripción</a>
+        con tus datos para crear una cuenta en <em>{{ site.domain }}</em>.
+    </p>
+    <p>
+        Si aún no eres suscriptor de <em>la diaria</em> podés
+        <a href="{% url 'subscribe' %}">suscribirte</a> para tener acceso a todos
+        los beneficios del <em>{{ site.domain }}</em>.
+    </p>
+    <form action="" method="post">
+        <fieldset>
+            <legend>Datos de suscriptor</legend>
+            {% crispy form %}
+            <p>
+                (*) Estos campos deben ser completados tal como figuran en la etiqueta del diario impreso.
+            </p>
+            <p>
+                (**) Ingrese nuevamente la misma contraseña para verificación.
+            </p>
+            <p>
+                <button class="submit" type="submit">Enviar</button>
+            </p>
+        </fieldset>
+    </form>
+{% endblock %}

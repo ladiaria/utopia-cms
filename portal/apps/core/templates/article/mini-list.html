@@ -1,0 +1,28 @@
+{% load core_tags ldml %}
+<article class="{% if article.photo.extended.is_portrait %}portrait {% endif %}{% ifequal article.media "I" %}{% ifnotequal article.photo None %} has_foto{% endifnotequal %}{% endifequal %}">
+  {% if article.photo %}
+  <figure>
+        <a href="{{ article.get_absolute_url }}" title="{{ article.photo.caption }} {{ article.photo.extended.type_verbose }}: {{ article.photo.get_byline }}" class="related_thumb"><img rel="tooltip" src="{{ article.photo.get_article_thumb_url }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% endif %} {{ photo.extended.type_verbose }}: {{ photo.get_byline }}"></a>
+  </figure>
+  {% endif %}
+  <header>
+      {% if article.date_published %}
+          {% if article.edition %}
+            <a href="{{ article.edition.get_absolute_url }}" class="date"> {{ article.date_published|date:"l d \• N \• y"|upper }}</a>
+          {% else %}
+          <span class="date">{{ article.date_published|date:"j.n.y" }}</span>
+        {% endif %}
+      {% endif %}
+      <div class="deck">
+        {% if article.get_keywords %}
+        <div class="keywords-style">{{ article.keywords }}</div>
+        {% endif %}
+      </div>
+      <p class="art_small_title"><a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|removetags:"p" }}</a></p>
+  </header>
+  {% if not ignore_toolbar %}
+  <footer class="navbar toolbar small">
+      {% render_toolbar_for article %}
+  </footer>
+  {% endif %}
+</article>

@@ -1,0 +1,10 @@
+<section class="pelicula_lead col-xs-4 col-sm-4 col-md-4">
+  <h1><a href="{{ pelicula.get_absolute_url }}" alt="Ver detalles de \"{{ pelicula }}\">{{ pelicula }}</a></h1>
+  <a href="{{ pelicula.get_absolute_url }}" class="poster"><img src="/media/{{ pelicula.poster }}" alt="{{ pelicula }}" /></a>
+    <p>{{ pelicula.description }}</p>
+  <footer>
+    {% with pelicula as evento %}
+      {% include "comunidad/evento_toolbar.html" %}
+    {% endwith %}
+  </footer>
+</section>

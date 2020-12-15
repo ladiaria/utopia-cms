@@ -1,0 +1,7 @@
+{{ value }}
+{% if field %}
+    {% for script in field.field.widget.media.render_js %}
+        {{ script|safe }}
+    {% endfor %}
+{% endif %}
+

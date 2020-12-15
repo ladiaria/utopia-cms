@@ -1,0 +1,34 @@
+{% load core_tags %}
+<div class="inline-image-wrap article_body_image-{{ display }}">
+  <figure class="principal">
+    <picture class="materialboxed">
+      <!--[if IE 9]><video style="display: none;"><![endif]-->
+      {% if display == "FW" %}
+      <source srcset="{{ image.get_fullscreen_url }}" media="(min-width: 1200px)">
+      <source srcset="{{ image.get_1200w_url }}" media="(min-width: 1000px)">
+      <source srcset="{{ image.get_900w_url }}" media="(min-width: 701px)">
+      <source srcset="{{ image.get_700w_url }}" media="(min-width: 260px)">
+      <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
+      {% elif display == "MD" %}
+      <source srcset="{{ image.get_1192w_url }}" media="(min-width: 901px)">
+      <source srcset="{{ image.get_900w_url }}" media="(min-width: 701px)">
+      <source srcset="{{ image.get_700w_url }}" media="(min-width: 260px)">
+      <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
+      {% elif display == "BG" %}
+      <source srcset="{{ image.get_1200w_url }}" media="(min-width: 701px)">
+      <source srcset="{{ image.get_700w_url }}" media="(min-width: 260px)">
+      <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
+      {% endif %}
+      <!--[if IE 9]></video><![endif]-->
+      <img class="responsive-img{% if image.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
+           data-caption="{% if image.caption %}{{ image.caption }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+           alt="{% if image.caption %}{{ image.caption }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}" />
+    </picture>
+    {% if image.caption or image.photographer %}
+    <figcaption class="ld-caption">{% if image.caption %}<p>{{ image.caption }}</p>{% endif %}
+    {% if image.photographer %}<p>{{ image.type_verbose }}: {{ image.photographer.name }}</p>{% endif %}</figcaption>
+    {% endif %}
+
+    </figure>
+</div>
+

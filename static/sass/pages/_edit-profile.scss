@@ -1,0 +1,209 @@
+// edit profile page
+
+.ld-profile-edit {
+
+    .ld-block {
+      margin:0 0 100px;
+
+    }
+    &__link-low {
+      color: $off-black;
+      text-decoration: underline;
+    }
+
+    label {
+      color: $off-black;
+      font-size: 16px;
+
+    }
+
+
+    .section.scrollspy {
+      padding: 0;
+      margin-bottom: 150px;
+    }
+    #suscripciones {
+      margin-top: 150px;
+    }
+    #datos {
+      margin-bottom: 30px;
+      margin-top: 70px;
+
+      fieldset {
+        input,
+        .select-wrapper  {
+          max-width: 400px;
+        }
+        .input-field.col label {
+          left: 0;
+        }
+      }
+      #div_id_province {
+        margin: 20px 0 20px;
+
+        label {
+          top:-15px;
+          font-size: 0.8rem;
+        }
+      }
+    }
+    #ld-comunicaciones{
+        margin-bottom: 40px;
+    }
+    .ld-section-newsletters {
+        margin-bottom: 0;
+
+        .item-newsletter {
+            .ld-caption {
+                margin: 0;
+            }
+
+            .ld-title-second {
+                margin-bottom: 0;
+                position: relative;
+                top:-3px;
+            }
+
+
+
+        }
+      .submit {
+          padding-top: 40px;
+      }
+    }
+    .profile-check {
+        label {
+            color: $off-black;
+            font-size: 16px;
+            height: auto;
+            padding:25px 10px 25px 40px;
+            display: block;
+            transition: background 0.2s ease-in-out;
+            border-radius: 10px;
+
+            &:hover {
+                background:rgba($color: #000000, $alpha: 0.04);
+            }
+        }
+        [type="checkbox"].filled-in:not(:checked) + label:before,
+        [type="checkbox"].filled-in:checked + label:before {
+            top:25px;
+            left: 11px;
+        }
+        [type="checkbox"].filled-in:checked + label:after,
+        [type="checkbox"].filled-in:not(:checked) + label:after
+        {
+            top:25px;
+            left: 10px;
+        }
+
+
+    }
+    #comunidad {
+        margin-top: 150px;
+    }
+    #edit-profile-form {
+        margin-bottom: 150px;
+    }
+
+
+
+    .profile-container {
+      &:after {
+        content:"";
+        display: block;
+        clear: both;
+      }
+    }
+    .user-form {
+      width: 90%;
+      margin: 0 auto;
+
+      @media (min-width:620px) {
+        width: 570px;
+        float: left;
+        margin-left: calc(50% - 285px) ;
+      }
+    }
+
+    .table-col {
+      min-width: 165px;
+      float: left;
+      margin-left: 50px;
+      padding-top: 70px;
+
+      @media (min-width:1160px) {
+        margin-left: 80px;
+      }
+    }
+
+    .table-title {
+       text-transform: uppercase;
+       font-size: 16px;
+       display: block;
+       padding-bottom: 10px;
+    }
+
+
+
+  .ld-profile-row {
+    margin-bottom: 60px;
+    padding:0;
+
+    .col {
+      padding: 0;
+
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .ld-btn {
+      margin-top: 20px;
+      text-decoration: none !important;
+    }
+  }
+  .alert-success {
+      position: fixed;
+      width: 100%;
+      z-index: 1;
+  }
+}
+
+// navigation
+.table-of-contents {
+    position: relative;
+      padding: 0;
+      margin: 0;
+
+    &.fixed {
+        position: fixed;
+      }
+
+    li {
+      padding: 0;
+      margin: 0;
+    }
+    a {
+      display: inline-block;
+      font-weight: 300;
+      color: $off-black;
+      padding: 8px 0 8px 16px;
+      line-height: 1.5rem;
+      letter-spacing: .4;
+      display: inline-block;
+      border-left: 2px solid $grey-1;
+      outline: none;
+
+      &:hover {
+        color: lighten($off-black, 20%);
+        border-left-color: $off-black;
+      }
+      &.active {
+        font-weight: 500;
+        border-left-color: $off-black;
+      }
+    }
+  }
+

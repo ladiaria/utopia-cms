@@ -1,0 +1,5 @@
+{{ contribution.user.get_full_name }} ha contribuído enviando una noticia. Puede verla clickeando el siguiente enlace:
+    https://{{ site.domain }}{{ contribution.get_absolute_url }}
+
+--
+http://{{ site.domain }}/

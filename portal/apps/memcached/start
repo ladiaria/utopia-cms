@@ -1,0 +1,6 @@
+#!/bin/bash
+# run memcached *if* its not already running
+COUNT=$(ps -u $USER -o command | grep -c '[/]usr/local/bin/memcached')
+if [ $COUNT -eq 0 ]; then
+    /usr/local/bin/memcached -p 10929 -d -l 127.0.0.1 -m 40
+fi

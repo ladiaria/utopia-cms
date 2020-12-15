@@ -1,0 +1,9 @@
+{% load thumbnail core_tags %}
+    <a href="{{ edition.get_absolute_url }}" title="{{ edition.date_published|date:"l j \d\e F \d\e Y"|capfirst }}">{{ edition.date_published|date:"j" }}</a>
+{% if edition.cover %}
+    {% thumbnail edition.cover "60" as im %}
+    <a href="{{ edition.get_absolute_url }}" title="{{ edition.date_published|date:"l j \d\e F \d\e Y"|capfirst }}">
+      <img src="{{ im.path }}" alt=""/>
+    </a>
+    {% endthumbnail %}
+{% endif %}

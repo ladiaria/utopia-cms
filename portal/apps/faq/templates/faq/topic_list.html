@@ -1,0 +1,15 @@
+{% extends "faq/base.html" %}
+
+
+{% block title %}Preguntas frecuentes{% endblock %}
+
+{% block content2 %}
+
+<h2>Categorías:</h2>
+
+<div>
+    {% for topic in topic_list %}
+    <p><a href="{{ topic.get_absolute_url }}">- {{ topic.title }}</a></p>
+    {% endfor %}
+</div>
+{% endblock %}

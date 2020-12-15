@@ -1,0 +1,108 @@
+.ld-modal{
+  background: white;
+  border-radius: 13px;
+  z-index: 1015 !important;
+  border-right: 10px solid white;
+  width: 95%;
+  max-height: 95%;
+
+  @media (min-width: 769px){
+    width: 760px;
+    max-height: 80%;
+  }
+
+  &__close{
+    appearance: none;
+    position: absolute;
+    padding: 12px;
+    top: 14px;
+    right: 12px;
+    cursor: pointer;
+    font-size: 20px;
+    color: #262626;
+    border: none;
+    background: none;
+    outline: 0;
+    line-height: 1;
+    text-align: right;
+    margin: 0;
+    padding: 12px;
+    vertical-align: top;
+  }
+}
+
+.modal-overlay{
+  z-index: 1010 !important;
+  background: rgba(0, 0, 0, .6);
+}
+
+.ld-modal-register{
+
+  &__list{
+    margin: 0 auto 25px auto;
+    text-align: left;
+    max-width: 360px;
+    li{
+      list-style: none;
+      background-image: url(../img/icon-tick.svg);
+      background-size: 18px;
+      background-repeat: no-repeat;
+      background-position: center left;
+      padding-left: 28px;
+    }
+  }
+
+  &__buttons{
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  &__btn{
+    transition: .1s ease-out;
+    border-radius: 10px;
+    box-shadow: rgba(#000000, .29) 0 4px 12px;
+    background: white;
+    font-size: 18px;
+    padding: 12px 12px 12px 50px;
+    display: block;
+    margin-bottom: 28px;
+    width: 100%;
+    background-position: center left 12px;
+    background-repeat: no-repeat;
+    background-size: 38px;
+    text-align: left;
+    border: none;
+    outline: 0;
+
+    &--google{
+      background-image: url(../img/icon-google.svg);
+    }
+
+    &--facebook{
+      background-image: url(../img/ladiaria.png);
+    }
+
+    &--email{
+      background-image: url(../img/icon-email.svg);
+      background-size: 27px;
+    }
+
+    &:last-child{
+      margin-bottom: 0;
+    }
+
+    &:hover{
+      transition: .1s ease-out;
+      box-shadow: rgba(#000000, .29) 0 4px 6px;
+      transform: translateY(1px);
+    }
+
+    &:active{
+      transition: .1s ease-out;
+      transform: translateY(1px);
+      box-shadow: rgba(#000000, .29) -1px 0px 3px;
+    }
+  }
+
+
+}

@@ -1,0 +1,50 @@
+{% extends "cartelera/vivo_base.html" %}
+
+{% block page_title %}{{ site.name }} eventos{% endblock %}
+
+{% block content %}
+
+    {% if event %}
+
+        {% if event.is_free or is_subscriber_any %}
+
+            <!-- Caso 1: transmitiendo en vivo / free event, suscriptor logueado -->
+            {% include 'cartelera/live_embed_event.html' %}
+            <!-- fin caso 1 -->
+
+        {% elif user.is_authenticated %}
+
+            <!-- Caso 2: transmitiendo en vivo / private event, logueado no suscriptor -->
+            {% include 'cartelera/live_embed_event_private.html' %}
+            <!-- fin caso 2 -->
+
+        {% else %}
+
+            <!-- Caso 3: transmitiendo en vivo / private event, no logueados -->
+            {% include 'cartelera/live_embed_event_anon.html' %}
+            <!-- fin caso 3 -->
+
+        {% endif %}
+
+    {% else %}
+
+        <!-- Caso 4: no transmitiendo / todos los usuarios -->
+        <section class="section-live">
+            <div class="container">
+                <div class="no-transmision align-center">
+                    <h1 class="section-live__title align-center">En este momento no estamos transmitiendo</h1>
+                    <p>Revisá la agenda de eventos y agendate los que te interesen.</p>
+                </div>
+                <div class="section-live__actions align-center">
+                    <a href="{{ events_external_url }}" class="ld-btn btn bordered">Ver agenda de eventos</a>
+                </div>
+             </div>
+            <div class="section-live__footer align-center">
+                <a href="{% url 'home' %}" class="home-link">Ir a la portada de {{ site.name }}</a>
+            </div>
+        </section>
+        <!-- fin caso 4 -->
+
+    {% endif %}
+
+{% endblock %}

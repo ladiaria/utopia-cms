@@ -1,0 +1,12 @@
+[submodule "static/materialize"]
+	path = static/materialize
+	url = https://github.com/Dogfalo/materialize.git
+[submodule "static/jquery_lazyload"]
+	path = static/jquery_lazyload
+	url = https://github.com/tuupola/jquery_lazyload.git
+[submodule "static/typi"]
+	path = static/typi
+	url = https://github.com/zellwk/typi.git
+[submodule "static/js/autocomplete"]
+	path = static/js/autocomplete
+	url = https://github.com/dyve/jquery-autocomplete

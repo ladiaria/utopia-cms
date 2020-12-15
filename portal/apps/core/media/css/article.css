@@ -1,0 +1,89 @@
+body.article #article {
+}
+#reportar {
+}
+body.article h1 {
+    margin-top:24px;
+}
+body.article div.extension h2, body.article div.fullwidthextension h2 {
+    font-size:1.4em;
+}
+body.article h2 {
+    font-size:1.2em;
+}
+body.article div.caption {
+    color:#666;
+    font-size:0.9em;
+    text-align:right;
+}
+body.article #body p {
+    font-size:1.1em;
+    line-height:1.3em;
+}
+body.article p.deck {
+    font-size:1.2em;
+}
+body.article p.lead {
+    color:#292929;
+    font-family:georgia,"times new roman",times,serif;
+}
+body.article p.deck, body.article p.lead {
+    font-size:1.1em;
+    line-height:1.3em;
+}
+body.article .block #gallery li {
+    text-align:center;
+}
+body.article #article #gallery {
+    padding-bottom:40px;
+}
+body.article #article #gallery li {
+    height:90px;
+    line-height:90px;
+    margin:0 12px;
+    text-align:center;
+}
+body.article #article #gallery li img {
+    vertical-align:middle;
+}
+.block .related {
+    background:transparent url(../../img/dotted.gif) repeat-x left bottom;
+    padding-bottom:12px;
+}
+.block .headline {
+    clear:both;
+}
+body.article div.extension, body.article div.fullwidthextension {
+    background-color:#EFF4FA;
+    border:2px solid #DDE9F7;
+    clear:right;
+    float:right;
+    margin:24px 0;
+    padding:12px;
+}
+body.article div.extension {
+    margin:24px 0 24px 24px;
+    width:204px;
+}
+body.article div.byline {
+    text-align:right;
+}
+body.article div.banner {
+    margin:24px auto;
+}
+body.article div.subscribe {
+    margin-top:24px;
+}
+/* Icono de comentario en la home */
+div.docomment {
+    background:white url(../../img/discussion-bg.jpg) no-repeat 55px top;
+    font-size:0.8em;
+    height:32px;
+    min-height:32px;
+}
+div.docomment span.docommentmsg {
+    margin-right:35px;
+    text-align:right;
+}
+div.docomment span.docommentcount {
+}

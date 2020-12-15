@@ -1,0 +1,7 @@
+{{ user.get_full_name|capfirst }} te invita a participar de la comunidad de La Diaria como Suscriptor durante un mes.
+
+Para activar tu suscripción hace click en el siguiente link y sigue los pasos.
+
+{{ signup_url }}
+
+Atte. La Diaria

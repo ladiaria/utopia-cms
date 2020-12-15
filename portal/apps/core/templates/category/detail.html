@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% load core_tags homev3_tags static ldml %}
+
+{% block page_title %}Noticias de {{ category.name }}{% endblock %}
+
+{% block meta_og_title %}
+  <!-- Open Graph (http://ogp.me) -->
+  <meta property="og:title" content="Noticias de {{ category.name }}" />
+{% endblock %}
+
+{% block body_class %}section-detail{% endblock %}
+
+{% block page_header %}
+
+  <div id="bn-module"></div>
+
+  <div class="container container--wide">
+    <div class="section-detail__head">
+      <h1 class="section-detail__title">{{ category.name|capfirst }}</h1>
+      <div class="section-detail__sub-cats">
+        <ul class="section-detail__sub-cats-list">
+          {% for section in category.section_set.all %}
+            {# useful if a submenu should be rendered #}
+            {% if section not in inner_sections %}
+              <li><a class="section-detail__header-sub-cat" href="{{ section.get_absolute_url }}">
+                {{ section.name_in_category_menu|default:section.name }}
+              </a></li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block content %}
+
+  <div class="container container--wide">
+
+    <section class="ld-grid-main ld-grid-main--two-cols">
+
+      <div class="ld-grid-area area-main">
+
+        <div class="ld-card ld-card--big">
+          {% render_toolbar_for cover_article %}
+          {% block image %}
+            {% if cover_article.photo %}
+              <a href="{{ cover_article.get_absolute_url }}">
+                <figure>
+                  <picture>
+                    <source srcset="{{ cover_article.photo.get_1200w_url }}" media="(min-width: 700px)">
+                    <source srcset="{{ cover_article.photo.get_700w_url }}" media="(min-width: 0)">
+                    <img class="ld-card__img lazyload" title="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}" alt="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}">
+                  </picture>
+                </figure>
+              </a>
+            {% endif %}
+          {% endblock %}
+          <div class="ld-card__body">
+            <h3 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
+              <a href="{{ cover_article.get_absolute_url }}">{{ cover_article.headline|ldmarkup:cover_article.id|removetags:'p' }}</a>
+            </h3>
+            {% if cover_article.home_lead or cover_article.lead %}
+              <div class="ld-card__intro">
+                {{ cover_article.home_lead|default:cover_article.lead|ldmarkup:cover_article.id|removetags:'p' }}
+              </div>
+            {% endif %}
+
+            <h4 class="ld-card__byline">
+              {% if cover_article.has_byline %}
+                {% for author in cover_article.get_authors %}
+                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                en
+              {% endif %}
+              {% if cover_article.section %}
+                <a href="{{ cover_article.section.get_absolute_url }}">{{ cover_article.section }}</a>
+              {% endif %}
+            </h4>
+          </div>
+        </div>
+      </div>
+
+      <div class="ld-grid-area area-third">
+
+        {% for a in destacados|slice:":5" %}
+            <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}">
+              {% render_toolbar_for a %}
+              {% if a.photo %}
+                <a href="{{ a.get_absolute_url }}" class="ld-card__img-link">
+                  <img class="ld-card__img lazyload" src="{{ a.photo.get_700w_url }}"
+                       title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                       alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}">
+                </a>
+              {% endif %}
+              <div class="ld-card__body">
+                <h4 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|removetags:'p' }}</a></h4>
+                {% if a.home_lead or a.deck %}
+                  <div class="ld-card__intro hide-on-med-and-up">
+                    {{ a.home_lead|default:a.deck|ldmarkup:a.id|removetags:"p" }}
+                  </div>
+                {% endif %}
+                <h4 class="ld-card__byline">
+                  {% if a.has_byline %}
+                    {% for author in a.get_authors %}
+                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                    en
+                  {% endif %}
+                  {% if a.section %}
+                    <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
+                  {% endif %}
+                </h4>
+              </div>
+              {% if a.photo.extended.square_version %}
+                <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
+                  <img class="ld-card__img lazyload"
+                       src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}"
+                       title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                       alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}">
+                </a>
+              {% endif %}
+            </div>
+        {% endfor %}
+
+      </div>
+
+      <div class="ld-grid-clear"></div>
+
+      {% for a in destacados|slice:"5:9" %}
+        <div class="ld-grid-area ld-grid-area-col area-col-{% cycle 'a' 'b' 'c' 'd' %}">
+          <div class="ld-card ld-card--reg">
+            {% render_toolbar_for a %}
+            {% if a.photo %}
+              <a href="{{ a.get_absolute_url }}">
+                <img class="ld-card__img lazyload" src="{{ a.photo.get_700w_url }}" title="{{ a.photo.caption }}" alt="{{ a.photo.caption }}">
+              </a>
+            {% endif %}
+            <div class="ld-card__body">
+              <h3 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
+                <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|removetags:'p' }}</a>
+              </h3>
+              {% if a.deck %}
+              <div class="ld-card__intro">
+                {{ a.deck|ldmarkup:a.id|removetags:'p' }}
+              </div>
+              {% endif %}
+              <h4 class="ld-card__byline">
+                {% if a.has_byline %}
+                  {% for author in a.get_authors %}
+                    <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                  {% endfor %}
+                  en
+                {% endif %}
+                {% if a.section %}
+                  <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
+                {% endif %}
+              </h4>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+
+      <div class="ld-grid-clear"></div>
+
+    </section>
+  </div>
+
+  {% block featured_content %}{% endblock %}
+
+  {% block big_photo %}
+    {% if big_photo %}
+      <section id="category-bigphoto" class="section-big-photo frontpage-section section-big-photo--category">
+        <div class="container">
+          {% if category.full_width_cover_image_title %}
+            <div class="section-detail__head">
+              <h3 class="section-detail__title">{{ category.full_width_cover_image_title }}</h3>
+              {% if category.full_width_cover_image_lead %}
+                <h4 class="section-detail__subtitle">{{ category.full_width_cover_image_lead|linebreaks }}</h4>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+        <figure>
+          <img class="big-photo__img lazyload" src="{{ big_photo.get_thumbnail_url }}"
+              data-src="{{ big_photo.get_fullscreen_url }}"
+              alt="{{ big_photo.caption }}">
+          <figcaption class="big-photo__caption ld-caption">
+            <div class="big-photo__description">
+              <div class="container">{{ big_photo.caption }}</div>
+            </div>
+            <div class="big-photo__credit">
+              <div class="container">
+                <p>{{ big_photo.date_taken }}</p>
+                {% if big_photo.byline %}
+                <p>{{ big_photo.type_verbose }}: {{ big_photo.byline }}</p>
+                {% endif %}
+              </div>
+            </div>
+          </figcaption>
+        </figure>
+      </section>
+    {% endif %}
+  {% endblock %}
+
+  {% block news_wall %}
+    {% include 'news_wall.html' %}
+  {% endblock %}
+
+{% endblock %}
+
+{% block footer_scripts %}
+  <script>
+    $(document).ready(function(){
+      resizeSubnav($('.section-detail__sub-cats'), $('.section-detail__sub-cats-list'), 2);
+      $('#bn-module').load("{% url 'bn-content' %}?category={{ category.slug }}", function(response){
+        if(response){
+          $('.breaking-notice').find('.btn-close').click(function(){
+            var notification = $(this).parent().parent();
+            $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
+              notification.toggle();
+            });
+          });
+        }
+      });
+    });
+  </script>
+{% endblock %}

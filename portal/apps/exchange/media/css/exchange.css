@@ -1,0 +1,23 @@
+#exchange {
+    width:100%;
+}
+#exchange thead tr th {
+    padding-bottom:6px;
+    text-align:left;
+}
+#exchange td {
+    background-image:none;
+}
+#exchange tr {
+    position:relative;
+}
+#exchange tbody tr {
+    background:#FAFBFF url(../../img/dotted.gif) repeat-x scroll left top;
+}
+#exchange tbody tr td {
+    padding:6px 0;
+}
+#exchange td.date {
+    text-align:right;
+    padding-right:12px;
+}

@@ -1,0 +1,69 @@
+{% load core_tags thumbnail %}
+<html>
+    <head>
+        <title>la diaria</title>
+    </head>
+    <body bgcolor="#FFFFFF" leftmargin="0" topmargin="0" marginstyle="display:block;width:0" marginheight="0">
+        <table id="Tabla_01" style="display:block;width:641;height:371" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+                <td rowspan="7">
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/suplementos_01.jpg" style="display:block;width:12;height:371" alt=""></td>
+                <td colspan="6">
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/s_sombra_up.jpg" style="display:block;width:628;height:15" alt=""></td>
+                <td>
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/espacio.gif" style="display:block;width:1;height:15" alt=""></td>
+            </tr>
+            <tr>
+                <td rowspan="6">
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/suplementos_03.jpg" style="display:block;width:36;height:356" alt=""></td>
+                <td align="left" valign="top">
+                    {% thumbnail supplement.cover "204x286" as im %}
+                        <img src="http://{{ site.domain }}{{ im.url }}" style="display:block;" alt="{{ supplement.name }}">
+                    {% endthumbnail %}
+                </td>
+                <td colspan="4" rowspan="2">
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/suplementos_05.jpg" style="display:block;width:388;height:290" alt=""></td>
+                <td>
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/espacio.gif" style="display:block;width:1;height:286" alt=""></td>
+            </tr>
+            <tr>
+                <td rowspan="5">
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/suplementos_06.jpg" style="display:block;width:204;height:70" alt=""></td>
+                <td>
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/espacio.gif" style="display:block;width:1;height:4" alt=""></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/suplementos_07.jpg" style="display:block;width:318;height:1" alt=""></td>
+                <td rowspan="2" align="left" valign="top">
+                    <a href="http://facebook.com/ladiaria" title="la diaria en Facebook">
+                        <img src="http://{{ site.domain }}{{ IMG_URL }}edition/s_facebook.png" style="display:block;width:33;height:43" border="0" alt="la diaria en Facebook"></a></td>
+                <td rowspan="4">
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/suplementos_09.jpg" style="display:block;width:37;height:66" alt=""></td>
+                <td>
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/espacio.gif" style="display:block;width:1;height:1" alt=""></td>
+            </tr>
+            <tr>
+                <td rowspan="3">
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/suplementos_10.jpg" style="display:block;width:263;height:65" alt=""></td>
+                <td rowspan="2" align="left" valign="top">
+                    <a href="http://twitter.com/ladiaria" title="la diaria en Twitter">
+                        <img src="http://{{ site.domain }}{{ IMG_URL }}edition/s_twitter.png" style="display:block;width:55;height:43" border="0" alt="la diaria en Twitter"></a></td>
+                <td>
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/espacio.gif" style="display:block;width:1;height:42" alt=""></td>
+            </tr>
+            <tr>
+                <td rowspan="2">
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/suplementos_12.jpg" style="display:block;width:33;height:23" alt=""></td>
+                <td>
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/espacio.gif" style="display:block;width:1;height:1" alt=""></td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/suplementos_13.jpg" style="display:block;width:55;height:22" alt=""></td>
+                <td>
+                    <img src="http://{{ site.domain }}{{ IMG_URL }}edition/espacio.gif" style="display:block;width:1;height:22" alt=""></td>
+            </tr>
+        </table>
+    </body>
+</html>

@@ -1,0 +1,27 @@
+<section amp-access="NOT nl_{{ publication.slug|default_if_none:'coronavirus' }}" class="ld-subscribe-box-wrap" amp-access-hide>
+  <div class="ld-subscribe-box">
+    <h4 class="ld-subscribe-box__title">
+      {% if publication.subscribe_box_question %}
+        {{ publication.subscribe_box_question }}
+      {% elif section.category.slug == 'coronavirus' or 'coronavirus' in article.get_categories_slugs %}
+        Newsletter de Coronavirus
+      {% endif %}
+    </h4>
+    <div class="ld-subscribe-box__info ld-caption">
+      Suscribite gratis y recibí la newsletter de
+      {% if publication.subscribe_box_nl_subscribe_anon %}
+        {{ publication.subscribe_box_nl_subscribe_anon|safe }}
+      {% elif section.category.slug == 'coronavirus' or 'coronavirus' in article.get_categories_slugs %}
+        Coronavirus
+      {% endif %}
+      en tu email.
+    </div>
+    <a href="{% url 'account-signup' %}" class="ld-btn-default ld-btn-default--sm ld-btn-default--icon-envelope ld-btn-default--inverted">
+      Suscribite gratis
+    </a>
+    <div class="ld-subscribe-box__login ld-text-secondary">
+      <p>¿Ya tenés suscripción?</p>
+      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}"  class="ld-btn-dark-bordered--sm">Ingresá</a>
+    </div>
+  </div>
+</section>

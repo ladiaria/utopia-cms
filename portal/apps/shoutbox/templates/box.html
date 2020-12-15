@@ -1,0 +1,25 @@
+<div id="shoutbox">
+    <ul>
+        {% for shout in shouts %}
+            <li class="shout">
+                <div class="name">
+                    {{ shout.user.get_full_name }} dice:
+                </div>
+                <div class="message">
+                    {{ shout.message|urlize }}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% if user.is_authenticated %}
+    <div id="do_shout">
+        <form action="{% url 'shout' %}" method="post" id="ishout">
+            <input type="text" name="message" id="message" maxlength="140" />
+        </form>
+    </div>
+{% else %}
+    <p>
+        Para participar del microchat <a href="{% url 'account-login' %}">ingresá</a>.
+    </p>
+{% endif %}

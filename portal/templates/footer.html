@@ -1,0 +1,29 @@
+{% load static %}
+
+{% if minimal_footer %}
+    <div class="container">
+        <div class="row">
+            <div class="col s12 center">
+                <a href="{% url 'home' %}" title="Ir a portada" class="header-logo"><img src="{% static HOMEV3_LOGO_FOOTER %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}"></a>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div id="mas-de-la-diaria" class="separador-franja"></div>
+    <div class="container latest_edition">
+        <div class="row white-text">
+            {% block resume %}
+                {% include 'core/templates/edition/resume.html' %}
+            {% endblock %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col s12 center">
+            <a href="{% url 'home' %}" title="Ir a portada" class="header-logo"><img src="{% static HOMEV3_LOGO_FOOTER %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}"></a>
+        </div>
+    </div>
+{% endif %}
+
+{% block page_footer %}{% endblock %}
+
+{% block footer_scripts %}{% endblock %}

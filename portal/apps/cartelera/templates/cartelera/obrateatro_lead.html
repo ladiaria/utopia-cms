@@ -1,0 +1,16 @@
+<article class="lead col-xs-4 col-sm-4 col-md-4{% if obrateatro.poster %} has_foto{% endif %}">
+  <header class="col-xs-8 col-sm-8 col-md-8">
+    <h2><a href="{{ obrateatro.get_absolute_url }}">{{ obrateatro }}</a></h2>
+    <p>{{ obrateatro.description }}</p>
+  </header>
+
+  <figure class="foto col-xs-4 col-sm-4 col-md-4">
+    <a href="{{ obrateatro.get_absolute_url }}" class="poster"><img src="/media/{{ obrateatro.poster }}" alt="{{ obrateatro }}" title="Ver detalles de esta obrateatro" /></a>
+  </figure>
+
+  <footer class="navbar toolbar col-xs-8 col-sm-8 col-md-8">
+    {% with obrateatro as evento %}
+      {% include "comunidad/evento_toolbar.html" %}
+    {% endwith %}
+  </footer>
+</article>

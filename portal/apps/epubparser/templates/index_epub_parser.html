@@ -1,0 +1,72 @@
+{% extends "base_epub_parser.html" %}
+{% load static %}
+
+{% block page_title %}Home{% endblock %}
+
+{% block content %}
+
+<h3>Epubs cargados</h3>
+
+{% if files %}
+
+<div class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>Identificador</th>
+        <th>Archivo</th>
+        <th>Sección</th>
+        <th>Accion</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for file in files %}
+      <tr>
+        <td>{{ file.id }}</td>
+        <td><a href="{% get_media_prefix %}{{ file.f }}">{{ file.f }}</a></td>
+        <td>{{ file.section }} - <a href="{% url 'epub-change' file.id %}">Cambiar Sección</a></td>
+        <td><a href="{% url 'parse-ebook' file.id %}">Generar Articulos</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-centered">
+  <ul class="pagination">
+    {% if paginator.has_previous %}
+    <li class="arrow"><a href="?page={{ paginator.previous_page_number }}">&laquo;</a></li>
+    {% else %}
+    <li class="arrow unavailable"><a href="">&laquo;</a></li>
+    {% endif %}
+    {% for pg in paginator.page_range %}
+      {% if page_obj.number == pg %}
+        <li class="current"><a href="?page={{ pg }}">{{ pg }}</a></li>
+      {% else %}
+        <li><a href="?page={{ pg }}">{{ pg }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if paginator.has_next %}
+    <li class="arrow"><a href="?page={{ paginator.next_page_number }}">&raquo;</a></li>
+    {% else %}
+    <li class="arrow unavailable"><a href="">&raquo;</a></li>
+    {% endif %}
+  </ul>
+</div>
+{% endif %}
+
+{% else %}
+
+  <!--                        -->
+  <!-- Your database is empty -->
+  <!--                        -->
+
+<div class="panel">
+  <p>No se encontraron Epubs &nbsp;&nbsp; :(</p>
+  <p>-->><a href="{% url 'epub-add' %}" title="Nuevo epub">Nuevo Epub</a></p>
+</div>
+
+{% endif %}
+
+{% endblock %}

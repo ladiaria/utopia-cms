@@ -1,0 +1,1 @@
+UPDATE core_section SET home_block_all_pubs=true;

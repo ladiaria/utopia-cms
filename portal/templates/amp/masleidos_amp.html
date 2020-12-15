@@ -1,0 +1,71 @@
+{% load core_tags inplace_edit comunidad adzone_tags %}
+<!-- MAS LEIDOS -->
+<!-- BRUNO -->
+<amp-selector role="tablist" layout="container" class="amp-selector-custom ampTabContainer">
+  <span class="card-title">Lo m&aacute;s le&iacute;do <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M16.85 6.85l1.44 1.44-4.88 4.88-3.29-3.29c-.39-.39-1.02-.39-1.41 0l-6 6.01c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L9.41 12l3.29 3.29c.39.39 1.02.39 1.41 0l5.59-5.58 1.44 1.44c.31.31.85.09.85-.35V6.5c.01-.28-.21-.5-.49-.5h-4.29c-.45 0-.67.54-.36.85z"/></svg></span>
+  <!-- DIA -->
+  <div role="tab" class="tabButton" selected option="a">Día</div>
+  <div role="tabpanel" class="tabContent">
+    {% if card_size == "FW" or card_size == "BG" or card_size == "FF" %}
+    <div class="card-content" id="ml_dia">
+      <div class="row">
+        <div class="col s12 m4">
+          {% for masv in cover_article.masleidos_cover_daily %} {% render_article_media with article=masv media=masv.home_display %} {% if forloop.counter|divisibleby:3 %}
+        </div>
+        <div class="col s12 m4">
+          {% endif %} {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="card-content" id="ml_dia">
+      {% for masv in cover_article.masleidos_cover_daily %} {% render_article_media with article=masv media=masv.home_display %} {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- SEMANA -->
+  <div role="tab" class="tabButton" option="b">Semana</div>
+  <div role="tabpanel" class="tabContent">
+    {% if card_size == "FW" or card_size == "BG" or card_size == "FF" %}
+    <div class="card-content" id="ml_semana">
+      <div class="row">
+        <div class="col s12 m4">
+          {% for masv in cover_article.masleidos_cover_weekly %} {% render_article_media with article=masv media=masv.home_display %} {% if forloop.counter|divisibleby:3 %}
+        </div>
+        <div class="col s12 m4">
+          {% endif %} {% if forloop.last %}
+        </div>
+        {% endif %} {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card-content" id="ml_semana">
+      {% for masv in cover_article.masleidos_cover_weekly %} {% render_article_media with article=masv media=masv.home_display %} {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- MES -->
+  <div role="tab" class="tabButton" option="c">Mes</div>
+  <div role="tabpanel" class="tabContent">
+    {% if card_size == "FW" or card_size == "BG" or card_size == "FF" %}
+    <div class="card-content" id="ml_mes">
+      <div class="row">
+        <div class="col s12 m4">
+          {% for masv in cover_article.masleidos_cover_monthly %} {% render_article_media with article=masv media=masv.home_display %} {% if forloop.counter|divisibleby:3 %}
+        </div>
+        <div class="col s12 m4">
+          {% endif %} {% if forloop.last %}
+        </div>
+        {% endif %} {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card-content" id="ml_mes">
+      {% for masv in cover_article.masleidos_cover_monthly %} {% render_article_media with article=masv media=masv.home_display %} {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</amp-selector>
+<!-- MAS LEIDOS -->

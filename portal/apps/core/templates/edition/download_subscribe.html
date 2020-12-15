@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load core_tags %}
+
+{% block page_title %}Suscribite{% endblock %}
+{% block body_class %}edition{% endblock %}
+
+{% block content %}
+    <div class="main">
+        <div class="titlebar">
+            <h2>
+                Descargar edición
+            </h2>
+        </div>
+        <h1>
+            Suscribite a la diaria
+        </h1>
+        <p>
+            Para descargar las últimas ediciones tenés que <a href="{% url 'account-login' %}">identificarte como usuario</a>. Si aún no sos suscriptor, <a href="{% url 'subscribe' %}">suscribite</a> y disfrutá todos los beneficios, entre ellos, descargar la versión completa de la diaria en PDF.
+        </p>
+    </div>
+
+{% endblock %}

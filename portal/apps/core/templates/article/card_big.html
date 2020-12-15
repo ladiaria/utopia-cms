@@ -1,0 +1,21 @@
+{% extends 'article/article_card.html' %}
+{% load core_tags inplace_edit adzone_tags tagging_tags ldml %}
+{% block class %}ld-card--big{% endblock %}
+{% block image %}
+  {% if article.photo %}
+    <a href="{{ article.get_absolute_url }}">
+      <img class="ld-card__img lazyload"
+           src="{{ article.photo.get_350w_url }}"
+           {% spaceless %}
+           data-srcset="{{ article.photo.get_900w_url }} 1400w,
+                        {{ article.photo.get_700w_url }} 1190w,
+                        {{ article.photo.get_600w_url }} 450w,
+                        {{ article.photo.get_450w_url }} 350w,
+                        {{ article.photo.get_350w_url }} 0"
+           {% endspaceless %}
+           sizes="(min-width: 900px) 1000px, {{ article.photo.get_450w_url }}"
+           title="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+           alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+    </a>
+  {% endif %}
+{% endblock %}

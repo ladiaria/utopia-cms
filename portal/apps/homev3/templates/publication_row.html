@@ -1,0 +1,17 @@
+{% load homev3_tags %}
+<section class="frontpage-section">
+  <div class="container">
+
+    <div class="section-detail__head">
+      <h3 class="section-detail__title">{{ publication }}</h3>
+    </div>
+
+    {% render_section None top_index=1 %}
+
+    <div class="row footer-section">
+      <div class="col s12">
+        <a href="{{ publication.get_absolute_url }}" class="btn bordered">más {{ publication }}</a>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,82 @@
+<form class="ratings" action="{% url 'rating' %}" >
+{% csrf_token %}
+{{ form.as_p }}
+</form>
+
+<style>
+.ratings ul {
+  unicode-bidi: bidi-override;
+  direction: rtl;
+  text-align: center;
+}
+.ratings ul > li {
+  display: inline-block;
+  position: relative;
+  width: 1.2em;
+  font-size: 1.5em;
+  cursor: pointer;
+  color: #CCC;
+}
+
+.ratings ul > li:hover,
+.ratings ul > li:hover ~ li {
+  color: transparent;
+}
+
+.ratings ul > li.checked ,
+.ratings ul > li.checked ~ li{
+  color: #FF00FF;
+}
+
+.ratings ul > li:hover,
+.ratings ul > li:hover ~ li {
+   color: #3399FF !important;
+}
+</style>
+
+
+<script type="text/javascript">
+;if(window.jQuery) (function($){
+        // plugin initialization
+        $.fn.rating = function(){
+                if(this.length==0) return this; // quick fail
+				var form = $(this);
+				form.find('input[type=radio].star').each(function(){
+                        var rater = $(this).clone().hide();
+                        var star = $(this).parent().parent();
+                        star.empty();
+                        star.append(rater);
+                        star.append('&#9733;');
+                        star.click(function(){
+	                        	   rater.prop('checked', true);
+	                               $.ajax({
+	                                   type: "POST",
+	                                   data: form.serialize(),
+	                                   url: form.attr('action'),
+	                                   cache: false,
+	                                   dataType: "html",
+	                                   success: function(html, textStatus) {
+	    								   star.addClass('checked')
+	                                	   //alert(html);
+	                                   },
+	                                   error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+	                                   }
+	                               });
+
+	                           });
+                });
+
+		 };
+
+        $(function(){
+         $('.ratings').rating();
+        });
+
+
+
+/*# AVOID COLLISIONS #*/
+})(jQuery);
+/*# AVOID COLLISIONS #*/
+</script>
+

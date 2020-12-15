@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static thumbnail videologue_tags %}
+
+{% block page_title %}{{ profile.get_full_name }}Humor - LOS INFORMANTES{% endblock %}
+{% block body_class %}losinformantes{% endblock %}
+{% block css %}
+    <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}css/videologue.css">
+{% endblock %}
+
+{% block content %}
+<h1>
+    Humor - <img src="{% static "img/los_informantes-head.jpg" %}" alt="Los Informantes">
+</h1>
+<div class="row">
+    {% for video in videos %}
+
+    <div class="videologue col-xs-12 col-sm-6">
+	    <div class="video-container"> <iframe src="{{ video.url }}" frameborder="0" width="560" height="315"></iframe> </div>
+	    <h2>
+	        {{ video.title }}
+	    </h2>
+	    <p>
+	        {{ video.description|safe }}
+	    </p>
+	</div>
+
+  	{% if forloop.counter|divisibleby:2 %}
+</div>
+<div class="row">
+    {% endif %}
+{% endfor %}
+</div>
+        <ul class="pagination pagination-centered">
+            {% if videos.has_previous %}
+                <li><a href="?page=1"><<</a></li>
+                <li><a href="?page={{ videos.previous_page_number }}"><</a></li>
+            {% endif %}
+
+            {% for i in videos.paginator.page_range %}
+                <li {% if videos.number == i %} class="active" {% endif %}><a href="?page={{i}}">{{i}}</a></li>
+            {% endfor %}
+
+            {% if videos.has_next %}
+                <li><a href="?page={{ videos.next_page_number }}">></a></li>
+                <li><a href="?page={{ videos.paginator.num_pages }}">>></a></li>
+            {% endif %}
+        </ul>
+{% endblock %}

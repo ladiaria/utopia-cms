@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}Activar cuenta{% endblock %}
+{% block body_class %}thedaily{% endblock %}
+
+{% block content %}
+  <main class="ld-content">
+    <div class="row">
+      <div class="col s12 m8 offset-m2">
+        <h1 class="ld-title-huge">Activar cuenta</h1>
+        {% if form %}
+          <p>
+            Te enviaremos por email instrucciones para activar tu cuenta.
+          </p>
+          {% crispy form %}
+        {% endif %}
+        {% if sent %}
+          <p>Email de activación enviado.</p>
+          <p>
+            ¿No te llegó? puede demorar unos minutos. ¿Revistaste tu carpeta de spam? Si no te llegó, podés <a href="{% url 'account-confirm_email' %}">pedirlo nuevamente.</a>
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+{% endblock %}

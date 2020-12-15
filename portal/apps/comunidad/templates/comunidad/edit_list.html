@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Historial</h2>
+
+    <h3>{{ article }}</h3>
+
+    <table>
+        <thead>
+            <th>Fecha</th>
+            <th>Usuario</th>
+            <th>Resumen</th>
+        </thead>
+        <tbody>
+            {% for edit in object_list %}
+            <tr>
+                <td>{{ edit.edited_on }}</td>
+                <td>{{ edit.editor }}</td>
+                <td>{{ edit.summary }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td>{{ article.date_created }}</td>
+                <td>{{ article.created_by }}</td>
+                <td>Creación del Articulo</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <br />
+    <a href="{% url 'comunidad_article_detail' article.slug %}">< ver Articulo</a>
+{% endblock %}

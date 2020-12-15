@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load core_tags %}
+
+{% block page_title %}{{ flatpage.title }}{% endblock %}
+{% block body_class %}static{% endblock %}
+
+{% block content %}
+  {{ flatpage.content }}
+{% endblock %}

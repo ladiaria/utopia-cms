@@ -1,0 +1,32 @@
+    <form method="post">
+        <input type="hidden" name="activity" value="{{ activity_id }}"/>
+        <div class="twocolumns">
+            <div class="first">
+                {{ form.name.errors }}
+                <label for="id_{{ form.name.name }}">{{ form.name.label }}:</label>{{ form.name }}
+            </div>
+        </div>
+        <div class="twocolumns">
+            <div class="first">
+                {{ form.email.errors }}
+                <label for="id_{{ form.email.name }}">{{ form.email.label }}:</label>{{ form.email }}
+            </div>
+            <div class="second">
+                <label for="id_{{ form.is_subscriber.name }}">{{ form.is_subscriber.label }}:</label>
+                <input type="checkbox" id="id_is_subscriber" name="is_subscriber" style="width:20px;"/>
+            </div>
+        </div>
+        <div class="twocolumns" style="padding-top:10px;">
+            {% if form.captcha.errors %}
+                <ul class="errorlist">
+                    <li>Los caracteres no coinciden</li>
+                </ul>
+            {% endif %}
+            <div class="first">
+                <label for="id_{{ form.captcha.name }}">{{ form.captcha.label }}:</label>{{ form.captcha }}
+            </div>
+            <div class="second">
+                <button type="submit" class="submit">Inscribirse</button>
+            </div>
+        </div>
+    </form>

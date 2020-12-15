@@ -1,0 +1,30 @@
+{% load activity_tags inplace_edit %}
+<nav class="toolbar navbar">
+   <ul class="nav">
+     <li class="share dropdown">
+	  	<a href="#share" class="dropdown-toggle" data-toggle="dropdown"
+		title="Comparti esta foto en redes sociales"><span
+			class="icon-ladiaria">s</span><span class="count global">0</span></a>
+		<div class="dropdown-menu">
+			<ul class="nav icons">
+				<li class="email">
+					<a href="" title="Enviá este artículo por email">
+						<span class="icon-envelope-alt icon-2x"></span>
+						<span class="count"{% if not article.mail_count %} style="display: none;"{% endif %}>{{ article.mail_count }}</span>
+					</a>
+				</li>
+{% if not debug %}
+				<li class="twitter" data-url="http://{{ site.domain }}{{ photo.get_absolute_url }}" data-text="{{ photo.caption|escape|truncatechars:40 }}"></li>
+				<li class="facebook" data-url="http://{{ site.domain }}{{ photo.get_absolute_url }}" data-text="{{ article.caption|escape|truncatechars:40 }}"></li>
+        <li class="whatsapp">
+          <a href="whatsapp://send?text={{ "Artículo en ladiaria.com.uy: "|urlencode }}{{ article.headline|urlencode }}{{ " - http://"|urlencode }}{{ site.domain }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share"><span class="fa fa-2x fa-whatsapp"></span></a>
+        </li>
+{% else %}
+
+				<li>social icons placeholder</li>
+{% endif %}
+			</ul>
+		</div>
+	</li>
+   </ul>
+</nav>

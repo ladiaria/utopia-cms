@@ -1,0 +1,37 @@
+{% spaceless %}
+{% load static %}
+{% load compress %}
+{% endspaceless %}<!doctype html>
+{% block html %}
+<html lang="es-UY">
+{% endblock %}
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Suscribite a la diaria</title>
+  <meta name="description" content="Para poder participar de los comentarios es necesario que tengas una suscripción." />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% compress css %}
+    <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {% endcompress %}
+
+{% comment %} Banner pop-up from comment section {% endcomment %}
+
+{% compress css %}
+  {% block css %}{% endblock %}
+{% endcompress %}
+</head>
+<body class="popup-talk">
+  <div class="ld-subscribe-box">
+    <h4 class="ld-subscribe-box__title">
+      Suscribite a <em>la diaria</em>
+    </h4>
+    <div class="ld-subscribe-box__info ld-caption">
+      Para poder participar de los comentarios es necesario que tengas una suscripción.
+    </div>
+    <button class="ld-btn-default ld-btn-default--sm ld-btn-default--icon-envelope"
+            onclick="window.close()">
+      Cerrar
+    </button>
+  </div>
+</body>

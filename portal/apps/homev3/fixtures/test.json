@@ -1,0 +1,258 @@
+[
+{
+  "pk": 1,
+  "model": "core.publication",
+  "fields": {
+    "weight": 0,
+    "headline": "mypublication",
+    "public": true,
+    "slug": "default",
+    "name": "mypublication",
+    "newsletter_header_color": "#262626"
+  }
+},
+{
+  "pk": 2,
+  "model": "core.publication",
+  "fields": {
+    "weight": 1,
+    "headline": "spinoff",
+    "public": true,
+    "slug": "spinoff",
+    "name": "spinoff",
+    "newsletter_header_color": "#262626"
+  }
+},
+{
+  "pk": 1,
+  "model": "core.edition",
+  "fields": {
+    "publication": 1,
+    "pdf_md5": "",
+    "downloads": 0,
+    "content": "",
+    "date_published": "2020-11-18",
+    "date_created": "2020-11-19T04:21:05Z"
+  }
+},
+{
+  "pk": 2,
+  "model": "core.edition",
+  "fields": {
+    "publication": 2,
+    "pdf_md5": "",
+    "downloads": 0,
+    "content": "",
+    "date_published": "2020-11-18",
+    "date_created": "2020-11-19T04:21:05Z"
+  }
+},
+{
+  "pk": 1,
+  "model": "core.section",
+  "fields": {
+    "home_block_all_pubs": true,
+    "home_order": 0,
+    "show_description": false,
+    "white_text": false,
+    "home_block_show_featured": true,
+    "publications": [
+      1, 2
+    ],
+    "show_image": false,
+    "date_created": "2020-11-19T04:23:41Z",
+    "in_home": false,
+    "background_color": "#ffffff",
+    "slug": "news",
+    "name": "news"
+  }
+},
+{
+  "pk": 2,
+  "model": "core.section",
+  "fields": {
+    "category": 1,
+    "home_block_all_pubs": true,
+    "home_order": 0,
+    "show_description": false,
+    "white_text": false,
+    "home_block_show_featured": true,
+    "publications": [],
+    "show_image": false,
+    "date_created": "2020-11-19T07:19:20Z",
+    "in_home": false,
+    "background_color": "#ffffff",
+    "slug": "areasection",
+    "name": "areasection"
+  }
+},
+{
+  "pk": 1,
+  "model": "core.journalist",
+  "fields": {
+    "name": "test journalist",
+    "job": "PE",
+    "sections": [],
+    "slug": "test-journalist"
+  }
+},
+{
+  "pk": 2,
+  "model": "core.journalist",
+  "fields": {
+    "name": "test columnist",
+    "job": "CO",
+    "sections": [],
+    "slug": "test-columnist"
+  }
+},
+{
+  "pk": 1,
+  "model": "core.article",
+  "fields": {
+    "newsletter_featured": false,
+    "allow_related": true,
+    "only_initials": false,
+    "byline": [1],
+    "headline": "test article",
+    "tags": "test",
+    "show_related_articles": true,
+    "public": false,
+    "body": "test.",
+    "views": 0,
+    "date_published": "2020-11-19T04:20:02Z",
+    "last_modified": "2020-11-19T04:25:57Z",
+    "url_path": "/articulo/2020/11/test-article/",
+    "slug": "test-article",
+    "main_section": 1,
+    "allow_comments": false,
+    "date_created": "2020-11-19T04:24:28Z",
+    "is_published": true
+  }
+},
+{
+  "pk": 2,
+  "model": "core.article",
+  "fields": {
+    "newsletter_featured": false,
+    "allow_related": true,
+    "only_initials": false,
+    "byline": [2],
+    "headline": "test article2",
+    "show_related_articles": true,
+    "public": false,
+    "body": "test.",
+    "views": 0,
+    "date_published": "2020-11-19T04:20:02Z",
+    "last_modified": "2020-11-19T04:25:57Z",
+    "url_path": "/spinoff/articulo/2020/11/test-article2/",
+    "slug": "test-article2",
+    "main_section": 1,
+    "allow_comments": false,
+    "date_created": "2020-11-19T04:24:28Z",
+    "is_published": true
+  }
+},
+{
+  "pk": 3,
+  "model": "core.article",
+  "fields": {
+    "newsletter_featured": false,
+    "allow_related": true,
+    "only_initials": false,
+    "byline": [],
+    "headline": "test article3",
+    "show_related_articles": true,
+    "public": false,
+    "body": "test.",
+    "views": 0,
+    "date_published": "2020-11-19T04:20:02Z",
+    "last_modified": "2020-11-19T04:25:57Z",
+    "url_path": "/test/articulo/2020/11/test-article3/",
+    "slug": "test-article3",
+    "main_section": 3,
+    "allow_comments": false,
+    "date_created": "2020-11-19T04:24:28Z",
+    "is_published": true
+  }
+},
+{
+  "pk": 1,
+  "model": "core.articlerel",
+  "fields": {
+    "position": 1,
+    "home_top": true,
+    "section": 1,
+    "edition": 1,
+    "article": 1,
+    "top_position": 1
+  }
+},
+{
+  "pk": 2,
+  "model": "core.articlerel",
+  "fields": {
+    "position": 1,
+    "home_top": true,
+    "section": 1,
+    "edition": 2,
+    "article": 2,
+    "top_position": 1
+  }
+},
+{
+  "pk": 3,
+  "model": "core.articlerel",
+  "fields": {
+    "position": 1,
+    "home_top": true,
+    "section": 2,
+    "edition": 1,
+    "article": 3,
+    "top_position": 2
+  }
+},
+{
+  "pk": 1,
+  "model": "core.articleurlhistory",
+  "fields": {
+    "article": 1,
+    "absolute_url": "/articulo/2020/11/test-article/"
+  }
+},
+{
+  "pk": 2,
+  "model": "core.articleurlhistory",
+  "fields": {
+    "article": 2,
+    "absolute_url": "/spinoff/articulo/2020/11/test-article2/"
+  }
+},
+{
+  "pk": 3,
+  "model": "core.articleurlhistory",
+  "fields": {
+    "article": 3,
+    "absolute_url": "/test/articulo/2020/11/test-article3/"
+  }
+},
+{
+  "pk": 1,
+  "model": "core.category",
+  "fields": {
+    "has_newsletter": false,
+    "new_pill": false,
+    "slug": "test",
+    "name": "test"
+  }
+},
+{
+  "pk": 1,
+  "model": "core.home",
+  "fields": {
+    "category": 1,
+    "fixed": false,
+    "cover": 1
+  }
+}
+]

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}{% if article %}{{ article.headline }}{% else %}Publicar artículo en comunidad{% endif %}{% endblock %}
+
+{% block content %}
+{% if article %}
+    <h1>Editando: "{{ article.headline }}"</h1>
+{% else %}
+    <h1>Publicar artículo</h1>
+{% endif %}
+
+{% comment %}
+<form action="" method="POST">
+    {% csrf_token %}
+    <table>
+        {{ form.as_table }}
+        {{ edit_form.as_table }}
+    </table>
+    <input type="submit" name="submit" value="Enviar">
+</form>
+{% endcomment %}
+
+{% crispy form %}
+
+{% endblock %}

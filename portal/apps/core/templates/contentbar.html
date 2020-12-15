@@ -1,0 +1,16 @@
+{% if articles %}
+    <div class="contentbar">
+        <h4>
+            Artículos
+        </h4>
+        <div class="block">
+            <ul>
+                {% for article in articles %}
+                    <li{% if not forloop.last %} class="related"{% endif %}>
+                        <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endif %}

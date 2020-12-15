@@ -1,0 +1,11 @@
+{% load i18n %}{% url "notification_notice_settings" as notices_url %}
+
+Esta es una notificación de actividad en {{ current_site }}:
+
+El usuario {{ user.get_full_name }} ahora te lee en {{ current_site }}
+
+Perfíl de {{ user.get_full_name }}: {{ user.get_absolute_url }}
+
+
+--------------------------------------------------------------------------
+Para configurar los avisos dirigíte a: {{ default_http_protocol }}://{{ current_site }}{{ notices_url }}

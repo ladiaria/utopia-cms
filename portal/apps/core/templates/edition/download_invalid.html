@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load core_tags %}
+
+{% block page_title %}Link de descarga inválido{% endblock %}
+{% block body_class %}edition{% endblock %}
+
+{% block content %}
+    <div class="main">
+        <div class="titlebar">
+            <h2>
+                Error
+            </h2>
+        </div>
+        <h1>
+            Link de descarga inválido
+        </h1>
+        <p>
+            El link de descarga que estás utilizando es inválido. Esto puede
+            deberse a varias razones, las más comunes son:
+        </p>
+        <ul class="generic">
+            <li>
+                Ya utilizaste este vínculo para realizar una descarga.
+            </li>
+            <li>
+                Estabas descargando la edición y se interrumpió la
+                transferencia.
+            </li>
+            <li>
+                Alguien interceptó este vínculo y utilizó para descargar la
+                diaria a tu nombre sin tu consentimiento. *
+            </li>
+        </ul>
+        <p>
+            En cualquier caso podés reintentar la descarga repitiendo el proceso
+            de solicitud de un link tantas veces como quieras.
+        </p>
+        <p>
+            * Esto puede ser particularmente peligroso porque puede significar
+            que alguien está accediendo a tu casilla de correo.
+        </p>
+    </div>
+
+{% endblock %}

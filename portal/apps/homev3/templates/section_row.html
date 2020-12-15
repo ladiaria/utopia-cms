@@ -1,0 +1,13 @@
+{% load static core_tags homev3_tags %}
+
+{% if art_count > 0 and is_portada %}
+  <div class="art_count_{{ art_count }}">
+    <div class="ld-grid-simple">
+      {% for article in articles %}
+        <div class="ld-grid-simple__area">
+           {% render_article_card article=article media=article.home_display card_size="FN" %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}

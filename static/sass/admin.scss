@@ -1,0 +1,91 @@
+/**
+* Admin/Staff only code
+*/
+
+.ld-admin-edit {
+  position: fixed;
+  bottom: 70px;
+  right: 15px;
+
+  svg {
+    vertical-align: text-bottom;
+  }
+
+  @media (min-width: 600px) {
+    bottom: 15px;
+  }
+}
+
+.ld-btn-default.ld-admin-edit-card,
+a.ld-btn-default.ld-admin-edit-card {
+  position: absolute;
+  right: 15px;
+  font-size: 11px;
+  padding: 4px 9px 5px;
+  bottom: 15px;
+}
+@media screen and (min-width: 769px) {
+  .ld-btn-default.ld-admin-edit-card,
+  a.ld-btn-default.ld-admin-edit-card {
+    display: none;
+    bottom: initial;
+    top: 15px;
+  }
+
+  .ld-btn-default.ld-admin-edit-card:hover,
+  a.ld-btn-default.ld-admin-edit-card:hover {
+    display: block;
+  }
+}
+
+.ld-btn-default.ld-admin-order,
+span.ld-btn-default.ld-admin-order {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  font-size: 11px;
+  padding: 4px 9px 5px;
+}
+@media screen and (min-width: 769px) {
+  .ld-btn-default.ld-admin-order,
+  span.ld-btn-default.ld-admin-order {
+    bottom: 15px;
+    right: 15px;
+    left: initial;
+    top: initial;
+  }
+}
+
+*:hover > .ld-btn-default.ld-admin-edit-card,
+*:hover > a.ld-btn-default.ld-admin-edit-card {
+  display: block;
+}
+
+.draft {
+  .ld-snackbar {
+    display: none;
+  }
+}
+
+.ld-tag-draft {
+  position: fixed;
+  font-family: "Roboto", sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 19px;
+  text-align: center;
+  color: #444444;
+  background-color: #ebb7b6;
+  padding: 6px;
+  border-radius: 3px;
+  right: 15px;
+  bottom: 120px;
+  text-transform: uppercase;
+  min-width: 105px;
+  user-select: none;
+
+  @media (min-width: 600px) {
+    bottom: 70px;
+  }
+}

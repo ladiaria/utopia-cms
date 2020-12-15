@@ -1,0 +1,181 @@
+// Estilos de footers
+.footer-portada {
+    background: $primary-color;
+    box-shadow: 0 0 7px rgba(0,0,0,0.65);
+
+    & > .container {
+      padding:20px 0;
+    }
+
+    hr {
+      background: $off-black;
+      opacity: .5;
+      height: 1px;
+      border: none;
+      margin: 20px 0px;
+      width: 60%;
+    }
+
+    .ld-btn {
+      min-width: 155px;
+      font-weight: bold;
+      min-width: 155px;
+      font-size: 16px;
+      padding: 10px 17px 9px 17px;
+      border: 3px solid $off-black;
+      color: $off-black;
+      text-decoration: none;
+
+      &:hover {
+        background: $off-black;
+        color: white;
+        text-decoration: none;
+      }
+    }
+
+    .ld-main-menu__item--btn {
+      margin-bottom: 12px;
+    }
+
+    h6 {
+      font-weight: bold;
+    }
+
+    .row {
+      margin: 0;
+    }
+
+    a {
+      color: $off-black;
+      text-decoration: none;
+      display: inline-block;
+
+      &:hover {
+        text-decoration: none;
+      }
+    }
+
+    .btn {
+      min-width: 150px;
+
+      @media #{$small-and-down} {
+        min-width: 100%;
+      }
+      line-height: 200% !important;
+    }
+    .header-logo {
+      transition: opacity 0.2s ease-in-out;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+
+// subscribe footer_popover
+#subscribe-footer {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    max-height: 120px;
+    max-height: 50vh;
+    background: $off-black;
+    color: white;
+    padding: 15px 5vw;
+
+
+    > .row {
+      margin-bottom: 0 !important;
+      max-width: 700px !important;
+    }
+    .subscribe-col {
+      padding-top: 4px;
+    }
+    .text-col {
+      max-width: 700px;
+    }
+    @media #{$medium-and-down} {
+      .subscribe-col {
+        padding-top: 20px;
+      }
+
+      .text {
+        text-align: center;
+      }
+    }
+
+    @media #{$small-and-down} {
+      height: auto;
+      max-height: 100%;
+      bottom: 56px;
+      padding-top: 56px;
+      padding-bottom: 30px;
+    }
+    .btn {
+      color: $off-black;
+      text-decoration: none !important;
+    }
+
+    .close {
+      color: white;
+      width: 29px;
+      height: 29px;
+      padding: 0;
+      background: transparent;
+      position: absolute;
+      right: 15px;
+      top: 15px;
+      border: none;
+      border-radius: 100%;
+      line-height: 28px;
+      vertical-align: middle !important;
+
+      svg {
+        fill: white;
+      }
+
+      @media #{$small-and-down} {
+        top: 15px;
+        bottom: auto;
+      }
+    }
+    .text {
+      font-size: 18px;
+      display: block;
+    }
+}
+
+.no-footer {
+    .footer-portada {
+        display: none;
+    }
+}
+
+.ld-footer-simple {
+margin-top: 50px;
+border-top: 1px solid #E8E8E8;
+padding-top: 20px;
+background: white;
+background: transparent;
+}
+
+
+.separador-franja {
+    background: $primary-color;
+
+    .row {
+      margin: 20px 0 0 0;
+    }
+
+    .valign-wrapper {
+      height: $line-height;
+    }
+
+    .title {
+      width: 100%;
+      text-transform: uppercase;
+    }
+}
+

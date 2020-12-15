@@ -1,0 +1,17 @@
+<div id="div_id_{{ field.name }}" class="validate input-field col s12">
+    <div class="select-wrapper">
+    <select name="{{ field.name }}" class="browser-default">
+        {% for val, name in field.field.choices %}
+            <option value="{{ val }}" {% ifequal field.value val %}selected{% endifequal %}>{{ name }}</option>
+        {% endfor %}
+    </select>
+    </div>
+    <label for="id_{{ field.id_for_label }}" {% if field.field.required %}class="required"{% endif %}>
+            {{ field.label|safe }}{% if field.field.required %}<span class="asterisk"> (requerido)</span>{% endif %}
+        </label>
+    {% for error in field.errors %}
+        <small id="error_{{ forloop.counter }}_id_{{ field.name }}" class="error red-text">
+            {{ error }}
+        </small>
+    {% endfor %}
+</div>

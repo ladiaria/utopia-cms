@@ -1,0 +1,50 @@
+<section class="section-live">
+    <div class="container">
+        <div class="section-live__head">
+            <span class="now">Transmitiendo ahora</span>
+            <h1 class="section-live__title">{{ event.title }}</h1>
+        </div>
+        <div class="row">
+            <!-- paywall begin -->
+           <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
+                <div class="ld-snackbar__title">
+                    Evento exclusivo para suscripción ilimitada
+                </div>
+                <div class="ld-snackbar__body ld-snackbar__body-sm">
+                    <p class="desc">Suscribite a ilimitada para ver todos los eventos, lectura sin límites y más beneficios.</p>
+                    <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-regular ld-snackbar__btn--white ld-snackbar__btn">Suscribite a ilimitada</a>
+                    <p class="desc">¿Ya tenés suscripción?</p>
+                    <a href="{% url 'account-login' %}?next={{ request.path }}" class="btn bordered">Ingresá</a>
+                </div>
+                <div class="ld-snackbar__body ld-snackbar__body-lg">
+                    <div class="container">
+                        <div class="row">
+                            <div class="ld-snackbar--option">
+                                <div class="ld-snackbar__text ld-snackbar__block">
+                                Suscribite a ilimitada para ver todos los eventos, lectura sin límites y más beneficios.
+                                </div>
+                                <div class="ld-snackbar__block">
+                                <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-default">Suscribite a ilimitada</a>
+                                </div>
+                            </div>
+                            <div class="ld-snackbar--option">
+                                <div class="ld-snackbar__text ld-snackbar__block">
+                                    ¿Ya tenés suscripción?
+                                </div>
+                                <div class="ld-snackbar__block">
+                                    <a href="{% url 'account-login' %}?next={{ request.path }}" class="btn bordered">Ingresá</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- paywall end -->
+        </div>
+    </div>
+    {% if not is_portada %}
+        <div class="section-live__footer align-center">
+            <a href="{% url 'home' %}" class="home-link">Ir a la portada de {{ site.name }}</a>
+        </div>
+    {% endif %}
+</section>

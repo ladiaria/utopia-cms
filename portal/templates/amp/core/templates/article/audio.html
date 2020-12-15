@@ -1,0 +1,35 @@
+<div class="ld-block ld-block--sm">
+  <div class="container">
+    <div class="ld-audio ld-card card">
+        <div amp-access="NOT subscriber" amp-access-hide>
+          <div class="ld-audio__overlay active">
+            <div class="ld-audio__overlay-content">
+              <div class="ld-audio__overlay-title">
+                Este audio es una característica exclusiva de la suscripción ilimitada.
+              </div>
+              <div class="ld-audio__overlay-links">
+                <a href="{% url 'subscribe' planslug='DDIGM' %}">Pasate a ilimitada</a>
+                <span class="d-inline-block" amp-access="NOT authenticated" amp-access-hide>
+                  o
+                  <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ld-audio__title">{{ article.audio.title }}</div>
+        <amp-audio class="ld-audio__audio"
+                   width="auto"
+                   height="50"
+                   preload="metadata"
+                   controls
+                   controlsList="nodownload"
+                   src="{% if is_subscriber %}{{ SITE_URL }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}">
+          <div fallback>
+            <p>Tu navegador no soporta audios HTML5.</p>
+          </div>
+        </amp-audio>
+        <div class="ld-audio__description">{{ article.audio.description }}</div>
+    </div>
+  </div>
+</div>

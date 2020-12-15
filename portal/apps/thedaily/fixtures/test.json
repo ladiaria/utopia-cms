@@ -1,0 +1,36 @@
+[
+{
+  "pk": 1,
+  "model": "core.publication",
+  "fields": {
+    "weight": 0,
+    "headline": "mypublication",
+    "public": true,
+    "slug": "default",
+    "name": "mypublication",
+    "newsletter_header_color": "#262626"
+  }
+},
+{
+  "pk": 1,
+  "model": "thedaily.subscriptionprices",
+  "fields": {
+    "subscription_type": "DDIGM",
+    "ga_category": "D",
+    "price": "350.00",
+    "ga_name": "digital ilimitada",
+    "order": 1
+  }
+},
+{
+  "pk": 2,
+  "model": "thedaily.subscriptionprices",
+  "fields": {
+    "subscription_type": "PAPYDIM",
+    "ga_category": "P",
+    "price": "790.00",
+    "ga_name": "papel lunes a viernes",
+    "order": 2
+  }
+}
+]

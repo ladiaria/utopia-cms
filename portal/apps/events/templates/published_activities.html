@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load attendant_tags %}
+
+{% block page_title %}Eventos{% endblock %}
+{% block body_class %}thedaily{% endblock %}
+{% block sidebar %}{% endblock %}
+
+{% block content %}
+    <div class="titlebar">
+        <h2>Eventos</h2>
+        <!-- AddThis Button BEGIN -->
+        <div class="addthis_toolbox addthis_default_style " style="float:right;width:108px;">
+            <a class="addthis_button_facebook"></a>
+            <a class="addthis_button_twitter"></a>
+            <a class="addthis_button_google_plusone" g:plusone:annotation="none"></a>
+            <a class="addthis_button_linkedin"></a>
+            <a class="addthis_button_email"></a>
+        </div>
+        <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ladiaria"></script>
+        <!-- AddThis Button END -->
+    </div>
+    {% for activity in object_list %}
+        <h3 style="padding-top:1em;">{{ activity }}</h3>
+        <p>{{ activity.description|safe|urlize }}</p>
+        <p style="font-size:1.5em;">
+            {{ activity.date|date:"l j" }} de {{ activity.date|date:"F"}} a las {{ activity.date|date:"H:i" }} horas
+            en {{ activity.location }}
+        </p>
+        {% if activity.closed %}
+            Las inscripciones para esta actividad están cerradas.
+        {% else %}
+            <p style="font-size:1.5em;">Inscribite:</p>
+            {% ifequal activity.id activity_id %}
+                {% include "attendant_form.html" %}
+                {% if success %}
+                    <br/>Inscripción recibida correctamente, muchas gracias.
+                {% endif %}
+            {% else %}
+                {% attendant_form activity.id %}
+            {% endifequal %}
+        {% endif %}
+        <br/>
+    {% endfor %}
+{% endblock %} 

@@ -1,0 +1,23 @@
+{% load homev3_tags %}
+
+<section class="frontpage-section">
+  <div class="container">
+
+    <div class="section-detail__head">
+      <h3 class="section-detail__title">{{ category.title|default:category }}{% if category.new_pill %} <span class="new-pill">Nuevo</span>{% endif %}</h3>
+      {% if category.description %}
+        <h4 class="section-detail__subtitle">{{ category.description }}</h4>
+      {% endif %}
+    </div>
+
+    {% render_section None top_index=1 %}
+
+    <div class="row footer-section">
+      <div class="col s12">
+        <a href="{% url 'home' domain_slug=category.slug %}" class="btn bordered">
+          {% if category.more_link_title %}{{ category.more_link_title }}{% else %}más de {{ category }}{% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

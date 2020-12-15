@@ -1,0 +1,113 @@
+// FAQ component
+.section-faq {
+    padding: 50px 0;
+
+    .desc {
+        font-size: 18px;
+        line-height: 22px;
+        font-weight: 500;
+        color: $off-black;
+    }
+
+    .questions {
+        background: #fff;
+        max-width: 500px;
+        margin:0 20px;
+        padding:30px 20px;
+        border:1px solid #D8D8D8;
+        border-radius: 3px;
+
+        @media (min-width:600px) {
+            margin:0 auto;
+        }
+    }
+    .ld-collapsible {
+        margin:0;
+
+        > li + li {
+            margin-top: 30px;
+        }
+
+        .collapsible-header {
+            background: #F3F3F4;
+            font-size: 16px;
+            line-height: 120%;
+            min-height: 38px;
+            font-weight: 500;
+            color: $off-black;
+            border: none;
+            padding: 9px 30px 9px 20px;
+            position: relative;
+            border-radius: 6px;
+    
+            @media (min-width:600px) {
+                font-size: 18px;
+            }
+    
+            &::after {
+                content: "+";
+                border: 2px solid $off-black;
+                width: 20px;
+                height: 20px;
+                line-height: 16px;
+                border-radius: 50%;
+                position: absolute;
+                right: 10px;
+                top:10px;
+                text-align: center;            
+            }
+    
+            
+        }
+        
+        .collapsible-body {
+            background: #F3F3F4;
+            border:none;
+            padding: 0 20px 20px;
+            border-radius: 0 0 6px 6px;                
+         
+    
+            > ul {
+                margin-left: 15px;
+    
+                li {
+                    list-style: disc outside;
+                    margin-bottom: 10px;
+                    
+                }
+            }
+            > p {
+                margin-top:0;
+            }
+            a {
+                text-decoration: underline;
+                color: $off-black;
+    
+                &:hover {
+                    text-decoration: none;
+                }
+            }
+        }
+        li.active   {
+            .collapsible-header{
+                border-radius: 6px 6px 0 0;
+    
+                &::after {
+                    content: "-";
+                    line-height: 15px;
+                }
+            }        
+            
+        }
+        &.js {
+            .collapsible-body {
+                display: none;
+            }
+        }
+    }
+    
+    .footer-section {
+        margin-top: 30px;
+        margin-bottom: 0;
+    } 
+}

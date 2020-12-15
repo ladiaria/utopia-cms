@@ -1,0 +1,141 @@
+
+// @import "../materialize/sass/components/prefixer";
+// @import "../materialize/sass/components/mixins";
+@import "../materialize/sass/components/color";
+
+// ladiaria mixins
+@import "ladiaria_mixins";
+
+///////////////////////////////////////////////////////////////////////////
+// Variables Materialize
+///////////////////////////////////////////////////////////////////////////
+
+$primary-color: #6EF9FF !default;
+$primary-color-accent: #fe5b4c !default;
+$secondary-color: #C2FCFF !default;
+
+$color-light-blue: #EDF6F5;
+
+$link-color: #262626 !default;
+$link-color-hover: #595959 !default;
+$off-black: #262626 !default;
+$off-black-1: #111111 !default;
+$off-black-2: #222222 !default;
+$off-black-3: #434343 !default;
+$lightGrey: #a4a4a4;
+$lightGrey-2: #979797;
+$grey: #595959;
+$grey-1: #d8d8d8;
+$grey-2: #fbfbfb;
+$grey-3: #e0e0e0;
+
+$error-color: #e74c3c;
+
+$button-radius: 100px !default;
+
+// typography
+$sans: Arial, Arial, Helvetica, sans-serif;
+$serif-body: 'Roboto', sans-serif;
+$serif-title: 'Meta Serif', serif;
+$line-height: 60px;
+
+$font-size-sm: 20px;
+$font-size-lg: 22px;
+
+
+$breakpoints: (
+  small: 400px,
+  medium: 600px,
+  large: 1200px,
+);
+
+$typi: (
+  base: (
+    null: (16px, 1.4),
+    small: (16px),
+    large: (16px)
+  ),
+  p: (
+    null: (16px),
+    small: (18px),
+    medium: (20px),
+    large: (22px),
+  ),
+  ArticleBody: (
+    null: (18px),
+    small: (20px 1.4em),
+    medium: (22px 1.55em),
+    large: (24px 1.75em),
+  ),
+  h1: (
+    null: (38px 120%),
+    small: (35px),
+    medium: (44px),
+    large: (52px),
+  ),
+  h2: (
+    null: (22px 120%),
+    small: (22px),
+    medium: (24px),
+    large: (26px),
+  ),
+  h3: (
+    null: (20px 120%),
+    small: (20px),
+    medium: (22px),
+    large: (24px),
+  ),
+  h4: (
+    null: (18px 120%),
+    small: (20px),
+    medium: (22px),
+    large: (22px),
+  ),
+  h5: (
+    null: (16px 120%),
+    small: (18px),
+    medium: (22px),
+    large: (20px),
+  ),
+  small: (
+    null: (16px 100%),
+    small: (16px),
+    medium: (17px),
+    large: (18px),
+  ),
+  medium: (
+    null: (20px 150%),
+    small: (22px),
+    large: (24px),
+  ),
+  large: (
+    null: (22px 130%),
+    small: (24px),
+    large: (26px),
+  ),
+  // Other font maps here
+);
+
+// Publicaciones / Emergentes
+$rio-abierto-primary-color: #009DE0;
+$chile-primary-color: #E74C3C;
+
+$garra-primary-color: #a8e3e9;
+
+$ahora-primary-color:#ff5252;
+
+$lento-primary-color: #e5007d;
+$lento-secondary-color:#e91e63;
+
+
+$humor-primary-color: #F1A9A0;
+
+$ei-color-votante: #3560BE;
+
+
+// Ajustes de alto y ancho de visual
+$view-full-height: calc(100vh - #{$line-height} * 2); // altura de visual menos ancho de una barra
+$view-full-width: 100vw;
+$view-image-title: calc(100vh - #{$line-height} * 4); // menos altura de barra menos alt titulo
+
+$gridMinWidth: 1000px;

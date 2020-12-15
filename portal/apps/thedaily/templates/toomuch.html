@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block page_title %}Demasiadas sesiones abiertas{% endblock %}
+{% block body_class %}thedaily{% endblock %}
+
+{% block content %}
+    <div class="titlebar">
+        <h1>
+             Asistencia a usuarios
+        </h1>
+    </div>
+    <h2>
+        Demasiadas sesiones abiertas
+    </h2>
+    <p>
+        Tu usuario posee demasiadas sesiones abiertas desde diferentes navegadores y/o dispositivos,
+        si te parece que es un error, comunicate con la diaria via mail utilizando nuestro
+        <a href="{% url 'contact-form' %}?mailto=suscriptores">formulario de contacto</a>.
+    </p>
+    <p>
+        Gracias.
+    </p>
+{% endblock %}

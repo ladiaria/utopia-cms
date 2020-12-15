@@ -1,0 +1,8 @@
+Existen 3 tipos de contenido interesante en un deployment:
+
+(1) Codigo fuente
+(2) "media" estructural (css e imagenes de la estetica, lo que generan los programadores)
+(3) "media" de publicacion (publicacion misma, lo que generan los periodistas)
+
+Enfrentamos el problema de que (2) (si es que todavía queda algo, debería estar en static)
+

@@ -1,0 +1,69 @@
+// inspiration: http://zerosixthree.se/8-sass-mixins-you-must-have-in-your-toolbox/
+@function calculateRem($size) {
+  $remSize: ($size / 16px);
+  @return calc($remSize * 1rem);
+}
+
+@mixin font-size($size) {
+  font-size: $size;
+  font-size: calculateRem($size);
+}
+
+// Keyframes
+@mixin keyframes($animation-name) {
+  @-webkit-keyframes #{$animation-name} {
+    @content;
+  }
+  @-moz-keyframes #{$animation-name} {
+    @content;
+  }
+  @keyframes #{$animation-name} {
+    @content;
+  }
+}
+
+// Animation
+
+@mixin animation($args) {
+    -webkit-animation: $args;
+    -moz-animation: $args;
+    -ms-animation: $args;
+    -o-animation: $args;
+    animation: $args;
+}
+
+// // Transitions
+
+@mixin transition($args:200ms) {
+    -webkit-transition: $args;
+    -moz-transition: $args;
+    -o-transition: $args;
+    -ms-transition: $args;
+    transition: $args;
+}
+
+// transform
+@mixin transform($args) {
+    -webkit-transform: $args;
+    -moz-transform: $args;
+    -ms-transform: $args;
+    -o-transform: $args;
+    transform: $args;
+}
+
+@mixin hide-text() {
+  font: 0/0 a;
+  color: transparent;
+  text-shadow: none;
+  background-color: transparent;
+  border: 0;
+}
+
+
+%clearfix {
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}

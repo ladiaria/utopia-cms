@@ -1,0 +1,6 @@
+<select name="{{ select_name }}" id="id_{{ select_name }}" class="media">
+    <option value="">-- Nada --</option>
+    {% for media in medias %}
+        <option value="{{ media.id }}">{{ media.name }}</option>
+    {% endfor %}
+</select>

@@ -1,0 +1,334 @@
+.btn {
+    color: white;
+  }
+
+.ld-btn{
+  border: 2px solid $primary-color;
+  font-size: 14px;
+  font-weight: bold;
+  transition: .2s ease-out;
+  cursor: pointer;
+  text-align: center;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+  height: auto;
+  padding: 10px 30px 9px;
+  border-radius: 100px;
+  display: inline-block;
+
+  &--whiteoutline{
+    border: 2px solid white;
+    color: white;
+    background: transparent;
+  }
+}
+
+.ld-btn-squared-outline{
+  color: white;
+  text-align: center;
+  border: 3px solid white;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 11px 6px;
+
+  &:hover{
+    color: white;
+  }
+}
+
+/*
+* Nuevos botones con sombra y solidos por defecto.
+*/
+.ld-btn-default, a.ld-btn-default, .btn.ld-btn-default {
+  background: $primary-color;
+  color: $off-black;
+  border: none;
+  font-family: "Roboto", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  transition: .1s ease-out;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: center;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+  height: auto;
+  padding: 16px 23px 15px;
+  border-radius: 100px;
+  display: inline-block;
+  box-shadow: rgba(#000000, .29) 0 4px 12px;
+  text-decoration: none;
+
+  svg {
+    vertical-align: text-bottom;
+  }
+
+  &:hover{
+    box-shadow: rgba(#000000, .29) 0 4px 6px;
+    color: $off-black;
+    text-decoration: none;
+    background: $primary-color;
+  }
+
+  &:active{
+    transition: .1s ease-out;
+    transform: translateY(1px);
+    box-shadow: rgba(#000000, .29) -1px 0px 3px;
+  }
+
+  &[disabled]{
+    cursor: not-allowed;
+    background-color: #CBCBCB;
+    box-shadow: none;
+    pointer-events: none;
+  }
+
+  &--no-shadow{
+    box-shadow: none;
+  }
+
+  &--sm {
+    font-size: 14px;
+    padding: 12px 19px 11px;
+
+  }
+
+  &--outline-white {
+    color: $grey;
+    background-color: transparent;
+    border: 1px solid $grey;
+    text-transform: none;
+    font-weight: 400;
+    &:hover{
+      color: $grey;
+    }
+  }
+
+  &--inverted {
+    background:$off-black;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background 0.2s ease-in-out;
+
+    &:hover {
+      background: $off-black-3;
+      color: white;
+    }
+  }
+
+  &--inverted-lento {
+    color: $lento-primary-color;
+    background-color: white;
+    text-decoration: none;
+    font-weight: bold;
+    &:hover {
+      color: lighten($lento-primary-color, 10%);
+    }
+  }
+
+}
+
+
+// New mixin for generating buttons
+@mixin ld-btn($bg-color: $primary-color, $bg-color-hover: $bg-color, $color: $off-black, $color-hover: $color, $border: false, $icon: false, $size: md) {
+  background-color: $bg-color;
+  color: $color;
+  border: 2px solid rgba(255, 255, 255, 0.000001);
+  border: 2px solid transparent;
+  @if $border {
+    border: 2px solid $bg-color;
+  }
+  font-family: "Roboto", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  transition: .1s ease-out;
+  text-transform: uppercase !important;
+  cursor: pointer;
+  text-align: center;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+  height: auto;
+  padding: 16px 23px 15px;
+  border-radius: 100px;
+  display: inline-block;
+  box-shadow: rgba(#000000, .29) 0 4px 12px;
+  background-repeat: no-repeat;
+  background-size: 26px auto;
+  text-decoration: none;
+
+  &:hover {
+    box-shadow: rgba(#000000, .29) 0 4px 6px;
+    @if $color-hover {
+      color: $color-hover;
+    }
+    background-color: $bg-color-hover;
+  }
+
+  &:active {
+    transition: .1s ease-out;
+    transform: translateY(1px);
+    box-shadow: rgba(#000000, .29) -1px 0px 3px;
+  }
+
+  &[disabled], &.disabled {
+    cursor: not-allowed;
+    background-color: rgba($bg-color, .6);
+    box-shadow: none;
+    pointer-events: none;
+    @if $bg-color == white {
+      background-color: #dedede;
+      color: #999;
+    }
+  }
+
+  @if $size == sm {
+    font-size: 14px;
+    padding: 12px 19px 11px;
+    background-size: 22px auto;
+  }
+
+  // 26x26 icon
+  @if $icon {
+    padding-left: 52px;
+    background-position: center left 16px;
+    background-image: url('../img/icon-#{$icon}.svg');
+  }
+
+}
+
+.ld-btn-regular {
+  @include ld-btn($color: $off-black);
+}
+
+.ld-btn--white {
+  @include ld-btn($bg-color: white, $bg-color-hover: white, $color: $primary-color, $color-hover: $primary-color, $icon: false);
+}
+.ld-btn--sm {
+  @include ld-btn($size: 'sm');
+}
+.ld-btn-inverted--sm {
+  @include ld-btn($size: 'sm', $bg-color:$off-black, $color: white);
+}
+
+.ld-btn-lock {
+  @include ld-btn($icon: 'lock');
+}
+
+.ld-btn-envelope--sm {
+  @include ld-btn($bg-color:$off-black, $color: white, $size: 'sm', $icon: 'envelope');
+  box-shadow: none !important;
+  transition: opacity 0.2s ease-in-out;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.ld-btn-bordered-envelope {
+  @include ld-btn($bg-color: transparent, $size: 'sm', $icon: 'envelope-dark');
+  border:2px solid $off-black;
+  box-shadow: none !important;
+
+  &:hover {
+    @include ld-btn($bg-color: $off-black, $color: #fff, $size: 'sm', $icon: 'envelope');
+    box-shadow: none;
+  }
+}
+
+.ld-btn-bordered--sm {
+  @include ld-btn($bg-color: transparent, $bg-color-hover: $primary-color, $size: 'sm', $icon: 'envelope');
+}
+
+.ld-btn-dark-bordered--sm {
+  @include ld-btn($bg-color: transparent, $bg-color-hover: $off-black, $size: 'sm', $color: $off-black, $color-hover:white);
+  border:2px solid $off-black;
+  box-shadow: none;
+}
+.ld-btn-solid-dark {
+  @include ld-btn($bg-color: $off-black, $color: #fff, $size: 'sm');
+}
+
+// Buttons
+
+.btn {
+    font-weight: bold;
+    box-shadow: none;
+    text-transform: none;
+    background: $primary-color;
+    color: $off-black;
+
+    &:hover {
+      background-color: $link-color-hover;
+      border-color: $link-color-hover;
+      text-decoration: underline;
+      box-shadow: none;
+    }
+
+    &.soft {
+      color: $grey;
+
+      &:hover {
+        background: $primary-color !important;
+        color: white;
+      }
+    }
+
+    &.strong {
+      color: white !important;
+    }
+
+    &.white {
+      color: white !important;
+      background: none !important;
+
+      &:hover {
+        background: white !important;
+        color: $primary-color;
+      }
+    }
+
+    &.bordered {
+      border: 2px solid $off-black;
+      color: $off-black;
+      background: none !important;
+      line-height: 18px;
+      padding:8px 20px;
+
+      svg {
+        display: inline-block;
+        position: relative;
+        top:2px;
+      }
+
+      &:hover {
+        background: $off-black !important;
+        color: white;
+        text-decoration: none;
+
+        svg {
+          path {
+            fill: #fff;
+          }
+        }
+      }
+
+      &.white {
+        border: 2px solid white;
+      }
+
+      &.soft {
+        border: 1px solid $grey;
+        color: $grey;
+
+        &:hover {
+          border-color: $primary-color;
+          color: white;
+        }
+      }
+    }
+}

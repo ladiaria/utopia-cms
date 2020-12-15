@@ -1,0 +1,78 @@
+{% load static core_tags homev3_tags ldml %}
+
+<section  id="home-section-{{ section.slug }}" class="frontpage-section">
+  <div class="container">
+    <div class="section-detail__head">
+      <h3 class="section-detail__title">{{ section.name_in_category_menu|default:section.name }}</h3>
+      {% if section.show_description %}
+        <h4 class="section-detail__subtitle">{{ section.description }}</h4>
+      {% endif %}
+    </div>
+
+    {# 4 Article grid for section #}
+    <section class="art_count_4">
+      <div class="ld-grid-simple">
+        {% for article in articles|slice:":4" %}
+        <div class="ld-grid-simple__area">
+            <div class="ld-card" data-id="{{ article.id }}" data-template="article_card_new">
+              {% if article.photo %}
+              <a href="{{ article.get_absolute_url }}">
+                <img
+                  class="ld-card__img lazyload"
+                  src="{{ article.photo.get_thumbnail_url }}"
+                  data-srcset="{{ article.photo.get_700w_url }} 320w"
+                  data-sizes="auto"
+                  title="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                  alt="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                  srcset="{{ article.photo.get_700w_url }} 320w"
+                />
+              </a>
+              {% endif %}
+              <div class="ld-card__body">
+                <h3 class="ld-card__title ld-card__title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
+                  <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|removetags:'p' }}</a>
+                </h3>
+
+                {% if article.home_lead %}
+                  <div class="ld-card__intro ld-card__intro--home_lead">
+                    {{ article.home_lead|ldmarkup:article.id|removetags:'p' }}
+                  </div>
+                {% endif %}
+
+                <h4 class="ld-card__byline">
+                  {% if article.has_byline  %}
+                    {% for author in article.get_authors %}
+                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                    en
+                  {% endif %}
+                  {% publication_section article %}
+                </h4>
+
+                {% if article.photo.extended.photographer %}
+                  <h4 class="ld-card__byline">
+                    {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
+                  </h4>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+      {% endfor %}
+
+      </div>
+    </section>
+    {# End article grid #}
+
+    <div class="row footer-section">
+      <div class="col s12">
+      {% if section.slug == 'fotografia' %}
+        <a class="ld-btn ld-btn-solid-dark" href="{{ section.get_absolute_url }}">Más de fotografía</a>
+        <a class="ld-btn btn bordered" href="https://www.instagram.com/ladiaria/">Instagram  <svg xmlns="http://www.w3.org/2000/svg" width="13.064" height="13.063" viewBox="0 0 13.064 13.063"><path d="M13.886,14.612H5.177a.728.728,0,0,1-.726-.726V5.177a.728.728,0,0,1,.726-.726H8.806A.726.726,0,1,0,8.806,3H4.452A1.451,1.451,0,0,0,3,4.452V14.612a1.456,1.456,0,0,0,1.452,1.452H14.612a1.456,1.456,0,0,0,1.452-1.452V10.258a.726.726,0,1,0-1.452,0v3.629A.728.728,0,0,1,13.886,14.612Zm-2.9-10.886a.728.728,0,0,0,.726.726h1.88L6.963,11.078A.724.724,0,0,0,7.986,12.1l6.626-6.626v1.88a.726.726,0,1,0,1.452,0V3H11.709A.728.728,0,0,0,10.983,3.726Z" transform="translate(-3 -3)" fill="#262626"></path></svg></a>
+      {% else %}
+        <a href="{{ section.get_absolute_url }}" class="ld-btn btn bordered">más de {{ section.name_in_category_menu|default:section.name }}</a>
+      {% endif %}
+      </div>
+    </div>
+
+  </div>
+</section>

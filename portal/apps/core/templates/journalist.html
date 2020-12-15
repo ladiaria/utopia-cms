@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load core_tags homev3_tags adzone_tags %}
+
+{% block page_title %}{{ journalist.name }} | {{ journalist.get_job_display }} en {{ site.name }} | {{ country_name }}{% endblock %}
+{% block page_description %}{{ site_description }}{% endblock %}
+
+{% block meta_og_title %}
+  <!-- Open Graph (http://ogp.me) -->
+  <meta property="og:title" content="{{ journalist.name }} | {{ journalist.get_job_display }} en {{ site.name }} | {{ country_name }}" />
+{% endblock %}
+
+{% block body_class %}section-detail {% endblock %}
+
+{% block page_header %}
+<div class="section_background">
+  <div class="container container--narrow">
+    <div class="section-detail__head">
+      <h1 class="section-detail__title">{{ journalist.name }}</h1>
+      <p class="section-detail__description">{{ journalist.description }}</p>
+    </div>
+    </div>
+  </div>
+
+{% if journalist.slug == 'masleidos' %}
+<header class="nav-extended main">
+
+  <div class="nav-content">
+    <ul class="tabs tabs-transparent">
+      <li class="tab"><a href="#test1">Esta semana</a></li>
+      <li class="tab"><a class="active" href="#test2">Este mes</a></li>
+      <li class="tab"><a href="#test4">Archivo</a></li>
+    </ul>
+  </div>
+</header>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+	<section class="section_module container--narrow">
+    {% for article in articles %}
+      {% render_article_card article=article media=article.home_display card_size="FD" %}
+    {% endfor %}
+
+
+    {% if articles.has_other_pages %}
+      {% with articles as pager %}
+        {% include "pagination.html" %}
+      {% endwith %}
+    {% endif %}
+
+	</section>
+{% endblock %}

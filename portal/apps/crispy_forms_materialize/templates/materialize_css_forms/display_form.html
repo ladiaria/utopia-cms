@@ -1,0 +1,8 @@
+{% if form.form_html %}{% spaceless %}
+    {% if form_show_errors %}
+        {% include "materialize_css_forms/errors.html" %}
+    {% endif %}
+    {{ form.form_html }}
+{% endspaceless %}{% else %}{% spaceless %}
+    {% include "materialize_css_forms/uni_form.html" %}
+{% endspaceless %}{% endif %}

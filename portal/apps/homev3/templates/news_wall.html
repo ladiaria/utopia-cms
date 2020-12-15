@@ -1,0 +1,111 @@
+{% load ldml %}
+
+<section class="frontpage-section section-news-wall">
+  <div class="container">
+    <div class="row">
+
+      {% if publication and publication != default_pub %}
+
+        {% for section in publication.section_set.all|slice:":8" %}
+          <div class="col s12 m6 l3 news-wall__block">
+            <h4 class="news-wall__title">
+              <a href="{% url 'section_detail' section_slug=section.slug %}">
+                {{ section.name_in_category_menu|default:section.name }}
+              </a>
+            </h4>
+            <ul class="news-wall__list">
+              {# TODO: create a template tag for this loop #}
+              {% for article in section.latest3 %}
+                {% if publication in article.publications %}
+                  <li class="news-wall__item">
+                    <a href="{{ article.get_absolute_url }}" class="news-wall__link">
+                      {{ article.headline|ldmarkup:article.id|removetags:'p' }}
+                    </a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </div>
+          {# at the 4th column close the div #}
+          {% if forloop.counter|divisibleby:"4" %}
+            </div>
+            {# in last cell dont open another row #}
+            {% if forloop.last %}{% else %}<div class="row">{% endif %}
+          {% endif %}
+        {% endfor %}
+
+      {% elif category %}
+
+        {% for section in category.section_set.all|slice:":8" %}
+          <div class="col s12 m6 l3 news-wall__block">
+            <h4 class="news-wall__title">
+              <a href="{{ section.get_absolute_url }}">
+                {{ section.name_in_category_menu|default:section.name }}
+              </a>
+            </h4>
+            <ul class="news-wall__list">
+              {% for article in section.latest3 %}
+                <li class="news-wall__item">
+                  <a href="{{ article.get_absolute_url }}" class="news-wall__link">
+                    {{ article.headline|ldmarkup:article.id|removetags:'p' }}
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {# at the 4th column close the div #}
+          {% if forloop.counter|divisibleby:"4" %}
+            </div>
+            {# in last cell dont open another row #}
+            {% if forloop.last %}{% else %}<div class="row">{% endif %}
+          {% endif %}
+        {% endfor %}
+
+      {% else %}
+
+        {% for category in MENU_CATEGORIES %}
+          <div class="col s12 m6 l3 news-wall__block">
+            <h4 class="news-wall__title">
+              <a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a>
+            </h4>
+            <ul class="news-wall__list">
+              {% for section in category.section_set.all|slice:":3" %}
+                <li class="news-wall__item">
+                  {% with section.latest_article.0 as latest_article %}
+                    <a href="{{ latest_article.get_absolute_url }}" class="news-wall__link">
+                      {{ latest_article.headline|ldmarkup:article.id|removetags:'p' }}
+                    </a>
+                  {% endwith %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% if forloop.counter|divisibleby:"4" %}
+            </div>
+            <div class="row">
+          {% endif %}
+        {% endfor %}
+
+        {% for pub in publications|slice:":3" %}
+          <div class="col s12 m6 l3 news-wall__block">
+            <h4 class="news-wall__title">
+              <a href="{{ pub.get_absolute_url }}">{{ pub|capfirst }}</a>
+            </h4>
+            <ul class="news-wall__list">
+              {% for section in pub.section_set.all|slice:":3" %}
+                <li class="news-wall__item">
+                  {% with section.latest_article.0 as latest_article %}
+                    <a href="{{ latest_article.get_absolute_url }}" class="news-wall__link">
+                      {{ latest_article.headline|ldmarkup:article.id|removetags:'p' }}
+                    </a>
+                  {% endwith %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endfor %}
+
+      {% endif %}
+    </div>
+  </div>
+</section>

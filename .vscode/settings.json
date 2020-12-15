@@ -1,0 +1,6 @@
+{
+    "python.envFile": "${workspaceFolder}/.env15",
+    "python.linting.enabled": true,
+    "python.linting.pycodestyleEnabled": true,
+    "python.linting.pylintEnabled": false
+}

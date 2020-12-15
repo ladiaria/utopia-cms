@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page_title %}Buscar en {{ site.name }} | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block body_class %}search{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col s12 m8 offset-m2">
+        <h1 class="center-align">
+          Buscar en la diaria
+        </h1>
+        <form action="{% url 'search' %}" method="get" class="search">
+            <label for="id_q">Buscar</label>
+            <input type="search" name="q" id="id_q" value="{{ token }}" aria-label="Buscar en el contenido del sitio" autofocus required>
+            {{ form.q.errors }}
+            <div class="row">
+                <div class="col s12">
+                    <p class="center-align">
+                      <button class="ld-btn ld-btn-regular" type="submit" id="submit-search">Buscar</button>
+                    </p>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="row">
+    <div class="col s12 m8 offset-m2">
+        {% if listaresultados.object_list %}
+            <div class="search-results">
+                <h2 class="ld-title">Resultados</h2>
+                <div class="hr"></div>
+                <ul>
+                    {% for article in listaresultados.object_list %}
+                    <li>
+                      <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
+                        <div class="searchdes">
+                        {{ article.get_lead }}
+                        </div>
+                        <div class="searchfooter">
+                            <span class="searchdate">{{ article.date_published|date:"j.n.y" }} | </span>
+                            {% if article.section %}
+                            <span class="searchsection">{{ article.section|upper }}</span>
+                            {% endif %}
+                            {% if article.type %}
+                            <span class="searchtype"> | {{ article.get_type_display }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="hr"></div>
+                    </li>
+
+                    {% endfor %}
+                </ul>
+
+            {% endif %}
+
+            {% if not cont and token %}
+                <p>
+                    No se han encontrado resultados para el término "<strong>{{ token }}</strong>".
+                </p>
+                <p>
+                    Pruebe con alguna de las siguientes opciones:
+                </p>
+                <ul class="browser-default">
+                    <li>
+                        Eliminar alguna de las palabras usadas.
+                    </li>
+                    <li>
+                        Verificar que los acentos sean correctos.
+                    </li>
+                    <li>
+                        Probar sinónimos.
+                    </li>
+                    <li>
+                        Nota: no está permitido buscar palabras de menos de 3 caracteres.
+                    </li>
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+
+
+
+</div>
+
+{% if listaresultados.object_list %}
+            {% with listaresultados as pager %}
+                {% include "pagination.html" %}
+            {% endwith %}
+        {% endif %}
+{% endblock %}

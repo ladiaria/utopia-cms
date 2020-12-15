@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}Ingreso de usuarios | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block body_class %}login no-footer{% endblock %}
+
+{% block javascript %}
+  <script type="text/javascript">
+    jQuery(document).ready(function ($) {
+      $(function () {
+        var text_input = document.getElementById('id_name_or_mail')
+        text_input.focus()
+        text_input.select()
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block content %}
+  <main class="ld-content">
+    <div class="row">
+      <div class="col s12 m8 offset-m2">
+        <h1 class="ld-title-huge align-center  u-mb-60">Ingresá</h1>
+        {% ifequal next_page '/usuarios/perfil/editar/#id_newsletters_wrapper' %}
+          <div class="row">
+            <div class="col s12 align-center">
+              <div class="login-notice">
+                Ingresá para recibir la newsletter 6AM + Apuntes del día.<br>
+                ¿No tenés cuenta? <a href="{% url 'account-signup' %}">Create una.</a>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          {% ifequal next_page '/usuarios/perfil/editar/#category-newsletter-coronavirus' %}
+            <div class="row">
+              <div class="col s12 align-center">
+                <div class="login-notice">
+                  Ingresá para recibir la newsletter de Coronavirus.<br>
+                  ¿No tenés cuenta? <a href="{% url 'account-signup' %}">Create una.</a>
+                </div>
+              </div>
+            </div>
+          {% endifequal %}
+        {% endifequal %}
+
+        <div class="google-auth align-center u-mb-60">
+          <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}" class="ld-btn-google">Ingresá con Google</a>
+        </div>
+
+        <div class="align-center ld-text-secondary">O ingresá con tu email</div>
+
+        <form class="row" method="post" action="{% url 'account-login' %}?next={{ next }}">
+          {% csrf_token %}{% crispy login_form %}
+          <div class="col s12 align-right">
+            <a href="{% url 'account-password_reset' %}" class="underlined">¿Olvidaste tu contraseña?</a>
+          </div>
+          <div class="row">
+            <div class="col align-center s12">
+              <button class="form-submit-login submit btn-login" type="submit">Ingresar</button>
+            </div>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </main>
+{% endblock %}
+
+{% block footer_block %}
+  <footer class="ld-footer-simple">
+    <div class="row ld-text-secondary align-center">
+      <div class="col s12">
+        <div>
+          ¿No tenés suscripción? <a href="{% url 'subscribe_landing' %}">Suscribite</a>.
+          <br />
+          ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="/contacto/">contactanos</a>.
+        </div>
+      </div>
+    </div>
+  </footer>
+{% endblock footer_block %}
