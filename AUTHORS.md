@@ -11,4 +11,4 @@
 * [Gabriel Budiño](https://github.com/orgs/ladiaria/people/gbudino)
 * [Gabriel Márquez](https://github.com/orgs/ladiaria/people/gmarquezuy)
 * [Lucia Pardo](https://twitter.com/lpardogys)
-* The whole team at [La Diaria](https://ayuda.ladiaria.com.uy/equipo/)
+* The whole team at [la diaria](https://ayuda.ladiaria.com.uy/equipo/)
