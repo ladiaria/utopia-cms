@@ -1,20 +1,4 @@
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Thanks again! Now go create something AMAZING! :D
--->
-
-
-
 <!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -33,10 +17,16 @@
   <h3 align="center">Utopía CMS</h3>
 
   <p align="center">
-    <em>Content Management System</em> tool that different teams in a newsroom can use to manage content.
+    <em>Content Management System</em> tool that multiple teams in a newsroom can use to manage publishing.
+    <br />
+    <br />
+    <a href="https://github.com/ladiaria/utopia-cms">View Demo</a>
+    ·
+    <a href="https://github.com/ladiaria/utopia-cms/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/ladiaria/utopia-cms/issues">Request Feature</a>
   </p>
 </p>
-
 
 
 <!-- TABLE OF CONTENTS -->
@@ -76,7 +66,7 @@
 
 Allows creation of print and digital subscriptions, add different payment methods, collect statistics and maintain relationships with readers.
 
-![Back-end Screen Shot][product-screenshot2]
+[![Back-end Screen Shot][product-screenshot2]](https://utopia.ladiaria.com.uy)
 
 ### Paywall
 
