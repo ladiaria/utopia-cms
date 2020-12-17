@@ -18,9 +18,8 @@ class SubscribeTestCase(TestCase):
 
     @unittest.skip("social_auth tables needed")
     def test_subscribe_logged_in(self):
-        # TODO: this test fails because social_auth tables are not present, find a way to create them, one possible
-        #       solution is create a management_command to create-if-not-exist the tables using "sqlall" or a hardcoded
-        #       version of it, and call this new command in a propoer place from your "runtests" bash script.
+        # TODO 2nd release: this test fails because social_auth tables are not present.
+        #                   maybe this will be fixed using Django1.11 with a newer version of social_django
         email, password = 'u1@example.com', User.objects.make_random_password()
         user = User.objects.create_user(email, email, password)
         user.is_active = True

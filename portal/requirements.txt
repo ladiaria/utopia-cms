@@ -30,6 +30,8 @@ django-mobile==0.3
 pycountry<2
 PyMongo
 pyPdf
+pyasn1>0.4.7
+six>1.14
 google-api-python-client
 hashids
 oauth2client
