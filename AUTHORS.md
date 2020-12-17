@@ -1,5 +1,6 @@
-## Authors to Utopia before opening the project
+## Authors that contributed to Utopia before opening the project
 
+* The whole team at [la diaria](https://ayuda.ladiaria.com.uy/equipo/)
 * [Andrés Trífero](https://github.com/orgs/ladiaria/people/virusereturns)
 * [Lu Osorio](https://github.com/orgs/ladiaria/people/LuOsorio)
 * [Pablo Massa](https://github.com/orgs/ladiaria/people/pablomassa)
@@ -11,4 +12,11 @@
 * [Gabriel Budiño](https://github.com/orgs/ladiaria/people/gbudino)
 * [Gabriel Márquez](https://github.com/orgs/ladiaria/people/gmarquezuy)
 * [Lucía Pardo](https://twitter.com/lpardogys)
-* The whole team at [la diaria](https://ayuda.ladiaria.com.uy/equipo/)
+* Ignacio Toledo
+* José Callero
+* Bruno Sarlo
+* Miguel Lezama
+* Guillermo Colmenero
+* Alvaro Mouriño
+* Eduardo Roldán
+* Diego García
