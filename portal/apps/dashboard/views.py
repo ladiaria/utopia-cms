@@ -92,7 +92,6 @@ def export_csv(request, table_id):
     return resp
 
 
-# @csrf_exempt
 @require_http_methods(["POST"])
 def audio_statistics_api(request):
     subscriber_id = request.POST.get('subscriber_id')
@@ -116,6 +115,8 @@ def audio_statistics_api(request):
             raise HttpResponseBadRequest("Unique object already exists")
 
 
+@never_cache
+@permission_required('thedaily.change_subscriber')
 @to_response
 def audio_statistics_dashboard(request):
     audios = Audio.objects.all().order_by('-id')
