@@ -96,11 +96,11 @@ def export_csv(request, table_id):
 def audio_statistics_api(request):
     subscriber_id = request.POST.get('subscriber_id')
     audio_id = request.POST.get('audio_id')
-    percentage = request.POST.get('percentage')
+    percentage = request.POST.get('percentage', 0)
     percentage = int(percentage)
 
     if AudioStatistics.objects.filter(
-            subscriber_id=subscriber_id, audio_id=audio_id, percentage=percentage).exists():
+            subscriber_id=subscriber_id, audio_id=audio_id, percentage__lte=percentage).exists():
         return HttpResponse()
     else:
         try:
