@@ -55,8 +55,10 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     edition = None
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
 
-    # Context variables for featured publication "grids"
-    context = {'publication': publication, 'featured_publications': []}
+    # Context variables for publication, featured publications and sections "grids".
+    context = {
+        'publication': publication, 'featured_publications': [],
+        'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ())}
     for publication_slug in getattr(settings, 'HOMEV3_FEATURED_PUBLICATIONS', ()):
         try:
             ftop_articles = \
@@ -99,7 +101,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         else:
             edition = get_current_edition(publication=publication)
 
-        top_articles = edition.top_articles
+        top_articles = edition.top_articles if edition else []
         if top_articles:
             cover_article = top_articles[0]
             top_articles.pop(0)
@@ -109,8 +111,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         context.update({
             'cover_article': cover_article, 'edition': edition, 'destacados': top_articles, 'mas_leidos': False,
             'big_photo': publication.full_width_cover_image, 'is_portada': True, 'question_list': question_list,
-            'questions_topic': questions_topic,
-            'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ())})
+            'questions_topic': questions_topic})
         return 'index_pubs.html', context
     else:
         if year and month and day:

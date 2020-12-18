@@ -16,11 +16,10 @@ def get_item(dictionary, key):
 
 
 class RenderSectionNode(Node):
-    def __init__(self, context, section_slug, article_type, top_index, article_type_template):
+    def __init__(self, context, section_slug, article_type, top_index):
         self.section_slug = section_slug
         self.article_type = article_type
         self.top_index = top_index
-        self.article_type_template = article_type_template
 
     def render(self, context):
         try:
@@ -34,23 +33,26 @@ class RenderSectionNode(Node):
             return u''
 
         top_articles = context.get('destacados')
-        template = 'section%s.html' % (
-            ('_' + self.article_type_template) if self.article_type_template
-            else (('_' + self.article_type) if self.article_type else ''))
+        template = 'section_custom/common.html'
 
         if self.top_index:
+
             articles = top_articles[self.top_index:self.top_index + 4]
             template = 'section_row.html'
 
         elif section:
 
+            if section.slug in getattr(settings, 'CORE_RENDER_SECTION_CUSTOM_TEMPLATES', ()):
+
+                template = '%s/%s.html' % (settings.CORE_RENDER_SECTION_TEMPLATE_DIR, section.slug)
+
             if not section.in_home:
 
                 return u''
 
-            elif section.slug == u'apuntes-del-dia':
+            elif section.slug in getattr(settings, 'CORE_RENDER_SECTION_ARTICLES_TEMPLATE_OVERRIDES', ()):
 
-                articles = list(section.latest())
+                articles = []
 
             else:
 
@@ -85,8 +87,8 @@ class RenderSectionNode(Node):
 
 
 @register.simple_tag(takes_context=True)
-def render_section(context, section_slug, article_type=None, top_index=None, article_type_template=None):
-    return RenderSectionNode(context, section_slug, article_type, top_index, article_type_template).render(context)
+def render_section(context, section_slug, article_type=None, top_index=None):
+    return RenderSectionNode(context, section_slug, article_type, top_index).render(context)
 
 
 class RenderPublicationRowNode(Node):
