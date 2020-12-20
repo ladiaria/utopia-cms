@@ -14,9 +14,12 @@
 * [Lucía Pardo](https://twitter.com/lpardogys)
 * Ignacio Toledo
 * José Callero
+* Marcelo Ramos
 * Bruno Sarlo
 * Miguel Lezama
 * Guillermo Colmenero
-* Alvaro Mouriño
+* Gonzalo Martinez
+* Guzmán Olivera
+* Álvaro Mouriño
 * Eduardo Roldán
 * Diego García
