@@ -14,23 +14,23 @@
       <section class="art_count_4">
         <div class="ld-grid-simple">
           {% for article in articles|slice:":4" %}
-          <div class="ld-grid-simple__area">
+            <div class="ld-grid-simple__area">
               <div class="ld-card" data-id="{{ article.id }}" data-template="article_card_new">
                 {% if article.photo %}
-                <a href="{{ article.get_absolute_url }}">
-                  <img
-                    class="ld-card__img lazyload"
-                    src="{{ article.photo.get_thumbnail_url }}"
-                    data-srcset="{{ article.photo.get_700w_url }} 320w"
-                    data-sizes="auto"
-                    title="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                    alt="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                    srcset="{{ article.photo.get_700w_url }} 320w"
-                  />
-                </a>
+                  <a href="{{ article.get_absolute_url }}">
+                    <img
+                      class="ld-card__img lazyload"
+                      src="{{ article.photo.get_thumbnail_url }}"
+                      data-srcset="{{ article.photo.get_700w_url }} 320w"
+                      data-sizes="auto"
+                      title="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                      alt="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                      srcset="{{ article.photo.get_700w_url }} 320w"
+                    />
+                  </a>
                 {% endif %}
                 <div class="ld-card__body">
-                  <h3 class="ld-card__title ld-card__title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
+                  <h3 class="ld-card__title ld-card__title{% if not article.home_lead %} ld-card__title--mb{% endif %}">
                     <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|removetags:'p' }}</a>
                   </h3>
 
@@ -58,8 +58,7 @@
                 </div>
               </div>
             </div>
-        {% endfor %}
-
+          {% endfor %}
         </div>
       </section>
       {# End article grid #}
