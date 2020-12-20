@@ -989,6 +989,11 @@ body {
             border-radius: 5px;
             margin-left: -8px;
 
+            .icon {
+                position: relative;
+                top:3px;
+            }
+
             &:hover{
             background: rgba(0, 0, 0, 0.1);
             text-decoration: none;

@@ -47,7 +47,9 @@
 
   {% render_cover %}
   {% if fcategory %}{% include 'category_grid.html' %}{% endif %}
-  {% render_section 'carnaval-2020' None None %}
+  {% for section in featured_sections.0 %}
+    {% render_section section %}
+  {% endfor %}
 
   {% for publication_slug in home_publications %}
     {% render_publication_row publication_slug %}
@@ -55,11 +57,15 @@
 
   {% if featured_publications.0 %}{% render_publication_grid featured_publications.0 %}{% endif %}
 
-  {% render_section 'fotografia' None None %}
+  {% for section in featured_sections.1 %}
+    {% render_section section %}
+  {% endfor %}
 
   {% if featured_publications.1 %}{% render_publication_grid featured_publications.1 %}{% endif %}
 
-  {% render_section 'humor' None None %}
+  {% for section in featured_sections.2 %}
+    {% render_section section %}
+  {% endfor %}
 
   {# news wall commented out due to performance issues #}
   {# include 'news_wall.html' #}

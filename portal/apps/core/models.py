@@ -762,7 +762,7 @@ class Section(Model):
 
     def latest(self, limit=4, all_sections=False, article_type=None, exclude_articles_ids=[], publications_ids=[]):
         """
-        Returns the latest 4 (or limit param) articles published in this section. Called from homev3_tags.py.
+        Returns the latest 4 (or limit param) articles published in this section.
         - include only articles of this article_type (if given).
         - exclude articles by id included in a list given by param.
         - include only articles published in editions publications included in a list given by param.

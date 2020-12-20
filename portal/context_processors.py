@@ -20,6 +20,7 @@ def urls(request):
     url_dict['URL_SCHEME'] = settings.URL_SCHEME
     return url_dict
 
+
 def gtm(request):
     return {'GTM_CONTAINER_ID': settings.GTM_CONTAINER_ID, 'GTM_AMP_CONTAINER_ID': settings.GTM_AMP_CONTAINER_ID}
 
