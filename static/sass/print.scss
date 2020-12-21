@@ -195,12 +195,15 @@
 
   .section-subheader.detail .header-logo {
         text-align: center;
-
-        img {
+        svg {
         height: 40px;
         margin: 10px auto;
         display: block;
+
+        .a, path {
+            fill:#262626 !important;
         }
+       }
   }
 
 }

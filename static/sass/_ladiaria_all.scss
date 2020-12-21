@@ -1211,6 +1211,13 @@ a.ladiaria {
             }
         }
     }
+    span.section-detail__header-sub-cat {
+        cursor: auto;
+        &:hover {
+            background: none;
+        }
+
+    }
 }
 
 // Grid for 5 columns in Materialize
