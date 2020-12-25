@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from django.db.models import CharField, Model, DateField, ForeignKey, PositiveIntegerField, PositiveSmallIntegerField
+from django.db.models import (
+    CharField, Model, DateField, ForeignKey, PositiveIntegerField, PositiveSmallIntegerField, BooleanField)
 
 from audiologue.models import Audio
 from thedaily.models import Subscriber
@@ -32,7 +33,8 @@ class AudioStatistics(Model):
     """
     subscriber = ForeignKey(Subscriber)
     audio = ForeignKey(Audio)
-    percentage = PositiveSmallIntegerField(default=0)
+    percentage = PositiveSmallIntegerField(null=True, blank=True)
+    amp_click = BooleanField(default=False)
 
     class Meta:
         unique_together = ('subscriber', 'audio')

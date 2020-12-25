@@ -16,7 +16,7 @@
   {% render_article_card article=cover_article media=cover_article.home_display card_size="FF" %}
 {% endif %}
 
-{% if publication == default_pub and not is_subscriber_default %}
+{% if allow_ads and not is_subscriber %}
   <div class="frontpage-section frontpage-section--white frontpage-section--ad frontpage-section">
     <div class="container">
       <section id="header-pub" class="col s12 center-align"></section>

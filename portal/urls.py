@@ -5,7 +5,7 @@ from feeds import ArticlesByJournalist, LatestArticlesByCategory, LatestEditions
 from rest_framework import serializers, viewsets, routers
 
 from django.conf import settings
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns, url, include
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import TemplateView, RedirectView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -220,7 +220,7 @@ urlpatterns = patterns(
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', include(admin.site.urls)),
 
-    # Search and special pagges (TODO: organize better)
+    # Search and special pages (TODO: organize better)
     url(r'^buscar/', include('search.urls')),
     url(r'^regala/', giveaway, name='giveaway'),
     url(r'^defensor/$', poll, name="poll"),
@@ -273,7 +273,7 @@ urlpatterns += patterns(
     # Most read
     url(r'^masleidos/', include('core.urls.masleidos')),
 
-    # Homes: domain_slug can be a publiction slug or an area slug
+    # Homes: domain_slug can be a publiction slug or an area (core.Category) slug
     url(r'^$', index, name='home'),
     url(r'^(?P<domain_slug>[\w-]+)/$', index, name='home'),
 

@@ -836,6 +836,15 @@ def update_user_from_crm(request):
 
 
 @never_cache
+def amp_analytics_config(request):
+    result = {}
+    if hasattr(request.user, 'subscriber'):
+        result['vars'] = {'subscriber_id': request.user.subscriber.id}
+    response = HttpResponse(simplejson.dumps(result), content_type="application/json")
+    return set_amp_cors_headers(request, response)
+
+
+@never_cache
 def amp_access_authorization(request):
     """
     Este endpoint obtiene la cantidad de visitas que posee el usuario y lo devuelve incrementado en uno para contar la
@@ -851,11 +860,11 @@ def amp_access_authorization(request):
     path = urlparse(url).path
     authenticated = request.user.is_authenticated()
     result = {'authenticated': authenticated}
+    has_subscriber = hasattr(request.user, 'subscriber')
 
     if path == '/' or not settings.SIGNUPWALL_ENABLED:
 
-        result['subscriber'] = authenticated and hasattr(request.user, 'subscriber') and \
-            request.user.subscriber.is_subscriber_any()
+        result['subscriber'] = authenticated and has_subscriber and request.user.subscriber.is_subscriber_any()
         result['access'], result['signupwall_enabled'] = True, False
 
     else:
@@ -870,14 +879,14 @@ def amp_access_authorization(request):
 
         if authenticated:
 
-            has_subscriber = hasattr(request.user, 'subscriber')
-            is_subscriber = has_subscriber and (request.user.subscriber.is_subscriber() or any(
-                [request.user.subscriber.is_subscriber(p.slug) for p in article.publications()]))
-            result['subscriber'] = is_subscriber
-
-            # newsletters
             if has_subscriber:
+                is_subscriber = request.user.subscriber.is_subscriber() or any(
+                    [request.user.subscriber.is_subscriber(p.slug) for p in article.publications()])
+                # newsletters
                 result.update([('nl_' + slug, True) for slug in request.user.subscriber.get_newsletters_slugs()])
+            else:
+                is_subscriber = False
+            result['subscriber'] = is_subscriber
 
             if is_subscriber:
 

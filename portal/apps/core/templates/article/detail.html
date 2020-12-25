@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load core_tags ldml cartelera_tags adzone_tags tagging_tags crispy_forms_tags videologue_tags inplace_edit markup %}
+{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags markup %}
 
 {% block page_title %}{{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endblock %}
 
@@ -59,91 +59,76 @@
 {% endblock %}
 
 {% block json_ld %}
-<script type="application/ld+json">
-{
-  "@context": "http://schema.org",
-  {% ifequal section.slug 'humor' %}
-    "@type": "SatiricalArticle",
-  {% else %}
-    "@type": "NewsArticle",
-  {% endifequal %}
-  "mainEntityOfPage": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}",
-  "headline": "{{ article.headline|remove_markup|truncatewords:25 }}",
-  "datePublished": "{{ article.date_published|date:"c" }}",
-  "dateModified": "{{ article.date_published|date:"c" }}",
-  "description": "{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
-  {% if article.public %}
-  "isAccessibleForFree": "True",
-  {% else %}
-  "isAccessibleForFree": "False",
-  {% endif %}
-  "hasPart":
-    {
-    "@type": "WebPageElement",
-    {% if article.public %}
-    "isAccessibleForFree": "True",
+  <script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "{% ifequal section.slug 'humor' %}SatiricalArticle{% else %}NewsArticle{% endifequal %}",
+    "mainEntityOfPage": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}",
+    "headline": "{{ article.headline|remove_markup|truncatewords:25 }}",
+    "datePublished": "{{ article.date_published|date:"c" }}",
+    "dateModified": "{{ article.date_published|date:"c" }}",
+    "description": "{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
+    "isAccessibleForFree": "{% if article.public %}True{% else %}False{% endif %}",
+    "hasPart": {
+      "@type": "WebPageElement",
+      "isAccessibleForFree": "{% if article.public %}True{% else %}False{% endif %}",
+      "cssSelector" : ".paywalled-content"
+    },
+    "isPartOf": {
+      "@type": ["CreativeWork"],
+      "name" : "{{ site.name }}"
+    },
+    {% if article.get_authors %}
+      "author": {% if article.get_authors|length > 1 %} [ {% endif %}
+        {% for author in article.get_authors %}
+          {
+            "@type": "Person",
+            "name": "{{ author.name }}"
+          }{% if not forloop.last or article.get_authors|length == 1 %}, {% endif %}
+        {% endfor %}
+        {% if article.get_authors|length > 1 %} ], {% endif %}
     {% else %}
-    "isAccessibleForFree": "False",
-    {% endif %}
-    "cssSelector" : ".paywalled-content"
-  },
-  "isPartOf": {
-    "@type": ["CreativeWork"],
-    "name" : "{{ site.name }}"
-  },
-  {% if article.get_authors %}
-      "author":
-      {% if article.get_authors|length > 1 %} [ {% endif %}
-      {% for author in article.get_authors %}
-      {
-        "@type": "Person",
-        "name": "{{ author.name }}"
-    }{% if not forloop.last or article.get_authors|length == 1 %}, {% endif %}
-      {% endfor %}
-      {% if article.get_authors|length > 1 %} ], {% endif %}
-  {% else %}
       "author": {
           "@type": "Organization",
           "name": "{{ site.name }}"
       },
-  {% endif %}{# TODO post release: eliminate custom pubs, use utopia assets in "else" #}
-  "publisher": {
+    {% endif %}{# TODO post release: eliminate custom pubs, use utopia assets in "else" #}
+    "publisher": {
       "@type": "Organization",
       "name": "{{ site.name }}",
       "logo": {
         "@type": "ImageObject",
         {% if publication == garra_pub %}
-        "url": "https://ladiaria.com.uy/static/img/garra-publisher-img.png",
-        "width": "152",
-        "height": "60"
+          "url": "https://ladiaria.com.uy/static/img/garra-publisher-img.png",
+          "width": "152",
+          "height": "60"
         {% elif publication == lento_pub %}
-        "url": "https://ladiaria.com.uy/static/img/lento-publisher-img.png",
-        "width": "84",
-        "height": "60"
+          "url": "https://ladiaria.com.uy/static/img/lento-publisher-img.png",
+          "width": "84",
+          "height": "60"
         {% else %}
-        "url": "https://ladiaria.com.uy/static/meta/la-diaria-205x60.png",
-        "width": "205",
-        "height": "60"
+          "url": "https://ladiaria.com.uy/static/meta/la-diaria-205x60.png",
+          "width": "205",
+          "height": "60"
         {% endif %}
-    }
-  },
-  {% if article.photo %}
-  "image": {
-      "@type": "ImageObject",
-      "url": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_1200w_url }}",
-      "width": "1200"
+      }
+    },
+    {% if article.photo %}
+      "image": {
+        "@type": "ImageObject",
+        "url": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_1200w_url }}",
+        "width": "1200"
+      }
+    {% else %}
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://ladiaria.com.uy/static/meta/la-diaria-1000x1000.png",
+        "width": "1000",
+        "height" : "1000"
+      }
+    {% endif %}
   }
-  {% else %}
-  "image": {
-      "@type": "ImageObject",
-      "url": "https://ladiaria.com.uy/static/meta/la-diaria-1000x1000.png",
-      "width": "1000",
-      "height" : "1000"
-  }
-  {% endif %}
-}
-</script>
-
+  </script>
 {% endblock %}
 
 {% block header_scripts %}
@@ -227,26 +212,25 @@
       </div>
     </div>
     {% else %}
-    <div class="container-photo photo{% if card_size %} {{ card_size }}{% else %} BG{% endif %}
-    {% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}">
-      <figure class="principal">
-        <picture class="materialboxed">
-            <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-            <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
-            <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
-            <img class="ld-article__main-photo responsive-img lazyload{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-            alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" />
-        </picture>
-        <figcaption class="article-caption container ld-caption">
-          <p>{{ article.photo.caption }}</p>
-          {% if article.photo.extended.photographer %}
-            <p>{{ article.photo.extended.type_verbose }}:
-            {{ article.photo.extended.photographer.name }}</p>
-          {% endif %}
-        </figcaption>
-      </figure>
-    </div>
-
+      <div class="container-photo photo{% if card_size %} {{ card_size }}{% else %} BG{% endif %}
+      {% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}">
+        <figure class="principal">
+          <picture class="materialboxed">
+              <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+              <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
+              <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
+              <img class="ld-article__main-photo responsive-img lazyload{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+              alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" />
+          </picture>
+          <figcaption class="article-caption container ld-caption">
+            <p>{{ article.photo.caption }}</p>
+            {% if article.photo.extended.photographer %}
+              <p>{{ article.photo.extended.type_verbose }}:
+              {{ article.photo.extended.photographer.name }}</p>
+            {% endif %}
+          </figcaption>
+        </figure>
+      </div>
     {% endif %}
     {% endif %}
     <div class="article-header">
@@ -756,9 +740,11 @@
     </section>
     {% endif %}
 
-    <section id="header-pub" class="col s12 center-align article__bottom-ad ld-block">
-      <div id="ad-container" class="container"></div>
-    </section>
+    {% if not is_subscriber %}
+      <section id="header-pub" class="col s12 center-align article__bottom-ad ld-block">
+        <div id="ad-container" class="container"></div>
+      </section>
+    {% endif %}
 
     <section id="mas-leidos" class="col s12 ld-block">
       <div id="mas-leidos-content" class="container"></div>
@@ -816,6 +802,10 @@
 </aside>
 {% endblock %}
 
+{% block javascript %}
+  <script type="text/javascript" src="{% static 'js/vendor/js.cookie.js' %}"></script>
+{% endblock %}
+
 {% block footer_scripts %}
   <script>
     $(document).ready(function(){
@@ -829,73 +819,45 @@
         });
       {% endif %}
 
-        // getCookie for csrf token
-        function getCookie(name) {
-            var cookieValue = null;
-            if (document.cookie && document.cookie != '') {
-                var cookies = document.cookie.split(';');
-                for (var i = 0; i < cookies.length; i++) {
-                    var cookie = jQuery.trim(cookies[i]);
-                    // Does this cookie string begin with the name we want?
-                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
+      // audio progress
+      var act_time = -1;
+
+      $(".ld-audio__audio").bind('timeupdate', function(){
+        var track_length = $(".ld-audio__audio")[0].duration;
+        var secs = $(".ld-audio__audio")[0].currentTime;
+        var percent = (secs/track_length) * 100;
+        var progress = Math.floor(percent);
+        var rounded_pct = '0'
+        if (progress > act_time && !(progress % 5)){
+          act_time = progress;
+          if (act_time > 70){
+            rounded_pct = '75';
+          } else if (act_time > 45){
+            rounded_pct = '50';
+          } else if (act_time > 20){
+            rounded_pct = '25';
+          }
+          $.ajax({
+            beforeSend: function(xhr, settings) {
+              xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+            },
+            method: "POST",
+            url: "/dashboard/audio_statistics_api/",
+            data: {audio_id: "{{ article.audio.id }}", subscriber_id: "{{user.subscriber.id}}", percentage: rounded_pct}
+          });
         }
-        var csrftoken = getCookie('csrftoken');
-
-        function csrfSafeMethod(method) {
-          // these HTTP methods do not require CSRF protection
-          return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-        }
-
-        // audio progress
-        var act_time = -1;
-
-        $(".ld-audio__audio").bind('timeupdate', function(){
-            var track_length = $(".ld-audio__audio")[0].duration;
-            var secs = $(".ld-audio__audio")[0].currentTime;
-            var percent = (secs/track_length) * 100;
-            var progress = Math.floor(percent);
-            var rounded_pct = '0'
-            if (progress > act_time && !(progress % 5)){
-                act_time = progress
-                if (act_time > 70){
-                    rounded_pct = '75'
-                } else if (act_time > 45){
-                    rounded_pct = '50'
-                } else if (act_time > 20){
-                    rounded_pct = '25'
-                }
-                $.ajax({
-                    beforeSend: function(xhr, settings) {
-                      if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                      }
-                    },
-                    method: "POST",
-                    url: "/dashboard/audio_statistics_api/",
-                    data: { audio_id: "{{ article.audio.id }}", subscriber_id: "{{user.subscriber.id}}", percentage: rounded_pct }
-                });
-            }
-        });
-
+      });
     });
   </script>
+{% endblock %}
 
+{% block main_close %}{# in addition to not close a non-opened main, render a edit button if the user is staff #}
   {% if user.is_staff %}
     {% if not article.is_published %}
-    <span class="ld-tag-draft">Borrador</span>
+      <span class="ld-tag-draft">Borrador</span>
     {% endif %}
-    <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/"
-       class="ld-btn-default ld-btn-default--sm ld-admin-edit">
+    <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="ld-btn-default ld-btn-default--sm ld-admin-edit">
       <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M3 17.46v3.04c0 .28.22.5.5.5h3.04c.13 0 .26-.05.35-.15L17.81 9.94l-3.75-3.75L3.15 17.1c-.1.1-.15.22-.15.36zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg> Editar
     </a>
   {% endif %}
-
 {% endblock %}
-
-{% block main_close %}{% endblock %}

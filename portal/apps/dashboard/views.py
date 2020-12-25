@@ -54,7 +54,7 @@ def load_table(request, table_id):
                 Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None)) in request.user.groups.all()):
             return HttpResponseForbidden()
 
-    if month and year and table_id not in ('activity', 'activity_only_digital'):
+    if month and year and table_id not in ('activity', 'activity_only_digital', 'audio_statistics'):
         date_start = date(int(year), int(month), 1)
         date_end = date_start + relativedelta(months=1)
         last_month = today - relativedelta(months=1)
@@ -67,7 +67,11 @@ def load_table(request, table_id):
         date_start = date_end - relativedelta(months=1)
         filename = '%s.csv' % table_id
     try:
-        rows = csv.reader(open(join(settings.DASHBOARD_REPORTS_PATH, filename)))
+        if table_id == 'audio_statistics':
+            # From this table we need to grab the data from the database, not from a csv.
+            rows = audio_statistics_dashboard(month, year)
+        else:
+            rows = csv.reader(open(join(settings.DASHBOARD_REPORTS_PATH, filename)))
         # hardcoded last year filter only for subscribers
         # TODO: implement the year selector
         if table_id == 'subscribers':
@@ -96,10 +100,9 @@ def export_csv(request, table_id):
 def audio_statistics_api(request):
     subscriber_id = request.POST.get('subscriber_id')
     audio_id = request.POST.get('audio_id')
-    percentage = request.POST.get('percentage', 0)
-    percentage = int(percentage)
+    percentage = int(request.POST.get('percentage'))
 
-    if AudioStatistics.objects.filter(
+    if not subscriber_id or AudioStatistics.objects.filter(
             subscriber_id=subscriber_id, audio_id=audio_id, percentage__lte=percentage).exists():
         return HttpResponse()
     else:
@@ -115,26 +118,52 @@ def audio_statistics_api(request):
             raise HttpResponseBadRequest("Unique object already exists")
 
 
-@never_cache
-@permission_required('thedaily.change_subscriber')
-@to_response
-def audio_statistics_dashboard(request):
-    audios = Audio.objects.all().order_by('-id')
-    for audio in audios:
-        articles = audio.articles_core.all()
-        if articles:
-            audio.article = articles[0].headline
-            audio.area = articles[0].section
-            audio.date = articles[0].date_published
-        else:
-            pass
-        # Not sure why this doesn't work. Raises UnicodeDecodeError
-        # audio_info = mutagen.File(audio.file).info
-        # audio.duration = timedelta(seconds=int(audio_info.length))
-        audio.clicks = audio.audiostatistics_set.filter().count()
-        audio.percentage0 = audio.audiostatistics_set.filter(percentage=0).count()
-        audio.percentage25 = audio.audiostatistics_set.filter(percentage=25).count()
-        audio.percentage50 = audio.audiostatistics_set.filter(percentage=50).count()
-        audio.percentage75 = audio.audiostatistics_set.filter(percentage=75).count()
+@csrf_exempt
+def audio_statistics_api_amp(request):
+    subscriber_id = request.GET.get('subscriber_id')
+    audio_id = request.GET.get('audio_id')
 
-    return 'audio_statistics.html', {'audios': audios}
+    if AudioStatistics.objects.filter(
+            subscriber_id=subscriber_id, audio_id=audio_id, amp_click=True).exists():
+        return HttpResponse()
+    else:
+        try:
+            audio_statistics, created = AudioStatistics.objects.get_or_create(
+                subscriber_id=subscriber_id, audio_id=audio_id)
+            audio_statistics.amp_click = True
+            audio_statistics.save()
+            return HttpResponse()
+        except ValidationError:
+            raise HttpResponseBadRequest("Unique object already exists")
+
+
+def audio_statistics_dashboard(month=None, year=None):
+    """
+    Returns all audio objects with play statistics.
+    NOTE: month and year are not being used yet, the date filter option was removed from the UX because more precise
+          information about this filter requirement is needed.
+    """
+    audios = Audio.objects.all().order_by('-id')
+    article_list = []
+    if month and year:
+        audios = audios.filter(articles_core__date_published__month=month, articles_core__date_published__year=year)
+
+    for audio in audios:
+        articles = audio.articles_core.all().order_by('-date_published')  # This will show the most recent article only
+        if articles:
+            # TODO: duration calculation is commented, it raises a UnicodeDecodeError and should be investigated
+            # audio_info = mutagen.File(audio.file).info
+            article_list.append({
+                'article': articles[0].headline,
+                'article_url': articles[0].get_absolute_url,
+                'area': articles[0].section,
+                'date': articles[0].date_published,
+                'clicks': audio.audiostatistics_set.filter(percentage__isnull=False).count(),
+                'amp': audio.audiostatistics_set.filter(amp_click=True).count(),
+                'percentage0': audio.audiostatistics_set.filter(percentage=0).count(),
+                'percentage25': audio.audiostatistics_set.filter(percentage=25).count(),
+                'percentage50': audio.audiostatistics_set.filter(percentage=50).count(),
+                'percentage75': audio.audiostatistics_set.filter(percentage=75).count(),
+                # 'duration': timedelta(seconds=int(audio_info.length))
+            })
+    return article_list

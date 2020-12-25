@@ -191,8 +191,7 @@ ACTSTREAM_SETTINGS = {
     'MODELS': (
         'auth.User', 'core.article', 'comunidad.subscriberarticle', 'cartelera.pelicula', 'cartelera.cine',
         'photologue.Photo'),
-    'FETCH_RELATIONS': False, 'USE_PREFETCH': True, 'GFK_FETCH_DEPTH': 1,
-}
+    'FETCH_RELATIONS': False, 'USE_PREFETCH': True}
 
 CRISPY_TEMPLATE_PACK = 'materialize_css_forms'
 

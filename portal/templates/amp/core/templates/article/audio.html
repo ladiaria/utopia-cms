@@ -24,7 +24,9 @@
                    preload="metadata"
                    controls
                    controlsList="nodownload"
-                   src="{% if is_subscriber %}{{ SITE_URL }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}">
+                   src="{% if is_subscriber %}{{ SITE_URL }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}"
+                   id="audioPlayer"
+                   >
           <div fallback>
             <p>Tu navegador no soporta audios HTML5.</p>
           </div>

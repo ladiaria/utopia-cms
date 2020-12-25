@@ -5,7 +5,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.urlresolvers import resolve, Resolver404
 
-from core.models import Article, ArticleUrlHistory
+from core.models import Article, ArticleUrlHistory, Publication
 from signupwall.middleware import get_article_by_url_kwargs
 
 
@@ -17,6 +17,7 @@ def permissions(request):
         subscriber = request.user.subscriber
 
         # use article.publications if this is an article detail page
+        # use publication if this is a publication home page
         try:
             path_resolved = resolve(request.path)
             url_name = path_resolved.url_name
@@ -40,6 +41,14 @@ def permissions(request):
                 except ArticleUrlHistory.DoesNotExist:
                     # no article found, treat as if it was any other page
                     is_subscriber = is_subscriber_default
+        elif url_name == 'home':
+            domain_slug = path_resolved.kwargs.get('domain_slug')
+            if domain_slug and Publication.objects.filter(slug=domain_slug).exists():
+                # not default pub home page
+                is_subscriber = subscriber.is_subscriber(domain_slug)
+            else:
+                # default pub or area home page
+                is_subscriber = is_subscriber_default
         else:
             is_subscriber = is_subscriber_default
 

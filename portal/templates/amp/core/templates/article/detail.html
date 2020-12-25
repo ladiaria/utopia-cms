@@ -385,4 +385,25 @@
     </div>
   {% endif %}
 
+  {# audio analytics #}
+  <amp-analytics config="{{ SITE_URL }}usuarios/amp-analytics/config" data-credentials="include">
+    <script type="application/json">
+      {
+        "requests": {
+          "audioPlay": "{{ SITE_URL }}dashboard/audio_statistics_api_amp/?subscriber_id=${subscriber_id}&audio_id=${audio_id}"
+        },
+        "triggers": {
+          "trackAudioPlay": {
+            "on": "audio-play",
+            "request": "audioPlay",
+            "selector": "#audioPlayer",
+            "vars": {
+              "audio_id": "{{ article.audio.id }}"
+            }
+          }
+        }
+      }
+    </script>
+  </amp-analytics>
+
 {% endblock %}

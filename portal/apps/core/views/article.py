@@ -145,13 +145,11 @@ def article_detail(request, year, month, slug, domain_slug=None):
     except (ConnectionError, ValueError, KeyError):
         comments_count = 0
 
-    article_tags = get_article_tags(article)
-    article_tags = reorder_tag_list(article, article_tags)
-
     return 'detail.html', {
         'article': article, 'is_detail': True, 'keep_reading': keep_reading, 'report_form': report_form,
         'domain': domain, 'category': category, 'section': article.publication_section(),
-        'header_display': article.header_display, 'tag_list': article_tags, 'comments_count': comments_count,
+        'header_display': article.header_display, 'tag_list': reorder_tag_list(article, get_article_tags(article)),
+        'comments_count': comments_count,
         'publication': article.main_section.edition.publication if article.main_section else None,
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED}
 

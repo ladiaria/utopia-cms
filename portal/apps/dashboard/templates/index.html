@@ -26,8 +26,14 @@
     <script>
       $(function(){
         $(document).ready(function(){
+          var hash = $(location).prop('hash');
+          var tableId = hash.substr(1);
           $('#inner-content').html("<img style='top:20%;left:50%; position:absolute;' src='{% static 'images/loading.gif' %}'>");
-          $('#inner-content').load('/dashboard/table/articles/');
+          if( hash == ""){
+            $('#inner-content').load('/dashboard/table/articles/');
+          }else {
+            $('#inner-content').load('/dashboard/table/' + tableId + '/');
+          }
         });
         $('a.embed').click(function(){
           $('#inner-content').html("<img style='top:20%;left:50%; position:absolute;' src='{% static 'images/loading.gif' %}'>");
@@ -53,38 +59,38 @@
         <div class="sidebar-sticky">
           <ul class="nav flex-column" id="sidebar" role="tablist">
             <li class="nav-item">
-              <a class="embed nav-link" id="articles" data-toggle="tab" href="#" role="tab" aria-controls="score" aria-selected="true">
-                <span data-feather="file"></span>
+              <a class="embed nav-link" id="articles" data-toggle="tab" href="#articles" role="tab" aria-controls="score" aria-selected="true">
+                <span data-feather="award"></span>
                 Puntaje <span class="sr-only">(current)</span>
               </a>
             </li>
             <li class="nav-item">
-              <a class="embed nav-link" id="sections" data-toggle="tab" href="#" role="tab" aria-controls="sections" aria-selected="false">
-                <span data-feather="file"></span>
+              <a class="embed nav-link" id="sections" data-toggle="tab" href="#sections" role="tab" aria-controls="sections" aria-selected="false">
+                <span data-feather="list"></span>
                 Secciones
               </a>
             </li>
             <li class="nav-item">
-              <a class="embed nav-link" id="subscribers" data-toggle="tab" href="#" role="tab" aria-controls="subscribers" aria-selected="false">
-                <span data-feather="file"></span>
+              <a class="embed nav-link" id="subscribers" data-toggle="tab" href="#subscribers" role="tab" aria-controls="subscribers" aria-selected="false">
+                <span data-feather="eye"></span>
                 Visitas de suscriptores (artículos)
               </a>
             </li>
             <li class="nav-item">
-              <a class="embed nav-link" id="subscribers_sections" data-toggle="tab" href="#" role="tab" aria-controls="subscribers_sections" aria-selected="false">
-                <span data-feather="file"></span>
+              <a class="embed nav-link" id="subscribers_sections" data-toggle="tab" href="#subscribers_sections" role="tab" aria-controls="subscribers_sections" aria-selected="false">
+                <span data-feather="eye"></span>
                 Visitas de suscriptores (secciones)
               </a>
             </li>
             {% if activity_rows %}
             <li class="nav-item">
-              <a class="embed nav-link" id="activity" data-toggle="tab" href="#" role="tab" aria-controls="activity" aria-selected="false">
+              <a class="embed nav-link" id="activity" data-toggle="tab" href="#activity" role="tab" aria-controls="activity" aria-selected="false">
                 <span data-feather="users"></span>
                 Actividad
               </a>
             </li>
             <li class="nav-item">
-              <a class="embed nav-link" id="activity_only_digital" data-toggle="tab" href="#" role="tab" aria-controls="activity" aria-selected="false">
+              <a class="embed nav-link" id="activity_only_digital" data-toggle="tab" href="#activity_only_digital" role="tab" aria-controls="activity" aria-selected="false">
                 <span data-feather="users"></span>
                 Actividad (sólo digitales)
               </a>
@@ -97,11 +103,12 @@
               {% endif %}
             {% endif %}
             <li class="nav-item">
-              <a class="embed nav-link" id="cards" href="audio_statistics/">
+              <a class="embed nav-link" id="audio_statistics" data-toggle="tab" href="#audio_statistics" role="tab" aria-controls="audio_statistics" aria-selected="false">
                 <span data-feather="headphones"></span>
                 Estadísticas de audio
               </a>
             </li>
+         </ul>
         </div>
       </nav>
 

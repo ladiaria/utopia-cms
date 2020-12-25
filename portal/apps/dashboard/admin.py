@@ -13,7 +13,7 @@ class NewsletterDeliveryAdmin(ModelAdmin):
 
 
 class AudioStatisticsAdmin(ModelAdmin):
-    list_display = ['audio', 'subscriber', 'percentage']
+    list_display = ['audio', 'subscriber', 'percentage', 'amp_click']
     raw_id_fields = ['audio', 'subscriber']
 
 

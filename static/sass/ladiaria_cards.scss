@@ -205,8 +205,6 @@ img{
       }
     }
   }
-
-
 }
 
 .ld-grid-area.area-third{
@@ -254,7 +252,6 @@ img{
 
   &__body{
     padding: 16px;
-
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -334,7 +331,6 @@ img{
       }
     }
   }
-
 
   &--sm {
     position: relative;
@@ -439,7 +435,6 @@ img{
       }
     }
   }
-
 }
 
 .ld-grid-clear{
@@ -493,7 +488,6 @@ img{
     }
   }
 
-
   .ld-grid-simple{
     @media (min-width: 640px) {
       margin: 0 -12px;
@@ -501,7 +495,6 @@ img{
     > .ld-grid-simple__area{
       margin-bottom: 24px;
       float: left;
-
 
       .ld-card{
         height: 100%;

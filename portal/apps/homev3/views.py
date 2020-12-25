@@ -111,7 +111,8 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         context.update({
             'cover_article': cover_article, 'edition': edition, 'destacados': top_articles, 'mas_leidos': False,
             'big_photo': publication.full_width_cover_image, 'is_portada': True, 'question_list': question_list,
-            'questions_topic': questions_topic})
+            'questions_topic': questions_topic,
+            'allow_ads': getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_ALLOW_ADS', True)})
         return 'index_pubs.html', context
     else:
         if year and month and day:
@@ -149,7 +150,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             print(u'DEBUG: Default home page view called.')
         context.update({
             'edition': ld_edition, 'destacados': top_articles, 'is_portada': True, 'cover_article': cover_article,
-            'big_photo': publication.full_width_cover_image, 'mas_leidos': True,
+            'big_photo': publication.full_width_cover_image, 'mas_leidos': True, 'allow_ads': True,
             'publications': Publication.objects.filter(public=True), 'home_publications': settings.HOME_PUBLICATIONS,
             'question_list': question_list, 'questions_topic': questions_topic})
         return 'index.html', context
