@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load core_tags inplace_edit tagging_tags %}
+{% load static core_tags %}
 
 {% block page_title %}Noticias de {% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %} | {{ site.name }} | {{ country_name }}{% endblock %}
 
@@ -9,9 +9,11 @@
 {% endblock %}
 {% block meta %}
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="la diaria" />
-  <meta property="og:url" content="https://piques.uy/tags/{{ tags.0 }}" />
-  <meta property="og:image" content="https://piques.uy/static/meta/la-diaria-1000x1000.png" />
+  <meta property="og:site_name" content="{{ site.name }}">
+  <meta property="og:url" content="{{ SITE_URL }}tags/{{ tags.0 }}">
+  {% if default_pub.open_graph_image %}
+    <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}">
+  {% endif %}
   <!-- End Open Graph (http://ogp.me) -->
 {% endblock %}
 
@@ -22,18 +24,18 @@
       "@graph": [
         {
           "@type": "WebSite",
-          "@id": "https://ladiaria.com.uy/",
-          "url": "https://ladiaria.com.uy/",
-          "name": "la diaria",
+          "@id": "{{ SITE_URL }}",
+          "url": "{{ SITE_URL }}",
+          "name": "{{ site.name }}",
           "inLanguage": "es"
         },
         {
           "@type": "CollectionPage",
-          "@id": "https://ladiaria.com.uy/tags/{{ tags.0 }}",
-          "url": "https://ladiaria.com.uy/tags/{{ tags.0 }}",
+          "@id": "{{ SITE_URL }}tags/{{ tags.0 }}",
+          "url": "{{ SITE_URL }}tags/{{ tags.0 }}",
           "name": "Noticias de {{ tags.0 }}",
           "isPartOf": {
-            "@id": "https://ladiaria.com.uy/"
+            "@id": "{{ SITE_URL }}"
           },
           "inLanguage": "es"
         }

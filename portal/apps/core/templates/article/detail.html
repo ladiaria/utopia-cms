@@ -11,47 +11,14 @@
   {{ article.tags }}
 {% endblock %}
 
-{% block robots %}{% ifequal section.slug "humor" %}noindex{% else %}{{ block.super }}{% endifequal %}{% endblock %}
+{% block robots %}{% if section.is_satirical %}noindex{% else %}{{ block.super }}{% endif %}{% endblock %}
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:title" content="{{ article.headline|remove_markup }}" />
+  <meta property="og:title" content="{{ article.headline|remove_markup }}">
 {% endblock %}
 {% block meta %}
-  <meta property="og:type" content="article">
-  <meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ site.name }}{% endif %}" />
-  <meta property="og:description" content="{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}" />
-  <meta property="og:locale" content="es_UY" />
-  <meta property="og:site_name" content="{{ site.name }}" />
-  <meta property="og:url" content="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" />
-  <meta property="article:section" content="{{ section }}" />
-  <meta property="article:publisher" content="https://www.facebook.com/ladiaria/" />
-  <meta property="article:published_time" content="{{ article.date_published|date:"c"|capfirst }}" />
-  {% if publication == garra_pub %}
-  <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}/static/img/garra-social-sq.png{% endif %}" />
-  {% elif publication == lento_pub %}
-  <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}/static/img/lento-social-sq.png{% endif %}" />
-  {% else %}
-    {% ifequal section.slug 'humor' %}
-      <meta property="og:image" content="{{ SITE_URL }}static/img/humor-social.png" />
-    {% else %}
-      <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}/static/meta/la-diaria-1000x1000.png{% endif %}" />
-    {% endifequal %}
-  {% endif %}
-  <!-- End Open Graph (http://ogp.me) -->
-  <!-- Meta tags Google -->
-  <meta name="robots" content="max-image-preview:large">
-  <!-- End Meta tags Google -->
-  <!-- Meta tags Twitter -->
-  <meta name="twitter:card" content="{% if article.photo %}summary_large_image{% else %}summary{% endif %}">
-  <meta name="twitter:site" content="@ladiaria" />
-  {% if article.photo %}
-  <meta name="twitter:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}/static/meta/la-diaria-1000x1000.png{% endif %}" />
-  <meta name="twitter:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
-  <meta property="og:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" />
-  {% endif %}
-  <!-- End Meta tags Twitter -->
-
+  {% include 'article/detail_meta.html' %}
   <!-- AMP -->
   <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
   <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
@@ -59,76 +26,7 @@
 {% endblock %}
 
 {% block json_ld %}
-  <script type="application/ld+json">
-  {
-    "@context": "http://schema.org",
-    "@type": "{% ifequal section.slug 'humor' %}SatiricalArticle{% else %}NewsArticle{% endifequal %}",
-    "mainEntityOfPage": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}",
-    "headline": "{{ article.headline|remove_markup|truncatewords:25 }}",
-    "datePublished": "{{ article.date_published|date:"c" }}",
-    "dateModified": "{{ article.date_published|date:"c" }}",
-    "description": "{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
-    "isAccessibleForFree": "{% if article.public %}True{% else %}False{% endif %}",
-    "hasPart": {
-      "@type": "WebPageElement",
-      "isAccessibleForFree": "{% if article.public %}True{% else %}False{% endif %}",
-      "cssSelector" : ".paywalled-content"
-    },
-    "isPartOf": {
-      "@type": ["CreativeWork"],
-      "name" : "{{ site.name }}"
-    },
-    {% if article.get_authors %}
-      "author": {% if article.get_authors|length > 1 %} [ {% endif %}
-        {% for author in article.get_authors %}
-          {
-            "@type": "Person",
-            "name": "{{ author.name }}"
-          }{% if not forloop.last or article.get_authors|length == 1 %}, {% endif %}
-        {% endfor %}
-        {% if article.get_authors|length > 1 %} ], {% endif %}
-    {% else %}
-      "author": {
-          "@type": "Organization",
-          "name": "{{ site.name }}"
-      },
-    {% endif %}{# TODO post release: eliminate custom pubs, use utopia assets in "else" #}
-    "publisher": {
-      "@type": "Organization",
-      "name": "{{ site.name }}",
-      "logo": {
-        "@type": "ImageObject",
-        {% if publication == garra_pub %}
-          "url": "https://ladiaria.com.uy/static/img/garra-publisher-img.png",
-          "width": "152",
-          "height": "60"
-        {% elif publication == lento_pub %}
-          "url": "https://ladiaria.com.uy/static/img/lento-publisher-img.png",
-          "width": "84",
-          "height": "60"
-        {% else %}
-          "url": "https://ladiaria.com.uy/static/meta/la-diaria-205x60.png",
-          "width": "205",
-          "height": "60"
-        {% endif %}
-      }
-    },
-    {% if article.photo %}
-      "image": {
-        "@type": "ImageObject",
-        "url": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_1200w_url }}",
-        "width": "1200"
-      }
-    {% else %}
-      "image": {
-        "@type": "ImageObject",
-        "url": "https://ladiaria.com.uy/static/meta/la-diaria-1000x1000.png",
-        "width": "1000",
-        "height" : "1000"
-      }
-    {% endif %}
-  }
-  </script>
+  {% include 'article/detail_json_ld.html' %}
 {% endblock %}
 
 {% block header_scripts %}
@@ -220,7 +118,7 @@
               <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
               <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
               <img class="ld-article__main-photo responsive-img lazyload{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-              alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" />
+              alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
           </picture>
           <figcaption class="article-caption container ld-caption">
             <p>{{ article.photo.caption }}</p>
@@ -234,18 +132,18 @@
     {% endif %}
     {% endif %}
     <div class="article-header">
-      {% ifequal section.slug 'humor' %}
+      {% if section.is_satirical %}
         <div class="align-center">
           <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
         </div>
-      {% endifequal %}
+      {% endif %}
       <h1 class="article-title after_foto">
-          {{ article.headline|ldmarkup:article.id|removetags:"p" }}
+        {{ article.headline|ldmarkup:article.id|removetags:"p" }}
       </h1>
 
       <div class="article-date-author">
       {% if article.date_published %}
-          <span class="date small"><time datetime="{{ article.date_published|date:"c" }}">{{ article.date_published|date:"j \d\e F \d\e Y"|lower }}</time> · </span>
+        <span class="date small"><time datetime="{{ article.date_published|date:'c' }}">{{ article.date_published|date:"j \d\e F \d\e Y"|lower }}</time> · </span>
       {% endif %}
       {% if article.has_byline %}
         Escribe

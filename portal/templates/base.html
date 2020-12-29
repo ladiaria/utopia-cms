@@ -1,5 +1,5 @@
 {% spaceless %}
-{% load static inplace_edit core_tags homev3_tags adzone_tags compress %}
+{% load static homev3_tags compress %}
 {% endspaceless %}<!doctype html>
 {% block html %}
 <!-- Legacy browsers support  -->
@@ -68,7 +68,7 @@
     {% endif %}
     <meta name="theme-color" content="#F2F2F2">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="la diaria">
+    <meta name="apple-mobile-web-app-title" content="{{ site.name }}">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- End Icons -->
 
@@ -96,16 +96,16 @@
 
     {% block meta_og_title %}
       <!-- Open Graph (http://ogp.me) -->
-      <meta property="og:title" content="la diaria">
+      <meta property="og:title" content="{{ site.name }}">
     {% endblock %}
 
     {% block meta %}
       <meta property="og:type" content="website">
-      <meta property="og:title" content="la diaria">
+      <meta property="og:title" content="{{ site.name }}">
       <meta property="og:description" content="{{ site_description }}">
       <meta property="og:locale" content="es_UY">
-      <meta property="og:site_name" content="la diaria">
-      <meta property="og:url" content="https://ladiaria.com.uy/">
+      <meta property="og:site_name" content="{{ site.name }}">
+      <meta property="og:url" content="{{ SITE_URL }}">
       {% if publication.slug in custom_icons_publications %}
         <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static publication.open_graph_image %}">
       {% elif default_pub.open_graph_image %}
@@ -115,7 +115,9 @@
 
       <!-- Meta tags Twitter -->
       <meta name="twitter:card" content="summary">
-      <meta name="twitter:site" content="@ladiaria">
+      {% if HOMEV3_TWITTER_SITE_META %}
+        <meta name="twitter:site" content="@{{ HOMEV3_TWITTER_SITE_META }}">
+      {% endif %}
       <!-- End Meta tags Twitter -->
     {% endblock %}
 
@@ -127,38 +129,20 @@
           {% if journalist %}
             "@type": "Person",
             "name": "{{ journalist.name }}",
-            "worksFor": "https://ladiaria.com.uy",
+            "worksFor": "{{ SITE_URL }}",
             "jobTitle": "{{ journalist.get_job_display }}"
           {% else %}
             "@type": "Organization",
-            "name": "la diaria",
-            "url": "https://ladiaria.com.uy/",
+            "name": "{{ site.name }}",
+            "url": "{{ SITE_URL }}",
             {% block json_ld_extra %}{% endblock %}
             {% if publication.slug in custom_icons_publications %}
               "logo": "{{ URL_SCHEME }}://{{ site.domain }}{% static publication.open_graph_image %}",
             {% elif default_pub.open_graph_image %}
               "logo": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}",
             {% endif %}
-            "description": "{{ site_description }}",
-            "address": {
-              "@type": "PostalAddress",
-              "streetAddress": "Treinta y Tres 1479",
-              "addressLocality": "Montevideo",
-              "addressRegion": "Montevideo",
-              "postalCode": "11000",
-              "addressCountry": "Uruguay"
-            },
-            "email":"contacto@ladiaria.com.uy",
-            "telephone":"+59829000808",
-            "sameAs": [
-              "https://www.facebook.com/ladiaria",
-              "https://twitter.com/ladiaria",
-              "https://www.instagram.com/ladiaria",
-              "https://www.youtube.com/channel/UCu0rrtxKLExB_fNSAJ_SU9A",
-              "https://www.linkedin.com/company/ladiaria",
-              "https://soundcloud.com/ladiaria",
-              "https://es.wikipedia.org/wiki/La_Diaria"
-            ]
+            "description": "{{ site_description }}"{% if HOMEV3_EXTRA_META %},
+            {% autoescape off %}{{ HOMEV3_EXTRA_META }}{% endautoescape %}{% endif %}
           {% endif %}
         }
       </script>
@@ -189,7 +173,7 @@
       {% block css %}{% endblock %}
     {% endcompress %}
 
-   <!-- JavaScript -->
+    <!-- JavaScript -->
     <script src="{% static 'js/vendor/jquery-3.4.1.min.js' %}"></script>
     <script type="text/javascript">
       $(function(){
@@ -215,7 +199,7 @@
     <!-- End Google Tag Manager (noscript) -->
     <!-- Legacy browser alert -->
     <!--[if lte IE 11]>
-      <p class="browserupgrade">El sitio web de la diaria no funciona apropiadamente en Internet Explorer. Para una experiencia óptima te recomendamos instalar un navegador moderno como <a href="https://www.mozilla.org/firefox">Firefox</a>, <a href="https://www.google.com/chrome">Chrome</a> o <a href="https://microsoft.com/edge">Edge</a>.</p>
+      <p class="browserupgrade">El sitio web de {{ site.name }} no funciona apropiadamente en Internet Explorer. Para una experiencia óptima te recomendamos instalar un navegador moderno como <a href="https://www.mozilla.org/firefox">Firefox</a>, <a href="https://www.google.com/chrome">Chrome</a> o <a href="https://microsoft.com/edge">Edge</a>.</p>
     <![endif]-->
     <!-- End legacy browser alert -->
 

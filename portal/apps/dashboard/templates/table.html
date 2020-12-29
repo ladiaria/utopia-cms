@@ -305,8 +305,8 @@
               <th>Artículo</th>
               <th>Categoría</th>
               <th data-sortable="true">Fecha</th>
+              <th data-sortable="true">Clics AMP</th>
               <th data-sortable="true">Clics</th>
-              <th data-sortable="true">AMP</th>
               <th data-sortable="true">&lt;25%</th>
               <th data-sortable="true">25-50%</th>
               <th data-sortable="true">50-75%</th>
@@ -319,12 +319,12 @@
               <td><a href="{{ item.article_url }}">{{ item.article }}</a></td>
               <td>{{ item.area }}</td>
               <td>{{ item.date|date:"Y-m-d" }}</td>
-              <td class="text-center">{{item.clicks}}</td>
-              <td class="text-center">{{item.amp}}</td>
-              <td class="text-center">{{item.percentage0}}</td>
-              <td class="text-center">{{item.percentage25}}</td>
-              <td class="text-center">{{item.percentage50}}</td>
-              <td class="text-center">{{item.percentage75}}</td>
+              <td class="text-center">{{ item.amp }}</td>
+              <td class="text-center">{{ item.clicks }}</td>
+              <td class="text-center">{{ item.percentage0 }}</td>
+              <td class="text-center">{{ item.percentage25 }}</td>
+              <td class="text-center">{{ item.percentage50 }}</td>
+              <td class="text-center">{{ item.percentage75 }}</td>
             </tr>
             {% endfor %}
           </tbody>

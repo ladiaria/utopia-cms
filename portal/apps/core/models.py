@@ -75,6 +75,11 @@ class Publication(Model):
     apple_touch_icon_192 = CharField(max_length=128, blank=True, null=True)
     apple_touch_icon_512 = CharField(max_length=128, blank=True, null=True)
     open_graph_image = CharField(max_length=128, blank=True, null=True)
+    open_graph_image_width = PositiveSmallIntegerField(blank=True, null=True)
+    open_graph_image_height = PositiveSmallIntegerField(blank=True, null=True)
+    publisher_logo = CharField(max_length=128, blank=True, null=True)
+    publisher_logo_width = PositiveSmallIntegerField(blank=True, null=True)
+    publisher_logo_height = PositiveSmallIntegerField(blank=True, null=True)
 
     def __unicode__(self):
         return self.name
@@ -752,6 +757,9 @@ class Section(Model):
 
     def get_absolute_url(self):
         return urlresolvers.reverse('section_detail', kwargs={'section_slug': self.slug})
+
+    def is_satirical(self):
+        return self.slug in getattr(settings, 'CORE_SATIRICAL_SECTIONS', ())
 
     def get_publications(self):
         return u', '.join(self.publications.values_list('name', flat=True))
@@ -1826,7 +1834,9 @@ def get_current_edition(publication=None):
     filters['date_published__lt' + ('e' if now > publishing else '')] = today
     try:
         return Edition.objects.filter(**filters).latest()
-    except Exception:
+    except Exception as e:
+        if settings.DEBUG:
+            print(u"ERROR: %s" % e)
         return None
 
 

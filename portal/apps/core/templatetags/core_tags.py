@@ -5,6 +5,7 @@ import random
 from datetime import date, timedelta
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.template import Library, Node, RequestContext, TemplateSyntaxError, Variable, loader
 from django.template.defaultfilters import stringfilter
 from django.utils import text
@@ -357,6 +358,29 @@ def render_supplements():
     supplements = Supplement.objects.all()[:2]
     return loader.render_to_string(
         'core/templates/supplement_list.html', {'supplements': supplements})
+
+
+@register.simple_tag
+def render_hierarchy(article):
+    """
+    Returns HTML to print links with the article hierarchy using its main category (or publication if the category is
+    None and publication is included in the custom setting) and its main section.
+    """
+    section = article.section
+    if section:
+        if section.category:
+            parent = (reverse('home', kwargs={'domain_slug': section.category.slug}), section.category)
+        else:
+            parent = None if (
+                not article.main_section or article.main_section.edition.publication.slug in \
+                getattr(settings, 'CORE_HIERARCHY_USE_PUBLICATION', ())
+            ) else (
+                reverse('home', kwargs={'domain_slug': article.main_section.edition.publication.slug}),
+                article.main_section.edition.publication)
+        child = u'<a href="%s">%s</a>' % (section.get_absolute_url(), section)
+        return u' › '.join([u'<a href="%s">%s</a>' % parent, child]) if parent else child
+    else:
+        return u''
 
 
 @register.simple_tag(takes_context=True)

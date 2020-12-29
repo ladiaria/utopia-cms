@@ -1,0 +1,65 @@
+{% load static core_tags %}
+
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "{% if section.is_satirical %}SatiricalArticle{% else %}NewsArticle{% endif %}",
+    "mainEntityOfPage": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}",
+    "headline": "{{ article.headline|remove_markup|truncatewords:25 }}",
+    "datePublished": "{{ article.date_published|date:'c' }}",
+    "dateModified": "{{ article.date_published|date:'c' }}",
+    "description": "{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
+    "isAccessibleForFree": "{% if article.public %}True{% else %}False{% endif %}",
+    "hasPart": {
+      "@type": "WebPageElement",
+      "isAccessibleForFree": "{% if article.public %}True{% else %}False{% endif %}",
+      "cssSelector" : ".paywalled-content"
+    },
+    "isPartOf": {
+      "@type": ["CreativeWork"],
+      "name" : "{{ site.name }}"
+    },
+    {% if article.get_authors %}
+      "author": {% if article.get_authors|length > 1 %} [ {% endif %}
+        {% for author in article.get_authors %}
+          {
+            "@type": "Person",
+            "name": "{{ author.name }}"
+          }{% if not forloop.last or article.get_authors|length == 1 %}, {% endif %}
+        {% endfor %}
+        {% if article.get_authors|length > 1 %} ], {% endif %}
+    {% else %}
+      "author": {
+        "@type": "Organization",
+        "name": "{{ site.name }}"
+      },
+    {% endif %}
+    "publisher": {
+      "@type": "Organization",
+      "name": "{{ site.name }}"{% if publication.publisher_logo or default_pub.publisher_logo %},
+      "logo": {
+        "@type": "ImageObject",
+        {% if publication.publisher_logo %}
+          "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static publication.publisher_logo %}",
+          "width": "{{ publication.publisher_logo_width }}",
+          "height": "{{ publication.publisher_logo_height }}"
+        {% else %}
+          "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.publisher_logo %}",
+          "width": "{{ default_pub.publisher_logo_width }}",
+          "height": "{{ default_pub.publisher_logo_height }}"
+        {% endif %}
+      }{% endif %}
+    }{% if article.photo %},
+    "image": {
+      "@type": "ImageObject",
+      "url": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_1200w_url }}",
+      "width": "1200"
+    }{% elif default_pub.open_graph_image %},
+    "image": {
+      "@type": "ImageObject",
+      "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}",
+      "width": "{{ default_pub.open_graph_image_width }}",
+      "height" : "{{ default_pub.open_graph_image_height }}"
+    }{% endif %}
+  }
+</script>

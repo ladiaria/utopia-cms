@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static core_tags ldml adzone_tags tagging_tags crispy_forms_tags videologue_tags markup %}
+{% load static core_tags ldml tagging_tags crispy_forms_tags videologue_tags markup %}
 
 {% autoescape on %}
 {% block page_title %}
@@ -15,146 +15,20 @@
 
 {% block meta %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:type" content="article">
-  <meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}la diaria{% endif %}" />
-  <meta property="og:title" content="{% autoescape on %}{{ article.headline|remove_markup }}{% endautoescape %}" />
-  <meta property="og:description" content="{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}" />
-  <meta property="og:locale" content="es_UY" />
-  <meta property="og:site_name" content="la diaria" />
-  <meta property="og:url" content="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" />
-  <meta property="article:section" content="{{ section }}" />
-  <meta property="article:publisher" content="https://www.facebook.com/ladiaria/" />
-  <meta property="article:published_time" content="{{ article.date_published|date:"c"|capfirst }}" />
-  {% if publication == garra_pub %}
-    <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}{% else %}/static/img/garra-social-sq.png{% endif %}" />
-  {% elif publication == lento_pub %}
-    <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}{% else %}/static/img/lento-social-sq.png{% endif %}" />
-  {% else %}
-    {% ifequal section.slug 'humor' %}
-      <meta property="og:image" content="{{ SITE_URL }}static/img/humor-social.png" />
-    {% else %}
-      <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}{% else %}/static/meta/la-diaria-1000x1000.png{% endif %}" />
-    {% endifequal %}
-  {% endif %}
-  {% if article.photo %}
-    <meta property="og:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" />
-  {% endif %}
-  <!-- End Open Graph (http://ogp.me) -->
-  <!-- Meta tags Google -->
-  <meta name="robots" content="max-image-preview:large">
-  <!-- End Meta tags Google -->
-  <!-- Meta tags Twitter -->
-  <meta name="twitter:card" content="{% if article.photo %}summary_large_image{% else %}summary{% endif %}">
-  <meta name="twitter:site" content="@ladiaria" />
-  {% if article.photo %}
-    <meta name="twitter:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
-  {% endif %}
-  <!-- End Meta tags Twitter -->
+  <meta property="og:title" content="{% autoescape on %}{{ article.headline|remove_markup }}{% endautoescape %}">
+  {% include 'article/detail_meta.html' %}
 
   <!-- Canonical -->
   <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
   <!-- End Canonical -->
 
   <!-- Schema (https://schema.org) -->
-  <script type="application/ld+json">
-    {
-      "@context": "http://schema.org",
-      {% ifequal section.slug 'humor' %}
-        "@type": "SatiricalArticle",
-      {% else %}
-        "@type": "NewsArticle",
-      {% endifequal %}
-      "mainEntityOfPage": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}",
-      "headline": "{% autoescape on %}{{ article.headline|remove_markup|truncatewords:25 }}{% endautoescape %}",
-      "datePublished": "{{ article.date_published|date:"c" }}",
-      "dateModified": "{{ article.date_published|date:"c" }}",
-      "description": "{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
-      {% if article.public %}
-      "isAccessibleForFree": "True",
-      {% else %}
-      "isAccessibleForFree": "False",
-      {% endif %}
-      "hasPart":
-        {
-        "@type": "WebPageElement",
-        {% if article.public %}
-        "isAccessibleForFree": "True",
-        {% else %}
-        "isAccessibleForFree": "False",
-        {% endif %}
-        "cssSelector" : ".paywalled-content"
-      },
-      "isPartOf": {
-        "@type": ["CreativeWork"],
-        "name" : "la diaria"
-      },
-      {% if article.get_authors %}
-          "author":
-          {% if article.get_authors|length > 1 %} [ {% endif %}
-          {% for author in article.get_authors %}
-          {
-            "@type": "Person",
-            "name": "{{ author.name }}"
-        }{% if not forloop.last or article.get_authors|length == 1 %}, {% endif %}
-          {% endfor %}
-          {% if article.get_authors|length > 1 %} ], {% endif %}
-      {% else %}
-          "author": {
-              "@type": "Organization",
-              "name": "la diaria"
-          },
-      {% endif %}
-      "publisher": {
-          "@type": "Organization",
-          "name": "la diaria",
-          "logo": {
-              "@type": "ImageObject",
-              {% if publication == garra_pub %}
-              "url": "https://ladiaria.com.uy/static/img/garra-publisher-img.png",
-              "width": "152",
-              "height": "60"
-              {% elif publication == lento_pub %}
-              "url": "https://ladiaria.com.uy/static/img/lento-publisher-img.png",
-              "width": "84",
-              "height": "60"
-              {% else %}
-              "url": "https://ladiaria.com.uy/static/meta/la-diaria-205x60.png",
-              "width": "205",
-              "height": "60"
-              {% endif %}
-
-          }
-      },
-      {% if article.photo %}
-      "image": {
-          "@type": "ImageObject",
-          "url": "{{ SITE_URL }}{{ article.photo.get_1200w_url }}",
-          "width": "1200"
-      }
-      {% else %}
-      "image": {
-          "@type": "ImageObject",
-          {% if publication == garra_pub %}
-          "url": "https://ladiaria.com.uy/static/img/garra-social-sq.png",
-          {% elif publication == lento_pub %}
-          "url": "https://ladiaria.com.uy/static/img/lento-social-sq.png",
-          {% else %}
-          "url": "https://ladiaria.com.uy/static/meta/la-diaria-1000x1000.png",
-          {% endif %}
-          "width": "1000",
-          "height" : "1000"
-      }
-      {% endif %}
-    }
-  </script>
+  {% include 'article/detail_json_ld.html' %}
   <!-- End Schema (https://schema.org) -->
 {% endblock %}
 
 {% block body_class %}
-  article-section-{{ section.slug }}
-  {% if not article.is_published %}draft{% endif %}
-{% endblock %}
-
+  article-section-{{ section.slug }}{% if not article.is_published %} draft{% endif %}{% endblock %}
 {% block content %}
 
   <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">

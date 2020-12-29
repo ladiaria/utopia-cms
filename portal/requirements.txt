@@ -3,7 +3,6 @@ freezegun
 python-dateutil==2.8.1
 social-auth-app-django==0.0.1
 social-auth-core==0.2.1
-django-pwa==1.0.0
 python-memcached
 django-compressor<2.0
 django-cookies-samesite

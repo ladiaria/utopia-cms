@@ -56,7 +56,8 @@ def publications(request):
 
     # use this context processor to load also some other useful variables configured in settings
     result.update((var, getattr(settings, var, None)) for var in (
-        'HOMEV3_LOGO', 'HOMEV3_SECONDARY_LOGO', 'HOMEV3_LOGO_FOOTER', 'HOMEV3_LOGO_PRINTABLE', 'HOMEV3_LOGO_ALT_TEXT'))
+        'HOMEV3_LOGO', 'HOMEV3_SECONDARY_LOGO', 'HOMEV3_LOGO_FOOTER', 'HOMEV3_LOGO_PRINTABLE', 'HOMEV3_LOGO_ALT_TEXT',
+        'HOMEV3_TWITTER_SITE_META', 'HOMEV3_EXTRA_META', 'CORE_ARTICLE_DETAIL_PUBLISHER_META'))
 
     return result
 
@@ -64,7 +65,7 @@ def publications(request):
 def main_menus(request):
     """
     Fills context variables to be shown in the main menus.
-    Also fill another context boolean variables using to toggle visualization of many ux "modules".
+    Also fill another context variables using to the visualization of many ux "modules".
     """
     result = {
         'MENU_CATEGORIES': Category.objects.filter(order__isnull=False),

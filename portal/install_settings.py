@@ -122,7 +122,6 @@ INSTALLED_APPS = (
     'django_filters',
     'rest_framework',
     'compressor',
-    'pwa',
 )
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
@@ -496,18 +495,3 @@ if 'manage.py compress' in ' '.join(sys.argv):
         INSTALLED_APPS += ('debug_toolbar', )
 
 ABSOLUTE_URL_OVERRIDES = {'auth.user': SITE_URL + "usuarios/perfil/editar/"}
-
-# Progressive web app settings
-PWA_APP_NAME = 'la diaria'
-PWA_APP_DESCRIPTION = "Plataforma periodística sustentada en una comunidad de suscriptores y gestionada por sus trabajadores."
-PWA_APP_DISPLAY = 'standalone'
-PWA_APP_START_URL = '/'
-PWA_APP_THEME_COLOR = '#F2F2F2'
-PWA_APP_ICONS = [
-    {
-        'src': '/static/meta/la-diaria-512x512.png',
-        'sizes': '512x512'
-    }
-]
-PWA_SERVICE_WORKER_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'sw.js')
-

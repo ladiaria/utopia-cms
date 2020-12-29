@@ -310,7 +310,6 @@ urlpatterns += patterns(
     # TODO: verify if this repeated path (?) makes sense
     url('', include('sitemaps.urls')),
 
-    url('', include('pwa.urls')),
     url('', include('social_django.urls', namespace='social')),
 )
 

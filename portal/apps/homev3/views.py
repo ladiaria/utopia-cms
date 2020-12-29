@@ -10,7 +10,7 @@ from django.views.decorators.cache import never_cache, cache_control
 
 from decorators import render_response, decorate_if_no_staff, decorate_if_staff
 
-from core.models import (Edition, get_current_edition, Section, Publication, Category)
+from core.models import Edition, get_current_edition, Section, Publication, Category
 from core.views.category import category_detail
 from home.models import Home
 from faq.models import Question, Topic

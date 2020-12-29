@@ -1,0 +1,40 @@
+{% load static core_tags %}
+
+<meta property="og:type" content="article">
+<meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ site.name }}{% endif %}">
+<meta property="og:description" content="{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}">
+<meta property="og:locale" content="es_UY">
+<meta property="og:site_name" content="{{ site.name }}">
+<meta property="og:url" content="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
+<meta property="article:section" content="{{ section }}">
+<meta property="article:publisher" content="{{ CORE_ARTICLE_DETAIL_PUBLISHER_META }}">
+<meta property="article:published_time" content="{{ article.date_published|date:'c'|capfirst }}">
+{% if publication.slug in custom_icons_publications %}
+  <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static publication.open_graph_image %}{% endif %}">
+{% elif section.is_satirical %}
+  {% with 'img/'|add:section.slug|add:'-social.png' as satirical_social_img %}
+    <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static satirical_social_img %}">
+  {% endwith %}
+{% elif default_pub.open_graph_image %}
+  <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static default_pub.open_graph_image %}{% endif %}">
+{% elif article.photo %}
+  <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_article_main_url }}?r={% randomgen %}">
+{% endif %}
+{% if article.photo %}
+  <meta property="og:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+{% endif %}
+<!-- End Open Graph (http://ogp.me) -->
+
+<!-- Meta tags Google -->
+<meta name="robots" content="max-image-preview:large">
+<!-- End Meta tags Google -->
+
+<!-- Meta tags Twitter -->
+<meta name="twitter:card" content="summary{% if article.photo %}_large_image{% endif %}">
+{% if HOMEV3_TWITTER_SITE_META %}
+  <meta name="twitter:site" content="@{{ HOMEV3_TWITTER_SITE_META }}">
+{% endif %}
+{% if article.photo %}
+  <meta name="twitter:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+{% endif %}
+<!-- End Meta tags Twitter -->
