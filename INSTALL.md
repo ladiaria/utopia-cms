@@ -16,7 +16,7 @@ Documentation about installing Utopia's CMS.
 
 #### Local repository and virtualenv configuration
 
-- Clone the project repository to any local destination directory and init its git submodules:
+- Clone the project repository to any local destination directory and init its git submodules (this can take some minutes):
 
   `user@host:~ $ git clone -b main https://github.com/ladiaria/utopia-cms && cd utopia-cms && git submodule update --init`
 
@@ -32,7 +32,7 @@ Documentation about installing Utopia's CMS.
 
   ```
   user@host:~/utopia-cms $ source ~/.virtualenvs/utopiacms/bin/activate
-  (utopiacms) user@host:~/utopia-cms $ pip install -r portal/requirements.txt
+  (utopiacms) user@host:~/utopia-cms $ pip install --upgrade pip && pip install -r portal/requirements.txt
   ```
 
 #### Database setup
