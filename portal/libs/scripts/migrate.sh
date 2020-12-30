@@ -25,3 +25,4 @@ done
 
 exec 2>&3
 
+python -W ignore manage.py utopiacms_photosizes

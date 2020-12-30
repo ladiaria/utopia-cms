@@ -94,7 +94,7 @@ MariaDB [(none)]> GRANT ALL PRIVILEGES ON utopiacms.* TO 'utopiacms_user'@'local
 
 `(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py sqlall social_django | mysql -u utopiacms_user -p utopiacms`
 
-- Run the migration script provided, it will create all the rest of database tables needed:
+- Run the migration script provided, it will create all the rest of database tables needed and also will add some required initial data:
 
 `(utopiacms) user@host:~/utopia-cms/portal $ libs/scripts/migrate.sh`
 
