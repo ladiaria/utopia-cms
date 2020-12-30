@@ -2,38 +2,6 @@
 
 Documentation about installing Utopia's CMS.
 
-## Code repository
-
-Obtain the code from GitHub with:
-
-``git clone git@github.com:ladiaria/utopia-cms.git``
-
-and change to that folder
-
-``cd utopia-cms``
-
-## Create a virtual environment and install CRM dependencies
-
-virtualenv is a tool to create an isolated Python enviroment, refer to: https://virtualenv.pypa.io/en/latest/ for installation.
-
-This project uses Python 2.7 so a virtualenv virtual enviroment should be created with that version of Python:
-
-``virtualenv -p /usr/bin/python2.7 virtualenv_name``
-
-Note that you should have Python 2.7 already installed. In the preceding example the binary was in the /usr/bin/python2.7 route.
-This last command will create a folder virtualenv_name where all Django and Python dependencies should
-be installed.
-
-Activate the virtual enviroment:
-`source virtualenv_name/bin/activate`
-
-And then install all needed dependencies using the requirements.txt file using pip.
-
-`(virtualenv_name) user@user-machine:~/projects/utopia-cms$ pip install -r requirements.txt`
-
-This will install all required dependencies in the virtualenv_name enviroment.
-
-
 ## Install requirements
 
 - System packages, names can vary by OS/distribution:
