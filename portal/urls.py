@@ -37,9 +37,19 @@ class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = (
-            'id', 'type', 'date_published', 'sections', 'headline', 'keywords',
-            'slug', 'deck', 'lead', 'get_app_body', 'get_app_photo',
-            'get_absolute_url')
+            'id',
+            'type',
+            'date_published',
+            'sections',
+            'headline',
+            'keywords',
+            'slug',
+            'deck',
+            'lead',
+            'get_app_body',
+            'get_app_photo',
+            'get_absolute_url',
+        )
         depth = 1
 
 
@@ -326,8 +336,8 @@ urlpatterns += patterns(
     '',
     url(r'^feeds/articulos/$', LatestArticles(), name='ultimos-articulos-rss'),
     url(r'^feeds/ediciones/$', LatestEditions()),
-    url(r'^feeds/periodista/$', ArticlesByJournalist()),
-    url(r'^feeds/seccion/$', LatestArticlesByCategory()),
+    url(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
+    url(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
     url(r'^feeds/suplementos/$', LatestSupplements()),
 )
 
