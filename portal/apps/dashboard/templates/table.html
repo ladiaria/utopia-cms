@@ -192,17 +192,11 @@
 {% elif table_id == 'activity' %}
   <script>
     $('#table-activity').bootstrapTable();
-    $('#activity-date').click(function(){
-      var date = $('.date-picker').val();
-      var month = date.split('/')[0];
-      var year = date.split('/')[1];
-      $('#inner-content').load('/dashboard/table/activity/?month=' + month + "&year=" + year);
-    });
   </script>
   <div class="tab-pane fade show" id="activity" role="tabpanel" aria-labelledby="activity-tab">
     <div role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
-        <h1 class="h2">Actividad {% if month and year %}- {{ month }}/{{ year }}{% endif %}</h1>
+        <h1 class="h2">Actividad</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
           <div class="btn-group mr-2">
             <button class="btn btn-sm btn-outline-secondary" onclick="location.href='export/activity/'">Exportar</button>
@@ -241,17 +235,11 @@
 {% elif table_id == 'activity_only_digital' %}
   <script>
     $('#table-activity-only-digital').bootstrapTable();
-    $('#activity-only-digital-date').click(function(){
-      var date = $('.date-picker').val();
-      var month = date.split('/')[0];
-      var year = date.split('/')[1];
-      $('#inner-content').load('/dashboard/table/activity/?month=' + month + "&year=" + year);
-    });
   </script>
   <div class="tab-pane fade show" id="activity-only-digital" role="tabpanel" aria-labelledby="activity-only-digital-tab">
     <div role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
-        <h1 class="h2">Actividad {% if month and year %}- {{ month }}/{{ year }}{% endif %}</h1>
+        <h1 class="h2">Actividad (sólo digitales)</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
           <div class="btn-group mr-2">
             <button class="btn btn-sm btn-outline-secondary" onclick="location.href='export/activity_only_digital/'">Exportar</button>

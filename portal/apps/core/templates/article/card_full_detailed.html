@@ -45,7 +45,7 @@
         {% endif %}
       </div>
 
-      <div class="ld-card__byline ld-card__date">{{ verbose_date|default:article.date_published|date:"j \d\e F \d\e o"|lower }}</div>
+      <div class="ld-card__byline ld-card__date">{% firstof verbose_date article.date_published|date:"j \d\e F \d\e o"|lower %}</div>
 
     </div>
 

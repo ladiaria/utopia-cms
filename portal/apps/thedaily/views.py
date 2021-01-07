@@ -1229,8 +1229,7 @@ def ldfs_promo(request):
 def registered_users(request):
     resp, fname = HttpResponse(content_type='text/csv'), 'registered_users.csv'
     resp['Content-Disposition'] = 'attachment; filename=%s' % fname
-    resp.write(
-        open(os.path.join(settings.DASHBOARD_REPORTS_PATH, fname)).read())
+    resp.write(open(os.path.join(settings.DASHBOARD_REPORTS_PATH, fname)).read())
     return resp
 
 
