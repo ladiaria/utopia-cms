@@ -1,16 +1,15 @@
 <div class="inline-image-wrap article_body_image-{{ display }}">
   <figure class="principal">
-      <amp-img
-        class="amp-inline-img"
-        height="{{ image.image.height }}"
-        width="{{ image.image.width }}"
-        layout="responsive"
-        src="{{ SITE_URL }}{{ image.get_700w_url }}"
-        alt="{{ image.caption }}">
-      </amp-img>
-      {% if image.caption or image.photographer %}
-    <figcaption class="ld-caption">{% if image.caption %}<p>{{ image.caption }}</p>{% endif %} {% if image.photographer %}<p>{{ image.type_verbose }}: {{ image.photographer.name }}</p>{% endif %}</figcaption>
+    <amp-img
+      class="amp-inline-img"
+      height="{{ image.image.height }}"
+      width="{{ image.image.width }}"
+      layout="responsive"
+      src="{{ SITE_URL }}{{ image.get_700w_url }}"
+      alt="{{ image.caption }}">
+    </amp-img>
+    {% if image.caption or image.extended.photographer %}
+      <figcaption class="ld-caption">{% if image.caption %}<p>{{ image.caption }}</p>{% endif %} {% if image.extended.photographer %}<p>{{ image.extended.type_verbose }}: {{ image.extended.photographer.name }}</p>{% endif %}</figcaption>
     {% endif %}
-    </figure>
+  </figure>
 </div>
-

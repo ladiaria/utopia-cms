@@ -22,8 +22,8 @@
         <div class="big-photo__credit">
           <div class="container">
             <p>{{ big_photo.date_taken }}</p>
-            {% if big_photo.byline %}
-            <p>{{ big_photo.type_verbose }}: {{ big_photo.byline }}</p>
+            {% if big_photo.extended.photographer %}
+              <p>{{ big_photo.extended.type_verbose }}: {{ big_photo.extended.photographer }}</p>
             {% endif %}
           </div>
         </div>
