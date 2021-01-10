@@ -599,12 +599,6 @@ class Supplement(PortableDocumentFormatBaseModel):
             'supplement_slug': self.slug, 'year': self.date_published.year,
             'month': self.date_published.month, 'day': self.date_published.day}
 
-    @permalink
-    def get_download_url(self):
-        return 'supplement_download', (), {
-            'supplement_slug': self.slug, 'year': self.date_published.year,
-            'month': self.date_published.month, 'day': self.date_published.day}
-
     def get_pdf_filename(self):
         return '%s-%s-%s.pdf' % (
             self.edition.get_name_display().replace(' ', '_'),

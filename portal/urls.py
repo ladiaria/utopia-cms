@@ -12,6 +12,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from core.models import Article, Publication, Category, Section, Journalist, get_current_edition, get_latest_edition
 from core.views.edition import edition_detail
+from core.views.supplement import supplement_list
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
 from thedaily.models import Subscriber
@@ -283,6 +284,10 @@ urlpatterns += patterns(
     # Most read
     url(r'^masleidos/', include('core.urls.masleidos')),
 
+    # supplements
+    url(r'^suplementos/', supplement_list, name='supplement_list'),
+    url(r'^suplemento/', include('core.urls.supplement')),
+
     # Homes: domain_slug can be a publiction slug or an area (core.Category) slug
     url(r'^$', index, name='home'),
     url(r'^(?P<domain_slug>[\w-]+)/$', index, name='home'),
@@ -297,7 +302,6 @@ urlpatterns += patterns(
     url(r'^tags/', include('core.urls.tag')),
 
     # Other pages (TODO: check and organize better)
-    url(r'^suplemento', include('core.urls.supplement')),
     url(r'^(?P<journalist_job>(periodista|columnista))/', include('core.urls.journalist')),
     url(r'^area/', include('core.urls.category')),
     url(r'^bn/', include('core.urls.breaking_news_module')))

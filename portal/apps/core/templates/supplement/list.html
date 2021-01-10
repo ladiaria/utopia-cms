@@ -5,9 +5,7 @@
 {% block body_class %}supplement{% endblock %}
 
 {% block content %}
-        <h1>
-            Suplementos
-        </h1>
+    <h1>Suplementos</h1>
     <div class="row">
         {% for supplement in supplements.object_list %}
             <div class="col-xs-6 col-sm-4 col-md-3 ">
@@ -21,7 +19,7 @@
                 </a>
                 {% ifnotequal supplement.name "hp" %}
                     <div>
-                        <a href="{{ supplement.get_download_url }}">Descargar PDF</a>
+                        <a href="{{ supplement.get_absolute_url }}">Descargar PDF</a>
                     </div>
                 {% endifnotequal %}
             </div>
