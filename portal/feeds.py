@@ -32,7 +32,7 @@ class LatestArticles(Feed):
             settings.URL_SCHEME, settings.SITE_DOMAIN, item.get_absolute_url())
 
     def item_pubdate(self, item):
-        return datetime(item.date_published.year, item.date_published.month, item.date_published.day)
+        return item.date_published
 
     def item_author_name(self, item):
         if item.get_authors():

@@ -1812,8 +1812,8 @@ def get_published_date():
 
 def get_current_edition(publication=None):
     """
-    Return last edition of publication if given, or the publications using root url as their home page if
-    the publication slug is not given.
+    Return last edition of publication if given, or the publications using root url as their home page if the
+    publication slug is not given.
     """
     today, now, filters = date.today(), datetime.now(), {}
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
@@ -1841,8 +1841,23 @@ def get_latest_edition(publication=None):
 
 
 def get_current_feeds():
+    # editions for "root" publications (current and "next")
+    current_edition = get_current_edition()
+    next_editions = Edition.objects.filter(
+        publication__slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL,
+        date_published__gt=current_edition.date_published,
+    ).order_by('date_published')
+    editions_ids = [str(current_edition.id)] + ([str(next_editions[0].id)] if next_editions else [])
+
+    # editions for all the other publications (current and "next")
+    for p in Publication.objects.exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL):
+        current_edition = get_current_edition(p)
+        next_editions = Edition.objects.filter(
+            publication=p, date_published__gt=current_edition.date_published).order_by('date_published')
+        editions_ids += [str(current_edition.id)] + ([str(next_editions[0].id)] if next_editions else [])
+
     return Article.objects.filter(is_published=True).extra(
         where=[
             'core_article.id=core_articlerel.article_id',
-            'core_articlerel.edition_id=%d' % get_current_edition().id],
+            'core_articlerel.edition_id IN (%s)' % ','.join(editions_ids)],
         tables=['core_articlerel']).distinct()
