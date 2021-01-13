@@ -4,6 +4,7 @@ from datetime import datetime
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.sites.models import Site
+from django.utils.feedgenerator import DefaultFeed, rfc2822_date
 from django.contrib.syndication.views import Feed
 from django.shortcuts import get_object_or_404
 
@@ -14,14 +15,55 @@ from core.templatetags.ldml import ldmarkup, cleanhtml
 site = Site.objects.get_current()
 
 
+# TODO: remove this class when item_guid_is_permalink worked
+class DefaultFeedCustom(DefaultFeed):
+    def add_item_elements(self, handler, item):
+        handler.addQuickElement("title", item['title'])
+        handler.addQuickElement("link", item['link'])
+        if item['description'] is not None:
+            handler.addQuickElement("description", item['description'])
+
+        # Author information.
+        if item["author_name"] and item["author_email"]:
+            handler.addQuickElement("author", "%s (%s)" % \
+                (item['author_email'], item['author_name']))
+        elif item["author_email"]:
+            handler.addQuickElement("author", item["author_email"])
+        elif item["author_name"]:
+            handler.addQuickElement("dc:creator", item["author_name"], {"xmlns:dc": "http://purl.org/dc/elements/1.1/"})
+
+        if item['pubdate'] is not None:
+            handler.addQuickElement("pubDate", rfc2822_date(item['pubdate']))
+        if item['comments'] is not None:
+            handler.addQuickElement("comments", item['comments'])
+        if item['unique_id'] is not None:
+            handler.addQuickElement("guid", item['unique_id'], {'isPermaLink': 'false'})
+        if item['ttl'] is not None:
+            handler.addQuickElement("ttl", item['ttl'])
+
+        # Enclosure.
+        if item['enclosure'] is not None:
+            handler.addQuickElement("enclosure", '',
+                {"url": item['enclosure'].url, "length": item['enclosure'].length,
+                    "type": item['enclosure'].mime_type})
+
+        # Categories.
+        for cat in item['categories']:
+            handler.addQuickElement("category", cat)
+
+
 class LatestArticles(Feed):
+    feed_type = DefaultFeedCustom
     title = site.name
     link = '/'
     description = u'Artículos de la publicación periodística %s.' % site.name
+    item_guid_is_permalink = False  # this will work in Django>1.5
+
+    def item_guid(self, item):
+        return u'%s.%d' % (site.domain, item.id)
 
     def items(self):
-        item_list = get_current_feeds()
-        return item_list
+        return get_current_feeds()
 
     def item_title(self, item):
         return cleanhtml(ldmarkup(item.headline))
@@ -29,16 +71,14 @@ class LatestArticles(Feed):
     def item_description(self, item):
         deck = "<h2>%s</h2><br/>" % ldmarkup(item.deck) if item.deck else ""
         return "%s" % deck + ldmarkup(item.body[:400] + "...") + "<a href='%s://%s%s'>Continuar leyendo...</a>" % (
-            settings.URL_SCHEME, settings.SITE_DOMAIN, item.get_absolute_url())
+            settings.URL_SCHEME, site.domain, item.get_absolute_url())
 
     def item_pubdate(self, item):
         return item.date_published
 
     def item_author_name(self, item):
-        if item.get_authors():
-            return item.get_authors()[0]
-        else:
-            return ""
+        authors = item.get_authors()
+        return authors[0] if authors else ""
 
     def item_categories(self, item):
         return [item.get_sections()]
