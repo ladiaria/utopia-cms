@@ -108,25 +108,41 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
 
         # iterate and send
         while True:
+
             try:
                 s, is_subscriber = func()
                 hashed_id = hashids.encode(int(s.id))
-                headers['List-Unsubscribe'] = '%s/usuarios/nlunsubscribe/c/%s/%s/' % (
-                    site_url, category.slug, hashed_id)
-                msg = Message(html=render_to_string(
-                    'category/newsletter/%s.html' % category.slug, {
-                        'cover_article': cover_article, 'category': category, 'opinion_article': opinion_article,
-                        'datos_article': datos_article, 'site_url': site_url, 'articles': top_articles,
-                        'hashed_id': hashed_id, 'ga_property_id': getattr(settings, 'GA_PROPERTY_ID', None),
-                        'subscriber_id': s.id, 'is_subscriber': is_subscriber,
-                        'cover_article_section': cover_article_section,
-                    }),
+                unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
+                    '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
+                headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
+                headers['List-ID'] = '%s <%s.%s>' % (category.slug, __name__, settings.SITE_DOMAIN)
+
+                msg = Message(
+                    html=render_to_string(
+                        '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug),
+                        {
+                            'cover_article': cover_article,
+                            'category': category,
+                            'opinion_article': opinion_article,
+                            'datos_article': datos_article,
+                            'site_url': site_url,
+                            'articles': top_articles,
+                            'unsubscribe_url': unsubscribe_url,
+                            'ga_property_id': getattr(settings, 'GA_PROPERTY_ID', None),
+                            'subscriber_id': s.id,
+                            'is_subscriber': is_subscriber,
+                            'cover_article_section': cover_article_section,
+                        }
+                    ),
                     mail_to=(s.name, s.user.email), subject=remove_markup(cover_article.headline),
-                    mail_from=(u'la diaria ' + category.name, EMAIL_FROM_ADDR), headers=headers)
+                    mail_from=(u'la diaria ' + category.name, EMAIL_FROM_ADDR), headers=headers,
+                )
+
                 # attach ads if any
                 for f_ad in f_ads:
                     f_ad_basename = os.path.basename(f_ad)
                     msg.attach(filename=f_ad_basename, data=open(f_ad, "rb"))
+
                 # send using smtp to receive bounces in another mailbox
                 try:
                     if not no_deliver:
@@ -149,6 +165,7 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
                     log.error("MTA down, not sending - %s" % s.user.email)
                     log.info("Trying to reconnect for the next delivery...")
                     smtp = smtp_connect()
+
             except StopIteration:
                 # append data processed to global results and quit.
                 # this can be done because list.append is threadsafe.

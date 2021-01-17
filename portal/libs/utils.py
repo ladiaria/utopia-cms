@@ -100,10 +100,12 @@ def smtp_connect(alternative=False):
     If alternative is True, connect to the alternative SMTP instead of the default.
     """
     email_conf = {}
-    for setting in ('HOST', 'PORT', 'HOST_USER', 'HOST_PASSWORD'):
+    for setting in ('HOST', 'PORT', 'HOST_USER', 'HOST_PASSWORD', 'USE_TLS'):
         email_conf[setting] = getattr(settings, ('EMAIL_%s' + setting) % ('ALTERNATIVE_' if alternative else ''), None)
 
     s = smtplib.SMTP(email_conf['HOST'], email_conf['PORT'])
+    if email_conf['USE_TLS']:
+        s.starttls()
     try:
         s.login(email_conf['HOST_USER'], email_conf['HOST_PASSWORD'])
     except smtplib.SMTPException:

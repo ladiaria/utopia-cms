@@ -3,7 +3,6 @@ import socket
 from datetime import datetime, timedelta
 from hashids import Hashids
 
-from decorators import render_response
 from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect
@@ -16,8 +15,6 @@ from core.models import Publication, Category, Section, Article, get_latest_edit
 from home.models import Home
 from faq.models import Question, Topic
 
-
-to_response = render_response('core/templates/category/')
 
 # Initialize the hashid object with salt from settings and custom length
 hashids = Hashids(settings.HASHIDS_SALT, 32)
@@ -74,7 +71,6 @@ def category_detail(request, slug):
 
 
 @never_cache
-@to_response
 def newsletter_preview(request, slug):
 
     # allow only staff members or requests from localhost
@@ -104,21 +100,38 @@ def newsletter_preview(request, slug):
         if nl_featured:
             opinion_article = nl_featured[0]
 
-        # datos_article for elecciones
+        # datos_article (a featured section in the category)
         try:
-            datos_article = category.section_set.get(slug='datos-elecciones-2019').latest_article()[0]
-        except (Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError):
+            datos_article = category.section_set.get(slug='datos').latest_article()[0]
+            assert (datos_article.date_published >= datetime.now() - timedelta(1))
+        except (Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
             datos_article = None
 
         try:
             hashed_id = hashids.encode(int(request.user.subscriber.id))
         except AttributeError:
             hashed_id = hashids.encode(0)
-        return 'newsletter/%s.html' % slug, {
-            'cover_article': cover_article, 'category': category, 'cover_article_section': cover_article_section,
-            'articles': top_articles, 'hashed_id': hashed_id, 'opinion_article': opinion_article,
-            'site_url': '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN), 'datos_article':
-                datos_article if
-                datos_article and datos_article.date_published >= datetime.now() - timedelta(1) else None}
+
+        site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
+        unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
+            '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
+
+        return render_to_response(
+            '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug),
+            {
+                'cover_article': cover_article,
+                'category': category,
+                'cover_article_section': cover_article_section,
+                'articles': top_articles,
+                'unsubscribe_url': unsubscribe_url,
+                'opinion_article': opinion_article,
+                'site_url': site_url,
+                'datos_article':
+                    datos_article if datos_article and datos_article.date_published >= datetime.now() - timedelta(1)
+                    else None
+            },
+            context_instance=RequestContext(request),
+        )
+
     except Exception as e:
         return HttpResponseServerError(u'ERROR: %s' % e)

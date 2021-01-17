@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from os.path import basename
-import smtplib
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 
+from libs.utils import smtp_connect
 from thedaily.models import SentMail
 
 
@@ -24,14 +24,8 @@ def send_notification(user, email_template, email_subject, extra_context={}):
             settings,
             'NOTIFICATIONS_FROM_ADDR2' if extra_context.get('seller_email') else 'NOTIFICATIONS_FROM_ADDR1')))
 
-    # Authenticate to SMTP
-    s = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
-    try:
-        s.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
-    except smtplib.SMTPException:
-        pass
-
     # send using smtp to receive bounces in another mailbox
+    s = smtp_connect()
     s.sendmail(settings.NOTIFICATIONS_FROM_MX, [user.email], msg.as_string())
     s.quit()
 
