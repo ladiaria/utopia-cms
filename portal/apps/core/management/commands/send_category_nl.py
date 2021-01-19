@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# la diaria, 2018, Aníbal Pacheco
+# utopia-cms, 2018-2021, Aníbal Pacheco
 
 import os
 import logging
@@ -39,8 +39,6 @@ hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 
 def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_from_ns, subscriber_ids, even, odd):
-
-    headers = {}
 
     category_home = Home.objects.get(category=category)
     cat_modules = category_home.modules.all()
@@ -100,22 +98,22 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
 
     # define the function to be executed by each thread
     def send(func):
-        # Authenticate to smtp (if any auth needed) and send all emails
+        # Connect to the SMTP server and send all emails
         smtp = smtp_connect()
 
         subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
         site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
+        list_id = '%s <%s.%s>' % (category.slug, __name__, settings.SITE_DOMAIN)
 
         # iterate and send
         while True:
 
             try:
                 s, is_subscriber = func()
-                hashed_id = hashids.encode(int(s.id))
+                headers, hashed_id = {'List-ID': list_id}, hashids.encode(int(s.id))
                 unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
                     '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
                 headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
-                headers['List-ID'] = '%s <%s.%s>' % (category.slug, __name__, settings.SITE_DOMAIN)
 
                 msg = Message(
                     html=render_to_string(
