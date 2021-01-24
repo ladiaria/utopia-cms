@@ -38,7 +38,7 @@ log.setLevel(logging.DEBUG)
 hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 
-def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_from_ns, subscriber_ids, even, odd):
+def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_from_ns, ids_ending_with, subscriber_ids):
 
     category_home = Home.objects.get(category=category)
     cat_modules = category_home.modules.all()
@@ -72,8 +72,8 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
         filter_args['id__in'] = subscriber_ids
     else:
         filter_args['category_newsletters__slug'] = category.slug
-        if even or odd:
-            filter_args['id__iregex'] = r'^\d*[%s]$' % ('02468' if even else '13579')
+        if ids_ending_with:
+            filter_args['id__iregex'] = r'^\d*[%s]$' % ids_ending_with
 
     blacklisted = set([row[0] for row in csv.reader(open(settings.CORE_NEWSLETTER_BLACKLIST))])
 
@@ -227,19 +227,42 @@ class Command(BaseCommand):
 
     option_list = BaseCommand.option_list + (
         make_option(
-            '--nthreads', action='store', type='int', dest='nthreads', default=2,
-            help='Number of threads to use for delivery, default 2.'),
+            '--nthreads',
+            action='store',
+            type='int',
+            dest='nthreads',
+            default=2,
+            help='Number of threads to use for delivery, default 2.',
+        ),
         make_option(
-            '--no-deliver', action='store_true', default=False, dest='no_deliver',
-            help=u'Do not send the emails, only log'),
+            '--no-deliver',
+            action='store_true',
+            default=False,
+            dest='no_deliver',
+            help=u'Do not send the emails, only log',
+        ),
         make_option(
-            '--starting-from-s', action='store', type='string', dest='starting_from_s',
-            help=u'Send only subscriptors emails alphabetically greather'),
+            '--starting-from-s',
+            action='store',
+            type='string',
+            dest='starting_from_s',
+            help=u'Send only subscriptors emails alphabetically greather',
+        ),
         make_option(
-            '--starting-from-ns', action='store', type='string', dest='starting_from_ns',
-            help=u'Send only no subscriptors emails alphabetically greather'),
-        make_option('--even', action='store_true', help=u'Send only to subscriptors with even id.'),
-        make_option('--odd', action='store_true', help=u'Send only to subscriptors with odd id'))
+            '--starting-from-ns',
+            action='store',
+            type='string',
+            dest='starting_from_ns',
+            help=u'Send only no subscriptors emails alphabetically greather',
+        ),
+        make_option(
+            '--ids-ending-with',
+            action='store',
+            type='string',
+            dest='ids_ending_with',
+            help=u'Send only to subscriptors with id ending in this numbers e.g.: --ids-ending-with=0123',
+        ),
+    )
 
     def handle(self, *args, **options):
         category_slug = args[0]
@@ -248,7 +271,13 @@ class Command(BaseCommand):
         no_deliver = options.get('no_deliver')
         start_time, nthreads = time.time(), options.get('nthreads')
         build_and_send(
-            category, nthreads, no_deliver, options.get('starting_from_s'), options.get('starting_from_ns'), args[1:],
-            options.get('even'), options.get('odd'))
+            category,
+            nthreads,
+            no_deliver,
+            options.get('starting_from_s'),
+            options.get('starting_from_ns'),
+            options.get('ids_ending_with'),
+            args[1:],
+        )
         log.info("%s %s completed in %.0f seconds using %d threads" % (
             today, 'Simulation' if no_deliver else 'Delivery', time.time() - start_time, nthreads))

@@ -130,7 +130,7 @@ class Publication(Model):
         if self.image:
             logo_filename = self.image.path
             logo_image = Image.open(logo_filename)
-            if logo_image.width > 120:
+            if logo_image.size[0] > 120:
                 tmpfile, f = tempfile.mkstemp('.png', dir=settings.MEDIA_ROOT)
                 logo_image.convert('RGB').save(f, optimize=True)
                 url = get_thumbnail(f, '120', crop='center', quality=99).url
