@@ -14,7 +14,7 @@ from django.views.decorators.cache import never_cache
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import permission_required
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from audiologue.models import Audio
 
@@ -96,7 +96,8 @@ def export_csv(request, table_id):
     return resp
 
 
-@require_http_methods(["POST"])
+@never_cache
+@require_POST
 def audio_statistics_api(request):
     subscriber_id = request.POST.get('subscriber_id')
     audio_id = request.POST.get('audio_id')
@@ -118,13 +119,18 @@ def audio_statistics_api(request):
             raise HttpResponseBadRequest("Unique object already exists")
 
 
+@never_cache
 @csrf_exempt
+@require_POST
 def audio_statistics_api_amp(request):
-    subscriber_id = request.GET.get('subscriber_id')
+
+    if not hasattr(request.user, 'subscriber'):
+        return HttpResponseForbidden()
+
+    subscriber_id = request.user.subscriber.id
     audio_id = request.GET.get('audio_id')
 
-    if AudioStatistics.objects.filter(
-            subscriber_id=subscriber_id, audio_id=audio_id, amp_click=True).exists():
+    if AudioStatistics.objects.filter(subscriber_id=subscriber_id, audio_id=audio_id, amp_click=True).exists():
         return HttpResponse()
     else:
         try:

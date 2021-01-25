@@ -6,12 +6,39 @@ from django.contrib.auth.views import logout
 from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import never_cache
 from thedaily.views import (
-    subscribe, referrals, ldfs_promo, google_phone, user_profile, users_api, signup, edit_profile,
-    update_user_from_crm, edit_subscription, confirm_email, password_change, password_reset, complete_signup, login,
-    registered_users, amp_analytics_config, amp_access_authorization, amp_access_pingback, amp_access_show_api,
-    session_refresh, edicion_impresa, nlunsubscribe, welcome, nl_category_subscribe, nl_category_unsubscribe,
-    notification_preview, phone_subscription, custom_api, nl_subscribe, discourse_sso, email_check_api,
-    user_comments_api)
+    subscribe,
+    referrals,
+    ldfs_promo,
+    google_phone,
+    user_profile,
+    users_api,
+    signup,
+    edit_profile,
+    update_user_from_crm,
+    edit_subscription,
+    confirm_email,
+    password_change,
+    password_reset,
+    complete_signup,
+    login,
+    registered_users,
+    amp_access_authorization,
+    amp_access_pingback,
+    amp_access_show_api,
+    session_refresh,
+    edicion_impresa,
+    nlunsubscribe,
+    welcome,
+    nl_category_subscribe,
+    nl_category_unsubscribe,
+    notification_preview,
+    phone_subscription,
+    custom_api,
+    nl_subscribe,
+    discourse_sso,
+    email_check_api,
+    user_comments_api,
+)
 
 
 # Used to override some views
@@ -113,7 +140,6 @@ urlpatterns = patterns(
     url(r'^nlunsubscribe/c/(?P<category_slug>\w+)/(?P<hashed_id>[\w]+)/$',
         nl_category_unsubscribe, name="nl-category-unsubscribe"),
 
-    url(r'^amp-analytics/config$', amp_analytics_config),
     url(r'^amp-access/authorization$', amp_access_authorization),
     url(r'^amp-access/pingback$', amp_access_pingback),
     url(r'^amp-access/show-api$', amp_access_show_api),

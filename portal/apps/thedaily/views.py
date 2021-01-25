@@ -836,15 +836,6 @@ def update_user_from_crm(request):
 
 
 @never_cache
-def amp_analytics_config(request):
-    result = {}
-    if hasattr(request.user, 'subscriber'):
-        result['vars'] = {'subscriber_id': request.user.subscriber.id}
-    response = HttpResponse(simplejson.dumps(result), content_type="application/json")
-    return set_amp_cors_headers(request, response)
-
-
-@never_cache
 def amp_access_authorization(request):
     """
     Este endpoint obtiene la cantidad de visitas que posee el usuario y lo devuelve incrementado en uno para contar la
