@@ -4,6 +4,8 @@ import csv
 import jwt
 import hmac
 import hashlib
+import requests
+import pymongo
 from base64 import b64decode, b64encode
 from time import time
 from datetime import datetime, timedelta
@@ -12,18 +14,24 @@ from urllib import urlencode, pathname2url
 from urlparse import urljoin, urlparse, unquote, parse_qs
 from hashids import Hashids
 from smtplib import SMTPRecipientsRefused
-import requests
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import IntegrityError
 from django.core.mail import send_mail, mail_admins, mail_managers
 from django.core.urlresolvers import reverse, resolve
 from django.core.exceptions import MultipleObjectsReturned
 from django.http import (
-    HttpResponseRedirect, Http404, HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, HttpResponseForbidden,
-    HttpResponseServerError)
+    HttpResponseRedirect,
+    Http404,
+    HttpResponse,
+    HttpResponseNotFound,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    HttpResponseServerError,
+)
 from django.forms.util import ErrorList
 from django.contrib import messages
 from django.contrib.auth import authenticate, logout, login as do_login
@@ -38,9 +46,14 @@ from django.views.decorators.cache import never_cache
 from django.template import RequestContext
 from django.utils import simplejson, timezone
 
+from actstream import actions
+from actstream.models import following
+from favit.models import Favorite
+
 from libs.utils import set_amp_cors_headers
 from libs.tokens.email_confirmation import default_token_generator, get_signup_validation_url, send_validation_email
 
+from core.models import Article
 from apps import core_articleviewedby_mdb, core_articlevisits_mdb, signupwall_visitor_mdb
 from core.models import Publication, Category, Article, ArticleUrlHistory
 from thedaily.models import Subscriber, Subscription, PollAnswer, SubscriptionPrices, UsersApiSession, OAuthState
@@ -50,6 +63,7 @@ from thedaily.forms import (
     PasswordChangeForm, H40UForm, H40Form, PollUForm, PollForm, GoogleSignupForm, SubscriberSignupForm,
     SubscriberSignupAddressForm, ConfirmEmailRequestForm)
 from thedaily.forms.subscriber import ProfileForm, UserForm
+from thedaily.utils import recent_following
 from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor
 from signupwall.utils import get_ip
 
@@ -740,6 +754,119 @@ def edit_profile(request, user=None):
 
 
 @never_cache
+@to_response
+@login_required
+def lista_lectura_leer_despues(request):
+    followings = recent_following(request.user, Article)
+    followings_count = len(followings)
+    if request.is_ajax():
+        return HttpResponse(followings_count)
+
+    # paginator for leer_despues
+    page = request.GET.get('pagina', 1)
+    paginator_leer_despues = Paginator(followings, 10)
+    try:
+        followings = paginator_leer_despues.page(page)
+    except PageNotAnInteger:
+        followings = paginator_leer_despues.page(1)
+    except EmptyPage:
+        followings = paginator_leer_despues.page(paginator_leer_despues.num_pages)
+    # end paginator for leer_despues
+
+    return 'lista-lectura.html', {'leer_despues': followings, 'leer_despues_count': followings_count}
+
+@never_cache
+@to_response
+@login_required
+def lista_lectura_favoritos(request):
+    user = request.user
+    favoritos = [favorito.target for favorito in Favorite.objects.for_user(user)]
+    favoritos_count = len(favoritos)
+    if request.is_ajax():
+        return HttpResponse(favoritos_count)
+
+    # paginator for favoritos
+    page = request.GET.get('pagina', 1)
+    paginator_favoritos = Paginator(favoritos, 10)
+    try:
+        favoritos = paginator_favoritos.page(page)
+    except PageNotAnInteger:
+        favoritos = paginator_favoritos.page(1)
+    except EmptyPage:
+        favoritos = paginator_favoritos.page(paginator_favoritos.num_pages)
+    # end paginator for favoritos
+
+    return 'lista-lectura.html', {'favoritos': favoritos, 'favoritos_count': favoritos_count}
+
+
+@never_cache
+@to_response
+@login_required
+def lista_lectura_historial(request):
+    """
+    Returns a paginated view of all articles viewed by the user, ordered by recently viewewd.
+    They are the ones in mongodb that have not been synced yet, union the ones already sinced saved in the model used
+    for this purpose.
+    """
+    # start the result set with mongo because these are the most recent viewed.
+    historial, mids = [], []
+    for a in core_articleviewedby_mdb.posts.find({'user': request.user.id}).sort('viewed_at', pymongo.DESCENDING):
+        try:
+            article_id = a['article']
+            historial.append(Article.objects.get(id=article_id))
+            mids.append(article_id)
+        except Article.DoesNotExist:
+            # the article could be removed
+            pass
+    # perform the union with the ones in the model
+    historial += [
+        avb.article for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at')]
+    historial_count = len(historial)
+    if request.is_ajax():
+        return HttpResponse(historial_count)
+
+    page = request.GET.get('pagina', 1)
+    paginator_historial = Paginator(historial, 10)
+    try:
+        historial = paginator_historial.page(page)
+    except PageNotAnInteger:
+        historial = paginator_historial.page(1)
+    except EmptyPage:
+        historial = paginator_historial.page(paginator_historial.num_pages)
+
+    return 'lista-lectura.html', {'historial': historial, 'historial_count': historial_count}
+
+
+@never_cache
+@csrf_exempt
+@require_POST
+def lista_lectura_toggle(request, event, article_id):
+
+    if not hasattr(request.user, 'subscriber'):
+        return HttpResponseForbidden()
+
+    subscriber_id = request.user.subscriber.id
+
+    try:
+        user, article = Subscriber.objects.get(id=subscriber_id).user, Article.objects.get(id=article_id)
+    except Exception:
+        return HttpResponseServerError()
+
+    if event == 'add':
+        actions.follow(user, article)
+    elif event == 'remove':
+        actions.unfollow(user, article)
+    elif event == 'favToggle':
+        fav = Favorite.objects.get_favorite(user, article.id, model='core.Article')
+        if fav is None:
+            Favorite.objects.create(user, article.id, model='core.Article')
+        else:
+            fav.delete()
+
+    return HttpResponse()
+
+
+@never_cache
 @staff_member_required
 def user_profile(request, user_id):
     try:
@@ -878,6 +1005,8 @@ def amp_access_authorization(request):
             else:
                 is_subscriber = False
             result['subscriber'] = is_subscriber
+            result['followed'] = article in following(request.user, Article)
+            result['favourited'] = article in [f.target for f in Favorite.objects.for_user(request.user)]
 
             if is_subscriber:
 

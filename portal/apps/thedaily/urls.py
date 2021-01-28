@@ -4,6 +4,7 @@ from django.conf.urls.defaults import patterns, url
 from django.views.generic import TemplateView, RedirectView
 from django.contrib.auth.views import logout
 from django.views.decorators.vary import vary_on_cookie
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from thedaily.views import (
     subscribe,
@@ -38,6 +39,10 @@ from thedaily.views import (
     discourse_sso,
     email_check_api,
     user_comments_api,
+    lista_lectura_leer_despues,
+    lista_lectura_favoritos,
+    lista_lectura_historial,
+    lista_lectura_toggle,
 )
 
 
@@ -137,18 +142,30 @@ urlpatterns = patterns(
     url(r'^nlsubscribe/$', nl_subscribe, name="nl-subscribe"),
     url(r'^nlsubscribe/c/(?P<slug>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
     url(r'^nlsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>[\w]+)/$', nl_subscribe, name="nl-subscribe"),
-    url(r'^nlunsubscribe/c/(?P<category_slug>\w+)/(?P<hashed_id>[\w]+)/$',
-        nl_category_unsubscribe, name="nl-category-unsubscribe"),
+    url(
+        r'^nlunsubscribe/c/(?P<category_slug>\w+)/(?P<hashed_id>[\w]+)/$',
+        nl_category_unsubscribe,
+        name="nl-category-unsubscribe",
+    ),
 
     url(r'^amp-access/authorization$', amp_access_authorization),
     url(r'^amp-access/pingback$', amp_access_pingback),
     url(r'^amp-access/show-api$', amp_access_show_api),
 
-    url(r'^suscribite-por-telefono/$', phone_subscription,
-        name="phone-subscription"),
+    url(r'^suscribite-por-telefono/$', phone_subscription, name="phone-subscription"),
 
-    url(r'^notification_preview/(?P<template>[\w]+)/$',
-        notification_preview, name="notification_preview"),
-    url(r'^notification_preview/(?P<template>[\w]+)/days/$',
-        notification_preview, {'days': True}, name="notification_preview"),
+    url(r'^notification_preview/(?P<template>[\w]+)/$', notification_preview, name="notification_preview"),
+    url(
+        r'^notification_preview/(?P<template>[\w]+)/days/$',
+        notification_preview,
+        {'days': True},
+        name="notification_preview",
+    ),
+    url(r'^lista-lectura-leer-despues/$', lista_lectura_leer_despues, name="lista-lectura-leer-despues"),
+    url(r'^lista-lectura-favoritos/$', lista_lectura_favoritos, name="lista-lectura-favoritos"),
+    url(r'^lista-lectura-historial/$', lista_lectura_historial, name="lista-lectura-historial"),
+    url(
+        r'^lista-lectura-toggle/(?P<event>add|remove|favToggle)/(?P<article_id>\d+)/$',
+        lista_lectura_toggle,
+        name="lista-lectura-toggle"),
 )

@@ -257,6 +257,10 @@ img{
     flex-grow: 1;
   }
 
+  &__footer {
+      padding: 16px;
+  }
+
   &__title {
     font-family: 'Meta Serif', serif;
     width: 100%;

@@ -32,7 +32,7 @@
 }
 
 .modal-overlay{
-  z-index: 1010 !important;
+  z-index: 1010;
   background: rgba(0, 0, 0, .6);
 }
 
@@ -105,4 +105,18 @@
   }
 
 
+}
+
+#paywallmodal {
+    background: none;
+    max-width: 700px;
+    box-shadow: none;
+
+    .ld-snackbar--static {
+        margin-bottom: 0;
+    }
+
+    .ld-snackbar__close {
+        right: 15px;
+    }
 }

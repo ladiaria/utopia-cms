@@ -256,17 +256,16 @@ urlpatterns += patterns(
     url(r'^memcached/', include('memcached.urls')),
     url(r'^robots.txt$', include('robots.urls')),
     url(r'^shout/', include('shoutbox.urls')),
+    url(r'^activity/', include('actstream.urls')),
+    url(r'^favit/', include('favit.urls')),
 
     # Vivo
     url(r'^vivo/$', vivo, name="cartelera-vivo"),
     url(r'^vivo/archivo/(?P<archived_event_id>\d+)/$', vivo, name="cartelera-archive"),
 
     # Other apps
-    url(r'^inplaceeditform/', include('inplaceeditform.urls')),
     url(r'^comunidad/', include('comunidad.urls')),
     url(r"^cartelera/", include("cartelera.urls")),
-    url(r"^elegi-informarte/", include("elegi_informarte.urls")),
-    url(r'^elegi/$', RedirectView.as_view(url='/elegi-informarte/')),
     url(r'^tagging_autocomplete_tagit/', include('tagging_autocomplete_tagit.urls')),
     url(r'^adzone/', include('adzone.urls')),
     url(r'^avatar/', include('avatar.urls')),

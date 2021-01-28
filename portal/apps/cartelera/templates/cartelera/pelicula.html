@@ -1,28 +1,27 @@
 {% extends "base.html" %}
-{% load cartelera %}
+{% load cartelera_tags %}
 
 {% block content %}
   <h1>{{ pelicula }}</h1>
   <section class="pelicula media">
-  <img src="/media/{{ pelicula.poster }}" alt="{{ pelicula }}" class="pull-left" />
-  <div class="media-body">
-    <p>{{ pelicula.description }}</p>
-    <footer class="navbar toolbar">
-      {% with pelicula as evento %}
-        {% include "comunidad/evento_toolbar.html" %}
-      {% endwith %}
-    </footer>
-    <div class="hr"><hr /></div>
-    <h2>Horarios</h2>
-    <ul class="unstyled">
-	    {% for horario in pelicula.horarios.all %}
-	    <li>
-		    <h3><a href="{{ horario.cine.get_absolute_url }}">{{ horario.cine }}</a></h3>
-		    {{ horario.horarios }}
-	    </li>
-	    {% endfor %}
-    </ul>
-  </div>
-</section>
-
+    <img src="/media/{{ pelicula.poster }}" alt="{{ pelicula }}" class="pull-left" />
+    <div class="media-body">
+      <p>{{ pelicula.description }}</p>
+      <footer class="navbar toolbar">
+        {% with pelicula as evento %}
+          {% include "comunidad/evento_toolbar.html" %}
+        {% endwith %}
+      </footer>
+      <div class="hr"><hr /></div>
+      <h2>Horarios</h2>
+      <ul class="unstyled">
+        {% for horario in pelicula.horarios.all %}
+          <li>
+            <h3><a href="{{ horario.cine.get_absolute_url }}">{{ horario.cine }}</a></h3>
+            {{ horario.horarios }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
 {% endblock %}

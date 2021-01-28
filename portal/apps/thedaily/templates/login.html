@@ -4,18 +4,6 @@
 {% block page_title %}Ingreso de usuarios | {{ site.name }} | {{ country_name }}{% endblock %}
 {% block body_class %}login no-footer{% endblock %}
 
-{% block javascript %}
-  <script type="text/javascript">
-    jQuery(document).ready(function ($) {
-      $(function () {
-        var text_input = document.getElementById('id_name_or_mail')
-        text_input.focus()
-        text_input.select()
-      });
-    });
-  </script>
-{% endblock %}
-
 {% block content %}
   <main class="ld-content">
     <div class="row">
@@ -79,3 +67,14 @@
     </div>
   </footer>
 {% endblock footer_block %}
+
+{% block javascript %}
+  <script type="text/javascript">
+    $(function(){
+      // TODO: test this 3 lines with only one using jquery
+      var text_input = document.getElementById('id_name_or_mail');
+      text_input.focus();
+      text_input.select();
+    });
+  </script>
+{% endblock %}

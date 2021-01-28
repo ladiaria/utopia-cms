@@ -8,6 +8,7 @@ from django.utils.html import conditional_escape as esc
 from sorl.thumbnail.templatetags.thumbnail import thumbnail
 from django.template.loader import render_to_string
 
+
 class EditionCalendar(LocaleHTMLCalendar,):
 
     def __init__(self, editions, *args):

@@ -386,17 +386,13 @@ def render_hierarchy(article):
 @register.simple_tag(takes_context=True)
 def publication_section(context, article, pub=None):
     """
-    Returns the anchor tag with the atricle.publication_section using the
-    publication given by parameter or publication context variable as
-    publication argument (or default_pub if None).
+    Returns the anchor tag with the atricle.publication_section using the publication given by parameter or publication
+    context variable as publication argument (or default_pub if None).
     """
-    section = article.publication_section(
-        pub or context.get('publication') or context.get('default_pub'))
+    section = article.publication_section(pub or context.get('publication') or context.get('default_pub'))
     if section and section.slug == 'partidos-politicos':
         section = Section.objects.get(slug='elecciones-2019')
-    return (
-        u'<a href="%s">%s</a>' % (section.get_absolute_url(), section)
-    ) if section else u''
+    return (u'<a href="%s">%s</a>' % (section.get_absolute_url(), section)) if section else u''
 
 
 # Inclusion tags

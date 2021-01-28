@@ -83,7 +83,8 @@
     <div class="fullwidth-container">
     <div class="main-photo">
       <div>
-        <figure class="js-figure principal {{ card_size }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+        <figure class="js-figure principal {{ card_size }}"
+                alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
                 data-src="{{ article.photo.get_1200w_url }}">
           <picture>
             <!--[if IE 9]><video style="display: none;"><![endif]-->
@@ -95,9 +96,10 @@
             <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
             <!--[if IE 9]></video><![endif]-->
             <img
-            class="ld-article__main-photo materialboxed responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
+            class="ld-article__main-photo lazyload materialboxed responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
             data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-            alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+            alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+            loading="lazy">
           </picture>
           <figcaption class="caption">
             {% if article.photo.caption %}<p>{{ article.photo.caption }}</p>{% endif %}
@@ -117,8 +119,10 @@
               <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
               <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
               <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
-              <img class="ld-article__main-photo responsive-img lazyload{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-              alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+              <img class="ld-article__main-photo responsive-img lazyload{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}"
+                   data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                   alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                   loading="lazy">
           </picture>
           <figcaption class="article-caption container ld-caption">
             <p>{{ article.photo.caption }}</p>
@@ -171,8 +175,15 @@
 
       </div>
       <div class="reading-time"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/></svg> <span class="eta">{{ article.reading_time }}</span> de lectura</div>
+      {% if user.is_authenticated and not followed %}
+        <div class="read-later top">
+          <a class="read-later__btn read-later__add"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path class="a" d="M0,0H17.672V17.672H0Z" fill="none"/><path class="b" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</a>
+          <div class="info read-later__add__info hide">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+          <a class="read-later__btn read-later__saved first hide"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><defs></defs><path class="a" d="M0,0H18V18H0Z" fill="none"/><path class="b" d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</a>
+          <div class="info read-later__saved__info first hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+        </div>
+      {% endif %}
     </div>
-
     {% if header_display == 'FW' %}
     </div>
     {% endif %}
@@ -477,6 +488,30 @@
 
     <div class="ld-fin ld-block"></div>
 
+    {% if followed %}
+      <div class="read-later u-mb-60">
+          <div class="info read-later__saved__info">
+            Este artículo está guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a><br>
+            ¿Terminaste de leerlo?
+          </div>
+          <a class="read-later__btn read-later__saved">Quitar de leer después</a>
+          <div class="info hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+        <a class="read-later__btn read-later__add hide"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path class="a" d="M0,0H17.672V17.672H0Z" fill="none"></path><path class="b" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"></path></svg> Leer después</a>
+          <div class="info read-later__add__info hide">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+        <a class="read-later__btn read-later__saved hide"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><defs></defs><path class="a" d="M0,0H18V18H0Z" fill="none"/><path class="b" d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</a>
+          <div class="info read-later__saved__info hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+      </div>
+    {% endif %}
+    {% if user.is_authenticated %}
+    <div class="fav u-mb-60">
+      <a class="fav__btn fav__saved{% if not favourited %} hide{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-874 -9241)"><g transform="translate(874 9241)"><path class="a" d="M0,0H24V24H0Z" fill="none" /><path class="a" d="M0,0H24V24H0Z" fill="none"/></g><g transform="translate(874.557 9242.428)"  fill="none"><path class="b" d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</a>
+      <div class="info hide">El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
+      <a class="fav__btn fav__add{% if favourited %} hide{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-1433 -9241)"><path class="a" d="M0,0H24V24H0Z" transform="translate(1433 9241)" fill="none"/><path class="b" d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(1433.556 9242.438)" fill="#262626"/></g></svg> Guardar como favorito</a>
+      <div class="info{% if not favourited %} hide{% endif %}">Guardaste este artículo como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
+      <div class="info hide">El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
+    </div>
+    {% endif %}
+
     {% with 'ciencia educacion salud feminismos trabajo garra lento economia justicia' as nls %}
       {% if publication.slug in nls.split %}
         {% if publication.slug in user.subscriber.get_newsletters %}
@@ -492,6 +527,72 @@
         {% endif %}
       {% endif %}
     {% endwith %}
+
+
+
+    {% if not user.is_authenticated %}
+    <!-- Modal Structure -->
+    <div id="paywallmodal" class="modal">
+      <!-- paywall begin -->
+        <div class="ld-snackbar ld-snackbar--active ld-snackbar--static">
+          <div class="ld-snackbar__title">
+            Suscribite o ingresá
+            <button class="ld-snackbar__close ld-snackbar__close-top modal-close"
+                    type="button" aria-pressed="false" aria-label="Cerrar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                   viewBox="0 0 24 24">
+                <path fill="none" d="M0 0h24v24H0V0z"/>
+                <path fill="#fff"
+                      d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="ld-snackbar__body ld-snackbar__body-sm">
+            <!-- caso favorito -->
+            <p class="desc">Suscribite para guardar este artículo como
+              favorito</p>
+            <!-- caso leer después -->
+            <p class="desc">Suscribite para guardar este artículo para leer
+              después</p>
+            <a href="{% url 'subscribe' planslug='DDIGM' %}"
+               class="ld-btn-regular ld-snackbar__btn--white ld-snackbar__btn">Suscribite
+              a ilimitada</a>
+            <p class="desc">¿Ya tenés suscripción?</p>
+            <a href="{% url 'account-login' %}?next={{ request.path }}"
+               class="btn bordered">Ingresá</a>
+          </div>
+          <div class="ld-snackbar__body ld-snackbar__body-lg">
+            <div class="container">
+              <div class="row">
+                <div class="ld-snackbar--option">
+                  <div class="ld-snackbar__text ld-snackbar__block">
+                    <!-- caso favorito -->
+                    Suscribite para guardar este artículo como favorito
+                    <!-- caso leer después -->
+                    Suscribite para guardar este artículo para leer después
+                  </div>
+                  <div class="ld-snackbar__block">
+                    <a href="{% url 'subscribe' planslug='DDIGM' %}"
+                       class="ld-btn-default">Suscribite a ilimitada</a>
+                  </div>
+                </div>
+                <div class="ld-snackbar--option">
+                  <div class="ld-snackbar__text ld-snackbar__block">
+                    ¿Ya tenés suscripción?
+                  </div>
+                  <div class="ld-snackbar__block">
+                    <a href="{% url 'account-login' %}?next={{ request.path }}"
+                       class="btn bordered">Ingresá</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <!-- paywall end -->
+
+    </div>
+    {% endif %}
 
     {% if tag_list %}
       <div class="article-tags align-center">
@@ -716,6 +817,86 @@
           $('#signupwall').toggle();
         });
       {% endif %}
+
+      $('a.read-later__add').click(function(){
+        {% if user.is_authenticated %}
+          $.get("{% url 'actstream_follow' content_type_id=article_ct_id object_id=article.id %}", function(data){
+            $('a.read-later__add').addClass('hide');
+            $('.read-later__add__info').addClass('hide');
+            $('.read-later__saved__info:eq(1)').removeClass('hide');
+            $('a.read-later__saved:eq(1)').removeClass('hide');
+
+            $('.read-later__saved__info.first').removeClass('hide');
+            $('a.read-later__saved.first').removeClass('hide');
+          });
+        {% else %}
+          $('.modal').modal('open');
+        {% endif %}
+      });
+
+      $('a.read-later__saved').click(function(){
+        {% if user.is_authenticated %}
+          $.get("{% url 'actstream_unfollow' content_type_id=article_ct_id object_id=article.id %}", function(data){
+            $('a.read-later__add').removeClass('hide');
+            $('.read-later__add__info').removeClass('hide');
+            $('.read-later__saved__info').addClass('hide');
+            $('a.read-later__saved').addClass('hide');
+          });
+        {% else %}
+          $('.modal').modal('open');
+        {% endif %}
+      });
+      {% if followed %}
+        $('a.read-later__saved:first').click(function(){
+          {% if user.is_authenticated %}
+            $.get("{% url 'actstream_unfollow' content_type_id=article_ct_id object_id=article.id %}", function(data){
+              $('a.read-later__saved').addClass('hide').prev().addClass('hide');
+              $('.read-later__add').removeClass('hide').next().removeClass('hide');
+            });
+          {% else %}
+            $('.modal').modal('open');
+          {% endif %}
+        });
+      {% endif %}
+
+      // fav buttons interactions
+      $('a.fav__saved').click(function(){
+        $.ajax({
+          beforeSend: function(xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+          },
+          url: '/favit/remove',
+          async: true,
+          cache: false,
+          type: 'POST',
+          data: {target_model: 'core.Article', target_object_id: {{ article.id }}},
+          success: function(){
+            $('a.fav__saved').next().addClass('hide').next().removeClass('hide');
+            $('a.fav__saved').addClass('hide').prev().addClass('hide').siblings(":last").removeClass('hide');
+          },
+        });
+      });
+      $('a.fav__add').click(function(){
+      $('.modal').modal();
+      {% if user.is_authenticated %}
+        $.ajax({
+          beforeSend: function(xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+          },
+          url: '/favit/add-or-remove',
+          async: true,
+          cache: false,
+          type: 'POST',
+          data: {target_model: 'core.Article', target_object_id: {{ article.id }}},
+          success: function(){
+            $('a.fav__add').addClass('hide').prev().removeClass('hide').prev().removeClass('hide')
+              .siblings(":last").addClass('hide');
+          },
+        });
+        {% else %}
+          $('.modal').modal('open');
+        {% endif %}
+      });
 
       // audio progress
       var act_time = -1;

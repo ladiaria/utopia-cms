@@ -58,9 +58,9 @@ MariaDB [(none)]> GRANT ALL PRIVILEGES ON utopiacms.* TO 'utopiacms_user'@'local
 
 `(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py syncdb --noinput`
 
-- Create `social_django` module tables using Django's `sqlall` management command piped to the database (provide the correct database user and password created before):
+- Create `social_django`, `actstream` and `favit` tables using Django's `sqlall` management command piped to the database (provide the correct database user and password created before):
 
-`(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py sqlall social_django | mysql -u utopiacms_user -p utopiacms`
+`(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py sqlall social_django actstream favit | mysql -u utopiacms_user -p utopiacms`
 
 - Run the migration script provided, it will create all the rest of database tables needed and also will add some required initial data:
 

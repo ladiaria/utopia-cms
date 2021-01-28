@@ -55,6 +55,19 @@ $navbarHeight: 60px;
         a {
             color: $off-black !important;
             padding:12px 16px;
+
+            .num {
+                display: inline-block;
+                background: $off-black;
+                color: #fff !important;
+                font-size: 12px;
+                line-height: 14px;
+                border-radius: 14px ;
+                padding: 0 4px;
+                position: relative;
+                top: -1px;
+                left: 5px;
+            }
         }
 
         .divider {
@@ -1015,6 +1028,17 @@ body {
             padding-bottom:4px;
             }
         }
+        .num {
+            display: inline-block;
+            background: $off-black;
+            color: $primary-color;
+            font-size: 12px;
+            line-height: 14px;
+            border-radius: 14px;
+            padding:0 4px ;
+            position: relative;
+            top:-2px;
+        }
     }
 
     &__close {
@@ -1186,6 +1210,21 @@ body {
             margin: 0 auto 5px auto;
             line-height: 1;
         }
+    }
+
+    &__num {
+        display: inline-block;
+        background: $off-black;
+        color: #fff !important;
+        border:2px solid #fff;
+        font-size: 12px;
+        line-height: 14px;
+        border-radius: 14px;
+        padding: 0 4px;
+        position: absolute;
+        top: 11px;
+        left: 50%;
+
     }
 
     &__icon-text {

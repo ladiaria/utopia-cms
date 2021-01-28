@@ -797,6 +797,24 @@ i.material-icons.icon-lo_mas_leido {
         @media (max-width: 699px) {
             width: 90%;
         }
+      }
+
+    .reading-time {
+      margin-top: 10px;
+      svg {
+        display: inline-block;
+        position: relative;
+        top:2px;
+      }
+    }
+
+    .article-title {
+      font-size: 32px;
+      line-height: 1.2;
+      font-weight: 500;
+
+      padding-left: 20px;
+      padding-right: 20px;
 
         .row {
             margin-bottom: 0;
@@ -2243,6 +2261,10 @@ nav.subscription_black {
     padding: 0 20px;
     margin-top: 50px;
 
+    &.top {
+        margin-top:10px;
+    }
+
     &__btn {
       font-size: 13px;
       line-height: 30px;
@@ -2273,6 +2295,7 @@ nav.subscription_black {
     .info {
       display: block;
       margin-top: 10px;
+      margin-bottom: 10px;
 
       a:hover {
         text-decoration: none;
@@ -2281,9 +2304,11 @@ nav.subscription_black {
   }
 .lista-lectura_nav {
   margin: 0;
+  display: flex;
+  justify-content: space-between;
 
-  @media (min-width:700px) {
-    display: flex;
+  @media (min-width:600px) {
+    justify-content: initial;
   }
 
   li {
@@ -2291,21 +2316,89 @@ nav.subscription_black {
     font-size: 14px;
     font-weight: 500;
 
+    @media (min-width:600px) {
+        margin-right: 20px;
+    }
+
 
     a {
-      display: block;
-      padding:10px 0;
+        display: block;
+        padding:10px 0;
 
-      svg {
-        position:relative;
-        top:7px;
-        margin-right: 5px;
-      }
+        &.active {
+            border-bottom:3px solid $off-black;
+        }
+
+        svg {
+            position:relative;
+            top:7px;
+            display: block;
+            margin:0 auto 10px;
+
+            @media (min-width:600px) {
+                margin:0 5px 0 0;
+                display: inline-block;
+            }
+
+        }
+        .count {
+            display:none;
+
+            @media (min-width:420px) {
+                display: inline-block;
+                margin-left: 5px;
+            }
+
+        }
+
+        $spinnerSize: 16;
+
+        svg.spinner {
+            width: $spinnerSize + px;
+            height: $spinnerSize + px;
+            x: 0px;
+            y: 0px;
+            viewBox: 0 0 $spinnerSize $spinnerSize;
+            display: inline;
+            vertical-align: top;
+            position: relative;
+            top: 2px;
+
+            circle {
+                fill: transparent;
+                stroke: #212121;
+                stroke-width: 4;
+                stroke-linecap: round;
+                stroke-dasharray: (3.14 * $spinnerSize);
+                -webkit-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
+                -moz-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
+                -ms-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
+                -o-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
+                transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
+                -webkit-animation: spinner 2s linear infinite;
+                -moz-animation: spinner 2s linear infinite;
+                -ms-animation: spinner 2s linear infinite;
+                -o-animation: spinner 2s linear infinite;
+                animation: spinner 2s linear infinite;
+            }
+        }
+
+        @keyframes spinner {
+            0% {
+                transform: rotate(0deg);
+                stroke-dashoffset: (0.66 * $spinnerSize);
+            } 50% {
+                transform: rotate(720deg);
+                stroke-dashoffset: (3.14 * $spinnerSize);
+            } 100% {
+                transform: rotate(1080deg);
+                stroke-dashoffset: (0.66 * $spinnerSize);
+            }
+        }
+
     }
 
-    &.active {
-      border-bottom:3px solid $off-black;
-    }
+
     @media (min-width:700px) {
     + li {
       margin-left: 10px;
@@ -2313,6 +2406,56 @@ nav.subscription_black {
     }
   }
 }
+.lista-lectura-tab {
+    margin-bottom: 100px;
+
+    .empty-feed {
+        background: #F8F8F8;
+        padding: 100px 35px;
+        text-align: center;
+        border-radius: 10px;
+
+        .icon {
+            display: inline-block;
+            margin-bottom:10px;
+        }
+        .msg {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        a {
+            text-decoration: underline;
+
+            &:hover {
+                text-decoration: none;
+            }
+        }
+    }
+
+    .feed-info {
+        background: #F8F8F8;
+        border-radius: 10px;
+        padding: 10px 15px 10px 45px;
+        font-size: 16px;
+        line-height: 24px;
+        margin-top:-10px;
+        margin-bottom: 20px;
+        position: relative;
+
+        svg {
+            display: inline-block;
+            vertical-align: top;
+            position: absolute;
+            left: 15px;
+            top:10px;
+        }
+
+    }
+
+}
+
+
 // captcha
 #div_id_captcha {
     margin:15px 0 25px;

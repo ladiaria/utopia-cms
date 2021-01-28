@@ -1,5 +1,5 @@
 {% extends 'article/article_card.html' %}
-{% load core_tags inplace_edit adzone_tags tagging_tags ldml %}
+{% load core_tags adzone_tags tagging_tags ldml %}
 {% block class %}ld-card--big{% endblock %}
 {% block image %}
   {% if article.photo %}
@@ -15,7 +15,8 @@
            {% endspaceless %}
            sizes="(min-width: 900px) 1000px, {{ article.photo.get_450w_url }}"
            title="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-           alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+           alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+           loading="lazy">
     </a>
   {% endif %}
 {% endblock %}

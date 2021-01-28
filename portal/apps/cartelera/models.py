@@ -3,17 +3,16 @@ import datetime
 
 from django.conf import settings
 from django.db.models import Model, CharField, TextField, ForeignKey, permalink
-from django.db.models.fields import (
-    DateTimeField, SlugField, PositiveSmallIntegerField, BooleanField, URLField
-)
+from django.db.models.fields import DateTimeField, SlugField, PositiveSmallIntegerField, BooleanField, URLField
 from django.db.models.fields.files import ImageField
 from django.utils.datetime_safe import date
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 
-from djangoratings.fields import RatingField
 from core.models import CT
+from djangoratings.fields import RatingField
+
 from choices import LIVE_EMBED_EVENT_ACCESS_TYPES
 
 
@@ -24,9 +23,7 @@ class CategoriaEvento(Model):
 
     def current_events(self):
         today_min = datetime.datetime.combine(date.today(), datetime.time.min)
-        eventos = \
-            self.eventobase_set.select_related().order_by('start').filter(
-                end__gte=today_min)[:20]
+        eventos = self.eventobase_set.select_related().order_by('start').filter(end__gte=today_min)[:20]
         result = []
         for evento in eventos:
             evento = getattr(evento, evento.type)

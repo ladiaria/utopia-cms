@@ -1,3 +1,0 @@
-{% load i18n activity_tags %}
-<h2>{% include 'actstream/action.html'|backwards_compatibility_check %}</h2>
-<p>{% blocktrans with date=action.timestamp|date time=action.timestamp|time %}On {{ date }} at {{ time }}{% endblocktrans %}</p>

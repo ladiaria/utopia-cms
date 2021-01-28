@@ -44,9 +44,10 @@ class HomeTopArticleInline(TabularInline):
         return qs.filter(home_top=True)
 
     class Media:
+        # jquery loaded again (admin uses custom js namespaces)
         js = (
-            'js/jquery-1.8.2.min.js',
-            'js/jquery-ui-1.8.22.custom.min.js',
+            'admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'),
+            'js/jquery-ui-1.12.1.custom.min.js',
             'js/homev2/edition_admin.js',
         )
         css = {'all': ('css/home_admin.css', )}
@@ -415,9 +416,13 @@ class ArticleAdmin(ModelAdmin):
 
     class Media:
         css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
+        # jquery loaded again (admin uses custom js namespaces)
         js = (
-            'js/jquery-1.8.2.min.js', 'js/jquery.charcounter-orig.js',
-            'js/markdown-help.js', 'js/homev2/article_admin.js',)
+            'admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'),
+            'js/jquery.charcounter-orig.js',
+            'js/markdown-help.js',
+            'js/homev2/article_admin.js',
+        )
 
 
 class SupplementAdmin(ModelAdmin):
@@ -472,9 +477,7 @@ class JournalistAdmin(ModelAdmin):
     list_filter = ('job',)
     search_fields = ['name']
     fieldsets = (
-        (None, {'fields': (
-            'name', 'email', 'image', 'bio', 'job', 'sections')}),
-        # ('Perfil público', {'fields': ('job', 'sections')}),
+        (None, {'fields': ('name', 'email', 'image', 'bio', 'job', 'sections')}),
         ('Redes sociales', {
             'description': 'Ingrese nombre de usuario de cada red social.',
             'fields': ('fb', 'tt', 'gp', 'ig')}),
@@ -569,6 +572,7 @@ class TaggedItemAdmin(admin.ModelAdmin):
     model = TaggedItem
     search_fields = ('name',)
 
+
 site.register(Article, ArticleAdmin)
 site.register(Edition, EditionAdmin)
 site.register(Journalist, JournalistAdmin)
@@ -583,4 +587,3 @@ site.unregister(Tag)
 site.unregister(TaggedItem)
 site.register(Tag, TagAdmin)
 site.register(TaggedItem, TaggedItemAdmin)
-

@@ -15,6 +15,8 @@ from sorl.thumbnail import get_thumbnail
 from PIL import Image
 import readtime
 
+from actstream import registry
+
 from django.conf import settings
 from django.core import urlresolvers
 from django.http import HttpResponse
@@ -166,13 +168,10 @@ class PortableDocumentFormatBaseModel(Model):
             u'<strong>AVISO:</strong> Si es mayor a 8MB probablemente no se ' +
             u'pueda enviar por mail.'))
     pdf_md5 = CharField(u'checksum', max_length=32, editable=False)
-    content = TextField(u'contenido')
     downloads = PositiveIntegerField(u'descargas', default=0)
-    cover = ImageField(
-        u'tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
+    cover = ImageField(u'tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
     date_published = DateField(u'fecha de publicación', default=date.today())
     date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
-    pages = GenericRelation('PortableDocumentFormatPage')
 
     def __unicode__(self):
         return self.pdf[self.pdf.rfind('/') + 1:]
@@ -181,109 +180,6 @@ class PortableDocumentFormatBaseModel(Model):
         abstract = True
         get_latest_by = 'date_published'
         ordering = ('-date_published', )
-
-    def save(self, *args, **kwargs):
-        from libs.utils import md5file
-        do_md5 = False
-        if 'md5' in kwargs:
-            if not kwargs.get('md5'):
-                do_md5 = False
-            del(kwargs['md5'])
-        if do_md5:
-            super(PortableDocumentFormatBaseModel, self).save(*args, **kwargs)
-            try:
-                md5_checksum = md5file(self.pdf.path)
-                if self.pdf_md5 != md5_checksum:
-                    self.pdf_md5 = md5_checksum
-                    self.process_pdf()
-            except Exception:
-                self.delete()
-                raise
-        super(PortableDocumentFormatBaseModel, self).save(*args, **kwargs)
-
-    def process_pdf(self):
-        # Mandar el PDF por mail
-        send_mail([self.pdf.path])
-        # Recortando el PDF para el iPad
-        input1 = PdfFileReader(file(self.pdf.path, "rb"))
-        output = PdfFileWriter()
-        numPages = input1.getNumPages()
-        for p in range(numPages):
-            page = input1.getPage(p)
-            page.trimBox.lowerLeft = (0, 0)
-            page.trimBox.upperRight = (854, 1197)
-            if not p % 2 == 0:
-                page.cropBox.lowerLeft = (50, 44)
-                page.cropBox.upperRight = (798, 1108)
-            else:
-                page.cropBox.lowerLeft = (23, 44)
-                page.cropBox.upperRight = (771, 1108)
-            output.addPage(page)
-
-        outputStream = file(os.path.splitext(
-            self.pdf.path)[0] + '-cropped.pdf', "wb")
-        output.write(outputStream)
-        outputStream.close()
-
-        bin = os.path.join(settings.PROJECT_ABSOLUTE_DIR, 'bin', 'pdftotext')
-        content_cmd = [bin, '-enc', 'Latin1', self.pdf.path, '-']
-        output = subprocess.Popen(
-            content_cmd, stdout=subprocess.PIPE).stdout.read().strip()
-        self.content = unicodedata.normalize(
-            'NFC', unicode(output, encoding='latin1', errors='ignore'))
-        if self.cover:
-            if os.path.exists(self.cover.path):
-                os.unlink(self.cover.path)
-        cover_path = '%s.jpg' % self.pdf.path[:-4]
-        self.cover = remove_media_root(cover_path)
-        cover_cmd = 'convert "%s[0]" "%s"' % (self.pdf.path, cover_path)
-        os.system(cover_cmd)
-        self.pages.all().delete()
-        if getattr(settings, 'EDITION_GENERATE_PDF_BREAKDOWN', True):
-            for page in range(1, self.get_pdf_total_pages() + 1):
-                try:
-                    self.save_page(page, self.extract_page(page))
-                except Exception as e:
-                    print('Página %i\t\t[FAIL]\n\t%s' % (page, e))
-
-    def get_pdf_total_pages(self):
-        # http://www.daniweb.com/forums/thread152831.html
-        pages_re = re.compile(r'/Count\s+(\d+)')
-        pages = [int(num) for num in pages_re.findall(
-            file(self.pdf.path, 'r').read())]
-        pages.sort()
-        pages.reverse()
-        try:
-            return pages[0]
-        except Exception:
-            return 16
-
-    def extract_page(self, number):
-        from django.conf import settings
-
-        # http://www.linuxjournal.com/content/tech-tip-extract-pages-pdf
-        bin = os.path.join(settings.PROJECT_ABSOLUTE_DIR, 'bin', 'pdftops')
-        pagename = '%s-%i.pdf' % (self.pdf.path[:-4], number)
-        os.system('%s %s - | psselect -p%i | ps2pdf14 - %s' % (
-            bin, self.pdf.path, number, pagename))
-        return pagename
-
-    def save_page(self, number, pdf_path):
-        page = PortableDocumentFormatPage(
-            pdf_model=self, number=number, pdf=remove_media_root(pdf_path))
-        bin = os.path.join(settings.PROJECT_ABSOLUTE_DIR, 'bin', 'pdftotext')
-        content_cmd = [
-            bin, self.pdf.path, '-enc', 'Latin1', '-f', str(number), '-l',
-            str(number), '-']
-        page.content = unicodedata.normalize(
-            'NFC', unicode(subprocess.Popen(
-                content_cmd, stdout=subprocess.PIPE).stdout.read().strip(),
-                encoding='latin1', errors='ignore'))
-        page.save()
-        return page
-
-    def get_cover_page(self):
-        return self.pages.get(number=1)
 
     def get_pdf_filename(self):
         return None
@@ -305,122 +201,6 @@ class PortableDocumentFormatBaseModel(Model):
         response = HttpResponse(self.pdf, mimetype='application/pdf')
         response['Content-Disposition'] = 'attachment; filename=%s' % filename
         return response
-
-
-class PortableDocumentFormatPage(Model):
-    content_type = ForeignKey(ContentType)
-    object_id = PositiveIntegerField()
-    pdf_model = GenericForeignKey()
-    number = PositiveSmallIntegerField(u'página')
-    pdf = FileField(u'archivo pdf', upload_to=get_pdfpage_pdf_upload_to)
-    snapshot = FileField(u'captura', upload_to=get_pdfpage_snapshot_upload_to)
-    content = TextField(u'contenido')
-    date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
-
-    def __unicode__(self):
-        if self.pdf_model:
-            return u'%s - Página %i' % (
-                self.pdf_model.__unicode__(), self.number)
-        else:
-            return u'Página %i' % (self.number)
-
-    def is_cover(self):
-        return self.number == 1
-
-    def save(self, *args, **kwargs):
-        if not self.id:
-            super(PortableDocumentFormatPage, self).save(*args, **kwargs)
-            try:
-                if not self.content:
-                    bin = os.path.join(
-                        settings.PROJECT_ABSOLUTE_DIR, 'bin', 'pdftotext')
-                    content_cmd = [
-                        bin, '-enc', 'Latin1', '-f', str(self.number), '-l',
-                        str(self.number), self.pdf_model.pdf.path, '-']
-                    self.content = unicodedata.normalize(
-                        'NFC', unicode(subprocess.Popen(
-                            content_cmd, stdout=subprocess.PIPE
-                        ).stdout.read().strip(), encoding='latin1',
-                            errors='ignore'))
-                cover_path = '%s.jpg' % self.pdf.path[:-4]
-                self.snapshot = remove_media_root(cover_path)
-                os.system('convert %s[0] %s' % (self.pdf.path, cover_path))
-                self.save_images()
-            except Exception:
-                self.delete()
-                raise
-        super(PortableDocumentFormatPage, self).save(*args, **kwargs)
-
-    def save_images(self):
-        bin = os.path.join(settings.PROJECT_ABSOLUTE_DIR, 'bin', 'pdfimages')
-        image_root = self.pdf.path[self.pdf.path.rfind('/') + 1:-4]
-        images_cmd = '%s -f %i -l %i %s %s &>/dev/null' % (
-            bin, self.number, self.number, self.pdf_model.pdf.path,
-            os.path.join(self.pdf.path[:self.pdf.path.rfind('/')], image_root))
-        os.system(images_cmd)
-        directory = self.pdf.path[:self.pdf.path.rfind('/')]
-        image_re = re.compile(r'%s-\d{3}\.\w{3}$' % image_root)
-        for filename in os.listdir(directory):
-            matches = image_re.findall(filename)
-            if len(matches):
-                relpath = remove_media_root(os.path.join(directory, filename))
-                image = PortableDocumentFormatPageImage(
-                    page=self, file=relpath)
-                image.save()
-
-    class Meta:
-        get_latest_by = 'date_created'
-        ordering = ('content_type', 'object_id', 'number')
-        unique_together = ('content_type', 'object_id', 'number')
-        verbose_name = u'página de PDF'
-        verbose_name_plural = u'páginas de PDF'
-
-
-class PortableDocumentFormatPageImage(Model):
-    page = ForeignKey(
-        PortableDocumentFormatPage, related_name='images',
-        verbose_name=u'página')
-    file = FileField(u'archivo', upload_to=get_pdfpageimage_file_upload_to)
-    number = PositiveSmallIntegerField(u'número', default=1)
-    date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
-
-    def __unicode__(self):
-        return '%s - Foto %i' % (self.page.__unicode__(), self.number)
-
-    class Meta:
-        get_latest_by = 'date_created'
-        ordering = ('-date_created', 'page', 'number', 'id')
-        verbose_name = u'imagen de PDF'
-        verbose_name_plural = u'imágenes de PDF'
-
-    def save(self, *args, **kwargs):
-        try:
-            self.number = int(self.file.path[-7:-4]) + 1
-        except Exception:
-            self.number = 1
-        if not self.file.path.endswith('.jpg'):
-            if os.path.exists(self.file.path):
-                output = '%s.jpg' % self.file.path[:-4]
-                convert_cmd = 'convert %(input)s %(output)s' % {
-                    'input': self.file.path, 'output': output}
-                os.system(convert_cmd)
-                os.unlink(self.file.path)
-                self.file = remove_media_root(output)
-        super(PortableDocumentFormatPageImage, self).save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        return self.file.url
-
-    def admin_thumbnail(self):
-        thumb = get_thumbnail(self.file.name, '100x100')
-        img_tag = u'<img src="%s" alt="%s">' % (
-            thumb.absolute_url, self.__unicode__())
-        if hasattr(self, 'get_absolute_url'):
-            return u'<a href="%s" class="jbox">%s</a>' % (
-                self.get_absolute_url(), img_tag)
-        return img_tag
-    admin_thumbnail.short_description = u'Thumbnail'
-    admin_thumbnail.allow_tags = True
 
 
 """ TODO: better enable this after new structure works well (**)
@@ -480,8 +260,7 @@ class Edition(PortableDocumentFormatBaseModel):
         return self.published_articles().filter(newsletter_featured=True)
 
     def get_pdf_filename(self):
-        return '%s-%s.pdf' % (
-            self.publication.slug, self.date_published.strftime('%Y%m%d'))
+        return '%s-%s.pdf' % (self.publication.slug, self.date_published.strftime('%Y%m%d'))
 
     @property
     def top_articles(self):
@@ -1454,6 +1233,10 @@ class Article(ArticleBase):
                 imagen__isnull=False).values_list('imagen', flat=True)
             if section_imgs:
                 return PhotoExtended(image=section_imgs[0])
+
+
+registry.register(Article)
+registry.register(User)
 
 
 class ArticleRel(Model):

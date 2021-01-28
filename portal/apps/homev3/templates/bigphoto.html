@@ -13,7 +13,7 @@
         <source srcset="{{ big_photo.get_1200w_url }}" media="(min-width: 901px)">
         <source srcset="{{ big_photo.get_900w_url }}" media="(min-width: 701px)">
         <source srcset="{{ big_photo.get_700w_url }}" media="(min-width: 0px)">
-        <img class="big-photo__img lazyload" alt="{{ big_photo.caption }}">
+        <img class="big-photo__img lazyload" alt="{{ big_photo.caption }}" loading="lazy">
       </picture>
       <figcaption class="big-photo__caption ld-caption">
         <div class="big-photo__description">

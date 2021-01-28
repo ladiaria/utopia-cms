@@ -14,10 +14,9 @@ signupwall
 cartelera
 comunidad
 djangoratings
-elegi_informarte
+updown
 epubparser
-dashboard
-actstream"
+dashboard"
 
 for app in $SOUTH_APPS; do
     DJANGO_SETTINGS_MODULE="install_settings" python -W ignore manage.py migrate $app

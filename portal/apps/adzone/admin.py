@@ -7,6 +7,7 @@
 
 import csv
 
+from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse
 from adzone.models import *
@@ -35,7 +36,8 @@ class AdBaseAdmin(admin.ModelAdmin):
     search_fields = ['title', 'url']
 
     class Media:
-        js = ('js/jquery-1.8.2.min.js', 'js/adbase_admin.js')
+        # jquery loaded again (admin uses custom js namespaces)
+        js = ('admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'), 'js/adbase_admin.js')
 
 
 class AdClickAdmin(admin.ModelAdmin):

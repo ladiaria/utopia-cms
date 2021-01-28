@@ -1,4 +1,4 @@
-{% load static homev3_tags %}
+{% load static homev3_tags thedaily_tags %}
 
 <div class="ld-print print-header">
   <img src="{% static HOMEV3_LOGO_PRINTABLE %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" style="height:30px">
@@ -45,6 +45,7 @@
 {% if is_subscriber %}
     <ul id="user-dropdown" class="dropdown-content hide-on-med-and-down">
         <li><a href="{% url 'edit-profile' %}">Opciones</a></li>
+        <li><a href="{% url 'lista-lectura-leer-despues' %}">Leer después <span class="num">{{ user|count_following }}</span></a></li>
         {% if poll_url %}
             <li><a href="{{ poll_url }}" target="_blank">Danos tu opinión</a></li>
         {% endif %}
@@ -57,6 +58,7 @@
 {% elif user.is_authenticated %}
     <ul id="user-dropdown" class="dropdown-content hide-on-med-and-down">
         <li><a href="{% url 'edit-profile' %}">Opciones</a></li>
+        <li><a href="{% url 'lista-lectura-leer-despues' %}">Leer después <span class="num">{{ user|count_following }}</span></a></li>
         {% if not is_subscriber_any %}
             <li><a href="{% url 'subscribe' planslug='DDIGM' %}">Pasate a ilimitada</a></li>
         {% endif %}

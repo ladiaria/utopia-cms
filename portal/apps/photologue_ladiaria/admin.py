@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.conf import settings
 from django import forms
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminDateWidget
@@ -42,7 +43,8 @@ class PhotoExtendedInline(admin.StackedInline):
             'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse', )}))
 
     class Media:
-        js = ('js/jquery.min.js', 'js/jquery.cropbox.js')
+        # jquery loaded again (admin uses custom js namespaces)
+        js = ('admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'), 'js/jquery.cropbox.js')
 
 
 class PhotoGalleryInline(admin.TabularInline):

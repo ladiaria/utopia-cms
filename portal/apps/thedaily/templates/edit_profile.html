@@ -26,6 +26,14 @@
       </section>
     </form>
 
+    <section class="ld-block section scrollspy" id="lista-lectura">
+      <h2 class="ld-title ld-title--underlined">Lista de lectura</h2>
+      <div class="row ld-profile-row">
+        <p>Los artículos que guardaste para leer después, tus favoritos e historial de visitados.</p>
+        <a class="ld-btn ld-btn-solid-dark" href="{% url 'lista-lectura-leer-despues' %}">Ir a lista de lectura</a>
+      </div>
+    </section>
+
     {% block extra_content %}{% endblock %}
 
     <section class="ld-block section scrollspy" id="google">
@@ -112,6 +120,7 @@
       <li><a href="#suscripciones">Suscripciones</a></li>
       <li><a href="#newsletters">Newsletters</a></li>
       <li><a href="#ld-comunicaciones">Comunicaciones</a></li>
+      <li><a href="#lista-lectura">Lista de lectura</a></li>
       {% block right_menu_extra %}{% endblock %}
       <li><a href="#google">Ingreso con Google</a></li>
       <li><a href="#seguridad">Seguridad</a></li>

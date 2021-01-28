@@ -13,11 +13,15 @@ from django.http import Http404, HttpResponseRedirect, HttpResponse, BadHeaderEr
 from django.utils import simplejson as json
 from django.views.generic import DetailView
 from django.contrib.sites.models import Site
+from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_list_or_404, get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache  # , cache_page
 # from django.views.decorators.vary import vary_on_cookie
 from django.template.defaultfilters import slugify
+
+from actstream.models import following
+from favit.models import Favorite
 
 from tagging.models import Tag
 from apps import core_articleviewedby_mdb, core_articlevisits_mdb
@@ -109,9 +113,11 @@ def article_detail(request, year, month, slug, domain_slug=None):
         raise Http404
 
     report_form = ReportErrorArticleForm(article=article)
+    user_is_authenticated = request.user.is_authenticated()
+
     if request.method == 'POST':
         post = request.POST.copy()
-        if 'error' in post and request.user.is_authenticated():
+        if 'error' in post and user_is_authenticated:
             report_form = ReportErrorArticleForm(post, article=article)
             if report_form.is_valid():
                 return report_error(request, article)
@@ -145,13 +151,21 @@ def article_detail(request, year, month, slug, domain_slug=None):
     except (ConnectionError, ValueError, KeyError):
         comments_count = 0
 
-    return 'detail.html', {
+    context = {
         'article': article, 'is_detail': True, 'keep_reading': keep_reading, 'report_form': report_form,
         'domain': domain, 'category': category, 'section': article.publication_section(),
-        'header_display': article.header_display, 'tag_list': reorder_tag_list(article, get_article_tags(article)),
-        'comments_count': comments_count,
+        'header_display': article.header_display, 'article_ct_id': ContentType.objects.get_for_model(Article).id,
+        'tag_list': reorder_tag_list(article, get_article_tags(article)), 'comments_count': comments_count,
         'publication': article.main_section.edition.publication if article.main_section else None,
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED}
+
+    if user_is_authenticated:
+        context.update({
+            'followed': article in following(request.user, Article),
+            'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
+        })
+
+    return 'detail.html', context
 
 
 def reorder_tag_list(article, tags):
@@ -204,12 +218,6 @@ Puede editar el artículo en:
         'site': Site.objects.get_current().domain}
     mail_managers(subject='Error en artículo', message=body)
     return HttpResponseRedirect(reverse('article_report_sent'))
-
-
-@to_response
-def js_toolbar(request, article_id):
-    article = get_object_or_404(Article, id=article_id)
-    return 'toolbar_social.html', {'article': article, }
 
 
 @require_http_methods(["POST"])

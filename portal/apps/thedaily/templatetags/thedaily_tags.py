@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.template import Library, Node, NodeList, TemplateSyntaxError, \
     Variable
-
+from actstream.models import following
+from core.models import Article
 from datetime import date, datetime, timedelta
 
 register = Library()
@@ -42,6 +43,11 @@ class TimeNode(Node):
             return self.nodelist_true.render(context)
         else:
             return self.nodelist_false.render(context)
+
+
+@register.filter(name='count_following')
+def count_following(user):
+    return len(following(user))
 
 
 def if_time(parser, token):

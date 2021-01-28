@@ -1,46 +1,22 @@
-{% load activity_tags inplace_edit %}
+{% load activity_tags %}
 
 <ul class="nav"{% if is_detail %} id="toolbar"{% endif %}>
-<li class="pin_icon">
-		<a class="pin{% if user|is_following:evento %} selected{% endif %}" href="{% url pin evento.contenttype_id evento.id %}">
-			<span class="icon-ladiaria" title="Guardar este evento en tu cuenta ladiaria">p</span>
-		</a>
-	</li>
-
-	{% if event.allow_comments %}
-	<li class="comment_icon">
-	{# Comentarios #}
-	<a href="{{ evento.get_absolute_url }}#comments"><span
-			class="icon-ladiaria" title="Ver y hacer comentarios sobre este artículo">c</span>
-			{% if evento.comment_count %}
-			<span	class="count">{{evento.comment_count}}</span>{% endif %}</a>
-	</li>
-  {% endif %}
-
-	{% if user.is_superuser %}
-	{% comment %}
-	<li class="edit_icon"><a class="inplace_edit_show" style="display:none;" href="{% url admin:comunidad_evento_change evento.id %}" title="Editar evento en admin"><span class="icon-ladiaria">e</span></a>
+  {# TODO: actstream_follow url will work after use the new version of actstream (lista de lectura requirement) #}
+  <li class="pin_icon">
+    <a class="pin{% if user|is_following:evento %} selected{% endif %}" href="{# url 'actstream_follow' content_type_id=evento.contenttype_id object_id=evento.id #}">
+      <span class="icon-ladiaria" title="Guardar este evento en tu cuenta">p</span>
+    </a>
   </li>
 
   {% if event.allow_comments %}
     <li class="comment_icon">
       {# Comentarios #}
-      <a href="{{ evento.get_absolute_url }}#comments">
-        <span class="icon-ladiaria" title="Ver y hacer comentarios sobre este artículo">c</span>
-        {% if evento.comment_count %}
-          <span class="count">{{evento.comment_count}}</span>
-        {% endif %}
+      <a href="{{ evento.get_absolute_url }}#comments"><span
+        class="icon-ladiaria" title="Ver y hacer comentarios sobre este artículo">c</span>
+        {% if evento.comment_count %}<span class="count">{{evento.comment_count}}</span>{% endif %}
       </a>
     </li>
-    {% endif %}
-
-  {% if request.user.is_superuser %}
-    {% comment %}
-    <li class="edit_icon">
-      <a class="inplace_edit_show" style="display:none;" href="{% url 'admin:comunidad_evento_change' evento.id %}" title="Editar evento en admin"><span class="icon-ladiaria">e</span></a>
-    </li>
-    {% endcomment %}
-   {% endif %}
+  {% endif %}
 
   <li class="share dropdown">
     {% if not is_detail %}

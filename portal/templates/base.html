@@ -1,5 +1,5 @@
 {% spaceless %}
-{% load static homev3_tags compress %}
+{% load static homev3_tags compress thedaily_tags %}
 {% endspaceless %}<!doctype html>
 {% block html %}
 <!-- Legacy browsers support  -->
@@ -174,7 +174,7 @@
     {% endcompress %}
 
     <!-- JavaScript -->
-    <script src="{% static 'js/vendor/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static 'admin/js/jquery.min.js' %}"></script>
     <script type="text/javascript">
       $(function(){
         $('.btn-close').click(function(){
@@ -228,7 +228,7 @@
       {% if user_form %}
         <div class="profile-container">
       {% elif not is_portada and not is_detail %}
-        <div class="container">
+        <div class="container {% block container_class %}{% endblock %}">
       {% endif %}
       {% block content_pre %}{% endblock %}
       {% block content %}{% endblock %}
@@ -267,12 +267,22 @@
                   </a>
                 {% endif %}
               </li>
+              {% if not user.is_authenticated %}
               <li class="col s{{ mobile_nav_ths }}ths">
                 <a class="nav-menu-button" href="{% url 'mas_leidos' %}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M20.114,7.042,21.88,8.808,15.9,14.792l-4.034-4.034a1.221,1.221,0,0,0-1.729,0L2.776,18.127a1.223,1.223,0,0,0,1.729,1.729l6.487-6.5,4.034,4.034a1.221,1.221,0,0,0,1.729,0l6.854-6.842,1.766,1.766a.612.612,0,0,0,1.042-.429V6.613a.59.59,0,0,0-.6-.613h-5.26a.613.613,0,0,0-.441,1.042Z" transform="translate(-2.417 -1.19)" fill="#262626"/></svg>
                   <span class="nav-mobile__icon-text">Lo más leído</span>
                 </a>
               </li>
+              {% else %}
+                <li class="col s{{ mobile_nav_ths }}ths">
+                  <a class="nav-menu-button" href="{% url 'lista-lectura-leer-despues' %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path class="a" d="M0,0H24V24H0Z" fill="none"/><path class="b" d="M17,3H7A2.006,2.006,0,0,0,5,5V21l7-3,7,3V5A2.006,2.006,0,0,0,17,3Z" fill="#262626"/></svg>
+                    <span class="nav-mobile__num">{{ request.user|count_following }}</span>
+                    <span class="nav-mobile__icon-text">Leer después</span>
+                  </a>
+                </li>
+              {% endif %}
               {% if MOBILE_NAV_EXTRA_TEMPLATE %}
                 {% include MOBILE_NAV_EXTRA_TEMPLATE %}
               {% endif %}
@@ -354,6 +364,7 @@
         {% endif %}
       {% endcomment %}
 
+      {# TODO: probably there is no reason to have 2 scripts blocks like this, investigate and eliminate one #}
       {% block javascript %}{% endblock %}
       {% block footer_scripts %}{% endblock %}
     {% block main_close %}</main>{% endblock %}

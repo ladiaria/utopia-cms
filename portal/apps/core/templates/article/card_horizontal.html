@@ -1,5 +1,5 @@
 {% extends 'article/article_card.html' %}
-{% load core_tags inplace_edit adzone_tags tagging_tags ldml %}
+{% load core_tags adzone_tags tagging_tags ldml %}
 {% block class %}horizontal{% endblock %}
 {% block image %}
 {% if article.photo and card_type != 'OP' %}
@@ -12,7 +12,7 @@
         <source srcset="{{ article.photo.get_450w_url }}" media="(min-width: 380px)">
         <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 0px)">
         <!--[if IE 9]></video><![endif]-->
-        <img alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" title="{{ article.photo.caption }}" >
+        <img class="lazyload" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" title="{{ article.photo.caption }}" loading="lazy">
       </picture>
       {% else %}
       <picture>
@@ -26,7 +26,7 @@
         <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 280px)">
         <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
         <!--[if IE 9]></video><![endif]-->
-        <img alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" title="{{ article.photo.caption }}" >
+        <img alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" class="lazyload" title="{{ article.photo.caption }}" loading="lazy">
       </picture>
       {% endif %}
     </a>

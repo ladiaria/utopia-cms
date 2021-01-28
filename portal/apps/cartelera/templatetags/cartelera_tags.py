@@ -17,10 +17,7 @@ def rating(context, object):
 def render_live_embed_event_notification(context):
     try:
         event = LiveEmbedEvent.objects.get(active=True, notification=True)
-        if event.id not in context['request'].session.get(
-                'live_embed_events_notifications_closed', set()):
-            return render_to_string(
-                'cartelera/live_embed_event_notification.html',
-                {'event': event})
+        if event.id not in context['request'].session.get('live_embed_events_notifications_closed', set()):
+            return render_to_string('cartelera/live_embed_event_notification.html', {'event': event})
     except LiveEmbedEvent.DoesNotExist:
         return u''

@@ -103,15 +103,11 @@ INSTALLED_APPS = (
     'signupwall',
     'homev3',
     'cartelera',
-    'inplaceeditform_bootstrap',
-    'inplaceeditform',
-    'inplaceeditform_extra_fields',
     'markdown',
     'django_markdown',
     'comunidad',
     'appconf',
     'djangoratings',
-    'elegi_informarte',
     'tagging_autocomplete_tagit',
     'avatar',
     'endless_pagination',
@@ -122,6 +118,7 @@ INSTALLED_APPS = (
     'django_filters',
     'rest_framework',
     'compressor',
+    'favit',
 )
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
@@ -168,23 +165,6 @@ REST_FRAMEWORK = {
     'PAGINATE_BY': 20,
     'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
 }
-
-# para que inplaceedit funcione no solo con superusuario sino que con
-# todos quienes tengan permiso para editar ese modelo.
-MARKDOWN_EDITOR_SKIN = 'simple'
-MARKDOWN_EXTENSIONS = ['extra']
-ADAPTOR_INPLACEEDIT_EDIT = 'inplaceeditform.perms.AdminDjangoPermEditInline'
-
-ADAPTOR_INPLACEEDIT = {}
-if 'inplaceeditform_extra_fields' in INSTALLED_APPS:
-    ADAPTOR_INPLACEEDIT = {
-        'fk': 'inplaceeditform_extra_fields.fields.AdaptorAutoCompleteForeingKeyField',
-        'm2mcomma': 'inplaceeditform_extra_fields.fields.AdaptorAutoCompleteManyToManyField'
-    }
-
-if 'bootstrap3_datetime' in INSTALLED_APPS:
-    ADAPTOR_INPLACEEDIT['date'] = 'inplaceeditform_bootstrap.fields.AdaptorDateBootStrapField'
-    ADAPTOR_INPLACEEDIT['datetime'] = 'inplaceeditform_bootstrap.fields.AdaptorDateTimeBootStrapField'
 
 ACTSTREAM_SETTINGS = {
     'MODELS': (
@@ -488,9 +468,5 @@ LOCALE_NAME = LOCAL_LANG + '_' + LOCAL_COUNTRY + '.UTF8'
 if FREEZE_TIME:
     freezer = freeze_time(FREEZE_TIME)
     freezer.start()
-
-if 'manage.py compress' in ' '.join(sys.argv):
-    if 'debug_toolbar' not in INSTALLED_APPS:
-        INSTALLED_APPS += ('debug_toolbar', )
 
 ABSOLUTE_URL_OVERRIDES = {'auth.user': SITE_URL + "usuarios/perfil/editar/"}

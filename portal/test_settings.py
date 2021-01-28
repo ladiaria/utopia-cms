@@ -59,15 +59,11 @@ INSTALLED_APPS = (
     'signupwall',
     'homev3',
     'cartelera',
-    'inplaceeditform_bootstrap',
-    'inplaceeditform',
-    'inplaceeditform_extra_fields',
     'markdown',
     'django_markdown',
     'comunidad',
     'appconf',
     'djangoratings',
-    'elegi_informarte',
     'tagging_autocomplete_tagit',
     'avatar',
     'endless_pagination',
@@ -78,4 +74,12 @@ INSTALLED_APPS = (
     'django_filters',
     'rest_framework',
     'compressor',
+    'favit',
 )
+
+if DEBUG:
+    # remove debug_toolbar middleware (if present)
+    if 'debug_toolbar.middleware.DebugToolbarMiddleware' in MIDDLEWARE_CLASSES:
+        m_list = list(MIDDLEWARE_CLASSES)
+        m_list.remove('debug_toolbar.middleware.DebugToolbarMiddleware')
+        MIDDLEWARE_CLASSES = tuple(m_list)

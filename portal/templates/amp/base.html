@@ -31,6 +31,8 @@
   <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
   <script async custom-element="amp-audio" src="https://cdn.ampproject.org/v0/amp-audio-0.1.js"></script>
 
+  <script async custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js"></script>
+
   <script id="amp-access" type="application/json">
     {
       "authorization": "https://{{ site.domain }}/usuarios/amp-access/authorization?rid=READER_ID&url=CANONICAL_URL&ref=DOCUMENT_REFERRER&_=RANDOM",
@@ -107,7 +109,6 @@
       .ampstart-headerbar { position: fixed; bottom: 0; box-shadow: 0px 25px 50px grey; width: 100%; background-color: #fff; display: -webkit-flex; display: flex; -webkit-flex-direction: row; flex-direction: row; height: 57px; z-index: 100; }.header-pill { z-index: 100; bottom: 0px; position: relative; padding:0; margin-left: 7px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; transition: .2s ease-out; display:inline-block; line-height:100%; }.header-pill:hover { opacity: .8; }
       .header-pill svg { display:block; }
       .header-pill--coronavirus {}
-
       .mobile-header { width: 100%; background-color: #262626; color: #fff; text-align: center; display: flex; align-items: center; justify-content: center; height: 60px; z-index: 100; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2); }
       #subheader-lento { background-color: #e5007d; }
       #subheader-garra { background-color: #a8e3e9; }
@@ -127,6 +128,17 @@
       amp-selector { font-size: 12px; }
       a { text-decoration: underline; color: #262626; }
       .reading-time { margin-top: 10px; } .reading-time svg { position:relative; top:2px; display:inline-block;}
+
+      .read-later, .fav { text-align: center; padding: 0 20px; margin-top: 10px; }
+      .read-later__btn, .fav__btn { font-size: 13px; line-height: 30px; text-transform: uppercase; text-decoration: none;display: inline-block; border-radius: 100px; padding: 0 15px; font-weight: 500; box-sizing: border-box; border:2px solid #222; cursor: pointer;}
+      .read-later__btn svg, .fav__btn svg { position: relative; top:5px; }
+      .read-later__saved, .fav__saved { background:#222; color: #fff; }
+      .read-later__saved:hover, .fav__saved:hover { color: #fff; }
+      .read-later .info, .fav .info {  display: block; margin-top: 10px; margin-bottom: 10px; }
+      .read-later .info a:hover, .fav .info a:hover{ text-decoration: none;  }
+      .read-later .hide, .fav .hide { display:none; }
+
+      .u-mb-60 { margin-bottom:60px;}
       .article-date-author, .reading-time {padding: 0 20px }
       .article-date-author span, .reading-time span { font-size: 1rem; }
       .article-date-author span a,
