@@ -8,7 +8,7 @@
 - debug_toolbar app moved to "dev" pip dependecy.
 - Removed many not used templates.
 - Removed many not used tables and fields from "core" app.
-- "Lista de lectura" feature.
+- "Lista de lectura" feature. Feature details at https://ayuda.ladiaria.com.uy/que-es-la-lista-de-lectura/ (Spanish)
 
 # version 0.0.1
 
