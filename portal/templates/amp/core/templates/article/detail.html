@@ -41,7 +41,7 @@
             </figure>
             <figcaption class="article-caption ld-caption">
               <div class="container">
-                {% if article.photo.caption %}<p>{{ article.photo.caption }}</p>{% endif %}
+                {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup:article.id|removetags:"p" }}</p>{% endif %}
                 {% if article.photo.extended.photographer %}
                   <p>{{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}</p>
                 {% endif %}
@@ -58,7 +58,7 @@
           </figure>
           <figcaption class="article-caption ld-caption">
             <div class="container">
-              <p>{{ article.photo.caption }}</p>
+              <p>{{ article.photo.caption|ldmarkup:article.id|removetags:"p" }}</p>
               {% if article.photo.extended.photographer %}
                 <p>{{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}</p>
               {% endif %}
@@ -110,12 +110,20 @@
 
       </div>
       <div class="reading-time"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/></svg> <span class="eta">{{ article.reading_time }}</span> de lectura</div>
-      <div amp-access="access AND authenticated AND NOT followed" amp-access-hide>
+      <div amp-access="authenticated AND NOT followed" amp-access-hide>
         <div class="read-later">
           <a id="rl-toggle0" data-vars-event-label="add" class="read-later__btn read-later__add" [class]="hideClass" on="tap:rl-toggle0.hide,rl-info0.hide,rl-toggle1.show,rl-info1.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path class="a" d="M0,0H17.672V17.672H0Z" fill="none"/><path class="b" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</a>
           <div id="rl-info0" class="info read-later__add__info" hidden [class]="secondaryText">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
           <a id="rl-toggle1" data-vars-event-label="remove" class="read-later__btn read-later__saved first" hidden [class]="showClass" on="tap:rl-toggle1.hide,rl-info1.hide,rl-toggle0.show,rl-info0.show"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><defs></defs><path class="a" d="M0,0H18V18H0Z" fill="none"/><path class="b" d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</a>
           <div id="rl-info1" class="info read-later__saved__info first" hidden [class]="textClass">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+        </div>
+      </div>
+      <div amp-access="NOT access AND authenticated AND followed" amp-access-hide>
+        <div class="read-later">
+          <a id="rl-wall-0" data-vars-event-label="remove" class="read-later__btn read-later__saved" [class]="removeClass" on="tap:rl-wall-0.hide,rl-wall-3.hide,rl-wall-1.show,rl-wall-2.show"> Quitar de Leer después</a>
+          <a id="rl-wall-2" data-vars-event-label="add" class="read-later__btn read-later__add" hidden [class]="hideClass" on="tap:rl-wall-2.hide,rl-wall-1.hide,rl-wall-0.show,rl-wall-3.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path class="a" d="M0,0H17.672V17.672H0Z" fill="none"/><path class="b" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</a>
+          <div id="rl-wall-1" class="info read-later__add__info" hidden [class]="sText">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+          <div id="rl-wall-3" class="info read-later__saved__info first" hidden [class]="textClass">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
         </div>
       </div>
     </div>
@@ -242,7 +250,7 @@
     {% endif %}
 
     <div amp-access="access" amp-access-hide>
-      <div class="center ld-share-widget ld-block">
+      <div class="center ld-share-widget">
         <span class="ld-share-widget__title">Compartir este artículo</span>
         <ul class="inline share ld-share-widget__list">
           <li class="whatsapp">
@@ -278,6 +286,11 @@
               </svg>
             </a>
           </li>
+          <li class="copy-link">
+            <amp-iframe sandbox="allow-scripts" width="170" height="66" frameborder="0" src="{% url 'copier' %}#{{ article.get_absolute_url }}">
+                <button class="copy-button" placeholder  disabled><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/></svg></button>
+            </amp-iframe>
+        </li>
         </ul>
       </div>
     </div>
@@ -310,7 +323,7 @@
           {% endif %}
           "trackAnchorClicks": {
             "on": "click",
-            "selector": ["#rl-toggle0", "#rl-toggle1", "#rlt2", "#rlt3", "#rlt5", "#rltf1", "#rltf2", "#rltf5", "#rltf7"],
+            "selector": ["#rl-toggle0", "#rl-toggle1", "#rl-wall-0", "#rl-wall-2", "#rlt2", "#rlt3", "#rlt5", "#rltf1", "#rltf2", "#rltf5", "#rltf7"],
             "request": "readLaterToggle"
           }
         },

@@ -39,6 +39,7 @@ emails
 pandas
 ebooklib
 django-tagging==0.3.4
+git+git://github.com/nemesisdesign/django-tagging-autocomplete-tag-it.git#egg=django-tagging-autocomplete
 django-model-utils<3
 django-photologue==2.7
 django-ratings

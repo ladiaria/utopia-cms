@@ -240,7 +240,11 @@ urlpatterns = patterns(
     url(r'^suscribite-por-telefono/$', RedirectView.as_view(url='/usuarios/suscribite-por-telefono/')),
     url(r'^suscribite/$', RedirectView.as_view(url=reverse_lazy('subscribe_landing'))),
     url(r'^digital/$', RedirectView.as_view(url=reverse_lazy('subscribe', args=['DDIGM']))),
-    url(r'^contacto/', RedirectView.as_view(url=getattr(settings, 'CONTACT_REDIRECT_URL', '/')), name="contact-form"))
+    url(r'^contacto/', RedirectView.as_view(url=getattr(settings, 'CONTACT_REDIRECT_URL', '/')), name="contact-form"),
+
+    # AMP copy iframe
+    url(r'^copier/', TemplateView.as_view(template_name="amp/core/templates/article/copier.html"), name='copier'),
+)
 
 # Used to add customized url patterns from a custom app
 urls_custom_module = getattr(settings, 'PORTAL_URLS_CUSTOM_MODULE', None)

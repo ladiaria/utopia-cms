@@ -1,3 +1,14 @@
+# From version 0.0.2 to 0.0.3
+
+```
+git pull
+git checkout 0.0.3
+cd portal
+rm -rf apps/tagging_autocomplete_tagit
+# activate your virtual env
+pip install -r requirements.txt
+```
+
 # From version 0.0.1 to 0.0.2
 
 ```

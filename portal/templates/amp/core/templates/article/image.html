@@ -1,3 +1,4 @@
+{% load ldml %}
 <div class="inline-image-wrap article_body_image-{{ display }}">
   <figure class="principal">
     <amp-img
@@ -9,7 +10,7 @@
       alt="{{ image.caption }}">
     </amp-img>
     {% if image.caption or image.extended.photographer %}
-      <figcaption class="ld-caption">{% if image.caption %}<p>{{ image.caption }}</p>{% endif %} {% if image.extended.photographer %}<p>{{ image.extended.type_verbose }}: {{ image.extended.photographer.name }}</p>{% endif %}</figcaption>
+      <figcaption class="ld-caption">{% if image.caption %}<p>{{ image.caption|ldmarkup|removetags:"p" }}</p>{% endif %} {% if image.extended.photographer %}<p>{{ image.extended.type_verbose }}: {{ image.extended.photographer.name }}</p>{% endif %}</figcaption>
     {% endif %}
   </figure>
 </div>

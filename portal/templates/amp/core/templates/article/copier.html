@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+/* so button can go to edge */
+body {
+  margin: 0;
+  font-family: Sans-Serif;
+}
+/* common styles for button */
+button#copy{
+  box-sizing: border-box;
+  cursor: pointer;
+  border-radius: 100%;
+  border: 2px solid transparent;
+  background: #fff;
+  padding: 0;
+  color: #262626;
+  display: inline-block;
+  text-align:center;
+  width:54px;
+  height:54px;
+}
+button#copy svg {
+    display:inline-block;
+    vertical-align:middle;
+}
+
+button#copy:hover {
+  outline:0;
+  background:rgba(0, 0, 0, 0.1);
+}
+button#copy:active,
+button#copy:focus {
+  outline:0;
+  background:rgba(0, 0, 0, 0.2);
+}
+#copied {
+    position:absolute;
+    background:#262626;
+    color:#fff;
+    padding:14px;
+    line-height:1;
+    top:0;
+    border-radius:16px;
+    box-shadow: 0px 3px 6px #00000029;
+    display:block;
+}
+#copied.off {
+    display:none;
+}
+  </style>
+</head>
+<body>
+<button id="copy"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/></svg></button>
+<input type="text" id="_i" hidden />
+<span id="copied" class="off">Vínculo<br/>copiado</span>
+<script>
+tooltip = document.getElementById("copied");
+copy.onclick = function() {
+  _i.hash = window.decodeURIComponent(window.location.hash.substr(1));
+  _i.value = "{{ URL_SCHEME }}://{{ site.domain }}" + _i.hash;
+  _i.hidden = false;
+  _i.select();
+  _i.focus();
+  document.execCommand('copy');
+  _i.hidden = true;
+  _i.hash = '';
+  _i.value = '';
+  tooltip.classList.remove("off");
+  setTimeout(function() {
+   tooltip.classList.add("off");
+  }, 1000);
+};
+</script>
+</body>

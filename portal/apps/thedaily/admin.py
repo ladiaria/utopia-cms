@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.contrib.admin import ModelAdmin, site
+from django.contrib.admin.sites import AlreadyRegistered
 
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
 from thedaily.models import (
@@ -61,7 +62,11 @@ class SubscriptionPricesAdmin(ModelAdmin):
 site.register(Subscription, SubscriptionAdmin)
 site.register(ExteriorSubscription, ExteriorSubscriptionAdmin)
 site.register(WebSubscriber)
-site.register(Subscriber, SubscriberAdmin)
+try:
+    # avoid error if this model was already registered elsewhere
+    site.register(Subscriber, SubscriberAdmin)
+except AlreadyRegistered:
+    pass
 site.register(SubscriberEditionDownloads)
 site.register(EditionDownload)
 site.register(SubscriptionPrices, SubscriptionPricesAdmin)

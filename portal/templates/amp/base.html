@@ -32,6 +32,7 @@
   <script async custom-element="amp-audio" src="https://cdn.ampproject.org/v0/amp-audio-0.1.js"></script>
 
   <script async custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js"></script>
+  <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
 
   <script id="amp-access" type="application/json">
     {
@@ -175,10 +176,11 @@
       .talk-login   .title { display: block;  margin-bottom: 10px; }
       .share li { margin: 0 2px; }
       .share a { color: #262626; }
-      .ld-share-widget { margin: 40px 0; text-align: center; }
+      .ld-share-widget { margin: 100px 0; text-align: center; }
       .ld-share-widget__title { display: block; margin-bottom: 10px; font-size: 16px; color: #262626; }
       .ld-share-widget__list {margin: 0; padding: 0}
-      .inline > li { display: inline-block; list-style-type: none; }
+      .ld-share-widget__list .copy-link { margin-right:-116px; }
+      .inline > li { display: inline-block; list-style-type: none; position:relative; vertical-align:top; }
       .inline > li a {  padding:10px; border-radius: 100%; display:inline-block; box-sizing: content-box;}
       .inline > li a > svg { display: inline-block; vertical-align: middle;  }
       .inline > li a:hover {  background: rgba(0, 0, 0, 0.1);}
@@ -526,7 +528,6 @@
       .article-tags .tag:hover { background-color: #d8d8d8; color: #262626; }
       .article-tags .tag > svg { vertical-align: middle; }
       .article-tags .tag + .tag {margin-left: 5px; }
-
   </style>
   <!-- End CSS -->
 </head>

@@ -66,12 +66,14 @@
       font-weight: normal;
     }
     .inline.share {
-      max-width: 200px;
+      max-width: 280px;
       margin: 20px auto 0 auto;
 
         li {
-            margin-bottom: 30px;
+            margin:0 1% 30px;
             width: 30%;
+            vertical-align: middle;
+            position: relative;
 
                 a {
                 display: block;
@@ -81,6 +83,27 @@
                     }
 
                 }
+                .copied-tooltip {
+                    display: inline-block;
+                    position: absolute;
+                    left: -27px;
+                    top:-50px;
+                    background: white;
+                    color: $off-black;
+                    font-size: 16px;
+                    padding:14px;
+                    border-radius: 16px;
+                    width: 145px;
+                    line-height: 1;
+                    box-shadow: 0px 3px 6px #00000029;
+                    transition: all 0.2s ease-in-out;
+
+                    &.off {
+                        background: transparent;
+                        box-shadow: none;
+                    }
+                }
+
         }
     }
 }
@@ -863,6 +886,9 @@ body.article {
 
             > li {
                 margin:0 2px;
+                position: relative;
+                vertical-align: top;
+
                 >  a,
                 > span.a {
                     display: inline-block;
@@ -891,6 +917,43 @@ body.article {
                         svg path {
                             fill: $off-black;
                         }
+                    }
+                }
+                .btn-copy {
+                    width: 54px;
+                    height: 54px;
+                    box-sizing: border-box !important;
+
+                    svg {
+                        position: relative;
+                        top:5px;
+                    }
+                }
+
+                .copied-tooltip {
+                    display: inline-block;
+                    position: absolute;
+                    left: auto;
+                    right: 0;
+                    top:-50px;
+                    background: $off-black;
+                    color: white;
+                    font-size: 16px;
+                    padding:14px;
+                    border-radius: 16px;
+                    width: 145px;
+                    line-height: 1;
+                    box-shadow: 0px 3px 6px #00000029;
+                    transition: all 0.2s ease-in-out;
+
+                    @media (min-width:400px){
+                        left: -46px;
+                        right: auto;
+                    }
+
+                    &.off {
+                        background: transparent;
+                        box-shadow: none;
                     }
                 }
             }
