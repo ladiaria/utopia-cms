@@ -1,8 +1,6 @@
 {% extends "base.html" %}
-{% load core_tags %}
 
 {% block page_title %}Lo más leído | {{ site.name }} | {{ country_name }}{% endblock %}
-{% block page_description %}{{ site_description }}{% endblock %}
 
 {% block header_scripts %}
   <script type="text/javascript">
@@ -17,9 +15,7 @@
 {% block body_class %}interior masleidos{% endblock %}
 
 {% block content %}
-
   <section id="mas-leidos" class="col s12">
     <div id="mas-leidos-content"></div>
   </section>
-
 {% endblock %}

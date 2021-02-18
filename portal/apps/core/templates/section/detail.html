@@ -2,11 +2,10 @@
 {% load core_tags %}
 
 {% block page_title %}Noticias de {{ section.name }} | {{ site.name }} | {{ country_name }}{% endblock %}
-{% block page_description %}{{ site_description }}{% endblock %}
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:title" content="Noticias de {{ category.name }} | {{ site.name }} | {{ country_name }}" />
+  <meta property="og:title" content="Noticias de {{ category.name }} | {{ site.name }} | {{ country_name }}">
 {% endblock %}
 
 {% block body_class %}section-detail{% endblock %}
