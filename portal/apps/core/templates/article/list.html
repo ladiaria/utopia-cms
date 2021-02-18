@@ -7,6 +7,7 @@
   <!-- Open Graph (http://ogp.me) -->
   <meta property="og:title" content="Noticias de {% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %} | {{ site.name }} | {{ country_name }}">
 {% endblock %}
+
 {% block meta %}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ site.name }}">

@@ -104,7 +104,7 @@
       <meta property="og:description" content="{{ site_description }}">
       <meta property="og:locale" content="es_UY">
       <meta property="og:site_name" content="{{ site.name }}">
-      <meta property="og:url" content="{{ SITE_URL }}">
+      <meta property="og:url" content="{{ URL_SCHEME }}://{{ site.domain }}{{ request.get_full_path }}">
       {% if publication.slug in custom_icons_publications %}
         <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static publication.open_graph_image %}">
       {% elif default_pub.open_graph_image %}
