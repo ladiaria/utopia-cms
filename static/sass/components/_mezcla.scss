@@ -1,9 +1,10 @@
 // Estilos para Podcast Mezcla
 .section-mezcla {
+  background-image:url('/static/img/bg-mezcla.svg');
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  background-color: #396046;
+  background-color: #BD5839;
   color: white;
   padding-bottom: 40px;
   font-size: 14px;
@@ -56,7 +57,7 @@
     &.spotify {
       box-shadow: 0px 2px 5px 1px rgba(0,0,0,0.75);
       border-radius: 10px;
-      background: #396046;
+      background: #BD5839;
     }
   }
 
