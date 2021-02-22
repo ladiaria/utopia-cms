@@ -33,8 +33,7 @@ class Agency(models.Model):
 class Photographer(models.Model):
     name = models.CharField(u'nombre', max_length=50, unique=True)
     email = models.EmailField(u'correo electrónico', blank=True, null=True)
-    date_created = models.DateTimeField(
-        u'fecha de creación', auto_now_add=True)
+    date_created = models.DateTimeField(u'fecha de creación', auto_now_add=True)
 
     def __unicode__(self):
         return self.name
@@ -55,25 +54,19 @@ class PhotoExtended(models.Model):
     )
     type = models.CharField(u'tipo', max_length=1, choices=TYPE, default=FOTO)
     image = models.OneToOneField(Photo, related_name='extended')
-    focuspoint_x = models.CharField(
-        u'punto de foco horizontal (x)', max_length=10, default=0,
-        help_text=u'')
-    focuspoint_y = models.CharField(
-        u'punto de foco vertical (y)', max_length=10, default=0, help_text=u'')
+    focuspoint_x = models.CharField(u'punto de foco horizontal (x)', max_length=10, default=0, help_text=u'')
+    focuspoint_y = models.CharField(u'punto de foco vertical (y)', max_length=10, default=0, help_text=u'')
     radius_length = models.SmallIntegerField(
-        u'radio', blank=True, null=True,
-        help_text=u'mitad del lado del cuadrado para recorte (pixeles)')
-    square_version = models.ImageField(
-        u'versión cuadrada', upload_to=get_storage_path, blank=True, null=True)
+        u'radio', blank=True, null=True, help_text=u'mitad del lado del cuadrado para recorte (pixeles)')
+    square_version = models.ImageField(u'versión cuadrada', upload_to=get_storage_path, blank=True, null=True)
     weight = models.SmallIntegerField(
-        u'orden de la imagen en la galería', max_length=3, default=0,
-        help_text=u'el número más bajo se muestra primero.')
-    photographer = models.ForeignKey(
-        Photographer, verbose_name=u'autor', related_name='photos', blank=True,
-        null=True)
-    agency = models.ForeignKey(
-        Agency, verbose_name=u'agencia', related_name='photos', blank=True,
-        null=True)
+        u'orden de la imagen en la galería',
+        max_length=3,
+        default=0,
+        help_text=u'el número más bajo se muestra primero.',
+    )
+    photographer = models.ForeignKey(Photographer, verbose_name=u'autor', related_name='photos', blank=True, null=True)
+    agency = models.ForeignKey(Agency, verbose_name=u'agencia', related_name='photos', blank=True, null=True)
 
     class Meta:
         verbose_name = u'configuración extra'

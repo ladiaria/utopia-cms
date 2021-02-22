@@ -2,7 +2,6 @@
 from django.conf import settings
 from django import forms
 from django.contrib import admin
-from django.contrib.admin.widgets import AdminDateWidget
 
 from photologue.models import Photo, Gallery, PhotoEffect, PhotoSize, Watermark
 from photologue.admin import PhotoAdmin as PhotoAdminDefault
@@ -16,7 +15,7 @@ class AgencyAdmin(admin.ModelAdmin):
 
 
 class PhotoExtendedModelForm(forms.ModelForm):
-    date_taken = forms.DateField(label=u'Tomada el', widget=AdminDateWidget(), required=False)
+    date_taken = forms.DateField(label=u'Tomada el', widget=admin.widgets.AdminDateWidget(), required=False)
 
     def __init__(self, *args, **kwargs):
         super(PhotoExtendedModelForm, self).__init__(*args, **kwargs)
@@ -128,9 +127,36 @@ class WatermarkAdmin(admin.ModelAdmin):
     list_display = ('name', 'opacity', 'style')
 
 
-# TODO: make filters by agency and photographer (lost features when upgraded to Django1.5)
+class AgencyFilter(admin.SimpleListFilter):
+    title = 'agency'
+    parameter_name = 'agency'
+
+    def lookups(self, request, model_admin):
+        return [(a.id, a.name) for a in Agency.objects.all() if a.photos.exists()]
+
+    def queryset(self, request, queryset):
+        agency = self.value()
+        return queryset.filter(
+            id__in=PhotoExtended.objects.filter(agency=agency).values_list('image', flat=True)) if agency else queryset
+
+
+class PhotographerFilter(admin.SimpleListFilter):
+    title = 'photographer'
+    parameter_name = 'photographer'
+
+    def lookups(self, request, model_admin):
+        return [(p.id, p.name) for p in Photographer.objects.all() if p.photos.exists()]
+
+    def queryset(self, request, queryset):
+        photographer = self.value()
+        return queryset.filter(
+            id__in=PhotoExtended.objects.filter(photographer=photographer).values_list('image', flat=True)
+        ) if photographer else queryset
+
+
 class PhotoAdmin(PhotoAdminDefault):
     list_display = ('title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public', 'view_count')
+    list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
     fieldsets = (
         (None, {'fields': ('title', 'image', 'caption')}),
         ('Avanzado', {'fields': ('title_slug', 'crop_from', 'is_public'), 'classes': ('collapse', )}))
