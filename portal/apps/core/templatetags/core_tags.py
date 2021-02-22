@@ -111,14 +111,16 @@ def render_article_card(context, article, media, card_size, card_type=None):
         card_display = "vertical"
 
     verbose_date = None
+    if article.date_published.date() == date.today():
+        verbose_date = "Hoy"
+    elif article.date_published.date() == date.today() - timedelta(1):
+        verbose_date = "Ayer"
+
+    # WARN: template value assigned here may change in next if block. TODO: fix this anti-pattern.
     if card_size == "FW":
         template = "card_full.html"
     elif card_size == "FD":
         template = "card_full_detailed.html"
-        if article.date_published.date() == date.today():
-            verbose_date = "Hoy"
-        elif article.date_published.date() == date.today() - timedelta(1):
-            verbose_date = "Ayer"
     elif card_size == "FF":
         template = "card_big_new.html"
         card_display = "horizontal"
@@ -134,10 +136,11 @@ def render_article_card(context, article, media, card_size, card_type=None):
     else:
         template = "card_medium.html"
 
+    # WARN: again, template may change in next if block.
     if card_type == 'OP':
         card_display = "horizontal"
         template = "card_opinion.html"
-    if card_type == 'SU':
+    elif card_type == 'SU':
         template = "card_summary.html"
 
     if card_size == "FN":

@@ -4,16 +4,13 @@
             {% block class %}{% endblock %}{% if article.photo != None %} has_photo{% endif %}
             card-media-{{ media }} {{ publication }} {{ publication }}-section {{ card_type }} {{ card_display }} {{ card_size }}
             {% if card_display == 'horizontal' %} responsive{% endif %}"
-     data-id="{{ article.id }}" data-template="article_card">
+         data-id="{{ article.id }}" data-template="article_card">
   {% block image %}
-    {% if article.photo and card_type != 'OP' %}
-    <a href="{{ article.get_absolute_url }}">
+    {% if article.photo and card_type %}
+      <a href="{{ article.get_absolute_url }}">
         <img class="ld-card__img lazyload"
              src="{{ article.photo.get_thumbnail_url }}"
-             {% spaceless %}
-               data-srcset="{{ article.photo.get_350w_url }} 320w,
-                        {{ article.photo.get_600w_url }} 450w"
-             {% endspaceless %}
+             data-srcset="{{ article.photo.get_350w_url }} 320w, {{ article.photo.get_600w_url }} 450w"
              data-sizes="auto"
              title="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
              alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
@@ -31,16 +28,18 @@
     {% if article.lead %}
       <div class="ld-card__intro">{{ article.lead|ldmarkup:article.id|removetags:'p' }}</div>
     {% endif %}
-
-    <h4 class="ld-card__byline">
-      {% if article.has_byline %}
-        {% for author in article.get_authors %}
-          <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-        {% endfor %}
-        en
-      {% endif %}
-      {% publication_section article %}
-    </h4>
+    <div class="ld-card__byline-wrap">
+      <h4 class="ld-card__byline">
+        {% if article.has_byline %}
+          {% for author in article.get_authors %}
+            <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+          en
+        {% endif %}
+        {% publication_section article %}
+      </h4>
+    </div>
+    <div class="ld-card__byline ld-card__date">{% firstof verbose_date article.date_published|date:"j \d\e F \d\e o"|lower %}</div>
   </div>
   {% render_toolbar_for article %}
 </article>

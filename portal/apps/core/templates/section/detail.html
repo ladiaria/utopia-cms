@@ -32,12 +32,11 @@
         {% endif %}
         <h1 class="section-detail__title">{{ section.name }}</h1>
         {% if section.show_description %}
-          <p class="section-detail__description">{{section.description}}</p>
+          <p class="section-detail__description">{{ section.description }}</p>
         {% endif %}
         {% if section.show_image %}
           <img class="responsive-img" src="{{ MEDIA_URL }}{{ section.imagen }}" width="500px" alt="{{ section.name }}"><br><br>
         {% endif %}
-      </div>
       </div>
     </div>
   </div>

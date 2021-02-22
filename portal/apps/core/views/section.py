@@ -66,12 +66,7 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
                 JOIN core_edition e ON ar.edition_id=e.id
             WHERE ar.section_id=%d AND a.is_published
             GROUP BY a.id
-            ORDER BY e.date_published DESC, position, a.id DESC""" % section.id))
-
-    try:
-        first_article = articles[0]
-    except IndexError:
-        first_article = None
+            ORDER BY a.date_published DESC""" % section.id))
 
     paginator = Paginator(articles, 10)
 
@@ -82,8 +77,7 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
     except EmptyPage:
         articles = paginator.page(paginator.num_pages)
 
-    return 'detail.html', {
-        'section': section, 'articles': articles, 'publication': publication, 'first_article': first_article}
+    return 'detail.html', {'section': section, 'articles': articles, 'publication': publication}
 
 
 @never_cache
