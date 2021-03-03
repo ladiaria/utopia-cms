@@ -258,6 +258,42 @@ $minWidth: 1040px;
   .desc:first-child{
     margin-top:0;
   }
+
+  &.softwall {
+      position: relative;
+      z-index: 1;
+      border-bottom: 20px solid white;
+      transform: none;
+      left:0;
+      margin: 0 20px 50px;
+      border-radius: 10px;
+      animation: none;
+      display: none;
+      width: auto;
+
+      .ld-snackbar__close {
+        transition: background 0.2s ease-in-out;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+        svg {
+            position: relative;
+            top:3px;
+        }
+      }
+
+
+      @media (min-width:700px) {
+        left:calc((100% - 700px) / 2);
+        width: 700px;
+        margin: 0 0 50px;
+      }
+
+  }
+  &--active.softwall {
+      display: block;
+  }
 }
 
 .ld-paywall-ending {

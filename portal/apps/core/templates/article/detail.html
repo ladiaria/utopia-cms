@@ -218,7 +218,7 @@
         {# Soft wall: Registro|Suscripción #}
 
         {% if not article.public %}
-          <div class="ld-snackbar ld-snackbar--active js-ld-snackbar">
+          <div class="ld-snackbar ld-snackbar--active js-ld-snackbar softwall">
             <div class="ld-snackbar__title">
               {% if request.credits > 0 %}
                 Suscribite o ingresá
@@ -314,7 +314,7 @@
           {# Soft wall: Suscripción #}
 
           {% if not article.public %}
-            <div class="ld-snackbar ld-snackbar--active ld-snackbar--narrow js-ld-snackbar">
+            <div class="ld-snackbar ld-snackbar--active ld-snackbar--narrow js-ld-snackbar softwall">
               <div class="ld-snackbar__title">
                 {# show credits popup only if signupwall is enabled #}
                 {% if signupwall_enabled %}

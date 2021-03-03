@@ -25,7 +25,6 @@ from thedaily.views import (
     registered_users,
     amp_access_authorization,
     amp_access_pingback,
-    amp_access_show_api,
     session_refresh,
     edicion_impresa,
     nlunsubscribe,
@@ -157,7 +156,6 @@ urlpatterns = patterns(
 
     url(r'^amp-access/authorization$', amp_access_authorization),
     url(r'^amp-access/pingback$', amp_access_pingback),
-    url(r'^amp-access/show-api$', amp_access_show_api),
 
     url(r'^suscribite-por-telefono/$', phone_subscription, name="phone-subscription"),
 

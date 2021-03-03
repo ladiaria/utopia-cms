@@ -25,7 +25,6 @@
   <script async custom-element="amp-selector" src="https://cdn.ampproject.org/v0/amp-selector-0.1.js"></script>
   <script async custom-element="amp-sticky-ad" src="https://cdn.ampproject.org/v0/amp-sticky-ad-1.0.js"></script>
   <script async custom-element="amp-access" src="https://cdn.ampproject.org/v0/amp-access-0.1.js"></script>
-  <script async custom-element="amp-user-notification" src="https://cdn.ampproject.org/v0/amp-user-notification-0.1.js"></script>
   <script async custom-element="amp-image-lightbox" src="https://cdn.ampproject.org/v0/amp-image-lightbox-0.1.js"></script>
   <script async custom-element="amp-youtube" src="https://cdn.ampproject.org/v0/amp-youtube-0.1.js"></script>
   <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
@@ -394,7 +393,7 @@
       .ld-btn-default--outline-white, a.ld-btn-default--outline-white { color: #A4A4A4; background-color: transparent; border: 1px solid #95989A; border: 1px solid rgba(149, 152, 154, 0.39); text-transform: none; font-weight: 400; }
       .ld-btn-default--outline-white:hover, a.ld-btn-default--outline-white:hover { color: #A4A4A4; }
       /* Buttons regular */
-      .ld-btn-regular { background-color: #3399ff; color: white; border: 2px solid rgba(255, 255, 255, 0); border: 2px solid transparent; font-family: "Roboto", sans-serif; font-size: 18px; font-weight: 500; transition: .1s ease-out; text-transform: uppercase; cursor: pointer; text-align: center; vertical-align: middle; -webkit-tap-highlight-color: transparent; line-height: 1; height: auto; padding: 16px 23px 15px; border-radius: 100px; display: inline-block; box-shadow: rgba(0, 0, 0, 0.29) 0 4px 12px; background-repeat: no-repeat; background-size: 26px auto; }
+      .ld-btn-regular { background-color: #3399ff; color: white; border: 2px solid rgba(255, 255, 255, 0); border: 2px solid transparent; font-family: "Roboto", sans-serif; font-size: 18px; font-weight: 500; transition: .1s ease-out; text-transform: uppercase; cursor: pointer; text-align: center; vertical-align: middle; -webkit-tap-highlight-color: transparent; line-height: 1; height: auto; padding: 16px 23px 15px; border-radius: 100px; display: inline-block; box-shadow: rgba(0, 0, 0, 0.29) 0 4px 8px; background-repeat: no-repeat; background-size: 26px auto; }
       .ld-btn-regular:hover { box-shadow: rgba(0, 0, 0, 0.29) 0 4px 6px; color: white; background-color: #3399ff; }
       .ld-btn-regular:active { -webkit-transition: .1s ease-out; transition: .1s ease-out; -webkit-transform: translateY(1px); -ms-transform: translateY(1px); transform: translateY(1px); box-shadow: rgba(0, 0, 0, 0.29) -1px 0px 3px; }
       .ld-btn-regular[disabled], .ld-btn-regular.disabled { cursor: not-allowed; background-color: rgba(51, 153, 255, 0.6); box-shadow: none; }
@@ -433,8 +432,9 @@
       .ld-snackbar__close { cursor: pointer; color: white; display: block; text-align: center; margin: 0 auto; padding: 0; text-decoration: none; background: none; outline: 0; position: absolute; right: 10px; top: 10px; border: none; border-radius: 36px; vertical-align: middle; width: 36px; height: 36px; }
       .ld-snackbar__close i { line-height: 34px; height: 36px; vertical-align: middle; }
       .ld-snackbar .row { margin-bottom: 0; }
-      #notification-subscribe1 { display: block; bottom: 0;  }
-      #notification-subscribe2 { display: block; bottom: 0;  }
+      #notification-subscribe1,
+      #notification-subscribe2 { display: block; bottom: 0; position:relative; left:0; transform:none;  margin: 0 20px; box-shadow: rgba(0, 0, 0, 0.16) 0 2px 6px;border-radius:10px; width:auto; }
+      @media (min-width: 740px) { #notification-subscribe1, #notification-subscribe2 { margin: 0 auto;  max-width:700px;} }
       .ad_banner { max-width: 700px; margin: 0 auto; }
       .ld-block { margin: 100px 0; }
       .ld-block--sm { margin: 50px 0; }

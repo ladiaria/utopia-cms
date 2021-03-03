@@ -1127,18 +1127,6 @@ def amp_access_pingback(request):
 
 
 @never_cache
-def amp_access_show_api(request):
-    """
-    We use a query parameter auth=1 when this notification should be shown when
-    the user is authenticated
-    """
-    response = HttpResponse(simplejson.dumps({
-        'showNotification': request.user.is_authenticated() == (
-            request.GET.get('auth') == '1')}), content_type="application/json")
-    return set_amp_cors_headers(request, response)
-
-
-@never_cache
 @csrf_exempt
 def users_api(request):
     max_device_msg = u'Ha superado la cantidad de dispositivos permitidos'
