@@ -152,12 +152,22 @@ def article_detail(request, year, month, slug, domain_slug=None):
         comments_count = 0
 
     context = {
-        'article': article, 'is_detail': True, 'keep_reading': keep_reading, 'report_form': report_form,
-        'domain': domain, 'category': category, 'section': article.publication_section(),
-        'header_display': article.header_display, 'article_ct_id': ContentType.objects.get_for_model(Article).id,
-        'tag_list': reorder_tag_list(article, get_article_tags(article)), 'comments_count': comments_count,
+        'article': article,
+        'is_detail': True,
+        'keep_reading': keep_reading,
+        'report_form': report_form,
+        'domain': domain,
+        'category': category,
+        'section': article.publication_section(),
+        'header_display': article.header_display,
+        'article_ct_id': ContentType.objects.get_for_model(Article).id,
+        'tag_list': reorder_tag_list(article, get_article_tags(article)),
+        'comments_count': comments_count,
         'publication': article.main_section.edition.publication if article.main_section else None,
-        'signupwall_enabled': settings.SIGNUPWALL_ENABLED}
+        'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
+        'publication_newsletters':
+            Publication.objects.filter(has_newsletter=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL),
+    }
 
     if user_is_authenticated:
         context.update({

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+import sys
 import socket
 from datetime import datetime, timedelta
+import traceback
 from hashids import Hashids
 
 from django.conf import settings
@@ -93,6 +95,13 @@ def newsletter_preview(request, slug):
         top_articles = [
             (a, a.publication_section(), 0) for a in (cat_modules[0].articles_as_list if cat_modules else [])]
 
+        listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
+        if listonly_section:
+            top_articles = [t for t in top_articles if t[1].slug == listonly_section]
+            if cover_article_section.slug != listonly_section:
+                cover_article = top_articles.pop(0)[0] if top_articles else None
+                cover_article_section = cover_article.publication_section() if cover_article else None
+
         opinion_article = None
         nl_featured = Article.objects.filter(id=settings.NEWSLETTER_FEATURED_ARTICLE) if \
             getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False) else \
@@ -100,12 +109,13 @@ def newsletter_preview(request, slug):
         if nl_featured:
             opinion_article = nl_featured[0]
 
-        # datos_article (a featured section in the category)
+        # featured_article (a featured section in the category)
         try:
-            datos_article = category.section_set.get(slug='datos').latest_article()[0]
-            assert (datos_article.date_published >= datetime.now() - timedelta(1))
-        except (Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
-            datos_article = None
+            featured_section, days_ago = settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[category.slug]
+            featured_article = category.section_set.get(slug=featured_section).latest_article()[0]
+            assert (featured_article.date_published >= datetime.now() - timedelta(days_ago))
+        except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
+            featured_article = None
 
         try:
             hashed_id = hashids.encode(int(request.user.subscriber.id))
@@ -119,19 +129,24 @@ def newsletter_preview(request, slug):
         return render_to_response(
             '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug),
             {
-                'cover_article': cover_article,
+                'site_url': site_url,
                 'category': category,
+                'featured_article': featured_article,
+                'opinion_article': opinion_article,
+                'cover_article': cover_article,
                 'cover_article_section': cover_article_section,
                 'articles': top_articles,
+                'newsletter_campaign': category.slug,
+                'hashed_id': hashed_id,
                 'unsubscribe_url': unsubscribe_url,
-                'opinion_article': opinion_article,
-                'site_url': site_url,
-                'datos_article':
-                    datos_article if datos_article and datos_article.date_published >= datetime.now() - timedelta(1)
-                    else None
             },
             context_instance=RequestContext(request),
         )
 
     except Exception as e:
+        if settings.DEBUG:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            print(exc_type)
+            print(exc_value)
+            print(traceback.extract_tb(exc_traceback))
         return HttpResponseServerError(u'ERROR: %s' % e)

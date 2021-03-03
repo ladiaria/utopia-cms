@@ -518,21 +518,15 @@
     </div>
     {% endif %}
 
-    {% with 'ciencia educacion salud feminismos trabajo garra lento economia justicia' as nls %}
-      {% if publication.slug in nls.split %}
-        {% if publication.slug in user.subscriber.get_newsletters %}
-          {# Already subscribed to publication newsletter #}
-        {% else %}
-          {% include 'article/subscribe_box.html' %}
-        {% endif %}
-      {% elif section.category.slug == 'coronavirus' or 'coronavirus' in article.get_categories_slugs %}
-        {% if 'coronavirus' in user.subscriber.get_newsletters %}
-          {# Already subscribed to coronavirus newsletter #}
-        {% else %}
-          {% include 'article/subscribe_box_coronavirus.html' %}
-        {% endif %}
+    {% if publication in publication_newsletters %}
+      {% if publication.slug in user.subscriber.get_newsletters_slugs %}
+        {# Already subscribed to publication newsletter #}
+      {% else %}
+        {% include 'article/subscribe_box.html' %}
       {% endif %}
-    {% endwith %}
+    {% else %}
+      {% category_nl_subscribe_box %}
+    {% endif %}
 
     {% if not user.is_authenticated %}
     <!-- Modal Structure -->

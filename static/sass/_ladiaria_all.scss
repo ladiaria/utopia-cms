@@ -228,31 +228,6 @@ i.material-icons.icon-lo_mas_leido {
 }
 
 
-.frontpage-section-elecciones {
-  .ld-btn {
-    margin-right: 0;
-
-    @media (min-width: 450px) and (max-width:475px) {
-      margin-left: 10px;
-      margin-right: 10px;
-    }
-
-    + .ld-btn {
-      margin-top:20px;
-      margin-left: 0;
-
-      @media (min-width: 450px) and (max-width:475px) {
-        margin-top: 20px;
-      }
-
-      @media (min-width: 476px) {
-        margin-top: 0;
-        margin-left: 10px;
-      }
-    }
-
-  }
-}
 
 .alert-box {
   color: white;
@@ -780,6 +755,66 @@ i.material-icons.icon-lo_mas_leido {
             }
         }
     }
+
+  .multi-buttons {
+      .ld-btn, .btn {
+        margin-right: 0;
+
+        @media (min-width: 450px) and (max-width:475px) {
+          margin-left: 10px;
+          margin-right: 10px;
+        }
+
+        + .ld-btn {
+          margin-top:20px;
+          margin-left: 0;
+
+          @media (min-width: 450px) and (max-width:475px) {
+            margin-top: 20px;
+          }
+
+          @media (min-width: 476px) {
+            margin-top: 0;
+            margin-left: 10px;
+          }
+        }
+
+        + .btn {
+          margin-top:20px;
+          margin-left: 0;
+
+          @media (min-width: 450px) and (max-width:475px) {
+            margin-top: 20px;
+          }
+
+          @media (min-width: 476px) {
+            margin-top: 0;
+            margin-left: 10px;
+          }
+        }
+
+    }
+  }
+  .section-footer {
+    background: #fff;
+    text-align: center;
+    padding: 20px 0;
+
+      a {
+        font-size:12px;
+        text-decoration: underline;
+        display: inline-block;
+
+        svg {
+          vertical-align: middle;
+          margin-left:5px;
+        }
+
+        &:hover {
+          text-decoration: none;
+        }
+      }
+  }
 }
 
 .section-opinion {

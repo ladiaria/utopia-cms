@@ -44,9 +44,15 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
     cat_modules = category_home.modules.all()
 
     cover_article = category_home.cover
-
     cover_article_section = cover_article.publication_section()
     top_articles = [(a, a.publication_section(), 0) for a in (cat_modules[0].articles_as_list if cat_modules else [])]
+
+    listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
+    if listonly_section:
+        top_articles = [t for t in top_articles if t[1].slug == listonly_section]
+        if cover_article_section.slug != listonly_section:
+            cover_article = top_articles.pop(0)[0] if top_articles else None
+            cover_article_section = cover_article.publication_section() if cover_article else None
 
     opinion_article = None
     nl_featured = Article.objects.filter(id=settings.NEWSLETTER_FEATURED_ARTICLE) if \
@@ -55,12 +61,13 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
     if nl_featured:
         opinion_article = nl_featured[0]
 
-    # datos_article (a featured section in the category)
+    # featured_article (a featured section in the category)
     try:
-        datos_article = category.section_set.get(slug='datos').latest_article()[0]
-        assert (datos_article.date_published >= datetime.now() - timedelta(1))
-    except (Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
-        datos_article = None
+        featured_section, days_ago = settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[category.slug]
+        featured_article = category.section_set.get(slug=featured_section).latest_article()[0]
+        assert (featured_article.date_published >= datetime.now() - timedelta(days_ago))
+    except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
+        featured_article = None
 
     # any custom attached files
     # TODO: make this a feature in the admin using adzone also make it path-setting instead of absolute
@@ -119,18 +126,20 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
                     html=render_to_string(
                         '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug),
                         {
-                            'cover_article': cover_article,
-                            'category': category,
-                            'opinion_article': opinion_article,
-                            'datos_article': datos_article,
                             'site_url': site_url,
+                            'category': category,
+                            'featured_article': featured_article,
+                            'opinion_article': opinion_article,
+                            'cover_article': cover_article,
+                            'cover_article_section': cover_article_section,
                             'articles': top_articles,
+                            'newsletter_campaign': category.slug,
+                            'hashed_id': hashed_id,
                             'unsubscribe_url': unsubscribe_url,
                             'ga_property_id': getattr(settings, 'GA_PROPERTY_ID', None),
                             'subscriber_id': s.id,
                             'is_subscriber': is_subscriber,
-                            'cover_article_section': cover_article_section,
-                        }
+                        },
                     ),
                     mail_to=(s.name, s.user.email), subject=remove_markup(cover_article.headline),
                     mail_from=(u'la diaria ' + category.name, EMAIL_FROM_ADDR), headers=headers,

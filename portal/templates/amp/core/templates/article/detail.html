@@ -161,22 +161,18 @@
       <div class="ld-fin ld-block"></div>
     </div>
     <div amp-access="access AND NOT authenticated" amp-access-hide>
-      {% with 'ciencia educacion salud feminismos trabajo garra lento economia justicia' as nls %}
-        {% if publication.slug in nls.split %}
-          {% include 'amp/core/templates/article/subscribe_box.html' %}
-        {% elif section.category.slug == 'coronavirus' or 'coronavirus' in article.get_categories_slugs %}
-          {% include 'amp/core/templates/article/subscribe_box.html' %}
-        {% endif %}
-      {% endwith %}
+      {% if publication in publication_newsletters %}
+        {% include 'amp/core/templates/article/subscribe_box.html' %}
+      {% else %}
+        {% category_nl_subscribe_box %}
+      {% endif %}
     </div>
     <div amp-access="access AND authenticated" amp-access-hide>
-      {% with 'ciencia educacion salud feminismos trabajo garra lento economia justicia' as nls %}
-        {% if publication.slug in nls.split %}
-          {% include 'amp/core/templates/article/subscribe_box_authenticated.html' %}
-        {% elif section.category.slug == 'coronavirus' or 'coronavirus' in article.get_categories_slugs %}
-          {% include 'amp/core/templates/article/subscribe_box_coronavirus.html' %}
-        {% endif %}
-      {% endwith %}
+      {% if publication in publication_newsletters %}
+        {% include 'amp/core/templates/article/subscribe_box_authenticated.html' %}
+      {% elif category.has_newsletter %}
+        {% include 'amp/core/templates/article/subscribe_box_authenticated_category.html' %}
+      {% endif %}
     </div>
 
     <div amp-access="access AND authenticated AND followed" amp-access-hide>

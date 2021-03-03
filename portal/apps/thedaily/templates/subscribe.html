@@ -55,7 +55,7 @@
                     Ya tenés una suscripción activa en <em>{{ product }}</em> relacionada con el usuario con el estas logueado actualmente.
                   </p>
                   <p>
-                    Para cambiar tu plan, forma de pago, u otra consulta comunicate con nosotros al 29000808 o a través de nuestro <a href="{% url 'contact-form' %}">formulario de contacto</a>, y a la brevedad nuestro servicio de atención al cliente se pondrá en contacto contigo.
+                    Para cambiar tu plan, forma de pago, u otra consulta <a href="{% url 'contact-form' %}">contactanos</a>, y a la brevedad nuestro servicio de atención al cliente se pondrá en contacto contigo.
                   </p>
                   <p>Muchas gracias.</p>
                 </div>
@@ -130,7 +130,7 @@
           ¿Ya tenés una suscripción? <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
           {% endif %}
           <br />
-          ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="/contacto/">contactanos</a>.
+          ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
         </div>
       </div>
     </div>

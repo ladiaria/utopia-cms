@@ -34,8 +34,7 @@ def render_related(context, article):
             'articles': section.latest4relatedbypublication(publication.id, article.id), 'is_detail': False,
             'section': publication.name})
 
-    elif category and category.slug in (u'opinion', u'cultura', u'cotidiana', u'coronavirus', u'chile') and \
-            section.slug != 'suplemento':
+    elif category and category.slug in getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', ()):
         return loader.render_to_string('core/templates/article/related.html', {
             'articles': section.latest4relatedbycategory(category.id, article.id), 'is_detail': False,
             'section': category.name})
@@ -396,6 +395,22 @@ def publication_section(context, article, pub=None):
     if section and section.slug == 'partidos-politicos':
         section = Section.objects.get(slug='elecciones-2019')
     return (u'<a href="%s">%s</a>' % (section.get_absolute_url(), section)) if section else u''
+
+
+@register.simple_tag(takes_context=True)
+def category_nl_subscribe_box(context):
+    """ renders the subscribe box for the article category, if proper conditions are met """
+    # TODO: can be improved and even removed making some modifications in caller templates
+    subscriber = getattr(context.get('user'), 'subscriber', None)
+    subscriber_nls = subscriber.get_newsletters_slugs() if subscriber else []
+    category = context.get('category')
+
+    if category and category.has_newsletter:
+        # article has category with nl
+        if category.slug not in subscriber_nls:
+            return loader.render_to_string('core/templates/article/subscribe_box_category.html', context)
+
+    return u''
 
 
 # Inclusion tags

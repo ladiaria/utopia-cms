@@ -1,0 +1,10 @@
+<div class="row ld-profile-row">
+  <div class="col">
+    <h3 class="ld-title-second">Novedades</h3>
+    {% block description %}{% endblock %}
+    <div class="">
+        <input id="id_{{ field.name }}" name="{{ field.name }}" class="filled-in" type="checkbox"{% if field.value %} checked{% endif %}/>
+        <label for="id_{{ field.name }}">Deseo recibir novedades</label>
+    </div>
+  </div>
+</div>

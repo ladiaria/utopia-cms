@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
-# La Diaria Markup Language
-from django.template.defaultfilters import stringfilter
+# utopia-cms Markup Language
+import markdown
+import re
+
 from django.template import Library
+from django.template.loader import render_to_string
+from django.template.defaultfilters import stringfilter
 from django.utils.encoding import force_unicode
 from django.utils.safestring import mark_safe
 from django.utils.html import strip_tags
-import markdown
-import re
+
 
 register = Library()
 
@@ -33,8 +36,6 @@ def to_p(value):
 def get_extension(match, aid):
     from core.models import ArticleExtension
 
-    from django.template.loader import render_to_string
-
     if match.groups()[0] == '':
         count = 0
     else:
@@ -43,40 +44,43 @@ def get_extension(match, aid):
     if extensions.count() > count and count >= 0:
         extension = extensions[count]
     else:
-        return ''
-    return render_to_string(
-        'core/templates/article/extension.html', {'extension': extension})
+        return u''
+    return render_to_string('core/templates/article/extension.html', {'extension': extension})
 
 
 def get_image(match, aid, amp=False):
-    from core.models import ArticleBodyImage
-
-    from django.template.loader import render_to_string
+    from core.models import Article
 
     if match.groups()[0] == '':
         count = 0
     else:
         count = int(match.groups()[0]) - 1
-    images = ArticleBodyImage.objects.filter(article__id=aid)
-    if images.count() > count and count >= 0:
-        article_body_image = images[count]
-        # ensure the image file exists
-        try:
-            bool(article_body_image.image.image.file)
-        except IOError:
-            return u''
+
+    try:
+        article = Article.objects.select_related('body_image__image').get(id=aid)
+        images = article.body_image.all()
+        if images.count() > count and count >= 0:
+            article_body_image = images[count]
+            # ensure the image file exists
+            try:
+                bool(article_body_image.image.image.file)
+            except IOError:
+                return u''
+            else:
+                return render_to_string(
+                    ('amp/' if amp else '') + 'core/templates/article/image.html',
+                    {'article': article, 'image': article_body_image.image, 'display': article_body_image.display},
+                )
         else:
-            return render_to_string(('amp/' if amp else '') + 'core/templates/article/image.html', {
-                'image': article_body_image.image, 'display': article_body_image.display})
-    else:
+            return u''
+    except Article.DoesNotExist:
         return u''
 
 
 @register.filter
 @stringfilter
 def ldmarkup(value, args='', amp=False):
-    """Usage: {% article.body|ldmarkup:article.id %}"""
-
+    """ Usage: {% article.body|ldmarkup:article.id %} """
     value = normalize(value)
     value = strip_tags(value)
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
@@ -88,19 +92,17 @@ def ldmarkup(value, args='', amp=False):
         value = reg.sub(lambda x: get_extension(x, args), value)
         reg = re.compile(IMAGE_RE, re.UNICODE + re.MULTILINE)
         value = reg.sub(lambda x: get_image(x, args, amp), value)
-    value = markdown.markdown(value, [
-        'abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra'])
+    value = markdown.markdown(value, ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra'])
     return mark_safe(force_unicode(value))
 
 
 @register.filter
 @stringfilter
 def ldmarkup_extension(value, args='', amp=False):
-    """Usage: {% article.body|ldmarkup_extension %}"""
+    """ Usage: {% article.body|ldmarkup_extension %} """
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
     value = reg.sub(r'\n\n\1\n----', value)
-    value = markdown.markdown(value, [
-        'abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra'])
+    value = markdown.markdown(value, ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra'])
     return mark_safe(force_unicode(value))
 
 
@@ -116,5 +118,4 @@ def amp_ldmarkup(value, args=''):
 
 def cleanhtml(html):
     cleanr = re.compile('<.*?>')
-    cleantext = re.sub(cleanr, '', html)
-    return cleantext
+    return re.sub(cleanr, '', html)

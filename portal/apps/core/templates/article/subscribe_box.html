@@ -1,28 +1,16 @@
 <section class="ld-subscribe-box-wrap">
   <div class="ld-subscribe-box">
     <h4 class="ld-subscribe-box__title">
-      {% if publication.subscribe_box_question %}
-        {{ publication.subscribe_box_question }}
-      {% elif section.category.slug == 'coronavirus' or 'coronavirus' in article.get_categories_slugs %}
-        Newsletter de Coronavirus
-      {% endif %}
+      {% block subscribe_box_question %}{{ publication.subscribe_box_question }}{% endblock %}
     </h4>
     <div class="ld-subscribe-box__info ld-caption">
-      {% if user.is_authenticated %}
-        {% if publication.subscribe_box_nl_subscribe_auth %}
+      {% block subscribe_box_info %}
+        {% if user.is_authenticated %}
           {{ publication.subscribe_box_nl_subscribe_auth|safe }}
-        {% elif section.category.slug == 'coronavirus' or 'coronavirus' in article.get_categories_slugs %}
-          Recibí la newsletter de Coronavirus en tu email.
+        {% else %}
+          Suscribite gratis y recibí la newsletter de {{ publication.subscribe_box_nl_subscribe_anon|safe }} en tu email.
         {% endif %}
-      {% else %}
-        Suscribite gratis y recibí la newsletter de
-        {% if publication.subscribe_box_nl_subscribe_anon %}
-          {{ publication.subscribe_box_nl_subscribe_anon|safe }}
-        {% elif section.category.slug == 'coronavirus' or 'coronavirus' in article.get_categories_slugs %}
-          Coronavirus
-        {% endif %}
-        en tu email.
-      {% endif %}
+      {% endblock %}
     </div>
     {% block signup_or_receive %}
       {% if user.is_authenticated %}

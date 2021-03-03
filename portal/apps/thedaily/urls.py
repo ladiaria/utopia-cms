@@ -32,6 +32,7 @@ from thedaily.views import (
     welcome,
     nl_category_subscribe,
     nl_category_unsubscribe,
+    disable_profile_property,
     notification_preview,
     phone_subscription,
     custom_api,
@@ -85,6 +86,11 @@ urlpatterns = patterns(
             'extra_context': {'signup': True}}, name="account-tmp"),
     # Profile
     url(r'^perfil/editar/$', edit_profile, name="edit-profile"),
+    url(
+        r'^perfil/disable/(?P<property_id>[\w_]+)/(?P<hashed_id>\w+)/$',
+        disable_profile_property,
+        name="disable-profile-property",
+    ),
     url(r'^perfil/(?P<user_id>\d+)/$', user_profile, name="user-profile"),
 
     url(r'^registered_users/$', registered_users, name='registered_users'),
@@ -137,13 +143,14 @@ urlpatterns = patterns(
 
     url(r'^edicion_impresa/$', edicion_impresa, name="edicion-impresa"),
     url(r'^discourse/sso/$', discourse_sso, name="discourse-sso"),
-    url(r'^referidos/(?P<hashed_id>[\w]+)/$', referrals, name="referrals"),
-    url(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>[\w]+)/$', nlunsubscribe, name="nlunsubscribe"),
+    url(r'^referidos/(?P<hashed_id>\w+)/$', referrals, name="referrals"),
+    url(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
     url(r'^nlsubscribe/$', nl_subscribe, name="nl-subscribe"),
     url(r'^nlsubscribe/c/(?P<slug>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
-    url(r'^nlsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>[\w]+)/$', nl_subscribe, name="nl-subscribe"),
+    url(r'^nlsubscribe/c/(?P<slug>\w+)/(?P<hashed_id>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
+    url(r'^nlsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nl_subscribe, name="nl-subscribe"),
     url(
-        r'^nlunsubscribe/c/(?P<category_slug>\w+)/(?P<hashed_id>[\w]+)/$',
+        r'^nlunsubscribe/c/(?P<category_slug>\w+)/(?P<hashed_id>\w+)/$',
         nl_category_unsubscribe,
         name="nl-category-unsubscribe",
     ),

@@ -92,13 +92,13 @@
 </div>
 
 <div class="col s12 l4ths">
-<div class="ld-main-menu__block">
-  <span class="ld-main-menu__title">Inicio</span>
-  <ul class="navmenu-list">
-    <li class="ld-main-menu__item">
-      <a href="{{ default_pub.get_absolute_url }}">Portada</a>
-    </li>
-  </ul>
+  <div class="ld-main-menu__block">
+    <span class="ld-main-menu__title">Inicio</span>
+    <ul class="navmenu-list">
+      <li class="ld-main-menu__item">
+        <a href="{{ default_pub.get_absolute_url }}">Portada</a>
+      </li>
+    </ul>
   </div>
   <div class="ld-main-menu__block">
     {% if MENU_CATEGORIES %}
@@ -126,6 +126,7 @@
       </ul>
     {% endif %}
   </div>
+  {% block extra_items %}{% endblock %}
 </div>
 
 <div class="col s12 l4ths">

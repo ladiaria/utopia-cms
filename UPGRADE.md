@@ -1,3 +1,14 @@
+# From version 0.0.3 to 0.0.4
+
+```
+git pull
+git checkout 0.0.4
+cd portal
+# activate your virtual env
+DJANGO_SETTINGS_MODULE=install_settings ./manage.py migrate core
+DJANGO_SETTINGS_MODULE=install_settings ./manage.py migrate thedaily
+```
+
 # From version 0.0.2 to 0.0.3
 
 ```
@@ -19,6 +30,6 @@ cd portal
 pip remove django-inplaceedit-bootstrap
 pip remove django-inplaceedit-extra-fields
 pip install --upgrade -r requirements.txt
-./manage.py migrate core
+DJANGO_SETTINGS_MODULE=install_settings ./manage.py migrate core
 ./manage.py sqlall favit | mysql <your_local_db_parameters>
 ```

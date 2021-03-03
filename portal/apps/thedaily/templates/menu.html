@@ -1,7 +1,6 @@
 {% load core_tags %}
 
 <ul class="main-menu center hide-on-small-and-down{% ifnotequal publication default_pub %} {{ publication.slug }}{% endifnotequal %}">
-
   {% for category in MENU_CATEGORIES %}
     <li class="nav-menu__{{ category.slug }}">
       <a href="{% url 'home' domain_slug=category.slug %}">
@@ -18,7 +17,7 @@
       </a>
     </li>
   {% endif %}
-
+  {% block extra_dropdowns %}{% endblock %}
   {% if MENU_LATEST_ARTICLE_SECTION_SLUG %}
     <li class="nav-menu__apuntes">
       <a href="{% url 'section-latest-article' section_slug=MENU_LATEST_ARTICLE_SECTION_SLUG %}">
@@ -27,7 +26,6 @@
     </li>
   {% endif %}
   {% block extra_items %}{% endblock %}
-
 	<li>
 		<a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="more-dropdown">
       <span class="inner">Más
@@ -57,7 +55,6 @@
         </li>
       {% endfor %}
     </ul>
-
     <ul id="secciones-dropdown2" class="dropdown-content hide-on-small-and-down">
       {% for section in publication.secondary_sections %}
         <li>
@@ -67,6 +64,7 @@
     </ul>
   {% endif %}
 {% endwith %}
+
 {% if "no-menu" != MENU_PUBLICATIONS and MENU_PUBLICATIONS|length > 1 %}
   <ul id="emergentes-dropdown" class="dropdown-content hide-on-small-and-down">
     {% for pub in MENU_PUBLICATIONS %}
@@ -81,3 +79,5 @@
   <li class="divider"><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
   {% block more_extra %}{% endblock %}
 </ul>
+
+{% block extra_dropdowns_contents %}{% endblock %}

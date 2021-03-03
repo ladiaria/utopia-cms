@@ -501,8 +501,14 @@ class CategoryAdmin(ModelAdmin):
         'id', 'name', 'order', 'slug', 'title', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag')
     list_editable = ('name', 'order', 'slug', 'title', 'has_newsletter')
     fieldsets = ((None, {'fields': (
-        ('name', 'slug', 'order', 'has_newsletter'), ('title', 'more_link_title', 'new_pill'), ('description', ),
-        ('full_width_cover_image', 'full_width_cover_image_title'), ('full_width_cover_image_lead', ))}), )
+        ('name', 'slug', 'order'),
+        ('title', 'more_link_title', 'new_pill'),
+        ('description', ),
+        ('full_width_cover_image', 'full_width_cover_image_title'),
+        ('full_width_cover_image_lead', ),
+        ('has_newsletter', 'newsletter_tagline', 'newsletter_periodicity'),
+        ('subscribe_box_question', 'subscribe_box_nl_subscribe_auth', 'subscribe_box_nl_subscribe_anon'),
+    )}), )
     raw_id_fields = ('full_width_cover_image', )
 
 

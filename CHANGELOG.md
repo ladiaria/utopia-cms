@@ -1,3 +1,9 @@
+# version 0.0.4 (2021-03-03)
+
+- Improvements and fixes on Category newsletters feature.
+- Fixes and de-customizations for "help" and "contact" links in many templates.
+- Fixes in article embed images template.
+
 # version 0.0.3 (2021-02-17)
 
 - tagging_autocomplete_taggit app moved to pip dependency and fixed in admin.

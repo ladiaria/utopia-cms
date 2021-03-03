@@ -499,10 +499,26 @@ class GoogleSigninForm(ModelForm):
     class Meta:
         model = Subscriber
         exclude = (
-            'costumer_id', 'user', 'name', 'downloads', 'profile_photo',
-            'days', 'address', 'city', 'province', 'country', 'newsletters',
-            'category_newsletters', 'allow_promotions', 'allow_polls',
-            'document', 'pdf', 'ruta', 'lento_pdf')
+            'costumer_id',
+            'user',
+            'name',
+            'downloads',
+            'profile_photo',
+            'days',
+            'address',
+            'city',
+            'province',
+            'country',
+            'newsletters',
+            'category_newsletters',
+            'allow_news',
+            'allow_promotions',
+            'allow_polls',
+            'document',
+            'pdf',
+            'ruta',
+            'lento_pdf',
+        )
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')

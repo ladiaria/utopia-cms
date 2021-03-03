@@ -66,7 +66,7 @@
           ¿Ya tenés suscripción? <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
           {% endif %}
           <br />
-          ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="/contacto/">contactanos</a>.
+          ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
         </div>
       </div>
     </div>

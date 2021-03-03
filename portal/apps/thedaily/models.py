@@ -87,6 +87,7 @@ class Subscriber(Model):
     days = CharField(max_length=5, null=True, default=None)
     newsletters = ManyToManyField(Publication, blank=True, limit_choices_to={'has_newsletter': True})
     category_newsletters = ManyToManyField(Category, blank=True, limit_choices_to={'has_newsletter': True})
+    allow_news = BooleanField(u'acepta novedades', default=True)
     allow_promotions = BooleanField(u'acepta promociones', default=True)
     allow_polls = BooleanField(u'acepta encuestas', default=True)
     # TODO: explain the utility of this field or remove it.

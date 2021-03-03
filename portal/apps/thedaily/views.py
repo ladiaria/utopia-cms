@@ -88,10 +88,11 @@ def notify_new_subscription(subscription_url, extra_subject=u''):
 def nl_subscribe(request, publication_slug=None, hashed_id=None):
     if publication_slug and hashed_id:
         # 1click subscription
-        publication = get_object_or_404(Publication, slug=publication_slug)
+        publication = get_object_or_404(Publication, slug=publication_slug, has_newsletter=True)
         ctx = {
             'publication': publication,
-            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO)}
+            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+        }
         hashids = Hashids(settings.HASHIDS_SALT, 32)
         subscriber_id = int(hashids.decode(hashed_id)[0])
         # TODO: if authenticated => assert same logged in user (also for other 1-click views in this module)
@@ -117,14 +118,39 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
 
 
 @never_cache
-def nl_category_subscribe(request, slug):
-    # next page is the first category NL anchor in edit profile page
-    next_page = reverse('edit-profile') + '#category-newsletter-' + slug
-    if request.user.is_authenticated():
-        return HttpResponseRedirect(next_page)
+def nl_category_subscribe(request, slug, hashed_id=None):
+    """
+    if hashed id is given, this view will do the things than nl_subscribe with a category instead of a publication
+    """
+    if hashed_id:
+        # 1click subscription
+        category = get_object_or_404(Category, slug=slug, has_newsletter=True)
+        ctx = {
+            'category': category,
+            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+        }
+        hashids = Hashids(settings.HASHIDS_SALT, 32)
+        subscriber_id = int(hashids.decode(hashed_id)[0])
+        if subscriber_id:
+            subscriber = get_object_or_404(Subscriber, id=subscriber_id)
+            if not subscriber.user:
+                return HttpResponseNotFound()
+            try:
+                subscriber.category_newsletters.add(category)
+            except Exception as e:
+                # for some reason UpdateCrmEx does not work in test (Python ver?)
+                ctx['error'] = e.displaymessage
+            return render_to_response('nlsubscribe.html', ctx)
+        else:
+            return HttpResponseNotFound()
     else:
-        request.session['next'] = next_page
-        return HttpResponseRedirect(reverse('account-login'))
+        # next page is the first category NL anchor in edit profile page
+        next_page = reverse('edit-profile') + '#category-newsletter-' + slug
+        if request.user.is_authenticated():
+            return HttpResponseRedirect(next_page)
+        else:
+            request.session['next'] = next_page
+            return HttpResponseRedirect(reverse('account-login'))
 
 
 @never_cache
@@ -743,14 +769,16 @@ def edit_profile(request, user=None):
     except UserSocialAuth.DoesNotExist:
         oauth2_assoc = None
 
-    # TODO post release: check the usage of "is_digital"
     return 'edit_profile.html', {
-        'user_form': user_form, 'profile_form': profile_form,
+        'user_form': user_form,
+        'profile_form': profile_form,
         'is_subscriber_digital': user.subscriber.is_digital_only(),
         'is_subscriber_special': user.subscriber.plan_id in getattr(settings, 'SUBSCRIPTION_SPECIAL_PLANS', ()),
         'google_oauth2_assoc': oauth2_assoc,
         'google_oauth2_allow_disconnect': oauth2_assoc and (user.email != oauth2_assoc.uid),
-        'community_coupon': user.subscriber.is_subscriber_any() and getattr(settings, 'COMMUNITY_COUPON', None)}
+        'community_coupon': user.subscriber.is_subscriber_any() and getattr(settings, 'COMMUNITY_COUPON', None),
+        'category_newsletters': Category.objects.filter(has_newsletter=True),
+    }
 
 
 @never_cache
@@ -1291,7 +1319,8 @@ def nlunsubscribe(request, publication_slug, hashed_id):
     publication = get_object_or_404(Publication, slug=publication_slug)
     ctx = {
         'publication': publication,
-        'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO)}
+        'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+    }
     hashids = Hashids(settings.HASHIDS_SALT, 32)
     subscriber_id = int(hashids.decode(hashed_id)[0])
     # subscriber_id can be 0 (test from /custom_email in allowed hosts)
@@ -1315,7 +1344,10 @@ def nlunsubscribe(request, publication_slug, hashed_id):
 @to_response
 def nl_category_unsubscribe(request, category_slug, hashed_id):
     category = get_object_or_404(Category, slug=category_slug)
-    ctx = {'publication': category}
+    ctx = {
+        'publication': category,
+        'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+    }
     hashids = Hashids(settings.HASHIDS_SALT, 32)
     subscriber_id = int(hashids.decode(hashed_id)[0])
     # subscriber_id can be 0 (test from /custom_email in allowed hosts)
@@ -1333,6 +1365,34 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
         email = u'anonymous_user@localhost'
     ctx['email'] = email
     return 'nlunsubscribe.html', ctx
+
+
+@never_cache
+@to_response
+def disable_profile_property(request, property_id, hashed_id):
+    """ Disables the profile bool property_id related to the subscriber matching the hashed_id argument given """
+    ctx = {
+        'property_name': {
+            'allow_news': u'Novedades', 'allow_promotions': u'Promociones', 'allow_polls': u'Encuestas'
+        }.get(property_id),
+        'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+    }
+    hashids = Hashids(settings.HASHIDS_SALT, 32)
+    subscriber_id = int(hashids.decode(hashed_id)[0])
+    # subscriber_id can be 0 (test from /custom_email in allowed hosts)
+    if subscriber_id:
+        subscriber = get_object_or_404(Subscriber, id=subscriber_id)
+        if not subscriber.user:
+            return HttpResponseNotFound()
+        setattr(subscriber, property_id, False)
+        try:
+            subscriber.save()
+        except Exception as e:
+            # for some reason UpdateCrmEx does not work in test (Python ver?)
+            ctx['error'] = e.displaymessage
+    else:
+        return HttpResponseNotFound()
+    return 'disable_profile_property.html', ctx
 
 
 @never_cache

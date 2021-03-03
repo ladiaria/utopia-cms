@@ -397,6 +397,11 @@ class Category(Model):
     description = TextField(u'descripción', blank=True, null=True)
     order = PositiveSmallIntegerField(u'orden', blank=True, null=True)
     has_newsletter = BooleanField(u'tiene NL', default=False)
+    newsletter_tagline = CharField(max_length=128, blank=True, null=True)
+    newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
+    subscribe_box_question = CharField(max_length=64, blank=True, null=True)
+    subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
+    subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
     title = CharField(u'título en el componente de portada', max_length=50, blank=True, null=True)
     more_link_title = CharField(
         u'texto en el link "más" del componente de portada', max_length=50, blank=True, null=True)

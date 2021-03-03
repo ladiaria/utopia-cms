@@ -1,0 +1,12 @@
+{% extends 'nlunsubscribe.html' %}
+{% load static %}
+
+{% block title %}Dejar de recibir {{ property_name }}{% endblock %}
+
+{% block description %}Dejar de recibir {{ property_name }}{% endblock %}
+
+{% block success %}Ya no recibirás {{ property_name }} de {{ site.name }}{% endblock %}
+
+{% block configure %}
+  <a href="{% url 'edit-profile' %}#ld-comunicaciones">Configurar todas las comunicaciones</a>
+{% endblock %}

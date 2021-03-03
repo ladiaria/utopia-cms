@@ -7,18 +7,21 @@
       <div class="item-newsletter profile-check">
 
         {# This acts as an anchor taking into account the topbar padding #}
-        {% if choice.1 == 'Coronavirus' %}
-          <div id="category-newsletter-coronavirus" class="item-newsletter__anchor"></div>
-          <div id="category-newsletter-chile" class="item-newsletter__anchor"></div>
-        {% endif %}
+        {% for category in category_newsletters %}
+          {% ifequal choice.1 category.name %}
+            <div id="category-newsletter-{{ category.slug }}" class="item-newsletter__anchor"></div>
+          {% endifequal %}
+        {% endfor %}
 
         <input class="filled-in" type="checkbox"{% if choice.0 in field.value or choice.0|stringformat:"s" in field.value or choice.0|stringformat:"s" == field.value|stringformat:"s" %} checked="checked"{% endif %} name="{{ field.html_name }}" id="id_{{ field.html_name }}_{{ forloop.counter }}" value="{{ choice.0|unlocalize }}"/>
         <label for="id_{{ field.html_name}}_{{ forloop.counter }}"{% if flat_attrs %} {{ flat_attrs|safe }}{% endif %}>
-          {% if choice.1 == 'Coronavirus' %}
-            <h3 class="ld-title-second">{{ choice.1 }}</h3>
-            <div>Lo importante sobre el nuevo coronavirus en Uruguay y el mundo.</div>
-            <h4 class="ld-caption">Periodicidad: martes y jueves.</h4>
-          {% endif %}
+          {% for category in category_newsletters %}
+            {% ifequal choice.1 category.name %}
+              <h3 class="ld-title-second">{{ choice.1 }}</h3>
+              <div>{{ category.newsletter_tagline }}.</div>
+              <h4 class="ld-caption">Periodicidad: {{ category.newsletter_periodicity }}.</h4>
+            {% endifequal %}
+          {% endfor %}
         </label>
 
       </div>

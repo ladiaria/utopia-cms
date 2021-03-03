@@ -32,7 +32,15 @@ class SubscriberAdmin(ModelAdmin):
     search_fields = ('user__username', 'name', 'user__email', 'costumer_id', 'document', 'phone')
     raw_id_fields = ('user', )
     readonly_fields = ('pdf', 'lento_pdf', 'ruta', 'plan_id', 'ruta_lento', 'ruta_fs', 'days')
-    list_filter = ['newsletters', 'category_newsletters', 'pdf', 'lento_pdf', 'allow_promotions', 'allow_polls']
+    list_filter = [
+        'newsletters',
+        'category_newsletters',
+        'pdf',
+        'lento_pdf',
+        'allow_news',
+        'allow_promotions',
+        'allow_polls',
+    ]
     actions = ['send_account_info']
 
     def send_account_info(self, request, queryset):

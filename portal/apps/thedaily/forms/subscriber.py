@@ -33,6 +33,7 @@ class ProfileForm(forms.ModelForm):
             <section id="ld-comunicaciones" class="ld-block section scrollspy">
               <h2 class="ld-title ld-title--underlined">Comunicaciones</h2>
         '''),
+        Field('allow_news', template=getattr(settings, 'THEDAILY_ALLOW_NEWS_TEMPLATE', 'profile/allow_news.html')),
         Field('allow_promotions', template='profile/allow_promotions.html'),
         Field('allow_polls', template='profile/allow_polls.html'),
         HTML('</section>'))
