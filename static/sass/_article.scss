@@ -424,9 +424,15 @@ article {
     width: 100%;
     height: auto;
     display: block;
+
 }
 
-
+.material-placeholder {
+    background:url('/static/img/img-icon.svg') no-repeat center center;
+    background-color: #FBFBFB;
+    outline:1px solid #D8D8D8;
+    outline-offset: -1px;
+}
 .article-body {
     font-size: $font-size-sm;
     position: relative;

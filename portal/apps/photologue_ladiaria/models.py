@@ -75,6 +75,13 @@ class PhotoExtended(models.Model):
     def __unicode__(self):
         return self.image.title
 
+    def image_file_exists(self):
+        try:
+            result = bool(self.image.image.file)
+        except IOError:
+            result = False
+        return result
+
     @property
     def is_landscape(self):
         try:

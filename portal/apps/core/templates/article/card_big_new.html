@@ -13,8 +13,12 @@
             <picture>
                 <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 700px)">
                 <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0)">
-              <img class="ld-card__img lazyload"
+              <img class="ld-card__img"
                    data-sizes="auto"
+                   width="700"
+                   {% if article.photo_image_file_exists %}
+                   height="{{ article.photo.get_700w_size.1 }}"
+                   {% endif %}
                    title="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
                    alt="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
                    loading="lazy">
@@ -54,7 +58,11 @@
           {% render_toolbar_for a %}
           {% if a.photo %}
             <a href="{{ a.get_absolute_url }}">
-              <img class="ld-card__img lazyload" src="{{ a.photo.get_700w_url }}"
+              <img class="ld-card__img" src="{{ a.photo.get_700w_url }}"
+                   width="700"
+                   {% if a.photo_image_file_exists %}
+                   height="{{ a.photo.get_700w_size.1 }}"
+                   {% endif %}
                    title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
                    alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
                    loading="lazy">
@@ -97,7 +105,11 @@
 
           {% if a.photo %}
             <a href="{{ a.get_absolute_url }}" class="ld-card__img-link">
-              <img class="ld-card__img lazyload" src="{{ a.photo.get_700w_url }}"
+              <img class="ld-card__img" src="{{ a.photo.get_700w_url }}"
+                   width="700"
+                   {% if a.photo_image_file_exists %}
+                   height="{{ a.photo.get_700w_size.1 }}"
+                   {% endif %}
                    title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
                    alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
                    loading="lazy">
@@ -124,10 +136,12 @@
           </div>
           {% if a.photo.extended.square_version %}
             <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
-              <img class="ld-card__img lazyload"
+              <img class="ld-card__img"
                     src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}"
                     title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
                     alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                    width="700"
+                    height="700"
                     loading="lazy">
             </a>
           {% endif %}

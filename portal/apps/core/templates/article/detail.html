@@ -45,9 +45,7 @@
           });
         }
       });
-      $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}", function() {
-        $('img.lazyload', this).lazyload();
-      });
+      $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
     });
   </script>
 {% endblock %}
@@ -96,7 +94,7 @@
             <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
             <!--[if IE 9]></video><![endif]-->
             <img
-            class="ld-article__main-photo lazyload materialboxed responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
+            class="ld-article__main-photo materialboxed responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
             data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
             alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
             loading="lazy">
@@ -116,13 +114,14 @@
       {% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}">
         <figure class="principal">
           <picture class="materialboxed">
-              <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-              <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
-              <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
-              <img class="ld-article__main-photo responsive-img lazyload{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}"
-                   data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                   alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                   loading="lazy">
+            <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+            <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
+            <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
+            <img class="ld-article__main-photo responsive-img {% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}"
+                 data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                 alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                 width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}
+                 loading="lazy">
           </picture>
           <figcaption class="article-caption container ld-caption">
             <p>{{ article.photo.caption|ldmarkup:article.id|removetags:"p" }}</p>

@@ -22,9 +22,7 @@
       $('#mas-leidos-content').load("{% url 'mas_leidos_content' %}", function(){
         $('ul.tablist').tabs();
       });
-      $('#header-pub').load("{% url 'adzone_ad_content' %}", function(){
-        $('img.lazyload', this).lazyload();
-      });
+      $('#header-pub').load("{% url 'adzone_ad_content' %}");
       $('#bn-module').load("{% url 'bn-content' %}?publication={{ publication.slug }}", function(response){
         if(response){
           $('.breaking-notice').find('.btn-close').click(function(){

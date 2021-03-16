@@ -7,11 +7,15 @@
     {% render_toolbar_for article %}
     {% if article.photo %}
       <a href="{{ article.get_absolute_url }}">
-        <img class="ld-card__img lazyload" src="{{ article.photo.get_thumbnail_url }}"
+        <img class="ld-card__img" src="{{ article.photo.get_700w_url }}"
              {% spaceless %}
              data-srcset="{{ article.photo.get_700w_url }} 320w"
              {% endspaceless %}
              data-sizes="auto"
+             width="700"
+             {% if article.photo_image_file_exists %}
+             height="{{ article.photo.get_700w_size.1 }}"
+             {% endif %}
              title="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
              alt="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
              loading="lazy">

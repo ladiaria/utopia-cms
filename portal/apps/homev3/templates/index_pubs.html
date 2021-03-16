@@ -47,9 +47,7 @@
     $(document).ready(function(){
       resizeSubnav($('.section-detail__sub-cats'), $('.section-detail__sub-cats-list'), 2);
       resizeSubnav($('.section-subheader .submenu'), $('.submenu--list'), 1);
-      $('#header-pub').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}", function(){
-        $('img.lazyload', this).lazyload();
-      });
+      $('#header-pub').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
       $('#bn-module').load("{% url 'bn-content' %}?publication={{ publication.slug }}", function(response){
         if(response){
           $('.breaking-notice').find('.btn-close').click(function(){

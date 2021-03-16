@@ -18,6 +18,11 @@ body.frontpage:not(.section-detail) .section-big-photo figcaption .container {
     max-width: 100%;
     height: auto;
     margin-bottom: 12px;
+    background:url('/static/img/img-icon.svg') no-repeat center center;
+    background-color: #FBFBFB;
+    display: block;
+    outline:1px solid #D8D8D8;
+    outline-offset: -1px;
   }
 
   &__caption {

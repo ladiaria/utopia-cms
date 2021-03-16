@@ -69,8 +69,6 @@
 
     $('select').material_select();
 
-    $('img.lazyload').lazyload();
-
     $('.js-close-ld-snackbar').on('click', function(){
       dismissPaywallSnackbar();
     });
@@ -90,8 +88,6 @@
         $('ld-modal').removeClass('active');
       }
     });
-
-
 
     // Dismiss alerts.
     $('body').on('click', '.js-dismiss-message', function(){

@@ -17,9 +17,13 @@
           <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 0px)">
           <!--[if IE 9]></video><![endif]-->
           <img id="main-photo"
-          class="responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %} lazyload"
+          class="responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
           data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
           alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+          width="700"
+          {% if article.photo_image_file_exists %}
+          height="{{ article.photo.get_700w_size.1 }}"
+          {% endif %}
           loading="lazy">
         </picture>
         <figcaption class="caption">

@@ -1,3 +1,11 @@
+# From version 0.0.4 to 0.0.5
+
+```
+git pull
+git checkout 0.0.5
+rm -rf static/jquery_lazyload
+```
+
 # From version 0.0.3 to 0.0.4
 
 ```

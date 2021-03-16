@@ -265,7 +265,8 @@ i.material-icons.icon-lo_mas_leido {
 
 
 .ad_banner a img {
-  background-color: #f2f2f2;
+  background:url('/static/img/ad-icon.svg') no-repeat center center;
+  background-color: #FBFBFB;
 }
 
 .ad_banner a img.ad-desktop {
@@ -293,7 +294,7 @@ i.material-icons.icon-lo_mas_leido {
 }
 
 .ad_banner a {
-  border: 1px solid #c1c1c1;
+  border: 1px solid #D8D8D8;
   display: inline-block;
   max-width: 100%;
   margin: 0 auto;
