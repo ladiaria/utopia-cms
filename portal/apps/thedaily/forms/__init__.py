@@ -164,17 +164,16 @@ class SignupForm(ModelForm):
         first_name = self.cleaned_data.get('first_name')
         if not RE_ALPHANUM.match(first_name):
             self._errors['first_name'] = self.error_class([
-                u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, '
-                u'espacios, guiones y puntos.'])
+                u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'])
         return first_name
 
     def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if len(email) <= 30:
+        email, email_max_length = self.cleaned_data.get('email'), getattr(settings, 'THEDAILY_EMAIL_MAX_LENGTH', 30)
+        if len(email) <= email_max_length:
             return email.lower()
         else:
-            self._errors['email'] = self.error_class(
-                [u'Email demasiado largo, se permiten hasta 30 caracteres.'])
+            self._errors['email'] = self.error_class([
+                u'Email demasiado largo, se permiten hasta %d caracteres.' % email_max_length])
             return email
 
     def clean_password(self):
@@ -183,15 +182,14 @@ class SignupForm(ModelForm):
         if check_password_strength(password):
             return password
         else:
-            msg = u'La contraseña debe tener 6 o más caracteres.'
-            self._errors['password'] = self.error_class([msg])
+            self._errors['password'] = self.error_class([u'La contraseña debe tener 6 o más caracteres.'])
             return password
 
     def create_user(self):
         DIGIT_RE = re.compile(r'\d')
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
-        user = User.objects.create_user(email, email, password)
+        user = User.objects.create_user(email.split('@')[0] if len(email) > 30 else email, email, password)
         if not user.subscriber.phone:
             user.subscriber.phone = ''.join(
                 DIGIT_RE.findall(self.cleaned_data.get('phone', '')))
