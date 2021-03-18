@@ -47,7 +47,7 @@
         <li><a href="{% url 'edit-profile' %}">Opciones</a></li>
         <li><a href="{% url 'lista-lectura-leer-despues' %}">Leer después <span class="num">{{ user|count_following }}</span></a></li>
         {% if poll_url %}
-            <li><a href="{{ poll_url }}" target="_blank">Danos tu opinión</a></li>
+            <li><a href="{{ poll_url }}" target="_blank" rel="noreferrer noopener">Danos tu opinión</a></li>
         {% endif %}
         {% if user.is_staff %}
             <li><a href="//{{ site.domain }}/admin/">Admin</a></li>
@@ -63,7 +63,7 @@
             <li><a href="{% url 'subscribe' planslug='DDIGM' %}">Pasate a ilimitada</a></li>
         {% endif %}
         {% if poll_url %}
-            <li><a href="{{ poll_url }}" target="_blank">Danos tu opinión</a></li>
+            <li><a href="{{ poll_url }}" target="_blank" rel="noreferrer noopener">Danos tu opinión</a></li>
         {% endif %}
         <li><a href="https://ayuda.ladiaria.com.uy/">Ayuda</a></li>
         <li><a href="{% url 'account-logout' %}" class="logout btn-logout">cerrar sesión</a></li>

@@ -51,7 +51,7 @@
         <ul id="user-dropdown" class="dropdown-content hide-on-med-and-down">
             <li><a href="{% url 'edit-profile' %}">Opciones</a></li>
             {% if poll_url %}
-                <li><a href="{{ poll_url }}" target="_blank">Danos tu opinión</a></li>
+                <li><a href="{{ poll_url }}" target="_blank" rel="noreferrer noopener">Danos tu opinión</a></li>
             {% endif %}
             {% if user.is_staff %}
                 <li><a href="//{{ site.domain }}/admin/">Admin</a></li>
@@ -66,7 +66,7 @@
                 <li><a href="{% url 'subscribe_landing' %}">Pasate a ilimitada</a></li>
             {% endif %}
             {% if poll_url %}
-                <li><a href="{{ poll_url }}" target="_blank">Danos tu opinión</a></li>
+                <li><a href="{{ poll_url }}" target="_blank" rel="noreferrer noopener">Danos tu opinión</a></li>
             {% endif %}
             <li><a href="/ayuda/">Ayuda</a></li>
             <li><a href="{% url 'account-logout' %}" class="logout btn-logout">cerrar sesión</a></li>
