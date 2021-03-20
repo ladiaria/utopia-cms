@@ -207,7 +207,11 @@ def signup(request):
         if signup_form.is_valid():
             user = signup_form.create_user()
             send_validation_email(
-                u'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url)
+                u'Verificá tu cuenta',
+                user,
+                'notifications/account_signup.html',
+                get_signup_validation_url,
+            )
             next_page = signup_form.cleaned_data.get('next_page')
             if next_page:
                 return HttpResponseRedirect(next_page)
@@ -321,15 +325,18 @@ def google_phone(request):
 
 @never_cache
 @to_response
-def subscribe(request, planslug):
+def subscribe(request, planslug, category_slug=None):
     """
     This view handles the plan subscriptions.
     """
     custom_module = getattr(settings, 'THEDAILY_VIEWS_CUSTOM_MODULE', None)
     if custom_module:
         subscribe_custom = __import__(custom_module, fromlist=['subscribe']).subscribe
-        return subscribe_custom(request, planslug)
+        return subscribe_custom(request, planslug, category_slug)
     else:
+        # category_slug is allowed only if custom_module is defined
+        if category_slug:
+            return HttpResponseNotFound()
         auth = request.GET.get('auth')
         if auth:
             request.session['planslug'] = planslug

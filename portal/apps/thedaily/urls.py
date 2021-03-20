@@ -73,7 +73,8 @@ urlpatterns = patterns(
     url(r'^comentarios/$', never_cache(TemplateView.as_view(template_name='thedaily/templates/comments.html')))
 ) + custom_patterns + patterns(
     '',
-    url(r'^suscribite/(?P<planslug>[\w]+)/$', subscribe, name="subscribe"),
+    url(r'^suscribite/(?P<planslug>\w+)/$', subscribe, name="subscribe"),
+    url(r'^suscribite/(?P<planslug>\w+)/(?P<category_slug>\w+)/$', subscribe, name="subscribe"),
     url(r'^api/$', users_api),
     url(r'^api/custom/$', custom_api),
     url(r'^api/email_check/$', email_check_api),
@@ -101,18 +102,14 @@ urlpatterns = patterns(
     url(r'^registrate/google/$', google_phone, name="account-google"),
     url(r'^salir/$', never_cache(logout), name="account-logout"),
     url(r'^bienvenida/$', welcome, {'signup': True}, name="account-welcome"),
-    url(r'^bienvenido/$', welcome, {'subscribed': True},
-        name="account-welcome-s"),
+    url(r'^bienvenido/$', welcome, {'subscribed': True}, name="account-welcome-s"),
 
-    url(r'^cambiar-password/$', password_change,
-        name="account-password_change"),
+    url(r'^cambiar-password/$', password_change, name="account-password_change"),
     url(r'^cambiar-password/hecho/$', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/password_change_done.html')),
         name="account-password_change-done"),
-    url(r'^cambiar-password/(?P<user_id>\d{1,})-(?P<hash>.*)/$',
-        password_reset, name='account-password_change-hash'),
-    url(r'^completar-registro/(?P<user_id>\d{1,})-(?P<hash>.*)/$',
-        complete_signup, name="account-signup-hash"),
+    url(r'^cambiar-password/(?P<user_id>\d{1,})-(?P<hash>.*)/$', password_reset, name='account-password_change-hash'),
+    url(r'^completar-registro/(?P<user_id>\d{1,})-(?P<hash>.*)/$', complete_signup, name="account-signup-hash"),
     url(r'^entrar/$', login, name="account-login"),
     url(r'^error/login/$', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/login_error.html')),
@@ -130,7 +127,8 @@ urlpatterns = patterns(
     url(r'^confirm_email/$', confirm_email, name='account-confirm_email'),
     url(r'^session_refresh/$', session_refresh, name='session-refresh'),
 
-    # TODO: No deberiamos permitir entrar a bienvenido/ directamente
+    # TODO: enter "bienvenido/" directly should not be allowed
+    # TODO: first 2 urls are custom and should be removed
     url(r'^ldfs/bienvenido/$', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/ldfs_thankyou.html')), name="ldfssubscribe_success"),
     url(r'^educacion/bienvenido/$', never_cache(TemplateView.as_view(

@@ -13,9 +13,8 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
             oas.state = state
             oas.save()
         except OAuthState.DoesNotExist:
-            OAuthState.objects.create(
-                user=user, state=state,
-                fullname=kwargs['details'].get('fullname'))
-        return HttpResponseRedirect(
-            '/usuarios/registrate/google/' + (
-                '?is_new=1' if kwargs.get('is_new') else ''))
+            OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
+        is_new, query_params = kwargs.get('is_new'), ''
+        if is_new:
+            query_params = '?is_new=1'
+        return HttpResponseRedirect('/usuarios/registrate/google/' + query_params)

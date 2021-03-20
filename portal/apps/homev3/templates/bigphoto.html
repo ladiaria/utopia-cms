@@ -30,16 +30,6 @@
         </div>
       </figcaption>
     </figure>
-
-    {% if not category %}
-      <div class="container">
-        <div class="row footer-section">
-          <div class="col s12">
-            <a class="ld-btn ld-btn-solid-dark" href="{% url 'section_detail' section_slug='fotografia' %}">Más de fotografía</a>
-            <a class="ld-btn btn bordered" href="https://www.instagram.com/ladiaria/">Instagram  <svg xmlns="http://www.w3.org/2000/svg" width="13.064" height="13.063" viewBox="0 0 13.064 13.063"><path d="M13.886,14.612H5.177a.728.728,0,0,1-.726-.726V5.177a.728.728,0,0,1,.726-.726H8.806A.726.726,0,1,0,8.806,3H4.452A1.451,1.451,0,0,0,3,4.452V14.612a1.456,1.456,0,0,0,1.452,1.452H14.612a1.456,1.456,0,0,0,1.452-1.452V10.258a.726.726,0,1,0-1.452,0v3.629A.728.728,0,0,1,13.886,14.612Zm-2.9-10.886a.728.728,0,0,0,.726.726h1.88L6.963,11.078A.724.724,0,0,0,7.986,12.1l6.626-6.626v1.88a.726.726,0,1,0,1.452,0V3H11.709A.728.728,0,0,0,10.983,3.726Z" transform="translate(-3 -3)" fill="#262626"/></svg></a>
-          </div>
-        </div>
-      </div>
-    {% endif %}
+    {% block footer %}{% endblock %}
   </div>
 {% endif %}

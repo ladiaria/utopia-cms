@@ -4,7 +4,7 @@
 
   {% if is_subscriber_any %}
     <div class="ld-main-menu__block">
-      <span class="ld-main-menu__title">tu cuenta</span>
+      <span class="ld-main-menu__title">Tu cuenta</span>
       <ul class="navmenu-list  ld-menu-list">
         <li class="ld-main-menu__item small">
           <a href="{% url 'edit-profile' %}">Opciones</a>
@@ -41,7 +41,7 @@
     </div>
   {% elif user.is_authenticated %}
     <div class="ld-main-menu__block">
-      <span class="ld-main-menu__title">tu cuenta</span>
+      <span class="ld-main-menu__title">Tu cuenta</span>
       <ul class="navmenu-list ">
         <li class="ld-main-menu__item small">
           <a href="{% url 'edit-profile' %}">Opciones</a>

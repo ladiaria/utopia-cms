@@ -12,25 +12,21 @@
 
 {% block content %}
 
-  {% with 'ciencia economia educacion feminismos justicia salud trabajo' as emergentes %}
-    {% if publication.slug in emergentes.split %}
-      <div class="container container--wide">
-        <div class="section-detail__head">
-          <h1 class="section-detail__title">{{ publication.name|capfirst }}</h1>
-          <div class="section-detail__sub-cats">
-            <ul class="section-detail__sub-cats-list">
-            {% for section in publication.primary_sections %}
-              <li><a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a></li>
-            {% endfor %}
-            </ul>
-          </div>
+  {% if publication.is_emergente %}
+    <div class="container container--wide">
+      <div class="section-detail__head">
+        <h1 class="section-detail__title">{{ publication.name|capfirst }}</h1>
+        <div class="section-detail__sub-cats">
+          <ul class="section-detail__sub-cats-list">
+          {% for section in publication.primary_sections %}
+            <li><a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a></li>
+          {% endfor %}
+          </ul>
         </div>
       </div>
-      {% render_cover %}
-    {% else %}
-      {% render_cover %}
-    {% endif %}
-  {% endwith %}
+    </div>
+  {% endif %}
+  {% render_cover %}
 
   {% for section in featured_sections %}
     {% render_section section %}
@@ -38,7 +34,7 @@
 
   {# news wall commented out due to performance issues #}
   {# include 'news_wall.html' #}
-  {% include 'bigphoto.html' %}
+  {% include bigphoto_template %}
 
 {% endblock %}
 

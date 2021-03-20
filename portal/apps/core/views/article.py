@@ -158,6 +158,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'report_form': report_form,
         'domain': domain,
         'category': category,
+        'category_signup':
+            domain == u'category' and category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_SIGNUP', ()),
         'section': article.publication_section(),
         'header_display': article.header_display,
         'article_ct_id': ContentType.objects.get_for_model(Article).id,

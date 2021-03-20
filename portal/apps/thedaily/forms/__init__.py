@@ -102,11 +102,8 @@ class SignupForm(ModelForm):
     """ Formulario con campos para crear una instancia del modelo User """
 
     first_name = CharField(label=u'Nombre')
-    email = EmailField(
-        label=u'Email', widget=EmailInput(attrs={'inputmode': 'email'}))
-    phone = CharField(
-        label='Teléfono',
-        widget=PhoneInput(attrs={'class': 'textinput textInput'}))
+    email = EmailField(label=u'Email', widget=EmailInput(attrs={'inputmode': 'email'}))
+    phone = CharField(label='Teléfono',widget=PhoneInput(attrs={'class': 'textinput textInput'}))
     password = CharField(label=u'Contraseña', widget=PasswordInput())
     next_page = CharField(required=False, widget=HiddenInput())
 
@@ -120,16 +117,19 @@ class SignupForm(ModelForm):
         self.helper.form_tag = True
         self.helper.help_text_inline = True
         self.helper.error_text_inline = True
-        self.helper.form_action = reverse('account-signup')
         self.helper.layout = Layout(
             Fieldset(
-                u'', 'first_name', 'phone', 'email', Field(
-                    'password',
-                    template='materialize_css_forms/layout/password.html'),
-                'next_page'),
+                u'',
+                'first_name',
+                'phone',
+                'email',
+                Field('password', template='materialize_css_forms/layout/password.html'),
+                'next_page',
+            ),
             HTML('<div class="align-center">'),
             Submit('save', u'Suscribite', css_class='btn-register'),
-            HTML('</div">'))
+            HTML('</div">'),
+        )
         super(SignupForm, self).__init__(*args, **kwargs)
 
     class Meta:

@@ -55,10 +55,13 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     edition = None
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
 
-    # Context variables for publication, featured publications and sections "grids".
+    # Context variables for publication, featured publications, sections "grids" and "big photo".
     context = {
-        'publication': publication, 'featured_publications': [],
-        'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ())}
+        'publication': publication,
+        'featured_publications': [],
+        'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ()),
+        'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
+    }
     for publication_slug in getattr(settings, 'HOMEV3_FEATURED_PUBLICATIONS', ()):
         try:
             ftop_articles = \
