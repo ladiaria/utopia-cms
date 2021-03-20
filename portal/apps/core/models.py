@@ -15,8 +15,6 @@ from sorl.thumbnail import get_thumbnail
 from PIL import Image
 import readtime
 
-from actstream import registry
-
 from django.conf import settings
 from django.core import urlresolvers
 from django.http import HttpResponse
@@ -38,6 +36,7 @@ from utils import (
     get_pdf_pdf_upload_to, get_pdf_cover_upload_to, get_pdfpage_pdf_upload_to, get_pdfpage_snapshot_upload_to,
     get_pdfpageimage_file_upload_to, send_mail)
 
+from apps import register_actstream_model
 from core.utils import CT, smart_quotes
 from core.templatetags.ldml import ldmarkup, cleanhtml
 from photologue_ladiaria.models import PhotoExtended
@@ -1240,8 +1239,8 @@ class Article(ArticleBase):
                 return PhotoExtended(image=section_imgs[0])
 
 
-registry.register(Article)
-registry.register(User)
+register_actstream_model(Article)
+register_actstream_model(User)
 
 
 class ArticleRel(Model):
