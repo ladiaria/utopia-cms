@@ -34,7 +34,7 @@
       {% endif %}
 
       <div class="ld-card__byline-wrap">
-        <h4 class="ld-card__byline">
+        <div class="ld-card__byline">
           {% if article.has_byline  %}
             {% for author in article.get_authors %}
               <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -42,12 +42,12 @@
             en
           {% endif %}
           {% publication_section article %}
-        </h4>
+        </div>
 
         {% if article.photo.extended.photographer %}
-        <h4 class="ld-card__byline">
+        <div class="ld-card__byline">
           {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
-        </h4>
+        </div>
         {% endif %}
       </div>
 

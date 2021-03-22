@@ -27,13 +27,13 @@
           {% endif %}
         {% endblock %}
         <div class="ld-card__body">
-          <h1 class="ld-card__title home-title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
+          <h{% if publication.is_emergente %}2{% else %}1{% endif %} class="ld-card__title home-title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
             <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|removetags:"p" }}</a>
-          </h1>
+          </h{% if publication.is_emergente %}2{% else %}1{% endif %}>
           {% if article.home_lead %}
             <div class="ld-card__intro">{{ article.home_lead|ldmarkup:article.id|removetags:'p' }}</div>
           {% endif %}
-          <h4 class="ld-card__byline">
+          <div class="ld-card__byline">
             {% if article.has_byline  %}
               {% for author in article.get_authors %}
                 <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -41,11 +41,11 @@
               en
             {% endif %}
             {% publication_section article %}
-          </h4>
+          </div>
           {% if article.photo.extended.photographer %}
-            <h4 class="ld-card__byline">
+            <div class="ld-card__byline">
               {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
-            </h4>
+            </div>
           {% endif %}
         </div>
       </div>
@@ -69,15 +69,15 @@
             </a>
           {% endif %}
           <div class="ld-card__body">
-            <h3 class="ld-card__title ld-card__title--mb">
+            <h{% if publication.is_emergente %}3{% else %}2{% endif %} class="ld-card__title ld-card__title--mb">
               <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|removetags:"p" }}</a>
-            </h3>
+            </h{% if publication.is_emergente %}3{% else %}2{% endif %}>
             {% if a.deck %}
             <div class="ld-card__intro hide-on-med-and-up">
               {{ a.deck|ldmarkup:a.id|removetags:"p" }}
             </div>
             {% endif %}
-            <h4 class="ld-card__byline">
+            <div class="ld-card__byline">
               {% if a.has_byline  %}
                 {% for author in a.get_authors %}
                   <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -85,11 +85,11 @@
                 en
               {% endif %}
               {% publication_section a %}
-            </h4>
+            </div>
             {% if a.photo.extended.photographer %}
-              <h4 class="ld-card__byline">
+              <div class="ld-card__byline">
                 {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}
-              </h4>
+              </div>
             {% endif %}
           </div>
         </div>
@@ -116,15 +116,15 @@
             </a>
           {% endif %}
           <div class="ld-card__body">
-            <h4 class="ld-card__title ld-card__title--mb">
+            <h{% if publication.is_emergente %}3{% else %}2{% endif %} class="ld-card__title ld-card__title--mb">
               <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|removetags:"p" }}</a>
-            </h4>
+            </h{% if publication.is_emergente %}3{% else %}2{% endif %}>
             {% if a.home_lead or a.deck %}
               <div class="ld-card__intro hide-on-med-and-up">
                 {{ a.home_lead|default:a.deck|ldmarkup:a.id|removetags:"p" }}
               </div>
             {% endif %}
-            <h4 class="ld-card__byline">
+            <div class="ld-card__byline">
               {% if a.has_byline  %}
                 {% for author in a.get_authors %}
                   <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -132,7 +132,7 @@
                 en
               {% endif %}
               {% publication_section a %}
-            </h4>
+            </div>
           </div>
           {% if a.photo.extended.square_version %}
             <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">

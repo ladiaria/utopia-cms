@@ -772,6 +772,7 @@ body {
     img {
       vertical-align: middle;
       height: 40px;
+      width: auto;
       margin: 20px;
     }
 }
@@ -1424,6 +1425,7 @@ main > header {
         svg {
             margin:40px 0 0;
             height: 50px;
+            width: auto;
         }
     }
     .submenu {
@@ -1572,6 +1574,7 @@ main > header {
 
             svg {
                 height: 40px;
+                width: auto;
                 margin: 10px 0;
             }
 

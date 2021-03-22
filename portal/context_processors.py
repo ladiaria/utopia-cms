@@ -55,9 +55,21 @@ def publications(request):
         result['footer_template'] = settings.HOMEV3_FOOTER_TEMPLATE
 
     # use this context processor to load also some other useful variables configured in settings
-    result.update((var, getattr(settings, var, None)) for var in (
-        'HOMEV3_LOGO', 'HOMEV3_SECONDARY_LOGO', 'HOMEV3_LOGO_FOOTER', 'HOMEV3_LOGO_PRINTABLE', 'HOMEV3_LOGO_ALT_TEXT',
-        'HOMEV3_TWITTER_SITE_META', 'HOMEV3_EXTRA_META', 'CORE_ARTICLE_DETAIL_PUBLISHER_META'))
+    result.update(
+        (var, getattr(settings, var, None)) for var in (
+            'HOMEV3_LOGO',
+            'HOMEV3_LOGO_WIDTH',
+            'HOMEV3_SECONDARY_LOGO',
+            'HOMEV3_LOGO_FOOTER',
+            'HOMEV3_LOGO_FOOTER_WIDTH',
+            'HOMEV3_LOGO_PRINTABLE',
+            'HOMEV3_LOGO_PRINTABLE_WIDTH',
+            'HOMEV3_LOGO_ALT_TEXT',
+            'HOMEV3_TWITTER_SITE_META',
+            'HOMEV3_EXTRA_META',
+            'CORE_ARTICLE_DETAIL_PUBLISHER_META',
+        ),
+    )
 
     return result
 

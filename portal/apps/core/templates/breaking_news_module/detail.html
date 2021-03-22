@@ -32,9 +32,9 @@
       </div>
       {% if bn_mod.has_embeds12 or bn_mod.has_embeds34 or bn_mod.has_embeds56 or bn_mod.has_embeds78 %}
         {% if bn_mod.embeds_headline %}
-          <h3 class="section-detail__title">{{ bn_mod.embeds_headline }}</h3>
+          <h2 class="section-detail__title">{{ bn_mod.embeds_headline }}</h2>
           {% if bn_mod.embeds_description %}
-            <h4 class="section-detail__subtitle">{{ bn_mod.embeds_description }}</h4>
+            <p class="section-detail__subtitle">{{ bn_mod.embeds_description }}</p>
           {% endif %}
         {% endif %}
         {% if bn_mod.has_embeds12 %}

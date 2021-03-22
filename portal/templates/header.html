@@ -1,13 +1,13 @@
 {% load static homev3_tags thedaily_tags %}
 
 <div class="ld-print print-header">
-  <img src="{% static HOMEV3_LOGO_PRINTABLE %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" style="height:30px">
+  <img src="{% static HOMEV3_LOGO_PRINTABLE %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_PRINTABLE_WIDTH }}" height="30" style="height:30px">
 </div>
 
 <div id="main-header" class="navbar-fixed nav-down{% if user.is_authenticated %} logged-in{% endif %}{% block header_extra_class %}{% if publication.is_emergente %} emergente{% endif %}{% endblock %}">
     <div class="nav-wrapper ">
         {% spaceless %}
-        <a class="header-logo emergentes" href="{% url 'home' %}"><img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}"></a>
+        <a class="header-logo emergentes" href="{% url 'home' %}"><img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_WIDTH }}" height="42"></a>
         {% block header_pill %}
         {% endblock %}
         {% endspaceless %}

@@ -16,18 +16,18 @@
   <div id="main-header">
     <nav class="subscription_black">
       <a href="{% url 'home' %}">
-        <img class="logo_ladiaria" src="{% static logo %}" alt="Logo de {{ site.name }}">
+        <img class="logo_ladiaria" src="{% static logo %}" alt="Logo de {{ site.name }}" width="{{ logo_width }}" height="42">
       </a>
     </nav>
   </div>
   <div class="ld-subscribe-box">
-    <h4 class="ld-subscribe-box__title">
+    <span class="ld-subscribe-box__title">
       {% if error %}
         {{ error }}.
       {% else %}
         Optaste por recibir el newsletter de {{ publication.headline|default:category }} con éxito.
       {% endif %}
-    </h4>
+    </span>
     <div class="ld-subscribe-box__info ld-caption">
       <p>
         <a href="{% url 'edit-profile' %}#ld-newsletters">Configurar todos tus newsletters</a>

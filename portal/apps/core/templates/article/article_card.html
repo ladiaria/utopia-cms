@@ -33,7 +33,7 @@
       <div class="ld-card__intro">{{ article.lead|ldmarkup:article.id|removetags:'p' }}</div>
     {% endif %}
     <div class="ld-card__byline-wrap">
-      <h4 class="ld-card__byline">
+      <div class="ld-card__byline">
         {% if article.has_byline %}
           {% for author in article.get_authors %}
             <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -41,7 +41,7 @@
           en
         {% endif %}
         {% publication_section article %}
-      </h4>
+      </div>
     </div>
     <div class="ld-card__byline ld-card__date">{% firstof verbose_date article.date_published|date:"j \d\e F \d\e o"|lower %}</div>
   </div>

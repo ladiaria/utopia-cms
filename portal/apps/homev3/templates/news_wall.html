@@ -8,11 +8,11 @@
 
         {% for section in publication.section_set.all|slice:":8" %}
           <div class="col s12 m6 l3 news-wall__block">
-            <h4 class="news-wall__title">
+            <span class="news-wall__title">
               <a href="{% url 'section_detail' section_slug=section.slug %}">
                 {{ section.name_in_category_menu|default:section.name }}
               </a>
-            </h4>
+            </span>
             <ul class="news-wall__list">
               {# TODO: create a template tag for this loop #}
               {% for article in section.latest3 %}
@@ -38,11 +38,11 @@
 
         {% for section in category.section_set.all|slice:":8" %}
           <div class="col s12 m6 l3 news-wall__block">
-            <h4 class="news-wall__title">
+            <span class="news-wall__title">
               <a href="{{ section.get_absolute_url }}">
                 {{ section.name_in_category_menu|default:section.name }}
               </a>
-            </h4>
+            </span>
             <ul class="news-wall__list">
               {% for article in section.latest3 %}
                 <li class="news-wall__item">
@@ -65,9 +65,9 @@
 
         {% for category in MENU_CATEGORIES %}
           <div class="col s12 m6 l3 news-wall__block">
-            <h4 class="news-wall__title">
+            <span class="news-wall__title">
               <a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a>
-            </h4>
+            </span>
             <ul class="news-wall__list">
               {% for section in category.section_set.all|slice:":3" %}
                 <li class="news-wall__item">
@@ -88,9 +88,9 @@
 
         {% for pub in publications|slice:":3" %}
           <div class="col s12 m6 l3 news-wall__block">
-            <h4 class="news-wall__title">
+            <span class="news-wall__title">
               <a href="{{ pub.get_absolute_url }}">{{ pub|capfirst }}</a>
-            </h4>
+            </span>
             <ul class="news-wall__list">
               {% for section in pub.section_set.all|slice:":3" %}
                 <li class="news-wall__item">

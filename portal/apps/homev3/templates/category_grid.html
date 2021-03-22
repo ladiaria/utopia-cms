@@ -4,7 +4,7 @@
   <div class="container">
 
     <div class="section-detail__head">
-      <h3 class="section-detail__title">{{ fcategory.name|capfirst }}</h3>
+      <h2 class="section-detail__title">{{ fcategory.name|capfirst }}</h2>
     </div>
 
     <div class="ld-grid-main ld-grid-main--two-cols ld-section-home">
@@ -33,7 +33,7 @@
             {% if category_cover_article.home_lead %}
               <div class="ld-card__intro">{{ category_cover_article.home_lead|ldmarkup:category_cover_article.id|removetags:'p' }}</div>
             {% endif %}
-            <h4 class="ld-card__byline">
+            <div class="ld-card__byline">
               {% if category_cover_article.has_byline %}
                 {% for author in category_cover_article.get_authors %}
                   <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -41,11 +41,11 @@
                 en
               {% endif %}
               <a href="{{ category_cover_article.section.get_absolute_url }}">{{ category_cover_article.section }}</a>
-            </h4>
+            </div>
             {% if category_cover_article.photo.extended.photographer %}
-              <h4 class="ld-card__byline">
+              <div class="ld-card__byline">
                 {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}
-              </h4>
+              </div>
             {% endif %}
           </div>
         </div>
@@ -62,15 +62,15 @@
               </a>
             {% endif %}
             <div class="ld-card__body">
-              <h4 class="ld-card__title ld-card__title--mb">
+              <h3 class="ld-card__title ld-card__title--mb">
                 <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|removetags:'p' }}</a>
-              </h4>
+              </h3>
               {% if a.home_lead or a.deck %}
                 <div class="ld-card__intro hide-on-med-and-up">
                   {{ a.home_lead|default:a.deck|ldmarkup:a.id|removetags:"p" }}
                 </div>
               {% endif %}
-              <h4 class="ld-card__byline">
+              <div class="ld-card__byline">
                 {% if a.has_byline %}
                   {% for author in a.get_authors %}
                     <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -78,7 +78,7 @@
                   en
                 {% endif %}
                 <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
-              </h4>
+              </div>
             </div>
             {% if a.photo.extended.square_version %}
               <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">

@@ -4,9 +4,9 @@
   <section  id="home-section-{{ section.slug }}" class="frontpage-section">
     <div class="container">
       <div class="section-detail__head">
-        <h3 class="section-detail__title">{{ section.name_in_category_menu|default:section.name }}{% block extra_title %}{% endblock %}</h3>
+        <h2 class="section-detail__title">{{ section.name_in_category_menu|default:section.name }}{% block extra_title %}{% endblock %}</h2>
         {% if section.show_description %}
-          <h4 class="section-detail__subtitle">{{ section.description }}</h4>
+          <p class="section-detail__subtitle">{{ section.description }}</p>
         {% endif %}
       </div>
 
@@ -41,7 +41,7 @@
                     </div>
                   {% endif %}
 
-                  <h4 class="ld-card__byline">
+                  <div class="ld-card__byline">
                     {% if article.has_byline  %}
                       {% for author in article.get_authors %}
                         <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -49,12 +49,12 @@
                       en
                     {% endif %}
                     {% publication_section article %}
-                  </h4>
+                  </div>
 
                   {% if article.photo.extended.photographer %}
-                    <h4 class="ld-card__byline">
+                    <div class="ld-card__byline">
                       {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
-                    </h4>
+                    </div>
                   {% endif %}
                 </div>
               </div>

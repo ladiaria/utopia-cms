@@ -10,15 +10,15 @@
     </a>
   {% endif %}
   <div class="ld-card__body">
-    <h3 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
+    <h2 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
       <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|removetags:"p" }}</a>
-    </h3>
+    </h2>
     {% if a.deck %}
     <div class="ld-card__intro">
     {{ a.deck|ldmarkup:a.id|removetags:"p" }}
     </div>
     {% endif %}
-    <h4 class="ld-card__byline">
+    <div class="ld-card__byline">
       {% if a.has_byline  %}
         {% for author in a.get_authors %}
           <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -26,11 +26,11 @@
         en
       {% endif %}
       {% publication_section a %}
-    </h4>
+    </div>
     {% if a.photo.extended.photographer %}
-      <h4 class="ld-card__byline">
+      <div class="ld-card__byline">
         {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}
-      </h4>
+      </div>
     {% endif %}
   </div>
 </div>

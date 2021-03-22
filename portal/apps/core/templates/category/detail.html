@@ -60,16 +60,16 @@
             {% endif %}
           {% endblock %}
           <div class="ld-card__body">
-            <h3 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
+            <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
               <a href="{{ cover_article.get_absolute_url }}">{{ cover_article.headline|ldmarkup:cover_article.id|removetags:'p' }}</a>
-            </h3>
+            </h2>
             {% if cover_article.home_lead or cover_article.lead %}
               <div class="ld-card__intro">
                 {{ cover_article.home_lead|default:cover_article.lead|ldmarkup:cover_article.id|removetags:'p' }}
               </div>
             {% endif %}
 
-            <h4 class="ld-card__byline">
+            <div class="ld-card__byline">
               {% if cover_article.has_byline %}
                 {% for author in cover_article.get_authors %}
                   <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -79,7 +79,7 @@
               {% if cover_article.section %}
                 <a href="{{ cover_article.section.get_absolute_url }}">{{ cover_article.section }}</a>
               {% endif %}
-            </h4>
+            </div>
           </div>
         </div>
       </div>
@@ -99,13 +99,13 @@
                 </a>
               {% endif %}
               <div class="ld-card__body">
-                <h4 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|removetags:'p' }}</a></h4>
+                <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|removetags:'p' }}</a></h3>
                 {% if a.home_lead or a.deck %}
                   <div class="ld-card__intro hide-on-med-and-up">
                     {{ a.home_lead|default:a.deck|ldmarkup:a.id|removetags:"p" }}
                   </div>
                 {% endif %}
-                <h4 class="ld-card__byline">
+                <div class="ld-card__byline">
                   {% if a.has_byline %}
                     {% for author in a.get_authors %}
                       <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -115,7 +115,7 @@
                   {% if a.section %}
                     <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
                   {% endif %}
-                </h4>
+                </div>
               </div>
               {% if a.photo.extended.square_version %}
                 <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
@@ -155,7 +155,7 @@
                 {{ a.deck|ldmarkup:a.id|removetags:'p' }}
               </div>
               {% endif %}
-              <h4 class="ld-card__byline">
+              <div class="ld-card__byline">
                 {% if a.has_byline %}
                   {% for author in a.get_authors %}
                     <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -165,7 +165,7 @@
                 {% if a.section %}
                   <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
                 {% endif %}
-              </h4>
+              </div>
             </div>
           </div>
         </div>
@@ -184,9 +184,9 @@
         <div class="container">
           {% if category.full_width_cover_image_title %}
             <div class="section-detail__head">
-              <h3 class="section-detail__title">{{ category.full_width_cover_image_title }}</h3>
+              <h2 class="section-detail__title">{{ category.full_width_cover_image_title }}</h2>
               {% if category.full_width_cover_image_lead %}
-                <h4 class="section-detail__subtitle">{{ category.full_width_cover_image_lead|linebreaks }}</h4>
+                <p class="section-detail__subtitle">{{ category.full_width_cover_image_lead|linebreaks }}</p>
               {% endif %}
             </div>
           {% endif %}

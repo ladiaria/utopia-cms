@@ -144,12 +144,18 @@
         {% include 'amp/core/templates/article/pw_auth_with_credits.html' %}
       </div>
 
-      <div amp-access="authenticated AND NOT subscriber AND NOT access" amp-access-hide>
-        {% include 'amp/core/templates/article/pw_auth_wo_credits.html' %}
-      </div>
-
       <div amp-access="NOT authenticated AND access" amp-access-hide>
         {% include 'amp/core/templates/article/pw_anon_with_credits.html' %}
+      </div>
+    {% endif %}
+
+    {% if article.audio %}
+      {% include 'core/templates/article/audio.html' %}
+    {% endif %}
+
+    {% if not article.public %}
+      <div amp-access="authenticated AND NOT subscriber AND NOT access" amp-access-hide>
+        {% include 'amp/core/templates/article/pw_auth_wo_credits.html' %}
       </div>
 
       <div amp-access="NOT authenticated AND NOT access" amp-access-hide>
@@ -157,9 +163,7 @@
       </div>
     {% endif %}
 
-    {% if article.audio %}
-      {% include 'core/templates/article/audio.html' %}
-    {% endif %}
+
 
     <div amp-access="access" amp-access-hide>
       {% include 'amp/core/templates/article/detail_content.html' %}

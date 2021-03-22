@@ -31,7 +31,7 @@
     {% endif %}
 
     {% ifnotequal card_type 'AC' %}
-      <h4 class="ld-card__byline">
+      <div class="ld-card__byline">
         {% if article.has_byline %}
           {% for author in article.get_authors %}
             <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
@@ -39,7 +39,7 @@
           en
         {% endif %}
         {% publication_section article %}
-      </h4>
+      </div>
     {% endifnotequal %}
     {% block footer %}{% endblock %}
   </div>

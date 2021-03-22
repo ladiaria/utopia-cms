@@ -92,6 +92,7 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
         ctx = {
             'publication': publication,
             'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+            'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
         }
         hashids = Hashids(settings.HASHIDS_SALT, 32)
         subscriber_id = int(hashids.decode(hashed_id)[0])
@@ -128,6 +129,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
         ctx = {
             'category': category,
             'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+            'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
         }
         hashids = Hashids(settings.HASHIDS_SALT, 32)
         subscriber_id = int(hashids.decode(hashed_id)[0])
@@ -1315,6 +1317,7 @@ def nlunsubscribe(request, publication_slug, hashed_id):
     ctx = {
         'publication': publication,
         'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+        'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
     }
     hashids = Hashids(settings.HASHIDS_SALT, 32)
     subscriber_id = int(hashids.decode(hashed_id)[0])
@@ -1342,6 +1345,7 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
     ctx = {
         'publication': category,
         'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+        'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
     }
     hashids = Hashids(settings.HASHIDS_SALT, 32)
     subscriber_id = int(hashids.decode(hashed_id)[0])
@@ -1371,6 +1375,7 @@ def disable_profile_property(request, property_id, hashed_id):
             'allow_news': u'Novedades', 'allow_promotions': u'Promociones', 'allow_polls': u'Encuestas'
         }.get(property_id),
         'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+        'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
     }
     hashids = Hashids(settings.HASHIDS_SALT, 32)
     subscriber_id = int(hashids.decode(hashed_id)[0])
