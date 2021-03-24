@@ -2121,6 +2121,8 @@ select.browser-default {
     }
 
     &.disabled {
+      color: $lightGrey-2;
+
       svg {
         fill: $lightGrey-2;
       }

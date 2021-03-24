@@ -594,7 +594,7 @@
           {% endif %}
         {% endfor %}
         {% if tag_list|length > 3 %}
-          <a href="#" class="tag expand" title="Desplegar más temas"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="6" viewBox="0 0 28 6"><g transform="translate(-684 -4183)"><circle cx="3" cy="3" r="3" transform="translate(706 4183)" fill="#262626"/><circle cx="3" cy="3" r="3" transform="translate(695 4183)" fill="#262626"/><circle cx="3" cy="3" r="3" transform="translate(684 4183)" fill="#262626"/></g><title>Desplegar más temas</title></svg></a>
+          <a href="#" class="tag expand" title="Mostrar todos los tags" aria-label="Mostrar todos los tags"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="6" viewBox="0 0 28 6"><g transform="translate(-684 -4183)"><circle cx="3" cy="3" r="3" transform="translate(706 4183)" fill="#262626"/><circle cx="3" cy="3" r="3" transform="translate(695 4183)" fill="#262626"/><circle cx="3" cy="3" r="3" transform="translate(684 4183)" fill="#262626"/></g><title>Mostrar todos los tags</title></svg></a>
         {% endif %}
         <div class="more-tags hidden">
           {% for tag in tag_list %}

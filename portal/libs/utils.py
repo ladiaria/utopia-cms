@@ -106,8 +106,9 @@ def smtp_connect(alternative=False):
     s = smtplib.SMTP(email_conf['HOST'], email_conf['PORT'])
     if email_conf['USE_TLS']:
         s.starttls()
-    try:
-        s.login(email_conf['HOST_USER'], email_conf['HOST_PASSWORD'])
-    except smtplib.SMTPException:
-        pass
+    if email_conf['HOST_USER']:
+        try:
+            s.login(email_conf['HOST_USER'], email_conf['HOST_PASSWORD'])
+        except smtplib.SMTPException:
+            pass
     return s

@@ -95,18 +95,32 @@ def send_confirmation_link(*args, **kwargs):
         context.update(extra_context)
     message = Message(
         html=loader.render_to_string(
-            message_template, context, context_instance=RequestContext(request) if request else {}),
-        mail_to=(user.first_name, user.email), mail_from=from_mail, subject=subject)
+            message_template, context, context_instance=RequestContext(request) if request else {}
+        ),
+        mail_to=(user.first_name, user.email),
+        mail_from=from_mail,
+        subject=subject,
+    )
     message.send()
 
 
 def send_validation_email(subject, user, msg_template, url_generator, extra_context={}):
-    extra_context.update({
-        'SITE_URL': settings.SITE_URL, 'URL_SCHEME': settings.URL_SCHEME, 'site': Site.objects.get_current(),
-        'logo_url': settings.HOMEV3_SECONDARY_LOGO})
+    extra_context.update(
+        {
+            'SITE_URL': settings.SITE_URL,
+            'URL_SCHEME': settings.URL_SCHEME,
+            'site': Site.objects.get_current(),
+            'logo_url': settings.HOMEV3_SECONDARY_LOGO,
+        },
+    )
     send_confirmation_link(
-        None, subject=subject, message_template=msg_template, user=user, url_generator=url_generator,
-        extra_context=extra_context)
+        None,
+        subject=subject,
+        message_template=msg_template,
+        user=user,
+        url_generator=url_generator,
+        extra_context=extra_context,
+    )
 
 
 def get_signup_validation_url(user):
