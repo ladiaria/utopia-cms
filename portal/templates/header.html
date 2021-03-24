@@ -48,7 +48,7 @@
         <li><a href="{% url 'edit-profile' %}">Opciones</a></li>
         <li><a href="{% url 'lista-lectura-leer-despues' %}">Leer después <span class="num">{{ user|count_following }}</span></a></li>
         {% if poll_url %}
-            <li><a href="{{ poll_url }}" target="_blank" rel="noreferrer noopener">Danos tu opinión</a></li>
+            <li><a href="{{ poll_url }}" rel="noreferrer noopener">Danos tu opinión <svg class="external" xmlns="http://www.w3.org/2000/svg" width="13.25" height="13.25" viewBox="0 0 13.25 13.25"><path class="a" d="M0,0H13.25V13.25H0Z" fill="none"></path><g transform="translate(1.656 1.656)"><path class="b" d="M12.385,7.969h0a.554.554,0,0,0-.552.552v3.312H4.1V4.1H7.417a.554.554,0,0,0,.552-.552h0A.554.554,0,0,0,7.417,3H4.1A1.107,1.107,0,0,0,3,4.1v7.729a1.107,1.107,0,0,0,1.1,1.1h7.729a1.107,1.107,0,0,0,1.1-1.1V8.521A.554.554,0,0,0,12.385,7.969Z" transform="translate(-3 -3)" fill="#262626"></path><path class="b" d="M15.218,3H12.3a.273.273,0,0,0-.193.469L13.175,4.54,8.869,8.847a.55.55,0,0,0,0,.778h0a.55.55,0,0,0,.778,0l4.3-4.3L15.019,6.4a.279.279,0,0,0,.475-.2V3.276A.273.273,0,0,0,15.218,3Z" transform="translate(-5.556 -3)" fill="#262626"></path></g></svg></a></li>
         {% endif %}
         {% if user.is_staff %}
             <li><a href="//{{ site.domain }}/admin/">Admin</a></li>
@@ -64,7 +64,7 @@
             <li><a href="{% url 'subscribe' planslug='DDIGM' %}">Pasate a ilimitada</a></li>
         {% endif %}
         {% if poll_url %}
-            <li><a href="{{ poll_url }}" target="_blank" rel="noreferrer noopener">Danos tu opinión</a></li>
+            <li><a href="{{ poll_url }}" rel="noreferrer noopener">Danos tu opinión <svg class="external" xmlns="http://www.w3.org/2000/svg" width="13.25" height="13.25" viewBox="0 0 13.25 13.25"><path class="a" d="M0,0H13.25V13.25H0Z" fill="none"></path><g transform="translate(1.656 1.656)"><path class="b" d="M12.385,7.969h0a.554.554,0,0,0-.552.552v3.312H4.1V4.1H7.417a.554.554,0,0,0,.552-.552h0A.554.554,0,0,0,7.417,3H4.1A1.107,1.107,0,0,0,3,4.1v7.729a1.107,1.107,0,0,0,1.1,1.1h7.729a1.107,1.107,0,0,0,1.1-1.1V8.521A.554.554,0,0,0,12.385,7.969Z" transform="translate(-3 -3)" fill="#262626"></path><path class="b" d="M15.218,3H12.3a.273.273,0,0,0-.193.469L13.175,4.54,8.869,8.847a.55.55,0,0,0,0,.778h0a.55.55,0,0,0,.778,0l4.3-4.3L15.019,6.4a.279.279,0,0,0,.475-.2V3.276A.273.273,0,0,0,15.218,3Z" transform="translate(-5.556 -3)" fill="#262626"></path></g></svg></a></li>
         {% endif %}
         <li><a href="https://ayuda.ladiaria.com.uy/">Ayuda</a></li>
         <li><a href="{% url 'account-logout' %}" class="logout btn-logout">cerrar sesión</a></li>

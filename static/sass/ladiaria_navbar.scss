@@ -45,7 +45,7 @@ $navbarHeight: 60px;
     }
 
     .dropdown-content {
-        min-width: 150px;
+        min-width: 160px;
 
         li {
             line-height: 1;
@@ -197,6 +197,12 @@ $navbarHeight: 60px;
             }
         }
 
+        .dropdown-content {
+            a {
+            line-height: 24px;
+            }
+        }
+
         .navbar-right-tools {
             position: absolute;
             bottom: 0;
@@ -247,6 +253,11 @@ $navbarHeight: 60px;
 
         svg {
         vertical-align: middle;
+
+            &.external {
+                position: relative;
+                top:-1px;
+            }
         }
     }
 
@@ -1040,6 +1051,10 @@ body {
             position: relative;
             top:-2px;
         }
+        .external {
+            display: inline-block;
+            vertical-align: middle;
+        }
     }
 
     &__close {
@@ -1483,6 +1498,11 @@ main > header {
             }
             svg {
             vertical-align: middle;
+
+                &.external {
+                    position: relative;
+                    top: -1px;;
+                }
             }
         }
 
@@ -1520,6 +1540,11 @@ main > header {
                     vertical-align: top;
                     position: relative;
                     top:-3px;
+
+                }
+                .external {
+                    top:-1px;
+                    vertical-align: middle;
                 }
             }
 
