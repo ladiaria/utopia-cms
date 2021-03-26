@@ -53,6 +53,14 @@ def remove_media_root(path):
 
 class Publication(Model):
     name = CharField(u'nombre', max_length=100)
+    twitter_username = CharField(
+        u'Nombre de usuario de Twitter',
+        max_length=15,
+        blank=True,
+        null=True,
+        help_text=u'Nombre de usuario de Twitter que se menciona cuando artículos de esta publicación son compartidos '
+            u'en Twitter (escribir sin @)',
+    )
     description = TextField(
         u'descripción', null=True, blank=True, help_text=u'Se muestra en el componente de portada.')
     slug = SlugField(u'slug', unique=True)

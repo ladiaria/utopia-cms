@@ -358,8 +358,10 @@ THEDAILY_WELCOME_TEMPLATE = 'welcome.html'
 # photologue
 DEFAULT_BYLINE = 'Difusión, S/D de autor.'
 
-# django-tagging
+# django-tagging and autocomplete-taggit
 FORCE_LOWERCASE_TAGS = False
+TAGGING_AUTOCOMPLETE_JS_BASE_URL = '%sjs/jquery-tag-it-utopia/' % STATIC_URL
+TAGGING_AUTOCOMPLETE_JQUERY_UI_FILE = 'jquery-ui.min.js'
 
 # home
 PUBLISHING_TIME = '05:00'  # 'HH:MM'

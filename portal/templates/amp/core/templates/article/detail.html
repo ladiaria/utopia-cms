@@ -216,7 +216,7 @@
     </div>
 
     {% if tag_list %}
-      <div class="article-tags align-center">
+      <div class="article-tags align-center" amp-access="access" amp-access-hide>
         <span class="title">Temas en este artículo</span>
         {% for tag in tag_list %}
           <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
@@ -255,41 +255,45 @@
         <span class="ld-share-widget__title">Compartir este artículo</span>
         <ul class="inline share ld-share-widget__list">
           <li class="whatsapp">
-            <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }} {{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share">
+            <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }} {{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
               <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="34" height="34" fill="transparent"/>
                 <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#262626"/>
+                <title>Compartir en WhatsApp</title>
               </svg>
             </a>
           </li>
           <li>
-            <a href="https://www.facebook.com/sharer/sharer.php?u={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" target="_blank" rel="noopener">
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
               <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="34" height="34" fill="transparent"/>
                 <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#262626"/>
+                <title>Compartir en Facebook</title>
               </svg>
             </a>
           </li>
           <li>
-            <a href="https://twitter.com/intent/tweet?original_referer={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related=ladiaria&text={{ article.headline|remove_markup }}&tw_p=tweetbutton&url={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&via={% if publication == garra_pub %}GarraUY{% elif publication == lento_pub %}RevistaLento{% else %}ladiaria{% endif %}"
-              target="_blank" rel="noopener">
+            <a href="https://twitter.com/intent/tweet?original_referer={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup }}&tw_p=tweetbutton&url={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}"
+              target="_blank" rel="noopener" aria-label="Compartir en Twitter">
               <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="34" height="34" fill="transparent"/>
                 <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#262626"/>
+                <title>Compartir en Twitter</title>
               </svg>
             </a>
           </li>
           <li>
-            <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
+            <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
               <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="34" height="34" fill="transparent"/>
                 <path d="M29 5H5C4.20695 5.00397 3.44774 5.32179 2.88837 5.88397C2.329 6.44615 2.01499 7.20694 2.015 8L2 26C2.00237 26.7949 2.31921 27.5566 2.8813 28.1187C3.4434 28.6808 4.20508 28.9976 5 29H29C29.7949 28.9976 30.5566 28.6808 31.1187 28.1187C31.6808 27.5566 31.9976 26.7949 32 26V8C31.9976 7.20508 31.6808 6.4434 31.1187 5.8813C30.5566 5.31921 29.7949 5.00237 29 5ZM28.4 11.375L17.8 18C17.5609 18.1471 17.2857 18.225 17.005 18.225C16.7243 18.225 16.4491 18.1471 16.21 18L5.6 11.375C5.45357 11.2886 5.32591 11.1737 5.22456 11.0372C5.12321 10.9007 5.05022 10.7452 5.00988 10.5801C4.96954 10.4149 4.96268 10.2433 4.98969 10.0754C5.0167 9.90755 5.07704 9.74679 5.16716 9.6026C5.25728 9.45841 5.37534 9.33372 5.5144 9.23588C5.65347 9.13804 5.81071 9.06902 5.97686 9.0329C6.14301 8.99678 6.31471 8.99428 6.48184 9.02555C6.64897 9.05683 6.80815 9.12124 6.95 9.215L17 15.5L27.05 9.215C27.1918 9.12124 27.351 9.05683 27.5182 9.02555C27.6853 8.99428 27.857 8.99678 28.0231 9.0329C28.1893 9.06902 28.3465 9.13804 28.4856 9.23588C28.6247 9.33372 28.7427 9.45841 28.8328 9.6026C28.923 9.74679 28.9833 9.90755 29.0103 10.0754C29.0373 10.2433 29.0305 10.4149 28.9901 10.5801C28.9498 10.7452 28.8768 10.9007 28.7754 11.0372C28.6741 11.1737 28.5464 11.2886 28.4 11.375Z" fill="#262626"/>
+                <title>Compartir vía email</title>
               </svg>
             </a>
           </li>
           <li class="copy-link">
             <amp-iframe sandbox="allow-scripts" width="170" height="66" frameborder="0" src="{% url 'copier' %}#{{ article.get_absolute_url }}">
-                <button class="copy-button" placeholder  disabled><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/></svg></button>
+                <button class="copy-button" placeholder  disabled  aria-label="Copiar vínculo"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/></svg><title>Copiar vínculo</title></button>
             </amp-iframe>
         </li>
         </ul>

@@ -1,9 +1,10 @@
-# version 0.0.5 (not-yet-released)
+# version 0.0.5 (2021-03-26)
 
 - Dropped jquery_lazyload and using native browser load-lazy support.
 - Signup support for emails upto 75 chars long (WARNING: after signup behaviour is not tested yet, may need work).
 - Removed legacy customizations in ad_tag template.
-- Improvements and fixes in many templates.
+- Removed share links customizations in article detail template, twitter share now uses a new Publication field.
+- UX Improvements and fixes in many templates.
 
 # version 0.0.4 (2021-03-03)
 

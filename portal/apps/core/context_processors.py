@@ -16,11 +16,10 @@ def aniosdias(request):
         ('Setiembre', '9'),
         ('Octubre', '10'),
         ('Noviembre', '11'),
-        ('Diciembre', '12')]
+        ('Diciembre', '12'),
+    ]
     return {'anios': range(2009, date.today().year + 1), 'meses': meses}
 
 
 def secure_static(request):
-    return {
-        'STATIC_URL': settings.SECURE_STATIC_URL if request.is_secure()
-        else settings.STATIC_URL}
+    return {'STATIC_URL': settings.SECURE_STATIC_URL if request.is_secure() else settings.STATIC_URL}
