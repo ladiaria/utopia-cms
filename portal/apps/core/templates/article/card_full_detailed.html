@@ -8,10 +8,6 @@
     {% if article.photo %}
       <a href="{{ article.get_absolute_url }}">
         <img class="ld-card__img" src="{{ article.photo.get_700w_url }}"
-             {% spaceless %}
-             data-srcset="{{ article.photo.get_700w_url }} 320w"
-             {% endspaceless %}
-             data-sizes="auto"
              width="700"
              {% if article.photo_image_file_exists %}
              height="{{ article.photo.get_700w_size.1 }}"

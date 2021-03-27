@@ -6,14 +6,10 @@
       <a href="{{ article.get_absolute_url }}">
         <img class="ld-card__img"
              src="{{ article.photo.get_700w_url }}"
-             {% spaceless %}
-               data-srcset="{{ article.photo.get_700w_url }} 320w"
-             {% endspaceless %}
              width="700"
              {% if article.photo_image_file_exists %}
              height="{{ article.photo.get_700w_size.1 }}"
              {% endif %}
-             data-sizes="auto"
              title="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
              alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
              loading="lazy">

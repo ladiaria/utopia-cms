@@ -78,9 +78,11 @@
     {% endifequal %}
 
     <!-- CSS -->
-    <link type="text/x-scss" rel="stylesheet" href="{% static 'lightGallery/dist/css/lightgallery.css' %}">
     {% compress css %}
       <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+      {% if HOMEV3_CUSTOM_CSS %}
+        <link href="{% static HOMEV3_CUSTOM_CSS %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+      {% endif %}
     {% endcompress %}
 
     {% compress css %}

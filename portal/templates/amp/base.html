@@ -1,7 +1,7 @@
 {% load static core_tags homev3_tags %}
 
 <!doctype html>
-<html ⚡ class="ld-amp">
+<html ⚡ class="ld-amp" lang="es-UY">
 <head>
   <!-- Title and description -->
   <title>{% if debug %}⚡️{% endif %}{% block page_title %}{% endblock %}</title>
@@ -130,7 +130,7 @@
       .reading-time { margin-top: 10px; } .reading-time svg { position:relative; top:2px; display:inline-block;}
 
       .read-later, .fav { text-align: center; padding: 0 20px; margin-top: 10px; }
-      .read-later__btn, .fav__btn { font-size: 13px; line-height: 30px; text-transform: uppercase; text-decoration: none;display: inline-block; border-radius: 100px; padding: 0 15px; font-weight: 500; box-sizing: border-box; border:2px solid #222; cursor: pointer;}
+      .read-later__btn, .fav__btn { font-size: 13px; line-height: 30px; text-transform: uppercase; text-decoration: none;display: inline-block; border-radius: 100px; padding: 0 15px; font-weight: 500; box-sizing: border-box; border:2px solid #222; cursor: pointer; outline:none; background:transparent; font-family: "Roboto", sans-serif;}
       .read-later__btn svg, .fav__btn svg { position: relative; top:5px; }
       .read-later__saved, .fav__saved { background:#222; color: #fff; }
       .read-later__saved:hover, .fav__saved:hover { color: #fff; }
@@ -177,7 +177,7 @@
       .share a { color: #262626; }
       .ld-share-widget { margin: 100px 0; text-align: center; }
       .ld-share-widget__title { display: block; margin-bottom: 10px; font-size: 16px; color: #262626; }
-      .ld-share-widget__list {margin: 0; padding: 0}
+      .ld-share-widget__list {margin: 0; padding: 0; max-width: 100%; overflow:hidden;}
       .ld-share-widget__list .copy-link { margin-right:-116px; }
       .inline > li { display: inline-block; list-style-type: none; position:relative; vertical-align:top; }
       .inline > li a {  padding:10px; border-radius: 100%; display:inline-block; box-sizing: content-box;}

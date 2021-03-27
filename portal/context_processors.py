@@ -57,6 +57,7 @@ def publications(request):
     # use this context processor to load also some other useful variables configured in settings
     result.update(
         (var, getattr(settings, var, None)) for var in (
+            'HOMEV3_CUSTOM_CSS',
             'HOMEV3_LOGO',
             'HOMEV3_LOGO_WIDTH',
             'HOMEV3_SECONDARY_LOGO',
