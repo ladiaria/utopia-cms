@@ -1,6 +1,5 @@
 @charset 'UTF-8';
 
-// la diaria variables
 @import '_variables';
 @import '../materialize/sass/components/variables';
 @import '../materialize/sass/components/normalize';
@@ -53,10 +52,8 @@
 @import 'garra';
 @import 'lento';
 @import 'rioabierto';
-@import 'components/comunidad';
 @import 'components/faq';
 @import 'components/live';
-@import 'components/ddf';
 /*
 * Do not include styles directly here.
 * Add in separate stylesheet or add to _ladiaria_all.scss
