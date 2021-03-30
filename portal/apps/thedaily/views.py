@@ -58,10 +58,26 @@ from apps import core_articleviewedby_mdb, core_articlevisits_mdb, signupwall_vi
 from core.models import Publication, Category, Article, ArticleUrlHistory
 from thedaily.models import Subscriber, Subscription, PollAnswer, SubscriptionPrices, UsersApiSession, OAuthState
 from thedaily.forms import (
-    LoginForm, SignupForm, SubscriberForm, SubscriberAddressForm, GoogleSigninForm, PasswordResetForm,
-    SubscriptionForm, SubscriptionPromoCodeForm, SubscriptionPromoCodeCaptchaForm, PasswordResetRequestForm,
-    PasswordChangeForm, H40UForm, H40Form, PollUForm, PollForm, GoogleSignupForm, SubscriberSignupForm,
-    SubscriberSignupAddressForm, ConfirmEmailRequestForm)
+    LoginForm,
+    SignupForm,
+    SubscriberForm,
+    SubscriberAddressForm,
+    GoogleSigninForm,
+    PasswordResetForm,
+    SubscriptionForm,
+    SubscriptionPromoCodeForm,
+    SubscriptionPromoCodeCaptchaForm,
+    PasswordResetRequestForm,
+    PasswordChangeForm,
+    H40UForm,
+    H40Form,
+    PollUForm,
+    PollForm,
+    GoogleSignupForm,
+    SubscriberSignupForm,
+    SubscriberSignupAddressForm,
+    ConfirmEmailRequestForm,
+)
 from thedaily.forms.subscriber import ProfileForm, UserForm
 from thedaily.utils import recent_following
 from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor
@@ -321,8 +337,6 @@ def google_phone(request):
         if request.GET.get('is_new') == u'1':
             pass
     return 'google_signup.html', {'google_signin_form': google_signin_form}
-
-
 
 
 @never_cache
@@ -943,8 +957,7 @@ def update_user_from_crm(request):
             newemail = request.POST.get(u'newemail')
             field = request.POST.get(u'field')
             value = request.POST.get(u'value')
-            if request.POST[u'ldsocial_api_key'] != \
-                    settings.CRM_UPDATE_USER_API_KEY:
+            if request.POST[u'ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
                 return HttpResponseForbidden()
         except KeyError:
             return HttpResponseBadRequest()
