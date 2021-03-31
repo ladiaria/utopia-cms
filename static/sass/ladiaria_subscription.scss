@@ -170,6 +170,11 @@ body.subscriptions-home {
         color: $grey;
       }
     }
+    .external {
+      display:inline-block;
+      vertical-align: middle;
+      margin-left: 5px;
+    }
   }
 }
 .subscription-box {
