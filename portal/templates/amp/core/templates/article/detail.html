@@ -27,8 +27,8 @@
   <!-- End Schema (https://schema.org) -->
 {% endblock %}
 
-{% block body_class %}
-  article-section-{{ section.slug }}{% if not article.is_published %} draft{% endif %}{% endblock %}
+{% block body_class %}article-section-{{ section.slug }}{% if not article.is_published %} draft{% endif %}{% endblock %}
+
 {% block content %}
 
   <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
@@ -163,8 +163,6 @@
       </div>
     {% endif %}
 
-
-
     <div amp-access="access" amp-access-hide>
       {% include 'amp/core/templates/article/detail_content.html' %}
     </div>
@@ -234,7 +232,6 @@
           </span>
         </span>
       </div>
-
     {% endif %}
 
     {# Talk comments #}
@@ -293,9 +290,9 @@
           </li>
           <li class="copy-link">
             <amp-iframe sandbox="allow-scripts" width="170" height="66" frameborder="0" src="{% url 'copier' %}#{{ article.get_absolute_url }}">
-                <button class="copy-button" placeholder  disabled  aria-label="Copiar vínculo"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/></svg><title>Copiar vínculo</title></button>
+              <button class="copy-button" placeholder disabled aria-label="Copiar enlace"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/></svg><title>Copiar enlace</title></button>
             </amp-iframe>
-        </li>
+          </li>
         </ul>
       </div>
     </div>
