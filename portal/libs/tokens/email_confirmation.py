@@ -9,6 +9,8 @@ from django.utils.http import int_to_base36, base36_to_int
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.template import RequestContext, loader
 
+from libs.utils import smtp_connect
+
 
 class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
     """
@@ -101,7 +103,15 @@ def send_confirmation_link(*args, **kwargs):
         mail_from=from_mail,
         subject=subject,
     )
-    message.send()
+    smtp = smtp_connect()
+    try:
+        smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [user.email], message.as_string())
+        if settings.DEBUG:
+            print('DEBUG: an email was sent from send_confirmation_link function')
+        smtp.quit()
+    except Exception:
+        # fail silently
+        pass
 
 
 def send_validation_email(subject, user, msg_template, url_generator, extra_context={}):

@@ -616,8 +616,11 @@ def password_reset(request, user_id=None, hash=None):
         if reset_form.is_valid():
             if reset_form.user:
                 send_validation_email(
-                    u'Recuperación de contraseña', user, 'notifications/password_reset_body.html',
-                    get_password_validation_url)
+                    u'Recuperación de contraseña',
+                    reset_form.user,
+                    'notifications/password_reset_body.html',
+                    get_password_validation_url,
+                )
             return HttpResponseRedirect(reverse('account-password_reset-mail_sent'))
     return 'password_reset.html', {'form': reset_form}
 
