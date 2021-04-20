@@ -1,3 +1,10 @@
+# version 0.0.6 (2021-04-20)
+
+- Unneded custom templates removed.
+- Syntax improvements and de-customizations in many templates.
+- More flexible subscription info in thedaily.Subscription model.
+- User disabled flow changed and improved using a more friendly strategy.
+
 # version 0.0.5 (2021-03-26)
 
 - Dropped jquery_lazyload and using native browser load-lazy support.

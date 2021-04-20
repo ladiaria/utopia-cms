@@ -114,9 +114,6 @@ urlpatterns = patterns(
     url(r'^error/login/$', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/login_error.html')),
         name="login-error"),
-    url(r'^error/inhabilitado/$', never_cache(TemplateView.as_view(
-        template_name='thedaily/templates/disabled.html')),
-        name="account-error-disabled"),
     url(r'^error/toomuch/$', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/toomuch.html')),
         name="account-error-toomuch"),

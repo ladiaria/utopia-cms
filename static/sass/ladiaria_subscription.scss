@@ -358,6 +358,10 @@ body.subscriptions-home {
   &.actual {
     background-color: $grey-2;
 
+    @media #{$small-and-down} {
+      padding-bottom:100px;
+    }
+
     .box-footer {
       &::before{
         content: "";
@@ -376,6 +380,10 @@ body.subscriptions-home {
         text-transform: uppercase;
         color: $lightGrey-2;
       }
+      @media #{$small-and-down} {
+        top: 60px;
+      }
+
     }
 
   }

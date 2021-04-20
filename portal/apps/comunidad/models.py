@@ -123,6 +123,6 @@ class Recommendation(models.Model):
     article = models.ForeignKey(Article, null=True, blank=True)
 
     def url_list(self):
-        return u'<br/>'.join(self.urls.values_list('url', flat=True))
+        return u'<br>'.join(self.urls.values_list('url', flat=True))
 
     url_list.allow_tags = True

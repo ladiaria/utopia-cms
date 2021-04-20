@@ -133,7 +133,7 @@
                 {% else %}
                 <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
                 {% endif %}
-                <br/>
+                <br>
                 {% if entry.content_type %}
                 <span class="mini quiet">{% filter capfirst %}{% trans entry.content_type.name %}{% endfilter %}</span>
                 {% else %}

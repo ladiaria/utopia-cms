@@ -141,8 +141,10 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
                             'is_subscriber': is_subscriber,
                         },
                     ),
-                    mail_to=(s.name, s.user.email), subject=remove_markup(cover_article.headline),
-                    mail_from=(u'la diaria ' + category.name, EMAIL_FROM_ADDR), headers=headers,
+                    mail_to=(s.name, s.user.email),
+                    subject=remove_markup(cover_article.headline),
+                    mail_from=(u'la diaria ' + category.name, EMAIL_FROM_ADDR),
+                    headers=headers,
                 )
 
                 # attach ads if any

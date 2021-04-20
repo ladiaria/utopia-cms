@@ -81,7 +81,7 @@ class Subscriber(Model):
     pdf = BooleanField(default=False)
     lento_pdf = BooleanField(u'pdf L.', default=False)
     ruta = PositiveSmallIntegerField(blank=True, null=True)
-    plan_id = PositiveSmallIntegerField(blank=True, null=True)
+    plan_id = TextField(blank=True, null=True)
     ruta_lento = PositiveSmallIntegerField(blank=True, null=True)
     ruta_fs = PositiveSmallIntegerField(blank=True, null=True)
     days = CharField(max_length=5, null=True, default=None)

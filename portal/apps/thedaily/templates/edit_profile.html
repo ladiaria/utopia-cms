@@ -75,10 +75,13 @@
       <h2 class="ld-title ld-title--underlined">Accesibilidad</h2>
       <p>Queremos tener un sitio web accesible para todas las personas.</p>
       <p>
-        Si encontrás alguna dificultad para utilizarlo podés reportar el problema y obtener ayuda escribiendo a <a href="mailto:ayuda@ladiaria.com.uy">ayuda@ladiaria.com.uy</a>.
+        Si encontrás alguna dificultad para utilizar el sitio web podés reportar el problema y obtener ayuda a través de las vías listadas en la <a href="{% url 'contact-form' %}">página de contacto</a>.
       </p>
       <p>
-        ¡Gracias!
+        Muchas gracias.
+      </p>
+      <p>
+        <a href="/accesibilidad/">Más información sobre accesibilidad</a>
       </p>
     </section>
 
@@ -95,9 +98,7 @@
         <div class="col m8">
           <h3 class="ld-title-second">Contacto</h3>
           <p><a href="{% url 'contact-form' %}">Formulario de contacto</a></p>
-          <p>Email: <a href="mailto:ayuda@ladiaria.com.uy">ayuda@ladiaria.com.uy</a></p>
-          <p>Mensajes WhatsApp: <a href="https://wa.me/59899128821">099 128 821</a></p>
-          <p>Teléfono fijo: <a href="tel:+59829000808">2900 08 08</a> (lunes a viernes de 9:00 a 17:00 y sábados de 9:00 a 13:00)</p>
+          {% block contact_extra %}{% endblock %}
         </div>
       </div>
 

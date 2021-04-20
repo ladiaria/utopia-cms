@@ -193,7 +193,7 @@ def login(request):
                     request.session.pop('next', None)
                     return HttpResponseRedirect(next_page)
                 else:
-                    return HttpResponseRedirect(reverse('account-error-disabled'))
+                    return HttpResponseRedirect(reverse('account-confirm_email'))
             else:
                 login_error = u'Usuario y/o contraseña incorrectos.'
         else:
@@ -633,9 +633,12 @@ def confirm_email(request):
         confirm_email_form = ConfirmEmailRequestForm(request.POST)
         if confirm_email_form.is_valid():
             send_validation_email(
-                u'Verificá tu cuenta', confirm_email_form.user, 'notifications/account_signup.html',
-                get_signup_validation_url)
-            return 'confirm_email.html', {'sent': True}
+                u'Verificá tu cuenta',
+                confirm_email_form.user,
+                'notifications/account_signup.html',
+                get_signup_validation_url,
+            )
+            return 'confirm_email.html', {'sent': True, 'email': confirm_email_form.cleaned_data['email']}
     return 'confirm_email.html', {'form': confirm_email_form}
 
 
@@ -799,7 +802,6 @@ def edit_profile(request, user=None):
         'user_form': user_form,
         'profile_form': profile_form,
         'is_subscriber_digital': user.subscriber.is_digital_only(),
-        'is_subscriber_special': user.subscriber.plan_id in getattr(settings, 'SUBSCRIPTION_SPECIAL_PLANS', ()),
         'google_oauth2_assoc': oauth2_assoc,
         'google_oauth2_allow_disconnect': oauth2_assoc and (user.email != oauth2_assoc.uid),
         'community_coupon': user.subscriber.is_subscriber_any() and getattr(settings, 'COMMUNITY_COUPON', None),

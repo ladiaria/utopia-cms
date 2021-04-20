@@ -642,7 +642,10 @@ class ConfirmEmailRequestForm(Form):
     helper.render_unmentioned_fields = False
     helper.layout = Layout(
         Fieldset(u'', Field('email')),
-        FormActions(Submit('save', u'Enviar email de activación')))
+        HTML('<div class="align-center">'),
+        FormActions(Submit('save', u'Enviar mensaje de activación', css_class='ld-btn-default btn-dark')),
+        HTML('</div">'),
+    )
 
     def clean(self):
         email = self.data.get('email').strip()

@@ -33,12 +33,12 @@
             {% ifequal activity.id activity_id %}
                 {% include "attendant_form.html" %}
                 {% if success %}
-                    <br/>Inscripción recibida correctamente, muchas gracias.
+                    <br>Inscripción recibida correctamente, muchas gracias.
                 {% endif %}
             {% else %}
                 {% attendant_form activity.id %}
             {% endifequal %}
         {% endif %}
-        <br/>
+        <br>
     {% endfor %}
 {% endblock %} 

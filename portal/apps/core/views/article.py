@@ -14,10 +14,11 @@ from django.utils import simplejson as json
 from django.views.generic import DetailView
 from django.contrib.sites.models import Site
 from django.contrib.contenttypes.models import ContentType
-from django.shortcuts import get_list_or_404, get_object_or_404
+from django.shortcuts import get_list_or_404, get_object_or_404, render_to_response
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache  # , cache_page
 # from django.views.decorators.vary import vary_on_cookie
+from django.template import RequestContext
 from django.template.defaultfilters import slugify
 
 from actstream.models import following
@@ -75,7 +76,6 @@ def article_list(request, type_slug):
 # @decorate_if_no_staff(decorator=vary_on_cookie)
 # @decorate_if_no_staff(decorator=cache_page(120))
 @never_cache
-@to_response
 def article_detail(request, year, month, slug, domain_slug=None):
     domain, category = u'publication', None
     if domain_slug:
@@ -93,12 +93,14 @@ def article_detail(request, year, month, slug, domain_slug=None):
         # netloc splitted by port (to support local environment running in port)
         netloc = request.META['HTTP_HOST'].split(':')[0]
         article = Article.objects.select_related('main_section__edition__publication').get(
-            slug=slug, date_published__year=year, date_published__month=month)
+            slug=slug, date_published__year=year, date_published__month=month
+        )
         article_url = article.get_absolute_url()
         if request.path != article_url:
             s = urlsplit(request.get_full_path())
             return HttpResponsePermanentRedirect(
-                urlunsplit((settings.URL_SCHEME, netloc, article_url, s.query, s.fragment)))
+                urlunsplit((settings.URL_SCHEME, netloc, article_url, s.query, s.fragment))
+            )
     except MultipleObjectsReturned:
         # TODO: mandar email a periodistas web
         raise Http404(u"Múltiples artículos con igual publicación en el mes.")
@@ -106,7 +108,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
         s = urlsplit(request.get_full_path())
         article = get_object_or_404(ArticleUrlHistory, absolute_url=request.path).article
         return HttpResponsePermanentRedirect(
-            urlunsplit((settings.URL_SCHEME, netloc, article.get_absolute_url(), s.query, s.fragment)))
+            urlunsplit((settings.URL_SCHEME, netloc, article.get_absolute_url(), s.query, s.fragment))
+        )
 
     # 2. si no está publicado solo se accede siendo staff
     if not article.is_published and not request.user.is_staff:
@@ -177,7 +180,11 @@ def article_detail(request, year, month, slug, domain_slug=None):
             'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
         })
 
-    return 'detail.html', context
+    return render_to_response(
+        getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE', 'article/detail.html'),
+        context,
+        context_instance=RequestContext(request),
+    )
 
 
 def reorder_tag_list(article, tags):

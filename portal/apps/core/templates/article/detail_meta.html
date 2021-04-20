@@ -1,7 +1,7 @@
 {% load static core_tags %}
 
 <meta property="og:type" content="article">
-<meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ site.name }}{% endif %}">
+<meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ URL_SCHEME }}://{{ site.domain }}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ site.name }}{% endif %}">
 <meta property="og:description" content="{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}">
 <meta property="og:locale" content="es_UY">
 <meta property="og:site_name" content="{{ site.name }}">
