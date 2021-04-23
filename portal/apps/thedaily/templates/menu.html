@@ -1,6 +1,9 @@
 {% load core_tags %}
 
 <ul class="main-menu center hide-on-small-and-down{% ifnotequal publication default_pub %} {{ publication.slug }}{% endifnotequal %}">
+  <li class="nav-menu__portada">
+    <a href="{% url 'home' %}"><span class="inner">Portada</span></a>
+  </li>
   {% for category in MENU_CATEGORIES %}
     <li class="nav-menu__{{ category.slug }}">
       <a href="{% url 'home' domain_slug=category.slug %}">

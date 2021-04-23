@@ -533,6 +533,9 @@ body.subscriptions-home {
   margin-top: 25px;
   margin-bottom: 35px;
 
+  p a:hover {
+    text-decoration: underline;
+  }
 
   .ld-title {
     font-size: 30px;
