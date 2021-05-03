@@ -1008,8 +1008,11 @@ def update_user_from_crm(request):
                     msg = u'Multiple email in users'
                     mail_managers(msg, email)
                     return HttpResponseServerError()
+                except IntegrityError as ie:
+                    mail_managers(u'IntegrityError saving user', str(ie))
+                    return HttpResponseServerError()
         except IntegrityError as ie:
-            mail_managers(u'IntegrityError saving user', ie.args)
+            mail_managers(u'IntegrityError saving user', str(ie))
             return HttpResponseServerError()
         except KeyError:
             pass
