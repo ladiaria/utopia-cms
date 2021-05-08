@@ -128,6 +128,7 @@ a.ld-text-secondary,
 ///////////////////////////////////////////////////////////////////////////
 
 .container {
+    font-size: 16px;
     transition: .2s ease-out;
 
     @media (max-width: 460px) {
@@ -639,6 +640,7 @@ i.material-icons.icon-lo_mas_leido {
     background: $color-light-blue;
     margin: 120px 0;
     cursor: default;
+    font-size: 16px;
 
     &:after {
         content: "";
@@ -1393,68 +1395,70 @@ a.ladiaria {
     }
 
     #main-header {
+      .nav-wrapper {
+        display: flex;
+        height: 60px;
+       }
+
         #nav-principal{
         position: absolute;
         top: 3px;
         right: 15px;
         }
+
         .header-pill {
-        background: none;
-        top:10px;
+          background: none;
+          top:11px;
+          line-height: 35px;
+          font-size: 35px;
+          height: 35px;
 
+            svg {
+              height: 36px;
+              line-height: 36px;
+              width: auto;
+              vertical-align: middle;
+          }
+        }
 
+        .header-logo.emergentes{
+          img {
+              height: 35px !important;
+              line-height: 35px;
+              width: auto;
+              display: block;
+              margin-top: 12px;
+          }
         }
 
         &.logged-in {
             .nav-wrapper {
-            text-align: center;
+            justify-content: center;
             }
             .header-logo.emergentes{
                 img {
                     margin-left: 0;
-                    height: 35px !important;
-                    width: auto;
                 }
             }
             .header-pill {
-                line-height: 35px;
-                top:0;
                 margin-left: 4px;
-                vertical-align: middle;
-
-                svg {
-                    height: 36px;
-                    width: auto;
-                }
-
             }
         }
         &:not(.logged-in){
+
             .btn.ingresar {
                 margin-top:7px !important;
             }
-
             .header-logo.ladiaria-white{
                 img {
                 height: 25px !important;
+                line-height: 25px;
                 width: auto;
-                }
-            }
-            .header-logo.emergentes{
-                img {
-                height: 35px !important;
-                width: auto;
+                margin-top: 12px;
                 }
             }
             .header-pill {
-                line-height: 35px;
-                top:2px;
                 margin-left: 3px;
-
-                svg {
-                    height: 35px;
-                    width: auto;
-                }
             }
         }
 
@@ -1480,6 +1484,9 @@ a.ladiaria {
         display: block;
         visibility: visible;
     }
+    .login #main-header:not(.logged-in) .nav-wrapper {
+      justify-content: center;
+    }
 }
 
 @media (max-width: 359px) {
@@ -1487,6 +1494,7 @@ a.ladiaria {
         .header-logo.emergentes {
             img {
                 height: 29px !important;
+                line-height: 29px;
                 width: auto;
             }
         }
@@ -1495,6 +1503,7 @@ a.ladiaria {
 
             svg {
                 height: 29px;
+                line-height: 29px;
                 width: auto;
             }
 

@@ -27,21 +27,36 @@ class ExteriorSubscriptionAdmin(SubscriptionAdmin):
 
 class SubscriberAdmin(ModelAdmin):
     list_display = (
-        'id', 'costumer_id', 'user', 'user_is_active', 'user_email', 'name', 'pdf', 'lento_pdf', 'activo',
-        'get_newsletters')
+        'id', 'costumer_id', 'user', 'user_is_active', 'user_email', 'name', 'pdf', 'activo', 'get_newsletters'
+    )
     search_fields = ('user__username', 'name', 'user__email', 'costumer_id', 'document', 'phone')
     raw_id_fields = ('user', )
-    readonly_fields = ('pdf', 'lento_pdf', 'ruta', 'plan_id', 'ruta_lento', 'ruta_fs', 'days')
-    list_filter = [
-        'newsletters',
-        'category_newsletters',
+    readonly_fields = (
         'pdf',
         'lento_pdf',
-        'allow_news',
-        'allow_promotions',
-        'allow_polls',
-    ]
+        'ruta',
+        'plan_id',
+        'ruta_lento',
+        'ruta_fs',
+        'days',
+        'get_latest_article_visited',
+    )
+    list_filter = ['newsletters', 'category_newsletters', 'pdf', 'allow_news', 'allow_promotions', 'allow_polls']
     actions = ['send_account_info']
+    fieldsets = (
+        (None, {
+            'fields': (
+                ('costumer_id', 'user', 'name'),
+                ('address', 'country', 'city', 'province'),
+                ('document', 'phone'),
+                ('newsletters', 'category_newsletters'),
+                ('allow_news', 'allow_promotions', 'allow_polls'),
+                ('pdf', 'ruta'),
+                ('plan_id', ),
+                ('get_latest_article_visited', ),
+            ),
+        }),
+    )
 
     def send_account_info(self, request, queryset):
         success_counter, errors = 0, []

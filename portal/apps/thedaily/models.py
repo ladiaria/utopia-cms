@@ -2,6 +2,7 @@
 import re
 import csv
 import requests
+import pymongo
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
@@ -14,7 +15,8 @@ from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.dispatch import receiver
 from django.utils import simplejson
 
-from core.models import Edition, Publication, Category
+from apps import core_articleviewedby_mdb
+from core.models import Edition, Publication, Category, ArticleViewedBy
 from exceptions import UpdateCrmEx
 
 
@@ -193,6 +195,23 @@ class Subscriber(Model):
             return u"Usuario sin nombre"
         else:
             return self.user.get_full_name()
+
+    def get_latest_article_visited(self):
+        """
+        Returns info about the latest visit to an article from this subscriber.
+        """
+        # Search in mongodb first, if none found then search in db-table
+        mdb = core_articleviewedby_mdb.posts.find({'user': self.user.id}).sort('viewed_at', pymongo.DESCENDING)
+        if mdb.count():
+            latest = mdb[0]
+            return (latest.get('article'), latest.get('viewed_at'))
+        else:
+            try:
+                latest = self.user.articleviewedby_set.latest('viewed_at')
+            except ArticleViewedBy.DoesNotExist:
+                pass
+            else:
+                return (latest.article_id, latest.viewed_at)
 
     @property
     def user_email(self):
