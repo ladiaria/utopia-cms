@@ -591,6 +591,11 @@ body {
             display: block;
         }
     }
+    @media (min-width: 1700px) {
+        &:nth-child(-n + 12) {
+            display: block;
+        }
+    }
 }
 
 .logged-in {
