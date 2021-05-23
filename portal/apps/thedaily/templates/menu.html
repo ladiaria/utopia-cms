@@ -29,13 +29,11 @@
     </li>
   {% endif %}
   {% block extra_items %}{% endblock %}
-	<li>
-		<a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="more-dropdown">
-      <span class="inner">Más
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z"  class="nav-fill" fill="#a4a4a4"/></svg>
-      </span>
-		</a>
-	</li>
+  <li class="nav-menu__more">
+    <button class="more-button js-ld-main-menu-toggle">
+      <span class="inner">Más</span>
+    </button>
+  </li>
 </ul>
 
 {% with 'ciencia economia educacion feminismos justicia salud trabajo' as emergentes %}
@@ -67,10 +65,5 @@
   </ul>
 {% endif %}
 
-<ul id="more-dropdown" class="dropdown-content hide-on-small-and-down">
-  <li><a href="{% url 'search' %}">Buscar</a></li>
-  <li class="divider"><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
-  {% block more_extra %}{% endblock %}
-</ul>
 
 {% block extra_dropdowns_contents %}{% endblock %}

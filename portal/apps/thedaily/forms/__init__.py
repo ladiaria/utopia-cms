@@ -678,9 +678,9 @@ class ConfirmEmailRequestForm(Form):
 
 class PasswordChangeBaseForm(Form):
     new_password_1 = CharField(
-        label=u'Nueva contraseña', widget=PasswordInput())
+        label=u'Nueva contraseña', widget=PasswordInput(attrs={"autocomplete": "new-password"}))
     new_password_2 = CharField(
-        label=u'Repetir contraseña', widget=PasswordInput())
+        label=u'Repetir contraseña', widget=PasswordInput(attrs={"autocomplete": "new-password"}))
 
     def clean(self):
         p1 = self.data.get('new_password_1', '')
@@ -732,7 +732,7 @@ class PasswordChangeForm(PasswordChangeBaseForm):
 
 
 class PasswordResetForm(PasswordChangeBaseForm):
-    new_password_1 = CharField(label=u'Contraseña', widget=PasswordInput())
+    new_password_1 = CharField(label=u'Contraseña', widget=PasswordInput(attrs={"autocomplete": "new-password"}))
     hash = CharField(widget=HiddenInput())
     gonzo = CharField(widget=HiddenInput())
 
@@ -754,7 +754,8 @@ class PasswordResetForm(PasswordChangeBaseForm):
         self.helper.form_style = 'inline'
         self.helper.form_method = 'post'
         self.helper.layout = Layout(
-            'new_password_1', 'new_password_2',
+            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
             Field('gonzo', type='hidden', value=initial['gonzo']),
             Field('hash', type='hidden', value=initial['gonzo']),
             FormActions(

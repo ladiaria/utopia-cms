@@ -130,7 +130,7 @@ $navbarHeight: 60px;
             }
         }
 
-        button {
+        button.nav-menu-button {
             color: $grey;
             position: relative;
             top:11px;
@@ -327,7 +327,6 @@ $navbarHeight: 60px;
         }
     }
 
-
     .header-logo.ladiaria-black {
         position: relative;
     }
@@ -344,7 +343,7 @@ $navbarHeight: 60px;
         }
 
     }
-  // minimmum header
+    // minimmum header
     &.min-header {
         .nav-wrapper {
             display: flex;
@@ -391,7 +390,6 @@ $navbarHeight: 60px;
 
 }
 
-
 @media #{$small-and-down} {
   body.login {
     #main-header {
@@ -405,7 +403,6 @@ $navbarHeight: 60px;
     }
   }
 }
-
 
 body {
   &.frontpage {
@@ -520,79 +517,69 @@ body {
     &:hover {
         opacity: 0.8;
     }
-
 }
 
-
 // Responsive menu
-
 .main-menu > li {
     display: none;
 
-    @media (min-width: 667px) {
+    @media (min-width: 700px) {
         &:nth-child(-n + 1) {
         display: block;
         }
     }
-
     @media (min-width: 770px) {
+        &.nav-menu__more {
+            display: block;
+        }
+    }
+    @media (min-width: 830px) {
         &:nth-child(-n + 2) {
         display: block;
         }
     }
-
-    @media (min-width: 830px) {
+    @media (min-width: 930px) {
         &:nth-child(-n + 3) {
         display: block;
         }
     }
-
-    @media (min-width: 930px) {
+    @media (min-width: 1000px) {
         &:nth-child(-n + 4) {
         display: block;
         }
     }
-
-    @media (min-width: 1030px) {
+    @media (min-width: 1100px) {
         &:nth-child(-n + 5) {
         display: block;
         }
     }
-
-    @media (min-width: 1130px) {
+    @media (min-width: 1210px) {
         &:nth-child(-n + 6) {
         display: block;
         }
     }
-
-    @media (min-width: 1230px) {
+    @media (min-width: 1310px) {
         &:nth-child(-n + 7) {
         display: block;
         }
     }
-
-    @media (min-width: 1400px) {
+    @media (min-width: 1520px) {
         &:nth-child(-n + 8) {
         display: block;
         }
     }
-
-    @media (min-width: 1580px) {
+    @media (min-width: 1600px) {
         &:nth-child(-n + 9) {
-        display: block;
-        }
-    }
-
-    @media (min-width: 1680px) {
-        &:nth-child(-n + 10) {
-        display: block;
-        }
-        &:nth-child(-n + 11) {
             display: block;
         }
     }
-    @media (min-width: 1700px) {
-        &:nth-child(-n + 12) {
+    @media (min-width: 1680px) {
+        &:nth-child(-n + 10) {
+            display: block;
+        }
+    }
+    @media (min-width: 1780px) {
+        &:nth-child(-n + 11) {
             display: block;
         }
     }
@@ -603,61 +590,55 @@ body {
         display: none;
 
         @media (min-width: 601px) {
+            &:nth-child(-n + 2) {
+                display: block;
+            }
+            &.nav-menu__more {
+                display: block;
+            }
+        }
+        @media (min-width: 700px) {
             &:nth-child(-n + 3) {
                 display: block;
             }
         }
-
-        @media (min-width: 700px) {
+        @media (min-width: 800px) {
             &:nth-child(-n + 4) {
                 display: block;
             }
         }
-
-        @media (min-width: 800px) {
+        @media (min-width: 850px) {
             &:nth-child(-n + 5) {
                 display: block;
             }
         }
-
-        @media (min-width: 900px) {
+        @media (min-width: 1024px) {
             &:nth-child(-n + 6) {
                 display: block;
             }
         }
-
-        @media (min-width: 1070px) {
+        @media (min-width: 1180px) {
             &:nth-child(-n + 7) {
                 display: block;
             }
         }
-
-        @media (min-width: 1220px) {
+        @media (min-width: 1280px) {
             &:nth-child(-n + 8) {
                 display: block;
             }
         }
-
-        @media (min-width: 1300px) {
+        @media (min-width: 1380px) {
             &:nth-child(-n + 9) {
                 display: block;
             }
         }
-
         @media (min-width: 1580px) {
             &:nth-child(-n + 10) {
                 display: block;
             }
         }
-
-        @media (min-width: 1640px) {
-            &:nth-child(-n + 11) {
-                display: block;
-            }
-        }
-
         @media (min-width: 1700px) {
-            &:nth-child(-n + 12) {
+            &:nth-child(-n + 11) {
                 display: block;
             }
         }
@@ -668,7 +649,7 @@ body {
     #nav-principal {
         .main-menu {
             > li {
-                > a {
+                > a, button {
                     outline: none;
                     padding:0 5px;
 
@@ -726,6 +707,11 @@ body {
                         }
                     }
                 }
+                button.more-button {
+                    cursor: pointer;
+                    padding: 0;
+                    display: block;
+                }
             }
 
         }
@@ -781,7 +767,6 @@ body {
         }
     }
 }
-
 
 .header-logo {
     display: inline-block;
@@ -1072,7 +1057,6 @@ body {
         margin: 0;
         padding: 0;
         position: fixed;
-        position: absolute;
         top: 20px;
         right: 20px;
         transition: 200ms ease-in-out;
@@ -1108,7 +1092,6 @@ body {
 
         @media (min-width: 992px) {
             top: 10px;
-            right: 5px;
         }
 
         .material-icons {
