@@ -27,9 +27,9 @@
                     </li>
                 {% else %}
                     <li>
-                        <a href="{% url 'account-login' %}?next={% ifequal request.path '/usuarios/salir/' %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endifequal %}" class="btn ingresar">ingresá</a>
+                        <a href="{% url 'account-login' %}?next={% ifequal request.path '/usuarios/salir/' %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endifequal %}" class="btn ingresar">Ingresá</a>
                     </li>
-                    <li class="hide-on-small-only"><a class="btn suscribirse right" href="{% url 'subscribe_landing' %}">suscribite</a></li>
+                    <li class="hide-on-small-only"><a class="btn suscribirse right" href="{% url 'subscribe_landing' %}">Suscribite</a></li>
                 {% endif %}
                 <li class="hide-on-small-and-down">
                     <button class="nav-menu-button right js-ld-main-menu-toggle">
