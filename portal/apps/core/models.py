@@ -24,17 +24,39 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.sitemaps import ping_google
 from django.db import IntegrityError
 from django.db.models import (
-    Manager, Model, CharField, TextField, DateField, DateTimeField, PositiveIntegerField, BooleanField, ForeignKey,
-    SlugField, FileField, ImageField, DecimalField, EmailField, ManyToManyField, PositiveSmallIntegerField, URLField,
-    permalink, SET_NULL)
+    Manager,
+    Model,
+    CharField,
+    TextField,
+    DateField,
+    DateTimeField,
+    PositiveIntegerField,
+    BooleanField,
+    ForeignKey,
+    SlugField,
+    FileField,
+    ImageField,
+    DecimalField,
+    EmailField,
+    ManyToManyField,
+    PositiveSmallIntegerField,
+    URLField,
+    permalink,
+    SET_NULL,
+)
 from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 
 from managers import PublishedArticleManager
 from utils import (
-    get_pdf_pdf_upload_to, get_pdf_cover_upload_to, get_pdfpage_pdf_upload_to, get_pdfpage_snapshot_upload_to,
-    get_pdfpageimage_file_upload_to, send_mail)
+    get_pdf_pdf_upload_to,
+    get_pdf_cover_upload_to,
+    get_pdfpage_pdf_upload_to,
+    get_pdfpage_snapshot_upload_to,
+    get_pdfpageimage_file_upload_to,
+    send_mail,
+)
 
 from apps import register_actstream_model
 from core.utils import CT, smart_quotes
@@ -62,12 +84,16 @@ class Publication(Model):
             u'en Twitter (escribir sin @)',
     )
     description = TextField(
-        u'descripción', null=True, blank=True, help_text=u'Se muestra en el componente de portada.')
+        u'descripción', null=True, blank=True, help_text=u'Se muestra en el componente de portada.'
+    )
     slug = SlugField(u'slug', unique=True)
     headline = CharField(u'title / Asunto de newsletter (NL)', max_length=100)
     weight = PositiveSmallIntegerField(u'orden', default=0)
     public = BooleanField(u'público', default=True)
     has_newsletter = BooleanField(u'tiene NL', default=False)
+    newsletter_name = CharField(max_length=64, blank=True, null=True)
+    newsletter_tagline = CharField(max_length=128, blank=True, null=True)
+    newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
     newsletter_header_color = CharField(u'color de cabezal para NL', max_length=7, default=u'#262626')
     newsletter_campaign = CharField(max_length=64, blank=True, null=True)
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
@@ -76,6 +102,7 @@ class Publication(Model):
     image = ImageField(u'logo / Logo para NL', upload_to='publications', blank=True, null=True)
     full_width_cover_image = ForeignKey(Photo, verbose_name=u'foto full de portada', blank=True, null=True)
     is_emergente = BooleanField(u'es emergente', default=False)
+    new_pill = BooleanField(u'pill de "nuevo" en el componente de portada', default=False)
     icon = CharField(max_length=128, blank=True, null=True)
     icon_png = CharField(max_length=128, blank=True, null=True)
     icon_png_16 = CharField(max_length=128, blank=True, null=True)
@@ -258,10 +285,12 @@ class Edition(PortableDocumentFormatBaseModel):
         return urlresolvers.reverse('edition_detail', kwargs=reverse_kwargs)
 
     def published_articles(self):
-        return Article.objects.filter(is_published=True).extra(where=[
-            'core_article.id=core_articlerel.article_id',
-            'core_articlerel.edition_id=%d' % self.id],
-            tables=['core_articlerel']).distinct()
+        return Article.objects.filter(
+            is_published=True
+        ).extra(
+            where=['core_article.id=core_articlerel.article_id', 'core_articlerel.edition_id=%d' % self.id],
+            tables=['core_articlerel'],
+        ).order_by('articlerel__top_position').distinct()
 
     def newsletter_featured_articles(self):
         return self.published_articles().filter(newsletter_featured=True)
@@ -428,8 +457,7 @@ class Category(Model):
         category_home_related = self.home.all()
         if category_home_related:
             category_home = category_home_related[0]
-            cat_modules = category_home.modules.all()
-            return [category_home.cover] + (cat_modules[0].articles_as_list if cat_modules else [])
+            return list(category_home.articles.all())
         else:
             return []
 
@@ -1281,15 +1309,59 @@ class ArticleViewedBy(Model):
         unique_together = ('article', 'user')
 
 
-def update_category_module():
+class CategoryHomeArticle(Model):
+    home = ForeignKey('CategoryHome')
+    article = ForeignKey(Article, related_name='home_articles')
+    position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
+    fixed = BooleanField('fijo')
+
+    def __unicode__(self):
+        # also a custom text version to be useful in the CategoryHome admin change form
+        return u'%s' % self.article.last_published_by_category(self.home.category)
+
+    class Meta:
+        ordering = ('position', )
+
+
+class CategoryHome(Model):
+    category = ForeignKey(Category, verbose_name=u'área', unique=True, related_name='home')
+    articles = ManyToManyField(Article, through=CategoryHomeArticle)
+
+    def __unicode__(self):
+        return u'%s - %s' % (self.category, self.cover())
+
+    def cover(self):
+        """ Returns the article in the 1st position """
+        return self.articles.exists() and self.articles.order_by('home_articles')[0]
+
+    def non_cover_articles(self):
+        """ Returns the articles from 2nd position """
+        return self.articles.order_by('home_articles')[1:] if self.articles.exists() else []
+
+    def set_article(self, article, position):
+        try:
+            actual_article = CategoryHomeArticle.objects.get(home=self, position=position)
+            if actual_article.article != article:
+                actual_article.article = article
+                actual_article.save()
+        except CategoryHomeArticle.DoesNotExist:
+            CategoryHomeArticle.objects.create(home=self, article=article, position=position)
+
+    class Meta:
+        verbose_name = u'portada de área'
+        verbose_name_plural = u'portadas de área'
+        ordering = ('category', )
+
+
+def update_category_home(dry_run=False):
     """
-    Update some categories homes and modules based on articles dates
+    Updates categories homes based on articles dates
     """
-    # fill each category bucket with latest articles
-    # TODO: calculate not fixed count before and better stop algorithm
-    buckets, category_sections, needed, stop = {}, {}, 10, False
-    categories = Category.objects.filter(
-        slug__in=settings.CORE_UPDATE_CATEGORY_MODULES)
+    # fill each category bucket with latest articles.
+    # @dry_run: Do not change anything. It forces a debug message when a change would be made.
+    # TODO: calculate not fixed count before and better stop algorithm.
+    buckets, category_sections, needed, stop = {}, {}, 11, False
+    categories = Category.objects.filter(slug__in=settings.CORE_UPDATE_CATEGORY_HOMES)
 
     for cat in categories:
         buckets[cat.slug] = []
@@ -1297,11 +1369,10 @@ def update_category_module():
 
     if categories:
         if settings.DEBUG:
-            print('DEBUG: update_category_module begin')
+            print('DEBUG: update_category_home begin')
         for edition in Edition.objects.order_by('-date_published').iterator():
 
-            for ar in ArticleRel.objects.filter(
-                    edition=edition).select_related('article').iterator():
+            for ar in ArticleRel.objects.filter(edition=edition).select_related('article').iterator():
 
                 article = ar.article
                 if article.is_published:
@@ -1309,16 +1380,12 @@ def update_category_module():
                     if any([len(b) < needed for b in buckets.values()]):
                         # fill category buckets with articles
                         # limiting upto needed quantity with no dupe articles
-                        article_sections = set(article.sections.filter(
-                            articlerel__edition=edition))
+                        article_sections = set(article.sections.filter(articlerel__edition=edition))
                         for cat in categories:
                             if len(buckets[cat.slug]) < needed and \
-                                    article not in \
-                                    [x[0] for x in buckets[cat.slug]] and \
-                                    article_sections.intersection(
-                                        category_sections[cat.slug]):
-                                buckets[cat.slug].append(
-                                    (article, edition.date_published))
+                                    article not in [x[0] for x in buckets[cat.slug]] and \
+                                    article_sections.intersection(category_sections[cat.slug]):
+                                buckets[cat.slug].append((article, edition.date_published))
                     else:
                         stop = True
                         break
@@ -1335,32 +1402,34 @@ def update_category_module():
         except IndexError:
             continue
 
-        cover_id, cover_fixed = home.cover.id, home.fixed
-        cover_date = home.cover.last_published_by_category(category)
+        try:
+            home_cover = CategoryHomeArticle.objects.get(home=home, position=1)
+        except CategoryHomeArticle.DoesNotExist:
+            home_cover = None
+        cover_id = home_cover.article_id if home_cover else None
+        cover_fixed = home_cover.fixed if home_cover else False
+        cover_date = home_cover.article.last_published_by_category(category) if home_cover else None
         if cover_fixed:
-            category_fixed_content = {
-                cover_id: (0, cover_fixed, cover_date, home.cover)}
+            category_fixed_content = {cover_id: (0, cover_fixed, cover_date, home_cover.article)}
             category_free_content = {}
         else:
             category_fixed_content = {}
             category_free_content = {cover_id: (0, cover_id, cover_date)}
         free_places = [0] if category_free_content else []
 
-        # TODO: check if this try is really necessary
         try:
-            module = home.modules.all()[0]
-            for i in range(1, needed):
-                a = getattr(module, 'article_%d' % i)
-                if a:
-                    aid, afixed = a.id, getattr(module, 'article_%d_fixed' % i)
+            for i in range(2, needed):
+                try:
+                    position_i = CategoryHomeArticle.objects.get(home=home, position=i)
+                    a = position_i.article
+                    aid, afixed = a.id, position_i.fixed
                     date_published = a.last_published_by_category(category)
                     if afixed:
-                        category_fixed_content[aid] = (
-                            i, afixed, date_published, a)
+                        category_fixed_content[aid] = (i, afixed, date_published, a)
                     else:
                         category_free_content[aid] = (i, aid, date_published)
                         free_places.append(i)
-                else:
+                except CategoryHomeArticle.DoesNotExist:
                     free_places.append(i)
 
         except IndexError:
@@ -1378,8 +1447,7 @@ def update_category_module():
                 continue
 
             # append in category_content to be reordered later
-            category_content.append(
-                (free_places.pop(), date_published, article))
+            category_content.append((free_places.pop(), date_published, article))
 
             if not len(free_places):
                 break
@@ -1388,25 +1456,23 @@ def update_category_module():
         category_content.sort(key=operator.itemgetter(1), reverse=True)
 
         # update the content
-        save_module, save_home = False, False
         for i, ipos in enumerate(free_places2):
 
             try:
                 old_pos, date_pub, art = category_content[i]
 
                 if ipos:
-                    setattr(module, 'article_%d' % ipos, art)
-                    save_module = True
+                    if settings.DEBUG or dry_run:
+                        print('DEBUG: update %s home position %d: %s' % (home.category, ipos, art))
+                    if not dry_run:
+                        home.set_article(art, ipos)
                 else:
-                    home.cover = art
-                    save_home = True
+                    if settings.DEBUG or dry_run:
+                        print('DEBUG: update %s home cover: %s' % (home.category, art))
+                    if not dry_run:
+                        home.set_article(art, 1)
             except IndexError:
                 pass
-
-        if save_module:
-            module.save()
-        if save_home:
-            home.save()
 
 
 class ArticleExtension(Model):
@@ -1415,16 +1481,11 @@ class ArticleExtension(Model):
         ('M', u'Mediano'),
         ('F', u'Full'),
     )
-    article = ForeignKey(
-        Article, verbose_name=u'artículo', related_name='extensions')
-    headline = CharField(
-        u'título', max_length=100, null=True, blank=True)
+    article = ForeignKey(Article, verbose_name=u'artículo', related_name='extensions')
+    headline = CharField(u'título', max_length=100, null=True, blank=True)
     body = TextField(u'cuerpo')
-    size = CharField(
-        u'size', max_length=1, choices=SIZE_CHOICES, default='R')
-    background_color = CharField(
-        u'background color', max_length=7, default='#eaeaea', null=True,
-        blank=True)
+    size = CharField(u'size', max_length=1, choices=SIZE_CHOICES, default='R')
+    background_color = CharField(u'background color', max_length=7, default='#eaeaea', null=True, blank=True)
 
     def __unicode__(self):
         return self.headline
@@ -1445,11 +1506,9 @@ class ArticleBodyImage(Model):
         ('MD', u'Ancho amplio'),
         ('FW', u'Ancho completo'),
     )
-    article = ForeignKey(
-        Article, verbose_name=u'artículo', related_name='body_image')
+    article = ForeignKey(Article, verbose_name=u'artículo', related_name='body_image')
     image = ForeignKey(Photo, verbose_name=u'foto', related_name='photo')
-    display = CharField(
-        u'display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
+    display = CharField(u'display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
 
     def __unicode__(self):
         return self.image.title
@@ -1462,8 +1521,7 @@ class ArticleBodyImage(Model):
 class PrintOnlyArticle(Model):
     headline = CharField(u'título', max_length=100)
     deck = CharField(u'bajada', max_length=255, blank=True, null=True)
-    edition = ForeignKey(
-        Edition, verbose_name=u'edición', related_name='print_only_articles')
+    edition = ForeignKey(Edition, verbose_name=u'edición', related_name='print_only_articles')
     date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
 
     def __unicode__(self):
@@ -1532,7 +1590,8 @@ class BreakingNewsModule(Model):
     def covers(self):
         return u', '.join(
             [p.__unicode__() for p in self.publications.all()] +
-            [c.__unicode__() for c in self.categories.all()])
+            [c.__unicode__() for c in self.categories.all()]
+        )
     covers.short_description = u'portadas'
 
     def has_embed(self, i):
@@ -1590,8 +1649,7 @@ class BreakingNewsModule(Model):
 
 def get_publishing_datetime():
     today = date.today()
-    publishing_hour, publishing_minute = [
-        int(i) for i in settings.PUBLISHING_TIME.split(':')]
+    publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
     return datetime(
         today.year, today.month, today.day, publishing_hour, publishing_minute)
 

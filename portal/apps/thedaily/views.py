@@ -79,7 +79,7 @@ from thedaily.forms import (
     ConfirmEmailRequestForm,
 )
 from thedaily.forms.subscriber import ProfileForm, UserForm
-from thedaily.utils import recent_following
+from thedaily.utils import recent_following, add_default_category_newsletters
 from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor
 from signupwall.utils import get_ip
 
@@ -224,6 +224,7 @@ def signup(request):
         signup_form = SignupForm(post)
         if signup_form.is_valid():
             user = signup_form.create_user()
+            add_default_category_newsletters(user.subscriber)
             send_validation_email(
                 u'Verificá tu cuenta',
                 user,
@@ -316,6 +317,10 @@ def google_phone(request):
     planslug = request.session.get('planslug')
     if planslug:
         request.session.pop('planslug')
+        if request.GET.get('is_new') == u'1':
+            # default category newsletters are not added here because some subscriptions may not add the default
+            # category newsletters. TODO: Add a M2M relation from subscriptionprices(planslug) to Category
+            pass
         return HttpResponseRedirect(reverse('subscribe', kwargs={'planslug': planslug}))
     try:
         oas = OAuthState.objects.get(state=request.session.get('google-oauth2_state'))
@@ -333,9 +338,9 @@ def google_phone(request):
             return HttpResponseRedirect('%s?next=%s' % (
                 reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('account-welcome')))
     else:
-        # TODO 2ndrelease: if is a new user add the default newsletters
+        # if is a new user add the default category newsletters (reached only from "free" subscriptions)
         if request.GET.get('is_new') == u'1':
-            pass
+            add_default_category_newsletters(profile)
     return 'google_signup.html', {'google_signin_form': google_signin_form}
 
 
@@ -486,15 +491,7 @@ def subscribe(request, planslug, category_slug=None):
                     request.session['notify_phone_subscription'] = True
                     request.session['preferred_time'] = post.get('preferred_time')
                     return HttpResponseRedirect(reverse('phone-subscription'))
-                # notify to la diaria costumer service about the new subscription
-                notify_new_subscription(subscription.get_absolute_url(), u' %s' % sp)
 
-                if oauth2_state:
-                    return HttpResponseRedirect('%s?next=%s' % (
-                        reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('account-tmp')))
-                return 'tmp.html', {
-                    'subscriber_form': subscriber_form, 'subscription_form': subscription_form,
-                    'telephone': subscription.telephone, 'email': subscription.email}
             else:
                 return 'subscribe.html', {
                     'subscriber_form': subscriber_form_v, 'subscription_form': subscription_form_v,
@@ -556,7 +553,7 @@ def complete_signup(request, user_id, hash):
     if user.username != user.email:
         user.username = user.email
     user.save()
-    get_or_create_user_profile(user)
+    subscriber = get_or_create_user_profile(user)
     user.backend = 'django.contrib.auth.backends.ModelBackend'
     do_login(request, user)
 
@@ -573,7 +570,6 @@ def complete_signup(request, user_id, hash):
     # task.task_name = re.sub(r'^apps\.', '', task.task_name) #(import re)
     # task.save()
 
-    subscriber = user.subscriber
     is_subscriber = subscriber.is_subscriber()
     is_subscriber_any = subscriber.is_subscriber_any()
 
@@ -805,6 +801,7 @@ def edit_profile(request, user=None):
         'google_oauth2_assoc': oauth2_assoc,
         'google_oauth2_allow_disconnect': oauth2_assoc and (user.email != oauth2_assoc.uid),
         'community_coupon': user.subscriber.is_subscriber_any() and getattr(settings, 'COMMUNITY_COUPON', None),
+        'publication_newsletters': Publication.objects.filter(has_newsletter=True),
         'category_newsletters': Category.objects.filter(has_newsletter=True),
     }
 
@@ -1253,9 +1250,10 @@ def user_comments_api(request):
         email = request.POST['email']
         if not email or request.POST['ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
             return HttpResponseForbidden()
-        if settings.TALK_URL:
+        talk_url = getattr(settings, 'TALK_URL', None)
+        if talk_url:
             result.update(requests.post(
-                settings.TALK_URL + 'api/graphql',
+                talk_url + 'api/graphql',
                 headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
                 data='{"query":"query user($id:ID!){user(id:$id){comments{nodes{story{url,metadata{title}},body}}}}",'
                      '"variables":{"id":%d},"operationName":"user"}' % User.objects.get(email__iexact=email).id

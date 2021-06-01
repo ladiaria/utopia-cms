@@ -60,9 +60,11 @@
             {% endif %}
           {% endblock %}
           <div class="ld-card__body">
-            <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
-              <a href="{{ cover_article.get_absolute_url }}">{{ cover_article.headline|ldmarkup:cover_article.id|removetags:'p' }}</a>
-            </h2>
+            {% if cover_article %}
+              <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
+                <a href="{{ cover_article.get_absolute_url }}">{{ cover_article.headline|ldmarkup:cover_article.id|removetags:'p' }}</a>
+              </h2>
+            {% endif %}
             {% if cover_article.home_lead or cover_article.lead %}
               <div class="ld-card__intro">
                 {{ cover_article.home_lead|default:cover_article.lead|ldmarkup:cover_article.id|removetags:'p' }}

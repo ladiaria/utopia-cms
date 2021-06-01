@@ -4,7 +4,6 @@ exec 3>&2
 exec 2> /dev/null
 
 SOUTH_APPS="core
-home
 thedaily
 videologue
 adzone

@@ -32,7 +32,6 @@ INSTALLED_APPS = (
     'core.attachments',
     'django_extensions',
     'generator',
-    'home',
     'memcached',
     'shoutbox',
     'thedaily',

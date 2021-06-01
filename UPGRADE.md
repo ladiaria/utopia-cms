@@ -1,3 +1,18 @@
+# From version 0.0.6 to 0.0.7
+
+```
+git pull
+git checkout 0.0.7
+mysql -u <db_user> -p <db_name> -Be "SELECT * FROM core_home" > /tmp/core_home.csv
+mysql -u <db_user> -p <db_name> -Be "SELECT * FROM core_module" > /tmp/core_module.csv
+cd portal
+# activate your virtual env and migrate core (answer "yes" to the question of removing stalled content types):
+DJANGO_SETTINGS_MODULE=install_settings ./manage.py migrate core
+./manage.py shell
+# inside the Django shell execute this line:
+execfile('libs/scripts/one_time/20210524_migrate_category_homes.py')
+```
+
 # From version 0.0.5 to 0.0.6
 
 ```

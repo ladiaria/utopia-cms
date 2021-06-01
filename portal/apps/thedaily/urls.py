@@ -81,9 +81,6 @@ urlpatterns = patterns(
     url(r'^api/comments/$', user_comments_api),
     url(r'^fromcrm$', update_user_from_crm),
     url(r'^suscripcion/editar$', edit_subscription, name="edit-subscription"),
-    url(r'^nuevosuscriptor/$', never_cache(TemplateView.as_view(
-        template_name='thedaily/templates/tmp.html')), {
-            'extra_context': {'signup': True}}, name="account-tmp"),
     # Profile
     url(r'^perfil/editar/$', edit_profile, name="edit-profile"),
     url(

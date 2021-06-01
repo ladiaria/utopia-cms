@@ -10,9 +10,8 @@ from django.views.decorators.cache import never_cache, cache_control
 
 from decorators import render_response, decorate_if_no_staff, decorate_if_staff
 
-from core.models import Edition, get_current_edition, Section, Publication, Category
+from core.models import Edition, get_current_edition, Section, Publication, Category, CategoryHome
 from core.views.category import category_detail
-from home.models import Home
 from faq.models import Question, Topic
 from cartelera.models import LiveEmbedEvent
 
@@ -30,8 +29,8 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     """
 
     if domain_slug:
-        # if domain_slug is one of the "root url" publications => redirect to home
-        if domain_slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL:
+        # if domain_slug is one of the "root url" publications => redirect to home (only if no edition date given)
+        if domain_slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL and not (year or month or day):
             return HttpResponsePermanentRedirect(reverse('home'))
         try:
             publication = Publication.objects.get(slug=domain_slug)
@@ -40,10 +39,16 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
                 raise Http404
         except Publication.DoesNotExist:
             # if domain_slug is an area slug (or a slug to redirect) => return area detail view
-            if domain_slug in getattr(settings, 'CORE_CATEGORY_REDIRECT', {}):
-                # removed or changed categories redirects by settings
-                return HttpResponsePermanentRedirect(
-                    reverse('home', args=(settings.CORE_CATEGORY_REDIRECT[domain_slug], )))
+            category_redirections = getattr(settings, 'CORE_CATEGORY_REDIRECT', {})
+            if domain_slug in category_redirections:
+                # removed, changed or force-404 categories redirects by settings
+                redirect_slug = category_redirections[domain_slug]
+                if redirect_slug:
+                    return HttpResponsePermanentRedirect(
+                        reverse('home', args=(settings.CORE_CATEGORY_REDIRECT[domain_slug], ))
+                    )
+                else:
+                    raise Http404
             return category_detail(request, get_object_or_404(Category, slug=domain_slug).slug)
     else:
         publication = Publication.objects.get(slug=settings.DEFAULT_PUB)
@@ -80,11 +85,14 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     featured_category_slug = getattr(settings, 'HOMEV3_FEATURED_CATEGORY', None)
     if featured_category_slug:
         category = get_object_or_404(Category, slug=featured_category_slug)
-        category_home = get_object_or_404(Home, category=category)
-        cat_modules = category_home.modules.all()
-        context.update({
-            'fcategory': category, 'category_cover_article': category_home.cover,
-            'category_destacados': cat_modules[0].articles_as_list if cat_modules else []})
+        category_home = get_object_or_404(CategoryHome, category=category)
+        context.update(
+            {
+                'fcategory': category,
+                'category_cover_article': category_home.cover(),
+                'category_destacados': category_home.non_cover_articles(),
+            }
+        )
 
     question_list = Question.published.filter(topic__slug='coronavirus')
     try:

@@ -3,30 +3,32 @@
 <div class="article-body article-body--faded">{{ article.body|amp_ldmarkup:article.id|truncatehtml:100 }}</div>
 
 <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
-  <div class="ld-snackbar__title">Para seguir leyendo suscribite o ingresá</div>
+  <div class="ld-snackbar__title">Para seguir leyendo ingresá o suscribite</div>
   <div class="ld-snackbar__body ld-snackbar__body-sm">
-    <p class="desc">Accedé a 10 artículos gratis por mes con la suscripción gratuita.</p>
-    <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ld-btn-regular ld-snackbar__btn--white ld-snackbar__btn">
+    <p class="desc">¿Ya tenés suscripción?</p>
+    <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ld-btn-regular ld-snackbar__btn--white ld-snackbar__btn ld-btn-default--no-shadow">Ingresá</a>
+    <p class="desc">¿No tenés suscripción?<br>
+    Accedé a 10 artículos gratis por mes con la suscripción gratuita.</p>
+    <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="btn bordered">
       Suscribite gratis
     </a>
-    <p class="desc">¿Ya tenés suscripción?</p>
-    <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn bordered">Ingresá</a>
   </div>
   <div class="ld-snackbar__body ld-snackbar__body-lg">
     <div class="container">
       <div class="row">
         <div class="col s6 ld-snackbar__col">
-          <div class="ld-snackbar__text ld-snackbar__block">
-            Accedé a 10 artículos gratis por mes con la suscripción gratuita.
-          </div>
+          <div class="ld-snackbar__text ld-snackbar__block">¿Ya tenés suscripción?</div>
           <div class="ld-snackbar__block">
-            <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ld-btn-default js-modal-trigger" data-trigger="modal-register">Suscribite gratis</a>
+            <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ld-btn-default ld-btn-default--no-shadow">Ingresá</a>
           </div>
         </div>
         <div class="col s6 ld-snackbar__col ld-snackbar__col--bordered">
-          <div class="ld-snackbar__text ld-snackbar__block">¿Ya tenés suscripción?</div>
+          <div class="ld-snackbar__text ld-snackbar__block">
+            ¿No tenés suscripción?<br>
+            Accedé a 10 artículos gratis por mes con la suscripción gratuita.
+          </div>
           <div class="ld-snackbar__block">
-            <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn bordered">Ingresá</a>
+            <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="btn bordered js-modal-trigger" data-trigger="modal-register">Suscribite gratis</a>
           </div>
         </div>
       </div>

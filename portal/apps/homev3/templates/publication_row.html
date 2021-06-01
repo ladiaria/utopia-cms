@@ -3,7 +3,7 @@
   <div class="container">
 
     <div class="section-detail__head">
-      <h2 class="section-detail__title">{{ publication }}</h2>
+      <h2 class="section-detail__title">{{ publication }}{% if publication.new_pill %} <span class="new-pill">Nuevo</span>{% endif %}</h2>
     </div>
 
     {% render_section None top_index=1 %}

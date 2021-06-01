@@ -8,26 +8,84 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin import ModelAdmin, TabularInline, site
 from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect
-from django.forms.fields import CharField
-from django.forms.widgets import TextInput
+from django.forms.models import BaseInlineFormSet, inlineformset_factory
+from django.forms.fields import CharField, IntegerField
+from django.forms.widgets import TextInput, HiddenInput
 from django.conf.urls import patterns
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError
 from django_markdown.widgets import MarkdownWidget
 
-from tasks import update_category_module
+from tasks import update_category_home
 from tagging.forms import TagField
 from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
-from home.models import HomeArticle
 from models import (
-    Article, ArticleExtension, ArticleBodyImage, Edition, Journalist, Location, PrintOnlyArticle, Section, Supplement,
-    Publication, ArticleRel, Category, ArticleUrlHistory, BreakingNewsModule)
+    Article,
+    ArticleExtension,
+    ArticleBodyImage,
+    Edition,
+    Journalist,
+    Location,
+    PrintOnlyArticle,
+    Section,
+    Supplement,
+    Publication,
+    ArticleRel,
+    Category,
+    CategoryHome,
+    CategoryHomeArticle,
+    ArticleUrlHistory,
+    BreakingNewsModule,
+)
 
 
 class PrintOnlyArticleInline(TabularInline):
     model = PrintOnlyArticle
     extra = 10
+
+
+class TopArticleInlineBaseFormSet(BaseInlineFormSet):
+    """
+    Method overrided with the only purpose to bypass the ValidationError (to fix the remove feature)
+    """
+    def save_existing_objects(self, commit=True):
+        self.changed_objects = []
+        self.deleted_objects = []
+        if not self.initial_forms:
+            return []
+
+        saved_instances = []
+        try:
+            forms_to_delete = self.deleted_forms
+        except AttributeError:
+            forms_to_delete = []
+        for form in self.initial_forms:
+            pk_name = self._pk_field.name
+            raw_pk_value = form._raw_value(pk_name)
+
+            # clean() for different types of PK fields can sometimes return
+            # the model instance, and sometimes the PK. Handle either.
+            try:
+                pk_value = form.fields[pk_name].clean(raw_pk_value)
+                pk_value = getattr(pk_value, 'pk', pk_value)
+
+                obj = self._existing_object(pk_value)
+                if form in forms_to_delete:
+                    self.deleted_objects.append(obj)
+                    obj.delete()
+                    continue
+                if form.has_changed():
+                    self.changed_objects.append((obj, form.changed_data))
+                    saved_instances.append(self.save_existing(form, obj, commit=commit))
+                    if not commit:
+                        self.saved_forms.append(form)
+            except ValidationError:
+                pass
+        return saved_instances
+
+
+TopArticleInlineFormSet = inlineformset_factory(Edition, ArticleRel, formset=TopArticleInlineBaseFormSet)
 
 
 class HomeTopArticleInline(TabularInline):
@@ -38,6 +96,7 @@ class HomeTopArticleInline(TabularInline):
     fields = ('article', 'top_position')
     raw_id_fields = ('article', )
     verbose_name_plural = u'Nota de tapa y titulines'
+    formset = TopArticleInlineFormSet
 
     def queryset(self, request):
         qs = super(HomeTopArticleInline, self).queryset(request)
@@ -53,11 +112,11 @@ class HomeTopArticleInline(TabularInline):
         css = {'all': ('css/home_admin.css', )}
 
 
-def SectionTopArticleInline(section):
+def section_top_article_inline_class(section):
+
     class SectionTopArticleInline(HomeTopArticleInline):
         max_num = 20
-        verbose_name_plural = u'Artículos en %s [[%d]]' % (
-            section.name, section.id)
+        verbose_name_plural = u'Artículos en %s [[%d]]' % (section.name, section.id)
         fields = ('article', 'position', 'home_top')
         raw_id_fields = ('article', )
         ordering = ('position', )
@@ -78,11 +137,6 @@ class EditionAdmin(ModelAdmin):
     date_hierarchy = 'date_published'
     publication = None
 
-    def queryset(self, request):
-        qs = super(EditionAdmin, self).queryset(request)
-        self.request = request
-        return qs
-
     def get_form(self, request, obj=None, **kwargs):
         if obj:
             self.publication = obj.publication
@@ -90,37 +144,38 @@ class EditionAdmin(ModelAdmin):
 
     def get_inline_instances(self, request, obj=None):
         self.inlines = [HomeTopArticleInline]
-
         if self.publication:
             for section in self.publication.section_set.order_by('home_order'):
-                self.inlines.append(SectionTopArticleInline(section))
+                self.inlines.append(section_top_article_inline_class(section))
         return super(EditionAdmin, self).get_inline_instances(request)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'cover':
             kwargs['queryset'] = self.articles_qs
             return db_field.formfield(**kwargs)
-        return super(EditionAdmin, self).formfield_for_foreignkey(
-            db_field, request, **kwargs)
+        return super(EditionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_urls(self):
         urls = super(EditionAdmin, self).get_urls()
-        my_urls = patterns('', (
-            r'^add_article/(?P<ed_id>\d+)/(?P<sec_id>\d+)/(?P<art_id>\d+)/$',
-            self.admin_site.admin_view(self.add_article)))
+        my_urls = patterns(
+            '',
+            (
+                r'^add_article/(?P<ed_id>\d+)/(?P<sec_id>\d+)/(?P<art_id>\d+)/$',
+                self.admin_site.admin_view(self.add_article),
+            ),
+        )
         return my_urls + urls
 
     def add_article(self, request, ed_id, sec_id, art_id):
         edition = get_object_or_404(Edition, pk=ed_id)
         section = get_object_or_404(Section, pk=sec_id)
         article = get_object_or_404(Article, pk=art_id)
-        ArticleRel.objects.create(
-            edition=edition, section=section, article=article)
+        ArticleRel.objects.create(edition=edition, section=section, article=article)
         return HttpResponseRedirect("/admin/core/edition/" + ed_id)
 
     def save_related(self, request, form, formsets, change):
         super(EditionAdmin, self).save_related(request, form, formsets, change)
-        update_category_module()
+        update_category_home()
 
 
 class PortableDocumentFormatPageAdmin(ModelAdmin):
@@ -139,22 +194,37 @@ class SectionAdmin(ModelAdmin):
     list_editable = ('name', 'category', 'name_in_category_menu', 'home_order', 'in_home')
     list_filter = ('category', 'in_home', 'home_block_all_pubs', 'home_block_show_featured')
     list_display = (
-        'id', 'name', 'category', 'name_in_category_menu', 'in_home', 'home_order', 'get_publications',
-        'articles_count')
+        'id',
+        'name',
+        'category',
+        'name_in_category_menu',
+        'in_home',
+        'home_order',
+        'get_publications',
+        'articles_count',
+    )
     search_fields = ('name', 'name_in_category_menu', 'contact')
     fieldsets = (
-        (None, {'fields': (
-            ('name', 'category', 'name_in_category_menu'), ('description', 'show_description'),
-            ('home_order', 'white_text', 'background_color'), ('publications', ), ('in_home', ),
-            ('home_block_all_pubs', ), ('home_block_show_featured', ), ('imagen', 'show_image', 'contact'))}), )
+        (
+            None,
+            {
+                'fields': (
+                    ('name', 'category', 'name_in_category_menu'),
+                    ('description', 'show_description'),
+                    ('home_order', 'white_text', 'background_color'),
+                    ('publications', ),
+                    ('in_home', ),
+                    ('home_block_all_pubs', ),
+                    ('home_block_show_featured', ),
+                    ('imagen', 'show_image', 'contact'),
+                ),
+            },
+        ),
+    )
 
     def save_related(self, request, form, formsets, change):
         super(SectionAdmin, self).save_related(request, form, formsets, change)
-        update_category_module()
-
-
-class HomeArticleInline(TabularInline):
-    model = HomeArticle
+        update_category_home()
 
 
 class ArticleExtensionInline(TabularInline):
@@ -166,8 +236,7 @@ class ArticleBodyImageInline(TabularInline):
     model = ArticleBodyImage
     extra = 0
     raw_id_fields = ('image', )
-    readonly_fields = [
-        'photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
+    readonly_fields = ['photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
 
     def photo_admin_thumbnail(self, instance):
         return instance.image.admin_thumbnail()
@@ -258,44 +327,48 @@ class ArticleAdmin(ModelAdmin):
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
     list_display = (
-        'headline', 'type', 'get_publications', 'get_sections', 'date_published', 'is_published', has_photo, 'surl')
+        'headline', 'type', 'get_publications', 'get_sections', 'date_published', 'is_published', has_photo, 'surl'
+    )
     list_select_related = True
     list_filter = ('type', 'date_created', 'is_published', 'date_published', 'newsletter_featured', 'byline')
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
     raw_id_fields = ('photo', 'gallery', 'continues', 'main_section')
-    inlines = article_optional_inlines + [
-        HomeArticleInline, ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
+    inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
 
     fieldsets = (
-        (None, {
-            'fields': ('type', 'headline', 'keywords', 'deck', 'lead', 'body'),
-            'classes': ('wide', ),
-        }),
-        ('Portada', {
-            'fields': ('home_lead', 'home_top_deck', 'home_display', 'home_header_display', 'header_display'),
-            'classes': ('wide', ),
-        }),
+        (None, {'fields': ('type', 'headline', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide', )}),
+        (
+            'Portada',
+            {
+                'fields': ('home_lead', 'home_top_deck', 'home_display', 'home_header_display', 'header_display'),
+                'classes': ('wide', ),
+            }
+        ),
         ('Metadatos', {'fields': ('continues', 'date_published', 'tags', 'main_section')}),
-        ('Autor', {
-            'fields': ('byline', 'only_initials', 'location'),
-            'classes': ('collapse', ),
-        }),
-        ('Multimedia', {
-            'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'),
-            'classes': ('collapse', ),
-        }),
-        ('Avanzado', {
-            'fields': (
-                'slug', 'allow_comments', 'is_published', 'public', 'allow_related', 'show_related_articles',
-                'newsletter_featured', 'latitude', 'longitude'),
-            'classes': ('collapse', ),
-        })
+        ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse', )}),
+        ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse', )}),
+        (
+            'Avanzado',
+            {
+                'fields': (
+                    'slug',
+                    'allow_comments',
+                    'is_published',
+                    'public',
+                    'allow_related',
+                    'show_related_articles',
+                    'newsletter_featured',
+                    'latitude',
+                    'longitude',
+                ),
+                'classes': ('collapse', ),
+            },
+        ),
     )
 
     def queryset(self, request):
-        return super(
-            ArticleAdmin, self).queryset(request).select_related('sections')
+        return super(ArticleAdmin, self).queryset(request).select_related('sections')
 
     def get_object(self, request, object_id):
         # Hook obj for use in formfield_for_manytomany
@@ -383,14 +456,17 @@ class ArticleAdmin(ModelAdmin):
             self.obj.url_path = new_url_path
             self.obj.save()
 
-            if change and settings.TALK_URL and not settings.DEBUG:
+            talk_url = getattr(settings, 'TALK_URL', None)
+            if change and talk_url and not settings.DEBUG:
                 # the article has a new url, we need to update it in Coral-Talk using the API
                 # but don't do this in DEBUG mode to avoid updates with local urls in Coral
                 # TODO: do not message user if the story is not found in coral (use "code" value in response.errors)
                 try:
                     requests.post(
-                        settings.TALK_URL + 'api/graphql', headers={
-                            'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
+                        talk_url + 'api/graphql',
+                        headers={
+                            'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN
+                        },
                         data='{"operationName":"updateStory","variables":{"input":{"id":%d,"story":{"url":"%s://%s%s"}'
                         ',"clientMutationId":"url updated"}},"query":"mutation updateStory($input: UpdateStoryInput!)'
                         '{updateStory(input:$input){story{id}}}"}' % (
@@ -403,7 +479,7 @@ class ArticleAdmin(ModelAdmin):
         if not ArticleUrlHistory.objects.filter(article=form.instance, absolute_url=new_url_path).exists():
             ArticleUrlHistory.objects.create(article=form.instance, absolute_url=new_url_path)
 
-        update_category_module()
+        update_category_home()
 
     def changelist_view(self, request, extra_context=None):
         if 'type__exact' not in request.GET:
@@ -426,14 +502,9 @@ class ArticleAdmin(ModelAdmin):
 
 
 class SupplementAdmin(ModelAdmin):
-    fieldsets = (
-        (None, {
-            'fields': ('edition', 'name', 'headline', 'pdf', 'public')
-        }),
-    )
+    fieldsets = ((None, {'fields': ('edition', 'name', 'headline', 'pdf', 'public')}), )
     date_hierarchy = 'date_published'
-    list_display = (
-        'name', 'edition', 'date_published', 'pdf', 'cover', 'public')
+    list_display = ('name', 'edition', 'date_published', 'pdf', 'cover', 'public')
     list_filter = ('name', 'date_created', 'public')
     search_fields = ['name', 'date_published']
     raw_id_fields = ['edition']
@@ -478,9 +549,10 @@ class JournalistAdmin(ModelAdmin):
     search_fields = ['name']
     fieldsets = (
         (None, {'fields': ('name', 'email', 'image', 'bio', 'job', 'sections')}),
-        ('Redes sociales', {
-            'description': 'Ingrese nombre de usuario de cada red social.',
-            'fields': ('fb', 'tt', 'gp', 'ig')}),
+        (
+            'Redes sociales',
+            {'description': 'Ingrese nombre de usuario de cada red social.', 'fields': ('fb', 'tt', 'gp', 'ig')},
+        ),
     )
 
 
@@ -528,6 +600,43 @@ class CategoryAdmin(ModelAdmin):
     raw_id_fields = ('full_width_cover_image', )
 
 
+class CategoryHomeArticleForm(ModelForm):
+    pos = IntegerField(label='orden', widget=TextInput(attrs={'size': 5, 'readonly': True}))
+
+    class Meta:
+        fields = ['position', 'pos', 'home', 'article', 'fixed']
+        model = CategoryHomeArticle
+
+
+CategoryHomeArticleFormSetBase = inlineformset_factory(CategoryHome, CategoryHomeArticle)
+
+
+class CategoryHomeArticleFormSet(CategoryHomeArticleFormSetBase):
+
+    def add_fields(self, form, index):
+        super(CategoryHomeArticleFormSet, self).add_fields(form, index)
+        form.fields["position"].widget = HiddenInput()
+        if index is not None:
+            form.fields["pos"].initial = index + 1
+            form.fields["position"].initial = index + 1
+
+
+class CategoryHomeArticleInline(TabularInline):
+    model = CategoryHome.articles.through
+    extra = 20
+    max_num = 20
+    form = CategoryHomeArticleForm
+    formset = CategoryHomeArticleFormSet
+    raw_id_fields = ('article', )
+    verbose_name_plural = u'Artículos en portada'
+
+
+class CategoryHomeAdmin(admin.ModelAdmin):
+    list_display = ('category', )
+    exclude = ('articles', )
+    inlines = [CategoryHomeArticleInline]
+
+
 class ArticleInline(TabularInline):
     model = BreakingNewsModule.articles.through
     extra = 3
@@ -545,44 +654,43 @@ class BreakingNewsModuleAdmin(ModelAdmin):
     fieldsets = (
         (None, {'fields': (('is_published', 'headline', 'deck'), )}),
         ('Portadas', {'fields': (('publications', 'categories'), )}),
-        ('Notificación', {'fields': (
-            ('enable_notification', 'notification_url'), ('notification_text')
-        )}),
-        ('Bloques incrustados', {'fields': (
-            ('embeds_headline', 'embeds_description'),
-            ('embed1_title', 'embed1_content'),
-            ('embed2_title', 'embed2_content'),
-            ('embed3_title', 'embed3_content'),
-            ('embed4_title', 'embed4_content'),
-            ('embed5_title', 'embed5_content'),
-            ('embed6_title', 'embed6_content'),
-            ('embed7_title', 'embed7_content'),
-            ('embed8_title', 'embed8_content'),
-            ('embed9_title', 'embed9_content'),
-            ('embed10_title', 'embed10_content'),
-            ('embed11_title', 'embed11_content'),
-            ('embed12_title', 'embed12_content'),
-            ('embed13_title', 'embed13_content'),
-            ('embed14_title', 'embed14_content'),
-        )})
+        ('Notificación', {'fields': (('enable_notification', 'notification_url'), ('notification_text'))}),
+        (
+            'Bloques incrustados',
+            {
+                'fields': (
+                    ('embeds_headline', 'embeds_description'),
+                    ('embed1_title', 'embed1_content'),
+                    ('embed2_title', 'embed2_content'),
+                    ('embed3_title', 'embed3_content'),
+                    ('embed4_title', 'embed4_content'),
+                    ('embed5_title', 'embed5_content'),
+                    ('embed6_title', 'embed6_content'),
+                    ('embed7_title', 'embed7_content'),
+                    ('embed8_title', 'embed8_content'),
+                    ('embed9_title', 'embed9_content'),
+                    ('embed10_title', 'embed10_content'),
+                    ('embed11_title', 'embed11_content'),
+                    ('embed12_title', 'embed12_content'),
+                    ('embed13_title', 'embed13_content'),
+                    ('embed14_title', 'embed14_content'),
+                ),
+            },
+        ),
     )
 
     def formfield_for_dbfield(self, db_field, **kwargs):
-        field = super(BreakingNewsModuleAdmin, self).formfield_for_dbfield(
-            db_field, **kwargs)
-        if db_field.name in (
-                'deck', 'embeds_description', 'notification_text'):
+        field = super(BreakingNewsModuleAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+        if db_field.name in ('deck', 'embeds_description', 'notification_text'):
             field.widget.attrs['style'] = 'width:50em;'
         elif db_field.name in ('publications', 'categories'):
-            field.widget.attrs['size'] = max((
-                Publication.objects.count(), Category.objects.count()))
+            field.widget.attrs['size'] = max((Publication.objects.count(), Category.objects.count()))
         return field
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "articles":
             kwargs["queryset"] = Article.objects.filter(is_published=True)
-        return super(BreakingNewsModuleAdmin, self).formfield_for_manytomany(
-            db_field, request, **kwargs)
+        return super(BreakingNewsModuleAdmin, self).formfield_for_manytomany(db_field, request, **kwargs)
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -604,6 +712,7 @@ site.register(Section, SectionAdmin)
 site.register(Supplement, SupplementAdmin)
 site.register(Publication, PublicationAdmin)
 site.register(Category, CategoryAdmin)
+site.register(CategoryHome, CategoryHomeAdmin)
 site.register(BreakingNewsModule, BreakingNewsModuleAdmin)
 site.unregister(Tag)
 site.unregister(TaggedItem)

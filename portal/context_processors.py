@@ -87,14 +87,14 @@ def main_menus(request):
 
     mobile_nav_ths = 4 + getattr(settings, 'HOMEV3_MOBILE_NAV_EXTRA_THS', 0)
 
-    menu_lasl = getattr(settings, 'HOMEV3_LATEST_ARTICLE_SECTION_SLUG', None)
-    if menu_lasl:
-        result.update({
-            'MENU_LATEST_ARTICLE_SECTION_SLUG': menu_lasl,
-            'MENU_LATEST_ARTICLE_LINK_TEXT_S': settings.HOMEV3_LATEST_ARTICLE_LINK_TEXT_S,
-            'MENU_LATEST_ARTICLE_LINK_TEXT_L': settings.HOMEV3_LATEST_ARTICLE_LINK_TEXT_L})
+    menu_lal = getattr(settings, 'HOMEV3_LATEST_ARTICLE_LINKS', ())
+    if menu_lal:
+        result['MENU_LATEST_ARTICLE_LINKS'] = menu_lal
         mobile_nav_ths += 1
-
+        if len(menu_lal) > 1:
+            result['MENU_LATEST_ARTICLE_LINKS_DROPDOWN'] = getattr(
+                settings, 'HOMEV3_LATEST_ARTICLE_LINKS_DROPDOWN', 'latest'
+            )
     try:
         menu_publications = Publication.objects.filter(public=True).exclude(
             slug__in=getattr(settings, 'HOMEV3_EXCLUDED_MENU_PUBLICATIONS', ()))

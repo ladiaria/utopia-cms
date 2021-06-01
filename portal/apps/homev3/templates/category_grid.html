@@ -27,9 +27,11 @@
             {% endif %}
           {% endblock %}
           <div class="ld-card__body">
-            <h3 class="ld-card__title">
-              <a href="{{ category_cover_article.get_absolute_url }}">{{ category_cover_article.headline|ldmarkup:category_cover_article.id|removetags:'p' }}</a>
-            </h3>
+            {% if category_cover_article %}
+              <h3 class="ld-card__title">
+                <a href="{{ category_cover_article.get_absolute_url }}">{{ category_cover_article.headline|ldmarkup:category_cover_article.id|removetags:'p' }}</a>
+              </h3>
+            {% endif %}
             {% if category_cover_article.home_lead %}
               <div class="ld-card__intro">{{ category_cover_article.home_lead|ldmarkup:category_cover_article.id|removetags:'p' }}</div>
             {% endif %}

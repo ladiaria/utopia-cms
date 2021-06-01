@@ -1,3 +1,12 @@
+# version 0.0.7 (2021-06-01)
+
+- "home" app removed, categories' homes now are managed by new models in core.
+- Generalizations for fields used by publications newsletters.
+- Code style formatting improved on many modules.
+- UX and CSS improvements in many templates.
+- Generalizations for menu items for latest articles in sections, now can be defined in settings.
+- Article detail view cache activated / deactivated automatically when signupwall is disabled / enabled.
+
 # version 0.0.6 (2021-04-20)
 
 - Unneded custom templates removed.

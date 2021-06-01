@@ -13,8 +13,7 @@ from django.template import RequestContext
 from django.shortcuts import redirect, get_object_or_404, render_to_response
 from django.core.urlresolvers import reverse
 
-from core.models import Publication, Category, Section, Article, get_latest_edition
-from home.models import Home
+from core.models import Publication, Category, CategoryHome, Section, Article, get_latest_edition
 from faq.models import Question, Topic
 
 
@@ -31,9 +30,7 @@ def category_detail(request, slug):
 
     category, inner_sections = get_object_or_404(Category, slug=slug), []
     question_list, questions_topic = [], None
-    category_home = get_object_or_404(Home, category=category)
-    cat_modules = category_home.modules.all()
-    top_articles = cat_modules[0].articles_as_list if cat_modules else []
+    category_home = get_object_or_404(CategoryHome, category=category)
     try:
         featured_section1 = category.section_set.get(home_order=1)
     except (Section.DoesNotExist, Section.MultipleObjectsReturned):
@@ -51,8 +48,9 @@ def category_detail(request, slug):
     if slug == u'elecciones':
         # example dropdown menu (elecciones ir disabled now by redirect)
         inner_sections = category.section_set.filter(
-            Q(slug__startswith='partido-') | Q(slug__in=(
-                'frente-amplio', 'unidad-popular', 'cabildo-abierto', 'otros')))
+            Q(slug__startswith='partido-') |
+            Q(slug__in=('frente-amplio', 'unidad-popular', 'cabildo-abierto', 'otros'))
+        )
     if slug == u'coronavirus':
         question_list = Question.published.filter(topic__slug='coronavirus')
         try:
@@ -64,12 +62,23 @@ def category_detail(request, slug):
         '%s/%s.html' % (
             getattr(settings, 'CORE_CATEGORIES_TEMPLATE_DIR', 'core/templates/category'),
             category.slug if category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_TEMPLATES', ()) else 'detail'
-        ), {
-            'category': category, 'cover_article': category_home.cover, 'destacados': top_articles, 'is_portada': True,
-            'featured_section1': featured_section1, 'featured_section2': featured_section2,
-            'featured_section3': featured_section3, 'inner_sections': inner_sections, 'edition': get_latest_edition(),
-            'question_list': question_list, 'questions_topic': questions_topic,
-            'big_photo': category.full_width_cover_image}, context_instance=RequestContext(request))
+        ),
+        {
+            'category': category,
+            'cover_article': category_home.cover(),
+            'destacados': category_home.non_cover_articles(),
+            'is_portada': True,
+            'featured_section1': featured_section1,
+            'featured_section2': featured_section2,
+            'featured_section3': featured_section3,
+            'inner_sections': inner_sections,
+            'edition': get_latest_edition(),
+            'question_list': question_list,
+            'questions_topic': questions_topic,
+            'big_photo': category.full_width_cover_image,
+        },
+        context_instance=RequestContext(request),
+    )
 
 
 @never_cache
@@ -81,19 +90,21 @@ def newsletter_preview(request, slug):
         return HttpResponseForbidden()
 
     # removed or changed categories redirects by settings
-    if slug in getattr(settings, 'CORE_CATEGORY_REDIRECT', {}):
-        return HttpResponsePermanentRedirect(
-            reverse('category-nl-preview', args=(settings.CORE_CATEGORY_REDIRECT[slug], )))
+    category_redirections = getattr(settings, 'CORE_CATEGORY_REDIRECT', {})
+    if slug in category_redirections:
+        redirect_slug = category_redirections[slug]
+        if redirect_slug:
+            return HttpResponsePermanentRedirect(
+                reverse('category-nl-preview', args=(settings.CORE_CATEGORY_REDIRECT[slug], ))
+            )
 
     category = get_object_or_404(Category, slug=slug)
-    category_home = get_object_or_404(Home, category=category)
-    cat_modules = category_home.modules.all()
+    category_home = get_object_or_404(CategoryHome, category=category)
 
     try:
-        cover_article = category_home.cover
-        cover_article_section = cover_article.publication_section()
-        top_articles = [
-            (a, a.publication_section(), 0) for a in (cat_modules[0].articles_as_list if cat_modules else [])]
+        cover_article = category_home.cover()
+        cover_article_section = cover_article.publication_section() if cover_article else None
+        top_articles = [(a, a.publication_section()) for a in category_home.non_cover_articles()]
 
         listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
         if listonly_section:

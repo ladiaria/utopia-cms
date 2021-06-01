@@ -76,7 +76,6 @@ INSTALLED_APPS = (
     'core.attachments',
     'django_extensions',
     'generator',
-    'home',
     'memcached',
     'shoutbox',
     'thedaily',
@@ -326,7 +325,7 @@ MAX_ATTEMPTS = 1
 CORE_PUBLICATIONS_USE_ROOT_URL = [DEFAULT_PUB]
 
 # slugs of the categories to update their modules after some modifications
-CORE_UPDATE_CATEGORY_MODULES = ['politica', 'opinion', 'cultura', 'cotidiana', 'coronavirus', 'chile']
+CORE_UPDATE_CATEGORY_HOMES = []
 
 # log user visits, disbale on critical performance issues
 CORE_LOG_ARTICLE_VIEWS = True
@@ -354,6 +353,7 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
 )
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_WELCOME_TEMPLATE = 'welcome.html'
+THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
 
 # photologue
 DEFAULT_BYLINE = 'Difusión, S/D de autor.'

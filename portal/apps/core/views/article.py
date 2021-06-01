@@ -16,8 +16,8 @@ from django.contrib.sites.models import Site
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_list_or_404, get_object_or_404, render_to_response
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.cache import never_cache  # , cache_page
-# from django.views.decorators.vary import vary_on_cookie
+from django.views.decorators.cache import never_cache, cache_page
+from django.views.decorators.vary import vary_on_cookie
 from django.template import RequestContext
 from django.template.defaultfilters import slugify
 
@@ -26,7 +26,7 @@ from favit.models import Favorite
 
 from tagging.models import Tag
 from apps import core_articleviewedby_mdb, core_articlevisits_mdb
-from decorators import render_response  # , decorate_if_no_staff, decorate_if_staff
+from decorators import render_response, decorate_if_no_staff, decorate_if_staff
 from core.forms import ReportErrorArticleForm, SendByEmailForm
 from core.models import Publication, Category, Article, ArticleUrlHistory
 
@@ -71,11 +71,6 @@ def article_list(request, type_slug):
         'articles': articles, 'section': atype}
 
 
-# this 3 decorators can be used only when the signupwall middleware is disabled
-# @decorate_if_staff(decorator=never_cache)
-# @decorate_if_no_staff(decorator=vary_on_cookie)
-# @decorate_if_no_staff(decorator=cache_page(120))
-@never_cache
 def article_detail(request, year, month, slug, domain_slug=None):
     domain, category = u'publication', None
     if domain_slug:
@@ -185,6 +180,18 @@ def article_detail(request, year, month, slug, domain_slug=None):
         context,
         context_instance=RequestContext(request),
     )
+
+
+@never_cache
+def article_detail_walled(request, year, month, slug, domain_slug=None):
+    return article_detail(request, year, month, slug, domain_slug)
+
+
+@decorate_if_staff(decorator=never_cache)
+@decorate_if_no_staff(decorator=vary_on_cookie)
+@decorate_if_no_staff(decorator=cache_page(120))
+def article_detail_free(request, year, month, slug, domain_slug=None):
+    return article_detail(request, year, month, slug, domain_slug)
 
 
 def reorder_tag_list(article, tags):

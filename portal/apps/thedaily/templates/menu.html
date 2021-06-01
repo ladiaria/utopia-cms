@@ -21,10 +21,18 @@
     </li>
   {% endif %}
   {% block extra_dropdowns %}{% endblock %}
-  {% if MENU_LATEST_ARTICLE_SECTION_SLUG %}
+  {% if MENU_LATEST_ARTICLE_LINKS_DROPDOWN %}
     <li class="nav-menu__apuntes">
-      <a href="{% url 'section-latest-article' section_slug=MENU_LATEST_ARTICLE_SECTION_SLUG %}">
-        <span class="inner">{{ MENU_LATEST_ARTICLE_LINK_TEXT_S }}</span>
+      <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="{{ MENU_LATEST_ARTICLE_LINKS_DROPDOWN }}-dropdown">
+        <span class="inner">{{ MENU_LATEST_ARTICLE_LINKS_DROPDOWN }}
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z" class="nav-fill" fill="#a4a4a4"/></svg>
+        </span>
+      </a>
+    </li>
+  {% elif MENU_LATEST_ARTICLE_LINKS %}
+    <li class="nav-menu__apuntes">
+      <a href="{% url 'section-latest-article' section_slug=MENU_LATEST_ARTICLE_LINKS.0.0 %}">
+        <span class="inner">{{ MENU_LATEST_ARTICLE_LINKS.0.1 }}</span>
       </a>
     </li>
   {% endif %}
@@ -65,5 +73,12 @@
   </ul>
 {% endif %}
 
+{% if MENU_LATEST_ARTICLE_LINKS_DROPDOWN %}
+  <ul id="{{ MENU_LATEST_ARTICLE_LINKS_DROPDOWN }}-dropdown" class="dropdown-content hide-on-small-and-down">
+    {% for s_slug, desktop_short, mobile_short, text_long in MENU_LATEST_ARTICLE_LINKS %}
+      <li><a href="{% url 'section-latest-article' section_slug=s_slug %}">{{ desktop_short }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
 
 {% block extra_dropdowns_contents %}{% endblock %}

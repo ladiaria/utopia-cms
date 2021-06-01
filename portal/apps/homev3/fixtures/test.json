@@ -246,11 +246,19 @@
 },
 {
   "pk": 1,
-  "model": "core.home",
+  "model": "core.categoryhome",
   "fields": {
-    "category": 1,
-    "fixed": false,
-    "cover": 1
+    "category": 1
+  }
+},
+{
+  "pk": 1,
+  "model": "core.categoryhomearticle",
+  "fields": {
+    "home": 1,
+    "article": 1,
+    "position": 1,
+    "fixed": false
   }
 }
 ]

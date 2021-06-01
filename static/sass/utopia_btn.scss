@@ -253,6 +253,14 @@
   @include ld-btn($bg-color: $off-black, $color: #fff, $size: 'sm');
 }
 
+.ld-btn-default--no-shadow, a.ld-btn-default--no-shadow {
+  box-shadow: none;
+
+  &:hover {
+    box-shadow: none;
+  }
+}
+
 // Buttons
 
 .btn {

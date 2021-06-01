@@ -10,7 +10,6 @@ from django.template import Library, Node, RequestContext, TemplateSyntaxError, 
 from django.template.defaultfilters import stringfilter
 from django.utils import text
 
-from home.models import HomeArticle
 from core.models import Article, Supplement, Category, Section
 from core.forms import SendByEmailForm
 from core.templatetags.ldml import ldmarkup, cleanhtml
@@ -151,64 +150,6 @@ def render_article_card(context, article, media, card_size, card_type=None):
     return loader.render_to_string('core/templates/article/' + template, context)
 
 
-# Render article short
-class RenderArticleShortNode(Node):
-    def __init__(self, article=None, media=None):
-        self.article = Variable(article)
-        self.media = Variable(media)
-
-    def render(self, context):
-        article = self.article.resolve(context)
-        if not article:
-            return ''
-        if isinstance(article, HomeArticle):
-            article = article.article
-        media = self.media.resolve(context)
-        article_html = loader.render_to_string(
-            'core/templates/article/lead.html',
-            {'article': article, 'media': media}, context_instance=context)
-        return article_html
-
-
-@register.tag
-def render_article_short(parser, token):
-    bits = token.contents.split()[2:]
-    kwargs = {}
-    for param in bits:
-        key, val = [str(p) for p in param.split('=')]
-        kwargs[key] = val.replace('"', '')
-    return RenderArticleShortNode(**kwargs)
-
-
-# Artículos destacados en portada (en ticker de una linea marcado amarillo)
-class RenderArticleHighlightedNode(Node):
-    def __init__(self, article=None, media=None):
-        self.article = Variable(article)
-        self.media = Variable(media)
-
-    def render(self, context):
-        article = self.article.resolve(context)
-        if not article:
-            return ''
-        if isinstance(article, HomeArticle):
-            article = article.article
-        media = self.media.resolve(context)
-        article_html = loader.render_to_string(
-            'core/templates/article/home_highlighted.html',
-            {'article': article, 'media': media}, context_instance=context)
-        return article_html
-
-
-@register.tag
-def render_article_highlighted(parser, token):
-    bits = token.contents.split()[2:]
-    kwargs = {}
-    for param in bits:
-        key, val = [str(p) for p in param.split('=')]
-        kwargs[key] = val.replace('"', '')
-    return RenderArticleHighlightedNode(**kwargs)
-
-
 # Render article media list con foto a la izquierda para mostrar en sidebar
 class RenderArticleMediaNode(Node):
     def __init__(self, article=None, media=None):
@@ -219,8 +160,6 @@ class RenderArticleMediaNode(Node):
         article = self.article.resolve(context)
         if not article:
             return ''
-        if isinstance(article, HomeArticle):
-            article = article.article
         media = self.media.resolve(context)
         article_html = loader.render_to_string(
             'core/templates/article/media-list.html',
@@ -237,36 +176,6 @@ def render_article_media(parser, token):
         key, val = [str(p) for p in param.split('=')]
         kwargs[key] = val.replace('"', '')
     return RenderArticleMediaNode(**kwargs)
-
-
-# Render article mini, para mostrar artículos de opinión, etc.
-class RenderArticleMiniNode(Node):
-    def __init__(self, article=None, media=None):
-        self.article = Variable(article)
-        self.media = Variable(media)
-
-    def render(self, context):
-        article = self.article.resolve(context)
-        if not article:
-            return ''
-        if isinstance(article, HomeArticle):
-            article = article.article
-        media = self.media.resolve(context)
-        article_html = loader.render_to_string(
-            'core/templates/article/mini-list.html',
-            {'article': article, 'media': media, 'ignore_toolbar': True},
-            context_instance=context)
-        return article_html
-
-
-@register.tag
-def render_article_mini(parser, token):
-    bits = token.contents.split()[2:]
-    kwargs = {}
-    for param in bits:
-        key, val = [str(p) for p in param.split('=')]
-        kwargs[key] = val.replace('"', '')
-    return RenderArticleMiniNode(**kwargs)
 
 
 class ArticlesByTypeNode(Node):
@@ -340,15 +249,21 @@ def defensoria(parser, token):
 def render_toolbar_for(context, toolbar_object):
     """ Usage example: {% render_toolbar_for article %} """
     user = context.get('user')
-    # TODO: check if anyone is using this HomeArticle model, if no => remove it
-    if user and user.is_staff and isinstance(toolbar_object, (Article, HomeArticle)):
+    if user and user.is_staff and isinstance(toolbar_object, Article):
         toolbar_template = 'core/templates/article/toolbar.html'
         params = {'article': toolbar_object, 'is_detail': False}
-        if isinstance(toolbar_object, Article) and context.get('is_cover'):
+        if context.get('is_cover'):
             edition = context.get('edition')
             if edition:
-                params.update({'featured_order': ', '.join(str(tp) for tp in toolbar_object.articlerel_set.filter(
-                    edition=edition, home_top=True).values_list('top_position', flat=True))})
+                params.update(
+                    {
+                        'featured_order': ', '.join(
+                            str(tp) for tp in toolbar_object.articlerel_set.filter(
+                                edition=edition, home_top=True
+                            ).values_list('top_position', flat=True)
+                        ),
+                    }
+                )
         context.update(params)
         return loader.render_to_string(toolbar_template, context)
     else:

@@ -68,7 +68,8 @@ def permissions(request):
         'is_subscriber_any': is_subscriber_any, 'poll_url': (u'https://forms.gle/' + pu_path) if pu_path else u''})
 
     # if is_subscriber generate the JWT for Coral Talk integration (if TALK_URL is set)
-    if is_subscriber and hasattr(settings, 'TALK_URL'):
+    talk_url = getattr(settings, 'TALK_URL', None)
+    if is_subscriber and talk_url:
         jti, exp = str(uuid4()), int(time()) + 60
         result['talk_auth_token'] = jwt.encode({'jti': jti, 'exp': exp + 3600, 'user': {
             'id': str(request.user.id), 'email': request.user.email,

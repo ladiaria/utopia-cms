@@ -17,9 +17,8 @@ from django.db import connection, IntegrityError
 from django.core.management.base import BaseCommand
 from django.template.loader import render_to_string
 
-from core.models import Category, Section, Article, get_latest_edition
+from core.models import Category, CategoryHome, Section, Article, get_latest_edition
 from core.templatetags.core_tags import remove_markup
-from home.models import Home
 from thedaily.models import Subscriber
 from dashboard.models import NewsletterDelivery
 from libs.utils import smtp_connect
@@ -40,12 +39,10 @@ hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_from_ns, ids_ending_with, subscriber_ids):
 
-    category_home = Home.objects.get(category=category)
-    cat_modules = category_home.modules.all()
-
-    cover_article = category_home.cover
+    category_home = CategoryHome.objects.get(category=category)
+    cover_article = category_home.cover()
     cover_article_section = cover_article.publication_section()
-    top_articles = [(a, a.publication_section(), 0) for a in (cat_modules[0].articles_as_list if cat_modules else [])]
+    top_articles = [(a, a.publication_section()) for a in category_home.non_cover_articles()]
 
     listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
     if listonly_section:
@@ -106,7 +103,7 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
     # define the function to be executed by each thread
     def send(func):
         # Connect to the SMTP server and send all emails
-        smtp = smtp_connect()
+        smtp = None if no_deliver else smtp_connect()
 
         subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
         site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
@@ -181,10 +178,11 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
                 counters.append((subscriber_sent, user_sent, subscriber_refused, user_refused))
                 break
 
-        try:
-            smtp.quit()
-        except smtplib.SMTPServerDisconnected:
-            pass
+        if not no_deliver:
+            try:
+                smtp.quit()
+            except smtplib.SMTPServerDisconnected:
+                pass
 
     # create threads
     subscribers_iter = subscribers()
@@ -290,5 +288,8 @@ class Command(BaseCommand):
             options.get('ids_ending_with'),
             args[1:],
         )
-        log.info("%s %s completed in %.0f seconds using %d threads" % (
-            today, 'Simulation' if no_deliver else 'Delivery', time.time() - start_time, nthreads))
+        log.info(
+            "%s %s completed in %.0f seconds using %d threads" % (
+                today, 'Simulation' if no_deliver else 'Delivery', time.time() - start_time, nthreads
+            )
+        )

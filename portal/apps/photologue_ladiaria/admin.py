@@ -137,7 +137,8 @@ class AgencyFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         agency = self.value()
         return queryset.filter(
-            id__in=PhotoExtended.objects.filter(agency=agency).values_list('image', flat=True)) if agency else queryset
+            id__in=PhotoExtended.objects.filter(agency=agency).values_list('image', flat=True)
+        ) if agency else queryset
 
 
 class PhotographerFilter(admin.SimpleListFilter):
