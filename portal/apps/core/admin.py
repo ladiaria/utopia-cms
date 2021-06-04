@@ -573,7 +573,7 @@ class PublicationAdmin(ModelAdmin):
         'image_tag',
         'get_full_width_cover_image_tag',
     )
-    list_editable = ('name', 'slug', 'headline', 'weight', 'public', 'has_newsletter')
+    list_editable = ('name', 'headline', 'weight', 'public', 'has_newsletter')
     raw_id_fields = ('full_width_cover_image', )
 
 

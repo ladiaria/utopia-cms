@@ -177,6 +177,14 @@ article {
         .container.container--no-margin {
             margin: 0 auto;
         }
+
+        a {
+            transition: color 0.1s ease-in-out;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
     }
 
     p,

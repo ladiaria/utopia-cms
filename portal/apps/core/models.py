@@ -1675,8 +1675,9 @@ def get_current_edition(publication=None):
     if publication:
         filters['publication'] = publication.id
     else:
-        filters['publication__in'] = [p.id for p in Publication.objects.filter(
-            slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL)]
+        filters['publication__in'] = [
+            p.id for p in Publication.objects.filter(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL)
+        ]
 
     filters['date_published__lt' + ('e' if now > publishing else '')] = today
     try:
@@ -1694,23 +1695,34 @@ def get_latest_edition(publication=None):
 
 
 def get_current_feeds():
+    """
+    NOTE: if no current_edition found, next editions are taken using "today" as date contition.
+    """
     # editions for "root" publications (current and "next")
     current_edition = get_current_edition()
     next_editions = Edition.objects.filter(
+        publication__public=True,
         publication__slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL,
-        date_published__gt=current_edition.date_published,
+        date_published__gt=current_edition.date_published if current_edition else date.today(),
     ).order_by('date_published')
-    editions_ids = [str(current_edition.id)] + ([str(next_editions[0].id)] if next_editions else [])
+    editions_ids = ([str(current_edition.id)] if current_edition else []) + (
+        [str(next_editions[0].id)] if next_editions else []
+    )
 
     # editions for all the other publications (current and "next")
-    for p in Publication.objects.exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL):
+    for p in Publication.objects.filter(public=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL):
         current_edition = get_current_edition(p)
         next_editions = Edition.objects.filter(
-            publication=p, date_published__gt=current_edition.date_published).order_by('date_published')
-        editions_ids += [str(current_edition.id)] + ([str(next_editions[0].id)] if next_editions else [])
+            publication=p, date_published__gt=current_edition.date_published if current_edition else date.today()
+        ).order_by('date_published')
+        editions_ids += ([str(current_edition.id)] if current_edition else []) + (
+            [str(next_editions[0].id)] if next_editions else []
+        )
 
     return Article.objects.filter(is_published=True).extra(
         where=[
             'core_article.id=core_articlerel.article_id',
-            'core_articlerel.edition_id IN (%s)' % ','.join(editions_ids)],
-        tables=['core_articlerel']).distinct()
+            'core_articlerel.edition_id IN (%s)' % ','.join(editions_ids),
+        ],
+        tables=['core_articlerel'],
+    ).distinct()

@@ -97,11 +97,15 @@ class RenderPublicationRowNode(Node):
 
     def render(self):
         edition = get_current_edition(publication=self.publication)
-        return loader.render_to_string(getattr(settings, 'HOMEV3_PUBLICATION_ROW_TEMPLATE', 'publication_row.html'), {
-            'publication': self.publication,
-            'edition': edition, 'is_portada': True,  # both should be set
-            # force a blank first node because top_index should be > 0
-            'destacados': [None] + edition.top_articles[:4]})
+        return loader.render_to_string(
+            getattr(settings, 'HOMEV3_PUBLICATION_ROW_TEMPLATE', 'publication_row.html'),
+            {
+                'publication': self.publication,
+                'edition': edition, 'is_portada': True,  # both should be set
+                # force a blank first node because top_index should be > 0
+                'destacados': [None] + edition.top_articles[:4],
+            },
+        ) if edition else u''
 
 
 @register.simple_tag(takes_context=True)
