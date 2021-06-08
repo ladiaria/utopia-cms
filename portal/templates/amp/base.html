@@ -461,24 +461,7 @@
       .ld-subscribe-box__login.ld-text-secondary p { font-size:16px; margin-bottom:8px;}
       .ld-btn-default--sm, a.ld-btn-default--sm{ font-size: 14px; padding: 12px 19px 11px; }
       .ld-subscribe-box__login .ld-btn-dark-bordered--sm { color: #262626; text-decoration:none; border:2px solid #262626; border-radius: 100px; padding: 12px 19px 11px; font-size: 14px; line-height: 1; height: auto; text-transform: uppercase;  font-weight:bold; display: inline-block;}
-      /* Audio audio.scss */
-      .ld-audio { text-align: center; padding: 19px; font-size: 18px; border-radius: 11px; position: relative; overflow: hidden; border: none; }
-      .ld-audio__overlay { font-family: 'Roboto'; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; -ms-flex-pack: center; justify-content: center; z-index: 1; opacity: 0; pointer-events: none; -webkit-transition: 300ms; transition: 300ms; }
-      .ld-audio__overlay.active { opacity: 1; pointer-events: all; }
-      .ld-audio__overlay-close-btn { position: absolute; right: 18px; top: 18px; border: none; background: none; cursor: pointer; width: 16px; height: 16px; padding: 0; margin: 0; }
-      .ld-audio__overlay-close-btn svg { width: 100%; height: 100%; }
-      .ld-audio__overlay-close-btn:focus { outline: default; }
-      .ld-audio__overlay-close-btn:hover svg { -webkit-transform: scale(1.1); -ms-transform: scale(1.1); transform: scale(1.1); }
-      .ld-audio__overlay-close-btn::-moz-focus-inner { border: 0; }
-      .ld-audio__overlay-close-btn svg { outline: none; -webkit-transition: -webkit-transform 0.3s linear; transition: transform 0.3s linear; }
-      .ld-audio__overlay-content { max-width: 450px; }
-      .ld-audio__overlay-title { color: white; font-size: 18px; margin-bottom: 20px; font-weight: 500; }
-      .ld-audio__overlay-links { font-size: 14px; color: white; }
-      .ld-audio__overlay-links a { color: white; text-decoration: underline; }
-      .ld-audio__audio { width: 100%; margin-bottom: 8px; }
-      .ld-audio__title { font-family: 'Roboto'; font-weight: 500; color: #262626; font-size: 18px; margin-bottom: 24px; }
-      .ld-audio__description { font-family: 'Roboto'; font-weight: normal; font-size: 14px; color: #595959; }
-      .ld-audio-block { margin: 0 20px; padding: 20px; max-width: 700px; border-radius: 11px; background-color: white; box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4); }
+
       .talk-login { margin-top: 30px; }
       .talk-login.active { display: block; }
       .ld-btn--sm.ld-btn-subscribe-to-comment { display: inline-block; margin-bottom: 10px; background:#262626; color:#fff;}
@@ -508,6 +491,24 @@
       .ld-card__byline a { color: #262626; text-decoration:underline; }
       .ld-card__byline-wrap { margin-bottom: 16px; }
       .ld-card__date { font-size: 12px; margin-top: 15px; margin-top: auto; }
+      /* Audio audio.scss */
+      .ld-audio { text-align: center; padding: 19px; font-size: 18px; border-radius: 10px; position: relative; overflow: hidden; border: none; }
+      .ld-audio__overlay { font-family: 'Roboto'; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; -ms-flex-pack: center; justify-content: center; z-index: 1; opacity: 0; pointer-events: none; -webkit-transition: 300ms; transition: 300ms; }
+      .ld-audio__overlay.active { opacity: 1; pointer-events: all; }
+      .ld-audio__overlay-close-btn { position: absolute; right: 18px; top: 18px; border: none; background: none; cursor: pointer; width: 16px; height: 16px; padding: 0; margin: 0; }
+      .ld-audio__overlay-close-btn svg { width: 100%; height: 100%; }
+      .ld-audio__overlay-close-btn:focus { outline: default; }
+      .ld-audio__overlay-close-btn:hover svg { -webkit-transform: scale(1.1); -ms-transform: scale(1.1); transform: scale(1.1); }
+      .ld-audio__overlay-close-btn::-moz-focus-inner { border: 0; }
+      .ld-audio__overlay-close-btn svg { outline: none; -webkit-transition: -webkit-transform 0.3s linear; transition: transform 0.3s linear; }
+      .ld-audio__overlay-content { max-width: 450px; }
+      .ld-audio__overlay-title { color: white; font-size: 18px; margin-bottom: 20px; font-weight: 500; }
+      .ld-audio__overlay-links { font-size: 14px; color: white; }
+      .ld-audio__overlay-links a { color: white; text-decoration: underline; }
+      .ld-audio__audio { width: 100%; margin-bottom: 8px; }
+      .ld-audio__title { font-family: 'Roboto'; font-weight: 500; color: #262626; font-size: 18px; margin-bottom: 24px; }
+      .ld-audio__description { font-family: 'Roboto'; font-weight: normal; font-size: 14px; color: #595959; }
+      .ld-audio-block { margin: 0 20px; padding: 20px; max-width: 700px; border-radius: 10px; background-color: white; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2); }
       .section-detail__head { padding-top: 48px; margin-bottom: 30px; }
       .section-detail__toplink { transition: .1s ease-out; color: #7f7f7f; margin-bottom: 5px; text-transform: uppercase; font-size: 14px; font-weight: 500; background-image: url(../img/icon-arrow-left.svg); background-repeat: no-repeat; background-position: top 2px left; padding-left: 13px; background-size: 8px; vertical-align: middle; display: inline-block; }
       .section-detail__toplink:hover { color: #7f7f7f; opacity: .85; }

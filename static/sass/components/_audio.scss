@@ -2,7 +2,7 @@
   text-align: center;
   padding: 19px;
   font-size: 18px;
-  border-radius: 11px;
+  border-radius: 10px;
   position: relative;
   overflow: hidden;
   border: none;
@@ -50,7 +50,7 @@
       outline: default;
     }
 
-    &:hover {      
+    &:hover {
       svg {
         transform: scale(1.1);
       }
