@@ -49,18 +49,17 @@ class SubscriptionPrices(Model):
 
 alphanumeric = RegexValidator(
     u'^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$',
-    u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, '
-    u'guiones y puntos.')
+    u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
+)
 
 
 class Subscriber(Model):
     """
     TODO 2nd release:
-     - Create an "extra" JSON field to save custom-bussiness-related subscriber data.
+     - Create an "extra" JSON field to save custom-bussiness-related subscriber data. (using plan_id for this now)
      - Many ladiaria custom fields like "lento_pdf" should be removed (ladiaria will be using them in "extra").
-     - Rename costumer -> customer (typo).
     """
-    costumer_id = PositiveIntegerField(u'ID ss', unique=True, editable=True, blank=True, null=True)
+    contact_id = PositiveIntegerField(u'CRM id', unique=True, editable=True, blank=True, null=True)
     user = OneToOneField(User, verbose_name=u'usuario', related_name='subscriber', blank=True, null=True)
 
     # TODO: ver la posibilidad de eliminarlo ya que es el "first_name" del modelo django.contrib.auth.models.User
@@ -71,7 +70,8 @@ class Subscriber(Model):
     country = CharField(u'país', max_length=50, blank=True, null=True)
     city = CharField(u'ciudad', max_length=64, blank=True, null=True)
     province = CharField(
-        u'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True)
+        u'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
+    )
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
     document = CharField(u'documento', max_length=50, blank=True, null=True)
@@ -86,7 +86,6 @@ class Subscriber(Model):
     plan_id = TextField(blank=True, null=True)
     ruta_lento = PositiveSmallIntegerField(blank=True, null=True)
     ruta_fs = PositiveSmallIntegerField(blank=True, null=True)
-    days = CharField(max_length=5, null=True, default=None)
     newsletters = ManyToManyField(Publication, blank=True, limit_choices_to={'has_newsletter': True})
     category_newsletters = ManyToManyField(Category, blank=True, limit_choices_to={'has_newsletter': True})
     allow_news = BooleanField(u'acepta novedades', default=True)
@@ -151,19 +150,6 @@ class Subscriber(Model):
     user_is_active.short_description = u'user act.'
     user_is_active.boolean = True
 
-    def activo(self):
-        if self.is_subscriber():
-            if self.days:
-                s = ''
-                for d in range(5):
-                    s += 'LMMJV'[d] if unicode(d + 1) in self.days else '_'
-            else:
-                s = '_' * 5
-        else:
-            s = '<img src="%sadmin/img/icon-no.gif" alt="no">' % settings.STATIC_URL
-        return s
-    activo.allow_tags = True
-
     def is_subscriber_any(self):
         return any(
             self.is_subscriber(pub_slug) for pub_slug in getattr(
@@ -226,8 +212,8 @@ class Subscriber(Model):
         permissions = (("es_suscriptor_%s" % settings.DEFAULT_PUB, "Es suscriptor actualmente"), )
 
 
-def updatecrmuser(costumer_id, field, value):
-    data = {"costumer_id": costumer_id, "field": field, "value": value}
+def updatecrmuser(contact_id, field, value):
+    data = {"contact_id": contact_id, "field": field, "value": value}
     if settings.CRM_UPDATE_USER_ENABLED:
         r = requests.post(settings.CRM_UPDATE_USER_URI, data=data)
         r.raise_for_status()
@@ -246,10 +232,10 @@ def user_pre_save(sender, instance, **kwargs):
     # sync email if changed
     if actualusr.email != instance.email:
         try:
-            costumer_id = instance.subscriber.costumer_id if instance.subscriber else None
+            contact_id = instance.subscriber.contact_id if instance.subscriber else None
             requests.post(
                 settings.CRM_UPDATE_USER_URI, data={
-                    'costumer_id': costumer_id, 'email': actualusr.email,
+                    'contact_id': contact_id, 'email': actualusr.email,
                     'newemail': instance.email}).raise_for_status()
         except requests.exceptions.RequestException:
             raise UpdateCrmEx(u"No se ha podido actualizar tu email, contactate con nosotros")
@@ -257,7 +243,7 @@ def user_pre_save(sender, instance, **kwargs):
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
 def subscriber_pre_save(sender, instance, **kwargs):
-    if settings.DEBUG:
+    if getattr(settings, 'THEDAILY_DEBUG_SIGNALS', False):
         print('DEBUG: subscriber_pre_save signal called')
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
         return True
@@ -266,7 +252,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
         for f in settings.CRM_UPDATE_SUBSCRIBER_FIELDS.values():
             if getattr(actual_sub, f) != getattr(instance, f):
                 try:
-                    updatecrmuser(instance.costumer_id, f, getattr(instance, f))
+                    updatecrmuser(instance.contact_id, f, getattr(instance, f))
                 except requests.exceptions.RequestException:
                     raise UpdateCrmEx(u"No se ha podido actualizar tu perfil, contactate con nosotros")
     except Subscriber.DoesNotExist:
@@ -281,7 +267,7 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
     if action.startswith('post_'):
         try:
             updatecrmuser(
-                instance.costumer_id, u'newsletters' + (u'_remove' if action == 'post_remove' else u''),
+                instance.contact_id, u'newsletters' + (u'_remove' if action == 'post_remove' else u''),
                 simplejson.dumps(list(pk_set)) if pk_set else None)
         except requests.exceptions.RequestException:
             raise UpdateCrmEx(u"No se ha podido actualizar tu perfil, contactate con nosotros")

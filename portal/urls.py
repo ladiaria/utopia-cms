@@ -5,7 +5,7 @@ from feeds import ArticlesByJournalist, LatestArticlesByCategory, LatestEditions
 from rest_framework import serializers, viewsets, routers
 
 from django.conf import settings
-from django.conf.urls.defaults import patterns, url, include
+from django.conf.urls import patterns, url, include
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import TemplateView, RedirectView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -200,7 +200,7 @@ class SubscriberViewSet(viewsets.ModelViewSet):
     queryset = Subscriber.objects.all()
     serializer_class = SubscriberSerializer
     http_method_names = ['get', 'head']
-    filter_fields = ('costumer_id', )
+    filter_fields = ('contact_id', )
 
 
 class DollarExchangeViewSet(viewsets.ModelViewSet):

@@ -954,7 +954,7 @@ def update_user_from_crm(request):
 
     if request.method == 'POST':
         try:
-            costumer_id = request.POST[u'costumer_id']
+            contact_id = request.POST[u'contact_id']
             email = request.POST.get(u'email')
             newemail = request.POST.get(u'newemail')
             field = request.POST.get(u'field')
@@ -964,7 +964,7 @@ def update_user_from_crm(request):
         except KeyError:
             return HttpResponseBadRequest()
         try:
-            s = Subscriber.objects.get(costumer_id=costumer_id)
+            s = Subscriber.objects.get(contact_id=contact_id)
             if field == u'email':
                 check_user = User.objects.filter(email=newemail)
                 if check_user.exists():
@@ -1202,7 +1202,7 @@ def users_api(request):
 @require_POST
 def email_check_api(request):
     """
-    Takes costumer_id and email from POST to check if there is any other user
+    Takes contact_id and email from POST to check if there is any other user
     with the requested email. If it doesn't exist, it returns OK. Then, if it
     exists, it checks if it's the same user that should have that email.
     If it's not, it returns an error message.
@@ -1210,21 +1210,21 @@ def email_check_api(request):
     try:
 
         email = request.POST['email']
-        costumer_id = int(request.POST['costumer_id'])
+        contact_id = int(request.POST['contact_id'])
 
-        if not email or not costumer_id or request.POST['ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
+        if not email or not contact_id or request.POST['ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
             return HttpResponseForbidden()
 
-        subscriber_from_crm = Subscriber.objects.filter(costumer_id=costumer_id)
+        subscriber_from_crm = Subscriber.objects.filter(contact_id=contact_id)
 
         if not subscriber_from_crm.exists():
             return HttpResponse('OK')
 
         user = User.objects.select_related('subscriber').get(email=email)
 
-        user_costumer_id = getattr(user.subscriber, 'costumer_id', None)
+        user_contact_id = getattr(user.subscriber, 'contact_id', None)
 
-        if (user_costumer_id and user_costumer_id != costumer_id) or (user_costumer_id is None):
+        if (user_contact_id and user_contact_id != contact_id) or (user_contact_id is None):
             msg = u'Ya existe otro usuario en la web con ese email'
         else:
             msg = u'OK'
@@ -1295,11 +1295,11 @@ def custom_api(request):
 @to_response
 def referrals(request, hashed_id):
     hashids = Hashids(settings.HASHIDS_SALT, 32)
-    costumer_id, user = hashids.decode(hashed_id), None
-    if costumer_id:
-        sub = get_object_or_404(Subscriber, costumer_id=int(costumer_id[0]))
+    contact_id, user = hashids.decode(hashed_id), None
+    if contact_id:
+        sub = get_object_or_404(Subscriber, contact_id=int(contact_id[0]))
         user = sub.user
-    if not (costumer_id or user):
+    if not (contact_id or user):
         raise Http404
     if request.method == 'POST':
         if user.suscripciones.all():

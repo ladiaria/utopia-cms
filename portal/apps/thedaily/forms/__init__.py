@@ -497,7 +497,7 @@ class GoogleSigninForm(ModelForm):
     class Meta:
         model = Subscriber
         exclude = (
-            'costumer_id',
+            'contact_id',
             'user',
             'name',
             'downloads',

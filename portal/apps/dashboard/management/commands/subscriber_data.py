@@ -27,7 +27,7 @@ class Command(BaseCommand):
             except Article.DoesNotExist:
                 viewed_sections = u''
             w.writerow([
-                s.id, s.costumer_id, s.user.get_full_name() or s.user.username,
+                s.id, s.contact_id, s.user.get_full_name() or s.user.username,
                 s.user.email, s.user.date_joined, s.user.is_active,
                 viewed_sections, latest_activity(s.user),
                 u', '.join(s.newsletters.values_list('name', flat=True))])

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 from django.views.generic import TemplateView
 
 from core.views.edition import edition_list, edition_list_ajax, edition_detail, edition_download, rawpic_cover

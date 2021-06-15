@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import md5
+from hashlib import md5
 import re
 import smtplib
 
@@ -52,7 +52,7 @@ def do_gonzo(*args, **kwargs):
     for arg in kwargs:
         hash_this += '%s$' % str(kwargs.get(arg))
     hash_this += settings.SECRET_KEY
-    return md5.md5(hash_this).hexdigest()
+    return md5(hash_this).hexdigest()
 
 
 def md5file(filename):

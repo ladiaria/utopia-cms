@@ -300,7 +300,6 @@ class Edition(PortableDocumentFormatBaseModel):
 
     @property
     def top_articles(self):
-        # TODO: check if dupes should be removed
         return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.select_related(
             'article__main_section__edition__publication', 'article__main_section__section',
             'article__photo__extended__photographer'

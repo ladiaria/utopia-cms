@@ -110,9 +110,15 @@ class RenderPublicationRowNode(Node):
 
 @register.simple_tag(takes_context=True)
 def render_publication_row(context, publication_slug):
-    publication = Publication.objects.get(slug=publication_slug)
-    # if not public => render only if saff user
-    return RenderPublicationRowNode(publication).render() if publication.public or context['user'].is_staff else u''
+    try:
+        publication = Publication.objects.get(slug=publication_slug)
+    except Publication.DoesNotExist:
+        return u''
+    else:
+        # if not public => render only if saff user
+        return (
+            RenderPublicationRowNode(publication).render() if publication.public or context['user'].is_staff else u''
+        )
 
 
 class RenderCategoryRowNode(Node):

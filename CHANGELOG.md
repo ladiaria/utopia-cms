@@ -1,3 +1,14 @@
+# version 0.0.8 (2021-06-15)
+
+- Removed a custom attribute and method from Subscriber model.
+- Renamed "costumer_id" (typo) attribute from Subscriber model to "contact_id".
+- Changed urls and md5 imports to avoid deprecation warnings.
+- Syntax formatting improvements on many modules.
+- A deprecated-custom urls module was removed.
+- Improvements on "Subscriptions" section of user profile template.
+- Fixed a templatetag error when a publication does not exist.
+
+
 # version 0.0.7 (2021-06-01)
 
 - "home" app removed, categories' homes now are managed by new models in core.

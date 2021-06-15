@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 from cartelera.views import index, categoria, cine, pelicula, rating, obrateatro, evento, notification_closed
 
 urlpatterns = patterns(

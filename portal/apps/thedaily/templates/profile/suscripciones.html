@@ -1,26 +1,26 @@
 <section class="ld-block section scrollspy" id="suscripciones">
   <h2 class="ld-title ld-title--underlined">Suscripciones</h2>
+  <div class="ld-profile-row">
 
-  {% if is_subscriber_any %}
+    {% if is_subscriber_any %}
 
-    <div class="row ld-profile-row">
-      <div class="col m12">
-        <h3 class="ld-title-second">Digital</h3>
-        Acceso a los contenidos digitales.
+      <div class="card-plan">
+        <h3 class="ld-title-second">Digital ilimitada</h3>
+        <p>Acceso a los contenidos digitales.</p>
       </div>
-    </div>
 
-  {% else %}
+    {% else %}
 
-    <div class="row ld-profile-row">
-      <div class="col m12">
-        <h3 class="ld-title-second">Digital gratuita ($0/mes)</h3>
-        Hasta 10 artículos gratuitos al mes y newsletters.
-        Para acceso ilimitado de artículos y más beneficios pasate a la diaria digital ilimitada ($350/mes).
+      <div class="card-plan">
+        <h3 class="ld-title-second">Digital gratuita</h3>
+        <p>
+          Hasta 10 artículos gratuitos al mes y newsletters.<br>{# TODO: unhardcode the "$350" #}
+          Para acceso ilimitado de artículos y más beneficios pasate a digital ilimitada ($350/mes).
+        </p>
         <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn ld-btn-solid-dark">Pasate a ilimitada</a>
       </div>
-    </div>
 
-  {% endif %}
+    {% endif %}
 
+  </div>
 </section>

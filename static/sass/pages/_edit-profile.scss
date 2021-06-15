@@ -207,3 +207,26 @@
     }
   }
 
+.card-plan {
+  box-shadow: 0 2px 2px 0 rgba(0,0,0,.14),0 1px 5px 0 rgba(0,0,0,.12),0 3px 1px -2px rgba(0,0,0,.2);
+  padding: 25px;
+  border-radius: 10px;
+
+  > ul {
+    margin-left: 1em;
+
+    > li {
+      list-style-type: disc;
+      margin-bottom: 5px;
+    }
+  }
+
+  .cancel-link {
+    text-decoration: underline;
+    display: inline-block;
+    margin-top: 10px;
+  }
+  + .card-plan {
+    margin-top: 25px;
+  }
+}

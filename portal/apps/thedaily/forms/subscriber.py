@@ -41,7 +41,7 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = Subscriber
         exclude = (
-            'costumer_id', 'user', 'name', 'downloads', 'profile_photo',
+            'contact_id', 'user', 'name', 'downloads', 'profile_photo',
             'days', 'pdf', 'ruta', 'lento_pdf')
 
 

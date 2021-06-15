@@ -1,3 +1,13 @@
+# From version 0.0.7 to 0.0.8
+
+```
+git pull
+git checkout 0.0.8
+cd portal
+# activate your virtual env
+DJANGO_SETTINGS_MODULE=install_settings ./manage.py migrate thedaily
+```
+
 # From version 0.0.6 to 0.0.7
 
 ```

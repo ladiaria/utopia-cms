@@ -46,7 +46,7 @@ def load_csv(csv_file):
             if user.id:
                 document = ''.join(DOCUMENT_RE.findall(bits[2])) if bits[2] not in ('', '\N') else ''
                 subscriber = Subscriber(user=user)
-                subscriber.costumer_id = int(bits[0])
+                subscriber.contact_id = int(bits[0])
                 subscriber.name = bits[1]
                 subscriber.document = document
                 subscriber.phone = get_phone(bits[3])

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from views import calendar, day_detail, event_detail
 
-from django.conf.urls.defaults import patterns, url, include
+from django.conf.urls import patterns, url, include
 
 urlpatterns = patterns('',
     url(r'^$', calendar, name='events-calendar'),

@@ -62,12 +62,12 @@ class Command(BaseCommand):
                 annotate(Count('id')).order_by().filter(document__isnull=False,
                 id__count__gt=1):
             try:
-                # obtain a subscriber with this document and costumer_id set
+                # obtain a subscriber with this document and contact_id set
                 costumer = Subscriber.objects.get(document=dupedoc['document'],
-                    costumer_id__isnull=False)
+                    contact_id__isnull=False)
                 # iterate over the others and merge fileds into the costumer
                 for s in Subscriber.objects.filter(document=dupedoc['document'],
-                        costumer_id__isnull=True):
+                        contact_id__isnull=True):
                     # merge the fields for the user object that can be blank
                     for f in ('first_name', 'last_name', 'email'):
                         try:
@@ -90,7 +90,7 @@ class Command(BaseCommand):
                                 costumer))
                 # iterate again to check email field and deletion
                 for s in Subscriber.objects.filter(document=dupedoc['document'],
-                        costumer_id__isnull=True):
+                        contact_id__isnull=True):
                     if not costumer.user.email:
                         # if email still blank set username if is a valid email
                         try:

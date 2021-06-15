@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 
 from views import (
     index, export_csv, load_table, audio_statistics_api, audio_statistics_dashboard, audio_statistics_api_amp)
