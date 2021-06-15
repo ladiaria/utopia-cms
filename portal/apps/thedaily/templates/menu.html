@@ -5,11 +5,11 @@
     <a href="{% url 'home' %}"><span class="inner">Portada</span></a>
   </li>
   {% for category in MENU_CATEGORIES %}
-    <li class="nav-menu__{{ category.slug }}">
-      <a href="{% url 'home' domain_slug=category.slug %}">
-        <span class="inner">{{ category|capfirst }}</span>
-      </a>
-    </li>
+    {% if not category.exclude_from_top_menu %}
+      <li class="nav-menu__{{ category.slug }}">
+        <a href="{% url 'home' domain_slug=category.slug %}"><span class="inner">{{ category|capfirst }}</span></a>
+      </li>
+    {% endif %}
   {% endfor %}
   {% if "no-menu" != MENU_PUBLICATIONS and MENU_PUBLICATIONS|length > 1 %}
     <li>

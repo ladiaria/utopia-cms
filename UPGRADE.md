@@ -1,3 +1,13 @@
+# From version 0.0.8 to 0.0.9
+
+```
+git pull
+git checkout 0.0.9
+cd portal
+# activate your virtual env
+DJANGO_SETTINGS_MODULE=install_settings ./manage.py migrate core
+```
+
 # From version 0.0.7 to 0.0.8
 
 ```

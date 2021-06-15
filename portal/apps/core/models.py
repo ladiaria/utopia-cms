@@ -448,6 +448,7 @@ class Category(Model):
     full_width_cover_image_lead = TextField(
         u'bajada para foto full', null=True, blank=True,
         help_text=u'Se muestra sólo si la foto y el título están seteados.')
+    exclude_from_top_menu = BooleanField(u'Excluir ítem en menú superior de escritorio', default=False)
 
     def __unicode__(self):
         return self.name

@@ -1,3 +1,7 @@
+# version 0.0.9 (2021-06-15)
+
+- Support to exclude categories with order, from the top menu.
+
 # version 0.0.8 (2021-06-15)
 
 - Removed a custom attribute and method from Subscriber model.
@@ -7,7 +11,6 @@
 - A deprecated-custom urls module was removed.
 - Improvements on "Subscriptions" section of user profile template.
 - Fixed a templatetag error when a publication does not exist.
-
 
 # version 0.0.7 (2021-06-01)
 

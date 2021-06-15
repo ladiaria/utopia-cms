@@ -579,14 +579,15 @@ class PublicationAdmin(ModelAdmin):
 
 class CategoryAdmin(ModelAdmin):
     list_display = (
-        'id', 'name', 'order', 'slug', 'title', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag')
+        'id', 'name', 'order', 'slug', 'title', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag'
+    )
     list_editable = ('name', 'order', 'slug', 'title', 'has_newsletter')
     fieldsets = (
         (
             None,
             {
                 'fields': (
-                    ('name', 'slug', 'order'),
+                    ('name', 'slug', 'order', 'exclude_from_top_menu'),
                     ('title', 'more_link_title', 'new_pill'),
                     ('description', ),
                     ('full_width_cover_image', 'full_width_cover_image_title'),
