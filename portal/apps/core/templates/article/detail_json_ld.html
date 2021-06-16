@@ -1,6 +1,5 @@
 {% load static core_tags %}
-
-<script type="application/ld+json">
+<script type="application/ld+json">{# TODO: some parts of this code can be made easier with template tags #}
   {
     "@context": "http://schema.org",
     "@type": "{% if section.is_satirical %}SatiricalArticle{% else %}NewsArticle{% endif %}",
@@ -18,48 +17,43 @@
     "isPartOf": {
       "@type": ["CreativeWork"],
       "name" : "{{ site.name }}"
-    },
-    {% if article.get_authors %}
-      "author": {% if article.get_authors|length > 1 %} [ {% endif %}
-        {% for author in article.get_authors %}
-          {
-            "@type": "Person",
-            "name": "{{ author.name }}"
-          }{% if not forloop.last or article.get_authors|length == 1 %}, {% endif %}
-        {% endfor %}
-        {% if article.get_authors|length > 1 %} ], {% endif %}
-    {% else %}
-      "author": {
-        "@type": "Organization",
-        "name": "{{ site.name }}"
-      },
-    {% endif %}
+    },{% if article.get_authors %}
+    "author":{% if article.get_authors|length > 1 %} [{% endif %}{% for author in article.get_authors %}
+      {
+        "@type": "Person",
+        "name": "{{ author.name }}"
+      }{% if not forloop.last or article.get_authors|length == 1 %},{% endif %}{% endfor %}
+    {% if article.get_authors|length > 1 %}],{% endif %}{% else %}
+    "author": {
+      "@type": "Organization",
+      "name": "{{ site.name }}"
+    },{% endif %}
     "publisher": {
       "@type": "Organization",
       "name": "{{ site.name }}"{% if publication.publisher_logo or default_pub.publisher_logo %},
       "logo": {
-        "@type": "ImageObject",
-        {% if publication.publisher_logo %}
-          "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static publication.publisher_logo %}",
-          "width": "{{ publication.publisher_logo_width }}",
-          "height": "{{ publication.publisher_logo_height }}"
-        {% else %}
-          "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.publisher_logo %}",
-          "width": "{{ default_pub.publisher_logo_width }}",
-          "height": "{{ default_pub.publisher_logo_height }}"
-        {% endif %}
+        "@type": "ImageObject",{% if publication.publisher_logo %}
+        "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static publication.publisher_logo %}",
+        "width": "{{ publication.publisher_logo_width }}",
+        "height": "{{ publication.publisher_logo_height }}"{% else %}
+        "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.publisher_logo %}",
+        "width": "{{ default_pub.publisher_logo_width }}",
+        "height": "{{ default_pub.publisher_logo_height }}"{% endif %}
       }{% endif %}
     }{% if article.photo %},
     "image": {
       "@type": "ImageObject",
       "url": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_1200w_url }}",
       "width": "1200"
-    }{% elif default_pub.open_graph_image %},
+    },
+    "thumbnailUrl": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_1200w_url }}"
+    {% elif default_pub.open_graph_image %},
     "image": {
       "@type": "ImageObject",
       "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}",
       "width": "{{ default_pub.open_graph_image_width }}",
       "height" : "{{ default_pub.open_graph_image_height }}"
-    }{% endif %}
+    },
+    "thumbnailUrl": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}"{% endif %}
   }
 </script>

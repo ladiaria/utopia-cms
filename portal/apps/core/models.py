@@ -827,90 +827,108 @@ class ArticleBase(Model, CT):
     )
 
     publication = ForeignKey(
-        Publication, verbose_name=u'publicación', blank=True, null=True,
-        related_name=(
-            'articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"]))
-    type = CharField(
-        u'tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True)
-    headline = CharField(
-        u'título', max_length=200,
-        help_text=u'Se muestra en la portada y en la nota.')
+        Publication,
+        verbose_name=u'publicación',
+        blank=True,
+        null=True,
+        related_name=('articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"]),
+    )
+    type = CharField(u'tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True)
+    headline = CharField(u'título', max_length=200, help_text=u'Se muestra en la portada y en la nota.')
     keywords = CharField(
-        u'titulín', max_length=45, blank=True, null=True,
-        help_text=u'Se muestra encima del título en portada.')
+        u'titulín', max_length=45, blank=True, null=True, help_text=u'Se muestra encima del título en portada.'
+    )
     slug = SlugField(u'slug', max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
-        u'bajada', blank=True, null=True,
-        help_text=u'Se muestra en la página de la nota debajo del título.')
+        u'bajada', blank=True, null=True, help_text=u'Se muestra en la página de la nota debajo del título.'
+    )
     lead = TextField(
-        u'copete', blank=True, null=True,
-        help_text=u'Se muestra en la página de la nota debajo de la bajada.')
+        u'copete', blank=True, null=True, help_text=u'Se muestra en la página de la nota debajo de la bajada.'
+    )
     body = TextField(u'cuerpo')
     header_display = CharField(
-        u'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES,
-        blank=True, null=True, default='BG')
+        u'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
+    )
     home_header_display = CharField(
-        u'tipo de cabezal cuando es portada', max_length=2,
-        choices=HOME_HEADER_DISPLAY_CHOICES, blank=True, null=True,
-        default='SM')
-    home_lead = TextField(
-        u'bajada en portada', blank=True, null=True, help_text=(
-            u'Bajada de la nota en portada.'))
-    home_display = CharField(
-        u'mostrar en portada', max_length=2, choices=DISPLAY_CHOICES,
-        blank=True, null=True)
+        u'tipo de cabezal cuando es portada',
+        max_length=2,
+        choices=HOME_HEADER_DISPLAY_CHOICES,
+        blank=True,
+        null=True,
+        default='SM',
+    )
+    home_lead = TextField(u'bajada en portada', blank=True, null=True, help_text=u'Bajada de la nota en portada.')
+    home_display = CharField(u'mostrar en portada', max_length=2, choices=DISPLAY_CHOICES, blank=True, null=True)
     home_top_deck = TextField(
-        u'bajada en destacados', blank=True, null=True, help_text=(
-            u'Se muestra en los destacados de la portada, ' +
-            u'en el caso de estar vació se muestra la bajada de la nota.'))
+        u'bajada en destacados',
+        blank=True,
+        null=True,
+        help_text=(
+            u'Se muestra en los destacados de la portada, en el caso de estar vació se muestra la bajada de la nota.'
+        ),
+    )
     byline = ManyToManyField(
-        Journalist, verbose_name=u'autor/es', related_name=(
-            'articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"]),
-        blank=True, null=True)
+        Journalist,
+        verbose_name=u'autor/es',
+        related_name='articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"],
+        blank=True,
+        null=True,
+    )
     only_initials = BooleanField(
-        u'sólo iniciales', default=False, help_text=(
-            u'Marque esta opción para que en la firma del artículo se ' +
-            u'muestren únicamente las iniciales del autor.'))
-    latitude = DecimalField(
-        u'latitud', max_digits=10, decimal_places=6, blank=True, null=True)
-    longitude = DecimalField(
-        u'longitud', max_digits=10, decimal_places=6, blank=True, null=True)
+        u'sólo iniciales',
+        default=False,
+        help_text=(
+            u'Marque esta opción para que en la firma del artículo se muestren únicamente las iniciales del autor.'
+        ),
+    )
+    latitude = DecimalField(u'latitud', max_digits=10, decimal_places=6, blank=True, null=True)
+    longitude = DecimalField(u'longitud', max_digits=10, decimal_places=6, blank=True, null=True)
     location = ForeignKey(
-        Location, verbose_name=u'ubicación', related_name=(
-            'articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"]),
-        blank=True, null=True)
+        Location,
+        verbose_name=u'ubicación',
+        related_name='articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"],
+        blank=True,
+        null=True,
+    )
     is_published = BooleanField(u'publicado', default=True)
-    date_published = DateTimeField(
-        u'fecha de publicación', default=datetime.today())
+    date_published = DateTimeField(u'fecha de publicación', default=datetime.today())
     date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
     last_modified = DateTimeField(u'última actualización', auto_now=True)
     views = PositiveIntegerField(u'vistas', default=0, db_index=True)
-    allow_comments = BooleanField(u'Habilitar comentarios', default=False)
+    allow_comments = BooleanField(u'Habilitar comentarios', default=True)
     created_by = ForeignKey(
-        User, verbose_name=u'creado por', related_name=(
-            'created_articles' +
-            ["_%(app_label)s", ""]["%(app_label)s" == "core"]),
-        editable=False, blank=False, null=True)
+        User,
+        verbose_name=u'creado por',
+        related_name='created_articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"],
+        editable=False,
+        blank=False,
+        null=True,
+    )
     photo = ForeignKey(Photo, blank=True, null=True, verbose_name=u'imagen')
-    gallery = ForeignKey(
-        Gallery, verbose_name=u'galería', blank=True, null=True)
+    gallery = ForeignKey(Gallery, verbose_name=u'galería', blank=True, null=True)
     video = ForeignKey(
-        Video, verbose_name=u'video', related_name=(
-            'articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"]),
-        blank=True, null=True)
-    youtube_video = ForeignKey(
-        YouTubeVideo, verbose_name=u'video de YouTube', blank=True, null=True)
+        Video,
+        verbose_name=u'video',
+        related_name='articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"],
+        blank=True,
+        null=True,
+    )
+    youtube_video = ForeignKey(YouTubeVideo, verbose_name=u'video de YouTube', blank=True, null=True)
     audio = ForeignKey(
-        Audio, verbose_name=u'audio', related_name=(
-            'articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"]),
-        blank=True, null=True)
+        Audio,
+        verbose_name=u'audio',
+        related_name='articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"],
+        blank=True,
+        null=True,
+    )
     tags = TagField(verbose_name=u'etiquetas', blank=True, null=True)
     allow_related = BooleanField(
-        u'mostrar en artículos relacionados', default=True, blank=False, null=False, db_index=True)
+        u'mostrar en artículos relacionados', default=True, blank=False, null=False, db_index=True
+    )
     show_related_articles = BooleanField(
-        u'mostrar artículos relacionados dentro de este artículo',
-        default=True, blank=False, null=False)
+        u'mostrar artículos relacionados dentro de este artículo', default=True, blank=False, null=False
+    )
     public = BooleanField(u'Artículo libre')
 
     published = PublishedArticleManager()
