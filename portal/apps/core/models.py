@@ -831,7 +831,7 @@ class ArticleBase(Model, CT):
         verbose_name=u'publicación',
         blank=True,
         null=True,
-        related_name=('articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"]),
+        related_name='articles_%(app_label)s',
     )
     type = CharField(u'tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True)
     headline = CharField(u'título', max_length=200, help_text=u'Se muestra en la portada y en la nota.')
@@ -871,7 +871,7 @@ class ArticleBase(Model, CT):
     byline = ManyToManyField(
         Journalist,
         verbose_name=u'autor/es',
-        related_name='articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"],
+        related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
@@ -887,7 +887,7 @@ class ArticleBase(Model, CT):
     location = ForeignKey(
         Location,
         verbose_name=u'ubicación',
-        related_name='articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"],
+        related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
@@ -900,7 +900,7 @@ class ArticleBase(Model, CT):
     created_by = ForeignKey(
         User,
         verbose_name=u'creado por',
-        related_name='created_articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"],
+        related_name='created_articles_%(app_label)s',
         editable=False,
         blank=False,
         null=True,
@@ -910,7 +910,7 @@ class ArticleBase(Model, CT):
     video = ForeignKey(
         Video,
         verbose_name=u'video',
-        related_name='articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"],
+        related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
@@ -918,7 +918,7 @@ class ArticleBase(Model, CT):
     audio = ForeignKey(
         Audio,
         verbose_name=u'audio',
-        related_name='articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"],
+        related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
@@ -1176,16 +1176,33 @@ class ArticleManager(Manager):
 class Article(ArticleBase):
     objects = ArticleManager()
     sections = ManyToManyField(
-        Section, verbose_name=u'sección', blank=False, null=True, through='ArticleRel',
-        related_name=('articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"]))
+        Section,
+        verbose_name=u'sección',
+        blank=False,
+        null=True,
+        through='ArticleRel',
+        related_name='articles_%(app_label)s',
+    )
     main_section = ForeignKey(
-        'ArticleRel', verbose_name=u'publicación principal', blank=True, null=True, related_name='main',
-        on_delete=SET_NULL)
+        'ArticleRel',
+        verbose_name=u'publicación principal',
+        blank=True,
+        null=True,
+        related_name='main',
+        on_delete=SET_NULL,
+    )
     viewed_by = ManyToManyField(
-        User, verbose_name=u'visto por', blank=True, null=True, editable=False, through='ArticleViewedBy',
-        related_name=('viewed_articles' + ["_%(app_label)s", ""]["%(app_label)s" == "core"]))
+        User,
+        verbose_name=u'visto por',
+        blank=True,
+        null=True,
+        editable=False,
+        through='ArticleViewedBy',
+        related_name='viewed_articles_%(app_label)s',
+    )
     continues = ForeignKey(
-        'Article', verbose_name=u'es continuación de', related_name='continuation', blank=True, null=True)
+        'Article', verbose_name=u'es continuación de', related_name='continuation', blank=True, null=True
+    )
     newsletter_featured = BooleanField(u'destacado en newsletter', default=False)
 
     def save(self, *args, **kwargs):
