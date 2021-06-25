@@ -9,8 +9,22 @@ from django.contrib.auth.models import User, Group
 from django.core.validators import RegexValidator
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from django.db.models import (
-    BooleanField, CharField, DateTimeField, EmailField, ForeignKey, Model, OneToOneField, PositiveIntegerField,
-    TextField, permalink, ImageField, PositiveSmallIntegerField, DecimalField, Manager, ManyToManyField)
+    BooleanField,
+    CharField,
+    DateTimeField,
+    EmailField,
+    ForeignKey,
+    Model,
+    OneToOneField,
+    PositiveIntegerField,
+    TextField,
+    permalink,
+    ImageField,
+    PositiveSmallIntegerField,
+    DecimalField,
+    Manager,
+    ManyToManyField,
+)
 from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.dispatch import receiver
 from django.utils import simplejson
@@ -25,7 +39,8 @@ GA_CATEGORY_CHOICES = (('D', 'Digital'), ('P', 'Papel'))
 
 class SubscriptionPrices(Model):
     subscription_type = CharField(
-        u'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, default='PAPYDIM')
+        u'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, default='PAPYDIM'
+    )
     price = DecimalField(u'Precio', max_digits=7, decimal_places=2)
     order = PositiveSmallIntegerField(u'Orden', null=True)
     paypal_button_id = CharField(max_length=13, null=True, blank=True)
@@ -34,9 +49,6 @@ class SubscriptionPrices(Model):
     ga_sku = CharField(max_length=10, blank=True, null=True)
     ga_name = CharField(max_length=64, blank=True, null=True)
     ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
-
-    def __str__(self):
-        return u"%s -- $ %s " % (self.get_subscription_type_display(), self.price)
 
     def __unicode__(self):
         return u"%s -- $ %s " % (self.get_subscription_type_display(), self.price)
