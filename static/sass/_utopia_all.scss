@@ -1473,7 +1473,8 @@ a.ladiaria {
         }
     }
     .frontpage-section .card h1 {
-        @include typi('h2');
+      font-size: 1.375rem;
+      line-height: 120%;
     }
 
     .navbar-fixed nav {
@@ -1929,115 +1930,6 @@ a.ld-link-low {
         font-size: 12px;
         font-weight: 500;
         line-height: 1.2;
-        }
-    }
-}
-
-.elegi-informarte {
-  background-image: url(../elegi-informarte/img/bg.png);
-  background-repeat: repeat;
-  padding: 50px 0;
-  margin:120px 0;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
-
-    .eli-title {
-        width: 100%;
-        max-width: 502px;
-        height: 67px;
-        background-image: url(../img/logo-ei.png);
-        background-repeat: no-repeat;
-        background-size: contain;
-        overflow: hidden;
-        text-indent: -900px;
-        margin: 0 auto;
-        @media (min-width: 860px) {
-        width: 502px;
-        margin: 0;
-        }
-    }
-    .eli-description {
-        font-family: 'Source Serif Pro', serif;
-        font-size: 28px;
-        line-height: 1.1;
-        text-shadow: white 10px 0px 30px, white -10px 0px 30px, white 0px 10px 30px, white 0px -10px 30px;
-        background-color: white;
-        background-color: rgba(255, 255, 255, 0.98);
-        text-align: center;
-        @media (min-width: 768px) {
-        font-size: 33px;
-        text-align: left;
-        }
-    }
-    .eli-btn {
-        text-shadow: none;
-        transition: all .15s ease;
-        font-size: 13px;
-        cursor: pointer;
-        border-radius: 5px;
-        border: none;
-        font-family: 'Poppins', sans-serif;
-        text-transform: uppercase;
-        font-weight: bold;
-        display: block;
-        color: white;
-        box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.25);
-        min-width: 230px;
-        max-width: 260px;
-        margin: 0 auto 15px;
-        text-decoration: none;
-        padding: 12px;
-        text-align: center;
-        position: relative;
-        background: $ei-color-votante;
-        @media (min-width: 768px) {
-        margin: 0 0 15px;
-        }
-
-        &:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 7px 14px rgba(50,50,93,.1), 0 3px 6px rgba(0,0,0,.08);
-        }
-    }
-    .eli-link {
-        font-size: 14px;
-        font-family: 'Poppins', sans-serif;
-        text-decoration: underline;
-        color: #000;
-        padding: 12px;
-        max-width: 260px;
-        text-align: center;
-        display: block;
-        text-shadow: white 10px 0px 30px, white -10px 0px 30px, white 0px 10px 30px, white 0px -10px 30px;
-        background-color: white;
-        background-color: rgba(255, 255, 255, 0.98);
-        margin: 0 auto;
-
-        @media (min-width: 768px) {
-        margin: 0;
-        }
-    }
-
-    .eli-drawing {
-        display: none;
-        @media (min-width: 768px) {
-        display: block;
-        }
-    }
-
-    .col-md {
-        @media (min-width: 768px) {
-        padding-left: 30px;
-        width: 65%;
-        padding-right: 30px;
-        max-width: 800px;
-        }
-    }
-    .col-sm {
-        width: 100%;
-        @media (min-width: 768px) {
-        width: 35%;
-        padding-left: 30px;
-        float: right;
         }
     }
 }

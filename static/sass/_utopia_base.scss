@@ -1,24 +1,85 @@
 /* Base styles */
-@include typi-init;
+html {
+  font-size: 100%;
+  line-height: 1.4;
+
+  @media all and (min-width: 400px) {
+      font-size: 100%;
+  }
+  @media all and (min-width: 1200px) {
+      font-size: 100%;
+   }
+}
 
 h1 {
-  @include typi('h1');
+  font-size: 2.375rem;
+  line-height: 120%;
+  @media all and (min-width: 400px) {
+      font-size: 2.1875rem;
+  }
+  @media all and (min-width: 600px) {
+      font-size: 2.75rem;
+  }
+  @media all and (min-width: 1200px) {
+      font-size: 3.25rem;
+  }
 }
 
 h2 {
-  @include typi('h2');
+  font-size: 1.375rem;
+  line-height: 120%;
+  @media all and (min-width: 400px) {
+      font-size: 1.375rem;
+  }
+  @media all and (min-width: 600px) {
+    font-size: 1.5rem;
+  }
+  @media all and (min-width: 1200px) {
+      font-size: 1.625rem;
+  }
 }
 
 h3 {
-  @include typi('h3');
+  font-size: 1.25rem;
+  line-height: 120%;
+  @media all and (min-width: 400px) {
+      font-size: 1.25rem;
+  }
+  @media all and (min-width: 600px) {
+      font-size: 1.375rem;
+  }
+  @media all and (min-width: 1200px) {
+    font-size: 1.5rem;
+  }
 }
 
 h4 {
-  @include typi('h4');
+  font-size: 1.125rem;
+  line-height: 120%;
+  @media all and (min-width: 400px) {
+    font-size: 1.25rem;
+  }
+  @media all and (min-width: 600px) {
+    font-size: 1.375rem;
+  }
+  @media all and (min-width: 1200px) {
+    font-size: 1.375rem;
+  }
 }
 
+
 h5 {
-  @include typi('h5');
+  font-size: 1rem;
+  line-height: 120%;
+  @media all and (min-width: 400px) {
+    font-size: 1.125rem;
+  }
+  @media all and (min-width: 600px) {
+    font-size: 1.375rem;
+  }
+  @media all and (min-width: 1200px) {
+    font-size: 1.25rem;
+  }
 }
 
 html {
@@ -90,12 +151,27 @@ figure {
 }
 
 .medium {
-  @include typi('medium');
+  font-size: 1.25rem;
+  line-height: 150%;
+  @media all and (min-width: 400px) {
+      font-size: 1.375rem;
+  }
+  @media all and (min-width: 1200px) {
+      font-size: 1.5rem;
+  }
 }
 
 .large {
-  @include typi('large');
+  font-size: 1.375rem;
+  line-height: 130%;
+  @media all and (min-width: 400px) {
+      font-size: 1.5rem;
+  }
+  @media all and (min-width: 1200px) {
+      font-size: 1.625rem;
+  }
 }
+
 // helpers
 .inline {
   > li {

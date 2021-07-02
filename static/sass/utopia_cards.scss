@@ -537,7 +537,16 @@ img{
   }
 
   p {
-    @include typi('p');
+    font-size: 1rem;
+    @media all and (min-width: 400px) {
+        font-size: 1.125rem;
+    }
+    @media all and (min-width: 600px) {
+        font-size: 1.25rem;
+    }
+    @media all and (min-width: 1200px) {
+        font-size: 1.375rem;
+      }
   }
 
   &.card-media-I {

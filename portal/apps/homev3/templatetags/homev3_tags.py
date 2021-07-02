@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from django.template import Library, loader
-from core.models import Section, Publication, Category, get_current_edition
-from django.template.base import Node
 from django.conf import settings
+from django.template import Library, TemplateDoesNotExist, loader
+from django.template.base import Node
+
+from core.models import Section, Publication, Category, get_current_edition
 
 
 register = Library()
@@ -22,68 +23,69 @@ class RenderSectionNode(Node):
         self.top_index = top_index
 
     def render(self, context):
-        try:
-            section = Section.objects.get(slug=self.section_slug)
-        except Exception:
-            section = None
+        result, edition = u'', context.get('edition')
 
-        articles, edition = [], context.get('edition')
+        if edition:
+            try:
+                section = Section.objects.get(slug=self.section_slug)
+            except Exception:
+                section = None
 
-        if not edition:
-            return u''
+            articles, top_articles = [], context.get('destacados')
+            template = 'section_custom/common.html'
 
-        top_articles = context.get('destacados')
-        template = 'section_custom/common.html'
+            if self.top_index:
 
-        if self.top_index:
+                articles = top_articles[self.top_index:self.top_index + 4]
+                template = 'section_row.html'
 
-            articles = top_articles[self.top_index:self.top_index + 4]
-            template = 'section_row.html'
+            elif section and section.in_home:
 
-        elif section:
+                if section.slug in getattr(settings, 'CORE_RENDER_SECTION_CUSTOM_TEMPLATES', ()):
 
-            if section.slug in getattr(settings, 'CORE_RENDER_SECTION_CUSTOM_TEMPLATES', ()):
+                    template = '%s/%s.html' % (settings.CORE_RENDER_SECTION_TEMPLATE_DIR, section.slug)
 
-                template = '%s/%s.html' % (settings.CORE_RENDER_SECTION_TEMPLATE_DIR, section.slug)
+                if section.slug not in getattr(settings, 'CORE_RENDER_SECTION_ARTICLES_TEMPLATE_OVERRIDES', ()):
 
-            if not section.in_home:
+                    latest_kwargs = {}
 
-                return u''
+                    if not section.home_block_show_featured:
+                        # articles should not be render twice if cover, (in cover and here)
+                        top_articles_ids = [art.id for art in top_articles or []]
+                        cover_article = context.get('cover_article')
+                        if cover_article:
+                            top_articles_ids.append(cover_article.id)
+                        latest_kwargs['exclude_articles_ids'] = top_articles_ids
 
-            elif section.slug in getattr(settings, 'CORE_RENDER_SECTION_ARTICLES_TEMPLATE_OVERRIDES', ()):
-
-                articles = []
-
-            else:
-
-                latest_kwargs = {}
-
-                if not section.home_block_show_featured:
-                    # articles should not be render twice if cover, (in cover and here)
-                    top_articles_ids = [art.id for art in top_articles or []]
-                    cover_article = context.get('cover_article')
-                    if cover_article:
-                        top_articles_ids.append(cover_article.id)
-                    latest_kwargs['exclude_articles_ids'] = top_articles_ids
-
-                if self.article_type == 'OP' and edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL:
-                    # special case for opinion articles
-                    latest_kwargs['all_sections'] = True  # use all section if article_type is given
-                    latest_kwargs['article_type'] = self.article_type
-                    latest_kwargs['publications_ids'] = Publication.objects.filter(
-                        slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL).values_list('id', flat=True)
-                else:
-                    if self.article_type:
+                    if (
+                        self.article_type == 'OP' and
+                        edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL
+                    ):
+                        # special case for opinion articles
                         latest_kwargs['all_sections'] = True  # use all section if article_type is given
                         latest_kwargs['article_type'] = self.article_type
-                    if not section.home_block_all_pubs:
-                        latest_kwargs['publications_ids'] = [edition.publication.id]
+                        latest_kwargs['publications_ids'] = Publication.objects.filter(
+                            slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL
+                        ).values_list('id', flat=True)
+                    else:
+                        if self.article_type:
+                            latest_kwargs['all_sections'] = True  # use all section if article_type is given
+                            latest_kwargs['article_type'] = self.article_type
+                        if not section.home_block_all_pubs:
+                            latest_kwargs['publications_ids'] = [edition.publication.id]
 
-                articles = list(section.latest(**latest_kwargs))
+                    articles = list(section.latest(**latest_kwargs))
 
-        return loader.render_to_string(
-            template, {'articles': articles, 'section': section, 'edition': edition, 'art_count': len(articles)},
-            context_instance=context)
+            try:
+                result = loader.render_to_string(
+                    template,
+                    {'articles': articles, 'section': section, 'edition': edition, 'art_count': len(articles)},
+                    context_instance=context,
+                )
+            except TemplateDoesNotExist:
+                pass
+
+        return result
 
 
 @register.simple_tag(takes_context=True)
