@@ -34,7 +34,8 @@ def content(request):
         else:
             # no module for publication or category, default to notify only
             bn_mod = bn_modules_published.filter(enable_notification=True).exclude(
-                id__in=request.session.get('bn_notifications_closed', set()))
+                id__in=request.session.get('bn_notifications_closed', set())
+            )
             if bn_mod:
                 return 'detail.html', {'bn_mod': bn_mod[0], 'notify_only': True}
     return HttpResponse()
