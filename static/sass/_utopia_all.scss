@@ -1079,6 +1079,14 @@ a.ladiaria {
     .ld-card {
         margin-bottom: 24px;
     }
+
+    .section__cta {
+      margin-bottom: 60px;
+
+      .btn {
+        margin-bottom: 15px;
+      }
+    }
 }
 
 // revisar
@@ -1275,6 +1283,7 @@ a.ladiaria {
         }
 
     }
+
 }
 
 // Grid for 5 columns in Materialize

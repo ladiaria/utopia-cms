@@ -4,24 +4,22 @@ from datetime import datetime
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponsePermanentRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render_to_response
 from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import never_cache, cache_control
+from django.template import RequestContext
 
-from decorators import render_response, decorate_if_no_staff, decorate_if_staff
+from decorators import decorate_if_no_staff, decorate_if_staff
 
 from core.models import Edition, get_current_edition, Section, Publication, Category, CategoryHome
 from core.views.category import category_detail
 from faq.models import Question, Topic
 from cartelera.models import LiveEmbedEvent
 
-to_response = render_response('homev3/templates/')
-
 
 @decorate_if_staff(decorator=never_cache)
 @decorate_if_no_staff(decorator=vary_on_cookie)
 @decorate_if_no_staff(decorator=cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=120))
-@to_response
 def index(request, year=None, month=None, day=None, domain_slug=None):
     """
     View to display the current edition page. Or the edition in the date and publication matching domain_slug.
@@ -119,12 +117,25 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         else:
             cover_article = None
 
-        context.update({
-            'cover_article': cover_article, 'edition': edition, 'destacados': top_articles, 'mas_leidos': False,
-            'big_photo': publication.full_width_cover_image, 'is_portada': True, 'question_list': question_list,
-            'questions_topic': questions_topic,
-            'allow_ads': getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_ALLOW_ADS', True)})
-        return 'index_pubs.html', context
+        context.update(
+            {
+                'cover_article': cover_article,
+                'edition': edition,
+                'destacados': top_articles,
+                'mas_leidos': False,
+                'big_photo': publication.full_width_cover_image,
+                'is_portada': True,
+                'question_list': question_list,
+                'questions_topic': questions_topic,
+                'allow_ads': getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_ALLOW_ADS', True),
+            }
+        )
+        template = 'homev3/templates/index_pubs.html'
+        if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_CUSTOM_TEMPLATES', ()):
+            template_dir = getattr(settings, 'CORE_PUBLICATIONS_TEMPLATE_DIR', None)
+            if template_dir:
+                template = '%s/%s.html' % (template_dir, publication.slug)
+        return render_to_response(template, context, context_instance=RequestContext(request))
     else:
         if year and month and day:
             date_published = datetime(
@@ -159,9 +170,19 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
 
         if settings.DEBUG:
             print(u'DEBUG: Default home page view called.')
-        context.update({
-            'edition': ld_edition, 'destacados': top_articles, 'is_portada': True, 'cover_article': cover_article,
-            'big_photo': publication.full_width_cover_image, 'mas_leidos': True, 'allow_ads': True,
-            'publications': Publication.objects.filter(public=True), 'home_publications': settings.HOME_PUBLICATIONS,
-            'question_list': question_list, 'questions_topic': questions_topic})
-        return 'index.html', context
+        context.update(
+            {
+                'edition': ld_edition,
+                'destacados': top_articles,
+                'is_portada': True,
+                'cover_article': cover_article,
+                'big_photo': publication.full_width_cover_image,
+                'mas_leidos': True,
+                'allow_ads': True,
+                'publications': Publication.objects.filter(public=True),
+                'home_publications': settings.HOME_PUBLICATIONS,
+                'question_list': question_list,
+                'questions_topic': questions_topic,
+            }
+        )
+        return render_to_response('index.html', context, context_instance=RequestContext(request))

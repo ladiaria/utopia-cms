@@ -306,6 +306,8 @@
       background: none !important;
       line-height: 18px;
       padding:8px 20px;
+      text-transform: uppercase;
+      font-size: 14px;
 
       svg {
         display: inline-block;
@@ -337,6 +339,17 @@
           border-color: $primary-color;
           color: white;
         }
+      }
+    }
+    &.dark {
+      font-size: 14px;
+      text-transform: uppercase;
+      background-color: $off-black;
+      color: white;
+
+      &:hover {
+        text-decoration: none;
+        opacity: 0.8;
       }
     }
 }

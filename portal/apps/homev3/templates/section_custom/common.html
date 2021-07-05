@@ -1,13 +1,17 @@
 {% load core_tags ldml %}
 
 {% if art_count > 0 and is_portada %}
-  <section  id="home-section-{{ section.slug }}" class="frontpage-section">
+  <section id="home-section-{{ section.slug }}" class="frontpage-section">
     <div class="container">
       <div class="section-detail__head">
-        <h2 class="section-detail__title">{{ section.name_in_category_menu|default:section.name }}{% block extra_title %}{% endblock %}</h2>
-        {% if section.show_description %}
-          <p class="section-detail__subtitle">{{ section.description }}</p>
-        {% endif %}
+        {% block section-detail-head-h2 %}
+          <h2 class="section-detail__title">{{ section.name_in_category_menu|default:section.name }}{% block extra_title %}{% endblock %}</h2>
+        {% endblock %}
+        {% block section-detail-head-description %}
+          {% if section.show_description %}
+            <p class="section-detail__subtitle">{{ section.description }}</p>
+          {% endif %}
+        {% endblock %}
       </div>
 
       {# 4 Article grid for section #}
