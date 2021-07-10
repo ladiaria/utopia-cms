@@ -54,20 +54,22 @@ var prepareFields = function(){
         // Don't collapse if fieldset contains errors
         fs.addClass('collapse' + fs.find('div').hasClass('errors')?' collapsed':'');
 
-        // Add toggle link
-        var a = $('<a class="collapse-toggle" href="#" style="display:inline;">' + gettext('Show') + '</a>');
-        h2.append(a);
-        a.before(' (').after(')');
-        a.click(function(event){
-            event.preventDefault();
-            if (!fs.hasClass('collapsed')){
-                fs.addClass('collapsed');
-                $(this).html(gettext('Show'));
-            } else {
-                fs.removeClass('collapsed');
-                $(this).html(gettext('Hide'));
-            }
-        }).css('cursor', 'pointer');
+        // Add toggle link if missing
+        if ($('a', h2).length == 0){
+          var a = $('<a class="collapse-toggle" href="#" style="display:inline;">' + gettext('Show') + '</a>');
+          h2.append(a);
+          a.before(' (').after(')');
+          a.click(function(event){
+              event.preventDefault();
+              if (!fs.hasClass('collapsed')){
+                  fs.addClass('collapsed');
+                  $(this).html(gettext('Show'));
+              } else {
+                  fs.removeClass('collapsed');
+                  $(this).html(gettext('Hide'));
+              }
+          }).css('cursor', 'pointer');
+        }
         return;
     });
     var div_body = $('#id_body').closest('.form-row');

@@ -12,7 +12,7 @@ from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
 from django.conf.urls import patterns
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError
 from django_markdown.widgets import MarkdownWidget
@@ -373,6 +373,8 @@ class ArticleAdmin(ModelAdmin):
     def get_object(self, request, object_id):
         # Hook obj for use in formfield_for_manytomany
         self.obj = super(ArticleAdmin, self).get_object(request, object_id)
+        if not self.obj:
+            raise Http404
         # Save old url_path to be used in save_related
         self.old_url_path = self.obj.url_path
         return self.obj
