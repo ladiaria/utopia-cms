@@ -255,21 +255,21 @@ class Command(BaseCommand):
             action='store',
             type='string',
             dest='starting_from_s',
-            help=u'Send only subscriptors emails alphabetically greather',
+            help=u'Send to subscribers only if their email is alphabetically greater than',
         ),
         make_option(
             '--starting-from-ns',
             action='store',
             type='string',
             dest='starting_from_ns',
-            help=u'Send only no subscriptors emails alphabetically greather',
+            help=u'Send to non-subscribers only if their email is alphabetically greater than',
         ),
         make_option(
             '--ids-ending-with',
             action='store',
             type='string',
             dest='ids_ending_with',
-            help=u'Send only to subscriptors with id ending in this numbers e.g.: --ids-ending-with=0123',
+            help=u'Send only if the Subscriber object id ends with one of these numbers e.g.: --ids-ending-with=0123',
         ),
     )
 
