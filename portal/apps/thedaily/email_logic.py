@@ -19,7 +19,8 @@ def limited_free_article_mail(user):
         send_mail = False
         try:
             event = SubscriberEvent.objects.filter(
-                subscriber=user.subscriber, description=subject).latest('date_occurred')
+                subscriber=user.subscriber, description=subject
+            ).latest('date_occurred')
             if not sent_recently(event):
                 send_mail = True
         except SubscriberEvent.DoesNotExist:
