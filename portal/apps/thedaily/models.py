@@ -422,7 +422,7 @@ class Subscription(Model):
             return u'%s %s' % (self.first_name, self.last_name)
 
     def get_subscription_type_prices(self):
-        return u', '.join('%s' % stp for stp in self.subscription_type_prices.all())
+        return u', '.join(u'%s' % stp for stp in self.subscription_type_prices.all())
 
     def get_absolute_url(self):
         return '/admin/thedaily/subscription/%i/' % self.id
