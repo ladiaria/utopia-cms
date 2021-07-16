@@ -13,8 +13,17 @@ from django.shortcuts import get_object_or_404
 
 from django.core.mail import mail_managers
 from django.forms import (
-    Form, ModelForm, CharField, EmailField, PasswordInput, TextInput, Textarea, HiddenInput, ChoiceField,
-    ValidationError)
+    Form,
+    ModelForm,
+    CharField,
+    EmailField,
+    PasswordInput,
+    TextInput,
+    Textarea,
+    HiddenInput,
+    ChoiceField,
+    ValidationError,
+)
 
 from django.core.urlresolvers import reverse
 from django.core.exceptions import MultipleObjectsReturned
@@ -163,8 +172,9 @@ class SignupForm(ModelForm):
     def clean_first_name(self):
         first_name = self.cleaned_data.get('first_name')
         if not RE_ALPHANUM.match(first_name):
-            self._errors['first_name'] = self.error_class([
-                u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'])
+            self._errors['first_name'] = self.error_class(
+                [u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.']
+            )
         return first_name
 
     def clean_email(self):
@@ -231,8 +241,8 @@ class SubscriberForm(ModelForm):
         first_name = self.cleaned_data.get('first_name')
         if not RE_ALPHANUM.match(first_name):
             raise ValidationError(
-                u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, '
-                u'espacios, guiones y puntos.')
+                u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
+            )
         return first_name
 
     def clean_telephone(self):
