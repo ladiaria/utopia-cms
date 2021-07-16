@@ -15,6 +15,8 @@ from emails.django import DjangoMessage as Message
 from django.conf import settings
 from django.db import connection, IntegrityError
 from django.core.management.base import BaseCommand
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 
 from core.models import Category, CategoryHome, Section, Article, get_latest_edition
@@ -88,6 +90,11 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
         receivers2 = []
         for s in Subscriber.objects.filter(**filter_args).distinct().order_by('user__email').iterator():
             if s.user and s.user.email and s.user.email not in blacklisted:
+                # validate email before doing anything
+                try:
+                    validate_email(s.user.email)
+                except ValidationError:
+                    continue
                 if s.is_subscriber():
                     if not starting_from_s or (starting_from_s and s.user.email > starting_from_s):
                         yield s, True
