@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
-import csv
 import json
 import requests
 import pymongo
-from datetime import datetime, timedelta
+from datetime import datetime
 from urllib import pathname2url
 from urlparse import urljoin, urlparse
 from hashids import Hashids
@@ -16,7 +15,7 @@ from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import IntegrityError
 from django.core.mail import send_mail, mail_admins, mail_managers
-from django.core.urlresolvers import reverse, resolve
+from django.core.urlresolvers import reverse
 from django.core.exceptions import MultipleObjectsReturned
 from django.http import (
     HttpResponseRedirect,
@@ -25,6 +24,7 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseServerError,
+    HttpResponseNotAllowed,
 )
 from django.forms.utils import ErrorList
 from django.contrib import messages
@@ -37,7 +37,6 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
-from django.utils import timezone
 
 from actstream import actions
 from actstream.models import following
@@ -46,10 +45,9 @@ from favit.models import Favorite
 from libs.utils import set_amp_cors_headers
 from libs.tokens.email_confirmation import default_token_generator, get_signup_validation_url, send_validation_email
 
-from core.models import Article
 from apps import core_articleviewedby_mdb, core_articlevisits_mdb, signupwall_visitor_mdb
 from core.models import Publication, Category, Article, ArticleUrlHistory
-from thedaily.models import Subscriber, Subscription, PollAnswer, SubscriptionPrices, UsersApiSession, OAuthState
+from thedaily.models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState
 from thedaily.forms import (
     LoginForm,
     SignupForm,
@@ -69,14 +67,12 @@ from thedaily.forms import (
 )
 from thedaily.forms.subscriber import ProfileForm, UserForm
 from thedaily.utils import recent_following, add_default_category_newsletters
+from thedaily.email_logic import limited_free_article_mail
 from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor
-from signupwall.utils import get_ip
 
 from decorators import render_response
-
 from exceptions import UpdateCrmEx
 from tasks import send_notification, notify_digital, notify_paper
-from thedaily.email_logic import limited_free_article_mail
 
 
 to_response = render_response('thedaily/templates/')
@@ -561,7 +557,6 @@ def complete_signup(request, user_id, hash):
     # task.task_name = re.sub(r'^apps\.', '', task.task_name) #(import re)
     # task.save()
 
-    is_subscriber = subscriber.is_subscriber()
     is_subscriber_any = subscriber.is_subscriber_any()
 
     if send_default_welcome and is_subscriber_any and user.suscripciones.count() == 1:
@@ -570,10 +565,10 @@ def complete_signup(request, user_id, hash):
             subscription_type = st.all()[0].subscription_type
             if subscription_type == u'DDIGM':
                 send_default_welcome = False
-                notify_digital(user, seller_fullname)
+                notify_digital(user)
             elif subscription_type == u'PAPYDIM':
                 send_default_welcome = False
-                notify_paper(user, seller_fullname)
+                notify_paper(user)
 
     if send_default_welcome:
         send_notification(user, 'notifications/signup.html', u'Tu suscripción digital gratuita está activa')
@@ -659,18 +654,14 @@ def password_change(request, user_id=None, hash=None):
         post = request.POST.copy()
         password_change_form = PasswordChangeForm(post, user=request.user)
         if user_id and hash:
-            password_change_form = PasswordResetForm(
-                post, user=user_id, hash=hash)
+            password_change_form = PasswordResetForm(post, user=user_id, hash=hash)
         if password_change_form.is_valid():
             user.set_password(password_change_form.get_password())
             user.save()
             user.backend = 'django.contrib.auth.backends.ModelBackend'
             do_login(request, user)
-            return HttpResponseRedirect(reverse(
-                request.session.get('welcome') or
-                'account-password_change-done'))
-    return 'password_change.html', {
-        'form': password_change_form, 'user_id': user_id, 'hash': hash}
+            return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
+    return 'password_change.html', {'form': password_change_form, 'user_id': user_id, 'hash': hash}
 
 
 @never_cache
@@ -750,6 +741,7 @@ def lista_lectura_leer_despues(request):
     # end paginator for leer_despues
 
     return 'lista-lectura.html', {'leer_despues': followings, 'leer_despues_count': followings_count}
+
 
 @never_cache
 @to_response
@@ -1059,7 +1051,7 @@ def amp_access_authorization(request):
             result['access'] = article.is_public()
             result['credits'] = False
             if settings.AMP_DEBUG:
-                print('AMP DEBUG: session_key=%s, authorization_result=%s' % (session_key, result))
+                print('AMP DEBUG: session_key=%s, authorization_result=%s' % (get_session_key(request), result))
 
     response = HttpResponse(json.dumps(result), content_type="application/json")
     return set_amp_cors_headers(request, response)

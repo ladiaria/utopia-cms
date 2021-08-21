@@ -1,27 +1,20 @@
 # -*- coding: utf-8 -*-
 import os
-import re
 import tempfile
-import subprocess
-import unicodedata
 import operator
 import csv
 from copy import copy
 from datetime import date, datetime, timedelta
 from collections import OrderedDict
 from django.utils import timezone
-from pyPdf import PdfFileWriter, PdfFileReader
 from sorl.thumbnail import get_thumbnail
 from PIL import Image
 import readtime
 
 from django.conf import settings
 from django.core import urlresolvers
-from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.sitemaps import ping_google
 from django.db.models import (
     Manager,
@@ -50,14 +43,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 
 from managers import PublishedArticleManager
-from utils import (
-    get_pdf_pdf_upload_to,
-    get_pdf_cover_upload_to,
-    get_pdfpage_pdf_upload_to,
-    get_pdfpage_snapshot_upload_to,
-    get_pdfpageimage_file_upload_to,
-    send_mail,
-)
+from utils import get_pdf_pdf_upload_to, get_pdf_cover_upload_to
 
 from core.utils import CT, smart_quotes
 from core.templatetags.ldml import ldmarkup, cleanhtml
@@ -81,7 +67,7 @@ class Publication(Model):
         blank=True,
         null=True,
         help_text=u'Nombre de usuario de Twitter que se menciona cuando artículos de esta publicación son compartidos '
-            u'en Twitter (escribir sin @)',
+                  u'en Twitter (escribir sin @)',
     )
     description = TextField(
         u'descripción', null=True, blank=True, help_text=u'Se muestra en el componente de portada.'
@@ -197,10 +183,13 @@ class Publication(Model):
 
 class PortableDocumentFormatBaseModel(Model):
     pdf = FileField(
-        u'archivo PDF', max_length=150, upload_to=get_pdf_pdf_upload_to,
-        blank=True, null=True, help_text=(
-            u'<strong>AVISO:</strong> Si es mayor a 8MB probablemente no se ' +
-            u'pueda enviar por mail.'))
+        u'archivo PDF',
+        max_length=150,
+        upload_to=get_pdf_pdf_upload_to,
+        blank=True,
+        null=True,
+        help_text=u'<strong>AVISO:</strong> Si es mayor a 8MB probablemente no se pueda enviar por mail.',
+    )
     pdf_md5 = CharField(u'checksum', max_length=32, editable=False)
     downloads = PositiveIntegerField(u'descargas', default=0)
     cover = ImageField(u'tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
@@ -1198,7 +1187,7 @@ class Article(ArticleBase):
     def save(self, *args, **kwargs):
         try:
             super(Article, self).save(*args, **kwargs)
-        except:
+        except Exception:
             # we dont know why sometimes raises duplicate entry XXXX for key K
             # I cant reproduce this error, better to do nothing more in method
             return
@@ -1207,8 +1196,7 @@ class Article(ArticleBase):
             # in the same edition-section is viewed (viewed implies saving)
             for ar in ArticleRel.objects.filter(article=self):
                 if not ar.position:
-                    ar.position = ArticleRel.objects.filter(
-                        edition=ar.edition, section=ar.section).count() + 1
+                    ar.position = ArticleRel.objects.filter(edition=ar.edition, section=ar.section).count() + 1
 
         # TODO: also this if block should be reviewed (broken)
         # if self.home_top and self.top_position is None:
@@ -1216,8 +1204,8 @@ class Article(ArticleBase):
         #        edition=self.edition, home_top=self.home_top).count() + 1
         if self.type == ArticleBase.HTML:
             self.headline = u'HTML | %s | %s | %s' % (
-                unicode(self.edition), unicode(self.section),
-                str(self.section_position))
+                unicode(self.edition), unicode(self.section), str(self.section_position)
+            )
 
         super(Article, self).save(*args, **kwargs)
 
@@ -1609,8 +1597,7 @@ class BreakingNewsModule(Model):
 
     def covers(self):
         return u', '.join(
-            [p.__unicode__() for p in self.publications.all()] +
-            [c.__unicode__() for c in self.categories.all()]
+            [p.__unicode__() for p in self.publications.all()] + [c.__unicode__() for c in self.categories.all()]
         )
     covers.short_description = u'portadas'
 
