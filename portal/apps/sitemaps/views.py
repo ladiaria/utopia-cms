@@ -4,7 +4,8 @@ from django.conf import settings
 from django.core import urlresolvers
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.http import Http404
-from django.contrib.sites.models import Site, get_current_site
+from django.contrib.sites.models import Site
+from django.contrib.sites.shortcuts import get_current_site
 from django.template.response import TemplateResponse
 
 from .sitemaps import ArticleSitemap, ArticleNewsSitemap

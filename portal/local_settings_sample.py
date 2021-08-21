@@ -14,12 +14,11 @@ RESTRICT_ACCESS_LOGIN_URL = '/acceso-beep/'
 SECRET_KEY = ''
 
 # Site settings
-ALLOWED_HOSTS = ["*"]
 CLOSED_SITE = False
 SITE_ID = 1
-SITE_URL = "https://hexxie.com/"
 SITE_DOMAIN = "hexxie.com"
 SESSION_COOKIE_DOMAIN = "." + SITE_DOMAIN
+ALLOWED_HOSTS = [SESSION_COOKIE_DOMAIN]
 
 COMPRESS_OFFLINE = False
 COMPRESS_ENABLED = True
@@ -32,28 +31,8 @@ if CLOSED_SITE or RESTRICT_ACCESS:
         'closed_site.middleware.RestrictedAccessMiddleware',
     ) + MIDDLEWARE_CLASSES
 
-if DEBUG:
-    # from settings import INSTALLED_APPS, MIDDLEWARE_CLASSES
-    # INSTALLED_APPS += ('debug_toolbar', )
-    # MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
-    # DEBUG_TOOLBAR_CONFIG = {'INTERCEPT_REDIRECTS': False}
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache'
-            # 'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-            # 'LOCATION': ['127.0.0.1:11211']
-        }
-    }
-else:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-            'LOCATION': ['127.0.0.1:11211']
-        }
-    }
-
 ADMINS = (
-    (u'Admins', 'admin@example.com'),
+    (u'Admin', 'admin@example.com'),
 )
 
 MANAGERS = ADMINS
@@ -64,7 +43,10 @@ DATABASES = {
         'NAME': 'utopiacms',
         'USER': 'utopiacms_user',
         'PASSWORD': 'password',
-    }
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
+        },
+    },
 }
 
 TIME_ZONE = 'America/Montevideo'
@@ -80,13 +62,13 @@ SECURE_STATIC_URL = '/static/'
 
 STATICFILES_DIRS = (
     '/home/user/utopia-cms/static',
-    '/home/user/.virtualenvs/utopiacms/lib/python2.7/site-packages/django/contrib/admin/static/',
 )
 
 STATICFILES_FINDERS = (
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-    "compressor.finders.CompressorFinder")
+    "compressor.finders.CompressorFinder",
+)
 
 LOGIN_URL = '/usuarios/entrar/'
 LOGOUT_URL = '/usuarios/salir/'
@@ -102,11 +84,12 @@ EMAIL_CONFIRMATION_TIMEOUT_DAYS = 3
 
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
-SENDNEWSLETTER_LOGFILE = '/home/user/utopia-cms-data/sendnewsletter_%s.log'
+SENDNEWSLETTER_LOGFILE = '/home/user/utopia-cms-data/sendnewsletter/%s-%s.log'
 
-SOUTH_DATABASE_ADAPTERS = {
-    'default': "south.db.mysql"
-}
+# TODO: remove this commented setting if not useful
+# SOUTH_DATABASE_ADAPTERS = {
+#     'default': "south.db.mysql"
+# }
 
 LAST_OLD_DAY = datetime(2013, 6, 15)
 EMAIL_EDITION_NUMBER_OFFSET = 0

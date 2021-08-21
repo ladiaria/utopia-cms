@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 import re
 from generator.views import contribute
-from feeds import ArticlesByJournalist, LatestArticlesByCategory, LatestEditions, LatestSupplements, LatestArticles
 from rest_framework import serializers, viewsets, routers
 
 from django.conf import settings
-from django.conf.urls import patterns, url, include
+from django.conf.urls import url, include
+from django.db import ProgrammingError
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import TemplateView, RedirectView
+from django.contrib.sites.models import Site
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.views.static import serve
 
 from core.models import Article, Publication, Category, Section, Journalist, get_current_edition, get_latest_edition
 from core.views.edition import edition_detail
@@ -16,7 +18,7 @@ from core.views.supplement import supplement_list
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
 from thedaily.models import Subscriber
-from thedaily.views import giveaway, poll
+from thedaily.views import giveaway, fav_add_or_remove
 from comunidad.models import Url, Recommendation
 from homev3.views import index
 from cartelera.views import vivo
@@ -223,8 +225,8 @@ router.register(r'urls', UrlViewSet)
 router.register(r'subscribers', SubscriberViewSet)
 router.register(r'dollar_exchange', DollarExchangeViewSet)
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
+    url(r'^photologue/', include('photologue.urls', namespace='photologue')),
     url(r'^epubparser/', include('epubparser.urls')),
 
     # Admin
@@ -234,7 +236,6 @@ urlpatterns = patterns(
     # Search and special pages (TODO: organize better)
     url(r'^buscar/', include('search.urls')),
     url(r'^regala/', giveaway, name='giveaway'),
-    url(r'^defensor/$', poll, name="poll"),
 
     # Custom redirects
     url(r'^suscribite-por-telefono/$', RedirectView.as_view(url='/usuarios/suscribite-por-telefono/')),
@@ -244,24 +245,25 @@ urlpatterns = patterns(
 
     # AMP copy iframe
     url(r'^copier/', TemplateView.as_view(template_name="amp/core/templates/article/copier.html"), name='copier'),
-)
+]
 
 # Used to add customized url patterns from a custom app
 urls_custom_module = getattr(settings, 'PORTAL_URLS_CUSTOM_MODULE', None)
 if urls_custom_module:
     urlpatterns += __import__(urls_custom_module, fromlist=['urlpatterns']).urlpatterns
 
-urlpatterns += patterns(
-    '',
+urlpatterns.extend([
     # Apps
     url(r'^dashboard/', include('dashboard.urls')),
     url(r'^fotos/', include('photologue.urls')),
     url(r'^genera-la-noticia/$', contribute, name='generator-contribute'),
     url(r'^memcached/', include('memcached.urls')),
-    url(r'^robots.txt$', include('robots.urls')),
+    url(r'^robots.txt', include('robots.urls')),
     url(r'^shout/', include('shoutbox.urls')),
     url(r'^activity/', include('actstream.urls')),
-    url(r'^favit/', include('favit.urls')),
+
+    # favit add-or-remove wrapper (TODO: favit should be replaced asap with a more compatible Django1.11+ app)
+    url(r'^favit/add-or-remove$', fav_add_or_remove),
 
     # Vivo
     url(r'^vivo/$', vivo, name="cartelera-vivo"),
@@ -307,15 +309,14 @@ urlpatterns += patterns(
     # Other pages (TODO: check and organize better)
     url(r'^(?P<journalist_job>(periodista|columnista))/', include('core.urls.journalist')),
     url(r'^area/', include('core.urls.category')),
-    url(r'^bn/', include('core.urls.breaking_news_module')))
+    url(r'^bn/', include('core.urls.breaking_news_module'))])
 
 # Used to customize "/custom_email/*" urls using patterns from a custom app
 custom_email_urls_module = getattr(settings, 'CUSTOM_EMAIL_URLS_MODULE', None)
 if custom_email_urls_module:
-    urlpatterns += patterns('', url(r'^custom_email/', include(custom_email_urls_module)))
+    urlpatterns.extend([url(r'^custom_email/', include(custom_email_urls_module))])
 
-urlpatterns += patterns(
-    '',
+urlpatterns.extend([
     url(r'^debug/', include('core.urls.debug')),
 
     # Usuarios
@@ -328,41 +329,45 @@ urlpatterns += patterns(
     url('', include('sitemaps.urls')),
 
     url('', include('social_django.urls', namespace='social')),
-)
+])
 
 # Shorturl machinery (enabled by default) (TODO: check if working)
 if getattr(settings, 'ENABLE_SHORTURLS', True):
-    urlpatterns += patterns(
-        '',
+    urlpatterns += [
         url(r'^', include('shorturls.urls')),
         url(r'^short/', include('short.urls')),
-    )
+    ]
 
-# Syndication framework
-urlpatterns += patterns(
-    '',
-    url(r'^feeds/articulos/$', LatestArticles(), name='ultimos-articulos-rss'),
-    url(r'^feeds/ediciones/$', LatestEditions()),
-    url(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
-    url(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
-    url(r'^feeds/suplementos/$', LatestSupplements()),
-)
+# Syndication framework, only available when a Site object can be defined
+try:
+    Site.objects.get_current()
+except (ProgrammingError, Site.DoesNotExist):
+    pass
+else:
+    from feeds import (
+        ArticlesByJournalist, LatestArticlesByCategory, LatestEditions, LatestSupplements, LatestArticles
+    )
+    urlpatterns += [
+        url(r'^feeds/articulos/$', LatestArticles(), name='ultimos-articulos-rss'),
+        url(r'^feeds/ediciones/$', LatestEditions()),
+        url(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
+        url(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
+        url(r'^feeds/suplementos/$', LatestSupplements()),
+    ]
 
 if settings.DEBUG:
     urlpatterns += staticfiles_urlpatterns()
-    urlpatterns += patterns(
-        '',
-        url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {
+    urlpatterns += [
+        url(r'^media/(?P<path>.*)$', serve, {
             'document_root': settings.MEDIA_ROOT,
         }),
-    )
+    ]
 # TODO: explain this
 #    urlpatterns += patterns('',
 #            (r'^media/(?P<path>.*)$',
 #            {'document_root': settings.MEDIA_ROOT,
 #            'show_indexes': settings.DEBUG}),)
 else:
-    urlpatterns += patterns(
-        '',
+    urlpatterns += [
         url(r'^.*.css$', TemplateView.as_view(template_name='devnull.html')),
-    )
+    ]

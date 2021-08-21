@@ -80,7 +80,7 @@
     <div class="ld-main-menu__block ld-main-menu__block--padded">
       <ul>
         <li class="ld-main-menu__item--btn">
-          <a class="ld-btn ld-btn--whiteoutline uppercase" href="{% url 'account-login' %}?next={% ifequal request.path '/usuarios/salir/' %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endifequal %}">Ingresá</a>
+          <a class="ld-btn ld-btn--whiteoutline uppercase" href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresá</a>
         </li>
         <li class="ld-main-menu__item--btn">
           <a class="ld-btn ld-btn--whiteoutline uppercase" href="{% url 'subscribe_landing' %}">Suscribite</a>

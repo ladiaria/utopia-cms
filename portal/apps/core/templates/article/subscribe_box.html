@@ -8,7 +8,7 @@
         {% if user.is_authenticated %}
           {{ publication.subscribe_box_nl_subscribe_auth|safe }}
         {% else %}
-          Suscribite gratis y recibí la newsletter de {{ publication.subscribe_box_nl_subscribe_anon|safe }} en tu email.
+          {{ publication.subscribe_box_nl_subscribe_anon|safe }}
         {% endif %}
       {% endblock %}
     </div>

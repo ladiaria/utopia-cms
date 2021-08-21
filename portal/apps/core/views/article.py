@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import requests
+import json
 from datetime import date, datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from requests.exceptions import ConnectionError
 from urlparse import urlsplit, urlunsplit
 
@@ -10,11 +12,10 @@ from django.core.urlresolvers import reverse
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponseRedirect, HttpResponse, BadHeaderError, HttpResponsePermanentRedirect
-from django.utils import simplejson as json
 from django.views.generic import DetailView
 from django.contrib.sites.models import Site
 from django.contrib.contenttypes.models import ContentType
-from django.shortcuts import get_list_or_404, get_object_or_404, render_to_response
+from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache, cache_page
 from django.views.decorators.vary import vary_on_cookie
@@ -80,15 +81,17 @@ def article_detail(request, year, month, slug, domain_slug=None):
             category = get_object_or_404(Category, slug=domain_slug)
             domain = u'category'
 
+    if settings.DEBUG:
+        print('DEBUG: article_detail view called with (%d, %d, %s, %s)' % (year, month, slug, domain_slug))
     if settings.AMP_DEBUG and request.flavour == 'amp':
         print('AMP DEBUG: request.META=%s' % request.META)
 
     # 1. obtener articulo
     try:
         # netloc splitted by port (to support local environment running in port)
-        netloc = request.META['HTTP_HOST'].split(':')[0]
+        netloc, first_of_month = request.META['HTTP_HOST'].split(':')[0], date(year, month, 1)
         article = Article.objects.select_related('main_section__edition__publication').get(
-            slug=slug, date_published__year=year, date_published__month=month
+            slug=slug, date_published__gte=first_of_month, date_published__lt=first_of_month + relativedelta(months=1)
         )
         article_url = article.get_absolute_url()
         if request.path != article_url:
@@ -175,23 +178,19 @@ def article_detail(request, year, month, slug, domain_slug=None):
             'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
         })
 
-    return render_to_response(
-        getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE', 'article/detail.html'),
-        context,
-        context_instance=RequestContext(request),
-    )
+    return render(request, getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE', 'article/detail.html'), context)
 
 
 @never_cache
 def article_detail_walled(request, year, month, slug, domain_slug=None):
-    return article_detail(request, year, month, slug, domain_slug)
+    return article_detail(request, int(year), int(month), slug, domain_slug)
 
 
 @decorate_if_staff(decorator=never_cache)
 @decorate_if_no_staff(decorator=vary_on_cookie)
 @decorate_if_no_staff(decorator=cache_page(120))
 def article_detail_free(request, year, month, slug, domain_slug=None):
-    return article_detail(request, year, month, slug, domain_slug)
+    return article_detail(request, int(year), int(month), slug, domain_slug)
 
 
 def reorder_tag_list(article, tags):

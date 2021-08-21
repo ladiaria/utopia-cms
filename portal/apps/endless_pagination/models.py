@@ -43,7 +43,7 @@ class EndlessPage(object):
             'querystring_key': self.querystring_key,
         })
         template = CURRENT_TEMPLATE if self.is_current else PAGE_TEMPLATE
-        return template.render(context_instance)
+        return template.render(context_instance.flatten())
                 
         
 class PageList(object):

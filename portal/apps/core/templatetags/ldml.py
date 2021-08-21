@@ -57,7 +57,7 @@ def get_image(match, aid, amp=False):
         count = int(match.groups()[0]) - 1
 
     try:
-        article = Article.objects.select_related('body_image__image').get(id=aid)
+        article = Article.objects.prefetch_related('body_image__image').get(id=aid)
         images = article.body_image.all()
         if images.count() > count and count >= 0:
             article_body_image = images[count]

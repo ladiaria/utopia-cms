@@ -6,7 +6,7 @@ Documentation about installing Utopia's CMS.
 
 - System packages, names can vary by OS/distribution:
 
-  mariadb nginx libtiff libtiff-devel giflib giflib-devel python-pillow MySQL-python python-dateutil python-vobject python-oauth2 pyPdf python-openid pytz pycrypto python-memcached python-requests-oauthlib python-requests rubygem-sass npm gcc libmaxminddb-devel
+  mariadb nginx libtiff libtiff-devel giflib giflib-devel python-pillow MySQL-python python-vobject python-oauth2 pytz pycrypto python-requests-oauthlib rubygem-sass npm gcc libmaxminddb-devel
 
 - npm (Node.js packages):
 
@@ -18,13 +18,16 @@ Documentation about installing Utopia's CMS.
 
 - Clone the project repository to any local destination directory and init its git submodules (this can take some minutes):
 
-  `user@host:~ $ git clone -b main https://github.com/ladiaria/utopia-cms && cd utopia-cms && git submodule update --init`
+  ```
+  user@host:~ $ git clone -b main https://github.com/ladiaria/utopia-cms
+  cd utopia-cms && git submodule update --init
+  ```
 
 - Clone also another repo with more static files needed:
 
   `user@host:~/utopia-cms $ git clone -b main https://github.com/ladiaria/lightGallery static/lightGallery`
 
-- Create a virtualenv (venv) for Python2.7 using system-site-packages (the subdirectory `~/.virtualenvs` is not needed, we use it in this guide because is the default virtualenv directory in the tool [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/), also the virtual environment name can be any other, "utopiacms" is choosed in this guide):
+- Create a virtualenv (venv) for Python2.7 using system-site-packages (the subdirectory `~/.virtualenvs` is not needed, we use it in this guide because is the default virtualenv directory in the tool [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/), also the virtual environment name can be any other, "utopiacms" is chosen in this guide):
 
   `user@host:~/utopia-cms $ mkdir -p ~/.virtualenvs && virtualenv2 --system-site-packages ~/.virtualenvs/utopiacms`
 
@@ -54,17 +57,9 @@ MariaDB [(none)]> GRANT ALL PRIVILEGES ON utopiacms.* TO 'utopiacms_user'@'local
 (utopiacms) user@host:~/utopia-cms/portal $ vim portal/local_settings.py
 ```
 
-- Create needed tables using Django's `syncdb` management command:
+- Create needed tables using Django's `migrate` management command:
 
-`(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py syncdb --noinput`
-
-- Create `social_django`, `actstream` and `favit` tables using Django's `sqlall` management command piped to the database (provide the correct database user and password created before):
-
-`(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py sqlall social_django actstream favit | mysql -u utopiacms_user -p utopiacms`
-
-- Run the migration script provided, it will create all the rest of database tables needed and also will add some required initial data:
-
-`(utopiacms) user@host:~/utopia-cms/portal $ libs/scripts/migrate.sh`
+`(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py migrate`
 
 #### Development environment setup
 

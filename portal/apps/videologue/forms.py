@@ -9,6 +9,7 @@ YT_RE = re.compile(r'(?:v|embed)[=\/]([\w_-]{11})')
 class YouTubeVideoForm(forms.ModelForm):
     class Meta:
         model = YouTubeVideo
+        fields = "__all__"
 
     def clean(self):
         cleaned_data = super(YouTubeVideoForm, self).clean()

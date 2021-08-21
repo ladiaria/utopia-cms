@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n admin_static %}
+{% load i18n static %}
 {% load admin_shortcuts_tags %}
 
 {# django-admin-shortcuts changes these blocks #}
@@ -22,27 +22,25 @@
 
 {% block coltype %}colMS{% endblock %}
 
-{% block bodyclass %}dashboard{% endblock %}
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
 
 {% block content %}
 <div id="content-main">
 
 {% if app_list %}
     {% for app in app_list %}
-        <div class="module"
+        <div class="app-{{ app.app_label }} module"
          {% if app.name == 'Photologue' %} style="margin-bottom: 0px; border-bottom-width: 0px;"{% endif %}
          {% if app.name == 'Photologue_Ladiaria' %} style="border-top-width: 0px;" {% endif %}>
         <table summary="{% blocktrans with name=app.name %}Models available in the {{ name }} application.{% endblocktrans %}">
         {% if app.name != 'Photologue_Ladiaria' or app_list|length_is:"1" and app.name == 'Photologue_Ladiaria' %}
         <caption>
-            <a href="{{ app.app_url }}" class="section">
-                {% blocktrans with name=app.name %}{{ name }}{% endblocktrans %}
-            </a>
+            <a href="{{ app.app_url }}" class="section">{{ app.name }}</a>
         </caption>
         {% endif %}
         {% for model in app.models %}
             {% if model.name != 'Configuraciones extra' %}
-            <tr>
+            <tr class="model-{{ model.object_name|lower }}">
             {% if model.admin_url %}
                 <th scope="row"><a href="{{ model.admin_url }}">
                   {% if model.name == 'Efectos de foto' %}
@@ -120,8 +118,8 @@
 {% block sidebar %}
 <div id="content-related">
     <div class="module" id="recent-actions-module">
-        <h2>{% trans 'Recent Actions' %}</h2>
-        <h3>{% trans 'My Actions' %}</h3>
+        <h2>{% trans 'Recent actions' %}</h2>
+        <h3>{% trans 'My actions' %}</h3>
             {% load log %}
             {% get_admin_log 10 as admin_log for_user user %}
             {% if not admin_log %}
@@ -137,7 +135,7 @@
                 {% endif %}
                 <br/>
                 {% if entry.content_type %}
-                    <span class="mini quiet">{% filter capfirst %}{% trans entry.content_type.name %}{% endfilter %}</span>
+                    <span class="mini quiet">{% filter capfirst %}{{ entry.content_type }}{% endfilter %}</span>
                 {% else %}
                     <span class="mini quiet">{% trans 'Unknown content' %}</span>
                 {% endif %}

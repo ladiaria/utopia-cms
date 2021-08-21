@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
 
@@ -55,7 +55,7 @@ def notice_settings(request):
         "rows": settings_table,
     }
 
-    return render_to_response("notification/notice_settings.html", {
+    return render(request, "notification/notice_settings.html", {
         "notice_types": notice_types,
         "notice_settings": settings,
-    }, context_instance=RequestContext(request))
+    })

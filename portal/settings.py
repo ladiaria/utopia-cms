@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import sys
-import os
 from os.path import abspath, basename, dirname, join, realpath
 from datetime import datetime
 import mimetypes
@@ -9,7 +8,6 @@ from freezegun import freeze_time
 from django.contrib.messages import constants as messages
 
 
-USE_TZ = True
 LAST_OLD_DAY = datetime(2014, 7, 22)
 FIRST_DAY = datetime(2009, 8, 1)
 
@@ -22,9 +20,7 @@ if APPS_DIR not in sys.path:
 SITE_ROOT = dirname(realpath(__file__))
 STATIC_URL = '/static/'
 STATIC_ROOT = '%s/static/' % SITE_ROOT
-
-SITE_URL = 'https://ladiaria.com.uy/'
-SITE_DOMAIN = 'ladiaria.com.uy'
+SITE_DOMAIN = 'example.com'
 URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
 
@@ -40,6 +36,7 @@ SESSION_COOKIE_AGE = 2592000  # 30 days
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SAMESITE_FORCE_ALL = True
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 AMP_DEBUG = False
 RAW_SQL_DEBUG = False
@@ -57,22 +54,16 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.admindocs',
     'django.contrib.auth',
-    'django.contrib.comments',
     'django.contrib.contenttypes',
-    'django.contrib.markup',
     'django.contrib.sessions',
     'django.contrib.sitemaps',
     'django.contrib.sites',
-    'django.contrib.formtools',
-    'django.contrib.webdesign',
+    'formtools',
     'background_task',
     'subdomains',
-    'sitemaps',
-    'south',
-    'django_nose',
     'audiologue',
     'tagging',
-    'core',
+    'core.config.CoreConfig',
     'core.attachments',
     'django_extensions',
     'generator',
@@ -86,6 +77,7 @@ INSTALLED_APPS = (
     'faq',
     'captcha',
     'photologue',
+    'sortedm2m',
     'photologue_ladiaria',
     'robots',
     'search',
@@ -101,12 +93,14 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'signupwall',
     'homev3',
-    'cartelera',
+    'cartelera.config.CarteleraConfig',
     'markdown',
+    'django_bleach',
     'django_markdown',
+    'django_markup',
     'comunidad',
     'appconf',
-    'djangoratings',
+    'star_ratings',
     'tagging_autocomplete_tagit',
     'avatar',
     'endless_pagination',
@@ -121,7 +115,10 @@ INSTALLED_APPS = (
     'social_django',
 )
 
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+SITE_ID = 1
+
+# photologue app need to add a custom migration
+MIGRATION_MODULES = {'photologue': 'photologue_ladiaria.photologue_migrations'}
 
 ADMIN_SHORTCUTS = [
     {
@@ -149,10 +146,6 @@ ADMIN_SHORTCUTS = [
                 'title': 'Usuarios registrados no suscriptores',
             },
             {
-                'url': '/usuarios/ldfs_promo/',
-                'title': 'Confirmaciones promo ldfs',
-            },
-            {
                 'url': '/dashboard/',
                 'title': u'Estadísticas de usuarios',
             },
@@ -163,20 +156,19 @@ ADMIN_SHORTCUTS = [
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
     'PAGINATE_BY': 20,
-    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
+    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
 }
 
-ACTSTREAM_SETTINGS = {
-    'MODELS': (
-        'auth.User', 'core.article', 'comunidad.subscriberarticle', 'cartelera.pelicula', 'cartelera.cine',
-        'photologue.Photo'),
-    'FETCH_RELATIONS': False, 'USE_PREFETCH': True}
+ACTSTREAM_SETTINGS = {'FETCH_RELATIONS': False, 'USE_PREFETCH': True}
 
+CRISPY_ALLOWED_TEMPLATE_PACKS = ('bootstrap', 'uni_form', 'bootstrap3', 'bootstrap4', 'materialize_css_forms')
 CRISPY_TEMPLATE_PACK = 'materialize_css_forms'
 
 MIDDLEWARE_CLASSES = (
+    'django.middleware.security.SecurityMiddleware',
     'django_cookies_samesite.middleware.CookiesSameSite',
     'core.middleware.AMP.FlavoursCookieSecure',
+    'django_mobile.cache.middleware.UpdateCacheFlavourMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',              # runs during the response phase (top -> last)
     'core.middleware.cache.AnonymousResponse',                    # hacks cookie header for anon users (resp phase)
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -184,51 +176,24 @@ MIDDLEWARE_CLASSES = (
     'subdomains.middleware.SubdomainURLRoutingMiddleware',
     'libs.middleware.url.UrlMiddleware',
     'django.middleware.gzip.GZipMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.RemoteUserMiddleware',
-    'django.middleware.doc.XViewMiddleware',
+    'django.contrib.admindocs.middleware.XViewMiddleware',
     'core.middleware.threadlocals.ThreadLocals',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
-    'django.middleware.transaction.TransactionMiddleware',
     'signupwall.middleware.SignupwallMiddleware',
     'django.contrib.flatpages.middleware.FlatpageFallbackMiddleware',
     'django_mobile.middleware.MobileDetectionMiddleware',
     'django_mobile.middleware.SetFlavourMiddleware',
     'core.middleware.cache.AnonymousRequest',                     # hacks cookie header for anon users (req phase)
+    'django_mobile.cache.middleware.FetchFromCacheFlavourMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',           # runs during the request phase (top -> first)
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'core.middleware.AMP.OnlyArticleDetail',
-)
-
-TEMPLATE_LOADERS = (
-    ('django_mobile.loader.CachedLoader', (
-        'django_mobile.loader.Loader',
-        'django.template.loaders.filesystem.Loader',
-        'django.template.loaders.app_directories.Loader',
-    )),
-)
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.request',
-    'context_processors.urls',
-    'context_processors.site',
-    'context_processors.publications',
-    'context_processors.gtm',
-    'context_processors.main_menus',
-    'django.core.context_processors.static',
-    'apps.core.context_processors.aniosdias',
-    'social_django.context_processors.backends',
-    'social_django.context_processors.login_redirect',
-    'django.contrib.messages.context_processors.messages',
-    "django.core.context_processors.i18n",
-    'apps.core.context_processors.secure_static',
-    'adzone.context_processors.get_source_ip',
-    'django_mobile.context_processors.flavour',
-    'apps.thedaily.context_processors.permissions'
 )
 
 LANGUAGES = (
@@ -254,6 +219,8 @@ DATETIME_INPUT_FORMATS = (
 
 ROOT_URLCONF = 'urls'
 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
+
 # Base
 BASE_SUB = None
 DEFAULT_PUB = 'default'
@@ -269,10 +236,6 @@ HASHIDS_SALT = 'top_secret_salt_phrase'
 # A dictionary of urlconf module paths, keyed by their subdomain.
 SUBDOMAIN_URLCONFS = {
     None: 'urls',  # no subdomain, e.g. ``example.com``
-}
-
-SOUTH_DATABASE_ADAPTERS = {
-    'default': "south.db.mysql"
 }
 
 # MEDIA
@@ -291,17 +254,59 @@ mimetypes.add_type("image/svg+xml", ".svgz", True)
 # AVATAR
 AVATAR_DEFAULT_IMAGE = 'identicon'
 
-# TEMPLATES
-TEMPLATE_DIRS = (
-    join(PROJECT_ABSOLUTE_DIR, 'templates'),
-    join(PROJECT_ABSOLUTE_DIR, 'apps'),
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': ['127.0.0.1:11211']
+    }
+}
+
+# required for django mobile.
+# TODO: search for a django-mobile replacement because last version is not compatible with new "TEMPLATE" setting.
+TEMPLATE_LOADERS = (
+    (
+        'django_mobile.loader.CachedLoader',
+        (
+            'django_mobile.loader.Loader',
+            'django.template.loaders.filesystem.Loader',
+            'django.template.loaders.app_directories.Loader',
+        ),
+    ),
 )
-ADMIN_TEMPLATE_DIRS = (
-    join(PROJECT_ABSOLUTE_DIR, 'templates'),
-)
-FIXTURE_DIRS = (
-    join(PROJECT_ABSOLUTE_DIR, 'fixtures'),
-)
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [join(PROJECT_ABSOLUTE_DIR, 'templates'), join(PROJECT_ABSOLUTE_DIR, 'apps')],
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'context_processors.urls',
+                'context_processors.site',
+                'context_processors.publications',
+                'context_processors.gtm',
+                'context_processors.main_menus',
+                'django.template.context_processors.static',
+                'apps.core.context_processors.aniosdias',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
+                'django.contrib.messages.context_processors.messages',
+                "django.template.context_processors.i18n",
+                'django.template.context_processors.tz',
+                'apps.core.context_processors.secure_static',
+                'adzone.context_processors.get_source_ip',
+                'django_mobile.context_processors.flavour',
+                'apps.thedaily.context_processors.permissions',
+                'django.template.context_processors.csrf',
+            ],
+            'loaders': TEMPLATE_LOADERS,
+        },
+    }
+]
+
+FIXTURE_DIRS = (join(PROJECT_ABSOLUTE_DIR, 'fixtures'), )
 
 # EMAIL
 EMAIL_FAIL_SILENTLY = False
@@ -314,7 +319,7 @@ NOTIFICATIONS_FROM_MX = NOTIFICATIONS_FROM_ADDR1
 
 NEWSLETTER_IMG_FORMAT = 'jpg'
 
-SENDNEWSLETTER_LOGFILE = '/var/log/ldsocial/sendnewsletter_%s.log'
+SENDNEWSLETTER_LOGFILE = '/var/log/utopiacms/sendnewsletter/%s-%s.log'
 
 # apps
 
@@ -440,6 +445,8 @@ COMPRESS_PRECOMPILERS = (
     ('text/x-scss', 'sass --scss {infile} {outfile}'),
 )
 
+BLEACH_STRIP_TAGS = True
+
 # Online sync User fields with CRM (empty, using hardcoded fields only)
 CRM_UPDATE_SUBSCRIBER_FIELDS = {}
 # Online sync User fields with CRM enabled by default
@@ -458,14 +465,10 @@ FREEZE_TIME = None
 try:
     from local_settings import *
 except ImportError:
-    debug_msg = "Can't find local_settings.py, using default settings."
-    try:
-        from mod_python import apache
-        apache.log_error("%s" % debug_msg, apache.APLOG_NOTICE)
-    except ImportError:
-        import sys
-        sys.stderr.write("%s\n" % debug_msg)
+    sys.stderr.write("WARNING: Can't find local_settings.py, using default settings.\n")
 
+SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
+ROBOTS_SITEMAP_URLS = [SITE_URL + 'sitemap.xml']
 LOCALE_NAME = LOCAL_LANG + '_' + LOCAL_COUNTRY + '.UTF8'
 
 if FREEZE_TIME:

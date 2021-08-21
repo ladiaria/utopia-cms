@@ -76,12 +76,9 @@ class RenderSectionNode(Node):
 
                     articles = list(section.latest(**latest_kwargs))
 
+            context.update({'articles': articles, 'section': section, 'edition': edition, 'art_count': len(articles)})
             try:
-                result = loader.render_to_string(
-                    template,
-                    {'articles': articles, 'section': section, 'edition': edition, 'art_count': len(articles)},
-                    context_instance=context,
-                )
+                result = loader.render_to_string(template, context.flatten())
             except TemplateDoesNotExist:
                 pass
 
@@ -158,12 +155,12 @@ def render_category_row(category_slug):
 @register.simple_tag(takes_context=True)
 def render_cover(context):
     context.update({'is_cover': True})
-    return loader.render_to_string(getattr(settings, 'HOMEV3_COVER_TEMPLATE', 'cover.html'), context)
+    return loader.render_to_string(getattr(settings, 'HOMEV3_COVER_TEMPLATE', 'cover.html'), context.flatten())
 
 
 class RenderHeaderNode(Node):
     def render(self, context, template_suffix):
-        return loader.render_to_string('header%s.html' % template_suffix, context_instance=context)
+        return loader.render_to_string('header%s.html' % template_suffix, context.flatten())
 
 
 @register.simple_tag(takes_context=True)

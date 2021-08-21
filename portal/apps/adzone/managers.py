@@ -18,7 +18,7 @@ class AdManager(models.Manager):
         and ``ad_zone``.
         If ``ad_category`` is None, the ad will be category independent.
         """
-        qs = self.get_query_set().filter(
+        qs = self.get_queryset().filter(
             start_showing__lte=now(), stop_showing__gte=now(),
             zone__slug=ad_zone, sites=site or Site.objects.get_current().pk
         ).select_related('textad', 'bannerad')
@@ -34,7 +34,7 @@ class AdManager(models.Manager):
         """
         Returns round robin next ad based on index parameter
         """
-        qs = self.get_query_set().filter(start_showing__lte=now(),
+        qs = self.get_queryset().filter(start_showing__lte=now(),
                                          stop_showing__gte=now(),
                                          zone__slug=ad_zone,
                                          sites=Site.objects.get_current().pk

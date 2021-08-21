@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static core_tags ldml tagging_tags crispy_forms_tags videologue_tags markup %}
+{% load bleach_tags static core_tags ldml tagging_tags crispy_forms_tags videologue_tags %}
 
 {% autoescape on %}
 {% block page_title %}
@@ -41,7 +41,7 @@
             </figure>
             <figcaption class="article-caption ld-caption">
               <div class="container">
-                {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup:article.id|removetags:"p" }}</p>{% endif %}
+                {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>{% endif %}
                 {% if article.photo.extended.photographer %}
                   <p>{{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}</p>
                 {% endif %}
@@ -58,7 +58,7 @@
           </figure>
           <figcaption class="article-caption ld-caption">
             <div class="container">
-              <p>{{ article.photo.caption|ldmarkup:article.id|removetags:"p" }}</p>
+              <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
               {% if article.photo.extended.photographer %}
                 <p>{{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}</p>
               {% endif %}
@@ -75,7 +75,7 @@
         </div>
       {% endifequal %}
       <h1 class="article-title after_foto">
-        {{ article.headline|ldmarkup:article.id|removetags:"p" }}
+        {{ article.headline|ldmarkup:article.id|bleach }}
       </h1>
 
       <div class="article-date-author">
@@ -131,11 +131,11 @@
     {% if article.has_deck or article.has_lead %}
       {% if article.has_deck %}
         <h2 class="article-deck article__deck">
-          {{ article.deck|ldmarkup:article.id|removetags:'p' }}
+          {{ article.deck|ldmarkup:article.id|bleach }}
         </h2>
       {% endif %}
       {% if article.has_lead %}
-        <p class="article-lead">{{ article.get_lead|urlize|ldmarkup:article.id|removetags:'p' }}</p>
+        <p class="article-lead">{{ article.get_lead|urlize|ldmarkup:article.id|bleach }}</p>
       {% endif %}
     {% endif %}
 

@@ -1,39 +1,48 @@
 # -*- coding: utf-8 -*-
 # utopia-cms, 2018-2021, Aníbal Pacheco
-
+import sys
 import os
 import logging
 import csv
 import smtplib
 import time
+from MySQLdb import ProgrammingError
 from datetime import date, datetime, timedelta
+from socket import error
 from threading import Thread
 from hashids import Hashids
-from optparse import make_option
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
-from django.db import connection, IntegrityError
+from django.db import close_old_connections, connection, IntegrityError, OperationalError
 from django.core.management.base import BaseCommand
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
+from django.contrib.sites.models import Site
 
-from core.models import Category, CategoryHome, Section, Article, get_latest_edition
+from core.models import Category, Section, Article, get_latest_edition
 from core.templatetags.core_tags import remove_markup
 from thedaily.models import Subscriber
 from dashboard.models import NewsletterDelivery
 from libs.utils import smtp_connect
 from libs.thread_iter import threadsafe_generator
 
+
 # CFG
 today = date.today()
-EMAIL_FROM_ADDR = 'suscriptores@ladiaria.com.uy'
+site = Site.objects.get_current()
 EMAIL_ATTACH, ATTACHMENTS = True, []
 
 # log
+log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+# print also errors to stderr to receive cron alert
+err_handler = logging.StreamHandler(sys.stderr)
+err_handler.setLevel(logging.ERROR)
+err_handler.setFormatter(log_formatter)
+log.addHandler(err_handler)
 
 # Initialize the hashid object with salt from settings and custom length
 hashids = Hashids(settings.HASHIDS_SALT, 32)
@@ -41,10 +50,9 @@ hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_from_ns, ids_ending_with, subscriber_ids):
 
-    category_home = CategoryHome.objects.get(category=category)
-    cover_article = category_home.cover()
-    cover_article_section = cover_article.publication_section()
-    top_articles = [(a, a.publication_section()) for a in category_home.non_cover_articles()]
+    cover_article = category.home.cover()
+    cover_article_section = cover_article.publication_section() if cover_article else None
+    top_articles = [(a, a.publication_section()) for a in category.home.non_cover_articles()]
 
     listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
     if listonly_section:
@@ -54,9 +62,11 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
             cover_article_section = cover_article.publication_section() if cover_article else None
 
     opinion_article = None
-    nl_featured = Article.objects.filter(id=settings.NEWSLETTER_FEATURED_ARTICLE) if \
-        getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False) else \
-        get_latest_edition().newsletter_featured_articles()
+    nl_featured = Article.objects.filter(
+        id=settings.NEWSLETTER_FEATURED_ARTICLE
+    ) if getattr(
+        settings, 'NEWSLETTER_FEATURED_ARTICLE', False
+    ) else get_latest_edition().newsletter_featured_articles()
     if nl_featured:
         opinion_article = nl_featured[0]
 
@@ -108,9 +118,16 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
     counters = []
 
     # define the function to be executed by each thread
-    def send(func):
+    def send(func, results, index):
         # Connect to the SMTP server and send all emails
-        smtp = None if no_deliver else smtp_connect()
+        try:
+            smtp = None if no_deliver else smtp_connect()
+        except error:
+            log.warning('MTA down for this thread')
+            results[index] = 1
+            return
+
+        retry_last_delivery = False
 
         subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
         site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
@@ -120,7 +137,8 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
         while True:
 
             try:
-                s, is_subscriber = func()
+                if not retry_last_delivery:
+                    s, is_subscriber = func()
                 headers, hashed_id = {'List-ID': list_id}, hashids.encode(int(s.id))
                 unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
                     '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
@@ -147,7 +165,7 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
                     ),
                     mail_to=(s.name, s.user.email),
                     subject=remove_markup(cover_article.headline),
-                    mail_from=(u'la diaria ' + category.name, EMAIL_FROM_ADDR),
+                    mail_from=(u'%s %s' % (site.name, category.name), settings.NOTIFICATIONS_FROM_ADDR1),
                     headers=headers,
                 )
 
@@ -160,26 +178,46 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
                 try:
                     if not no_deliver:
                         smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [s.user.email], msg.as_string())
-                    log.info("%s Email %s to %ssubscriber %s\t%s" % (
-                        today, 'simulated' if no_deliver else 'sent', '' if is_subscriber else 'non-',
-                        s.id, s.user.email))
+                    log.info(
+                        "Email %s to %ssubscriber %s\t%s" % (
+                            'simulated' if no_deliver else 'sent', '' if is_subscriber else 'non-', s.id, s.user.email
+                        )
+                    )
                     if is_subscriber:
                         subscriber_sent += 1
                     else:
                         user_sent += 1
                 except smtplib.SMTPRecipientsRefused:
-                    log.warning("%s Email refused for %ssubscriber %s\t%s" % (
-                        today, '' if is_subscriber else 'non-', s.id, s.user.email))
+                    log.warning(
+                        "Email refused for %ssubscriber %s\t%s" % ('' if is_subscriber else 'non-', s.id, s.user.email)
+                    )
                     if is_subscriber:
                         subscriber_refused += 1
                     else:
                         user_refused += 1
                 except smtplib.SMTPServerDisconnected:
-                    log.error("MTA down, not sending - %s" % s.user.email)
-                    log.info("Trying to reconnect for the next delivery...")
-                    smtp = smtp_connect()
+                    # Retries are made only once per iteration to avoid infinite loop if MTA got down at all
+                    retry_last_delivery = not retry_last_delivery
+                    log_message = "MTA down, email to %s not sent. Reconnecting " % s.user.email
+                    if retry_last_delivery:
+                        log.warning(log_message + "to retry ...")
+                    else:
+                        log.error(log_message + "for the next delivery ...")
+                    try:
+                        smtp = smtp_connect()
+                    except error:
+                        log.warning('MTA reconnect failed')
+                else:
+                    retry_last_delivery = False
 
-            except StopIteration:
+            except (ProgrammingError, OperationalError, StopIteration) as exc:
+                # the connection to databse can be killed, if that is the case print useful log to continue
+                if isinstance(exc, (ProgrammingError, OperationalError)):
+                    log.error(
+                        'DB connection error, (%s, %s, %s) was the last delivery in this thread' % (
+                            s.user.email, is_subscriber, ids_ending_with
+                        )
+                    )
                 # append data processed to global results and quit.
                 # this can be done because list.append is threadsafe.
                 counters.append((subscriber_sent, user_sent, subscriber_refused, user_refused))
@@ -192,8 +230,8 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
                 pass
 
     # create threads
-    subscribers_iter = subscribers()
-    threads = [Thread(target=send, args=(subscribers_iter.next, )) for i in range(nthreads)]
+    subscribers_iter, results = subscribers(), [0] * nthreads
+    threads = [Thread(target=send, args=(subscribers_iter.next, results, i)) for i in range(nthreads)]
 
     # start threads
     for t in threads:
@@ -202,6 +240,10 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
     # wait for threads to finish
     for t in threads:
         t.join()
+
+    if sum(results) == nthreads:
+        # All threads got socket.error at the beginning, log this error
+        log.error("All threads got MTA down, '%s' was used for ids_ending_with" % ids_ending_with)
 
     # sum total counters
     subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
@@ -214,13 +256,19 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
     # update log stats counters only if subscriber_ids not given
     if not subscriber_ids:
         try:
+            # close connections because reach this point can take several minutes
+            close_old_connections()
             # A transaction is needed because autocommit in django is broken in concurrent management processes
             cursor = connection.cursor()
             cursor.execute('BEGIN')
-            cursor.execute("""INSERT INTO dashboard_newsletterdelivery(
-                delivery_date,newsletter_name,user_sent,subscriber_sent,user_refused,subscriber_refused)
-                VALUES('%s','%s',%d,%d,%d,%d)""" % (
-                today, category.slug, user_sent, subscriber_sent, user_refused, subscriber_refused))
+            cursor.execute(
+                """
+                INSERT INTO dashboard_newsletterdelivery(
+                    delivery_date,newsletter_name,user_sent,subscriber_sent,user_refused,subscriber_refused
+                )
+                VALUES('%s','%s',%d,%d,%d,%d)
+                """ % (today, category.slug, user_sent, subscriber_sent, user_refused, subscriber_refused)
+            )
             cursor.execute('COMMIT')
         except IntegrityError:
             nl_delivery = NewsletterDelivery.objects.get(delivery_date=today, newsletter_name=category.slug)
@@ -230,59 +278,63 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
             nl_delivery.subscriber_refused = (nl_delivery.subscriber_refused or 0) + subscriber_refused
             nl_delivery.save()
         except Exception as e:
-            log.error(u'%s ERROR: Delivery stats not updated: %s' % (today, e))
+            log.error(u'Delivery stats not updated: %s' % e)
 
-    log.info((u'%s %s stats: user_sent: %d, subscriber_sent: %s, user_refused: %d, subscriber_refused: %d') % (
-        today, 'Simulation' if no_deliver else 'Delivery', user_sent, subscriber_sent, user_refused,
-        subscriber_refused))
+    log.info(
+        u'%s stats: user_sent: %d, subscriber_sent: %s, user_refused: %d, subscriber_refused: %d' % (
+            'Simulation' if no_deliver else 'Delivery', user_sent, subscriber_sent, user_refused, subscriber_refused
+        )
+    )
 
 
 class Command(BaseCommand):
-    args = '<category_slug [subscriber_id1 id2 ...]>'
     help = 'Sends the last category newsletter by email to all subscribers of the category given or those given by id.'
 
-    option_list = BaseCommand.option_list + (
-        make_option(
+    def add_arguments(self, parser):
+        parser.add_argument('category_slug', nargs=1, type=unicode)
+        parser.add_argument('subscriber_ids', nargs='*', type=long)
+        parser.add_argument(
             '--nthreads',
             action='store',
-            type='int',
+            type=int,
             dest='nthreads',
             default=2,
             help='Number of threads to use for delivery, default 2.',
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--no-deliver',
             action='store_true',
             default=False,
             dest='no_deliver',
             help=u'Do not send the emails, only log',
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--starting-from-s',
             action='store',
-            type='string',
+            type=unicode,
             dest='starting_from_s',
             help=u'Send to subscribers only if their email is alphabetically greater than',
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--starting-from-ns',
             action='store',
-            type='string',
+            type=unicode,
             dest='starting_from_ns',
             help=u'Send to non-subscribers only if their email is alphabetically greater than',
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--ids-ending-with',
             action='store',
-            type='string',
+            type=unicode,
             dest='ids_ending_with',
             help=u'Send only if the Subscriber object id ends with one of these numbers e.g.: --ids-ending-with=0123',
-        ),
-    )
+        )
 
     def handle(self, *args, **options):
-        category_slug = args[0]
-        log.addHandler(logging.FileHandler(filename=settings.SENDNEWSLETTER_LOGFILE % category_slug))
+        category_slug = options.get('category_slug')[0]
+        h = logging.FileHandler(filename=settings.SENDNEWSLETTER_LOGFILE % (category_slug, today.strftime('%Y%m%d')))
+        h.setFormatter(log_formatter)
+        log.addHandler(h)
         category = Category.objects.get(slug=category_slug)
         no_deliver = options.get('no_deliver')
         start_time, nthreads = time.time(), options.get('nthreads')
@@ -293,10 +345,10 @@ class Command(BaseCommand):
             options.get('starting_from_s'),
             options.get('starting_from_ns'),
             options.get('ids_ending_with'),
-            args[1:],
+            options.get('subscriber_ids'),
         )
         log.info(
-            "%s %s completed in %.0f seconds using %d threads" % (
-                today, 'Simulation' if no_deliver else 'Delivery', time.time() - start_time, nthreads
+            "%s completed in %.0f seconds using %d threads" % (
+                'Simulation' if no_deliver else 'Delivery', time.time() - start_time, nthreads
             )
         )

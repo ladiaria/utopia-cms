@@ -1,11 +1,11 @@
-{% load core_tags tagging_tags adzone_tags ldml %}
+{% load bleach_tags core_tags tagging_tags adzone_tags ldml %}
     {% for article in articles %}
     <li data-id="{{ article.id }}" class="">
         <article>
             <span class="num-recomendados col s1 iter-{{forloop.parentloop.counter}}">
             {{forloop.parentloop.counter}}
             </span>
-            <a href="{{ article.get_absolute_url }}"  class="title-recomendados col ">{{ article.headline|ldmarkup:article.id|removetags:"p" }}</a>
+            <a href="{{ article.get_absolute_url }}" class="title-recomendados col">{{ article.headline|ldmarkup:article.id|bleach }}</a>
         </article>
     </li>
     {% endfor %}

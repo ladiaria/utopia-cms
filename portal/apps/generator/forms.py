@@ -11,6 +11,7 @@ class ContributionForm(ModelForm):
 
     class Meta:
         model = Contribution
+        fields = "__all__"
 
     def get_body(self, instance):
         site = Site.objects.get(id=getattr(settings, 'SITE_ID'))

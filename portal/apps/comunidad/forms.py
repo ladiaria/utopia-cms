@@ -76,7 +76,7 @@ class EventoForm(forms.ModelForm):
 
 class RegistroForm(forms.ModelForm):
     """ Registro de la utilizacion de un beneficio """
-    document = forms.CharField({'max_length': 50}, required=False,
+    document = forms.CharField(max_length=50, required=False,
         label='Documento', help_text=u'Número de cédula sin puntos ni guiones '
         'u otro documento registrado en la diaria.')
 

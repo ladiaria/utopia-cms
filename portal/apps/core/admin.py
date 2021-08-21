@@ -1,23 +1,25 @@
 # -*- coding: utf-8 -*-
 from datetime import date, timedelta
-from tagging.models import Tag, TaggedItem
 import requests
 from requests.exceptions import ConnectionError
 
 from django.conf import settings
+from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.admin import ModelAdmin, TabularInline, site
 from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
-from django.conf.urls import patterns
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError
 from django_markdown.widgets import MarkdownWidget
 
+from actstream.models import Action
+
 from tasks import update_category_home
+from tagging.models import Tag, TaggedItem
 from tagging.forms import TagField
 from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
 from models import (
@@ -45,47 +47,22 @@ class PrintOnlyArticleInline(TabularInline):
     extra = 10
 
 
-class TopArticleInlineBaseFormSet(BaseInlineFormSet):
-    """
-    Method overrided with the only purpose to bypass the ValidationError (to fix the remove feature)
-    """
-    def save_existing_objects(self, commit=True):
-        self.changed_objects = []
-        self.deleted_objects = []
-        if not self.initial_forms:
-            return []
+class ArticleRelForm(ModelForm):
 
-        saved_instances = []
-        try:
-            forms_to_delete = self.deleted_forms
-        except AttributeError:
-            forms_to_delete = []
-        for form in self.initial_forms:
-            pk_name = self._pk_field.name
-            raw_pk_value = form._raw_value(pk_name)
+    class Meta:
+        fields = ('article', 'top_position')
+        model = ArticleRel
 
-            # clean() for different types of PK fields can sometimes return
-            # the model instance, and sometimes the PK. Handle either.
-            try:
-                pk_value = form.fields[pk_name].clean(raw_pk_value)
-                pk_value = getattr(pk_value, 'pk', pk_value)
+class TopArticleRelBaseInlineFormSet(BaseInlineFormSet):
 
-                obj = self._existing_object(pk_value)
-                if form in forms_to_delete:
-                    self.deleted_objects.append(obj)
-                    obj.delete()
-                    continue
-                if form.has_changed():
-                    self.changed_objects.append((obj, form.changed_data))
-                    saved_instances.append(self.save_existing(form, obj, commit=commit))
-                    if not commit:
-                        self.saved_forms.append(form)
-            except ValidationError:
-                pass
-        return saved_instances
+    def __init__(self, *args, **kwargs):
+        super(TopArticleRelBaseInlineFormSet, self).__init__(*args, **kwargs)
+        self.can_delete = False
 
 
-TopArticleInlineFormSet = inlineformset_factory(Edition, ArticleRel, formset=TopArticleInlineBaseFormSet)
+TopArticleRelInlineFormSet = inlineformset_factory(
+    Edition, ArticleRel, form=ArticleRelForm, formset=TopArticleRelBaseInlineFormSet
+)
 
 
 class HomeTopArticleInline(TabularInline):
@@ -93,13 +70,14 @@ class HomeTopArticleInline(TabularInline):
     extra = 0
     max_num = 0
     ordering = ('top_position', )
-    fields = ('article', 'top_position')
+    fields = ('article', 'section', 'top_position')
+    readonly_fields = ('section', )
     raw_id_fields = ('article', )
     verbose_name_plural = u'Nota de tapa y titulines'
-    formset = TopArticleInlineFormSet
+    formset = TopArticleRelInlineFormSet
 
-    def queryset(self, request):
-        qs = super(HomeTopArticleInline, self).queryset(request)
+    def get_queryset(self, request):
+        qs = super(HomeTopArticleInline, self).get_queryset(request)
         return qs.filter(home_top=True)
 
     class Media:
@@ -112,6 +90,16 @@ class HomeTopArticleInline(TabularInline):
         css = {'all': ('css/home_admin.css', )}
 
 
+class SectionArticleRelForm(ModelForm):
+
+    class Meta:
+        fields = ('article', 'position', 'home_top')
+        model = ArticleRel
+
+
+SectionArticleRelInlineFormSet = inlineformset_factory(Edition, ArticleRel, form=SectionArticleRelForm)
+
+
 def section_top_article_inline_class(section):
 
     class SectionTopArticleInline(HomeTopArticleInline):
@@ -120,10 +108,11 @@ def section_top_article_inline_class(section):
         fields = ('article', 'position', 'home_top')
         raw_id_fields = ('article', )
         ordering = ('position', )
+        formset = SectionArticleRelInlineFormSet
 
-        def queryset(self, request):
+        def get_queryset(self, request):
             # calling super of HomeTopArticleInline to avoid top=true filter
-            qs = super(HomeTopArticleInline, self).queryset(request)
+            qs = super(HomeTopArticleInline, self).get_queryset(request)
             return qs.filter(section=section)
 
     return SectionTopArticleInline
@@ -157,13 +146,12 @@ class EditionAdmin(ModelAdmin):
 
     def get_urls(self):
         urls = super(EditionAdmin, self).get_urls()
-        my_urls = patterns(
-            '',
-            (
+        my_urls = [
+            url(
                 r'^add_article/(?P<ed_id>\d+)/(?P<sec_id>\d+)/(?P<art_id>\d+)/$',
                 self.admin_site.admin_view(self.add_article),
             ),
-        )
+        ]
         return my_urls + urls
 
     def add_article(self, request, ed_id, sec_id, art_id):
@@ -188,16 +176,16 @@ class SectionAdminModelForm(ModelForm):
 
     class Meta:
         model = Section
+        fields = "__all__"
 
 
 class SectionAdmin(ModelAdmin):
-    list_editable = ('name', 'category', 'name_in_category_menu', 'home_order', 'in_home')
+    list_editable = ('name', 'home_order', 'in_home')
     list_filter = ('category', 'in_home', 'home_block_all_pubs', 'home_block_show_featured')
     list_display = (
         'id',
         'name',
         'category',
-        'name_in_category_menu',
         'in_home',
         'home_order',
         'get_publications',
@@ -257,6 +245,7 @@ class ArticleRelAdminModelForm(ModelForm):
 
     class Meta:
         model = ArticleRel
+        fields = "__all__"
 
 
 class ArticleEditionInline(TabularInline):
@@ -287,6 +276,7 @@ class ArticleAdminModelForm(ModelForm):
 
     class Meta:
         model = Article
+        fields = "__all__"
 
 
 def has_photo(obj):
@@ -367,10 +357,7 @@ class ArticleAdmin(ModelAdmin):
         ),
     )
 
-    def queryset(self, request):
-        return super(ArticleAdmin, self).queryset(request).select_related('sections')
-
-    def get_object(self, request, object_id):
+    def get_object(self, request, object_id, from_field=None):
         # Hook obj for use in formfield_for_manytomany
         self.obj = super(ArticleAdmin, self).get_object(request, object_id)
         if not self.obj:
@@ -492,6 +479,14 @@ class ArticleAdmin(ModelAdmin):
         return super(ArticleAdmin, self).changelist_view(
             request, extra_context=extra_context)
 
+    def delete_view(self, request, object_id, extra_context=None):
+        # actstream does not return unicode when rendering an Action if the target object has non-ascii chars,
+        # this breaks the django six names collector, and this temporal change can hack this when deleting an article.
+        Action.__unicode__ = lambda x: u'Article followed by user'
+        response = super(ArticleAdmin, self).delete_view(request, object_id, extra_context)
+        del Action.__unicode__
+        return response
+
     class Media:
         css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
         # jquery loaded again (admin uses custom js namespaces)
@@ -542,6 +537,7 @@ class JournalistForm(ModelForm):
 
     class Meta:
         model = Journalist
+        fields = '__all__'
 
 
 class JournalistAdmin(ModelAdmin):
@@ -583,19 +579,22 @@ class CategoryAdmin(ModelAdmin):
     list_display = (
         'id', 'name', 'order', 'slug', 'title', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag'
     )
-    list_editable = ('name', 'order', 'slug', 'title', 'has_newsletter')
+    list_editable = ('name', 'order', 'slug', 'has_newsletter')
     fieldsets = (
         (
             None,
             {
                 'fields': (
-                    ('name', 'slug', 'order', 'exclude_from_top_menu'),
+                    ('name', 'slug', 'order'),
+                    ('exclude_from_top_menu', ),
                     ('title', 'more_link_title', 'new_pill'),
                     ('description', ),
                     ('full_width_cover_image', 'full_width_cover_image_title'),
                     ('full_width_cover_image_lead', ),
                     ('has_newsletter', 'newsletter_tagline', 'newsletter_periodicity'),
-                    ('subscribe_box_question', 'subscribe_box_nl_subscribe_auth', 'subscribe_box_nl_subscribe_anon'),
+                    ('subscribe_box_question', ),
+                    ('subscribe_box_nl_subscribe_auth', ),
+                    ('subscribe_box_nl_subscribe_anon', ),
                 ),
             },
         ),
@@ -611,7 +610,7 @@ class CategoryHomeArticleForm(ModelForm):
         model = CategoryHomeArticle
 
 
-CategoryHomeArticleFormSetBase = inlineformset_factory(CategoryHome, CategoryHomeArticle)
+CategoryHomeArticleFormSetBase = inlineformset_factory(CategoryHome, CategoryHomeArticle, form=CategoryHomeArticleForm)
 
 
 class CategoryHomeArticleFormSet(CategoryHomeArticleFormSetBase):

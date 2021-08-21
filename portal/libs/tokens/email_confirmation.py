@@ -60,7 +60,8 @@ class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
         return True
 
     def _make_token_with_timestamp(self, user, timestamp):
-        from django.utils.hashcompat import sha_constructor
+        # from django.utils.hashcompat import sha_constructor
+        from hashlib import sha1
 
         # timestamp is number of days since 2001-1-1.  Converted to
         # base 36, this gives us a 3 digit string until about 2121
@@ -72,7 +73,7 @@ class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
             hash += str(user.get_profile().get_downloads())
         else:
             hash += unicode(user.password)
-        return "%s-%s" % (ts_b36, sha_constructor(hash).hexdigest()[::2])
+        return "%s-%s" % (ts_b36, sha1(hash).hexdigest()[::2])
 
 
 default_token_generator = EmailConfirmationTokenGenerator()
@@ -96,9 +97,7 @@ def send_confirmation_link(*args, **kwargs):
     if extra_context:
         context.update(extra_context)
     message = Message(
-        html=loader.render_to_string(
-            message_template, context, context_instance=RequestContext(request) if request else {}
-        ),
+        html=loader.render_to_string(message_template, context, request),
         mail_to=(user.first_name, user.email),
         mail_from=from_mail,
         subject=subject,
@@ -124,7 +123,7 @@ def send_validation_email(subject, user, msg_template, url_generator, extra_cont
         },
     )
     send_confirmation_link(
-        None,
+        extra_context.get('request'),
         subject=subject,
         message_template=msg_template,
         user=user,

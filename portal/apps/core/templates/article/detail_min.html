@@ -1,4 +1,4 @@
-{% load core_tags ldml markup %}
+{% load bleach_tags core_tags ldml %}
 
 <!DOCTYPE html>
 <html lang="es-uy">
@@ -15,7 +15,7 @@
         </div>
       {% endifequal %}
       <h1 class="article-title after_foto">
-          {{ article.headline|ldmarkup:article.id|removetags:"p" }}
+          {{ article.headline|ldmarkup:article.id|bleach }}
       </h1>
 
       <div class="article-date-author">

@@ -24,6 +24,7 @@ class NewsletterDelivery(Model):
     subscriber_bounces = PositiveIntegerField(blank=True, null=True)
 
     class Meta:
+        app_label = 'dashboard'
         unique_together = ('delivery_date', 'newsletter_name')
 
 

@@ -5,7 +5,7 @@ from django_mobile.conf import defaults
 
 
 class OnlyArticleDetail(object):
-    """Middleware to customize AMP and overwrite django-mobile."""
+    """ Middleware to customize AMP and overwrite django-mobile. """
 
     def process_request(self, request):
         if get_flavour(request) == 'amp':
@@ -21,8 +21,5 @@ class FlavoursCookieSecure(object):
         if flavours_cookie_key in response.cookies:
             response.cookies[flavours_cookie_key]['secure'] = settings.FLAVOURS_COOKIE_SECURE
 
-        if settings.SESSION_COOKIE_SECURE and settings.SESSION_COOKIE_NAME in response.cookies:
-            # Ensure session cookie set as secure (for some reason django does not set it)
-            response.cookies[settings.SESSION_COOKIE_NAME]['secure'] = True
-
         return response
+

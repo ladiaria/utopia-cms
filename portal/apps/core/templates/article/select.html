@@ -1,9 +1,9 @@
-{% load ldml %}
+{% load bleach_tags ldml %}
 {% if articles %}
     <select name="{{ select_name }}" id="id_{{ select_name }}" class="article">
         <option value="">-- Ninguno --</option>
         {% for article in articles %}
-            <option value="{{ article.id }}">{{ article.headline|ldmarkup:article.id|removetags:"p" }}</option>
+            <option value="{{ article.id }}">{{ article.headline|ldmarkup:article.id|bleach }}</option>
         {% endfor %}
     </select>
 {% else %}

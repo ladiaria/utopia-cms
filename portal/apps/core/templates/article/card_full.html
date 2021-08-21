@@ -1,5 +1,5 @@
 {% extends 'article/article_card.html' %}
-{% load core_tags ldml %}
+{% load bleach_tags core_tags ldml %}
 
 {% block image %}
 
@@ -36,7 +36,7 @@
 {% block header %}
   <div class="article-header">
     <h1 class="article-title">
-      <a href="{{ article.get_absolute_url }}">{{article.headline|ldmarkup:article.id|removetags:"p" }}</a>
+      <a href="{{ article.get_absolute_url }}">{{article.headline|ldmarkup:article.id|bleach }}</a>
     </h1>
     {% if not article.is_published %}
       <div style="color:red;font-weight:bold;text-align:right;">(NO PUBLICADO)</div>

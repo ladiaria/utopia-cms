@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block page_title %}Tu sesión fue finalizada | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block body_class %}login no-footer{% endblock %}
+
+{% block content %}
+  <main class="ld-content">
+    <div class="row">
+      <div class="col s12 m8 offset-m2">
+        <h1 class="ld-title-huge align-center u-mb-60">Tu sesión fue finalizada</h1>
+
+        <div class="align-center ld-text-secondary">
+          Volvé a ingresar con tu cuenta<br>
+          <a href="{% url 'account-login' %}">Ingresar</a><br><br>
+          Si tenés problemas para ingresar <a href="{% url 'contact-form' %}">contactá a atención al cliente</a>.
+        </div>
+
+      </div>
+    </div>
+  </main>
+{% endblock %}
+
+{% block footer_block %}
+  <footer class="ld-footer-simple">
+    <div class="row ld-text-secondary align-center">
+      <div class="col s12">
+        <div>
+          ¿Tenés consultas?<br>
+          Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
+        </div>
+      </div>
+    </div>
+  </footer>
+{% endblock %}
+

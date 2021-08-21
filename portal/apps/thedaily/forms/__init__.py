@@ -57,10 +57,8 @@ class EmailInput(TextInput):
 class LoginForm(Form):
     """ Login form """
 
-    name_or_mail = CharField(
-        label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
-    password = CharField(
-        label='Contraseña', widget=PasswordInput(attrs={'class': CSS_CLASS}))
+    name_or_mail = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
+    password = CharField(label='Contraseña', widget=PasswordInput(attrs={'class': CSS_CLASS}))
 
     def __init__(self, *args, **kwargs):
         self.helper = FormHelper()
@@ -74,15 +72,16 @@ class LoginForm(Form):
         self.helper.render_unmentioned_fields = False
         self.helper.form_tag = False
         self.helper.layout = Layout(
-
             Field(
-                'name_or_mail', title=u"Ingresá tu nombre de usuario o email",
-                template='materialize_css_forms/layout/email-login.html'),
+                'name_or_mail',
+                title=u"Ingresá tu nombre de usuario o email",
+                template='materialize_css_forms/layout/email-login.html',
+            ),
             Field(
                 'password',
                 title=u"Contraseña. Si no la recordás la podés restablecer.",
-                template='materialize_css_forms/layout/password-login.html'),
-
+                template='materialize_css_forms/layout/password-login.html',
+            ),
         )
         super(LoginForm, self).__init__(*args, **kwargs)
 
@@ -97,8 +96,7 @@ class LoginForm(Form):
                 raise ValidationError(USER_PASS_ERROR)
         else:
             try:
-                self.username = Subscriber.objects.get(
-                    name__iexact=nom).user.username
+                self.username = Subscriber.objects.get(name__iexact=nom).user.username
             except Exception:
                 if User.objects.filter(username__iexact=nom).count():
                     self.username = nom
@@ -130,8 +128,8 @@ class SignupForm(ModelForm):
             Fieldset(
                 u'',
                 'first_name',
-                'phone',
                 'email',
+                'phone',
                 Field('password', template='materialize_css_forms/layout/password.html'),
                 'next_page',
             ),
@@ -182,8 +180,9 @@ class SignupForm(ModelForm):
         if len(email) <= email_max_length:
             return email.lower()
         else:
-            self._errors['email'] = self.error_class([
-                u'Email demasiado largo, se permiten hasta %d caracteres.' % email_max_length])
+            self._errors['email'] = self.error_class(
+                [u'Email demasiado largo, se permiten hasta %d caracteres.' % email_max_length]
+            )
             return email
 
     def clean_password(self):
@@ -201,8 +200,7 @@ class SignupForm(ModelForm):
         password = self.cleaned_data.get('password')
         user = User.objects.create_user(email.split('@')[0] if len(email) > 30 else email, email, password)
         if not user.subscriber.phone:
-            user.subscriber.phone = ''.join(
-                DIGIT_RE.findall(self.cleaned_data.get('phone', '')))
+            user.subscriber.phone = ''.join(DIGIT_RE.findall(self.cleaned_data.get('phone', '')))
         user.subscriber.save()
         user.first_name = self.cleaned_data.get('first_name')
         user.last_name = self.cleaned_data.get('last_name', '')
@@ -216,9 +214,7 @@ class SubscriberForm(ModelForm):
 
     first_name = CharField(label='Nombre')
     email = EmailField(label=u'Email', widget=EmailInput(attrs={'inputmode': 'email'}))
-    telephone = CharField(
-        label='Teléfono',
-        widget=PhoneInput(attrs={'class': 'textinput textInput'}))
+    telephone = CharField(label=u'Teléfono', widget=PhoneInput(attrs={'class': 'textinput textInput'}))
 
     helper = FormHelper()
     helper.form_tag = False
@@ -229,7 +225,7 @@ class SubscriberForm(ModelForm):
             u'Datos personales',
             Field('first_name', readonly=True),
             Field('email', readonly=True),
-            Field('telephone', readonly=True)
+            Field('telephone', readonly=True),
         ),
     )
 
@@ -261,14 +257,11 @@ class SubscriberForm(ModelForm):
             try:
                 s = Subscription.objects.get(
                     email__iexact=self.cleaned_data.get('email'))
-                if subscription_type in s.subscription_type_prices.values_list(
-                        'subscription_type', flat=True):
-                    self._errors['email'] = self.error_class([
-                        u"Su email ya posee una suscripción"])
+                if subscription_type in s.subscription_type_prices.values_list('subscription_type', flat=True):
+                    self._errors['email'] = self.error_class([u"Su email ya posee una suscripción"])
                     result = False
             except Subscription.MultipleObjectsReturned:
-                self._errors['email'] = self.error_class([
-                    u"Su email ya posee más de una suscripción"])
+                self._errors['email'] = self.error_class([u"Su email ya posee más de una suscripción"])
                 result = False
             except Subscription.DoesNotExist:
                 pass
@@ -279,8 +272,10 @@ class SubscriberAddressForm(SubscriberForm):
     address = CharField(label='Dirección')
     city = CharField(label='Ciudad')
     province = ChoiceField(
-        label='Departamento', choices=settings.THEDAILY_PROVINCE_CHOICES,
-        initial=getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None))
+        label='Departamento',
+        choices=settings.THEDAILY_PROVINCE_CHOICES,
+        initial=getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None),
+    )
 
     helper = FormHelper()
     helper.form_tag = False
@@ -289,18 +284,26 @@ class SubscriberAddressForm(SubscriberForm):
     helper.field_class = 'col-sm-8'
     helper.help_text_inline = True
     helper.error_text_inline = True
-    helper.layout = Layout(Fieldset(
-        u'', Field('first_name', readonly=True), Field('email', readonly=True), Field('telephone', readonly=True),
-        HTML(
-            u'<div class="validate col s12 ">'
-            u'<h3 class="medium" style="color:black;">'
-            u'Información de entrega</h3></div>'), 'address', 'city',
-        Field('province', template='materialize_css_forms/layout/select.html')))
+    helper.layout = Layout(
+        Fieldset(
+            u'',
+            Field('first_name', readonly=True),
+            Field('email', readonly=True),
+            Field('telephone', readonly=True),
+            HTML(
+                u'<div class="validate col s12">'
+                u'<h3 class="medium" style="color:black;">Información de entrega</h3>'
+                u'</div>'
+            ),
+            'address',
+            'city',
+            Field('province', template='materialize_css_forms/layout/select.html'),
+        )
+    )
 
     class Meta:
         model = Subscriber
-        fields = (
-            'first_name', 'email', 'telephone', 'address', 'city', 'province')
+        fields = ('first_name', 'email', 'telephone', 'address', 'city', 'province')
 
 
 class SubscriberSubmitForm(SubscriberForm):
@@ -314,15 +317,8 @@ class SubscriberSubmitForm(SubscriberForm):
     helper.help_text_inline = True
     helper.error_text_inline = True
     helper.layout = Layout(
-        Fieldset(
-            u'Datos personales',
-            'first_name',
-            'email',
-            'telephone',
-        ),
-        FormActions(
-            Submit('save', u'Enviar suscripción'),
-        ),
+        Fieldset(u'Datos personales', 'first_name', 'email', 'telephone'),
+        FormActions(Submit('save', u'Enviar suscripción')),
     )
 
 
@@ -339,19 +335,26 @@ class SubscriberSignupForm(SubscriberForm):
     helper.error_text_inline = True
     helper.layout = Layout(
         Fieldset(
-            u'', 'first_name', 'email', 'telephone', Field(
-                'password',
-                template='materialize_css_forms/layout/password.html')))
+            u'',
+            'first_name',
+            'email',
+            'telephone',
+            Field('password', template='materialize_css_forms/layout/password.html'),
+        )
+    )
 
     def is_valid(self, subscription_type):
         result = super(SubscriberSignupForm, self).is_valid(subscription_type)
         if result:
             # continue validation to check for the new signup:
-            self.signup_form = SignupForm({
-                'first_name': self.cleaned_data.get('first_name'),
-                'email': self.cleaned_data.get('email'),
-                'phone': self.cleaned_data.get('telephone'),
-                'password': self.cleaned_data.get('password')})
+            self.signup_form = SignupForm(
+                {
+                    'first_name': self.cleaned_data.get('first_name'),
+                    'email': self.cleaned_data.get('email'),
+                    'phone': self.cleaned_data.get('telephone'),
+                    'password': self.cleaned_data.get('password'),
+                }
+            )
             result = self.signup_form.is_valid()
             if not result:
                 self._errors = self.signup_form._errors
@@ -372,27 +375,36 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
     helper.field_class = 'col-sm-8'
     helper.help_text_inline = True
     helper.error_text_inline = True
-    helper.layout = Layout(Fieldset(
-        u'', 'first_name', 'email', 'telephone', Field(
-            'password',
-            template='materialize_css_forms/layout/password.html'),
-        HTML(
-            u'<div class="validate col s12 ">'
-            u'<h3 class="medium" style="color:black;">'
-            u'Información de entrega</h3></div>'), 'address', 'city',
-        Field('province', template='materialize_css_forms/layout/select.html')
-    ))
+    helper.layout = Layout(
+        Fieldset(
+            u'',
+            'first_name',
+            'email',
+            'telephone',
+            Field('password', template='materialize_css_forms/layout/password.html'),
+            HTML(
+                u'<div class="validate col s12">'
+                u'<h3 class="medium" style="color:black;">Información de entrega</h3>'
+                u'</div>'
+            ),
+            'address',
+            'city',
+            Field('province', template='materialize_css_forms/layout/select.html'),
+        )
+    )
 
     def is_valid(self, subscription_type):
-        result = super(
-            SubscriberSignupAddressForm, self).is_valid(subscription_type)
+        result = super(SubscriberSignupAddressForm, self).is_valid(subscription_type)
         if result:
             # continue validation to check for the new signup:
-            self.signup_form = SignupForm({
-                'first_name': self.cleaned_data.get('first_name'),
-                'email': self.cleaned_data.get('email'),
-                'phone': self.cleaned_data.get('telephone'),
-                'password': self.cleaned_data.get('password')})
+            self.signup_form = SignupForm(
+                {
+                    'first_name': self.cleaned_data.get('first_name'),
+                    'email': self.cleaned_data.get('email'),
+                    'phone': self.cleaned_data.get('telephone'),
+                    'password': self.cleaned_data.get('password'),
+                }
+            )
             result = self.signup_form.is_valid()
             if not result:
                 self._errors = self.signup_form._errors
@@ -405,30 +417,31 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
 class SubscriptionForm(ModelForm):
     subscription_type_prices = ChoiceField(choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, widget=HiddenInput())
     payment_type = ChoiceField(
-        label=u'Elegí la forma de suscribirte', choices=(('tel', u'Telefónica (te llamamos)'), ), initial='tel')
+        label=u'Elegí la forma de suscribirte', choices=(('tel', u'Telefónica (te llamamos)'), ), initial='tel'
+    )
     preferred_time = ChoiceField(
-        label=u'Hora de contacto preferida', choices=(
+        label=u'Hora de contacto preferida',
+        choices=(
             ('1', u'Cualquier hora (9:00 a 20:00)'),
             ('2', u'En la mañana (9:00 a 12:00)'),
             ('3', u'En la tarde (12:00 a 18:00)'),
-            ('4', u'En la tarde-noche (18:00 a 20:00)')), initial='1')
+            ('4', u'En la tarde-noche (18:00 a 20:00)')
+        ),
+        initial='1',
+    )
     choice = ()
     helper = FormHelper()
     helper.form_tag = False
     helper.help_text_inline = True
     helper.error_text_inline = True
     helper.layout = Layout(
-        HTML('<div class="col s12" style="margin-top: 30px; \
-            margin-bottom: 50px;">'),
+        HTML('<div class="col s12" style="margin-top: 30px; margin-bottom: 50px;">'),
         Field('payment_type', template='payment_type.html'),
         Field('preferred_time', template='preferred_time.html'),
         HTML('</div>'),
         HTML('<div class="ld-block--sm align-center">'),
-        FormActions(
-            Submit('save', u'Continuar', css_class='ld-btn-regular'),
-        ),
-        HTML('''<div class="ld-text-secondary align-center
-         ld-subscription-step" style="display:none;">Paso 1 de 2<div></div>''')
+        FormActions(Submit('save', u'Continuar', css_class='ld-btn-regular')),
+        HTML('<div class="ld-text-secondary align-center ld-subscription-step" style="display:none;">Paso 1 de 2'),
     )
 
     class Meta:
@@ -449,8 +462,8 @@ class SubscriptionPromoCodeForm(SubscriptionForm):
         Field('payment_type', template='payment_type.html'),
         Field('preferred_time', template='preferred_time.html'),
         HTML('</div><div class="ld-block--sm align-center">'),
-        FormActions(Submit('save', u'Continuar', css_class='ld-btn-regular'), ),
-        HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2<div></div>')
+        FormActions(Submit('save', u'Continuar', css_class='ld-btn-regular')),
+        HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
     )
 
     class Meta:
@@ -480,11 +493,12 @@ class SubscriptionPromoCodeCaptchaForm(SubscriptionPromoCodeForm):
         Field('preferred_time', template='preferred_time.html'),
         HTML(
             u'</div><div class="col s12" style="margin-top: 25px; margin-bottom: 25px;">'
-            u'<strong>Comprobá que no sos un robot</strong>'),
+            u'<strong>Comprobá que no sos un robot</strong>'
+        ),
         Field('captcha'),
         HTML('</div><div class="ld-block--sm align-center">'),
-        FormActions(Submit('save', u'Continuar', css_class='ld-btn-regular'), ),
-        HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2<div></div>')
+        FormActions(Submit('save', u'Continuar', css_class='ld-btn-regular')),
+        HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
     )
 
 
@@ -501,8 +515,8 @@ class GoogleSigninForm(ModelForm):
     helper.error_text_inline = True
     helper.layout = Layout(
         Fieldset(u'', 'phone'),
-        FormActions(
-            Submit('save', u'suscribite', css_class='ld-btn-regular')))
+        FormActions(Submit('save', u'suscribite', css_class='ld-btn-regular')),
+    )
 
     class Meta:
         model = Subscriber
@@ -510,22 +524,25 @@ class GoogleSigninForm(ModelForm):
             'contact_id',
             'user',
             'name',
-            'downloads',
-            'profile_photo',
-            'days',
             'address',
+            'country',
             'city',
             'province',
-            'country',
+            'profile_photo',
+            'document',
+            'downloads',
+            'pdf',
+            'lento_pdf',
+            'ruta',
+            'plan_id',
+            'ruta_lento',
+            'ruta_fs',
             'newsletters',
             'category_newsletters',
             'allow_news',
             'allow_promotions',
             'allow_polls',
-            'document',
-            'pdf',
-            'ruta',
-            'lento_pdf',
+            'last_paid_subscription',
         )
 
     def clean_phone(self):
@@ -551,9 +568,9 @@ class GoogleSignupForm(GoogleSigninForm):
     helper.help_text_inline = True
     helper.error_text_inline = True
     helper.layout = Layout(
-        HTML(u'''<div class="ld-block--sm align-center">
-            Para continuar completá los siguientes datos</div>'''),
-        Fieldset(u'', 'phone'))
+        HTML(u'<div class="ld-block--sm align-center">Para continuar completá los siguientes datos</div>'),
+        Fieldset(u'', 'phone'),
+    )
 
     def is_valid(self, arg=None):
         # wrapper to allow compatibility with calls with an argument
@@ -574,14 +591,19 @@ class PasswordResetRequestForm(Form):
         self.helper.error_text_inline = True
         self.helper.render_unmentioned_fields = False
         self.helper.layout = Layout(
-            Fieldset(u'', Field(
-                'name_or_mail', id="name_or_email",
-                title="Nombre de usuario o email.",
-                template='materialize_css_forms/layout/email-login.html'),
+            Fieldset(
+                u'',
+                Field(
+                    'name_or_mail',
+                    id="name_or_email",
+                    title="Nombre de usuario o email.",
+                    template='materialize_css_forms/layout/email-login.html'
+                ),
             ),
             HTML('<div class="align-center form-group">'),
             Submit('save', u'Restablecer contraseña', css_class='ld-btn-default btn-dark'),
-            HTML('</div">'))
+            HTML('</div>'),
+        )
 
         super(PasswordResetRequestForm, self).__init__(*args, **kwargs)
 
@@ -594,16 +616,14 @@ class PasswordResetRequestForm(Form):
                 mail_managers("Multiple email in users", nom)
                 raise ValidationError(u'Error, comunicate con nosotros.')
             except User.DoesNotExist:
-                raise ValidationError(
-                    u'No hay usuarios registrados con ese email.')
+                raise ValidationError(u'No hay usuarios registrados con ese email.')
             if user.email is None:
                 raise ValidationError(
-                    u'Su usuario no está activado, si cree '
-                    u'que esto es un error, comuníquese con nuestra oficina.')
+                    u'Tu usuario no está activado, si crees que esto es un error, comunicate con nosotros.'
+                )
             else:
                 if not user.is_active:
-                    raise ValidationError(
-                        u'El suscriptor no está registrado en el sitio.')
+                    raise ValidationError(u'El suscriptor no está registrado en el sitio.')
         else:
             try:
                 user = Subscriber.objects.get(name__iexact=nom).user
@@ -612,11 +632,9 @@ class PasswordResetRequestForm(Form):
                     nom = slugify(nom).replace("-", "_")
                     user = User.objects.get(username__iexact=nom)
                 except Exception:
-                    raise ValidationError(
-                        u'No hay usuarios registrados con ese nombre.')
+                    raise ValidationError(u'No hay usuarios registrados con ese nombre.')
             if not user.is_active:
-                raise ValidationError(
-                    u'El suscriptor no está registrado en el sitio.')
+                raise ValidationError(u'El suscriptor no está registrado en el sitio.')
         return self.data
 
     @property
@@ -666,11 +684,9 @@ class ConfirmEmailRequestForm(Form):
                 mail_managers("Multiple email in users", email)
                 raise ValidationError(u'Error, comunicate con nosotros.')
             except User.DoesNotExist:
-                raise ValidationError(
-                    u'No hay usuarios registrados con ese email.')
+                raise ValidationError(u'No hay usuarios registrados con ese email.')
             if user.is_active:
-                raise ValidationError(
-                    u'El usuario correspondiente a ese email ya está activo.')
+                raise ValidationError(u'El usuario correspondiente a ese email ya está activo.')
         else:
             raise ValidationError(u'Tenés que ingresar un email válido')
         return self.data
@@ -717,13 +733,13 @@ class PasswordChangeForm(PasswordChangeBaseForm):
         self.helper.form_style = 'inline'
         self.helper.form_method = 'post'
         self.helper.layout = Layout(
-            'old_password', 'new_password_1', 'new_password_2',
+            'old_password',
+            'new_password_1',
+            'new_password_2',
             HTML('<div class="align-center">'),
-            FormActions(
-                Submit(
-                    'save', u'Elegir contraseña', css_class='ld-btn-default btn-dark'),
-            ),
-             HTML('</div">'))
+            FormActions(Submit('save', u'Elegir contraseña', css_class='ld-btn-default btn-dark')),
+            HTML('</div>'),
+        )
 
         self.user = kwargs.get('user')
         if 'user' in kwargs:
@@ -768,20 +784,16 @@ class PasswordResetForm(PasswordChangeBaseForm):
             Field('new_password_2', template='materialize_css_forms/layout/password.html'),
             Field('gonzo', type='hidden', value=initial['gonzo']),
             Field('hash', type='hidden', value=initial['gonzo']),
-            FormActions(
-                Submit(
-                    'save', u'Elegir contraseña', css_class='ld-btn-default'),
-            ))
+            FormActions(Submit('save', u'Elegir contraseña', css_class='ld-btn-default')),
+        )
 
         super(PasswordResetForm, self).__init__(*args, **kwargs)
 
     def gen_gonzo(self):
         from libs.utils import do_gonzo
-
         return do_gonzo(self.hash)
 
     def clean(self, *args, **kwargs):
-
         super(PasswordResetForm, self).clean(*args, **kwargs)
         password = self.get_password()
         if password:
@@ -792,45 +804,3 @@ class PasswordResetForm(PasswordChangeBaseForm):
                 raise ValidationError('Ocurrió un error interno.')
         return self.data
 
-
-# H40 forms
-class H40UForm(Form):
-    name = CharField(required=False, label='Nombre')
-    h40 = CharField(max_length=140, widget=Textarea(attrs={'rows': 2}))
-
-
-class H40Form(H40UForm):
-    document = CharField(label='Documento', max_length=8)
-
-    def clean_document(self):
-        if Subscriber.objects.filter(document=self.cleaned_data['document']):
-            return self.cleaned_data['document']
-        else:
-            raise ValidationError(
-                u'No coinciden tus datos, ayuda: comunidad@ladiaria.com.uy')
-
-
-# Poll: #TODO Apply DRY, this is much similar to the last one (H40 forms)
-class PollUForm(Form):
-    name = CharField(required=False, label='Nombre')
-    option = ChoiceField(label='Voto por', choices=(
-        ('', '-- Elija un candidato --'),
-        ('couto', 'Couto, Daniela'),
-        ('platero', 'Platero, Soledad'),
-    ), help_text='Candidatos en orden alfabético')
-
-    def clean_name(self):
-        raise ValidationError('La votación ha finalizado')
-
-
-class PollForm(PollUForm):
-    document = CharField(
-        label='Documento', max_length=13,
-        help_text=u'Todos los números, sin puntos ni guiones')
-
-    def clean_document(self):
-        if Subscriber.objects.filter(document=self.cleaned_data['document']):
-            return self.cleaned_data['document']
-        else:
-            raise ValidationError(
-                u'No coinciden tus datos, ayuda: defensor@ladiaria.com.uy')

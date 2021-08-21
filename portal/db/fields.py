@@ -1,5 +1,4 @@
 from django.db.models import ForeignKey
-from django.db.models import SubfieldBase
 from core.middleware import threadlocals
 #TODO chequear si se puede borrar, se usaba para poner automaticamente el usuario que estaba modificando un Evento o un Articulo
 class AuthUserForeignKey(ForeignKey):

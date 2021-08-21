@@ -1,11 +1,12 @@
 import re
 
 from django import template
-
-from endless_pagination import settings, models, utils
-from endless_pagination.paginator import DefaultPaginator, LazyPaginator, EmptyPage
+from ..models import *
+from ..settings import *
+from ..paginator import *
 
 register = template.Library()
+
 
 @register.tag
 def paginate(parser, token, paginator_class=None):
@@ -92,6 +93,7 @@ def paginate(parser, token, paginator_class=None):
     # call the node
     return PaginateNode(paginator_class, objects, **kwargs)
 
+
 @register.tag
 def lazy_paginate(parser, token):
     """
@@ -102,13 +104,16 @@ def lazy_paginate(parser, token):
     """
     return paginate(parser, token, paginator_class=LazyPaginator)
 
+
 class PaginateNode(template.Node):
     """
     Insert into context the objects of the current page and
     the django paginator's *page* object.
     """
-    def __init__(self, paginator_class, objects, first_page=None, per_page=None,
-        var_name=None, number=None, key=None, override_path=None):
+
+    def __init__(self, paginator_class, objects, first_page=None,
+                 per_page=None,
+                 var_name=None, number=None, key=None, override_path=None):
         self.paginator = paginator_class or DefaultPaginator
         self.objects = template.Variable(objects)
         # if var_name is not passed then will be queryset name
@@ -116,7 +121,7 @@ class PaginateNode(template.Node):
         # if per_page is not passed then is taken from settings
         self.per_page_variable = None
         if per_page is None:
-            self.per_page = settings.PER_PAGE
+            self.per_page = PER_PAGE
         elif per_page.isdigit():
             self.per_page = int(per_page)
         else:
@@ -140,7 +145,7 @@ class PaginateNode(template.Node):
         # set the querystring key attribute
         self.querystring_key_variable = None
         if key is None:
-            self.querystring_key = settings.PAGE_LABEL
+            self.querystring_key = PAGE_LABEL
         elif key[0] in ('"', "'") and key[-1] == key[0]:
             self.querystring_key = key[1:-1]
         else:
@@ -183,7 +188,8 @@ class PaginateNode(template.Node):
 
         # request is used to get requested page number
         page_number = utils.get_page_number_from_request(context["request"],
-            querystring_key, default=default_number)
+                                                         querystring_key,
+                                                         default=default_number)
 
         objects = self.objects.resolve(context)
 
@@ -192,16 +198,19 @@ class PaginateNode(template.Node):
         # eg: display pages 1 to 3 if a user requests ?page=3 with normal get
         # and lazy pagination is used
         if issubclass(self.paginator, LazyPaginator) and (
-                context.has_key("request") and  not context["request"].is_ajax()):
-            paginator = self.paginator(objects, per_page, first_page=page_number*per_page,
-                orphans=settings.ORPHANS)
+                context.has_key("request") and not context[
+            "request"].is_ajax()):
+            paginator = self.paginator(objects, per_page,
+                                       first_page=page_number * per_page,
+                                       orphans=ORPHANS)
             page = paginator.page(1)
             page.number = page_number
             if paginator.num_pages > 1:
                 paginator._num_pages = page_number + 1
         else:
-            paginator = self.paginator(objects, per_page, first_page=first_page,
-                orphans=settings.ORPHANS)
+            paginator = self.paginator(objects, per_page,
+                                       first_page=first_page,
+                                       orphans=ORPHANS)
             # get the page, user in settings can manage the case it is empty
             try:
                 page = paginator.page(page_number)
@@ -218,7 +227,7 @@ class PaginateNode(template.Node):
 
 
 @register.inclusion_tag("endless/show_more.html", takes_context=True)
-def show_more(context, label=None, loading=settings.LOADING):
+def show_more(context, label=None, loading=LOADING):
     """
     Show the link to get the next page in a Twitter-like pagination.
     Usage::
@@ -246,7 +255,9 @@ def show_more(context, label=None, loading=settings.LOADING):
         # querystring
         querystring_key = context["endless_querystring_key"]
         querystring = utils.get_querystring_for_page(request, page_number,
-            querystring_key, default_number=context["endless_default_number"])
+                                                     querystring_key,
+                                                     default_number=context[
+                                                         "endless_default_number"])
         return {
             'path': context["endless_override_path"] or request.path,
             'querystring_key': querystring_key,
@@ -349,10 +360,12 @@ def get_pages(parser, token):
     # call the node
     return GetPagesNode(var_name)
 
+
 class GetPagesNode(template.Node):
     """
     Insert into context the page list.
     """
+
     def __init__(self, var_name):
         self.var_name = var_name
 
@@ -363,10 +376,12 @@ class GetPagesNode(template.Node):
         default_number = context.get("endless_default_number")
 
         # put the PageList instance in the context
-        context[self.var_name] = models.PageList(context["request"], page,
-            context["endless_querystring_key"],
-            default_number=context["endless_default_number"],
-            override_path=context["endless_override_path"])
+        context[self.var_name] = PageList(context["request"], page,
+                                          context["endless_querystring_key"],
+                                          default_number=context[
+                                              "endless_default_number"],
+                                          override_path=context[
+                                              "endless_override_path"])
         return ""
 
 
@@ -411,19 +426,21 @@ def show_pages(parser, token):
     # call the node
     return ShowPagesNode()
 
+
 class ShowPagesNode(template.Node):
     """
     Show the pagination.
     """
+
     def render(self, context):
         # this can raise a PaginationError
         # (you have to call paginate before including the get pages template)
         page = utils.get_page_from_context(context)
         # unicode representation of the sequence of pages
-        pages = models.PageList(context["request"], page,
-            context["endless_querystring_key"],
-            default_number=context["endless_default_number"],
-            override_path=context["endless_override_path"])
+        pages = PageList(context["request"], page,
+                         context["endless_querystring_key"],
+                         default_number=context["endless_default_number"],
+                         override_path=context["endless_override_path"])
         return unicode(pages)
 
 
@@ -487,10 +504,12 @@ def show_current_number(parser, token):
     # call the node
     return ShowCurrentNumberNode(number, key, var_name)
 
+
 class ShowCurrentNumberNode(template.Node):
     """
     Show the page number taken from context.
     """
+
     def __init__(self, number, key, var_name):
         # page number
         self.page_number_variable = None
@@ -504,7 +523,7 @@ class ShowCurrentNumberNode(template.Node):
         # querystring key
         self.querystring_key_variable = None
         if key is None:
-            self.querystring_key = settings.PAGE_LABEL
+            self.querystring_key = PAGE_LABEL
         elif key[0] in ('"', "'") and key[-1] == key[0]:
             self.querystring_key = key[1:-1]
         else:
@@ -527,7 +546,8 @@ class ShowCurrentNumberNode(template.Node):
             querystring_key = self.querystring_key_variable.resolve(context)
 
         page_number = utils.get_page_number_from_request(context["request"],
-            querystring_key, default=default_number)
+                                                         querystring_key,
+                                                         default=default_number)
         if self.var_name is None:
             return unicode(page_number)
         context[self.var_name] = page_number

@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.views.generic import TemplateView
 
 from updown.views import AddRatingFromModel
@@ -7,8 +7,7 @@ from views import (
     index, profile)
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^$', index, name='comunidad', ),
     url(r'^perfil/$', profile, name='comunidad_profile'),
     url(r'^article/(?P<slug>[-\w]+)$', article_detail, name='comunidad_article_detail'),
@@ -23,4 +22,4 @@ urlpatterns = patterns(
     url(r'^formaparte', TemplateView.as_view(template_name='comunidad/formaparte.html'), name='formaparte'),
     url(r'beneficios', beneficios, name='beneficios'),
     url(r'^registro/(?P<beneficio_id>\d+)/(?P<hashed_subscriber_id>[\w]+)/$', add_registro)
-)
+]

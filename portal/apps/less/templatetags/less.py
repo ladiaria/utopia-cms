@@ -5,7 +5,7 @@ from ..settings import LESS_EXECUTABLE, LESS_USE_CACHE,\
 from ..utils import URLConverter
 from django.conf import settings
 from django.core.cache import cache
-from django.template.base import Library, Node
+from django.template import Library, Node
 import logging
 import shlex
 import subprocess

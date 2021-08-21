@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.views.generic import TemplateView, RedirectView
-from django.contrib.auth.views import logout
 from django.views.decorators.vary import vary_on_cookie
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
+from django.contrib.auth import views as auth_views
+
 from thedaily.views import (
     subscribe,
     referrals,
-    ldfs_promo,
     google_phone,
     user_profile,
     users_api,
@@ -26,7 +26,6 @@ from thedaily.views import (
     amp_access_authorization,
     amp_access_pingback,
     session_refresh,
-    edicion_impresa,
     nlunsubscribe,
     welcome,
     nl_category_subscribe,
@@ -36,7 +35,6 @@ from thedaily.views import (
     phone_subscription,
     custom_api,
     nl_subscribe,
-    discourse_sso,
     email_check_api,
     user_comments_api,
     lista_lectura_leer_despues,
@@ -64,15 +62,13 @@ urls_custom_module = getattr(settings, 'THEDAILY_URLS_CUSTOM_MODULE', None)
 if urls_custom_module:
     custom_patterns = __import__(urls_custom_module, fromlist=['urlpatterns']).urlpatterns
 else:
-    custom_patterns = patterns('', url(
-        r'^planes/$', RedirectView.as_view(url='/usuarios/suscribite/DDIGM/'), name="subscribe_landing"))
+    custom_patterns = [url(
+        r'^planes/$', RedirectView.as_view(url='/usuarios/suscribite/DDIGM/'), name="subscribe_landing")]
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^$', RedirectView.as_view(url='perfil/editar/')),
     url(r'^comentarios/$', never_cache(TemplateView.as_view(template_name='thedaily/templates/comments.html')))
-) + custom_patterns + patterns(
-    '',
+] + custom_patterns + [
     url(r'^suscribite/(?P<planslug>\w+)/$', subscribe, name="subscribe"),
     url(r'^suscribite/(?P<planslug>\w+)/(?P<category_slug>\w+)/$', subscribe, name="subscribe"),
     url(r'^api/$', users_api),
@@ -91,13 +87,21 @@ urlpatterns = patterns(
     url(r'^perfil/(?P<user_id>\d+)/$', user_profile, name="user-profile"),
 
     url(r'^registered_users/$', registered_users, name='registered_users'),
-    url(r'^ldfs_promo/$', ldfs_promo, name='ldfs_promo'),
     url(r'^registrate/$', signup, name="account-signup"),
-    url(r'^cambiar-password/hecho/$', vary_on_cookie(TemplateView.as_view(
-        template_name='thedaily/templates/password_change_done.html')),
-        name="account-password_change-done"),
+    url(
+        r'^cambiar-password/hecho/$',
+        vary_on_cookie(TemplateView.as_view(template_name='thedaily/templates/password_change_done.html')),
+        name="account-password_change-done"
+    ),
     url(r'^registrate/google/$', google_phone, name="account-google"),
-    url(r'^salir/$', never_cache(logout), name="account-logout"),
+    url(r'^salir/$', auth_views.LogoutView.as_view(next_page='/usuarios/sesion-cerrada/'), name="account-logout"),
+    url(r'^sesion-cerrada/$', never_cache(TemplateView.as_view(template_name='registration/logged_out.html'))),
+    url(
+        r'^salir-invalid/$',
+        auth_views.LogoutView.as_view(next_page='/usuarios/sesion-finalizada/'),
+        name="account-invalid",
+    ),
+    url(r'^sesion-finalizada/$', never_cache(TemplateView.as_view(template_name='registration/session_invalid.html'))),
     url(r'^bienvenida/$', welcome, {'signup': True}, name="account-welcome"),
     url(r'^bienvenido/$', welcome, {'subscribed': True}, name="account-welcome-s"),
 
@@ -132,8 +136,6 @@ urlpatterns = patterns(
         template_name='thedaily/templates/phone_subscription_thankyou.html')),
         name="telsubscribe_success"),
 
-    url(r'^edicion_impresa/$', edicion_impresa, name="edicion-impresa"),
-    url(r'^discourse/sso/$', discourse_sso, name="discourse-sso"),
     url(r'^referidos/(?P<hashed_id>\w+)/$', referrals, name="referrals"),
     url(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
     url(r'^nlsubscribe/$', nl_subscribe, name="nl-subscribe"),
@@ -165,4 +167,4 @@ urlpatterns = patterns(
         r'^lista-lectura-toggle/(?P<event>add|remove|favToggle)/(?P<article_id>\d+)/$',
         lista_lectura_toggle,
         name="lista-lectura-toggle"),
-)
+]

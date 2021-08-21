@@ -46,6 +46,17 @@
   }
 },
 {
+  "pk": 3,
+  "model": "core.edition",
+  "fields": {
+    "publication": 1,
+    "pdf_md5": "",
+    "downloads": 0,
+    "date_published": "2020-11-19",
+    "date_created": "2020-11-19T04:21:05Z"
+  }
+},
+{
   "pk": 1,
   "model": "core.section",
   "fields": {
@@ -164,8 +175,8 @@
     "public": false,
     "body": "test.",
     "views": 0,
-    "date_published": "2020-11-19T04:20:02Z",
-    "last_modified": "2020-11-19T04:25:57Z",
+    "date_published": "2020-11-20T04:20:02Z",
+    "last_modified": "2020-11-20T04:25:57Z",
     "url_path": "/test/articulo/2020/11/test-article3/",
     "slug": "test-article3",
     "main_section": 3,
@@ -206,6 +217,30 @@
     "home_top": true,
     "section": 2,
     "edition": 1,
+    "article": 3,
+    "top_position": 2
+  }
+},
+{
+  "pk": 4,
+  "model": "core.articlerel",
+  "fields": {
+    "position": 2,
+    "home_top": true,
+    "section": 1,
+    "edition": 2,
+    "article": 3,
+    "top_position": 2
+  }
+},
+{
+  "pk": 5,
+  "model": "core.articlerel",
+  "fields": {
+    "position": 1,
+    "home_top": true,
+    "section": 1,
+    "edition": 3,
     "article": 3,
     "top_position": 2
   }

@@ -20,7 +20,7 @@ class SubscriberArticle(ArticleBase):
     @staticmethod
     def top_articles():
         desde = datetime.now() - timedelta(days=15)
-        return SubscriberArticle.objects.get_query_set().filter(
+        return SubscriberArticle.objects.get_queryset().filter(
             date_published__gt=desde)[:3]
 
     def __unicode__(self):

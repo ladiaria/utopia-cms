@@ -2,8 +2,17 @@
 from django.contrib.admin import ModelAdmin, TabularInline, site
 
 from models import (
-    Cine, Pelicula, PeliculaEnCine, Teatro, ObraEnTeatro, ObraTeatro, CategoriaEvento, Evento, LiveEmbedEvent,
-    ArchivedEvent)
+    Cine,
+    Pelicula,
+    PeliculaEnCine,
+    Teatro,
+    ObraEnTeatro,
+    ObraTeatro,
+    CategoriaEvento,
+    Evento,
+    LiveEmbedEvent,
+    ArchivedEvent,
+)
 
 
 class EventoBaseAdmin(ModelAdmin):
@@ -71,7 +80,6 @@ class ObraAdmin(EventoBaseAdmin):
 
 class CategoriaEventoAdmin(ModelAdmin):
     model = CategoriaEvento
-    exclude = ('slug',)
 
 
 class EventoAdmin(EventoBaseAdmin):

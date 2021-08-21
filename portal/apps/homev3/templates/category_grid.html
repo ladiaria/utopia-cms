@@ -1,4 +1,4 @@
-{% load core_tags homev3_tags adzone_tags static ldml %}
+{% load bleach_tags core_tags homev3_tags adzone_tags static ldml %}
 
 <section class="frontpage-section" data-template="category_grid">
   <div class="container">
@@ -29,11 +29,11 @@
           <div class="ld-card__body">
             {% if category_cover_article %}
               <h3 class="ld-card__title">
-                <a href="{{ category_cover_article.get_absolute_url }}">{{ category_cover_article.headline|ldmarkup:category_cover_article.id|removetags:'p' }}</a>
+                <a href="{{ category_cover_article.get_absolute_url }}">{{ category_cover_article.headline|ldmarkup:category_cover_article.id|bleach }}</a>
               </h3>
             {% endif %}
             {% if category_cover_article.home_lead %}
-              <div class="ld-card__intro">{{ category_cover_article.home_lead|ldmarkup:category_cover_article.id|removetags:'p' }}</div>
+              <div class="ld-card__intro">{{ category_cover_article.home_lead|ldmarkup:category_cover_article.id|bleach }}</div>
             {% endif %}
             <div class="ld-card__byline">
               {% if category_cover_article.has_byline %}
@@ -65,11 +65,11 @@
             {% endif %}
             <div class="ld-card__body">
               <h3 class="ld-card__title ld-card__title--mb">
-                <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|removetags:'p' }}</a>
+                <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a>
               </h3>
               {% if a.home_lead or a.deck %}
                 <div class="ld-card__intro hide-on-med-and-up">
-                  {{ a.home_lead|default:a.deck|ldmarkup:a.id|removetags:"p" }}
+                  {{ a.home_lead|default:a.deck|ldmarkup:a.id|bleach }}
                 </div>
               {% endif %}
               <div class="ld-card__byline">

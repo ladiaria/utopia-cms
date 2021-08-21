@@ -1,9 +1,8 @@
-"""Adapted from: A simple example of how to access the Google Analytics API."""
+""" Adapted from: A simple example of how to access the Google Analytics API. """
 import sys
 from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 from progress.bar import Bar
-from optparse import make_option
 
 from dashboard.models import NewsletterDelivery
 
@@ -12,7 +11,8 @@ from django.core.management.base import BaseCommand
 
 
 def initialize_analyticsreporting():
-    """Initializes an Analytics Reporting API V4 service object.
+    """
+    Initializes an Analytics Reporting API V4 service object.
 
     Returns:
     An authorized Analytics Reporting API V4 service object.
@@ -22,7 +22,8 @@ def initialize_analyticsreporting():
     except AttributeError:
         sys.exit(u'ERROR: No secrets file configured in settings.')
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
-        KEY_FILE_LOCATION, ['https://www.googleapis.com/auth/analytics.readonly'])
+        KEY_FILE_LOCATION, ['https://www.googleapis.com/auth/analytics.readonly']
+    )
 
     # Build the service object.
     analytics = build('analyticsreporting', 'v4', credentials=credentials)
@@ -31,7 +32,8 @@ def initialize_analyticsreporting():
 
 
 def get_report(analytics, start_date, end_date, campaign):
-    """Queries the Analytics Reporting API V4.
+    """
+    Queries the Analytics Reporting API V4.
 
       Args:
         analytics: An authorized Analytics Reporting API V4 service object.
@@ -54,9 +56,16 @@ def get_report(analytics, start_date, end_date, campaign):
             {'name': 'ga:eventLabel'}, {'name': 'ga:campaign'}, {'name': 'ga:pageTitle'},
             # {'name': 'ga:date'}, {'name': 'ga:hour'}, {'name': 'ga:minute'}
         ],
-        'dimensionFilterClauses': [{"operator": "AND", "filters": [
-            {"dimensionName": "ga:pageTitle", "not": True, "operator": "EXACT", "expressions": ['(not set)']},
-            {"dimensionName": "ga:eventLabel", "operator": "BEGINS_WITH", "expressions": ['open_email']}]}]}
+        'dimensionFilterClauses': [
+            {
+                "operator": "AND",
+                "filters": [
+                    {"dimensionName": "ga:pageTitle", "not": True, "operator": "EXACT", "expressions": ['(not set)']},
+                    {"dimensionName": "ga:eventLabel", "operator": "BEGINS_WITH", "expressions": ['open_email']}
+                ],
+            },
+        ],
+    }
 
     campaign_filter = {"dimensionName": "ga:campaign", "operator": "EXACT", "expressions": [campaign or '(not set)']}
 
@@ -71,21 +80,34 @@ def get_report(analytics, start_date, end_date, campaign):
 class Command(BaseCommand):
     help = u'Updates Newsletter Delivery statistics with the events data collected from Google Analytics'
 
-    option_list = BaseCommand.option_list + (
-        make_option(
-            '--start-date', action='store', type='string', dest='start_date',
-            help=u'Get Google Analytics stats from this date, default=yesterday'),
-        make_option(
-            '--end-date', action='store', type='string', dest='end_date',
-            help=u'Get Google Analytics stats until this date, default=today'),
-        make_option(
-            '--campaign', action='store', type='string', dest='campaign',
-            help=u'Get Google Analytics stats only for this campaign, default=all'),
-        make_option(
-            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'),
-        make_option(
-            '--no-sync', action='store_true', default=False, dest='no_sync', help=u'No sync, only print'),
-    )
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--start-date',
+            action='store',
+            type=unicode,
+            dest='start_date',
+            help=u'Get Google Analytics stats from this date, default=yesterday',
+        )
+        parser.add_argument(
+            '--end-date',
+            action='store',
+            type=unicode,
+            dest='end_date',
+            help=u'Get Google Analytics stats until this date, default=today',
+        )
+        parser.add_argument(
+            '--campaign',
+            action='store',
+            type=unicode,
+            dest='campaign',
+            help=u'Get Google Analytics stats only for this campaign, default=all',
+        )
+        parser.add_argument(
+            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+        )
+        parser.add_argument(
+            '--no-sync', action='store_true', default=False, dest='no_sync', help=u'No sync, only print'
+        )
 
     def handle(self, *args, **options):
         analytics = initialize_analyticsreporting()
@@ -123,3 +145,4 @@ class Command(BaseCommand):
 
         if bar:
             bar.finish()
+

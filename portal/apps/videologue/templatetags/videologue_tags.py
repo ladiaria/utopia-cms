@@ -60,4 +60,4 @@ def render_video(video):
         return ''
     tpl = loader.get_template(
         TPL_DIR + '%s/module.html' % lower(video.__class__.__name__))
-    return tpl.render(Context({'video': video}))
+    return tpl.render({'video': video})

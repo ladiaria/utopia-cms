@@ -4,10 +4,10 @@ from crispy_forms.layout import Layout, Submit, HTML
 from crispy_forms.bootstrap import FormActions
 
 from django.conf import settings
-from django.http import HttpResponseNotFound
+from django.http import Http404
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.shortcuts import redirect, render_to_response, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404, render
 from django.template import RequestContext
 from django.forms import HiddenInput
 from django.contrib.auth.decorators import permission_required, login_required
@@ -42,23 +42,22 @@ def index(request):
         Q(user__groups__permissions=perm) | Q(user__user_permissions=perm)
     ).distinct().order_by('-date_created')[:30]
 
-    return render_to_response(
-        'comunidad/index.html', {
-            'articulos': articulos,
-            'eventos': eventos,
-            'top_users_week': top_users_week,
-            'top_users_month': top_users_month,
-            'latest_users': latest_users},
-        context_instance=RequestContext(request))
+    return render(request,
+                  'comunidad/index.html', {
+                      'articulos': articulos,
+                      'eventos': eventos,
+                      'top_users_week': top_users_week,
+                      'top_users_month': top_users_month,
+                      'latest_users': latest_users}
+                  )
 
 
 @never_cache
 def article_detail(request, slug):
     article = get_object_or_404(SubscriberArticle, slug=slug)
-    return render_to_response(
-        'article/detail.html', {
-            'article': article, 'is_comunidad': True, 'is_detail': True},
-        context_instance=RequestContext(request))
+    return render(request, 'article/detail.html', {
+        'article': article, 'is_comunidad': True,
+        'is_detail': True})
 
 
 @never_cache
@@ -72,9 +71,7 @@ def add_article(request):
         msg = "Article saved successfully"
         messages.success(request, msg, fail_silently=True)
         return redirect(article)
-    return render_to_response(
-        'comunidad/article_form.html', {'form': form},
-        context_instance=RequestContext(request))
+    return render(request, 'comunidad/article_form.html', {'form': form})
 
 
 @never_cache
@@ -87,21 +84,15 @@ def edit_article(request, slug):
         msg = "Article updated successfully"
         messages.success(request, msg, fail_silently=True)
         return redirect(article)
-    return render_to_response('comunidad/article_form.html',
-                              {
-                                  'form': form,
-                                  'article': article,
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'comunidad/article_form.html',
+                  {'form': form, 'article': article})
 
 
 @never_cache
 def evento_detail(request, slug):
     evento = get_object_or_404(SubscriberEvento, slug=slug)
-    return render_to_response(
-        'cartelera/evento_detail.html',
-        {'evento': evento, 'is_comunidad': True},
-        context_instance=RequestContext(request))
+    return render(request, 'cartelera/evento_detail.html',
+                  {'evento': evento, 'is_comunidad': True})
 
 
 @never_cache
@@ -115,9 +106,7 @@ def add_evento(request):
         msg = "Evento guardado exitosamente."
         messages.success(request, msg, fail_silently=True)
         return redirect(evento)
-    return render_to_response(
-        'comunidad/evento_form.html', {'form': form},
-        context_instance=RequestContext(request))
+    return render(request, 'comunidad/evento_form.html', {'form': form})
 
 
 @never_cache
@@ -128,12 +117,8 @@ def edit_evento(request, slug):
     if form.is_valid():
         evento = form.save()
         return redirect(evento)
-    return render_to_response('comunidad/evento_form.html',
-                              {
-                                  'form': form,
-                                  'article': article,
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'comunidad/evento_form.html',
+                  {'form': form, 'article': article})
 
 
 @never_cache
@@ -145,10 +130,8 @@ def AllSubscribers(request):
     suscriptores = User.objects.filter(
         Q(groups__permissions=perm) | Q(user_permissions=perm)).distinct()
 
-    return render_to_response(
-        'comunidad/suscriptores.html',
-        {'suscriptores': suscriptores, 'is_comunidad': True},
-        context_instance=RequestContext(request))
+    return render(request, 'comunidad/suscriptores.html',
+                  {'suscriptores': suscriptores, 'is_comunidad': True})
 
 
 @never_cache
@@ -180,10 +163,9 @@ def beneficios(request):
                         '¿Confirmar %(benefit)s para %(subscriber)s?' %
                         form.cleaned_data),
                     FormActions(Submit('save', u'Confirmar')))
-        return render_to_response(
-            'comunidad/beneficios.html',
-            {'form': form, 'is_comunidad': True, 'success': success},
-            context_instance=RequestContext(request))
+        return render(request, 'comunidad/beneficios.html',
+                      {'form': form, 'is_comunidad': True, 'success': success})
+
     except Socio.DoesNotExist:
         # non socios cant access this view
         return redirect(reverse('comunidad'))
@@ -192,13 +174,11 @@ def beneficios(request):
 @never_cache
 @to_response
 def add_registro(request, beneficio_id, hashed_subscriber_id):
-    hashids = Hashids(settings.HASHIDS_SALT, 32)
-    subscriber_id, error = hashids.decode(hashed_subscriber_id), None
+    decoded, error = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_subscriber_id), None
     try:
-        registro, created = Registro.objects.get_or_create(
-            subscriber_id=subscriber_id[0], benefit_id=beneficio_id)
+        registro, created = Registro.objects.get_or_create(subscriber_id=decoded[0], benefit_id=beneficio_id)
         if not created:
             error = u'Su registro ya fue confirmado'
     except IndexError:
-        return HttpResponseNotFound()
+        raise Http404
     return 'comunidad/add_registro.html', {'error': error}

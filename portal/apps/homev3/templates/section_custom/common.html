@@ -1,4 +1,4 @@
-{% load core_tags ldml %}
+{% load bleach_tags core_tags ldml %}
 
 {% if art_count > 0 and is_portada %}
   <section id="home-section-{{ section.slug }}" class="frontpage-section">
@@ -33,12 +33,12 @@
                 {% endif %}
                 <div class="ld-card__body">
                   <h3 class="ld-card__title ld-card__title{% if not article.home_lead %} ld-card__title--mb{% endif %}">
-                    <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|removetags:'p' }}</a>
+                    <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|bleach }}</a>
                   </h3>
 
                   {% if article.home_lead %}
                     <div class="ld-card__intro ld-card__intro--home_lead">
-                      {{ article.home_lead|ldmarkup:article.id|removetags:'p' }}
+                      {{ article.home_lead|ldmarkup:article.id|bleach }}
                     </div>
                   {% endif %}
 
@@ -49,7 +49,9 @@
                       {% endfor %}
                       en
                     {% endif %}
-                    {% publication_section article %}
+                    {% autoescape off %}
+                      {% publication_section article %}
+                    {% endautoescape %}
                   </div>
 
                   {% if article.photo.extended.photographer %}

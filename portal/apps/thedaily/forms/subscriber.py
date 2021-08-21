@@ -40,12 +40,24 @@ class ProfileForm(forms.ModelForm):
         Field('allow_news', template=getattr(settings, 'THEDAILY_ALLOW_NEWS_TEMPLATE', 'profile/allow_news.html')),
         Field('allow_promotions', template='profile/allow_promotions.html'),
         Field('allow_polls', template='profile/allow_polls.html'),
-        HTML('</section>'))
+        HTML('</section>'),
+    )
 
     class Meta:
         model = Subscriber
         exclude = (
-            'contact_id', 'user', 'name', 'downloads', 'profile_photo', 'days', 'pdf', 'ruta', 'lento_pdf'
+            'contact_id',
+            'user',
+            'name',
+            'profile_photo',
+            'downloads',
+            'pdf',
+            'lento_pdf',
+            'ruta',
+            'plan_id',
+            'ruta_lento',
+            'ruta_fs',
+            'last_paid_subscription',
         )
 
 

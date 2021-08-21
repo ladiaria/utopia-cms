@@ -1,9 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
+from .views import index, sitemap
 
-
-urlpatterns = patterns(
-    'sitemaps.views',
-    url(r'^sitemap.xml$', 'index', {'sitemap_url_name': 'sitemaps.views.sitemap'}),
-    url(r'^sitemap-(?P<section>.+)\.xml$', 'sitemap'),
-)
+urlpatterns = [
+    url(r'^sitemap.xml$', index, {'sitemap_url_name': 'sitemap'}),
+    url(r'^sitemap-(?P<section>.+)\.xml$', sitemap, name='sitemap'),
+]
 

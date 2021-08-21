@@ -60,11 +60,7 @@ class PhotoExtended(models.Model):
         u'radio', blank=True, null=True, help_text=u'mitad del lado del cuadrado para recorte (pixeles)')
     square_version = models.ImageField(u'versión cuadrada', upload_to=get_storage_path, blank=True, null=True)
     weight = models.SmallIntegerField(
-        u'orden de la imagen en la galería',
-        max_length=3,
-        default=0,
-        help_text=u'el número más bajo se muestra primero.',
-    )
+        u'orden de la imagen en la galería', default=0, help_text=u'el número más bajo se muestra primero.')
     photographer = models.ForeignKey(Photographer, verbose_name=u'autor', related_name='photos', blank=True, null=True)
     agency = models.ForeignKey(Agency, verbose_name=u'agencia', related_name='photos', blank=True, null=True)
 
@@ -127,12 +123,6 @@ class PhotoExtended(models.Model):
 
     def type_verbose(self):
         return dict(self.TYPE)[self.type]
-
-
-@receiver(pre_save, sender=Photo)
-def photo_pre_save_handler(sender, **kwargs):
-    input_date = kwargs['instance'].date_taken
-    kwargs['instance'].date_taken = date(day=input_date.day, month=input_date.month, year=input_date.year)
 
 
 @receiver(post_save, sender=Photo)

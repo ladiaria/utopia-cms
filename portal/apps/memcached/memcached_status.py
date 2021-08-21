@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django import http
 from django.conf import settings
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 
 import datetime, re
 
@@ -54,7 +54,7 @@ def view(request):
         hit_rate = 100 * stats.get_hits / stats.cmd_get
     except:
         hit_rate = 100
-    return render_to_response('memcached/memcached_status.html', dict(
+    return render(request, 'memcached/memcached_status.html', dict(
         stats=stats, hit_rate=hit_rate,
         time=datetime.datetime.now(), # server time
     ))

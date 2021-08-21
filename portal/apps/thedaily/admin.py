@@ -4,8 +4,15 @@ from django.contrib.admin.sites import AlreadyRegistered
 
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
 from thedaily.models import (
-    Subscription, ExteriorSubscription, WebSubscriber, Subscriber, SentMail, SubscriberEditionDownloads,
-    EditionDownload, SubscriptionPrices)
+    Subscription,
+    ExteriorSubscription,
+    WebSubscriber,
+    Subscriber,
+    SentMail,
+    SubscriberEditionDownloads,
+    EditionDownload,
+    SubscriptionPrices,
+)
 
 
 class SubscriptionAdmin(ModelAdmin):
@@ -76,8 +83,7 @@ class SubscriberAdmin(ModelAdmin):
 
 
 class SubscriptionPricesAdmin(ModelAdmin):
-    list_display = (
-        'id', 'subscription_type', 'price', 'order', 'auth_group', 'ga_sku', 'ga_name', 'ga_category', 'publication')
+    list_display = ('id', 'subscription_type', 'price', 'order', 'auth_group', 'publication')
     list_editable = ('subscription_type', 'price', 'order', 'auth_group', 'publication')
 
 

@@ -4,7 +4,6 @@ import operator
 from datetime import datetime, date, timedelta
 from unicodecsv import writer
 from progress.bar import Bar
-from optparse import make_option
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -19,13 +18,18 @@ from signupwall.middleware import get_article_by_url_kwargs
 class Command(BaseCommand):
     help = 'Generates the articles report content'
 
-    option_list = BaseCommand.option_list + (
-        make_option(
-            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'),
-        make_option(
-            '--out-prefix', action='store', type='string', dest='out-prefix', default='',
-            help=u"Don't make changes to existing files and save generated files with this prefix"),
-    )
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+        )
+        parser.add_argument(
+            '--out-prefix',
+            action='store',
+            type=unicode,
+            dest='out-prefix',
+            default=u'',
+            help=u"Don't make changes to existing files and save generated files with this prefix",
+        )
 
     def handle(self, *args, **options):
         if not signupwall_visitor_mdb:
@@ -42,7 +46,7 @@ class Command(BaseCommand):
             'path_visited': {'$exists': True}}, no_cursor_timeout=True)
 
         verbosity = options.get('verbosity')
-        if verbosity > '1':
+        if verbosity > 1:
             print(u'Generating reports from %s to %s ...' % (last_month_first, dt_until))
 
         bar = Bar('Processing', max=visitors.count()) if options.get('progress') else None

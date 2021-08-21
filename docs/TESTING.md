@@ -1,18 +1,12 @@
 # Unit Tests
 
-They are generated according to the testing documentation for Django 1.5: https://django-document-tchinese.readthedocs.io/en/latest/topics/testing.html
+They are generated according to the testing documentation for Django 1.11: https://docs.djangoproject.com/en/1.11/topics/testing/
 
-In turn we use django-nose because it saves us several minutes of execution time and also allows us to use a "tests" directory on each app, to run the tests provided chdir to `portal` and execute the `runtests.sh` script.
+To run the tests provided chdir to `portal` and execute the `runtests.sh` script.
 
 NOTE: To the command contained in said script you can add a `.tests.name_of_module_to_test` to test only a given module within the `tests` module of an app, and in turn adding to the above a `.ClassNameToTest` will only test that class inside the module.
 
-Note that in addition, in the command, the environment variable `REUSE_DB=1` is set so that the test database is reused and several minutes are not lost in generating it each time the tests are run. In case the database previously used for the execution of a test is outdated, the command must be executed without said environment variable, so that the test database is eliminated and generated again.
-
 IMPORTANT: on the mysql server `character-set-server=utf8` (in the `mysqld` section) must be set, otherwise the default encoding could be another and the `varchar` lengths 255 could fail because other encodings use more bytes and would exceed the limit of the bytes that MySQL has as cap for varchar.
-
-There are many other very useful options such as `--nologcapture` and `--pdb`, to see all run `manage.py help test`.
-
-At the same time we use redefined settings to execute the tests, because some apps fail when executing migrations and because some validations may fail due to the way in which django-nose load the modules.
 
 # Tests using codeception
 

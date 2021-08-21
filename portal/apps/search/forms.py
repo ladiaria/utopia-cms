@@ -9,3 +9,4 @@ class SearchForm(ModelForm):
 
     class Meta:
         model = Search
+        fields = "__all__"

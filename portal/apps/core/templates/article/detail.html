@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags markup %}
+{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags %}
 
 {% block page_title %}{{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endblock %}
 
@@ -100,7 +100,7 @@
             loading="lazy">
           </picture>
           <figcaption class="caption">
-            {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup:article.id|removetags:"p" }}</p>{% endif %}
+            {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>{% endif %}
             {% if article.photo.extended.photographer %}
                 <p>{{ article.photo.extended.type_verbose }}:
                 {{ article.photo.extended.photographer.name }}</p>
@@ -124,7 +124,7 @@
                  loading="lazy">
           </picture>
           <figcaption class="article-caption container ld-caption">
-            <p>{{ article.photo.caption|ldmarkup:article.id|removetags:"p" }}</p>
+            <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
             {% if article.photo.extended.photographer %}
               <p>{{ article.photo.extended.type_verbose }}:
               {{ article.photo.extended.photographer.name }}</p>
@@ -141,7 +141,7 @@
         </div>
       {% endif %}
       <h1 class="article-title after_foto">
-        {{ article.headline|ldmarkup:article.id|removetags:"p" }}
+        {{ article.headline|ldmarkup:article.id|bleach }}
       </h1>
 
       <div class="article-date-author">
@@ -195,12 +195,12 @@
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
           <h2 class="article-deck article__deck">
-            {{ article.deck|ldmarkup:article.id|removetags:'p' }}
+            {{ article.deck|ldmarkup:article.id|bleach }}
           </h2>
         {% endif %}
         {% if article.has_lead %}
           <p class="article-lead">
-            {{ article.get_lead|urlize|ldmarkup:article.id|removetags:'p' }}
+            {{ article.get_lead|urlize|ldmarkup:article.id|bleach }}
           </p>
         {% endif %}
       {% endif %}
@@ -737,12 +737,12 @@
             {% if next.get_keywords %}
               <div class="keywords-style">{{ next.keywords }}</div>
             {% endif %}
-            <h1><a href="{{ next.get_absolute_url }}">{{ next.headline|ldmarkup:article.id|removetags:"p" }}</a></h1>
+            <h1><a href="{{ next.get_absolute_url }}">{{ next.headline|ldmarkup:article.id|bleach }}</a></h1>
           </header>
         </article>
       {% endfor %}
     </section>
-    {% endif %}
+  {% endif %}
 
     {% if not is_subscriber %}
       <section id="header-pub" class="col s12 center-align article__bottom-ad ld-block">

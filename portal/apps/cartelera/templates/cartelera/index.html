@@ -1,16 +1,17 @@
 {% extends "base.html" %}
-{% block body_class %}cartelera{% endblock %}
-{% block content %}
 
-<h1>Cartelera</h1>
+{% block body_class %}cartelera{% endblock %}
+
+{% block content %}
+  <h1>Cartelera</h1>
 
   {% for seccion in secciones %}
-	<h2><a href="{{ seccion.get_absolute_url }}">{{ seccion }}</a></h2>
-	<div class="article-list row">
-	{% for evento in seccion.current_events %}
-		{{ evento.render }}
-	{% endfor %}
-	</div>
+    <h2><a href="{{ seccion.get_absolute_url }}">{{ seccion }}</a></h2>
+    <div class="article-list row">
+      {% for evento in seccion.current_events %}
+        {{ evento.render }}
+      {% endfor %}
+    </div>
   {% endfor %}
 
 {% endblock %}

@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect
 from django.views.decorators.cache import never_cache
 from django.template import RequestContext
-from django.shortcuts import redirect, get_object_or_404, render_to_response
+from django.shortcuts import redirect, get_object_or_404, render
 from django.core.urlresolvers import reverse
 
 from core.models import Publication, Category, CategoryHome, Section, Article, get_latest_edition
@@ -58,7 +58,8 @@ def category_detail(request, slug):
         except Topic.DoesNotExist:
             pass
 
-    return render_to_response(
+    return render(
+        request,
         '%s/%s.html' % (
             getattr(settings, 'CORE_CATEGORIES_TEMPLATE_DIR', 'core/templates/category'),
             category.slug if category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_TEMPLATES', ()) else 'detail'
@@ -77,7 +78,6 @@ def category_detail(request, slug):
             'questions_topic': questions_topic,
             'big_photo': category.full_width_cover_image,
         },
-        context_instance=RequestContext(request),
     )
 
 
@@ -137,7 +137,8 @@ def newsletter_preview(request, slug):
         unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
             '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
 
-        return render_to_response(
+        return render(
+            request,
             '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug),
             {
                 'site_url': site_url,
@@ -151,7 +152,6 @@ def newsletter_preview(request, slug):
                 'hashed_id': hashed_id,
                 'unsubscribe_url': unsubscribe_url,
             },
-            context_instance=RequestContext(request),
         )
 
     except Exception as e:

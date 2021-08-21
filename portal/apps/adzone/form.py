@@ -51,3 +51,4 @@ class UploadFileForm(forms.ModelForm):
 
     class Meta:
         model = BannerAd
+        fields = '__all__'

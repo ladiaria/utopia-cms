@@ -1,6 +1,5 @@
-{% load core_tags ldml %}
-
 <div class="ld-card ld-card--reg">
+  {% load bleach_tags core_tags ldml %}
   {% render_toolbar_for a %}
   {% if a.photo %}
     <a href="{{ a.get_absolute_url }}">
@@ -11,11 +10,11 @@
   {% endif %}
   <div class="ld-card__body">
     <h2 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
-      <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|removetags:"p" }}</a>
+      <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|bleach }}</a>
     </h2>
     {% if a.deck %}
     <div class="ld-card__intro">
-    {{ a.deck|ldmarkup:a.id|removetags:"p" }}
+    {{ a.deck|ldmarkup:a.id|bleach }}
     </div>
     {% endif %}
     <div class="ld-card__byline">
@@ -25,7 +24,9 @@
         {% endfor %}
         en
       {% endif %}
-      {% publication_section a %}
+      {% autoescape off %}
+        {% publication_section a %}
+      {% endautoescape %}
     </div>
     {% if a.photo.extended.photographer %}
       <div class="ld-card__byline">

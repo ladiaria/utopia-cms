@@ -34,7 +34,7 @@ class SubscribeTestCase(TestCase):
         with self.settings(DEBUG=True):
             for item in self.urls_to_test:
                 response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))
-                self.assertEqual(response.status_code, 200, response)
+                self.assertEqual(response.status_code, 200, (response.status_code, response))
 
     def test_home_logged_in(self):
         email, password = 'u1@example.com', User.objects.make_random_password()

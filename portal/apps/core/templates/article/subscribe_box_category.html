@@ -6,7 +6,7 @@
   {% if user.is_authenticated %}
     {{ category.subscribe_box_nl_subscribe_auth|safe }}
   {% else %}
-    Suscribite gratis y recibí la newsletter de {{ category.subscribe_box_nl_subscribe_anon }} en tu email.
+    {{ category.subscribe_box_nl_subscribe_anon }}
   {% endif %}
 {% endblock %}
 

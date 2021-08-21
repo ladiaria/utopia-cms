@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
-import logging
 
 from django.conf import settings
 from django.contrib.auth import logout
@@ -16,14 +15,14 @@ from core.models import Article
 from thedaily.email_logic import limited_free_article_mail
 
 
-log = logging.getLogger(__name__)
-debug = getattr('settings', 'SIGNUPWALL_DEBUG', False)
+debug = getattr(settings, 'SIGNUPWALL_DEBUG', False)
 
 
 def get_article_by_url_kwargs(kwargs):
     try:
         return Article.objects.get(
-            slug=kwargs['slug'], date_published__year=kwargs['year'], date_published__month=kwargs['month'])
+            slug=kwargs['slug'], date_published__year=kwargs['year'], date_published__month=kwargs['month']
+        )
     except Article.MultipleObjectsReturned:
         # TODO: Send a notification to "editors"
         raise Http404(u"Múltiples artículos con igual identificación en el mes.")
@@ -42,9 +41,9 @@ def get_session_key(request):
         # usa la cookie de sessionid como key
         session_key = request.COOKIES[settings.SESSION_COOKIE_NAME]
     else:
-        # sino tiene le genera una y manda cookie de test para mantenerla
-        session_key = request.session._get_or_create_session_key()
-        request.session.set_test_cookie()
+        # sino tiene le genera una
+        request.session.save()
+        session_key = request.session.session_key
     return session_key
 
 
@@ -78,10 +77,10 @@ class SignupwallMiddleware(object):
         path_resolved = resolve(request.path)
         if path_resolved.url_name == 'article_detail':
             try:
-                article = get_article_by_url_kwargs(path_resolved.kwargs)
+                article = get_article_by_url_path(request.path)
             except Article.DoesNotExist:
                 # ignore signupwall for not-found articles (core.views.article.article_detail will redirect if the
-                # article is found in URL history)
+                # article is found in article's URL history)
                 return
         else:
             # ignore signupwall for non article_detail paths
@@ -105,6 +104,9 @@ class SignupwallMiddleware(object):
             if debug:
                 print('DEBUG: signupwall.middleware.process_request - subscribed user')
             return
+        elif debug:
+            print('DEBUG: signupwall.middleware.process_request - non subscribed user')
+            print('DEBUG: signupwall.middleware.process_request - requested URL: %s' % request.get_full_path())
 
         visitor = None
 
@@ -148,7 +150,7 @@ class SignupwallMiddleware(object):
                 limited_free_article_mail(user)
 
         if raise_signupwall and (articles_visited_count > credits):
-            # TODO: Why is this next function setted here?
+            # TODO: Why is this next function set here?
             request.signupwall = {'next': next}
         else:
             request.credits = credits - articles_visited_count

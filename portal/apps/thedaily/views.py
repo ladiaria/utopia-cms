@@ -1,17 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 import csv
-import jwt
-import hmac
-import hashlib
+import json
 import requests
 import pymongo
-from base64 import b64decode, b64encode
-from time import time
 from datetime import datetime, timedelta
-from uuid import uuid4
-from urllib import urlencode, pathname2url
-from urlparse import urljoin, urlparse, unquote, parse_qs
+from urllib import pathname2url
+from urlparse import urljoin, urlparse
 from hashids import Hashids
 from smtplib import SMTPRecipientsRefused
 from social_django.models import UserSocialAuth
@@ -27,24 +22,22 @@ from django.http import (
     HttpResponseRedirect,
     Http404,
     HttpResponse,
-    HttpResponseNotFound,
     HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseServerError,
 )
-from django.forms.util import ErrorList
+from django.forms.utils import ErrorList
 from django.contrib import messages
 from django.contrib.auth import authenticate, logout, login as do_login
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
-from django.contrib.formtools.wizard.views import SessionWizardView
-from django.shortcuts import get_object_or_404, render_to_response
+from formtools.wizard.views import SessionWizardView
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
-from django.template import RequestContext
-from django.utils import simplejson, timezone
+from django.utils import timezone
 
 from actstream import actions
 from actstream.models import following
@@ -69,10 +62,6 @@ from thedaily.forms import (
     SubscriptionPromoCodeCaptchaForm,
     PasswordResetRequestForm,
     PasswordChangeForm,
-    H40UForm,
-    H40Form,
-    PollUForm,
-    PollForm,
     GoogleSignupForm,
     SubscriberSignupForm,
     SubscriberSignupAddressForm,
@@ -110,21 +99,20 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
             'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
             'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
         }
-        hashids = Hashids(settings.HASHIDS_SALT, 32)
-        subscriber_id = int(hashids.decode(hashed_id)[0])
+        decoded = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)
         # TODO: if authenticated => assert same logged in user (also for other 1-click views in this module)
-        if subscriber_id:
-            subscriber = get_object_or_404(Subscriber, id=subscriber_id)
+        if decoded:
+            subscriber = get_object_or_404(Subscriber, id=decoded[0])
             if not subscriber.user:
-                return HttpResponseNotFound()
+                raise Http404
             try:
                 subscriber.newsletters.add(publication)
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
                 ctx['error'] = e.displaymessage
-            return render_to_response('nlsubscribe.html', ctx)
+            return render(request, 'nlsubscribe.html', ctx)
         else:
-            return HttpResponseNotFound()
+            raise Http404
     # default behavour: go to profile or login
     next_page = reverse('edit-profile') + '#id_newsletters_wrapper'
     if request.user.is_authenticated():
@@ -135,6 +123,7 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
 
 
 @never_cache
+@to_response
 def nl_category_subscribe(request, slug, hashed_id=None):
     """
     if hashed id is given, this view will do the things than nl_subscribe with a category instead of a publication
@@ -147,20 +136,19 @@ def nl_category_subscribe(request, slug, hashed_id=None):
             'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
             'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
         }
-        hashids = Hashids(settings.HASHIDS_SALT, 32)
-        subscriber_id = int(hashids.decode(hashed_id)[0])
-        if subscriber_id:
-            subscriber = get_object_or_404(Subscriber, id=subscriber_id)
+        decoded = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)
+        if decoded:
+            subscriber = get_object_or_404(Subscriber, id=decoded[0])
             if not subscriber.user:
-                return HttpResponseNotFound()
+                raise Http404
             try:
                 subscriber.category_newsletters.add(category)
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
                 ctx['error'] = e.displaymessage
-            return render_to_response('nlsubscribe.html', ctx)
+            return 'nlsubscribe.html', ctx
         else:
-            return HttpResponseNotFound()
+            raise Http404
     else:
         # next page is the first category NL anchor in edit profile page
         next_page = reverse('edit-profile') + '#category-newsletter-' + slug
@@ -172,7 +160,6 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 
 
 @never_cache
-@to_response
 def login(request):
     next_page = request.session.get('next', request.GET.get('next', '/'))
 
@@ -206,7 +193,11 @@ def login(request):
                 login_form.errors['__all__'].append(login_error)
             else:
                 login_form.errors['__all__'] = [login_error]
-    return 'login.html', {'login_form': login_form, 'next_page': next_page, 'next': pathname2url(next_page)}
+    return render(
+        request,
+        getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html'),
+        {'login_form': login_form, 'next_page': next_page, 'next': pathname2url(next_page)},
+    )
 
 
 @never_cache
@@ -225,11 +216,13 @@ def signup(request):
         if signup_form.is_valid():
             user = signup_form.create_user()
             add_default_category_newsletters(user.subscriber)
+            # TODO: check if request is needed
             send_validation_email(
                 u'Verificá tu cuenta',
                 user,
                 'notifications/account_signup.html',
                 get_signup_validation_url,
+                {'request': request},
             )
             next_page = signup_form.cleaned_data.get('next_page')
             if next_page:
@@ -293,7 +286,7 @@ class ValidarWizard(SessionWizardView):
         return form.data
 
     def done(self, form_list, **kwargs):
-        return render_to_response('welcome.html', {'form_data': [form.cleaned_data for form in form_list]})
+        return render(self.request, 'welcome.html', {'form_data': [form.cleaned_data for form in form_list]})
 
 
 @never_cache
@@ -303,9 +296,7 @@ def welcome(request, signup=False, subscribed=False):
     """
     if request.session.get('welcome'):
         request.session.pop('welcome')
-        return render_to_response(
-            settings.THEDAILY_WELCOME_TEMPLATE, {'signup': signup, 'subscribed': subscribed},
-            context_instance=RequestContext(request))
+        return render(request, settings.THEDAILY_WELCOME_TEMPLATE, {'signup': signup, 'subscribed': subscribed})
     else:
         return HttpResponseRedirect(reverse('home'))
 
@@ -325,7 +316,7 @@ def google_phone(request):
     try:
         oas = OAuthState.objects.get(state=request.session.get('google-oauth2_state'))
     except OAuthState.DoesNotExist:
-        return HttpResponseNotFound()
+        raise Http404
     profile = get_or_create_user_profile(oas.user)
     google_signin_form = GoogleSigninForm(instance=profile)
     if request.method == 'POST':
@@ -357,7 +348,7 @@ def subscribe(request, planslug, category_slug=None):
     else:
         # category_slug is allowed only if custom_module is defined
         if category_slug:
-            return HttpResponseNotFound()
+            raise Http404
         auth = request.GET.get('auth')
         if auth:
             request.session['planslug'] = planslug
@@ -532,7 +523,7 @@ def hash_validate(user_id, hash):
 
 def get_or_create_user_profile(user):
     try:
-        profile = user.get_profile()
+        profile = user.subscriber
     except Subscriber.DoesNotExist:
         profile = Subscriber.objects.create(user=user)
     return profile
@@ -579,10 +570,10 @@ def complete_signup(request, user_id, hash):
             subscription_type = st.all()[0].subscription_type
             if subscription_type == u'DDIGM':
                 send_default_welcome = False
-                notify_digital(user, seller_email)
+                notify_digital(user, seller_fullname)
             elif subscription_type == u'PAPYDIM':
                 send_default_welcome = False
-                notify_paper(user, seller_email)
+                notify_paper(user, seller_fullname)
 
     if send_default_welcome:
         send_notification(user, 'notifications/signup.html', u'Tu suscripción digital gratuita está activa')
@@ -685,75 +676,7 @@ def password_change(request, user_id=None, hash=None):
 @never_cache
 @to_response
 def giveaway(request):
-    return 'giveaway.html'
-
-
-@never_cache
-@to_response
-def h40(request):
-    subscribers = []
-    if request.user.is_authenticated():
-        try:
-            subscribers = [request.user.subscriber]
-            fclass = H40UForm
-        except Subscriber.DoesNotExist:
-            fclass = H40Form
-    else:
-        fclass = H40Form
-    ctx = {}
-    if request.method == 'POST':
-        h40_form = fclass(request.POST)
-        if h40_form.is_valid():
-            if not subscribers:
-                subscribers = Subscriber.objects.filter(
-                    document=h40_form.cleaned_data['document'])
-            send_mail('Nuevo 140', "De: %s\n%s\nSuscriptor(es): %s" % (
-                h40_form.cleaned_data['name'],
-                h40_form.cleaned_data['h40'],
-                ', '.join(
-                    "%s (CI: %s)" % (s.name, s.document) for s in subscribers
-                )),
-                settings.DEFAULT_FROM_EMAIL, ['140@ladiaria.com.uy'])
-            ctx['success'] = True
-    else:
-        h40_form = fclass()
-    ctx['form'] = h40_form
-    return '140.html', ctx
-
-
-# TODO: Apply DRY with the last one
-@never_cache
-@to_response
-def poll(request):
-    subscribers = []
-    if request.user.is_authenticated():
-        try:
-            subscribers = [request.user.subscriber]
-            fclass = PollUForm
-        except Subscriber.DoesNotExist:
-            fclass = PollForm
-    else:
-        fclass = PollForm
-    ctx = {}
-    if request.method == 'POST':
-        poll_form = fclass(request.POST)
-        if poll_form.is_valid():
-            if not subscribers:
-                subscribers = Subscriber.objects.filter(
-                    document=poll_form.cleaned_data['document'])
-            # All documents should be the same, take first for the answer
-            try:
-                PollAnswer.objects.create(
-                    document=subscribers[0].document,
-                    answer=poll_form.cleaned_data['option'])
-                ctx['success'] = True
-            except Exception:
-                # Disallow already answered or null/blank document
-                ctx['error'] = 'Voto ya registrado o información no válida'
-    else:
-        poll_form = fclass()
-    ctx['form'] = poll_form
-    return 'poll.html', ctx
+    return render(request, 'thedaily/giveaway.html')
 
 
 @never_cache
@@ -853,6 +776,43 @@ def lista_lectura_favoritos(request):
 
 
 @never_cache
+@login_required
+def fav_add_or_remove(request):
+    """
+    Cloned from favit.views and modified only the response with content_type arg to make it run in Django 1.11+.
+    """
+    if not request.is_ajax():
+        return HttpResponseNotAllowed()
+
+    user = request.user
+
+    try:
+        app_model = request.POST["target_model"]
+        obj_id = int(request.POST["target_object_id"])
+    except (KeyError, ValueError):
+        return HttpResponseBadRequest()
+
+    fav = Favorite.objects.get_favorite(user, obj_id, model=app_model)
+
+    if fav is None:
+        Favorite.objects.create(user, obj_id, app_model)
+        status = 'added'
+    else:
+        fav.delete()
+        status = 'deleted'
+
+    response = {
+        'status': status,
+        'fav_count': Favorite.objects.for_object(obj_id, app_model).count()
+    }
+
+    return HttpResponse(
+        json.dumps(response, ensure_ascii=False),
+        content_type='application/json'
+    )
+
+
+@never_cache
 @to_response
 @login_required
 def lista_lectura_historial(request):
@@ -928,7 +888,7 @@ def user_profile(request, user_id):
     except AssertionError:
         return HttpResponseForbidden()
     except User.DoesNotExist:
-        return HttpResponseNotFound()
+        raise Http404
     return edit_profile(request, user)
 
 
@@ -985,7 +945,7 @@ def update_user_from_crm(request):
                 # add all the ones that came in the value JSON list
                 s.updatefromcrm = True
                 s.newsletters.clear()
-                for pub_name in simplejson.loads(value):
+                for pub_name in json.loads(value):
                     s.newsletters.add(Publication.objects.get(name=pub_name))
             else:
                 changesubscriberfield(s, field, value)
@@ -1023,7 +983,7 @@ def amp_access_authorization(request):
     Este endpoint obtiene la cantidad de visitas que posee el usuario y lo devuelve incrementado en uno para contar la
     visita que se está haciendo en este momento.
     El registro de dicha visita se hace en el endpoint de pingback (siguiente funcion).
-    Return 'access' True if singupwall middleware is not enabled.
+    Return 'access' True if signupwall middleware is not enabled.
     """
     try:
         url = request.GET['url']
@@ -1101,7 +1061,7 @@ def amp_access_authorization(request):
             if settings.AMP_DEBUG:
                 print('AMP DEBUG: session_key=%s, authorization_result=%s' % (session_key, result))
 
-    response = HttpResponse(simplejson.dumps(result), content_type="application/json")
+    response = HttpResponse(json.dumps(result), content_type="application/json")
     return set_amp_cors_headers(request, response)
 
 
@@ -1160,8 +1120,7 @@ def users_api(request):
     if request.method == 'POST':
         try:
             email = request.POST['email']
-            if not email or request.POST['ldsocial_users_api_key'] != \
-                    settings.LDSOCIAL_USERS_API_KEY:
+            if not email or request.POST['ldsocial_users_api_key'] != settings.LDSOCIAL_USERS_API_KEY:
                 return HttpResponseForbidden()
             password = request.POST['password']
             udid = request.POST.get('UDID')
@@ -1171,8 +1130,7 @@ def users_api(request):
                 if udid:
                     sessions = UsersApiSession.objects.filter(user=user)
                     if sessions.count() < settings.MAX_USERS_API_SESSIONS:
-                        UsersApiSession.objects.get_or_create(
-                            user=user, udid=udid)
+                        UsersApiSession.objects.get_or_create(user=user, udid=udid)
                     elif not sessions.filter(udid=udid):
                         return HttpResponseBadRequest(max_device_msg)
                 try:
@@ -1182,10 +1140,12 @@ def users_api(request):
                     is_subscriber, uuid = False, None
             else:
                 is_subscriber, uuid = False, None
-            return render_to_response(
-                'users_api.xml', {
-                    'response': str(is_subscriber).lower(), 'uuid': uuid
-                }, mimetype='text/xml')
+            return render(
+                request,
+                'users_api.xml',
+                {'response': str(is_subscriber).lower(), 'uuid': uuid},
+                content_type='text/xml',
+            )
         except KeyError:
             msg = u'Parameter missing'
         except User.DoesNotExist:
@@ -1271,7 +1231,7 @@ def user_comments_api(request):
     except MultipleObjectsReturned:
         result[u'error'] = u'Hay más de un usuario en la web con ese email'
 
-    return HttpResponse(simplejson.dumps(result), content_type="application/json")
+    return HttpResponse(json.dumps(result), content_type="application/json")
 
 
 @never_cache
@@ -1294,12 +1254,11 @@ def custom_api(request):
 @never_cache
 @to_response
 def referrals(request, hashed_id):
-    hashids = Hashids(settings.HASHIDS_SALT, 32)
-    contact_id, user = hashids.decode(hashed_id), None
-    if contact_id:
-        sub = get_object_or_404(Subscriber, contact_id=int(contact_id[0]))
+    decoded, user = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id), None
+    if decoded:
+        sub = get_object_or_404(Subscriber, contact_id=int(decoded[0]))
         user = sub.user
-    if not (contact_id or user):
+    if not (decoded or user):
         raise Http404
     if request.method == 'POST':
         if user.suscripciones.all():
@@ -1333,94 +1292,86 @@ def referrals(request, hashed_id):
 @to_response
 def nlunsubscribe(request, publication_slug, hashed_id):
     publication = get_object_or_404(Publication, slug=publication_slug)
-    ctx = {
-        'publication': publication,
-        'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
-        'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
-    }
-    hashids = Hashids(settings.HASHIDS_SALT, 32)
-    subscriber_id = int(hashids.decode(hashed_id)[0])
-    # subscriber_id can be 0 (test from /custom_email in allowed hosts)
-    if subscriber_id:
-        subscriber = get_object_or_404(Subscriber, id=subscriber_id)
-        if not subscriber.user:
-            return HttpResponseNotFound()
-        email = subscriber.user.email
-        try:
-            subscriber.newsletters.remove(publication)
-        except Exception as e:
-            # for some reason UpdateCrmEx does not work in test (Python ver?)
-            ctx['error'] = e.displaymessage
-    else:
-        email = u'anonymous_user@localhost'
-    ctx['email'] = email
-    return 'nlunsubscribe.html', ctx
+    try:
+        subscriber_id = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)[0]
+        ctx = {
+            'publication': publication,
+            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+            'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
+        }
+        # subscriber_id can be 0 (test from /custom_email in allowed hosts)
+        if subscriber_id:
+            subscriber = get_object_or_404(Subscriber, id=subscriber_id)
+            if not subscriber.user:
+                raise Http404
+            email = subscriber.user.email
+            try:
+                subscriber.newsletters.remove(publication)
+            except Exception as e:
+                # for some reason UpdateCrmEx does not work in test (Python ver?)
+                ctx['error'] = e.displaymessage
+        else:
+            email = u'anonymous_user@localhost'
+        ctx['email'] = email
+        return 'nlunsubscribe.html', ctx
+    except IndexError:
+        raise Http404
 
 
 @never_cache
 @to_response
 def nl_category_unsubscribe(request, category_slug, hashed_id):
     category = get_object_or_404(Category, slug=category_slug)
-    ctx = {
-        'publication': category,
-        'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
-        'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
-    }
-    hashids = Hashids(settings.HASHIDS_SALT, 32)
-    subscriber_id = int(hashids.decode(hashed_id)[0])
-    # subscriber_id can be 0 (test from /custom_email in allowed hosts)
-    if subscriber_id:
-        subscriber = get_object_or_404(Subscriber, id=subscriber_id)
-        if not subscriber.user:
-            return HttpResponseNotFound()
-        email = subscriber.user.email
-        try:
-            subscriber.category_newsletters.remove(category)
-        except Exception as e:
-            # for some reason UpdateCrmEx does not work in test (Python ver?)
-            ctx['error'] = e.displaymessage
-    else:
-        email = u'anonymous_user@localhost'
-    ctx['email'] = email
-    return 'nlunsubscribe.html', ctx
+    try:
+        subscriber_id = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)[0]
+        ctx = {
+            'publication': category,
+            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+            'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
+        }
+        # subscriber_id can be 0 (test from /custom_email in allowed hosts)
+        if subscriber_id:
+            subscriber = get_object_or_404(Subscriber, id=subscriber_id)
+            if not subscriber.user:
+                raise Http404
+            email = subscriber.user.email
+            try:
+                subscriber.category_newsletters.remove(category)
+            except Exception as e:
+                # for some reason UpdateCrmEx does not work in test (Python ver?)
+                ctx['error'] = e.displaymessage
+        else:
+            email = u'anonymous_user@localhost'
+        ctx['email'] = email
+        return 'nlunsubscribe.html', ctx
+    except IndexError:
+        raise Http404
 
 
 @never_cache
 @to_response
 def disable_profile_property(request, property_id, hashed_id):
     """ Disables the profile bool property_id related to the subscriber matching the hashed_id argument given """
-    ctx = {
-        'property_name': {
-            'allow_news': u'Novedades', 'allow_promotions': u'Promociones', 'allow_polls': u'Encuestas'
-        }.get(property_id),
-        'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
-        'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
-    }
-    hashids = Hashids(settings.HASHIDS_SALT, 32)
-    subscriber_id = int(hashids.decode(hashed_id)[0])
-    # subscriber_id can be 0 (test from /custom_email in allowed hosts)
-    if subscriber_id:
-        subscriber = get_object_or_404(Subscriber, id=subscriber_id)
+    try:
+        subscriber = get_object_or_404(Subscriber, id=Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)[0])
         if not subscriber.user:
-            return HttpResponseNotFound()
+            raise Http404
         setattr(subscriber, property_id, False)
+        ctx = {
+            'property_name': {
+                'allow_news': u'Novedades', 'allow_promotions': u'Promociones', 'allow_polls': u'Encuestas'
+            }.get(property_id),
+            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
+            'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
+        }
         try:
             subscriber.save()
         except Exception as e:
             # for some reason UpdateCrmEx does not work in test (Python ver?)
             ctx['error'] = e.displaymessage
-    else:
-        return HttpResponseNotFound()
-    return 'disable_profile_property.html', ctx
-
-
-@never_cache
-@permission_required('thedaily.change_subscriber')
-def ldfs_promo(request):
-    resp = HttpResponse(content_type='text/csv')
-    resp['Content-Disposition'] = 'attachment; filename=ldfs_promo.csv'
-    resp.write(open(settings.LDFS_SUBSCRIBERS).read())
-    return resp
+        return 'disable_profile_property.html', ctx
+    except IndexError:
+        raise Http404
 
 
 @never_cache
@@ -1433,99 +1384,10 @@ def registered_users(request):
 
 
 @never_cache
-def edicion_impresa(request):
-    if hasattr(request.user, 'subscriber') and \
-            request.user.subscriber.is_subscriber():
-        # if is_subscriber generate the JWT for publica.la and redirect
-        return HttpResponseRedirect(
-            "https://papel.ladiaria.com.uy/auth/token?external-auth-token=" +
-            jwt.encode({
-                'iss': 'ladiaria', 'jti': uuid4().hex, 'exp': int(time()) + 60,
-                'aud': 'farfalla', 'sub': 'user', 'intended_url':
-                'https://papel.ladiaria.com.uy/library',
-                'user': {
-                    'uuid': str(request.user.subscriber.id),
-                    'email': request.user.email}},
-                settings.JWT_SECRET, algorithm='HS256'))
-    else:
-        return HttpResponseRedirect('https://papel.ladiaria.com.uy/library')
-
-
-@never_cache
-@login_required
-def discourse_sso(request):
-    '''
-    Taken from: https://gist.github.com/alee/3c6161809ef78966454e434a8ed350d1
-    Code adapted from https://meta.discourse.org/t/sso-example-for-django/14258
-    TODO: better error pages
-    '''
-    discourse_sso_debug = getattr(settings, 'DISCOURSE_SSO_DEBUG', False)
-    contact_msg = 'Please contact support if this problem persists.'
-
-    # generate the discourse payload and redirect
-    payload = request.GET.get('sso')
-    try:
-        signature = bytes(request.GET['sig'])
-    except KeyError:
-        signature = None
-
-    if None in [payload, signature]:
-        return HttpResponseBadRequest(
-            'No SSO payload or signature. ' + contact_msg)
-
-    # Validate the payload
-    payload = bytes(unquote(payload))
-    decoded = b64decode(payload).decode('utf-8')
-    if len(payload) == 0 or 'nonce' not in decoded:
-        if discourse_sso_debug:
-            print(
-                u"DEBUG: discourse sso payload length is zero or 'nonce' not "
-                u"in utf-8 decoded payload\n\tpayload: %s\n\tdecoded: %s" % (
-                    payload, decoded))
-        return HttpResponseBadRequest('Invalid payload. ' + contact_msg)
-
-    key = bytes(settings.DISCOURSE_SSO_SECRET)
-    h = hmac.new(key, payload, digestmod=hashlib.sha256)
-    this_signature = h.hexdigest()
-
-    if not hmac.compare_digest(this_signature, signature):
-        if discourse_sso_debug:
-            print(u"DEBUG: discourse sso signatures digests mismatch")
-            print(u"\tpayload: %s\n\tsignature: %s" % (payload, signature))
-        return HttpResponseBadRequest('Invalid payload. ' + contact_msg)
-    elif discourse_sso_debug:
-        print(u"DEBUG: discourse sso signatures digests match")
-        print(u"\tpayload: %s\n\tsignature: %s" % (payload, signature))
-
-    # Build the return payload
-    qs = parse_qs(decoded)
-    user = request.user
-    params = {
-        'nonce': qs['nonce'][0],
-        'email': user.email,
-        'external_id': user.id,
-        'username': user.username,
-        'require_activation': 'true',
-        'name': user.get_full_name(),
-    }
-
-    return_payload = b64encode(bytes(urlencode(params)))
-    h = hmac.new(key, return_payload, digestmod=hashlib.sha256)
-    query_string = urlencode({'sso': return_payload, 'sig': h.hexdigest()})
-
-    # Redirect back to Discourse
-    discourse_sso_url = '{0}/session/sso_login?{1}'.format(
-        settings.DISCOURSE_BASE_URL, query_string)
-    return HttpResponseRedirect(discourse_sso_url)
-
-
-@never_cache
 @staff_member_required
 @to_response
 def notification_preview(request, template, days=False):
-    return 'notifications/%s.html' % template, {
-        'preview': True, 'days': days,
-        'seller_email': 'vendedor@ladiaria.com.uy'}
+    return 'notifications/%s.html' % template, {'preview': True, 'days': days, 'seller_fullname': u'Seller Fullname'}
 
 
 @never_cache
@@ -1545,11 +1407,12 @@ def phone_subscription(request):
         subscription = request.session.get('subscription')
         if is_authenticated:
             user = request.user
-            user.subscriber.address = subscription.address
-            user.subscriber.city = subscription.city
-            user.subscriber.province = subscription.province
         else:
             user = subscription.subscriber
+        user.subscriber.address = subscription.address
+        user.subscriber.city = subscription.city
+        user.subscriber.province = subscription.province
+        user.subscriber.save()
         preferred_time = request.session.get('preferred_time')
         subject, body = telephone_subscription_msg(user, preferred_time)
         message = Message(

@@ -132,7 +132,6 @@
 
 }
 
-
 // New mixin for generating buttons
 @mixin ld-btn($bg-color: $primary-color, $bg-color-hover: $bg-color, $color: $off-black, $color-hover: $color, $border: false, $icon: false, $size: md) {
   background-color: $bg-color;
@@ -208,6 +207,7 @@
 .ld-btn--white {
   @include ld-btn($bg-color: white, $bg-color-hover: white, $color: $primary-color, $color-hover: $primary-color, $icon: false);
 }
+
 .ld-btn--sm {
   @include ld-btn($size: 'sm');
 }

@@ -8,28 +8,7 @@
   <main class="ld-content">
     <div class="row">
       <div class="col s12 m8 offset-m2">
-        <h1 class="ld-title-huge align-center  u-mb-60">Ingresá</h1>
-        {% ifequal next_page '/usuarios/perfil/editar/#id_newsletters_wrapper' %}
-          <div class="row">
-            <div class="col s12 align-center">
-              <div class="login-notice">
-                Ingresá para recibir la newsletter 6AM + Apuntes del día.<br>
-                ¿No tenés cuenta? <a href="{% url 'account-signup' %}">Create una.</a>
-              </div>
-            </div>
-          </div>
-        {% else %}
-          {% ifequal next_page '/usuarios/perfil/editar/#category-newsletter-coronavirus' %}
-            <div class="row">
-              <div class="col s12 align-center">
-                <div class="login-notice">
-                  Ingresá para recibir la newsletter de Coronavirus.<br>
-                  ¿No tenés cuenta? <a href="{% url 'account-signup' %}">Create una.</a>
-                </div>
-              </div>
-            </div>
-          {% endifequal %}
-        {% endifequal %}
+        <h1 class="ld-title-huge align-center u-mb-60">Ingresá</h1>
 
         <div class="google-auth align-center u-mb-60">
           <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}" class="ld-btn-google">Ingresá con Google</a>
@@ -48,7 +27,6 @@
             </div>
           </div>
         </form>
-
       </div>
     </div>
   </main>

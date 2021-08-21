@@ -4,7 +4,7 @@ from datetime import datetime
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponsePermanentRedirect
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import never_cache, cache_control
 from django.template import RequestContext
@@ -135,7 +135,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             template_dir = getattr(settings, 'CORE_PUBLICATIONS_TEMPLATE_DIR', None)
             if template_dir:
                 template = '%s/%s.html' % (template_dir, publication.slug)
-        return render_to_response(template, context, context_instance=RequestContext(request))
+        return render(request, template, context)
     else:
         if year and month and day:
             date_published = datetime(
@@ -185,4 +185,4 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
                 'questions_topic': questions_topic,
             }
         )
-        return render_to_response('index.html', context, context_instance=RequestContext(request))
+        return render(request, 'index.html', context)

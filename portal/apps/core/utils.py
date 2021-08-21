@@ -6,6 +6,7 @@ from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE
 from email.Utils import formatdate
+from django.utils.deconstruct import deconstructible
 
 import smtplib
 
@@ -93,7 +94,9 @@ def send_mail(files, send_from='web-automatico@ladiaria.com.uy', send_to=['web-r
     smtp.close()
 
 
-class CT():
+@deconstructible
+class CT(object):
+
     __content_type_id__ = None
 
     def contenttype_id(self):
@@ -101,6 +104,9 @@ class CT():
             self.__class__.__content_type_id__ = \
                 ContentType.objects.get_for_model(self).pk
         return self.__class__.__content_type_id__
+
+    def __eq__(self, other):
+        return self.__content_type_id__ == other.__content_type_id__
 
 
 def smart_quotes(value):

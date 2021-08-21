@@ -40,7 +40,7 @@ class BaseBackend(object):
                 context.autoescape = False
             format_templates[fmt] = render_to_string((
                 "notification/%s/%s" % (label, fmt),
-                "notification/%s" % fmt), context_instance=context)
+                "notification/%s" % fmt), context=context)
         return format_templates
 
     def default_context(self):

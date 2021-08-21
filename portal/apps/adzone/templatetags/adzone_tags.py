@@ -50,10 +50,10 @@ def random_zone_ad(context, ad_zone):
             except Exception:
                 pass
 
-        return template.loader.render_to_string('adzone/ad_tag.html', {'ad': ad}, context_instance=context)
-
+        context.update({'ad': ad})
+        return template.loader.render_to_string(
+            'adzone/ad_tag.html', context=context.flatten(), request=context.request)
     else:
-
         return u''
 
 

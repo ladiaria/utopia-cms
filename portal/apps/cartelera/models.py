@@ -9,9 +9,11 @@ from django.utils.datetime_safe import date
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
+
+from star_ratings.models import Rating
 
 from core.models import CT
-from djangoratings.fields import RatingField
 
 from choices import LIVE_EMBED_EVENT_ACCESS_TYPES
 
@@ -23,26 +25,20 @@ class CategoriaEvento(Model):
 
     def current_events(self):
         today_min = datetime.datetime.combine(date.today(), datetime.time.min)
-        eventos = self.eventobase_set.select_related().order_by('start').filter(end__gte=today_min)[:20]
-        result = []
-        for evento in eventos:
-            evento = getattr(evento, evento.type)
-            result.append(evento)
-        return result
+        return self.eventobase_set.select_related().order_by('start').filter(end__gte=today_min)[:20]
 
     def __unicode__(self):
         return self.nombre
 
     def get_absolute_url(self):
-        return reverse('categoria_evento', args=[self.slug])
+        return reverse('categoria_evento', kwargs={'slug': self.slug})
 
 
 class EventoBaseCategoryAuto(Model):
 
     def save(self, *args, **kwargs):
         self.type = self._meta.module_name
-        self.categoria, created = CategoriaEvento.objects.get_or_create(
-            slug=self.type, nombre=self.type)
+        self.categoria, created = CategoriaEvento.objects.get_or_create(slug=self.type, nombre=self.type)
         super(EventoBaseCategoryAuto, self).save(*args, **kwargs)
 
     class Meta:
@@ -54,7 +50,7 @@ class EventoBase(Model, CT):
     title = CharField('titulo', max_length=250)
     description = TextField('descripción', blank=True, null=True)
     slug = SlugField(db_index=True)
-    rating = RatingField(range=10, can_change_vote=True)
+    rating = GenericRelation(Rating)
     start = DateTimeField('comienzo')
     end = DateTimeField('fin')
     precio = CharField('precio', max_length=250)
@@ -65,18 +61,17 @@ class EventoBase(Model, CT):
         return self.title
 
     def render(self):
-        return render_to_string([
-            'cartelera/%s_lead.html' % self.categoria.slug,
-            'cartelera/evento_lead.html'], {'%s' % self.categoria.slug: self})
+        return render_to_string(
+            ['cartelera/%s_lead.html' % self.categoria.slug, 'cartelera/evento_lead.html'],
+            {'%s' % self.categoria.slug: self},
+        )
 
     def get_absolute_url(self):
-        return reverse('evento', args=[self.categoria.slug, self.slug])
+        return reverse('evento', kwargs={'slug': self.slug})
 
 
 class ArchivedEvent(Model):
-    access_type = CharField(
-        u'acceso al evento', max_length=1,
-        choices=LIVE_EMBED_EVENT_ACCESS_TYPES, default='s')
+    access_type = CharField(u'acceso al evento', max_length=1, choices=LIVE_EMBED_EVENT_ACCESS_TYPES, default='s')
     title = CharField(u'título', max_length=255)
     embed_content = TextField(u'contenido incrustado', blank=True, null=True)
 
@@ -88,9 +83,7 @@ class ArchivedEvent(Model):
         return 'cartelera-archive', (), {'archived_event_id': self.id}
 
     def link(self):
-        href = '%s://%s%s' % (
-            settings.URL_SCHEME, settings.SITE_DOMAIN, self.get_absolute_url()
-        ) if self.id else None
+        href = '%s://%s%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN, self.get_absolute_url()) if self.id else None
         return '<a href="%s">%s</a>' % (href, href) if href else None
     link.allow_tags = True
 
@@ -111,14 +104,10 @@ class LiveEmbedEvent(Model):
     embeded in a page of our site.
     """
     active = BooleanField(u'activo', default=False)
-    access_type = CharField(
-        u'acceso al evento', max_length=1,
-        choices=LIVE_EMBED_EVENT_ACCESS_TYPES, default='s')
+    access_type = CharField(u'acceso al evento', max_length=1, choices=LIVE_EMBED_EVENT_ACCESS_TYPES, default='s')
     in_home = BooleanField(u'agregar a portada', default=False)
-    notification = BooleanField(
-        u'mostrar notificación en artículos', default=False)
-    notification_text = CharField(
-        u'texto', max_length=255, null=True, blank=True)
+    notification = BooleanField(u'mostrar notificación en artículos', default=False)
+    notification_text = CharField(u'texto', max_length=255, null=True, blank=True)
     notification_url = URLField(u'url', null=True, blank=True)
     title = CharField(u'título', max_length=255)
     embed_content = TextField(u'contenido incrustado', blank=True, null=True)
@@ -133,11 +122,9 @@ class LiveEmbedEvent(Model):
         if self.active:
             if (active_now.exclude(id=self.id) if self.id else active_now):
                 # Don't allow more than one active instance
-                raise ValidationError(
-                    u'Only one event can be active at the same time.')
+                raise ValidationError(u'Only one event can be active at the same time.')
             if not self.embed_content:
-                raise ValidationError(
-                    u'Embed content should be set if the event is active.')
+                raise ValidationError(u'Embed content should be set if the event is active.')
 
     def save(self, *args, **kwargs):
         self.full_clean()  # calls self.clean() as well cleans other fields
@@ -166,8 +153,7 @@ class Lugar(Model):
 
 
 def get_content_type(name):
-    contenttype, created = ContentType.objects.get_or_create(
-        app_label="cartelera", model=name)
+    contenttype, created = ContentType.objects.get_or_create(app_label="cartelera", model=name)
     return contenttype
 
 

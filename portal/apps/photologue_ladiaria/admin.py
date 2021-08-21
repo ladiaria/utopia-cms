@@ -25,11 +25,15 @@ class PhotoExtendedModelForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super(PhotoExtendedModelForm, self).save(commit=commit)
         instance.image.date_taken = self.cleaned_data['date_taken']
+        if not instance.image._old_image:
+            # this is a new image, we need to "fake" the old image to avoid photologue.Photo attemp to rm a "None" file
+            instance.image._old_image = instance.image.image
         instance.image.save()
         return instance
 
     class Meta:
         model = PhotoExtended
+        fields = ('date_taken', )
 
 
 class PhotoExtendedInline(admin.StackedInline):
@@ -72,7 +76,7 @@ class GalleryAdmin(GalleryAdminDefault):
     list_display = ('title', 'date_added', 'photo_count', 'is_public')
     list_filter = ['date_added', 'is_public']
     date_hierarchy = 'date_added'
-    prepopulated_fields = {'title_slug': ('title',)}
+    prepopulated_fields = {'slug': ('title',)}
     filter_horizontal = ('photos',)
     inlines = [PhotoGalleryInline]
     exclude = ('photos', )
@@ -160,7 +164,7 @@ class PhotoAdmin(PhotoAdminDefault):
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
     fieldsets = (
         (None, {'fields': ('title', 'image', 'caption')}),
-        ('Avanzado', {'fields': ('title_slug', 'crop_from', 'is_public'), 'classes': ('collapse', )}))
+        ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse', )}))
     inlines = [PhotoExtendedInline]
 
 

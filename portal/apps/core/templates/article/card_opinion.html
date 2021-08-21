@@ -1,5 +1,5 @@
 {% extends 'article/article_card.html' %}
-{% load core_tags ldml %}
+{% load bleach_tags core_tags ldml %}
 
 {% block class %}{% endblock %}
 
@@ -8,7 +8,7 @@
   {% block headline %}
     <h2 class="article-title">
       <a href="{{ article.get_absolute_url }}">
-        {{ article.headline|ldmarkup:article.id|removetags:"p" }}
+        {{ article.headline|ldmarkup:article.id|bleach }}
       </a>
     </h2>
   {% endblock %}

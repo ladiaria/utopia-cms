@@ -1,3 +1,0 @@
-sqlparse<0.2
-django-debug-toolbar<1.4
-

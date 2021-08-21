@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load core_tags homev3_tags static ldml %}
+{% load bleach_tags core_tags homev3_tags static ldml %}
 
 {% block page_title %}Noticias de {{ category.name }}{% endblock %}
 
@@ -62,12 +62,12 @@
           <div class="ld-card__body">
             {% if cover_article %}
               <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
-                <a href="{{ cover_article.get_absolute_url }}">{{ cover_article.headline|ldmarkup:cover_article.id|removetags:'p' }}</a>
+                <a href="{{ cover_article.get_absolute_url }}">{{ cover_article.headline|ldmarkup:cover_article.id|bleach }}</a>
               </h2>
             {% endif %}
             {% if cover_article.home_lead or cover_article.lead %}
               <div class="ld-card__intro">
-                {{ cover_article.home_lead|default:cover_article.lead|ldmarkup:cover_article.id|removetags:'p' }}
+                {{ cover_article.home_lead|default:cover_article.lead|ldmarkup:cover_article.id|bleach }}
               </div>
             {% endif %}
 
@@ -101,10 +101,10 @@
                 </a>
               {% endif %}
               <div class="ld-card__body">
-                <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|removetags:'p' }}</a></h3>
+                <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a></h3>
                 {% if a.home_lead or a.deck %}
                   <div class="ld-card__intro hide-on-med-and-up">
-                    {{ a.home_lead|default:a.deck|ldmarkup:a.id|removetags:"p" }}
+                    {{ a.home_lead|default:a.deck|ldmarkup:a.id|bleach }}
                   </div>
                 {% endif %}
                 <div class="ld-card__byline">
@@ -150,11 +150,11 @@
             {% endif %}
             <div class="ld-card__body">
               <h3 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
-                <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|removetags:'p' }}</a>
+                <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a>
               </h3>
               {% if a.deck %}
               <div class="ld-card__intro">
-                {{ a.deck|ldmarkup:a.id|removetags:'p' }}
+                {{ a.deck|ldmarkup:a.id|bleach }}
               </div>
               {% endif %}
               <div class="ld-card__byline">
@@ -240,3 +240,4 @@
     });
   </script>
 {% endblock %}
+

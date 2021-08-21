@@ -1,9 +1,8 @@
 {% load activity_tags %}
 
 <ul class="nav"{% if is_detail %} id="toolbar"{% endif %}>
-  {# TODO: actstream_follow url will work after use the new version of actstream (lista de lectura requirement) #}
   <li class="pin_icon">
-    <a class="pin{% if user|is_following:evento %} selected{% endif %}" href="{# url 'actstream_follow' content_type_id=evento.contenttype_id object_id=evento.id #}">
+    <a class="pin{% if user|is_following:evento %} selected{% endif %}" href="{% url 'actstream_follow' content_type_id=evento.contenttype_id object_id=evento.id %}">
       <span class="icon-ladiaria" title="Guardar este evento en tu cuenta">p</span>
     </a>
   </li>
@@ -13,7 +12,7 @@
       {# Comentarios #}
       <a href="{{ evento.get_absolute_url }}#comments"><span
         class="icon-ladiaria" title="Ver y hacer comentarios sobre este artículo">c</span>
-        {% if evento.comment_count %}<span class="count">{{evento.comment_count}}</span>{% endif %}
+        {% if evento.comment_count %}<span class="count">{{ evento.comment_count }}</span>{% endif %}
       </a>
     </li>
   {% endif %}

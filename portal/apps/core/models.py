@@ -9,7 +9,7 @@ import csv
 from copy import copy
 from datetime import date, datetime, timedelta
 from collections import OrderedDict
-
+from django.utils import timezone
 from pyPdf import PdfFileWriter, PdfFileReader
 from sorl.thumbnail import get_thumbnail
 from PIL import Image
@@ -17,12 +17,12 @@ import readtime
 
 from django.conf import settings
 from django.core import urlresolvers
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.generic import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sitemaps import ping_google
-from django.db import IntegrityError
 from django.db.models import (
     Manager,
     Model,
@@ -32,6 +32,7 @@ from django.db.models import (
     DateTimeField,
     PositiveIntegerField,
     BooleanField,
+    OneToOneField,
     ForeignKey,
     SlugField,
     FileField,
@@ -58,7 +59,6 @@ from utils import (
     send_mail,
 )
 
-from apps import register_actstream_model
 from core.utils import CT, smart_quotes
 from core.templatetags.ldml import ldmarkup, cleanhtml
 from photologue_ladiaria.models import PhotoExtended
@@ -118,7 +118,7 @@ class Publication(Model):
     publisher_logo_height = PositiveSmallIntegerField(blank=True, null=True)
 
     def __unicode__(self):
-        return self.name
+        return self.name or u''
 
     def save(self, *args, **kwargs):
         super(Publication, self).save(*args, **kwargs)
@@ -204,7 +204,7 @@ class PortableDocumentFormatBaseModel(Model):
     pdf_md5 = CharField(u'checksum', max_length=32, editable=False)
     downloads = PositiveIntegerField(u'descargas', default=0)
     cover = ImageField(u'tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
-    date_published = DateField(u'fecha de publicación', default=date.today())
+    date_published = DateField(u'fecha de publicación', default=timezone.now)
     date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
 
     def __unicode__(self):
@@ -232,7 +232,7 @@ class PortableDocumentFormatBaseModel(Model):
 
     def download(self, request=None):
         filename = os.path.basename(self.pdf.path)
-        response = HttpResponse(self.pdf, mimetype='application/pdf')
+        response = HttpResponse(self.pdf, content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename=%s' % filename
         return response
 
@@ -300,7 +300,7 @@ class Edition(PortableDocumentFormatBaseModel):
 
     @property
     def top_articles(self):
-        return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.select_related(
+        return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.prefetch_related(
             'article__main_section__edition__publication', 'article__main_section__section',
             'article__photo__extended__photographer'
         ).filter(article__is_published=True, home_top=True).order_by('top_position')]))
@@ -389,8 +389,7 @@ class Supplement(PortableDocumentFormatBaseModel):
         verbose_name_plural = u'suplementos'
 
     def __unicode__(self):
-        return u'%s - %s' % (
-            self.date_published.strftime('%d-%m-%Y'), self.get_name_display())
+        return u'%s - %s' % (self.date_published.strftime('%d-%m-%Y'), self.get_name_display())
 
     def save(self, *args, **kwargs):
         self.date_published = self.edition.date_published
@@ -454,12 +453,7 @@ class Category(Model):
         return self.name
 
     def latest_articles(self):
-        category_home_related = self.home.all()
-        if category_home_related:
-            category_home = category_home_related[0]
-            return list(category_home.articles.all())
-        else:
-            return []
+        return list(self.home.articles.all()) if self.home else []
 
     def articles(self):
         """
@@ -549,7 +543,7 @@ class Section(Model):
         u'en portada', default=False,
         help_text=u'si el componente de portadas de esta categoría está insertado, esta opción lo muestra u oculta.')
     imagen = ImageField(u'imagen o ilustración', upload_to='section_images', blank=True, null=True)
-    publications = ManyToManyField(Publication, verbose_name=u'publicaciones', blank=True, null=True)
+    publications = ManyToManyField(Publication, verbose_name=u'publicaciones', blank=True)
     home_block_all_pubs = BooleanField(
         u'usar todas las publicaciones en módulos de portada', default=True,
         help_text=u'Marque esta opción para mostrar artículos de todas las publicaciones en los módulos de portada.')
@@ -586,12 +580,10 @@ class Section(Model):
         Returns the latest 4 (or limit param) articles published in this section.
         - include only articles of this article_type (if given).
         - exclude articles by id included in a list given by param.
-        - include only articles published in editions publications included in a list given by param.
+        - include only articles published only in editions of the publications included in a list given by param.
         - include articles related to any section and not only this (self) section if all_sections=True.
-        NOTE/WISH: when all_sections is True, the ordering by position should not be applied because the position is
-                   an ordering that makes sense only inside a section, but the negative effects of using it are
-                   minimal. Also it would be better this use case (all_sections=True) to an Article's method instead of
-                   here (Section method) for trivial reasons, the section is not used.
+        NOTE: ordering by position is not applied because this method can take articles in more than one edition and
+              the position is an ordering that makes sense only inside a section in one edition.
         """
         extra_where = ''
 
@@ -608,13 +600,15 @@ class Section(Model):
             extra_where += ' AND core_edition.publication_id IN (%s)' % ','.join([str(x) for x in publications_ids])
 
         query = """
-            SELECT core_article.*
+            SELECT core_article.id
             FROM core_article
                 JOIN core_articlerel ON core_article.id = core_articlerel.article_id
-                JOIN core_edition ON core_articlerel.edition_id=core_edition.id
+                JOIN core_edition ON core_articlerel.edition_id = core_edition.id
             WHERE is_published%s
-            GROUP BY id ORDER BY core_edition.date_published DESC, position
-            LIMIT %s""" % (extra_where, limit)
+            GROUP BY id
+            ORDER BY core_article.date_published DESC
+            LIMIT %s
+        """ % (extra_where, limit)
 
         if settings.RAW_SQL_DEBUG:
             print(query)
@@ -722,7 +716,7 @@ class Journalist(Model):
     bio = TextField(
         u'bio', null=True, blank=True, help_text=u'Bio aprox 200 caracteres.')
     sections = ManyToManyField(
-        Section, verbose_name=u'secciones', blank=True, null=True)
+        Section, verbose_name=u'secciones', blank=True)
     fb = CharField(u'facebook', max_length=255, blank=True, null=True)
     tt = CharField(u'twitter', max_length=255, blank=True, null=True)
     gp = CharField(u'google plus', max_length=255, blank=True, null=True)
@@ -873,7 +867,6 @@ class ArticleBase(Model, CT):
         verbose_name=u'autor/es',
         related_name='articles_%(app_label)s',
         blank=True,
-        null=True,
     )
     only_initials = BooleanField(
         u'sólo iniciales',
@@ -892,7 +885,7 @@ class ArticleBase(Model, CT):
         null=True,
     )
     is_published = BooleanField(u'publicado', default=True)
-    date_published = DateTimeField(u'fecha de publicación', default=datetime.today())
+    date_published = DateTimeField(u'fecha de publicación', blank=False, null=False, default=timezone.now)
     date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
     last_modified = DateTimeField(u'última actualización', auto_now=True)
     views = PositiveIntegerField(u'vistas', default=0, db_index=True)
@@ -929,10 +922,9 @@ class ArticleBase(Model, CT):
     show_related_articles = BooleanField(
         u'mostrar artículos relacionados dentro de este artículo', default=True, blank=False, null=False
     )
-    public = BooleanField(u'Artículo libre')
+    public = BooleanField(u'Artículo libre', default=False)
 
     published = PublishedArticleManager()
-    objects = Manager()
 
     def __unicode__(self):
         return self.headline
@@ -1169,8 +1161,8 @@ class ArticleBase(Model, CT):
 
 
 class ArticleManager(Manager):
-    def get_query_set(self):
-        return super(ArticleManager, self).get_query_set()
+    def get_queryset(self):
+        return super(ArticleManager, self).get_queryset()
 
 
 class Article(ArticleBase):
@@ -1179,7 +1171,6 @@ class Article(ArticleBase):
         Section,
         verbose_name=u'sección',
         blank=False,
-        null=True,
         through='ArticleRel',
         related_name='articles_%(app_label)s',
     )
@@ -1195,7 +1186,6 @@ class Article(ArticleBase):
         User,
         verbose_name=u'visto por',
         blank=True,
-        null=True,
         editable=False,
         through='ArticleViewedBy',
         related_name='viewed_articles_%(app_label)s',
@@ -1208,11 +1198,10 @@ class Article(ArticleBase):
     def save(self, *args, **kwargs):
         try:
             super(Article, self).save(*args, **kwargs)
-        except IntegrityError:
+        except:
             # we dont know why sometimes raises duplicate entry XXXX for key K
             # I cant reproduce this error, better to do nothing more in method
             return
-
         if self.sections:
             # TODO: this should be reviewed, what happens if another article
             # in the same edition-section is viewed (viewed implies saving)
@@ -1310,10 +1299,6 @@ class Article(ArticleBase):
                 return PhotoExtended(image=section_imgs[0])
 
 
-register_actstream_model(Article)
-register_actstream_model(User)
-
-
 class ArticleRel(Model):
     """
     Relation to save the relative position of the article into the
@@ -1348,7 +1333,7 @@ class CategoryHomeArticle(Model):
     home = ForeignKey('CategoryHome')
     article = ForeignKey(Article, related_name='home_articles')
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
-    fixed = BooleanField('fijo')
+    fixed = BooleanField('fijo', default=False)
 
     def __unicode__(self):
         # also a custom text version to be useful in the CategoryHome admin change form
@@ -1359,7 +1344,7 @@ class CategoryHomeArticle(Model):
 
 
 class CategoryHome(Model):
-    category = ForeignKey(Category, verbose_name=u'área', unique=True, related_name='home')
+    category = OneToOneField(Category, verbose_name=u'área', related_name='home')
     articles = ManyToManyField(Article, through=CategoryHomeArticle)
 
     def __unicode__(self):
@@ -1433,8 +1418,8 @@ def update_category_home(dry_run=False):
         category = categories.get(slug=category_slug)
 
         try:
-            home = category.home.all()[0]
-        except IndexError:
+            home = category.home
+        except CategoryHome.DoesNotExist:
             continue
 
         try:
@@ -1523,7 +1508,7 @@ class ArticleExtension(Model):
     background_color = CharField(u'background color', max_length=7, default='#eaeaea', null=True, blank=True)
 
     def __unicode__(self):
-        return self.headline
+        return self.headline or u''
 
     def _is_published(self):
         return self.article.is_published
@@ -1546,7 +1531,7 @@ class ArticleBodyImage(Model):
     display = CharField(u'display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
 
     def __unicode__(self):
-        return self.image.title
+        return (self.image.title or u'') if self.image else u''
 
     class Meta:
         verbose_name = u'imagen'
@@ -1560,7 +1545,7 @@ class PrintOnlyArticle(Model):
     date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
 
     def __unicode__(self):
-        return self.headline
+        return self.headline or u''
 
     class Meta:
         get_latest_by = 'date_created'
@@ -1616,11 +1601,11 @@ class BreakingNewsModule(Model):
     embed13_content = TextField(u'contenido de incrustado 13', blank=True, null=True)
     embed14_title = CharField(u'título de incrustado 14', max_length=100, blank=True, null=True)
     embed14_content = TextField(u'contenido de incrustado 14', blank=True, null=True)
-    publications = ManyToManyField(Publication, verbose_name=u'portada de publicaciones', blank=True, null=True)
-    categories = ManyToManyField(Category, verbose_name=u'portada de áreas', blank=True, null=True)
+    publications = ManyToManyField(Publication, verbose_name=u'portada de publicaciones', blank=True)
+    categories = ManyToManyField(Category, verbose_name=u'portada de áreas', blank=True)
 
     def __unicode__(self):
-        return self.headline
+        return self.headline or u''
 
     def covers(self):
         return u', '.join(

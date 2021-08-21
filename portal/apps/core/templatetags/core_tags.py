@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.template import Library, Node, RequestContext, TemplateSyntaxError, Variable, loader
 from django.template.defaultfilters import stringfilter
-from django.utils import text
+from django.utils.text import Truncator
 
 from core.models import Article, Supplement, Category, Section
 from core.forms import SendByEmailForm
@@ -147,7 +147,7 @@ def render_article_card(context, article, media, card_size, card_type=None):
     context.update({
         'article': article, 'media': media, 'card_size': card_size, 'card_display': card_display,
         'card_type': card_type, 'verbose_date': verbose_date})
-    return loader.render_to_string('core/templates/article/' + template, context)
+    return loader.render_to_string('core/templates/article/' + template, context.flatten())
 
 
 # Render article media list con foto a la izquierda para mostrar en sidebar
@@ -161,10 +161,10 @@ class RenderArticleMediaNode(Node):
         if not article:
             return ''
         media = self.media.resolve(context)
+        context.update({'articles': [article], 'media': media, 'separador': True})
         article_html = loader.render_to_string(
             'core/templates/article/media-list.html',
-            {'articles': [article], 'media': media, 'separador': True},
-            context_instance=context)
+            context=context.flatten(), request=context.request)
         return article_html
 
 
@@ -236,7 +236,7 @@ class DefensoriaNode(Node):
             params = {'article': article, 'ignore_toolbar': True}
             html += loader.render_to_string(
                 defensoria_template, params,
-                context_instance=RequestContext(context['request']))
+                context=RequestContext(context['request']))
         return html
 
 
@@ -265,7 +265,7 @@ def render_toolbar_for(context, toolbar_object):
                     }
                 )
         context.update(params)
-        return loader.render_to_string(toolbar_template, context)
+        return loader.render_to_string(toolbar_template, context.flatten())
     else:
         return u''
 
@@ -323,7 +323,7 @@ def category_nl_subscribe_box(context):
     if category and category.has_newsletter:
         # article has category with nl
         if category.slug not in subscriber_nls:
-            return loader.render_to_string('core/templates/article/subscribe_box_category.html', context)
+            return loader.render_to_string('core/templates/article/subscribe_box_category.html', context.flatten())
 
     return u''
 
@@ -382,7 +382,8 @@ def remove_markup(value):
 
 @register.filter
 def truncatehtml(string, length):
-    return text.truncate_html_words(string, length)
+    truncator = Truncator(string)
+    return truncator.words(length, html=True)
 
 
 truncatehtml.is_safe = True

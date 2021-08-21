@@ -1,3 +1,14 @@
+# version 0.1.0 (2021-08-21)
+
+- Django support upgraded to version 1.11 (dropped support for Django 1.5).
+- Install guide upgraded, improved and tested.
+- django-robots upgraded and removed from repo.
+- typi submodule removed.
+- Log usage and errror handling improved in send_category_nl command.
+- Custom things like settings and some views were removed.
+- Syntax formatting improvements and fixes on many modules.
+- UX and CSS improvements in many templates.
+
 # version 0.0.9 (2021-06-15)
 
 - Support to exclude categories with order, from the top menu.

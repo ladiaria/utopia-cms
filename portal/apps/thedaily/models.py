@@ -27,7 +27,7 @@ from django.db.models import (
 )
 from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.dispatch import receiver
-from django.utils import simplejson
+import json
 
 from apps import core_articleviewedby_mdb
 from core.models import Edition, Publication, Category, ArticleViewedBy
@@ -158,7 +158,7 @@ class Subscriber(Model):
         return True
 
     def user_is_active(self):
-        return self.user.is_active
+        return self.user and self.user.is_active
     user_is_active.short_description = u'user act.'
     user_is_active.boolean = True
 
@@ -213,7 +213,7 @@ class Subscriber(Model):
 
     @property
     def user_email(self):
-        return self.user.email
+        return self.user.email if self.user else None
 
     @permalink
     def get_absolute_url(self):
@@ -280,7 +280,7 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
         try:
             updatecrmuser(
                 instance.contact_id, u'newsletters' + (u'_remove' if action == 'post_remove' else u''),
-                simplejson.dumps(list(pk_set)) if pk_set else None)
+                json.dumps(list(pk_set)) if pk_set else None)
         except requests.exceptions.RequestException:
             raise UpdateCrmEx(u"No se ha podido actualizar tu perfil, contactate con nosotros")
 
@@ -389,7 +389,8 @@ class Subscription(Model):
     country = CharField(u'país', max_length=50)
     city = CharField(u'ciudad', max_length=64, blank=True, null=True)
     province = CharField(
-        u'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True)
+        u'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
+    )
 
     observations = TextField(u'observaciones para la entrega', blank=True, null=True)
     subscription_type = CharField(u'suscripción', max_length=3, choices=SUBSCRIPTION_CHOICES, default='DIG')
@@ -441,9 +442,9 @@ class Subscription(Model):
 
 
 class ExteriorSubscriptionManager(Manager):
-    def get_query_set(self):
+    def get_queryset(self):
         return super(
-            ExteriorSubscriptionManager, self).get_query_set().filter(
+            ExteriorSubscriptionManager, self).get_queryset().filter(
                 subscriber__in=Group.objects.get(name='exterior_subscribers').user_set.all())
 
 

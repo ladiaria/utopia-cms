@@ -1,4 +1,4 @@
-{% load core_tags ldml %}
+{% load bleach_tags core_tags ldml %}
 <div class="inline-image-wrap article_body_image-{{ display }}">
   <figure class="principal">
     <amp-img
@@ -10,7 +10,7 @@
       alt="{% if image.caption %}{{ image.caption }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}">
     </amp-img>
     {% if image.caption or image.extended.photographer %}
-      <figcaption class="ld-caption">{% if image.caption %}<p>{{ image.caption|ldmarkup|removetags:"p" }}</p>{% endif %} {% if image.extended.photographer %}<p>{{ image.extended.type_verbose }}: {{ image.extended.photographer.name }}</p>{% endif %}</figcaption>
+      <figcaption class="ld-caption">{% if image.caption %}<p>{{ image.caption|ldmarkup|bleach }}</p>{% endif %} {% if image.extended.photographer %}<p>{{ image.extended.type_verbose }}: {{ image.extended.photographer.name }}</p>{% endif %}</figcaption>
     {% endif %}
   </figure>
 </div>

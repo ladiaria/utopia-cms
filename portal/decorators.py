@@ -66,7 +66,7 @@ def render_response(template_prefix=None, always_use_requestcontext=True):
                     template_name = correct_path(template_name)
 
             return HttpResponse(loader.render_to_string(
-                template_name, context_instance=context))
+                template_name, context=context.flatten(), request=context.request))
 
         return _dec
 

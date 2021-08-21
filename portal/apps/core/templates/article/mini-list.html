@@ -1,4 +1,4 @@
-{% load core_tags ldml %}
+{% load bleach_tags core_tags ldml %}
 <article class="{% if article.photo.extended.is_portrait %}portrait {% endif %}{% ifequal article.media "I" %}{% ifnotequal article.photo None %} has_foto{% endifnotequal %}{% endifequal %}">
   {% if article.photo %}
   <figure>
@@ -18,7 +18,7 @@
         <div class="keywords-style">{{ article.keywords }}</div>
         {% endif %}
       </div>
-      <p class="art_small_title"><a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|removetags:"p" }}</a></p>
+      <p class="art_small_title"><a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|bleach }}</a></p>
   </header>
   {% if not ignore_toolbar %}
   <footer class="navbar toolbar small">

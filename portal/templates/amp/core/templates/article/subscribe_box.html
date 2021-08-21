@@ -4,9 +4,7 @@
       {% block subscribe_box_question %}{{ publication.subscribe_box_question }}{% endblock %}
     </span>
     <div class="ld-subscribe-box__info ld-caption">
-      Suscribite gratis y recibí la newsletter de
       {% block subscribe_box_nl_subscribe_anon %}{{ publication.subscribe_box_nl_subscribe_anon|safe }}{% endblock %}
-      en tu email.
     </div>
     <a href="{% block subscribe_box_signup_url %}{% url 'account-signup' %}{% endblock %}" class="ld-btn-default ld-btn-default--sm ld-btn-default--icon-envelope ld-btn-default--inverted">
       Suscribite gratis

@@ -114,10 +114,10 @@
                                       {% block thank_you_body %}
                                         <p>
                                           Gracias por formar parte,<br>
-                                          El equipo de <span style="font-style: italic;">{{ site.name }}</span>.
+                                          {% if seller_fullname %}{{ seller_fullname }} de{% else %}E{% endif %}l equipo de <span style="font-style: italic;">{{ site.name }}</span>.
                                         </p>
                                         <p>
-                                          ¿Tenés consultas? Visitá nuestro <a href="{{ SITE_URL }}ayuda/" style="color: #0a0a0a;">centro de ayuda</a> o <a href="{{ SITE_URL }}contacto/" style="color: #0a0a0a;">contactanos</a>.
+                                          Por consultas también podés visitar nuestro <a href="{{ SITE_URL }}ayuda/" style="color: #0a0a0a;">Centro de ayuda</a>.
                                         </p>
                                       {% endblock %}
                                       {% block second_extra_body %}{% endblock %}

@@ -43,28 +43,28 @@ class StatusManager(models.Manager):
 
     def drafted(self):
         """Returns only items with a status of 'drafted'."""
-        return self.get_query_set().filter(status=DRAFTED)
+        return self.get_queryset().filter(status=DRAFTED)
 
     def published(self):
         """Returns only items with a status of 'published'."""
-        return self.get_query_set().filter(status=PUBLISHED)
+        return self.get_queryset().filter(status=PUBLISHED)
 
     def removed(self):
         """Returns only items with a status of 'removed'."""
-        return self.get_query_set().filter(status=REMOVED)
+        return self.get_queryset().filter(status=REMOVED)
 
 
 class OnSiteManager(StatusManager):
     """Custom manager that returns only items related to the current site."""
 
-    def get_query_set(self):
-        return super(OnSiteManager, self).get_query_set().filter(
+    def get_queryset(self):
+        return super(OnSiteManager, self).get_queryset().filter(
             **_field_lookups(self.model))
 
 
 class PublishedManager(models.Manager):
     """Custom manager that returns only published, on-site items."""
 
-    def get_query_set(self):
-        return super(PublishedManager, self).get_query_set().filter(
+    def get_queryset(self):
+        return super(PublishedManager, self).get_queryset().filter(
             **_field_lookups(self.model, PUBLISHED))

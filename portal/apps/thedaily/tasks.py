@@ -15,14 +15,20 @@ welcome_email_sub = u'Tu suscripción %s está activa'
 
 
 def send_notification(user, email_template, email_subject, extra_context={}):
-    extra_context.update({
-        'SITE_URL': settings.SITE_URL, 'URL_SCHEME': settings.URL_SCHEME, 'site': Site.objects.get_current(),
-        'logo_url': settings.HOMEV3_SECONDARY_LOGO})
+    extra_context.update(
+        {
+            'SITE_URL': settings.SITE_URL,
+            'URL_SCHEME': settings.URL_SCHEME,
+            'site': Site.objects.get_current(),
+            'logo_url': settings.HOMEV3_SECONDARY_LOGO,
+        }
+    )
     msg = Message(
-        html=render_to_string(email_template, extra_context), mail_to=(user.get_full_name(), user.email),
-        subject=email_subject, mail_from=(settings.NOTIFICATIONS_FROM_NAME, getattr(
-            settings,
-            'NOTIFICATIONS_FROM_ADDR2' if extra_context.get('seller_email') else 'NOTIFICATIONS_FROM_ADDR1')))
+        html=render_to_string(email_template, extra_context),
+        mail_to=(user.get_full_name(), user.email),
+        subject=email_subject,
+        mail_from=(settings.NOTIFICATIONS_FROM_NAME, settings.NOTIFICATIONS_FROM_ADDR1),
+    )
 
     # send using smtp to receive bounces in another mailbox
     s = smtp_connect()
@@ -30,17 +36,21 @@ def send_notification(user, email_template, email_subject, extra_context={}):
     s.quit()
 
 
-def notify_digital(user, seller_email=None):
+def notify_digital(user, seller_fullname=None):
     send_notification(
-        user, welcome_email_template, welcome_email_sub % u'digital ilimitada',
-        {'seller_email': seller_email} if seller_email else {})
+        user,
+        welcome_email_template,
+        welcome_email_sub % u'digital ilimitada',
+        {'seller_fullname': seller_fullname} if seller_fullname else {},
+    )
     SentMail.objects.create(subscriber=user.subscriber, subject="Bienvenida DI")
 
 
-def notify_paper(user, seller_email=None):
-    extra_context = {'seller_email': seller_email} if seller_email else {}
+def notify_paper(user, seller_fullname=None):
+    extra_context = {'seller_fullname': seller_fullname} if seller_fullname else {}
     send_notification(
-        user, welcome_email_template % '_PAPYDIM', welcome_email_sub % u'a la edición papel', extra_context)
+        user, welcome_email_template % '_PAPYDIM', welcome_email_sub % u'a la edición papel', extra_context,
+    )
     SentMail.objects.create(subscriber=user.subscriber, subject="Bienvenida Papel (PAPYDIM)")
 
 

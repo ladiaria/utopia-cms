@@ -760,39 +760,34 @@ i.material-icons.icon-lo_mas_leido {
     }
 
   .multi-buttons {
+
       .ld-btn, .btn {
         margin-right: 0;
+        margin-bottom: 20px;
+        vertical-align: top;
+        margin-right: 10px;
 
         @media (min-width: 450px) and (max-width:475px) {
           margin-left: 10px;
-          margin-right: 10px;
+
         }
 
         + .ld-btn {
-          margin-top:20px;
+          margin-bottom:0;
           margin-left: 0;
 
-          @media (min-width: 450px) and (max-width:475px) {
-            margin-top: 20px;
-          }
 
           @media (min-width: 476px) {
-            margin-top: 0;
-            margin-left: 10px;
+            margin-right: 0;
           }
         }
 
         + .btn {
-          margin-top:20px;
           margin-left: 0;
-
-          @media (min-width: 450px) and (max-width:475px) {
-            margin-top: 20px;
-          }
+          margin-bottom:0;
 
           @media (min-width: 476px) {
-            margin-top: 0;
-            margin-left: 10px;
+            margin-right: 0;
           }
         }
 

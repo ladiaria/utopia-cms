@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
+import json
 from datetime import date
 
 from django.conf import settings
-from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseRedirect, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseRedirect, Http404
 from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.template import RequestContext
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.urlresolvers import reverse
 
@@ -86,7 +83,7 @@ def latest_article(request, section_slug):
         return HttpResponseRedirect(get_object_or_404(
             Section, slug=section_slug).latest_article()[0].get_absolute_url())
     except IndexError:
-        return HttpResponseNotFound()
+        raise Http404
 
 
 @never_cache

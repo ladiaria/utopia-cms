@@ -87,6 +87,7 @@
               {% endif %}
               <div class="col s12">
                 <form id="subscribe" method="post" class="form-{{ planslug }}">
+
                   {% if oauth2_button and not user.is_authenticated %}
                     <div class="row">
                       <div class="col s12 align-center ld-block--sm">
@@ -105,14 +106,13 @@
                   {% if subscription_form %}
                     {% crispy subscription_form %}
                   {% endif %}
+
                 </form>
               </div>
-
             </div>
           </div>
         </div>
-      </div>
-      </div>
+
       </div>
 
     {% endif %}

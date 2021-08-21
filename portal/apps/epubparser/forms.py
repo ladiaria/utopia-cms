@@ -14,6 +14,7 @@ class UploadEpubForm(forms.ModelForm):
 
     class Meta:
         model = EpubFile
+        fields = "__all__"
 
 
 class EpubChangeSectionForm(forms.ModelForm):
@@ -22,3 +23,4 @@ class EpubChangeSectionForm(forms.ModelForm):
 
     class Meta:
         model = EpubFile
+        fields = "__all__"

@@ -57,7 +57,7 @@ class BaseEvent(Model):
 class Event(BaseEvent):
     slug = SlugField('slug', editable=False)
     artists = ManyToManyField(Artist, verbose_name='artistas',
-        related_name='events', blank=True, null=True)
+        related_name='events', blank=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
     created_by = ForeignKey(User, editable=False, blank=False,
         null=True, verbose_name='creado por', related_name='created_events')
@@ -87,7 +87,7 @@ class Activity(BaseEvent):
     Activities are special events having also attendance info, attendants
     can enter in only not closed activities.
     """
-    closed = BooleanField('cerrada')
+    closed = BooleanField('cerrada', default=False)
 
     class Meta:
         verbose_name = 'actividad'
@@ -102,7 +102,7 @@ class Attendant(Model):
     activity = ForeignKey(Activity)
     name = CharField(u'nombre', max_length=255)
     email = EmailField()
-    is_subscriber = BooleanField(u'suscriptor')
+    is_subscriber = BooleanField(u'suscriptor', default=False)
     subscriber = ForeignKey(Subscriber, null=True)
 
     class Meta:

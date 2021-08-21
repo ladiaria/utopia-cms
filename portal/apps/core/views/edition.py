@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseForbidden, HttpResponse, Http404, HttpResponseNotFound
+from django.http import HttpResponseForbidden, HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.models import User
@@ -77,7 +77,7 @@ def edition_download(request, publication_slug, year, month, day, filename):
     try:
         date_published = date(int(year), int(month), int(day))
     except ValueError:
-        return HttpResponseNotFound()
+        raise Http404
     edition = get_object_or_404(Edition, publication__slug=publication_slug, date_published=date_published)
     downloadable_editions = getattr(settings, 'CORE_PUBLICATIONS_EDITION_DOWNLOAD', ())
     if request.user.is_staff or (
