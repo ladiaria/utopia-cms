@@ -9,7 +9,6 @@ import time
 from MySQLdb import ProgrammingError
 from datetime import date, datetime, timedelta
 from socket import error
-from threading import Thread
 from hashids import Hashids
 from emails.django import DjangoMessage as Message
 
@@ -26,7 +25,6 @@ from core.templatetags.core_tags import remove_markup
 from thedaily.models import Subscriber
 from dashboard.models import NewsletterDelivery
 from libs.utils import smtp_connect
-from libs.thread_iter import threadsafe_generator
 
 
 # CFG
@@ -48,7 +46,7 @@ log.addHandler(err_handler)
 hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 
-def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_from_ns, ids_ending_with, subscriber_ids):
+def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_ending_with, subscriber_ids):
 
     cover_article = category.home.cover()
     cover_article_section = cover_article.publication_section() if cover_article else None
@@ -95,7 +93,6 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
 
     # iterate over receivers and yield the subscribers first, saving the
     # not subscribers ids in a temporal list an then yield them also
-    @threadsafe_generator
     def subscribers():
         receivers2 = []
         for s in Subscriber.objects.filter(**filter_args).distinct().order_by('user__email').iterator():
@@ -114,144 +111,119 @@ def build_and_send(category, nthreads, no_deliver, starting_from_s, starting_fro
         for sus_id in receivers2:
             yield Subscriber.objects.get(id=sus_id), False
 
-    # create global counters
-    counters = []
+    # Connect to the SMTP server and send all emails
+    try:
+        smtp = None if no_deliver else smtp_connect()
+    except error:
+        log.error("MTA down, '%s' was used for ids_ending_with" % ids_ending_with)
+        return
 
-    # define the function to be executed by each thread
-    def send(func, results, index):
-        # Connect to the SMTP server and send all emails
-        try:
-            smtp = None if no_deliver else smtp_connect()
-        except error:
-            log.warning('MTA down for this thread')
-            results[index] = 1
-            return
-
-        retry_last_delivery = False
-
-        subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
-        site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
-        list_id = '%s <%s.%s>' % (category.slug, __name__, settings.SITE_DOMAIN)
-
-        # iterate and send
-        while True:
-
-            try:
-                if not retry_last_delivery:
-                    s, is_subscriber = func()
-                headers, hashed_id = {'List-ID': list_id}, hashids.encode(int(s.id))
-                unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                    '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
-                headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
-
-                msg = Message(
-                    html=render_to_string(
-                        '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug),
-                        {
-                            'site_url': site_url,
-                            'category': category,
-                            'featured_article': featured_article,
-                            'opinion_article': opinion_article,
-                            'cover_article': cover_article,
-                            'cover_article_section': cover_article_section,
-                            'articles': top_articles,
-                            'newsletter_campaign': category.slug,
-                            'hashed_id': hashed_id,
-                            'unsubscribe_url': unsubscribe_url,
-                            'ga_property_id': getattr(settings, 'GA_PROPERTY_ID', None),
-                            'subscriber_id': s.id,
-                            'is_subscriber': is_subscriber,
-                        },
-                    ),
-                    mail_to=(s.name, s.user.email),
-                    subject=remove_markup(cover_article.headline),
-                    mail_from=(u'%s %s' % (site.name, category.name), settings.NOTIFICATIONS_FROM_ADDR1),
-                    headers=headers,
-                )
-
-                # attach ads if any
-                for f_ad in f_ads:
-                    f_ad_basename = os.path.basename(f_ad)
-                    msg.attach(filename=f_ad_basename, data=open(f_ad, "rb"))
-
-                # send using smtp to receive bounces in another mailbox
-                try:
-                    if not no_deliver:
-                        smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [s.user.email], msg.as_string())
-                    log.info(
-                        "Email %s to %ssubscriber %s\t%s" % (
-                            'simulated' if no_deliver else 'sent', '' if is_subscriber else 'non-', s.id, s.user.email
-                        )
-                    )
-                    if is_subscriber:
-                        subscriber_sent += 1
-                    else:
-                        user_sent += 1
-                except smtplib.SMTPRecipientsRefused:
-                    log.warning(
-                        "Email refused for %ssubscriber %s\t%s" % ('' if is_subscriber else 'non-', s.id, s.user.email)
-                    )
-                    if is_subscriber:
-                        subscriber_refused += 1
-                    else:
-                        user_refused += 1
-                except smtplib.SMTPServerDisconnected:
-                    # Retries are made only once per iteration to avoid infinite loop if MTA got down at all
-                    retry_last_delivery = not retry_last_delivery
-                    log_message = "MTA down, email to %s not sent. Reconnecting " % s.user.email
-                    if retry_last_delivery:
-                        log.warning(log_message + "to retry ...")
-                    else:
-                        log.error(log_message + "for the next delivery ...")
-                    try:
-                        smtp = smtp_connect()
-                    except error:
-                        log.warning('MTA reconnect failed')
-                else:
-                    retry_last_delivery = False
-
-            except (ProgrammingError, OperationalError, StopIteration) as exc:
-                # the connection to databse can be killed, if that is the case print useful log to continue
-                if isinstance(exc, (ProgrammingError, OperationalError)):
-                    log.error(
-                        'DB connection error, (%s, %s, %s) was the last delivery in this thread' % (
-                            s.user.email, is_subscriber, ids_ending_with
-                        )
-                    )
-                # append data processed to global results and quit.
-                # this can be done because list.append is threadsafe.
-                counters.append((subscriber_sent, user_sent, subscriber_refused, user_refused))
-                break
-
-        if not no_deliver:
-            try:
-                smtp.quit()
-            except smtplib.SMTPServerDisconnected:
-                pass
-
-    # create threads
-    subscribers_iter, results = subscribers(), [0] * nthreads
-    threads = [Thread(target=send, args=(subscribers_iter.next, results, i)) for i in range(nthreads)]
-
-    # start threads
-    for t in threads:
-        t.start()
-
-    # wait for threads to finish
-    for t in threads:
-        t.join()
-
-    if sum(results) == nthreads:
-        # All threads got socket.error at the beginning, log this error
-        log.error("All threads got MTA down, '%s' was used for ids_ending_with" % ids_ending_with)
-
-    # sum total counters
     subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
-    for counter0, counter1, counter2, counter3 in counters:
-        subscriber_sent += counter0
-        user_sent += counter1
-        subscriber_refused += counter2
-        user_refused += counter3
+    site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
+    list_id = '%s <%s.%s>' % (category.slug, __name__, settings.SITE_DOMAIN)
+
+    # fixed email data
+    email_template = '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug)
+    ga_property_id = getattr(settings, 'GA_PROPERTY_ID', None)
+    email_subject = (
+        getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category.slug, u'')
+        + remove_markup(cover_article.headline)
+    )
+    email_from = (u'%s %s' % (site.name, category.name), settings.NOTIFICATIONS_FROM_ADDR1)
+
+    # iterate and send
+    retry_last_delivery, s, is_subscriber, subscribers_iter = False, None, None, subscribers()
+    while True:
+
+        try:
+            if not retry_last_delivery:
+                s, is_subscriber = subscribers_iter.next()
+            headers, hashed_id = {'List-ID': list_id}, hashids.encode(int(s.id))
+            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
+                '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
+            headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
+
+            msg = Message(
+                html=render_to_string(
+                    email_template,
+                    {
+                        'site_url': site_url,
+                        'category': category,
+                        'featured_article': featured_article,
+                        'opinion_article': opinion_article,
+                        'cover_article': cover_article,
+                        'cover_article_section': cover_article_section,
+                        'articles': top_articles,
+                        'newsletter_campaign': category.slug,
+                        'hashed_id': hashed_id,
+                        'unsubscribe_url': unsubscribe_url,
+                        'ga_property_id': ga_property_id,
+                        'subscriber_id': s.id,
+                        'is_subscriber': is_subscriber,
+                    },
+                ),
+                mail_to=(s.name, s.user.email),
+                subject=email_subject,
+                mail_from=email_from,
+                headers=headers,
+            )
+
+            # attach ads if any
+            for f_ad in f_ads:
+                f_ad_basename = os.path.basename(f_ad)
+                msg.attach(filename=f_ad_basename, data=open(f_ad, "rb"))
+
+            # send using smtp to receive bounces in another mailbox
+            try:
+                if not no_deliver:
+                    smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [s.user.email], msg.as_string())
+                log.info(
+                    "Email %s to %ssubscriber %s\t%s" % (
+                        'simulated' if no_deliver else 'sent', '' if is_subscriber else 'non-', s.id, s.user.email
+                    )
+                )
+                if is_subscriber:
+                    subscriber_sent += 1
+                else:
+                    user_sent += 1
+            except smtplib.SMTPRecipientsRefused:
+                log.warning(
+                    "Email refused for %ssubscriber %s\t%s" % ('' if is_subscriber else 'non-', s.id, s.user.email)
+                )
+                if is_subscriber:
+                    subscriber_refused += 1
+                else:
+                    user_refused += 1
+            except smtplib.SMTPServerDisconnected:
+                # Retries are made only once per iteration to avoid infinite loop if MTA got down at all
+                retry_last_delivery = not retry_last_delivery
+                log_message = "MTA down, email to %s not sent. Reconnecting " % s.user.email
+                if retry_last_delivery:
+                    log.warning(log_message + "to retry ...")
+                else:
+                    log.error(log_message + "for the next delivery ...")
+                try:
+                    smtp = smtp_connect()
+                except error:
+                    log.warning('MTA reconnect failed')
+            else:
+                retry_last_delivery = False
+
+        except (ProgrammingError, OperationalError, StopIteration) as exc:
+            # the connection to databse can be killed, if that is the case print useful log to continue
+            if isinstance(exc, (ProgrammingError, OperationalError)):
+                log.error(
+                    'DB connection error, (%s, %s, %s) was the last delivery attempt' % (
+                        s.user.email if s else None, is_subscriber, ids_ending_with
+                    )
+                )
+            break
+
+    if not no_deliver:
+        try:
+            smtp.quit()
+        except smtplib.SMTPServerDisconnected:
+            pass
 
     # update log stats counters only if subscriber_ids not given
     if not subscriber_ids:
@@ -294,14 +266,6 @@ class Command(BaseCommand):
         parser.add_argument('category_slug', nargs=1, type=unicode)
         parser.add_argument('subscriber_ids', nargs='*', type=long)
         parser.add_argument(
-            '--nthreads',
-            action='store',
-            type=int,
-            dest='nthreads',
-            default=2,
-            help='Number of threads to use for delivery, default 2.',
-        )
-        parser.add_argument(
             '--no-deliver',
             action='store_true',
             default=False,
@@ -335,12 +299,10 @@ class Command(BaseCommand):
         h = logging.FileHandler(filename=settings.SENDNEWSLETTER_LOGFILE % (category_slug, today.strftime('%Y%m%d')))
         h.setFormatter(log_formatter)
         log.addHandler(h)
-        category = Category.objects.get(slug=category_slug)
-        no_deliver = options.get('no_deliver')
-        start_time, nthreads = time.time(), options.get('nthreads')
+        category, no_deliver = Category.objects.get(slug=category_slug), options.get('no_deliver')
+        start_time = time.time()
         build_and_send(
             category,
-            nthreads,
             no_deliver,
             options.get('starting_from_s'),
             options.get('starting_from_ns'),
@@ -348,7 +310,5 @@ class Command(BaseCommand):
             options.get('subscriber_ids'),
         )
         log.info(
-            "%s completed in %.0f seconds using %d threads" % (
-                'Simulation' if no_deliver else 'Delivery', time.time() - start_time, nthreads
-            )
+            "%s completed in %.0f seconds" % ('Simulation' if no_deliver else 'Delivery', time.time() - start_time)
         )
