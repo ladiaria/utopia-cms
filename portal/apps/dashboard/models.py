@@ -34,9 +34,13 @@ class NewsletterDelivery(Model):
 
     def get_newsletter_name(self):
         try:
-            return Publication.objects.get(newsletter_campaign=self.newsletter_name).newsletter_name
+            p = Publication.objects.get(newsletter_campaign=self.newsletter_name)
+            return p.newsletter_name or p.newsletter_campaign
         except Publication.DoesNotExist:
-            return Category.objects.get(slug=self.newsletter_name).name
+            try:
+                return Category.objects.get(slug=self.newsletter_name).name
+            except Category.DoesNotExist:
+                return self.newsletter_name
 
     get_newsletter_name.short_description = u'newsletter'
 
