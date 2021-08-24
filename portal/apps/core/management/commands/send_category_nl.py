@@ -17,8 +17,9 @@ from django.db import close_old_connections, connection, IntegrityError, Operati
 from django.core.management.base import BaseCommand
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from django.template.loader import render_to_string
+from django.template import Engine, Context
 from django.contrib.sites.models import Site
+from django.utils import translation
 
 from core.models import Category, Section, Article, get_latest_edition
 from core.templatetags.core_tags import remove_markup
@@ -123,13 +124,21 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
     list_id = '%s <%s.%s>' % (category.slug, __name__, settings.SITE_DOMAIN)
 
     # fixed email data
-    email_template = '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug)
+    email_template = Engine.get_default().get_template(
+        '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug)
+    )
     ga_property_id = getattr(settings, 'GA_PROPERTY_ID', None)
     email_subject = (
         getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category.slug, u'')
         + remove_markup(cover_article.headline)
     )
-    email_from = (u'%s %s' % (site.name, category.name), settings.NOTIFICATIONS_FROM_ADDR1)
+    email_from = (
+        site.name if category.slug in getattr(
+            settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ()
+        ) else (u'%s %s' % (site.name, category.name)),
+        settings.NOTIFICATIONS_FROM_ADDR1,
+    )
+    translation.activate(settings.LANGUAGE_CODE)
 
     # iterate and send
     retry_last_delivery, s, is_subscriber, subscribers_iter = False, None, None, subscribers()
@@ -144,23 +153,24 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
             headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
 
             msg = Message(
-                html=render_to_string(
-                    email_template,
-                    {
-                        'site_url': site_url,
-                        'category': category,
-                        'featured_article': featured_article,
-                        'opinion_article': opinion_article,
-                        'cover_article': cover_article,
-                        'cover_article_section': cover_article_section,
-                        'articles': top_articles,
-                        'newsletter_campaign': category.slug,
-                        'hashed_id': hashed_id,
-                        'unsubscribe_url': unsubscribe_url,
-                        'ga_property_id': ga_property_id,
-                        'subscriber_id': s.id,
-                        'is_subscriber': is_subscriber,
-                    },
+                html=email_template.render(
+                    Context(
+                        {
+                            'site_url': site_url,
+                            'category': category,
+                            'featured_article': featured_article,
+                            'opinion_article': opinion_article,
+                            'cover_article': cover_article,
+                            'cover_article_section': cover_article_section,
+                            'articles': top_articles,
+                            'newsletter_campaign': category.slug,
+                            'hashed_id': hashed_id,
+                            'unsubscribe_url': unsubscribe_url,
+                            'ga_property_id': ga_property_id,
+                            'subscriber_id': s.id,
+                            'is_subscriber': is_subscriber,
+                        }
+                    )
                 ),
                 mail_to=(s.name, s.user.email),
                 subject=email_subject,

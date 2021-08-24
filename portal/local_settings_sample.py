@@ -55,8 +55,8 @@ USE_I18N = True
 
 DATE_FORMAT = 'l j de F de Y'
 TIME_FORMAT = 'H:i:s'
-DATETIME_FORMAT = '%s%s%s' % (DATE_FORMAT, ' ', TIME_FORMAT)
-SHORT_DATE_FORMAT = "%m/%d/%Y"
+DATETIME_FORMAT = '%s %s' % (DATE_FORMAT, TIME_FORMAT)
+SHORT_DATE_FORMAT = 'd/m/Y'
 
 SECURE_STATIC_URL = '/static/'
 

@@ -207,7 +207,6 @@ LOCAL_LANG = 'es'
 DEFAULT_CHARSET = 'utf-8'
 LOCAL_COUNTRY = 'UY'
 
-DATE_FORMAT = '%l/%n/%Y'
 DATE_INPUT_FORMATS = (
     '%Y-%m-%d', '%d/%m/%Y', '%d/%m/%y',  # 2006-10-25, 25/10/2006, 25/10/06
 )

@@ -1,14 +1,51 @@
 # -*- coding: utf-8 -*-
 
-from django.contrib.admin import ModelAdmin, site
+from django.contrib.admin import ModelAdmin, SimpleListFilter, site
 from dashboard.models import NewsletterDelivery, AudioStatistics
 
 
+class NLNameFilter(SimpleListFilter):
+    title = 'newsletter name'
+    parameter_name = 'newsletter_name'
+
+    def lookups(self, request, model_admin):
+        return [
+            (nld.newsletter_name, nld.get_newsletter_name()) for nld in NewsletterDelivery.objects.raw(
+                'SELECT id,newsletter_name FROM %s GROUP BY newsletter_name' % NewsletterDelivery._meta.db_table
+            )
+        ]
+
+    def queryset(self, request, queryset):
+        newsletter_name = self.value()
+        return queryset.filter(newsletter_name=newsletter_name) if newsletter_name else queryset
+
+
 class NewsletterDeliveryAdmin(ModelAdmin):
-    list_display = readonly_fields = (
-        'delivery_date', 'newsletter_name', 'user_sent', 'subscriber_sent', 'user_refused', 'subscriber_refused',
-        'user_opened', 'subscriber_opened', 'user_bounces', 'subscriber_bounces')
-    list_filter = ('newsletter_name', )
+    list_display = (
+        'delivery_date_short',
+        'get_newsletter_name',
+        'user_sent',
+        'subscriber_sent',
+        'user_refused',
+        'subscriber_refused',
+        'user_opened',
+        'subscriber_opened',
+        'user_bounces',
+        'subscriber_bounces',
+    )
+    readonly_fields = (
+        'delivery_date',
+        'newsletter_name',
+        'user_sent',
+        'subscriber_sent',
+        'user_refused',
+        'subscriber_refused',
+        'user_opened',
+        'subscriber_opened',
+        'user_bounces',
+        'subscriber_bounces',
+    )
+    list_filter = (NLNameFilter, )
     date_hierarchy = 'delivery_date'
 
 
