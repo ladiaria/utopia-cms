@@ -110,7 +110,11 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
                     if not starting_from_ns or (starting_from_ns and s.user.email > starting_from_ns):
                         receivers2.append(s.id)
         for sus_id in receivers2:
-            yield Subscriber.objects.get(id=sus_id), False
+            try:
+                yield Subscriber.objects.get(id=sus_id), False
+            except Subscriber.DoesNotExist:
+                # rare, but could be recently deleted
+                continue
 
     # Connect to the SMTP server and send all emails
     try:
