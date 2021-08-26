@@ -13,7 +13,6 @@ from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
-from django.db import IntegrityError
 from django_markdown.widgets import MarkdownWidget
 
 from actstream.models import Action
@@ -52,6 +51,7 @@ class ArticleRelForm(ModelForm):
     class Meta:
         fields = ('article', 'top_position')
         model = ArticleRel
+
 
 class TopArticleRelBaseInlineFormSet(BaseInlineFormSet):
 
@@ -558,6 +558,15 @@ class LocationAdmin(ModelAdmin):
     pass
 
 
+class PublicationAdminChangelistForm(ModelForm):
+    name = CharField(widget=TextInput(attrs={'size': 15}))
+    headline = CharField(widget=TextInput(attrs={'size': 25}))
+
+    class Meta:
+        model = Publication
+        fields = ('name', 'headline', 'weight', 'public', 'has_newsletter')
+
+
 class PublicationAdmin(ModelAdmin):
     list_display = (
         'id',
@@ -573,6 +582,10 @@ class PublicationAdmin(ModelAdmin):
     )
     list_editable = ('name', 'headline', 'weight', 'public', 'has_newsletter')
     raw_id_fields = ('full_width_cover_image', )
+
+    def get_changelist_form(self, request, **kwargs):
+        kwargs.setdefault('form', PublicationAdminChangelistForm)
+        return super(PublicationAdmin, self).get_changelist_form(request, **kwargs)
 
 
 class CategoryAdmin(ModelAdmin):

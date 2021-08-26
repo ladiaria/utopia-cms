@@ -3,7 +3,6 @@
 import sys
 import os
 import logging
-import csv
 import smtplib
 import time
 from MySQLdb import ProgrammingError
@@ -15,15 +14,15 @@ from emails.django import DjangoMessage as Message
 from django.conf import settings
 from django.db import close_old_connections, connection, IntegrityError, OperationalError
 from django.core.management.base import BaseCommand
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError
 from django.template import Engine, Context
 from django.contrib.sites.models import Site
 from django.utils import translation
 
+from apps import blacklisted
 from core.models import Category, Section, Article, get_latest_edition
 from core.templatetags.core_tags import remove_markup
 from thedaily.models import Subscriber
+from thedaily.utils import subscribers_nl_iter
 from dashboard.models import NewsletterDelivery
 from libs.utils import smtp_connect
 
@@ -82,39 +81,13 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
     # f_ads = ['/srv/ldsocial/portal/media/document.pdf']
     f_ads = []
 
-    filter_args = {'user__is_active': True}
+    receivers = Subscriber.objects.filter(user__is_active=True).exclude(user__email='')
     if subscriber_ids:
-        filter_args['id__in'] = subscriber_ids
+        receivers = receivers.filter(id__in=subscriber_ids)
     else:
-        filter_args['category_newsletters__slug'] = category.slug
+        receivers = receivers.filter(category_newsletters__slug=category.slug).exclude(user__email__in=blacklisted)
         if ids_ending_with:
-            filter_args['id__iregex'] = r'^\d*[%s]$' % ids_ending_with
-
-    blacklisted = set([row[0] for row in csv.reader(open(settings.CORE_NEWSLETTER_BLACKLIST))])
-
-    # iterate over receivers and yield the subscribers first, saving the
-    # not subscribers ids in a temporal list an then yield them also
-    def subscribers():
-        receivers2 = []
-        for s in Subscriber.objects.filter(**filter_args).distinct().order_by('user__email').iterator():
-            if s.user and s.user.email and s.user.email not in blacklisted:
-                # validate email before doing anything
-                try:
-                    validate_email(s.user.email)
-                except ValidationError:
-                    continue
-                if s.is_subscriber():
-                    if not starting_from_s or (starting_from_s and s.user.email > starting_from_s):
-                        yield s, True
-                else:
-                    if not starting_from_ns or (starting_from_ns and s.user.email > starting_from_ns):
-                        receivers2.append(s.id)
-        for sus_id in receivers2:
-            try:
-                yield Subscriber.objects.get(id=sus_id), False
-            except Subscriber.DoesNotExist:
-                # rare, but could be recently deleted
-                continue
+            receivers = receivers.filter(id__iregex=r'^\d*[%s]$' % ids_ending_with)
 
     # Connect to the SMTP server and send all emails
     try:
@@ -145,7 +118,8 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
     translation.activate(settings.LANGUAGE_CODE)
 
     # iterate and send
-    retry_last_delivery, s, is_subscriber, subscribers_iter = False, None, None, subscribers()
+    retry_last_delivery, s, is_subscriber = False, None, None
+    subscribers_iter = subscribers_nl_iter(receivers, starting_from_s, starting_from_ns)
     while True:
 
         try:

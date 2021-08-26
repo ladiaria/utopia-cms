@@ -45,6 +45,7 @@ from django.shortcuts import get_object_or_404
 from managers import PublishedArticleManager
 from utils import get_pdf_pdf_upload_to, get_pdf_cover_upload_to
 
+from apps import blacklisted
 from core.utils import CT, smart_quotes
 from core.templatetags.ldml import ldmarkup, cleanhtml
 from photologue_ladiaria.models import PhotoExtended
@@ -73,7 +74,7 @@ class Publication(Model):
         u'descripción', null=True, blank=True, help_text=u'Se muestra en el componente de portada.'
     )
     slug = SlugField(u'slug', unique=True)
-    headline = CharField(u'title / Asunto de newsletter (NL)', max_length=100)
+    headline = CharField(u'título', max_length=100)
     weight = PositiveSmallIntegerField(u'orden', default=0)
     public = BooleanField(u'público', default=True)
     has_newsletter = BooleanField(u'tiene NL', default=False)
@@ -141,10 +142,13 @@ class Publication(Model):
         return ([cover_article] + top_arts) if cover_article else top_arts
 
     def subscriber_count(self):
-        blacklisted = set([row[0] for row in csv.reader(open(settings.CORE_NEWSLETTER_BLACKLIST))]) if \
-            hasattr(settings, 'CORE_NEWSLETTER_BLACKLIST') else set()
-        subscribed = set(self.subscriber_set.filter(user__email__isnull=False).values_list('user__email', flat=True))
-        return len(subscribed - blacklisted)
+        return len(
+            set(
+                self.subscriber_set.filter(
+                    user__is_active=True
+                ).exclude(user__email='').values_list('user__email', flat=True)
+            ) - blacklisted
+        )
     subscriber_count.short_description = u'Suscrip. NL'
 
     def image_tag(self):
@@ -427,15 +431,23 @@ class Category(Model):
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
     title = CharField(u'título en el componente de portada', max_length=50, blank=True, null=True)
     more_link_title = CharField(
-        u'texto en el link "más" del componente de portada', max_length=50, blank=True, null=True)
+        u'texto en el link "más" del componente de portada', max_length=50, blank=True, null=True
+    )
     new_pill = BooleanField(u'pill de "nuevo" en el componente de portada', default=False)
     full_width_cover_image = ForeignKey(Photo, verbose_name=u'foto full de portada', blank=True, null=True)
     full_width_cover_image_title = CharField(
-        u'título para foto full', max_length=50, null=True, blank=True,
-        help_text=u'Se muestra sólo si la foto está seteada. (Máx 50 caract.)')
+        u'título para foto full',
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text=u'Se muestra sólo si la foto está seteada. (Máx 50 caract.)',
+    )
     full_width_cover_image_lead = TextField(
-        u'bajada para foto full', null=True, blank=True,
-        help_text=u'Se muestra sólo si la foto y el título están seteados.')
+        u'bajada para foto full',
+        null=True,
+        blank=True,
+        help_text=u'Se muestra sólo si la foto y el título están seteados.',
+    )
     exclude_from_top_menu = BooleanField(u'Excluir ítem en menú superior de escritorio', default=False)
 
     def __unicode__(self):
@@ -490,10 +502,13 @@ class Category(Model):
         return self.mas_leidos(30)
 
     def subscriber_count(self):
-        blacklisted = set([row[0] for row in csv.reader(open(settings.CORE_NEWSLETTER_BLACKLIST))]) if \
-            hasattr(settings, 'CORE_NEWSLETTER_BLACKLIST') else set()
-        subscribed = set(self.subscriber_set.filter(user__email__isnull=False).values_list('user__email', flat=True))
-        return len(subscribed - blacklisted)
+        return len(
+            set(
+                self.subscriber_set.filter(
+                    user__is_active=True
+                ).exclude(user__email='').values_list('user__email', flat=True)
+            ) - blacklisted
+        )
     subscriber_count.short_description = u'Suscrip. NL'
 
     def get_full_width_cover_image_tag(self):
