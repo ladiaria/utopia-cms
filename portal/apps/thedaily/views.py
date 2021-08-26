@@ -36,7 +36,7 @@ from formtools.wizard.views import SessionWizardView
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.cache import never_cache
+from django.views.decorators.cache import never_cache, cache_control
 
 from actstream import actions
 from actstream.models import following
@@ -156,6 +156,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 
 
 @never_cache
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def login(request):
     next_page = request.session.get('next', request.GET.get('next', '/'))
 
@@ -165,7 +166,7 @@ def login(request):
     initial, name_or_mail = {}, request.GET.get('name_or_mail')
     if name_or_mail:
         initial['name_or_mail'] = name_or_mail
-    login_form, login_error = LoginForm(initial=initial), None
+    response, login_form, login_error = None, LoginForm(initial=initial), None
     if request.method == 'POST':
         login_form = LoginForm(request.POST)
         if login_form.is_valid():
@@ -174,9 +175,9 @@ def login(request):
                 if user.is_active:
                     do_login(request, user)
                     request.session.pop('next', None)
-                    return HttpResponseRedirect(next_page)
+                    response = HttpResponseRedirect(next_page)
                 else:
-                    return HttpResponseRedirect(reverse('account-confirm_email'))
+                    response = HttpResponseRedirect(reverse('account-confirm_email'))
             else:
                 login_error = u'Usuario y/o contraseña incorrectos.'
         else:
@@ -189,11 +190,14 @@ def login(request):
                 login_form.errors['__all__'].append(login_error)
             else:
                 login_form.errors['__all__'] = [login_error]
-    return render(
-        request,
-        getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html'),
-        {'login_form': login_form, 'next_page': next_page, 'next': pathname2url(next_page)},
-    )
+    if not response:
+        response = render(
+            request,
+            getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html'),
+            {'login_form': login_form, 'next_page': next_page, 'next': pathname2url(next_page)},
+        )
+    response['Expires'], response['Pragma'] = 0, 'no-cache'
+    return response
 
 
 @never_cache
