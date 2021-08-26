@@ -86,6 +86,9 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
         receivers = receivers.filter(id__in=subscriber_ids)
     else:
         receivers = receivers.filter(category_newsletters__slug=category.slug).exclude(user__email__in=blacklisted)
+        # if both "starting_from" we can filter now with the minimum
+        if starting_from_s and starting_from_ns:
+            receivers = receivers.filter(user__email__gt=min(starting_from_s, starting_from_ns))
         if ids_ending_with:
             receivers = receivers.filter(id__iregex=r'^\d*[%s]$' % ids_ending_with)
 
