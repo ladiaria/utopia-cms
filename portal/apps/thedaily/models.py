@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import re
-import csv
 import requests
 import pymongo
 
@@ -127,19 +126,27 @@ class Subscriber(Model):
         self.save()
 
     def is_subscriber(self, pub_slug=settings.DEFAULT_PUB):
-        if self.user:
-            if self.user.is_staff:
-                return True
+        try:
 
-            elif pub_slug in getattr(settings, 'THEDAILY_IS_SUBSCRIBER_CUSTOM_PUBLICATIONS', ()):
-                is_subscriber_custom = __import__(
-                    settings.THEDAILY_IS_SUBSCRIBER_CUSTOM_MODULE, fromlist=['is_subscriber']).is_subscriber
-                return is_subscriber_custom(self, pub_slug)
+            if self.user:
 
-            else:
-                return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
-        else:
-            return False
+                if self.user.is_staff:
+                    return True
+
+                elif pub_slug in getattr(settings, 'THEDAILY_IS_SUBSCRIBER_CUSTOM_PUBLICATIONS', ()):
+                    is_subscriber_custom = __import__(
+                        settings.THEDAILY_IS_SUBSCRIBER_CUSTOM_MODULE, fromlist=['is_subscriber']
+                    ).is_subscriber
+                    return is_subscriber_custom(self, pub_slug)
+
+                else:
+                    return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
+
+        except User.DoesNotExist:
+            # rare, but we saw once this exception happen
+            pass
+
+        return False
 
     def is_digital_only(self):
         """ Returns True only if this subcriber is subscribed only to the "digital" edition """
@@ -342,7 +349,8 @@ class SubscriberEvent(Model):
 
 class EditionDownload(Model):
     subscriber = ForeignKey(
-        SubscriberEditionDownloads, related_name='subscriber_downloads',verbose_name=u'suscriptor')
+        SubscriberEditionDownloads, related_name='subscriber_downloads', verbose_name=u'suscriptor'
+    )
     incomplete = BooleanField(default=True)
     download_date = DateTimeField(auto_now_add=True)
 
