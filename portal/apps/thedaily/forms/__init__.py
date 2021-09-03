@@ -13,16 +13,7 @@ from django.shortcuts import get_object_or_404
 
 from django.core.mail import mail_managers
 from django.forms import (
-    Form,
-    ModelForm,
-    CharField,
-    EmailField,
-    PasswordInput,
-    TextInput,
-    Textarea,
-    HiddenInput,
-    ChoiceField,
-    ValidationError,
+    Form, ModelForm, CharField, EmailField, PasswordInput, TextInput, HiddenInput, ChoiceField, ValidationError
 )
 
 from django.core.urlresolvers import reverse
@@ -58,7 +49,10 @@ class LoginForm(Form):
     """ Login form """
 
     name_or_mail = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
-    password = CharField(label='Contraseña', widget=PasswordInput(attrs={'class': CSS_CLASS}))
+    password = CharField(
+        label='Contraseña',
+        widget=PasswordInput(attrs={'class': CSS_CLASS, 'autocomplete': 'current-password', 'autocapitalize': 'none'}),
+    )
 
     def __init__(self, *args, **kwargs):
         self.helper = FormHelper()
@@ -108,10 +102,20 @@ class LoginForm(Form):
 class SignupForm(ModelForm):
     """ Formulario con campos para crear una instancia del modelo User """
 
-    first_name = CharField(label=u'Nombre')
-    email = EmailField(label=u'Email', widget=EmailInput(attrs={'inputmode': 'email'}))
-    phone = CharField(label='Teléfono',widget=PhoneInput(attrs={'class': 'textinput textInput'}))
-    password = CharField(label=u'Contraseña', widget=PasswordInput())
+    first_name = CharField(
+        label=u'Nombre',
+        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
+    )
+    email = EmailField(
+        label=u'Email',
+        widget=EmailInput(
+            attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
+        ),
+    )
+    phone = CharField(
+        label='Teléfono',
+        widget=PhoneInput(attrs={'class': 'textinput textInput', 'autocomplete': 'tel', 'spellcheck': 'false'}),
+    )
     next_page = CharField(required=False, widget=HiddenInput())
 
     def __init__(self, *args, **kwargs):
@@ -142,6 +146,16 @@ class SignupForm(ModelForm):
     class Meta:
         model = User
         fields = ('first_name', 'email', 'password')
+        widgets = {
+            'password': PasswordInput(
+                attrs={
+                    'class': 'textinput textInput',
+                    'autocomplete': 'new-password',
+                    'autocapitalize': 'none',
+                    'spellcheck': 'false',
+                }
+            ),
+        }
 
     def clean(self):
         cleaned_data = super(SignupForm, self).clean()
@@ -212,9 +226,20 @@ class SignupForm(ModelForm):
 class SubscriberForm(ModelForm):
     """ Formulario con la información para crear un suscriptor """
 
-    first_name = CharField(label='Nombre')
-    email = EmailField(label=u'Email', widget=EmailInput(attrs={'inputmode': 'email'}))
-    telephone = CharField(label=u'Teléfono', widget=PhoneInput(attrs={'class': 'textinput textInput'}))
+    first_name = CharField(
+        label=u'Nombre',
+        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
+    )
+    email = EmailField(
+        label=u'Email',
+        widget=EmailInput(
+            attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
+        ),
+    )
+    telephone = CharField(
+        label=u'Teléfono',
+        widget=PhoneInput(attrs={'class': 'textinput textInput', 'autocomplete': 'tel', 'spellcheck': 'false'}),
+    )
 
     helper = FormHelper()
     helper.form_tag = False
@@ -269,7 +294,12 @@ class SubscriberForm(ModelForm):
 
 
 class SubscriberAddressForm(SubscriberForm):
-    address = CharField(label='Dirección')
+    address = CharField(
+        label=u'Dirección',
+        widget=TextInput(
+            attrs={'autocomplete': 'street-address', 'autocapitalize': 'sentences', 'spellcheck': 'false'}
+        ),
+    )
     city = CharField(label='Ciudad')
     province = ChoiceField(
         label='Departamento',
@@ -324,7 +354,17 @@ class SubscriberSubmitForm(SubscriberForm):
 
 class SubscriberSignupForm(SubscriberForm):
     """ Adds a password to the SubscriberForm to also signup """
-    password = CharField(label=u'Contraseña', widget=PasswordInput())
+    password = CharField(
+        label=u'Contraseña',
+        widget=PasswordInput(
+            attrs={
+                'class': 'textinput textInput',
+                'autocomplete': 'new-password',
+                'autocapitalize': 'none',
+                'spellcheck': 'false',
+            }
+        ),
+    )
 
     helper = FormHelper()
     helper.form_tag = False
@@ -366,7 +406,17 @@ class SubscriberSignupForm(SubscriberForm):
 
 class SubscriberSignupAddressForm(SubscriberAddressForm):
     """ Adds password (like SubscriberSignupForm) and address """
-    password = CharField(label=u'Contraseña', widget=PasswordInput())
+    password = CharField(
+        label=u'Contraseña',
+        widget=PasswordInput(
+            attrs={
+                'class': 'textinput textInput',
+                'autocomplete': 'new-password',
+                'autocapitalize': 'none',
+                'spellcheck': 'false',
+            }
+        ),
+    )
 
     helper = FormHelper()
     helper.form_tag = False
@@ -544,6 +594,7 @@ class GoogleSigninForm(ModelForm):
             'allow_polls',
             'last_paid_subscription',
         )
+        widgets = {'phone': PhoneInput(attrs={'autocomplete': 'tel', 'spellcheck': 'false'})}
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')
@@ -658,7 +709,10 @@ class PasswordResetRequestForm(Form):
 
 
 class ConfirmEmailRequestForm(Form):
-    email = EmailField(label=u'Email', widget=EmailInput(attrs={'inputmode': 'email'}))
+    email = EmailField(
+        label=u'Email',
+        widget=EmailInput(attrs={'inputmode': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}),
+    )
 
     helper = FormHelper()
     helper.form_id = 'confirm_email'
@@ -704,9 +758,13 @@ class ConfirmEmailRequestForm(Form):
 
 class PasswordChangeBaseForm(Form):
     new_password_1 = CharField(
-        label=u'Nueva contraseña', widget=PasswordInput(attrs={"autocomplete": "new-password"}))
+        label=u'Nueva contraseña',
+        widget=PasswordInput(attrs={"autocomplete": "new-password", 'autocapitalize': 'none', 'spellcheck': 'false'}),
+    )
     new_password_2 = CharField(
-        label=u'Repetir contraseña', widget=PasswordInput(attrs={"autocomplete": "new-password"}))
+        label=u'Repetir contraseña',
+        widget=PasswordInput(attrs={"autocomplete": "new-password", 'autocapitalize': 'none', 'spellcheck': 'false'}),
+    )
 
     def clean(self):
         p1 = self.data.get('new_password_1', '')
@@ -724,7 +782,11 @@ class PasswordChangeBaseForm(Form):
 
 class PasswordChangeForm(PasswordChangeBaseForm):
     old_password = CharField(
-        label=u'Contraseña actual', widget=PasswordInput())
+        label=u'Contraseña actual',
+        widget=PasswordInput(
+            attrs={'autocomplete': 'current-password', 'autocapitalize': 'none', 'spellcheck': 'false'}
+        ),
+    )
 
     def __init__(self, *args, **kwargs):
         self.helper = FormHelper()
@@ -758,7 +820,10 @@ class PasswordChangeForm(PasswordChangeBaseForm):
 
 
 class PasswordResetForm(PasswordChangeBaseForm):
-    new_password_1 = CharField(label=u'Contraseña', widget=PasswordInput(attrs={"autocomplete": "new-password"}))
+    new_password_1 = CharField(
+        label=u'Contraseña',
+        widget=PasswordInput(attrs={"autocomplete": "new-password", 'autocapitalize': 'none', 'spellcheck': 'false'}),
+    )
     hash = CharField(widget=HiddenInput())
     gonzo = CharField(widget=HiddenInput())
 
@@ -803,4 +868,3 @@ class PasswordResetForm(PasswordChangeBaseForm):
             if not default_token_generator.check_token(user, self.hash):
                 raise ValidationError('Ocurrió un error interno.')
         return self.data
-

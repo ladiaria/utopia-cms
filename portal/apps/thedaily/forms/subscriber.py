@@ -74,7 +74,11 @@ class UserForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email')
-        widgets = {'email': EmailInput(attrs={'inputmode': 'email'})}
+        widgets = {
+            'email': EmailInput(
+                attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
+            ),
+        }
 
     def clean(self):
         cleaned_data = super(UserForm, self).clean()
@@ -108,4 +112,3 @@ class UserForm(forms.ModelForm):
         if not email:
             raise forms.ValidationError(u'La dirección de correo electrónico no puede ser vacia.')
         return email
-
