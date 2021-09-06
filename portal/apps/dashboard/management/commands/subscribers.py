@@ -2,7 +2,6 @@ from os.path import join
 from unicodecsv import writer
 import operator
 from progress.bar import Bar
-from optparse import make_option
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -11,26 +10,40 @@ from core.models import Article, ArticleViewedBy, Publication, Section
 
 
 class Command(BaseCommand):
-    help = 'Generates the articles report content for subscribers visits'
+    help = u'Generates the articles report content for subscribers visits'
 
-    option_list = BaseCommand.option_list + (
-        make_option(
-            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'),
-        make_option(
-            '--published-since', action='store', type='string', dest='published-since',
-            help='Only count visits of articles published at or after this date, in format : YYYY-mm-dd'),
-        make_option(
-            '--views-since', action='store', type='string', dest='views-since',
-            help='Only count visits at or after this date, in format : YYYY-mm-dd'),
-        make_option(
-            '--out-prefix', action='store', type='string', dest='out-prefix', default='',
-            help=u"Don't make changes to existing files and save generated files with this prefix"),
-    )
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+        )
+        parser.add_argument(
+            '--published-since',
+            action='store',
+            type=unicode,
+            dest='published-since',
+            help='Only count visits of articles published at or after this date, in format : YYYY-mm-dd',
+        )
+        parser.add_argument(
+            '--views-since',
+            action='store',
+            type=unicode,
+            dest='views-since',
+            help='Only count visits at or after this date, in format : YYYY-mm-dd',
+        )
+        parser.add_argument(
+            '--out-prefix',
+            action='store',
+            type=unicode,
+            dest='out-prefix',
+            default=u'',
+            help=u"Don't make changes to existing files and save generated files with this prefix",
+        )
 
     def handle(self, *args, **options):
         published_since, views_since = options.get('published-since'), options.get('views-since')
 
-        filter_articles_kwargs, filter_views_kwargs = {'is_published': True, 'views__gt': 0}, {'user__is_staff': False}
+        filter_articles_kwargs = {'is_published': True, 'views__gt': 0}
+        filter_views_kwargs = {'user__is_staff': False, 'user__subscriber__isnull': False}
 
         if published_since:
             filter_articles_kwargs.update({'date_published__gte': published_since})
@@ -47,25 +60,30 @@ class Command(BaseCommand):
         target_articles, articles, articles_sections = Article.objects.filter(**filter_articles_kwargs), [], {}
         bar = Bar('Processing articles', max=target_articles.count()) if options.get('progress') else None
 
-        for article in target_articles.iterator():
+        for article in target_articles.select_related('main_section__edition').iterator():
             filter_views_kwargs.update({'article': article})
-            views = 0
+            views, article_publications = 0, article.publications()
 
-            for article_view in ArticleViewedBy.objects.select_related('user__subscriber').filter(
-                    **filter_views_kwargs).iterator():
-                if hasattr(article_view.user, 'subscriber') and (article_view.user.subscriber.is_subscriber() or any([
-                        article_view.user.subscriber.is_subscriber(p.slug) for p in article.publications()])):
+            for article_view in ArticleViewedBy.objects.select_related(
+                'user__subscriber'
+            ).filter(**filter_views_kwargs).iterator():
+
+                if (
+                    article_view.user.subscriber.is_subscriber()
+                    or any([article_view.user.subscriber.is_subscriber(p.slug) for p in article_publications])
+                ):
                     views += 1
 
-            articles.append((article.id, views))
-            for ar in article.articlerel_set.iterator():
-                # TODO: get unique pairs (publication, section)
-                year = ar.edition.date_published.year
-                publication = ar.edition.publication.slug
-                section = ar.section.id
-                section_views = articles_sections.get((year, publication, section), 0)
-                section_views += views
-                articles_sections[(year, publication, section)] = section_views
+            if views:
+                articles.append((article.id, views))
+
+                main_section = article.main_section
+                if main_section:
+                    main_publication_id = main_section.edition.publication_id
+                    main_section_id = main_section.section_id
+                    section_views = articles_sections.get((main_publication_id, main_section_id), 0)
+                    section_views += views
+                    articles_sections[(main_publication_id, main_section_id)] = section_views
 
             if bar:
                 bar.next()
@@ -82,16 +100,22 @@ class Command(BaseCommand):
         for article_id, views in articles:
             article = Article.objects.get(id=article_id)
             i += 1
-            w.writerow([
-                i, article.date_published.date(), article.get_absolute_url(), views,
-                ', '.join(['%s' % ar for ar in article.articlerel_set.all()])])
+            w.writerow(
+                [
+                    i,
+                    article.date_published.date(),
+                    article.get_absolute_url(),
+                    views,
+                    ', '.join(['%s' % ar for ar in article.articlerel_set.all()]),
+                ]
+            )
 
-        as_list = [(y, p, s, v) for (y, p, s), v in articles_sections.iteritems()]
-        as_list.sort(key=operator.itemgetter(3), reverse=True)
+        as_list = [(p, s, v) for (p, s), v in articles_sections.iteritems()]
+        as_list.sort(key=operator.itemgetter(2), reverse=True)
         w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, '%ssubscribers_sections.csv' % out_prefix), 'w'))
         i = 0
-        for year, publication_slug, section_id, views in as_list:
+        for publication_id, section_id, views in as_list:
             i += 1
-            publication = Publication.objects.get(slug=publication_slug)
-            section = Section.objects.get(id=section_id)
-            w.writerow([i, year, publication.name, section.name, views])
+            w.writerow(
+                [i, Publication.objects.get(id=publication_id).name, Section.objects.get(id=section_id).name, views]
+            )

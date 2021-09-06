@@ -1,14 +1,14 @@
 # coding=utf-8
 from os.path import join
 import csv
-from datetime import date, timedelta
+from datetime import date
 from dateutil.relativedelta import relativedelta
 
 from django.conf import settings
 
 from decorators import render_response
 
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
 from django.core.exceptions import ValidationError
@@ -33,10 +33,16 @@ def index(request):
         user_groups = request.user.groups.all()
         is_seller = get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None)) in user_groups
         is_financial = get_object_or_404(
-            Group, name=getattr(settings, 'DASHBOARD_FINANCIAL_GROUP', None)) in user_groups
-    return 'index.html', {
-        'activity_rows': is_admin or is_seller, 'is_financial': is_admin or is_financial,
-        'financial_extra_items_template': getattr(settings, 'DASHBOARD_FINANCIAL_EXTRA_ITEMS_TEMPLATE', None)}
+            Group, name=getattr(settings, 'DASHBOARD_FINANCIAL_GROUP', None)
+        ) in user_groups
+    return (
+        'index.html',
+        {
+            'activity_rows': is_admin or is_seller,
+            'is_financial': is_admin or is_financial,
+            'financial_extra_items_template': getattr(settings, 'DASHBOARD_FINANCIAL_EXTRA_ITEMS_TEMPLATE', None),
+        },
+    )
 
 
 @never_cache
@@ -50,8 +56,12 @@ def load_table(request, table_id):
 
     if table_id in ('activity', 'activity_only_digital'):
         # Alow only admins or member of seller group
-        if not (request.user.is_superuser or get_object_or_404(
-                Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None)) in request.user.groups.all()):
+        if not (
+            request.user.is_superuser
+            or get_object_or_404(
+                Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None)
+            ) in request.user.groups.all()
+        ):
             return HttpResponseForbidden()
 
     if month and year and table_id not in ('activity', 'activity_only_digital', 'audio_statistics'):
@@ -75,23 +85,33 @@ def load_table(request, table_id):
         # hardcoded last year filter only for subscribers
         # TODO: implement the year selector
         if table_id == 'subscribers':
-            rows = [row for row in rows if row[1].startswith('2019')]
+            rows = [row for row in rows if row[1].startswith('2021')]
     except Exception:
         rows = None
     else:
         # TODO: show warning if we know the data for the selected table/date was not generated correctly
         pass
 
-    return 'table.html', {
-        'rows': rows, 'table_id': table_id, 'month': month, 'year': year, 'date_start': date_start,
-        'date_end': date_end}
+    return (
+        'table.html',
+        {
+            'rows': rows,
+            'table_id': table_id,
+            'month': month,
+            'year': year,
+            'date_start': date_start,
+            'date_end': date_end,
+        },
+    )
 
 
 @never_cache
 @permission_required('thedaily.change_subscriber')
 def export_csv(request, table_id):
     resp = HttpResponse(
-        content=open(join(settings.DASHBOARD_REPORTS_PATH, '%s.csv' % table_id)).read(), content_type='text/csv')
+        content=open(join(settings.DASHBOARD_REPORTS_PATH, '%s.csv' % table_id)).read(),
+        content_type='text/csv',
+    )
     resp['Content-Disposition'] = 'attachment; filename=%s.csv' % table_id
     return resp
 
@@ -103,13 +123,18 @@ def audio_statistics_api(request):
     audio_id = request.POST.get('audio_id')
     percentage = int(request.POST.get('percentage'))
 
-    if not subscriber_id or AudioStatistics.objects.filter(
-            subscriber_id=subscriber_id, audio_id=audio_id, percentage__lte=percentage).exists():
+    if not (
+        subscriber_id
+        or AudioStatistics.objects.filter(
+            subscriber_id=subscriber_id, audio_id=audio_id, percentage__lte=percentage
+        ).exists()
+    ):
         return HttpResponse()
     else:
         try:
             audio_statistics, created = AudioStatistics.objects.get_or_create(
-                subscriber_id=subscriber_id, audio_id=audio_id)
+                subscriber_id=subscriber_id, audio_id=audio_id
+            )
             if audio_statistics.percentage < percentage:
                 audio_statistics.percentage = percentage
                 audio_statistics.save()
@@ -135,7 +160,8 @@ def audio_statistics_api_amp(request):
     else:
         try:
             audio_statistics, created = AudioStatistics.objects.get_or_create(
-                subscriber_id=subscriber_id, audio_id=audio_id)
+                subscriber_id=subscriber_id, audio_id=audio_id
+            )
             audio_statistics.amp_click = True
             audio_statistics.save()
             return HttpResponse()
@@ -159,17 +185,19 @@ def audio_statistics_dashboard(month=None, year=None):
         if articles:
             # TODO: duration calculation is commented, it raises a UnicodeDecodeError and should be investigated
             # audio_info = mutagen.File(audio.file).info
-            article_list.append({
-                'article': articles[0].headline,
-                'article_url': articles[0].get_absolute_url,
-                'area': articles[0].section,
-                'date': articles[0].date_published,
-                'clicks': audio.audiostatistics_set.filter(percentage__isnull=False).count(),
-                'amp': audio.audiostatistics_set.filter(amp_click=True).count(),
-                'percentage0': audio.audiostatistics_set.filter(percentage=0).count(),
-                'percentage25': audio.audiostatistics_set.filter(percentage=25).count(),
-                'percentage50': audio.audiostatistics_set.filter(percentage=50).count(),
-                'percentage75': audio.audiostatistics_set.filter(percentage=75).count(),
-                # 'duration': timedelta(seconds=int(audio_info.length))
-            })
+            article_list.append(
+                {
+                    'article': articles[0].headline,
+                    'article_url': articles[0].get_absolute_url,
+                    'area': articles[0].section,
+                    'date': articles[0].date_published,
+                    'clicks': audio.audiostatistics_set.filter(percentage__isnull=False).count(),
+                    'amp': audio.audiostatistics_set.filter(amp_click=True).count(),
+                    'percentage0': audio.audiostatistics_set.filter(percentage=0).count(),
+                    'percentage25': audio.audiostatistics_set.filter(percentage=25).count(),
+                    'percentage50': audio.audiostatistics_set.filter(percentage=50).count(),
+                    'percentage75': audio.audiostatistics_set.filter(percentage=75).count(),
+                    # 'duration': timedelta(seconds=int(audio_info.length))
+                }
+            )
     return article_list
