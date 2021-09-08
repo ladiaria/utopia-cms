@@ -16,11 +16,18 @@ from signupwall.middleware import get_article_by_url_kwargs
 
 
 class Command(BaseCommand):
-    help = 'Generates the articles report content'
+    help = 'Generates and rotates the articles report content taking mongodb data for the last month visits'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+        )
+        parser.add_argument(
+            '--live',
+            action='store_true',
+            default=False,
+            dest='live',
+            help=u"Use all mongodb data instead of last month's only",
         )
         parser.add_argument(
             '--out-prefix',
@@ -35,19 +42,27 @@ class Command(BaseCommand):
         if not signupwall_visitor_mdb:
             return
 
-        articles, articlerels, this_month_first = {}, {}, date.today().replace(day=1)
+        articles, main_sections, live, out_prefix = {}, {}, options.get('live'), options.get('out-prefix')
+        if live and not out_prefix:
+            print(u'ERROR: --live option should also specify a value for --out-prefix option')
+            return
+        this_month_first = date.today().replace(day=1)
         last_month = this_month_first - timedelta(1)
         last_month_first = datetime.combine(last_month.replace(day=1), datetime.min.time())
         month_before_last = last_month_first - timedelta(1)
         dt_until = datetime.combine(this_month_first, datetime.min.time())
 
-        visitors = signupwall_visitor_mdb.posts.find({
-            'timestamp': {'$gte': last_month_first, '$lt': dt_until}, 'user': {'$exists': True},
-            'path_visited': {'$exists': True}}, no_cursor_timeout=True)
+        find_filters = {'user': {'$exists': True}, 'path_visited': {'$exists': True}}
+        if not live:
+            find_filters['timestamp'] = {'$gte': last_month_first, '$lt': dt_until}
+        visitors = signupwall_visitor_mdb.posts.find(find_filters, no_cursor_timeout=True)
 
         verbosity = options.get('verbosity')
         if verbosity > 1:
-            print(u'Generating reports from %s to %s ...' % (last_month_first, dt_until))
+            if live:
+                print(u'Generating reports ...')
+            else:
+                print(u'Generating reports from %s to %s ...' % (last_month_first, dt_until))
 
         bar = Bar('Processing', max=visitors.count()) if options.get('progress') else None
 
@@ -74,7 +89,8 @@ class Command(BaseCommand):
                     viewed = articles.get(u.id, [])
                     viewed.append(article.id)
                     articles[u.id] = viewed
-                    articlerels[u.id] = [ar for ar in article.articlerel_set.all()]
+                    if article.main_section:
+                        main_sections[u.id] = article.main_section
 
             except User.DoesNotExist:
                 continue
@@ -100,39 +116,49 @@ class Command(BaseCommand):
 
         sorted_x = sorted(counters.items(), key=operator.itemgetter(1), reverse=True)
 
-        out_prefix = options.get('out-prefix')
         if not out_prefix:
             os.rename(
                 join(settings.DASHBOARD_REPORTS_PATH, 'articles.csv'),
-                join(settings.DASHBOARD_REPORTS_PATH, '%s%.2d_articles.csv' % (
-                    month_before_last.year, month_before_last.month)))
+                join(
+                    settings.DASHBOARD_REPORTS_PATH, '%s%.2d_articles.csv' % (
+                        month_before_last.year, month_before_last.month
+                    )
+                ),
+            )
         w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, '%sarticles.csv' % out_prefix), 'w'))
         i = 0
         for article_id, score in sorted_x:
             a = Article.objects.get(id=article_id)
             i += 1
-            w.writerow([
-                i, a.get_absolute_url(), a.views,
-                ', '.join(['%s' % ar for ar in a.articlerel_set.all()]), score])
+            w.writerow(
+                [
+                    i,
+                    a.get_absolute_url(),
+                    a.views,
+                    ', '.join(['%s' % ar for ar in a.articlerel_set.all()]),
+                    score,
+                ]
+            )
 
         counters = {}
-        for user_id, articlerels in articlerels.iteritems():
-            for articlerel in articlerels:
-                ar_id = (articlerel.edition.publication.slug, articlerel.section.id)
-                counter = counters.get(ar_id, 0)
-                counter += 1
-                counters[ar_id] = counter
+        for user_id, main_section in main_sections.iteritems():
+            ar_id = (main_section.edition.publication.slug, main_section.section_id)
+            counter = counters.get(ar_id, 0)
+            counter += 1
+            counters[ar_id] = counter
 
         sorted_y = sorted(counters.items(), key=operator.itemgetter(1), reverse=True)
         if not out_prefix:
             os.rename(
                 join(settings.DASHBOARD_REPORTS_PATH, 'sections.csv'),
-                join(settings.DASHBOARD_REPORTS_PATH, '%s%.2d_sections.csv' % (
-                    month_before_last.year, month_before_last.month)))
+                join(
+                    settings.DASHBOARD_REPORTS_PATH, '%s%.2d_sections.csv' % (
+                        month_before_last.year, month_before_last.month
+                    )
+                ),
+            )
         w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, '%ssections.csv' % out_prefix), 'w'))
         i = 0
         for ar_id, score in sorted_y:
             i += 1
-            p = Publication.objects.get(slug=ar_id[0])
-            s = Section.objects.get(pk=ar_id[1])
-            w.writerow([i, p.name, s.name, score])
+            w.writerow([i, Publication.objects.get(slug=ar_id[0]).name, Section.objects.get(pk=ar_id[1]).name, score])
