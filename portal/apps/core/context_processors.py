@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from django.conf import settings
 from datetime import date
 
 
@@ -19,7 +18,3 @@ def aniosdias(request):
         ('Diciembre', '12'),
     ]
     return {'anios': range(2009, date.today().year + 1), 'meses': meses}
-
-
-def secure_static(request):
-    return {'STATIC_URL': settings.SECURE_STATIC_URL if request.is_secure() else settings.STATIC_URL}

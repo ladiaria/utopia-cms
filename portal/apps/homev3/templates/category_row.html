@@ -14,7 +14,7 @@
 
     <div class="row footer-section">
       <div class="col s12">
-        <a href="{% url 'home' domain_slug=category.slug %}" class="btn bordered">
+        <a href="{% url 'home' domain_slug=category.slug %}" class="ut-btn ut-btn-outline">
           {% if category.more_link_title %}{{ category.more_link_title }}{% else %}más de {{ category }}{% endif %}
         </a>
       </div>

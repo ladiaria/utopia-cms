@@ -58,8 +58,6 @@ TIME_FORMAT = 'H:i:s'
 DATETIME_FORMAT = '%s %s' % (DATE_FORMAT, TIME_FORMAT)
 SHORT_DATE_FORMAT = 'd/m/Y'
 
-SECURE_STATIC_URL = '/static/'
-
 STATICFILES_DIRS = (
     '/home/user/utopia-cms/static',
 )

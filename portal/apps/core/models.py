@@ -2,18 +2,16 @@
 import os
 import tempfile
 import operator
-import csv
 from copy import copy
 from datetime import date, datetime, timedelta
 from collections import OrderedDict
-from django.utils import timezone
 from sorl.thumbnail import get_thumbnail
 from PIL import Image
 import readtime
 
 from django.conf import settings
 from django.core import urlresolvers
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User
 from django.contrib.sitemaps import ping_google
 from django.db.models import (
@@ -41,6 +39,7 @@ from django.db.models import (
 from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from managers import PublishedArticleManager
 from utils import get_pdf_pdf_upload_to, get_pdf_cover_upload_to
@@ -224,10 +223,13 @@ class PortableDocumentFormatBaseModel(Model):
             'filename': os.path.basename(self.pdf.path)}
 
     def download(self, request=None):
-        filename = os.path.basename(self.pdf.path)
-        response = HttpResponse(self.pdf, content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename=%s' % filename
-        return response
+        try:
+            response = HttpResponse(self.pdf, content_type='application/pdf')
+        except IOError:
+            raise Http404
+        else:
+            response['Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(self.pdf.path)
+            return response
 
 
 """ TODO: better enable this after new structure works well (**)
@@ -454,7 +456,7 @@ class Category(Model):
         return self.name
 
     def latest_articles(self):
-        return list(self.home.articles.all()) if self.home else []
+        return list(self.home.articles.all()) if hasattr(self, 'home') else []
 
     def articles(self):
         """
@@ -1193,9 +1195,6 @@ class Article(ArticleBase):
         editable=False,
         through='ArticleViewedBy',
         related_name='viewed_articles_%(app_label)s',
-    )
-    continues = ForeignKey(
-        'Article', verbose_name=u'es continuación de', related_name='continuation', blank=True, null=True
     )
     newsletter_featured = BooleanField(u'destacado en newsletter', default=False)
 

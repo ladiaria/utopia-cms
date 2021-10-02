@@ -26,6 +26,12 @@
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker.min.css">
     <script>
       $(function(){
+        var current_date = new Date()  // will be used as "last month" date
+        current_date.setMonth(current_date.getMonth() - 1);
+        var month = current_date.getMonth() + 1;
+        if(month < 10){
+          month = '0' + month;
+        }
         $(document).ready(function(){
           var hash = $(location).prop('hash');
           var tableId = hash.substr(1);
@@ -33,12 +39,22 @@
           if( hash == ""){
             $('#inner-content').load('/dashboard/table/articles/');
           }else {
-            $('#inner-content').load('/dashboard/table/' + tableId + '/');
+            var table_url = '/dashboard/table/' + tableId + '/'
+            if(tableId == 'subscribers'){
+              // subscribers table needs year and month
+              table_url += '?month=' + month + "&year=" + current_date.getFullYear();
+            }
+            $('#inner-content').load(table_url);
           }
         });
         $('a.embed').click(function(){
+          var table_url = '/dashboard/table/' + this.id + '/'
           $('#inner-content').html("<img style='top:20%;left:50%; position:absolute;' src='{% static 'images/loading.gif' %}'>");
-          $('#inner-content').load('/dashboard/table/' + this.id + '/');
+          if(this.id == 'subscribers'){
+            // subscribers table needs year and month
+            table_url += '?month=' + month + "&year=" + current_date.getFullYear();
+          }
+          $('#inner-content').load(table_url);
         });
       });
     </script>

@@ -16,6 +16,10 @@
   {% render_article_card article=cover_article media=cover_article.home_display card_size="FF" %}
 {% endif %}
 
+{% if user.is_authenticated %}
+  {% include 'pwa-module.html' %}
+{% endif %}
+
 {% if allow_ads and not is_subscriber %}
   <div class="frontpage-section frontpage-section--white frontpage-section--ad frontpage-section">
     <div class="container">
@@ -48,6 +52,8 @@
     </div>
   </div>
 {% endif %}
+
+
 
 {% block extra_cover %}{% endblock %}
 

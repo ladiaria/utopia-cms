@@ -3,7 +3,6 @@ from django.conf import settings
 from django.conf.urls import url
 from django.views.generic import TemplateView, RedirectView
 from django.views.decorators.vary import vary_on_cookie
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import views as auth_views
 
@@ -55,7 +54,8 @@ if views_custom_module:
     password_reset = __import__(views_custom_module, fromlist=['password_reset']).password_reset
     phone_subscription = __import__(views_custom_module, fromlist=['phone_subscription']).phone_subscription
     amp_access_authorization = __import__(
-        views_custom_module, fromlist=['amp_access_authorization']).amp_access_authorization
+        views_custom_module, fromlist=['amp_access_authorization']
+    ).amp_access_authorization
 
 # Used to override some urls
 urls_custom_module = getattr(settings, 'THEDAILY_URLS_CUSTOM_MODULE', None)

@@ -77,3 +77,11 @@ main {
     background-color: #262626 !important;
     border-color: #262626 !important;
 }
+body:not(.logged-in) .coral-comment-actionBar,
+body:not(.logged-in) #post-comment-form,
+body:not(.logged-in) .coral-guidelines,
+.coral-comment-shareButton,
+.coral-createComment-signIn,
+.coral-streamFooter  {
+    display: none!important;
+}

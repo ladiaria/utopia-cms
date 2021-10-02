@@ -7,7 +7,6 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseRedirect, Http404
 from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.template import RequestContext
 from django.shortcuts import get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.urlresolvers import reverse
@@ -25,7 +24,11 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
 
     # removed or changed sections redirects by settings
     if section_slug in getattr(settings, 'CORE_SECTION_REDIRECT', {}):
-        reverse_kwargs = {'section_slug': settings.CORE_SECTION_REDIRECT[section_slug]}
+        target_section_slug = settings.CORE_SECTION_REDIRECT[section_slug]
+        if target_section_slug.startswith('/'):
+            # support for a "direct path" redirect
+            return HttpResponsePermanentRedirect(target_section_slug)
+        reverse_kwargs = {'section_slug': target_section_slug}
         for arg, val in {'tag': tag, 'year': year, 'month': month, 'day': day}.items():
             if val:
                 reverse_kwargs[arg] = val

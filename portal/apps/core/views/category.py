@@ -9,7 +9,6 @@ from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect
 from django.views.decorators.cache import never_cache
-from django.template import RequestContext
 from django.shortcuts import redirect, get_object_or_404, render
 from django.core.urlresolvers import reverse
 
@@ -48,8 +47,8 @@ def category_detail(request, slug):
     if slug == u'elecciones':
         # example dropdown menu (elecciones ir disabled now by redirect)
         inner_sections = category.section_set.filter(
-            Q(slug__startswith='partido-') |
-            Q(slug__in=('frente-amplio', 'unidad-popular', 'cabildo-abierto', 'otros'))
+            Q(slug__startswith='partido-')
+            | Q(slug__in=('frente-amplio', 'unidad-popular', 'cabildo-abierto', 'otros'))
         )
     if slug == u'coronavirus':
         question_list = Question.published.filter(topic__slug='coronavirus')
@@ -86,7 +85,8 @@ def newsletter_preview(request, slug):
 
     # allow only staff members or requests from localhost
     if not (request.user.is_staff or request.META.get('REMOTE_ADDR') in (
-            socket.gethostbyname('localhost'), socket.gethostbyname(socket.gethostname()))):
+        socket.gethostbyname('localhost'), socket.gethostbyname(socket.gethostname()))
+    ):
         return HttpResponseForbidden()
 
     # removed or changed categories redirects by settings
@@ -137,22 +137,27 @@ def newsletter_preview(request, slug):
         unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
             '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
 
-        return render(
-            request,
-            '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug),
-            {
-                'site_url': site_url,
-                'category': category,
-                'featured_article': featured_article,
-                'opinion_article': opinion_article,
-                'cover_article': cover_article,
-                'cover_article_section': cover_article_section,
-                'articles': top_articles,
-                'newsletter_campaign': category.slug,
-                'hashed_id': hashed_id,
-                'unsubscribe_url': unsubscribe_url,
-            },
-        )
+        context = {
+            'site_url': site_url,
+            'category': category,
+            'featured_article': featured_article,
+            'opinion_article': opinion_article,
+            'cover_article': cover_article,
+            'cover_article_section': cover_article_section,
+            'articles': top_articles,
+            'newsletter_campaign': category.slug,
+            'hashed_id': hashed_id,
+            'unsubscribe_url': unsubscribe_url,
+        }
+
+        # override is_subscriber_any and _default only to "False"
+        for suffix in ('any', 'default'):
+            is_subscriber_var = 'is_subscriber_' + suffix
+            is_subscriber_val = request.GET.get(is_subscriber_var)
+            if is_subscriber_val and is_subscriber_val.lower() in (u'false', u'0'):
+                context[is_subscriber_var] = False
+
+        return render(request, '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug), context)
 
     except Exception as e:
         if settings.DEBUG:

@@ -55,7 +55,7 @@
 }
 
 a.ld-text-secondary,
-.ld-text-secondary a {
+.ld-text-secondary a:not(.ut-btn) {
   color: $grey;
   text-decoration: underline;
 }
@@ -761,7 +761,7 @@ i.material-icons.icon-lo_mas_leido {
 
   .multi-buttons {
 
-      .ld-btn, .btn {
+      .ld-btn, .btn, .ut-btn {
         margin-right: 0;
         margin-bottom: 20px;
         vertical-align: top;
@@ -783,6 +783,15 @@ i.material-icons.icon-lo_mas_leido {
         }
 
         + .btn {
+          margin-left: 0;
+          margin-bottom:0;
+
+          @media (min-width: 476px) {
+            margin-right: 0;
+          }
+        }
+
+        + .ut-btn {
           margin-left: 0;
           margin-bottom:0;
 
@@ -1078,7 +1087,7 @@ a.ladiaria {
     .section__cta {
       margin-bottom: 60px;
 
-      .btn {
+      .btn, .ut-btn {
         margin-bottom: 15px;
       }
     }
@@ -1406,7 +1415,7 @@ a.ladiaria {
 
         #nav-principal{
         position: absolute;
-        top: 3px;
+        top: 0;
         right: 15px;
         }
 
@@ -1475,6 +1484,40 @@ a.ladiaria {
 
             }
         }
+    }
+
+    .frontpage.homepage {
+      #main-header.install-pwa {
+        .nav-wrapper {
+          justify-content: unset;
+        }
+        .header-logo.emergentes{
+          img {
+              margin-left: 15px;
+          }
+        }
+        .instalar-app {
+          min-width: 121px;
+          margin: 13px 0 15px 15px;
+          line-height: 28px !important;
+          height: 30px;
+          padding: 0 14px;
+          text-decoration: none !important;
+          border:2px solid white;
+          color:white !important;
+          box-sizing: border-box;
+          background-color: transparent;
+          font-size: 12px;
+          font-weight: 500;
+          text-transform: uppercase;
+
+          &:hover {
+          background-color: white;
+          color: $off-black !important;
+          }
+        }
+      }
+
     }
     .frontpage-section .card h1 {
       font-size: 1.375rem;
@@ -1761,8 +1804,51 @@ a.ladiaria {
 }
 
 .ld-btn-google {
-  @include ld-btn(white, white, $off-black, $off-black, $icon: google);
+  color: #262626;
+  border: 2px solid $off-black;
+  font-family: "Roboto", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  text-transform: uppercase !important;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+  height: auto;
   margin: 0;
+  padding: 14px 23px 14px 52px;
+  border-radius: 100px;
+  display: inline-block;
+  background-color: white;
+  background-repeat: no-repeat;
+  background-size: 26px auto;
+  background-position: center left 16px;
+  background-image: url("/static/img/icon-google.svg");
+  transition:background-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+
+  &:hover {
+    background-color: $off-black;
+    color: white;
+    border:none;
+    padding:16px 25px 16px 54px;
+    background-position: center left 18px;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  &:active {
+    background-color: #4D4F4F;
+    border-color:#4D4F4F;
+    border:none;
+    padding:16px 25px 16px 54px;
+    background-position: center left 18px;
+    transform: translateY(1px);
+    box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  &:focus {
+    background-color: $off-black;
+    color:white;
+  }
 }
 
 .ld-subscription-step{
@@ -2215,30 +2301,88 @@ nav.subscription_black {
     }
 
     &__btn {
-      font-size: 13px;
-      line-height: 30px;
+      font-family: "Roboto", sans-serif;
+      font-size: 15px;
+      line-height: 20px;
+      font-weight: 700;
       text-transform: uppercase;
       text-decoration: none;
+      text-align: center;
       display: inline-block;
       border-radius: 100px;
-      padding: 0 15px;
-      font-weight: 500;
+      padding: 8px 18px;
       box-sizing: border-box;
       border:2px solid $off-black;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition:background 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+      vertical-align: middle;
+      background: transparent;
 
       svg {
         position: relative;
-        top:5px;
+        top:3px;
+        max-height: 18px;
+        width: auto;
+
+        path {
+          transition: fill 0.35s ease;
+        }
       }
 
+      &:hover {
+        background: $off-black;
+        color: white;
+        border:none;
+        padding:10px 20px;
+        box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3);
+
+        svg path.change-fill {
+          fill: white;
+        }
+      }
+
+      &:focus {
+        background-color: transparent;
+      }
+
+      &:active {
+        background: #4D4F4F;
+        border-color:#4D4F4F;
+        border:none;
+        padding:10px 20px;
+        transform: translateY(1px);
+
+        svg path.change-fill {
+          fill: white;
+        }
+      }
     }
     &__saved {
-      background:$off-black;
-      color: #fff;
+      background: $off-black;
+      color: white;
+      border:none;
+      padding:10px 20px;
+
+      svg path.change-fill {
+        fill: white;
+      }
 
       &:hover {
-          color: #fff;
+        box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3);
+        color: white;
+        background-color: #3A3A3A;
+      }
+      &:focus {
+        background-color: $off-black;
+        color: white;
+      }
+
+      &:active {
+        box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.3);
+        color: white;
+        background: #4D4F4F;
+        transform: translateY(1px);
       }
     }
     .info {
@@ -2437,4 +2581,10 @@ nav.subscription_black {
     a {
       color: white;
     }
+}
+// reset styles for tiktok embeds
+blockquote.tiktok-embed {
+  margin: 0;
+  padding: 0;
+  border: none;
 }

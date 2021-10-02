@@ -150,6 +150,8 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
                             'ga_property_id': ga_property_id,
                             'subscriber_id': s.id,
                             'is_subscriber': is_subscriber,
+                            'is_subscriber_any': s.is_subscriber_any(),
+                            'is_subscriber_default': s.is_subscriber(settings.DEFAULT_PUB),
                         }
                     )
                 ),

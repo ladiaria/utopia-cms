@@ -37,7 +37,7 @@
   </script>
 {% endblock %}
 
-{% block body_class %}frontpage{% endblock %}
+{% block body_class %}homepage{% endblock %}
 
 {% block content %}
 
@@ -71,6 +71,6 @@
   {# other custom components can be included also like this commented includes: #}
   {# include 'components.html' #}
 
-  {# include 'footer_popover.html' #}
+  {% block extra_homepage %}{% endblock %}
 
 {% endblock %}

@@ -58,7 +58,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sitemaps',
     'django.contrib.sites',
-    'formtools',
     'background_task',
     'subdomains',
     'audiologue',
@@ -294,7 +293,6 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 "django.template.context_processors.i18n",
                 'django.template.context_processors.tz',
-                'apps.core.context_processors.secure_static',
                 'adzone.context_processors.get_source_ip',
                 'django_mobile.context_processors.flavour',
                 'apps.thedaily.context_processors.permissions',
@@ -453,6 +451,9 @@ CRM_UPDATE_USER_ENABLED = True
 
 PROMO_CODE = u'ei2020'
 
+PWA_SERVICE_WORKER_TEMPLATE = 'core/templates/sw/serviceworker.js'
+PWA_SERVICE_WORKER_VERSION = 1
+
 try:
     UTILS_MODULE = __import__('utils', fromlist=[PROJECT_ABSOLUTE_DIR])
 except ImportError as e:
@@ -461,10 +462,7 @@ except ImportError as e:
 FREEZE_TIME = None
 
 # Override previous settings with values in local_settings.py settings file.
-try:
-    from local_settings import *
-except ImportError:
-    sys.stderr.write("WARNING: Can't find local_settings.py, using default settings.\n")
+from local_settings import *
 
 SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
 ROBOTS_SITEMAP_URLS = [SITE_URL + 'sitemap.xml']

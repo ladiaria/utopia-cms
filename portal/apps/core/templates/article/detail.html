@@ -176,7 +176,7 @@
       <div class="reading-time"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/></svg> <span class="eta">{{ article.reading_time }}</span> de lectura</div>
       {% if user.is_authenticated and not followed %}
         <div class="read-later top">
-          <a class="read-later__btn read-later__add"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</a>
+          <a class="read-later__btn read-later__add"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path class="change-fill" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</a>
           <div class="info read-later__add__info hide">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
           <a class="read-later__btn read-later__saved first hide"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</a>
           <div class="info read-later__saved__info first hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
@@ -226,10 +226,10 @@
             </div>
             <div class="ld-snackbar__body ld-snackbar__body-sm">
               <p class="desc">¿Ya tenés suscripción?</p>
-              <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ld-btn-default ld-btn-default--inverted ld-btn-noshadow">Ingresá</a>
+              <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
               <p class="desc">No tenés suscripción?<br>
               Accedé a 10 artículos gratis por mes con la suscripción gratuita.</p>
-              <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="btn bordered">
+              <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">
                 Suscribite gratis
               </a>
             </div>
@@ -239,7 +239,7 @@
                   <div class="ld-snackbar--option">
                     <div class="ld-snackbar__text ld-snackbar__block">¿Ya tenés suscripción?</div>
                     <div class="ld-snackbar__block">
-                      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ld-btn-default ld-btn-default--inverted ld-btn-noshadow">Ingresá</a>
+                      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
                     </div>
                   </div>
                   <div class="ld-snackbar--option">
@@ -248,7 +248,7 @@
                       Accedé a 10 artículos gratis por mes con la suscripción gratuita.
                     </div>
                     <div class="ld-snackbar__block">
-                      <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="btn bordered">Suscribite gratis</a>
+                      <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">Suscribite gratis</a>
                     </div>
                   </div>
                 </div>
@@ -267,10 +267,10 @@
           <div class="ld-snackbar__title">Para seguir leyendo ingresá o suscribite</div>
           <div class="ld-snackbar__body ld-snackbar__body-sm">
             <p class="desc">¿Ya tenés suscripción?</p>
-            <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ld-btn-default ld-btn-default--inverted ld-btn-default--no-shadow">Ingresá</a>
+            <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
             <p class="desc">¿No tenés suscripción?<br>
             Accedé a 10 artículos gratis por mes con la suscripción gratuita.</p>
-            <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="btn bordered">Suscribite gratis</a>
+            <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">Suscribite gratis</a>
           </div>
           <div class="ld-snackbar__body ld-snackbar__body-lg">
               <div class="container">
@@ -280,7 +280,7 @@
                         ¿Ya tenés suscripción?
                       </div>
                       <div class="ld-snackbar__block">
-                        <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ld-btn-default ld-btn-default--inverted ld-btn-default--no-shadow">Ingresá</a>
+                        <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
                       </div>
                   </div>
                   <div class="ld-snackbar--option">
@@ -289,7 +289,7 @@
                       Accedé a 10 artículos gratis por mes con la suscripción gratuita.
                     </div>
                     <div class="ld-snackbar__block">
-                      <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="btn bordered">Suscribite gratis</a>
+                      <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">Suscribite gratis</a>
                     </div>
                   </div>
                 </div>
@@ -331,7 +331,7 @@
                 <p class="desc">Pasate a suscripción ilimitada para lectura sin límites y más beneficios.</p>
                 {# TODO: conditional subscribe url if category_signup #}
                 <a href="{% url 'subscribe' planslug='DDIGM' %}"
-                   class="ld-btn-default ld-snackbar__btn--white ld-snackbar__btn">
+                   class="ut-btn ut-btn-l">
                   Pasate a ilimitada
                 </a>
               </div>
@@ -344,7 +344,7 @@
                       </div>
                       <div class="ld-snackbar__block">
                         {# TODO: conditional subscribe url if category_signup #}
-                        <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-default">Pasate a ilimitada</a>
+                        <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Pasate a ilimitada</a>
                       </div>
                     </div>
                   </div>
@@ -364,7 +364,7 @@
             <div class="ld-snackbar__body ld-snackbar__body-sm">
               <p class="desc">Pasate a suscripción ilimitada para lectura sin límites y más beneficios.</p>
               {# TODO: conditional subscribe url if category_signup #}
-              <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-default ld-snackbar__btn--white ld-snackbar__btn">
+              <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
                 Pasate a ilimitada
               </a>
             </div>
@@ -378,7 +378,7 @@
                     <div class="ld-snackbar__block">
                       {# TODO: conditional subscribe url if category_signup #}
                       <a href="{% url 'subscribe' planslug='DDIGM' %}"
-                         class="ld-btn-regular">Pasate a ilimitada</a>
+                         class="ut-btn ut-btn-l">Pasate a ilimitada</a>
                     </div>
                   </div>
                 </div>
@@ -499,7 +499,7 @@
           </div>
           <a class="read-later__btn read-later__saved">Quitar de leer después</a>
           <div class="info hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-        <a class="read-later__btn read-later__add hide"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"></path><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"></path></svg> Leer después</a>
+        <a class="read-later__btn read-later__add hide"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"></path><path class="change-fill" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"></path></svg> Leer después</a>
           <div class="info read-later__add__info hide">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
         <a class="read-later__btn read-later__saved hide"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</a>
           <div class="info read-later__saved__info hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
@@ -507,9 +507,9 @@
     {% endif %}
     {% if user.is_authenticated %}
     <div class="fav u-mb-60">
-      <a class="fav__btn fav__saved{% if not favourited %} hide{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-874 -9241)"><g transform="translate(874 9241)"><path d="M0,0H24V24H0Z" fill="none" /><path d="M0,0H24V24H0Z" fill="none"/></g><g transform="translate(874.557 9242.428)"  fill="none"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</a>
+      <a class="fav__btn fav__saved{% if not favourited %} hide{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><g transform="translate(-1306 -11387)"><g transform="translate(1306 11387)"><path d="M0,0H18V18H0Z" fill="none"/><path d="M0,0H18V18H0Z" fill="none"/></g><g transform="translate(1303.557 11385.428)"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</a>
       <div class="info hide">El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-      <a class="fav__btn fav__add{% if favourited %} hide{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-1433 -9241)"><path d="M0,0H24V24H0Z" transform="translate(1433 9241)" fill="none"/><path d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(1433.556 9242.438)" fill="#262626"/></g></svg> Guardar como favorito</a>
+      <a class="fav__btn fav__add{% if favourited %} hide{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><g transform="translate(-870 -11388)"><path d="M0,0H18V18H0Z" transform="translate(870 11388)" fill="none"/><path class="change-fill" d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(867.557 11386.438)" fill="#262626"/></g></svg> Guardar como favorito</a>
       <div class="info{% if not favourited %} hide{% endif %}">Guardaste este artículo como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
       <div class="info hide">El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
     </div>
@@ -550,11 +550,11 @@
             <p class="desc">Suscribite para guardar este artículo para leer
               después</p>
             <a href="{% url 'subscribe' planslug='DDIGM' %}"
-               class="ld-btn-regular ld-snackbar__btn--white ld-snackbar__btn">Suscribite
+               class="ut-btn ut-btn-l">Suscribite
               a ilimitada</a>
             <p class="desc">¿Ya tenés suscripción?</p>
             <a href="{% url 'account-login' %}?next={{ request.path }}"
-               class="btn bordered">Ingresá</a>
+               class="ut-btn ut-btn-l ut-btn-outline">Ingresá</a>
           </div>
           <div class="ld-snackbar__body ld-snackbar__body-lg">
             <div class="container">
@@ -568,7 +568,7 @@
                   </div>
                   <div class="ld-snackbar__block">
                     <a href="{% url 'subscribe' planslug='DDIGM' %}"
-                       class="ld-btn-default">Suscribite a ilimitada</a>
+                       class="ut-btn ut-btn-l">Suscribite a ilimitada</a>
                   </div>
                 </div>
                 <div class="ld-snackbar--option">
@@ -577,7 +577,7 @@
                   </div>
                   <div class="ld-snackbar__block">
                     <a href="{% url 'account-login' %}?next={{ request.path }}"
-                       class="btn bordered">Ingresá</a>
+                       class="ut-btn ut-btn-l ut-btn-outline">Ingresá</a>
                   </div>
                 </div>
               </div>
@@ -634,7 +634,7 @@
 
         <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}" data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}" data-article-url="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-login-url="{{ URL_SCHEME }}://{{ site.domain }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
           <span class="title">Comentar este artículo</span>
-          <button class="ld-btn-inverted--sm">
+          <button class="ut-btn">
             {% if comments_count > 0 %}{{ comments_count }} comentario{{comments_count|pluralize:"s"}}{% else %}Comentar{% endif %}
           </button>
         </section>
@@ -642,10 +642,10 @@
         <div class="talk-login align-center display-hidden">
           {% if user.is_authenticated %}
             {% if not is_subscriber %}
-              <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ld-btn-inverted--sm ld-btn-subscribe-to-comment">Pasate a Ilimitada para comentar</a>
+              <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Pasate a Ilimitada para comentar</a>
             {% endif %}
           {% else %}
-            <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ld-btn-inverted--sm ld-btn-subscribe-to-comment">Suscribite a Ilimitada para comentar</a>
+            <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite a Ilimitada para comentar</a>
             <span class="ld-caption ld-caption-subscribe-to-comment">
               ¿Ya tenés suscripción?
               <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
@@ -711,37 +711,14 @@
     </ul>
   </section>
 
-  {% if article.show_related_articles %}
-    {% render_related article %}
+  {% if user.is_authenticated %}
+    {% include 'pwa-module.html' %}
   {% endif %}
 
-  {% if keep_reading %}
-    <section class="seguir-leyendo article-list visible-desktop ld-block">
-      <h5>Seguí leyendo sobre esto</h5>
+  {% block featured_content %}{% endblock %}
 
-      {% for next in keep_reading %}
-        <article class="{% if next.photo %}has_foto {% endif %}row lead">
-          {% if next.photo %}
-            <figure class="col s3">
-              <a href="{{ next.get_absolute_url }}" class="media-object related_thumb"><img rel="tooltip" src="{{ next.photo.get_article_thumb_url }}" alt="{% if next.photo.caption %}{{ next.photo.caption }}{% endif %}"></a>
-            </figure>
-          {% endif %}
-          <header class="{% if next.photo %}col s9{% else %}col s12{% endif %}">
-            {% if next.date_published %}
-              {% if next.edition %}
-                <a href="{{ next.edition.get_absolute_url }}" class="date"> {{ next.date_published|date:"l d \• N \• y"|upper }}</a>
-              {% else %}
-                <span class="date">{{ next.date_published|date:"j.n.y" }}</span>
-              {% endif %}
-            {% endif %}
-            {% if next.get_keywords %}
-              <div class="keywords-style">{{ next.keywords }}</div>
-            {% endif %}
-            <h1><a href="{{ next.get_absolute_url }}">{{ next.headline|ldmarkup:article.id|bleach }}</a></h1>
-          </header>
-        </article>
-      {% endfor %}
-    </section>
+  {% if article.show_related_articles %}
+    {% render_related article %}
   {% endif %}
 
     {% if not is_subscriber %}
@@ -760,7 +737,7 @@
 
   {% if not request.signupwall %}
     <div class="align-center u-mb-50 footer-section">
-      <a href="{% url 'home' %}" class="btn bordered">Ir a la portada</a>
+      <a href="{% url 'home' %}" class="ut-btn ut-btn-outline">Ir a la portada</a>
     </div>
   {% endif %}
 
@@ -968,8 +945,8 @@
     {% if not article.is_published %}
       <span class="ld-tag-draft">Borrador</span>
     {% endif %}
-    <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="ld-btn-default ld-btn-default--sm ld-admin-edit">
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M3 17.46v3.04c0 .28.22.5.5.5h3.04c.13 0 .26-.05.35-.15L17.81 9.94l-3.75-3.75L3.15 17.1c-.1.1-.15.22-.15.36zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg> Editar
+    <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="ut-btn ut-admin-edit">
+      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M3 17.46v3.04c0 .28.22.5.5.5h3.04c.13 0 .26-.05.35-.15L17.81 9.94l-3.75-3.75L3.15 17.1c-.1.1-.15.22-.15.36zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#ffffff"/></svg> Editar
     </a>
   {% endif %}
 {% endblock %}

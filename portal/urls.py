@@ -13,12 +13,13 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.static import serve
 
 from core.models import Article, Publication, Category, Section, Journalist, get_current_edition, get_latest_edition
-from core.views.edition import edition_detail
+from core.views.edition import edition_detail, edition_list, edition_list_ajax
 from core.views.supplement import supplement_list
+from core.views.sw import service_worker
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
 from thedaily.models import Subscriber
-from thedaily.views import giveaway, fav_add_or_remove
+from thedaily.views import fav_add_or_remove
 from comunidad.models import Url, Recommendation
 from homev3.views import index
 from cartelera.views import vivo
@@ -233,9 +234,11 @@ urlpatterns = [
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', include(admin.site.urls)),
 
-    # Search and special pages (TODO: organize better)
+    # Search
     url(r'^buscar/', include('search.urls')),
-    url(r'^regala/', giveaway, name='giveaway'),
+
+    # Service Worker
+    url(r'^sw\.js$', service_worker, name='serviceworker'),
 
     # Custom redirects
     url(r'^suscribite-por-telefono/$', RedirectView.as_view(url='/usuarios/suscribite-por-telefono/')),
@@ -282,9 +285,14 @@ urlpatterns.extend([
     url(r'^api/auth/', include('rest_framework.urls', namespace='rest_framework')),
 
     # Editions
-    url(r'^edicion', include('core.urls.edition')),
-    url(r'^(?P<publication_slug>[\w-]+)/edicion/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/$', edition_detail,
-        name='edition_detail'),
+    url(r'^ediciones/$', edition_list, name='edition_list'),
+    url(r'^ediciones/(?P<year>\d{4})/(?P<month>\d{1,2})/$', edition_list_ajax, name='edition_list_ajax'),
+    url(r'^edicion/', include('core.urls.edition')),
+    url(
+        r'^(?P<publication_slug>[\w-]+)/edicion/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/$',
+        edition_detail,
+        name='edition_detail',
+    ),
 
     # Most read
     url(r'^masleidos/', include('core.urls.masleidos')),
@@ -293,11 +301,11 @@ urlpatterns.extend([
     url(r'^suplementos/', supplement_list, name='supplement_list'),
     url(r'^suplemento/', include('core.urls.supplement')),
 
-    # Homes: domain_slug can be a publiction slug or an area (core.Category) slug
+    # Homes: domain_slug can be a publication slug or an area (core.Category) slug
     url(r'^$', index, name='home'),
     url(r'^(?P<domain_slug>[\w-]+)/$', index, name='home'),
 
-    # Article detail pages: domain_slug can be a publiction slug or an area slug
+    # Article detail pages: domain_slug can be a publication slug or an area slug
     url(r'^articulo/', include('core.urls.article')),
     url(r'^(?P<domain_slug>[\w-]+)/articulo/', include('core.urls.article')),
 

@@ -10,6 +10,9 @@
 <html class="no-js" lang="es-UY">
 {% endblock %}
   <head>
+    <!-- Progressive Web App (PWA) -->
+    <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
+    <!-- End Progressive Web App (PWA) -->
     {% block head_first_content %}{% endblock %}
     {% if not debug and GTM_CONTAINER_ID %}
       <!-- Google Tag Manager -->
@@ -87,6 +90,9 @@
 
     {% compress css %}
       <link href="{% static 'sass/print.scss' %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
+      {% if HOMEV3_CUSTOM_PRINT_CSS %}
+        <link href="{% static HOMEV3_CUSTOM_PRINT_CSS %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
+      {% endif %}
     {% endcompress %}
 
     {% if user.is_staff %}
@@ -175,6 +181,7 @@
     {% endcompress %}
 
     <!-- JavaScript -->
+    <script src="{% static 'js/index.js' %}"></script>
     <script src="{% static 'admin/js/jquery.min.js' %}"></script>
     <script type="text/javascript">
       $(function(){
@@ -333,14 +340,13 @@
       <script src="{% static 'materialize/js/scrollspy.js' %}"></script>
       <script src="{% static 'materialize/js/pushpin.js' %}"></script>
 
-      <!-- JS ladiaria.uy -->
       <script src="{% static 'js/ld.js' %}"></script>
       <script src="{% static 'js/resizeSubnav.js' %}" ></script>
 
       {# Modernizr - Detect CSS Grid #}
       <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
 
-      {# cookie (for modal popup) #}
+      {# js.cookie #}
       <script src="{% static 'js/vendor/js.cookie.js' %}"></script>
 
       {# picturefill #}
@@ -355,12 +361,6 @@
       <script src="{% static 'lightGallery/modules/lg-pager.js' %}"></script>
       <script src="{% static 'lightGallery/modules/lg-video.js' %}"></script>
       <script src="{% static 'lightGallery/modules/lg-ladiaria.js' %}"></script>
-
-      {% comment "bottom subscribe popover temporarely disabled" %}
-        {% if not user.is_authenticated %}
-          <script src="{% static 'js/ld-footer-subscribe.js' %}"></script>
-        {% endif %}
-      {% endcomment %}
 
       {# TODO: probably there is no reason to have 2 scripts blocks like this, investigate and eliminate one #}
       {% block javascript %}{% endblock %}

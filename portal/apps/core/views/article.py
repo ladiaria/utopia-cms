@@ -19,7 +19,6 @@ from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache, cache_page
 from django.views.decorators.vary import vary_on_cookie
-from django.template import RequestContext
 from django.template.defaultfilters import slugify
 
 from actstream.models import following
@@ -137,7 +136,6 @@ def article_detail(request, year, month, slug, domain_slug=None):
         if core_articlevisits_mdb:
             core_articlevisits_mdb.posts.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
 
-    keep_reading = list(article.continuation.filter(is_published=True))
     try:
         talk_url = getattr(settings, 'TALK_URL', None)
         if talk_url and article.allow_comments:
@@ -155,7 +153,6 @@ def article_detail(request, year, month, slug, domain_slug=None):
     context = {
         'article': article,
         'is_detail': True,
-        'keep_reading': keep_reading,
         'report_form': report_form,
         'domain': domain,
         'category': category,

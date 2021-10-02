@@ -5,7 +5,7 @@
   #main-header,
   #header-pub,
   #mas-leidos,
-  .ld-admin-edit,
+  .ut-admin-edit,
   .ld-share-widget,
   .footer-portada,
   .gallery-wrap,
@@ -24,7 +24,9 @@
   .read-later,
   .fav,
   .ld-caption-subscribe-to-comment,
-  .ld-btn-subscribe-to-comment
+  .ld-btn-subscribe-to-comment,
+  .breaking-notice,
+  .footer-section
   {
     display: none !important;
   }
@@ -197,17 +199,6 @@
     margin-bottom: 40px;
   }
 
-  .section-subheader.detail .header-logo {
-        text-align: center;
-        svg {
-        height: 40px;
-        margin: 10px auto;
-        display: block;
 
-        .a, path {
-            fill:#262626 !important;
-        }
-       }
-  }
 
 }

@@ -42,8 +42,11 @@ def publications(request):
         default_pub = None
 
     result = {
-        'BASE_SUB': settings.BASE_SUB, 'DEFAULT_PUB': DEFAULT_PUB, 'default_pub': default_pub,
-        'custom_icons_publications': getattr(settings, 'CORE_CUSTOM_ICONS_PUBLICATIONS', None)}
+        'BASE_SUB': settings.BASE_SUB,
+        'DEFAULT_PUB': DEFAULT_PUB,
+        'default_pub': default_pub,
+        'custom_icons_publications': getattr(settings, 'CORE_CUSTOM_ICONS_PUBLICATIONS', None),
+    }
 
     for p in Publication.objects.exclude(slug=DEFAULT_PUB).iterator():
         result.update({p.slug.upper() + '_SUB': p.slug, p.slug + '_pub': p})
@@ -56,20 +59,24 @@ def publications(request):
 
     # use this context processor to load also some other useful variables configured in settings
     result.update(
-        (var, getattr(settings, var, None)) for var in (
-            'HOMEV3_CUSTOM_CSS',
-            'HOMEV3_LOGO',
-            'HOMEV3_LOGO_WIDTH',
-            'HOMEV3_SECONDARY_LOGO',
-            'HOMEV3_LOGO_FOOTER',
-            'HOMEV3_LOGO_FOOTER_WIDTH',
-            'HOMEV3_LOGO_PRINTABLE',
-            'HOMEV3_LOGO_PRINTABLE_WIDTH',
-            'HOMEV3_LOGO_ALT_TEXT',
-            'HOMEV3_TWITTER_SITE_META',
-            'HOMEV3_EXTRA_META',
-            'CORE_ARTICLE_DETAIL_PUBLISHER_META',
-        ),
+        (
+            (var, getattr(settings, var, None)) for var in (
+                'HOMEV3_CUSTOM_CSS',
+                'HOMEV3_CUSTOM_PRINT_CSS',
+                'HOMEV3_LOGO',
+                'HOMEV3_LOGO_WIDTH',
+                'HOMEV3_SECONDARY_LOGO',
+                'HOMEV3_LOGO_FOOTER',
+                'HOMEV3_LOGO_FOOTER_WIDTH',
+                'HOMEV3_LOGO_PRINTABLE',
+                'HOMEV3_LOGO_PRINTABLE_WIDTH',
+                'HOMEV3_LOGO_ALT_TEXT',
+                'HOMEV3_TWITTER_SITE_META',
+                'HOMEV3_EXTRA_META',
+                'CORE_ARTICLE_DETAIL_PUBLISHER_META',
+                'PWA_MANIFEST_STATIC_PATH',
+            )
+        )
     )
 
     return result

@@ -1,5 +1,9 @@
 $navbarHeight: 60px;
 
+nav ul a:hover {
+    background: none;
+}
+
 #main-header {
     height: $navbarHeight;
     position: relative;
@@ -23,6 +27,7 @@ $navbarHeight: 60px;
         background: none;
         box-shadow: none;
     }
+
     .nav-menu-button {
         display: block;
         margin: 0 15px 0 10px;
@@ -31,6 +36,11 @@ $navbarHeight: 60px;
         height: auto;
         border-radius: 4px;
         transition: background 0.2s ease-in-out;
+        color: white !important;
+        background: none;
+        border: none;
+        outline: none;
+        text-transform: uppercase;
 
         &:hover {
             background:rgba($color: white, $alpha: 0.1) !important;
@@ -150,8 +160,8 @@ $navbarHeight: 60px;
             }
         }
 
-        a,
-        button {
+        .main-menu a,
+        .main-menu button {
         color: $lightGrey;
         font-size: 12px;
         font-weight: 500;
@@ -211,44 +221,31 @@ $navbarHeight: 60px;
             right: 0;
             height: $navbarHeight;
 
-            a {
-                line-height: $navbarHeight;
-            }
-
             .dropdown-content {
                 a {
                 line-height: 24px;
+                font-size: 12px;
+                font-weight: 500;
+                text-transform: uppercase;
+
+                    &:hover {
+                        background: none;
+                    }
                 }
             }
-
-            .btn.suscribirse {
-                color: $off-black !important;
-                background-color: $primary-color;
-                margin: 15px 0 15px 15px;
-                line-height: 32px;
-                height: 30px;
-                padding: 0 14px;
-                text-decoration: none !important;
-
-                &:hover {
-                background-color: $secondary-color;
-                }
+            .dropdown-button {
+                color: $lightGrey;
+                font-size: 12px;
+                font-weight: 500;
+                text-transform: uppercase;
             }
 
-            .btn.ingresar {
-                margin: 13px 0 15px 15px;
-                line-height: 28px !important;
-                height: 30px;
-                padding: 0 14px;
-                text-decoration: none !important;
-                border:2px solid white;
-                color:white !important;
-                box-sizing: border-box;
+            .suscribirse {
+                margin-left: 15px;
+            }
 
-                &:hover {
-                background-color: white;
-                color: $off-black !important;
-                }
+            .ingresar {
+                margin-left:15px;
             }
 
         }
@@ -398,94 +395,9 @@ $navbarHeight: 60px;
       .header-logo.ladiaria-white img {
         height: 30px !important;
       }
-      #nav-principal .navbar-right-tools .btn.ingresar {
+      #nav-principal .navbar-right-tools .ingresar {
       display: none;
       }
-    }
-  }
-}
-
-body {
-  &.frontpage {
-    #main-header {
-        .nav-menu-button {
-            a {
-            color: black;
-            }
-        }
-
-        #nav-principal {
-            a {
-                @media #{$large-and-up} {
-                    color: $off-black;
-                }
-            }
-
-            .input-field {
-                label i {
-                    color: $off-black;
-                }
-            }
-        }
-
-        .frontpage-logo-bar {
-            @media #{$medium-and-down} {
-            max-height: 0;
-            }
-        }
-
-        .header-logo.ladiaria-white {
-            filter: alpha(opacity=0);
-            opacity: 0;
-            display: none;
-
-            @media #{$medium-and-down} {
-                filter: alpha(opacity=1);
-                opacity: 1;
-                display: inline-block;
-            }
-        }
-
-        &.nav-up {
-            nav {
-            position: relative;
-            }
-        }
-
-        &.nav-down {
-            .frontpage-logo-bar {
-                max-height: 0;
-            }
-
-            .header-logo.ladiaria-white {
-                filter: alpha(opacity=1);
-                opacity: 1;
-                display: inline-block;
-            }
-
-            nav {
-                background: $off-black;
-            }
-
-            #nav-principal {
-                a,
-                span {
-                    color: $lightGrey;
-                }
-
-                .input-field {
-                    label i {
-                    color: white;
-                    }
-                }
-
-                .dropdown-content {
-                    a {
-                    color: $off-black !important;
-                    }
-                }
-            }
-        }
     }
   }
 }
@@ -823,11 +735,6 @@ body {
         }
 
         #nav-principal {
-          a {
-            @media #{$large-and-up} {
-              color: $off-black;
-            }
-          }
 
           .input-field {
             label i {
@@ -877,7 +784,7 @@ body {
           }
 
           #nav-principal {
-            a {
+            .main-menu a {
               color: $lightGrey ;
             }
 
@@ -894,11 +801,7 @@ body {
             }
           }
 
-          .navbar-right-tools {
-            .nav-menu-button {
-              color: white !important;
-            }
-          }
+
         }
       }
     }
@@ -947,16 +850,15 @@ body {
       visibility: visible;
     }
 
-    a {
+    a:not(.ut-btn) {
       color: $off-black;
-      font-weight: normal;
       font-family: "Roboto",sans-serif;
       -webkit-font-smoothing: antialiased;
       display:inline-block;
 
       &:hover {
         transition: 200ms ease;
-        text-decoration: underline;
+        text-decoration: none;
       }
     }
 
@@ -971,20 +873,8 @@ body {
       text-transform: uppercase;
     }
 
-    .ld-btn {
+    .ut-btn {
       min-width: 155px;
-      font-weight: bold;
-      min-width: 155px;
-      font-size: 16px;
-      padding: 10px 17px 9px 17px;
-      border: 3px solid $off-black;
-      color:$off-black;
-
-      &:hover {
-        background: $off-black;
-        color: white;
-        text-decoration: none;
-      }
     }
 
     &__title-name {

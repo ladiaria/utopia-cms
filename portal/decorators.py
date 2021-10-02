@@ -16,6 +16,7 @@ def render_response(template_prefix=None, always_use_requestcontext=True):
          * a dictionary to add to the Context or RequestContext and
          * (optionally) a list of context processors (if given, forces use of
            RequestContext).
+         * (optionally) a headers dictionary to inject in the response
 
     Example usage (in a views module)::
 
@@ -35,27 +36,30 @@ def render_response(template_prefix=None, always_use_requestcontext=True):
                 return response
             elif isinstance(response, basestring):
                 template_name = response
-                namespace = {}
-                context_processors = None
+                namespace, context_processors, headers = {}, None, {}
             elif isinstance(response, (tuple, list)):
                 len_tuple = len(response)
                 if len_tuple == 2:
                     template_name, namespace = response
-                    context_processors = None
+                    context_processors, headers = None, {}
                 elif len_tuple == 3:
                     template_name, namespace, context_processors = response
+                    headers = {}
+                elif len_tuple == 4:
+                    template_name, namespace, context_processors, headers = response
                 else:
                     raise TemplateSyntaxError(
-                        '%s.%s function did not return a parsable tuple' % (
-                            func.__module__, func.__name__))
+                        '%s.%s function did not return a parsable tuple' % (func.__module__, func.__name__)
+                    )
             else:
                 raise TemplateSyntaxError(
-                    '%s.%s function did not provide a template name or '
-                    'HttpResponse object' % (func.__module__, func.__name__))
+                    '%s.%s function did not provide a template name or HttpResponse object' % (
+                        func.__module__, func.__name__
+                    )
+                )
 
             if always_use_requestcontext or context_processors is not None:
-                context = RequestContext(
-                    request, namespace, context_processors)
+                context = RequestContext(request, namespace, context_processors)
             else:
                 context = Context(namespace)
 
@@ -65,8 +69,12 @@ def render_response(template_prefix=None, always_use_requestcontext=True):
                 else:
                     template_name = correct_path(template_name)
 
-            return HttpResponse(loader.render_to_string(
-                template_name, context=context.flatten(), request=context.request))
+            http_response = HttpResponse(
+                loader.render_to_string(template_name, context=context.flatten(), request=context.request)
+            )
+            for header, header_value in headers.items():
+                http_response[header] = header_value
+            return http_response
 
         return _dec
 

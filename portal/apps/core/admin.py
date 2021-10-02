@@ -323,7 +323,7 @@ class ArticleAdmin(ModelAdmin):
     list_filter = ('type', 'date_created', 'is_published', 'date_published', 'newsletter_featured', 'byline')
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
-    raw_id_fields = ('photo', 'gallery', 'continues', 'main_section')
+    raw_id_fields = ('photo', 'gallery', 'main_section')
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
 
     fieldsets = (
@@ -335,7 +335,7 @@ class ArticleAdmin(ModelAdmin):
                 'classes': ('wide', ),
             }
         ),
-        ('Metadatos', {'fields': ('continues', 'date_published', 'tags', 'main_section')}),
+        ('Metadatos', {'fields': ('date_published', 'tags', 'main_section')}),
         ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse', )}),
         ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse', )}),
         (

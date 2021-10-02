@@ -64,7 +64,7 @@ def load_table(request, table_id):
         ):
             return HttpResponseForbidden()
 
-    if month and year and table_id not in ('activity', 'activity_only_digital', 'audio_statistics'):
+    if month and year and table_id not in ('activity', 'activity_only_digital', 'audio_statistics', 'subscribers'):
         date_start = date(int(year), int(month), 1)
         date_end = date_start + relativedelta(months=1)
         last_month = today - relativedelta(months=1)
@@ -82,10 +82,8 @@ def load_table(request, table_id):
             rows = audio_statistics_dashboard(month, year)
         else:
             rows = csv.reader(open(join(settings.DASHBOARD_REPORTS_PATH, filename)))
-        # hardcoded last year filter only for subscribers
-        # TODO: implement the year selector
         if table_id == 'subscribers':
-            rows = [row for row in rows if row[1].startswith('2021')]
+            rows = [row for row in rows if row[1].startswith('%s-%s' % (year, month))]
     except Exception:
         rows = None
     else:
@@ -108,10 +106,15 @@ def load_table(request, table_id):
 @never_cache
 @permission_required('thedaily.change_subscriber')
 def export_csv(request, table_id):
-    resp = HttpResponse(
-        content=open(join(settings.DASHBOARD_REPORTS_PATH, '%s.csv' % table_id)).read(),
-        content_type='text/csv',
-    )
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    content = open(join(settings.DASHBOARD_REPORTS_PATH, '%s.csv' % table_id))
+    if month and year and table_id == 'subscribers':
+        resp = HttpResponse(content_type='text/csv')
+        w = csv.writer(resp)
+        w.writerows([row for row in csv.reader(content) if row[1].startswith('%s-%s' % (year, month))])
+    else:
+        resp = HttpResponse(content=content.read(), content_type='text/csv')
     resp['Content-Disposition'] = 'attachment; filename=%s.csv' % table_id
     return resp
 

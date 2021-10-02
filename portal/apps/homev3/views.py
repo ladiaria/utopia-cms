@@ -7,7 +7,6 @@ from django.http import Http404, HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import never_cache, cache_control
-from django.template import RequestContext
 
 from decorators import decorate_if_no_staff, decorate_if_staff
 
@@ -130,12 +129,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
                 'allow_ads': getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_ALLOW_ADS', True),
             }
         )
-        template = 'homev3/templates/index_pubs.html'
-        if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_CUSTOM_TEMPLATES', ()):
-            template_dir = getattr(settings, 'CORE_PUBLICATIONS_TEMPLATE_DIR', None)
-            if template_dir:
-                template = '%s/%s.html' % (template_dir, publication.slug)
-        return render(request, template, context)
+        template = 'index_pubs.html'
     else:
         if year and month and day:
             date_published = datetime(
@@ -185,4 +179,10 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
                 'questions_topic': questions_topic,
             }
         )
-        return render(request, 'index.html', context)
+        template = 'index.html'
+
+    if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_CUSTOM_TEMPLATES', ()):
+        template_dir = getattr(settings, 'CORE_PUBLICATIONS_TEMPLATE_DIR', None)
+        if template_dir:
+            template = '%s/%s.html' % (template_dir, publication.slug)
+    return render(request, template, context)

@@ -98,19 +98,23 @@
 
     function loadComments(){
       $.getScript($('#coral_talk_stream').attr('data-talk-url') + 'assets/js/embed.js', function(){
-        Coral.createStreamEmbed({
-            id: 'coral_talk_stream',
-            autoRender: true,
-            rootURL: $('#coral_talk_stream').attr('data-talk-url'),
-            storyID: $('#coral_talk_stream').attr('data-article-id'),
-            storyURL: $('#coral_talk_stream').attr('data-article-url'),
-            accessToken: $('#coral_talk_stream').attr('data-talk-auth-token'),
-            events: function(events){
-              events.on("loginPrompt", function(){
-                location.href = $('#coral_talk_stream').attr('data-login-url');
-              });
-            }
-        });
+        var coral_options = {
+          id: 'coral_talk_stream',
+          autoRender: true,
+          rootURL: $('#coral_talk_stream').attr('data-talk-url'),
+          storyID: $('#coral_talk_stream').attr('data-article-id'),
+          storyURL: $('#coral_talk_stream').attr('data-article-url'),
+          accessToken: $('#coral_talk_stream').attr('data-talk-auth-token'),
+          events: function(events){
+            events.on("loginPrompt", function(){
+              location.href = $('#coral_talk_stream').attr('data-login-url');
+            });
+          }
+        };
+        if (coral_options.accessToken) {
+          coral_options.bodyClassName = 'logged-in';
+        }
+        Coral.createStreamEmbed(coral_options);
         $('.talk-login').addClass('active');
       });
     }

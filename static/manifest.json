@@ -1,0 +1,45 @@
+{
+  "background_color": "#6ef9ff",
+  "theme_color": "#F2F2F2",
+  "description": "Utopía CMS",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/static/meta/utopia-1024x1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/meta/utopia-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/meta/utopia-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/meta/utopia-maskable-1024x1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/meta/utopia-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/meta/utopia-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "name": "Utopía CMS",
+  "short_name": "Utopía CMS",
+  "start_url": "/",
+  "scope": "/"
+}

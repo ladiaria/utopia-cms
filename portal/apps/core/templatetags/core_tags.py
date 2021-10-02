@@ -289,11 +289,12 @@ def render_hierarchy(article):
             parent = (reverse('home', kwargs={'domain_slug': section.category.slug}), section.category)
         else:
             parent = None if (
-                not article.main_section or article.main_section.edition.publication.slug in \
+                not article.main_section or article.main_section.edition.publication.slug in
                 getattr(settings, 'CORE_HIERARCHY_USE_PUBLICATION', ())
             ) else (
                 reverse('home', kwargs={'domain_slug': article.main_section.edition.publication.slug}),
-                article.main_section.edition.publication)
+                article.main_section.edition.publication,
+            )
         child = u'<a href="%s">%s</a>' % (section.get_absolute_url(), section)
         return u' › '.join([u'<a href="%s">%s</a>' % parent, child]) if parent else child
     else:
@@ -307,8 +308,6 @@ def publication_section(context, article, pub=None):
     context variable as publication argument (or default_pub if None).
     """
     section = article.publication_section(pub or context.get('publication') or context.get('default_pub'))
-    if section and section.slug == 'partidos-politicos':
-        section = Section.objects.get(slug='elecciones-2019')
     return (u'<a href="%s">%s</a>' % (section.get_absolute_url(), section)) if section else u''
 
 

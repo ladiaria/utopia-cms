@@ -20,8 +20,9 @@ from django.core.urlresolvers import reverse
 from django.core.exceptions import MultipleObjectsReturned
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Submit, Field, Fieldset, HTML
+from crispy_forms.layout import Layout, BaseInput, Field, Fieldset, HTML
 from crispy_forms.bootstrap import FormActions
+from crispy_forms.utils import get_template_pack
 
 from thedaily.models import Subscription, Subscriber
 
@@ -35,6 +36,15 @@ def check_password_strength(password):
         return False
     else:
         return True
+
+
+class Submit(BaseInput):
+    """ Use a custom submit because crispy's adds btn and btn-primary in the class attribute """
+    input_type = 'submit'
+
+    def __init__(self, *args, **kwargs):
+        self.field_classes = 'submit submitButton' if get_template_pack() == 'uni_form' else ''
+        super(Submit, self).__init__(*args, **kwargs)
 
 
 class PhoneInput(TextInput):
@@ -138,7 +148,7 @@ class SignupForm(ModelForm):
                 'next_page',
             ),
             HTML('<div class="align-center">'),
-            Submit('save', u'Suscribite', css_class='btn-register'),
+            Submit('save', u'Suscribite', css_class='u-mt-50 ut-btn ut-btn-l'),
             HTML('</div">'),
         )
         super(SignupForm, self).__init__(*args, **kwargs)
@@ -490,7 +500,7 @@ class SubscriptionForm(ModelForm):
         Field('preferred_time', template='preferred_time.html'),
         HTML('</div>'),
         HTML('<div class="ld-block--sm align-center">'),
-        FormActions(Submit('save', u'Continuar', css_class='ld-btn-regular')),
+        FormActions(Submit('save', u'Continuar', css_class='ut-btn ut-btn-l')),
         HTML('<div class="ld-text-secondary align-center ld-subscription-step" style="display:none;">Paso 1 de 2'),
     )
 
@@ -512,7 +522,7 @@ class SubscriptionPromoCodeForm(SubscriptionForm):
         Field('payment_type', template='payment_type.html'),
         Field('preferred_time', template='preferred_time.html'),
         HTML('</div><div class="ld-block--sm align-center">'),
-        FormActions(Submit('save', u'Continuar', css_class='ld-btn-regular')),
+        FormActions(Submit('save', u'Continuar', css_class='ut-btn ut-btn-l')),
         HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
     )
 
@@ -547,7 +557,7 @@ class SubscriptionPromoCodeCaptchaForm(SubscriptionPromoCodeForm):
         ),
         Field('captcha'),
         HTML('</div><div class="ld-block--sm align-center">'),
-        FormActions(Submit('save', u'Continuar', css_class='ld-btn-regular')),
+        FormActions(Submit('save', u'Continuar', css_class='ut-btn ut-btn-l')),
         HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
     )
 
@@ -565,7 +575,7 @@ class GoogleSigninForm(ModelForm):
     helper.error_text_inline = True
     helper.layout = Layout(
         Fieldset(u'', 'phone'),
-        FormActions(Submit('save', u'suscribite', css_class='ld-btn-regular')),
+        FormActions(Submit('save', u'suscribite', css_class='ut-btn ut-btn-l')),
     )
 
     class Meta:
@@ -652,7 +662,7 @@ class PasswordResetRequestForm(Form):
                 ),
             ),
             HTML('<div class="align-center form-group">'),
-            Submit('save', u'Restablecer contraseña', css_class='ld-btn-default btn-dark'),
+            Submit('save', u'Restablecer contraseña', css_class='ut-btn ut-btn-l'),
             HTML('</div>'),
         )
 
@@ -725,7 +735,7 @@ class ConfirmEmailRequestForm(Form):
     helper.layout = Layout(
         Fieldset(u'', Field('email')),
         HTML('<div class="align-center">'),
-        FormActions(Submit('save', u'Enviar mensaje de activación', css_class='ld-btn-default btn-dark')),
+        FormActions(Submit('save', u'Enviar mensaje de activación', css_class='ut-btn ut-btn-l')),
         HTML('</div">'),
     )
 
@@ -799,7 +809,7 @@ class PasswordChangeForm(PasswordChangeBaseForm):
             'new_password_1',
             'new_password_2',
             HTML('<div class="align-center">'),
-            FormActions(Submit('save', u'Elegir contraseña', css_class='ld-btn-default btn-dark')),
+            FormActions(Submit('save', u'Elegir contraseña', css_class='ut-btn ut-btn-l')),
             HTML('</div>'),
         )
 
@@ -849,7 +859,7 @@ class PasswordResetForm(PasswordChangeBaseForm):
             Field('new_password_2', template='materialize_css_forms/layout/password.html'),
             Field('gonzo', type='hidden', value=initial['gonzo']),
             Field('hash', type='hidden', value=initial['gonzo']),
-            FormActions(Submit('save', u'Elegir contraseña', css_class='ld-btn-default')),
+            FormActions(Submit('save', u'Elegir contraseña', css_class='ut-btn ut-btn-l')),
         )
 
         super(PasswordResetForm, self).__init__(*args, **kwargs)

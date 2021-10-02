@@ -5,6 +5,35 @@
   @media (min-width: 390px) {
     padding: 0;
   }
+
+  &.pwa {
+      .dismiss {
+          margin:10px 0 0;
+        a {
+            display: inline-block;
+            font-size: 14px;
+            text-decoration: underline;
+
+            &:hover {
+                text-decoration: none;
+            }
+
+        }
+      }
+      .dismissed {
+        font-size: 14px;
+        line-height: 17px;
+
+        .undo {
+            display: inline-block;
+            margin-top:10px;
+
+            &:hover {
+                text-decoration: none;
+            }
+        }
+    }
+  }
 }
 .ld-subscribe-box {
   background-color: white;
@@ -21,7 +50,7 @@
   &__title {
     font-weight: 500;
     margin: 0 0 24px 0;
-    line-height: 1;
+    line-height: 22px;
     font-size: 18px;
     display: block;
   }
@@ -39,7 +68,7 @@
   &__login {
     margin-top:30px;
 
-    a {
+    a:not(.ut-btn) {
       text-decoration: none;
       color: $off-black;
     }
@@ -49,4 +78,21 @@
       color: $off-black;
     }
   }
+
+  &.pwa {
+    .ld-subscribe-box__title {
+        margin-bottom: 10px;
+    }
+    .ld-subscribe-box__info {
+        font-size: 14px;
+        line-height: 17px;
+        margin-bottom: 15px;
+    }
+
+    .icon {
+        display: inline-block;
+        margin-bottom: 18px;
+    }
+  }
 }
+

@@ -1,3 +1,20 @@
+# From version 0.1.0 to 0.1.1
+
+WARNING: The "keep reading" feature was removed, if you want to keep the article relations that you made with this
+feature, you have to backup your data before this upgrade. Then you can just relate each "group" of the articles
+involved through a tag, we believe that this is the "state of the art" mechanism to maintain a group of related
+articles in a publication site, and its usage is easier for the publisher user than the removed feature.
+
+```
+git pull
+git checkout 0.1.1
+cd portal
+# activate your virtual env
+pip uninstall django-formtools
+pip install -r requirements.txt
+DJANGO_SETTINGS_MODULE=install_settings ./manage.py migrate core
+```
+
 # From version 0.0.9 to 0.1.0
 
 [Upgrade from 0.0.9 to 0.1.0 guide](docs/upgrade_from_009_to_010.md)

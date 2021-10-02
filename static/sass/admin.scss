@@ -2,7 +2,7 @@
 * Admin/Staff only code
 */
 
-.ld-admin-edit {
+.ut-admin-edit {
   position: fixed;
   bottom: 70px;
   right: 15px;
@@ -16,8 +16,8 @@
   }
 }
 
-.ld-btn-default.ld-admin-edit-card,
-a.ld-btn-default.ld-admin-edit-card {
+.ut-btn.ut-admin-edit-card,
+a.ut-btn.ut-admin-edit-card {
   position: absolute;
   right: 15px;
   font-size: 11px;
@@ -25,21 +25,21 @@ a.ld-btn-default.ld-admin-edit-card {
   bottom: 15px;
 }
 @media screen and (min-width: 769px) {
-  .ld-btn-default.ld-admin-edit-card,
-  a.ld-btn-default.ld-admin-edit-card {
+  .ut-btn.ut-admin-edit-card,
+  a.ut-btn.ut-admin-edit-card {
     display: none;
     bottom: initial;
     top: 15px;
   }
 
-  .ld-btn-default.ld-admin-edit-card:hover,
-  a.ld-btn-default.ld-admin-edit-card:hover {
+  .ut-btn.ut-admin-edit-card:hover,
+  a.ut-btn.ut-admin-edit-card:hover {
     display: block;
   }
 }
 
-.ld-btn-default.ld-admin-order,
-span.ld-btn-default.ld-admin-order {
+.ut-btn.ut-admin-order,
+span.ut-btn.ut-admin-order {
   position: absolute;
   right: 15px;
   top: 15px;
@@ -47,8 +47,8 @@ span.ld-btn-default.ld-admin-order {
   padding: 4px 9px 5px;
 }
 @media screen and (min-width: 769px) {
-  .ld-btn-default.ld-admin-order,
-  span.ld-btn-default.ld-admin-order {
+  .ut-btn.ut-admin-order,
+  span.ut-btn.ut-admin-order {
     bottom: 15px;
     right: 15px;
     left: initial;
@@ -56,8 +56,8 @@ span.ld-btn-default.ld-admin-order {
   }
 }
 
-*:hover > .ld-btn-default.ld-admin-edit-card,
-*:hover > a.ld-btn-default.ld-admin-edit-card {
+*:hover > .ut-btn.ut-admin-edit-card,
+*:hover > a.ut-btn.ut-admin-edit-card {
   display: block;
 }
 

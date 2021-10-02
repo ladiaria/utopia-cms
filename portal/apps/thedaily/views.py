@@ -32,7 +32,6 @@ from django.contrib.auth import authenticate, logout, login as do_login
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
-from formtools.wizard.views import SessionWizardView
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -230,63 +229,6 @@ def signup(request):
             else:
                 return 'welcome.html', {'signup_mail': user.email}
     return 'signup.html', {'signup_form': signup_form, 'errors': signup_form.errors.get('__all__')}
-
-
-class ValidarWizard(SessionWizardView):
-
-    def get_template_names(self, step=None):
-        if step == 0:
-            return 'wizard.html'
-        return 'wizard.html'
-
-    def get_form_kwargs(self, step):
-        kwargs = {}
-        # if step == 1:
-        #     cleaned_data = self.get_cleaned_data_for_step('first_step')
-        #     kwargs.update(
-        #         {'subscription_type': cleaned_data['subscription_type']})
-        return kwargs
-
-    def get_context_data(self, form, **kwargs):
-        # data = self.get_cleaned_data_for_step(1)
-        #  if self.steps.current == '1':
-        #      service_name = str(data['provider']).split('Service')[1]
-        #      #services are named th_<service>
-        #      #call of the dedicated <service>ProviderForm
-        #      form = class_for_name('th_' + service_name.lower() + '.forms',
-        #            service_name + 'ProviderForm')
-        # elif self.steps.current == '3':
-        #      service_name = str(data['consummer']).split('Service')[1]
-        #      #services are named th_<service>
-        #      #call of the dedicated <service>ConsummerForm
-        #      form = class_for_name('th_' + service_name.lower() + '.forms',
-        #            service_name + 'ConsummerForm')
-        context = super(ValidarWizard, self).get_context_data(
-            form=form, **kwargs)
-        return context
-
-    def get_form(self, step=None, data=None, files=None):
-        form = super(ValidarWizard, self).get_form(step, data, files)
-        user = self.request.user
-        if user.is_authenticated():
-            # determine the step if not given
-            if step is None:
-                step = self.steps.current
-        else:
-            if step is None:
-                step = 2
-        return form
-
-    def process_step(self, form):
-        if self.step == 0:
-            prof = self.current_request.user.get_profile()
-            self.extra_context['profile'] = prof
-
-    def get_form_step_data(self, form):
-        return form.data
-
-    def done(self, form_list, **kwargs):
-        return render(self.request, 'welcome.html', {'form_data': [form.cleaned_data for form in form_list]})
 
 
 @never_cache
@@ -666,12 +608,6 @@ def password_change(request, user_id=None, hash=None):
             do_login(request, user)
             return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
     return 'password_change.html', {'form': password_change_form, 'user_id': user_id, 'hash': hash}
-
-
-@never_cache
-@to_response
-def giveaway(request):
-    return render(request, 'thedaily/giveaway.html')
 
 
 @never_cache

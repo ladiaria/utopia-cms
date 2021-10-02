@@ -1,3 +1,22 @@
+# version 0.1.1 (2021-10-02)
+
+- Progressive Web Apps (PWA) support.
+- "Keep reading" feature dropped.
+- Many author customizations removed.
+- UX improvements.
+- Syntax formatting improvements and fixes on many modules and templates.
+- Unneeded secure_static context processor removed.
+- settings and test_settings modules improved eliminating not needed lines.
+- Fixed edition PDF download view.
+- Fixed Category.latest_articles method when the category has no home.
+- Support for a non-subscriber version in the category newsletter preview feature.
+- Support for direct path redirect in section redirect feature.
+- Improvements in dashboard views.
+- Support for custom templating in publications home pages.
+- Support for custom headers in the to_response decorator.
+- Unneeded formtools pip dependency removed.
+- Support for a custom css for the print version.
+
 # version 0.1.0 (2021-08-21)
 
 - Django support upgraded to version 1.11 (dropped support for Django 1.5).

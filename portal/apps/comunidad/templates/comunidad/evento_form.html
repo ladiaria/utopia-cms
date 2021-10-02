@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load static crispy_forms_tags %}
 
 {% block css %}
-    <link rel="stylesheet" href="{{ STATIC_URL }}css/datetimepicker.css">
+  <link rel="stylesheet" href="{% static 'css/datetimepicker.css' %}">
 {% endblock %}
 
 {% block javascript %}
@@ -31,7 +31,7 @@ jQuery(document).ready(function ($) {
         }(jQuery));
 
         $('.datepicker').datetimepicker({ format: 'dd/mm/yyyy hh:ii', language: 'es'});
-         
+
         var start = $('#id_start');
         var end = $('#id_end');
 

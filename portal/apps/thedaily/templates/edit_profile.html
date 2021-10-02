@@ -30,7 +30,7 @@
       <h2 class="ld-title ld-title--underlined">Lista de lectura</h2>
       <div class="row ld-profile-row">
         <p>Los artículos que guardaste para leer después, tus favoritos e historial de visitados.</p>
-        <a class="ld-btn ld-btn-solid-dark" href="{% url 'lista-lectura-leer-despues' %}">Ir a lista de lectura</a>
+        <a class="ut-btn" href="{% url 'lista-lectura-leer-despues' %}">Ir a lista de lectura</a>
       </div>
     </section>
 
@@ -42,13 +42,13 @@
         {% if google_oauth2_allow_disconnect %}
           <form action="{% url 'social:disconnect_individual' backend='google-oauth2' association_id=google_oauth2_assoc.id %}" method="post">
             {% csrf_token %}
-            <input class="ld-btn ld-btn-solid-dark" type="submit" id="desconectar" value="desconectar" name="desconectar"/>
+            <input class="ut-btn" type="submit" id="desconectar" value="desconectar" name="desconectar"/>
           </form>
         {% else %}
           <div>Tu cuenta de usuario está asociada a tu cuenta de Google</div>
         {% endif %}
       {% else %}
-        <a class="ld-btn ld-btn-solid-dark" href="{% url 'social:begin' backend='google-oauth2' %}" title="Conectá tu cuenta de Google">
+        <a class="ut-btn" href="{% url 'social:begin' backend='google-oauth2' %}" title="Conectá tu cuenta de Google">
           conectar
         </a>
       {% endif %}

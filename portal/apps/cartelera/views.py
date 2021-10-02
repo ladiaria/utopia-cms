@@ -54,17 +54,13 @@ def vivo(request, archived_event_id=None):
         'logo_template': getattr(settings, 'CARTELERA_EVENTS_LOGO_TEMPLATE', None),
         'resume_template': getattr(settings, 'CARTELERA_EVENTS_RESUME_TEMPLATE', 'core/templates/edition/resume.html')}
     if archived_event_id:
-        context.update({
-            'event': get_object_or_404(ArchivedEvent, id=archived_event_id), 'is_detail': True,
-            'archive_external_url': getattr(settings, 'CARTELERA_ARCHIVE_EXTERNAL_URL', '#')})
+        context.update({'event': get_object_or_404(ArchivedEvent, id=archived_event_id), 'is_detail': True})
         return render(request, 'cartelera/vivo_archive.html', context)
     try:
         active_event = LiveEmbedEvent.objects.get(active=True)
     except LiveEmbedEvent.DoesNotExist:
         active_event = None
-    context.update({
-        'event': active_event, 'is_detail': True,
-        'events_external_url': getattr(settings, 'CARTELERA_EVENTS_EXTERNAL_URL', '#')})
+    context.update({'event': active_event, 'is_detail': True})
     return render(request, 'cartelera/vivo.html', context)
 
 
