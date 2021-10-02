@@ -12,7 +12,7 @@ cd portal
 # activate your virtual env
 pip uninstall django-formtools
 pip install -r requirements.txt
-DJANGO_SETTINGS_MODULE=install_settings ./manage.py migrate core
+./manage.py migrate core
 ```
 
 # From version 0.0.9 to 0.1.0
