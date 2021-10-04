@@ -30,7 +30,7 @@ class LatestArticles(Feed):
 
     def item_description(self, item):
         deck = "<h2>%s</h2><br/>" % ldmarkup(item.deck) if item.deck else ""
-        return "%s" % deck + ldmarkup(item.body[:400] + "...") + "<a href='%s://%s%s'>Continuar leyendo...</a>" % (
+        return "%s" % deck + ldmarkup(item.body[:400] + "...") + '<a href="%s://%s%s">Continuar leyendo...</a>' % (
             settings.URL_SCHEME, site.domain, item.get_absolute_url()
         )
 
