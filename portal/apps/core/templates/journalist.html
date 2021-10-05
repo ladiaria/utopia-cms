@@ -24,7 +24,11 @@
 {% block content %}
 	<section class="section_module container--narrow">
     {% for article in articles %}
-      {% render_article_card article=article media=article.home_display card_size="FD" %}
+      {% if forloop.first %}
+        {% render_article_card article=article media=article.home_display card_size="FD" img_load_lazy=False %}
+      {% else %}
+        {% render_article_card article=article media=article.home_display card_size="FD" %}
+      {% endif %}
     {% endfor %}
 
     {% if articles.has_other_pages %}

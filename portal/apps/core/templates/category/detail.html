@@ -53,7 +53,7 @@
                     <source srcset="{{ cover_article.photo.get_700w_url }}" media="(min-width: 0)">
                     <img class="ld-card__img" title="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}" alt="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}"
                          width="700"{% if cover_article.photo_image_file_exists %} height="{{ cover_article.photo.get_700w_size.1 }}"{% endif %}
-                         loading="lazy">
+                    >
                   </picture>
                 </figure>
               </a>

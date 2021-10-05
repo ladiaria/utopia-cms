@@ -52,17 +52,6 @@ def render_related(context, article):
         'articles': section.latest4related(article.id), 'is_detail': False, 'section': section.name})
 
 
-@register.tag
-def render_mas_leidos(parser, token):
-    """Usage: {% render_mas_leidos period="day" %}"""
-    bits = token.contents.split()[2:]
-    kwargs = {}
-    for param in bits:
-        key, val = [str(p) for p in param.split('=')]
-        kwargs[key] = val.replace('"', '')
-    return RenderArticleMiniNode(**kwargs)
-
-
 # Media select
 class MediaSelectNode(Node):
     def __init__(self, name):
@@ -93,7 +82,7 @@ def media_select(parser, token):
 
 
 @register.simple_tag(takes_context=True)
-def render_article_card(context, article, media, card_size, card_type=None):
+def render_article_card(context, article, media, card_size, card_type=None, img_load_lazy=True):
     if not card_size:
         card_size = article.header_display
 
@@ -144,9 +133,17 @@ def render_article_card(context, article, media, card_size, card_type=None):
     if card_size == "FN":
         template = "article_card_new.html"
 
-    context.update({
-        'article': article, 'media': media, 'card_size': card_size, 'card_display': card_display,
-        'card_type': card_type, 'verbose_date': verbose_date})
+    context.update(
+        {
+            'article': article,
+            'media': media,
+            'card_size': card_size,
+            'card_display': card_display,
+            'card_type': card_type,
+            'verbose_date': verbose_date,
+            'img_load_lazy': img_load_lazy,
+        }
+    )
     return loader.render_to_string('core/templates/article/' + template, context.flatten())
 
 
@@ -388,6 +385,7 @@ def truncatehtml(string, length):
 truncatehtml.is_safe = True
 
 
+# randomgen is taken from https://github.com/bkeating/django-templatetag-randomgen and fixed (*) here
 @register.tag(name="randomgen")
 def randomgen(parser, token):
     items = []
@@ -404,6 +402,9 @@ class RandomgenNode(Node):
             self.items.append(item)
 
     def render(self, context):
+        # (*) Note: we fixed index error in arg1 and arg2, but they can still raise errors if not passed correctly
+        arg1 = self.items[0] if self.items else None
+        arg2 = self.items[1] if len(self.items) > 1 else None
         if "hash" in self.items:
             result = os.urandom(16).encode('hex')
         elif "float" in self.items:

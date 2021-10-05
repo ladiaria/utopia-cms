@@ -121,7 +121,7 @@
                  data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
                  alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
                  width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}
-                 loading="lazy">
+                 >
           </picture>
           <figcaption class="article-caption container ld-caption">
             <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
