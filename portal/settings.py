@@ -449,8 +449,7 @@ CRM_UPDATE_SUBSCRIBER_FIELDS = {}
 # Online sync User fields with CRM enabled by default
 CRM_UPDATE_USER_ENABLED = True
 
-PROMO_CODE = u'ei2020'
-
+# PWA
 PWA_SERVICE_WORKER_TEMPLATE = 'core/templates/sw/serviceworker.js'
 PWA_SERVICE_WORKER_VERSION = 1
 

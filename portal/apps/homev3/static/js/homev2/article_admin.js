@@ -78,6 +78,11 @@ var prepareFields = function(){
     div_body.after(div_body_clone);
 }
 
+var main_section_row_selected = function(radio_field){
+    radio_field.parents("tr").addClass('row-articlerel-selected');
+    $("[name=main_section_radio]:not(:checked)").parents("tr").removeClass('row-articlerel-selected');
+}
+
 $(function(){
     prepareFields();
     $("#id_type").change(prepareFields);
@@ -91,8 +96,7 @@ $(function(){
         }
         $(value).change(function(){
             $("#id_main_section").val($(this).attr('data-articlerel-id'));
-            $(this).parents("tr").addClass('row-articlerel-selected');
-            $("[name=main_section_radio]:not(:checked)").parents("tr").removeClass('row-articlerel-selected');
+            main_section_row_selected($(this));
         });
     });
 });

@@ -421,8 +421,11 @@ class ArticleAdmin(ModelAdmin):
                             self.message_user(request, u'Publicación principal: %s' % self.obj.main_section)
                     else:
                         main_section = ArticleRel.objects.get(
-                            article=self.obj, edition=request.POST.get('articlerel_set-%s-edition' % row_selected),
-                            section=request.POST.get('articlerel_set-%s-section' % row_selected))
+                            article=self.obj,
+                            edition=request.POST.get('articlerel_set-%s-edition' % row_selected),
+                            section=request.POST.get('articlerel_set-%s-section' % row_selected),
+                            position=request.POST.get('articlerel_set-%s-position' % row_selected),
+                        )
                         if self.obj.main_section != main_section:
                             self.obj.main_section, save = main_section, True
                             self.message_user(request, u'Publicación principal: %s' % main_section)

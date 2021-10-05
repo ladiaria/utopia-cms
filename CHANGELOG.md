@@ -1,3 +1,8 @@
+# version 0.1.2 (2021-10-05)
+
+- Support to disable (default) the "promo code" field for new subscriptions.
+- Fixes and improvements in the Article admin change form.
+
 # version 0.1.1 (2021-10-02)
 
 - Progressive Web Apps (PWA) support.

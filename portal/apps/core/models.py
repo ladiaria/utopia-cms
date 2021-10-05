@@ -1303,16 +1303,20 @@ class Article(ArticleBase):
 
 class ArticleRel(Model):
     """
-    Relation to save the relative position of the article into the
-    Article-Edition-Section relationship
+    Relation to save the relative position of the article into the Article-Edition-Section relationship.
+    NOTE: position cannot be blank because new rows marked as "main" in the admin inline, with position blank, and
+          duplicated with another row (unique_together allows null values) will cause a 500 error when trying to set
+          the row as main (another row can exist).
     """
     article = ForeignKey(Article)
     edition = ForeignKey(Edition)
     section = ForeignKey(Section)
     position = PositiveSmallIntegerField(u'orden en la sección', default=None, null=True)
     home_top = BooleanField(
-        u'destacado en portada', default=False, help_text=(
-            u'Marque esta opción para que esta nota aparezca en los destacados de la edición.'))
+        u'destacado en portada',
+        default=False,
+        help_text=u'Marque esta opción para que esta nota aparezca en los destacados de la edición.',
+    )
     top_position = PositiveSmallIntegerField(u'orden', blank=True, null=True)
 
     def __unicode__(self):
@@ -1320,6 +1324,7 @@ class ArticleRel(Model):
 
     class Meta:
         ordering = ('position', '-article__date_published')
+        unique_together = ('article', 'edition', 'section', 'position')
 
 
 class ArticleViewedBy(Model):

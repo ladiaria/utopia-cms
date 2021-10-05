@@ -1,3 +1,13 @@
+# From version 0.1.1 to 0.1.2
+
+```
+git pull
+git checkout 0.1.2
+cd portal
+# activate your virtual env
+./manage.py migrate core
+```
+
 # From version 0.1.0 to 0.1.1
 
 WARNING: The "keep reading" feature was removed, if you want to keep the article relations that you made with this

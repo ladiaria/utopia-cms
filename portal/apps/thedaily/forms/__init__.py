@@ -539,6 +539,28 @@ class SubscriptionPromoCodeForm(SubscriptionForm):
         return promo_code
 
 
+class SubscriptionCaptchaForm(SubscriptionForm):
+    captcha = ReCaptchaField(label=u'')
+
+    helper = FormHelper()
+    helper.form_tag = False
+    helper.help_text_inline = True
+    helper.error_text_inline = True
+    helper.layout = Layout(
+        HTML('<div class="col s12" style="margin-top: 30px; margin-bottom: 25px;">'),
+        Field('payment_type', template='payment_type.html'),
+        Field('preferred_time', template='preferred_time.html'),
+        HTML(
+            u'</div><div class="col s12" style="margin-top: 25px; margin-bottom: 25px;">'
+            u'<strong>Comprobá que no sos un robot</strong>'
+        ),
+        Field('captcha'),
+        HTML('</div><div class="ld-block--sm align-center">'),
+        FormActions(Submit('save', u'Continuar', css_class='ut-btn ut-btn-l')),
+        HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
+    )
+
+
 class SubscriptionPromoCodeCaptchaForm(SubscriptionPromoCodeForm):
     captcha = ReCaptchaField(label=u'')
 

@@ -56,6 +56,7 @@ from thedaily.forms import (
     PasswordResetForm,
     SubscriptionForm,
     SubscriptionPromoCodeForm,
+    SubscriptionCaptchaForm,
     SubscriptionPromoCodeCaptchaForm,
     PasswordResetRequestForm,
     PasswordChangeForm,
@@ -345,14 +346,15 @@ def subscribe(request, planslug, category_slug=None):
                 subscription = request.session.get('subscription')
                 subscription_in_process = subscription and subscription.subscriber
 
+        PROMOCODE_ENABLED = getattr(settings, 'THEDAILY_PROMOCODE_ENABLED', False)
         # TODO post release: do not asume CF for getting the country (do it like signupwall gets the ip_address)
         ipcountry = request.META.get('HTTP_CF_IPCOUNTRY', settings.SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY)
-        subscription_promocode_formclass = \
-            SubscriptionPromoCodeForm if ipcountry in settings.SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED \
-            else SubscriptionPromoCodeCaptchaForm
+        subscription_formclass = (SubscriptionPromoCodeForm if PROMOCODE_ENABLED else SubscriptionForm) \
+            if ipcountry in settings.SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED \
+            else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
 
         initial = {'subscription_type_prices': planslug}
-        subscription_form = subscription_promocode_formclass(initial=initial) \
+        subscription_form = subscription_formclass(initial=initial) \
             if subscription_price.ga_category == 'D' else SubscriptionForm(initial=initial)
 
         if not is_subscriber and request.method == 'POST':
@@ -371,7 +373,7 @@ def subscribe(request, planslug, category_slug=None):
             else:
                 subscriber_form_v = SubscriberSignupForm(post) \
                     if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm(post)
-            subscription_form_v = subscription_promocode_formclass(post) \
+            subscription_form_v = subscription_formclass(post) \
                 if subscription_price.ga_category == 'D' else SubscriptionForm(post)
 
             if subscriber_form_v.is_valid(planslug) and subscription_form_v.is_valid():
