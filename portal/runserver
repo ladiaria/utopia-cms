@@ -2,7 +2,7 @@
 
 # utopia-cms 2021, Aníbal Pacheco
 # An utility shell script to clear cache and run the Django development server with an optional parameter.
-# Example: ./runserver hexxie.com:8000
+# Example: ./runserver yoogle.com:8000
 
 python -W ignore manage.py clear_cache
 python -W ignore manage.py runserver $1

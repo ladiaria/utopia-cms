@@ -1,3 +1,12 @@
+# From version 0.1.2 to 0.1.3
+
+NOTE: Development domain changed to yoogle.com, update your local_settings if needed.
+
+```
+git pull
+git checkout 0.1.3
+```
+
 # From version 0.1.1 to 0.1.2
 
 ```

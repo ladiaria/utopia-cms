@@ -36,7 +36,7 @@ cd docs/ssl
 sudo ./ca.sh
 ```
 
-Runing the above script will generate some files, the `hexxie.com` cert and key should be set in your nginx conf files (don't forget to restart nginx) and the CA should be imported in chrome using "Settings -> Privacy and Security -> Manage certificates -> Authorities -> Import".
+Runing the above script will generate some files, the `yoogle.com` cert and key should be set in your nginx conf files (don't forget to restart nginx) and the CA should be imported in chrome using "Settings -> Privacy and Security -> Manage certificates -> Authorities -> Import".
 
 ## Run tests
 

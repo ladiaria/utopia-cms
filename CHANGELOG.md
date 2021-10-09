@@ -1,3 +1,8 @@
+# version 0.1.3 (2021-10-09)
+
+- Development domain changed to yoogle.com
+- defer js in base template
+
 # version 0.1.2 (2021-10-05)
 
 - Support to disable (default) the "promo code" field for new subscriptions.

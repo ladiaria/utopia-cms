@@ -8,7 +8,7 @@ openssl req -x509 -new -nodes -key myCA.key -sha256 -days 825 -out myCA.pem
 # Create CA-signed certs
 ######################
 
-NAME=hexxie.com # Use your own domain name
+NAME=yoogle.com # Use your own domain name
 # Generate a private key
 openssl genrsa -out $NAME.key 2048
 # Create a certificate-signing request

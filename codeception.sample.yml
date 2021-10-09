@@ -16,7 +16,7 @@ env:
           browser: chrome
           port: 9515
           window_size: false
-          url: https://hexxie.com/
+          url: https://yoogle.com/
           restart: true
           capabilities:
             chromeOptions:
