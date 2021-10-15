@@ -21,18 +21,7 @@ class NLNameFilter(SimpleListFilter):
 
 
 class NewsletterDeliveryAdmin(ModelAdmin):
-    list_display = (
-        'delivery_date_short',
-        'get_newsletter_name',
-        'user_sent',
-        'subscriber_sent',
-        'user_refused',
-        'subscriber_refused',
-        'user_opened',
-        'subscriber_opened',
-        'user_bounces',
-        'subscriber_bounces',
-    )
+    list_display = ('delivery_date_short', 'get_newsletter_name', 'user_stats', 'subscriber_stats', 'total_stats')
     readonly_fields = (
         'delivery_date',
         'newsletter_name',
