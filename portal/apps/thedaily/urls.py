@@ -21,7 +21,6 @@ from thedaily.views import (
     password_reset,
     complete_signup,
     login,
-    registered_users,
     amp_access_authorization,
     amp_access_pingback,
     session_refresh,
@@ -86,7 +85,6 @@ urlpatterns = [
     ),
     url(r'^perfil/(?P<user_id>\d+)/$', user_profile, name="user-profile"),
 
-    url(r'^registered_users/$', registered_users, name='registered_users'),
     url(r'^registrate/$', signup, name="account-signup"),
     url(
         r'^cambiar-password/hecho/$',

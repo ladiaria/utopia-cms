@@ -29,7 +29,7 @@ from django.http import (
 from django.forms.utils import ErrorList
 from django.contrib import messages
 from django.contrib.auth import authenticate, logout, login as do_login
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render
@@ -1306,15 +1306,6 @@ def disable_profile_property(request, property_id, hashed_id):
         return 'disable_profile_property.html', ctx
     except IndexError:
         raise Http404
-
-
-@never_cache
-@permission_required('thedaily.change_subscriber')
-def registered_users(request):
-    resp, fname = HttpResponse(content_type='text/csv'), 'registered_users.csv'
-    resp['Content-Disposition'] = 'attachment; filename=%s' % fname
-    resp.write(open(os.path.join(settings.DASHBOARD_REPORTS_PATH, fname)).read())
-    return resp
 
 
 @never_cache

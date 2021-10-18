@@ -129,26 +129,22 @@ ADMIN_SHORTCUTS = [
             },
             {
                 'url_name': 'admin:core_edition_add',
-                'title': u'Crear edicion',
+                'title': u'Crear edición',
             },
             {
                 'url_name': 'admin:core_article_add',
                 'title': u'Crear Artículo',
             },
-        ]
+        ],
     },
     {
         'title': 'Reportes',
         'shortcuts': [
             {
-                'url': '/usuarios/registered_users/',
-                'title': 'Usuarios registrados no suscriptores',
-            },
-            {
                 'url': '/dashboard/',
                 'title': u'Estadísticas de usuarios',
             },
-        ]
+        ],
     },
 ]
 
