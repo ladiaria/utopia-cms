@@ -1,4 +1,5 @@
-import csv
+from os.path import join
+from unicodecsv import writer
 import collections
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -13,24 +14,23 @@ from thedaily.models import SubscriberEvent, Subscriber
 # 'heavy users' are free user that consume all free articles in a month
 
 class Command(BaseCommand):
-    args = '<filename.csv>'
-    help = 'Saves into a csv file, the heavy users from actual month and ' + \
-        'last three monthts. Example: If run on 15th April takes users' + \
-        'since 1st Jan.'
+    help = """
+        Saves into a csv file, the heavy users from actual month and last three monthts.
+        Example: If run on 15th April takes users since 1st Jan.
+    """
+
+    def add_arguments(self, parser):
+        parser.add_argument('filename', nargs=1, type=unicode)
 
     def handle(self, *args, **options):
-        if len(args) == 0:
-            print('error: filename required')
-            print('example: <command_name> jan_to_apr_report.csv')
-            return
-        file = settings.GENERAL_MANAGEMENT_COMMAND_EXPORT_PATH + args[0]
+        file = join(getattr(settings, 'GENERAL_MANAGEMENT_COMMAND_EXPORT_PATH', '/tmp'), options.get('filename')[0])
 
         today = date.today()
         start = today.replace(day=1) - relativedelta(months=3)
 
         events = SubscriberEvent.objects.filter(
-            date_occurred__gte=start,
-            description=SUBJ_FREE_ARTICLES_LIMIT).order_by('date_occurred')
+            date_occurred__gte=start, description=SUBJ_FREE_ARTICLES_LIMIT
+        ).order_by('date_occurred')
 
         # by construction, if the subscribear repeats, the last is valid
 
@@ -44,19 +44,13 @@ class Command(BaseCommand):
             s_dic[s_id] = occurred
 
         with open(file, 'w') as f:
-            w = csv.writer(f)
-            w.writerow(['user id', 'nombre', 'mail',
-                        'telefono', 'ultimafecha'])
+            w = writer(f)
+            w.writerow(['subscriber_id', 'name', 'email', 'telephone', 'last_date'])
             rev = collections.OrderedDict(reversed(list(s_dic.items())))
             # reverse so in csv is descending order
             for s in rev.items():
                 subscriber = Subscriber.objects.get(pk=s[0])
                 user = subscriber.user
-                user_id = user.id
-                mail = user.email
-                name = user.get_full_name() or user.subscriber.name
-                phone = "'" + str(subscriber.phone) + "'"
-                last_date = s[1]
-                # print([user_id, name.encode('utf-8'), mail, phone, last_date])
-                w.writerow([user_id, name.encode('utf-8'), mail, phone,
-                            last_date])
+                w.writerow(
+                    [subscriber.id, user.get_full_name() or user.subscriber.name, user.email, subscriber.phone, s[1]]
+                )
