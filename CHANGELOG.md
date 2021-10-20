@@ -1,3 +1,7 @@
+# version 0.1.4 (2021-10-20)
+
+- Support for custom subject in category newsletters.
+
 # version 0.1.3 (2021-10-09)
 
 - Development domain changed to yoogle.com

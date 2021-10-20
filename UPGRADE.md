@@ -1,3 +1,12 @@
+# From version 0.1.3 to 0.1.4
+```
+git pull
+git checkout 0.1.4
+cd portal
+# activate your virtual env
+./manage.py migrate core
+```
+
 # From version 0.1.2 to 0.1.3
 
 NOTE: Development domain changed to yoogle.com, update your local_settings if needed.

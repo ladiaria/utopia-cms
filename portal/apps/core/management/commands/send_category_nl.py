@@ -108,10 +108,12 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
         '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug)
     )
     ga_property_id = getattr(settings, 'GA_PROPERTY_ID', None)
-    email_subject = (
+    custom_subject = category.newsletter_automatic_subject is False and category.newsletter_subject
+    email_subject = custom_subject or (
         getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category.slug, u'')
         + remove_markup(cover_article.headline)
     )
+
     email_from = (
         site.name if category.slug in getattr(
             settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ()
@@ -152,6 +154,7 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
                             'is_subscriber': is_subscriber,
                             'is_subscriber_any': s.is_subscriber_any(),
                             'is_subscriber_default': s.is_subscriber(settings.DEFAULT_PUB),
+                            'custom_subject': custom_subject,
                         }
                     )
                 ),

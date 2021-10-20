@@ -7,7 +7,7 @@ from django.conf import settings
 from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.admin import ModelAdmin, TabularInline, site
-from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect
+from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
@@ -570,7 +570,32 @@ class PublicationAdminChangelistForm(ModelForm):
         fields = ('name', 'headline', 'weight', 'public', 'has_newsletter')
 
 
+class CustomSubjectAdminForm(ModelForm):
+    newsletter_automatic_subject = TypedChoiceField(
+        label=u'',
+        coerce=lambda x: x == 'True',
+        choices=((True, u'Asunto automático'), (False, u'Asunto manual')),
+        widget=RadioSelect,
+    )
+
+    def clean(self):
+        cleaned_data = super(CustomSubjectAdminForm, self).clean()
+        if cleaned_data.get('newsletter_automatic_subject') is False and not cleaned_data.get('newsletter_subject'):
+            raise ValidationError('Se debe incluir un asunto de newsletter al configurarlo como "manual".')
+
+
+class PublicationAdminForm(CustomSubjectAdminForm):
+
+    class Meta:
+        model = Publication
+        fields = "__all__"
+        widgets = {
+            'newsletter_tagline': TextInput(attrs={'size': 160}), 'newsletter_subject': TextInput(attrs={'size': 160}),
+        }
+
+
 class PublicationAdmin(ModelAdmin):
+    form = PublicationAdminForm
     list_display = (
         'id',
         'name',
@@ -585,13 +610,61 @@ class PublicationAdmin(ModelAdmin):
     )
     list_editable = ('name', 'headline', 'weight', 'public', 'has_newsletter')
     raw_id_fields = ('full_width_cover_image', )
+    fieldsets = (
+        (
+            None,
+            {
+                'fields': (
+                    ('name', ),
+                    ('twitter_username', ),
+                    ('description', ),
+                    ('slug', 'headline', 'weight'),
+                    ('public', 'has_newsletter'),
+                    ('newsletter_name', ),
+                    ('newsletter_tagline', ),
+                    ('newsletter_periodicity', 'newsletter_header_color'),
+                    ('newsletter_campaign', 'subscribe_box_question'),
+                    ('subscribe_box_nl_subscribe_auth', 'subscribe_box_nl_subscribe_anon'),
+                    ('image', ),
+                    ('full_width_cover_image', ),
+                    ('is_emergente', 'new_pill'),
+                ),
+            },
+        ),
+        ('Asunto de newsletter', {'fields': (('newsletter_automatic_subject', ), ('newsletter_subject', ))}),
+        (
+            'Metadatos',
+            {
+                'fields': (
+                    ('icon', 'icon_png'),
+                    ('icon_png_16', 'icon_png_32'),
+                    ('apple_touch_icon_180', ),
+                    ('apple_touch_icon_192', ),
+                    ('apple_touch_icon_512', ),
+                    ('open_graph_image', ),
+                    ('open_graph_image_width', 'open_graph_image_height'),
+                    ('publisher_logo', ),
+                    ('publisher_logo_width', 'publisher_logo_height'),
+                ),
+            },
+        ),
+    )
 
     def get_changelist_form(self, request, **kwargs):
         kwargs.setdefault('form', PublicationAdminChangelistForm)
         return super(PublicationAdmin, self).get_changelist_form(request, **kwargs)
 
 
+class CategoryAdminForm(CustomSubjectAdminForm):
+
+    class Meta:
+        model = Category
+        fields = "__all__"
+        widgets = {'newsletter_subject': TextInput(attrs={'size': 160})}
+
+
 class CategoryAdmin(ModelAdmin):
+    form = CategoryAdminForm
     list_display = (
         'id', 'name', 'order', 'slug', 'title', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag'
     )
@@ -614,6 +687,7 @@ class CategoryAdmin(ModelAdmin):
                 ),
             },
         ),
+        ('Asunto de newsletter', {'fields': (('newsletter_automatic_subject', ), ('newsletter_subject', ))}),
     )
     raw_id_fields = ('full_width_cover_image', )
 

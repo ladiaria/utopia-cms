@@ -9,13 +9,16 @@ from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect
 from django.views.decorators.cache import never_cache
+from django.contrib.sites.models import Site
 from django.shortcuts import redirect, get_object_or_404, render
 from django.core.urlresolvers import reverse
 
 from core.models import Publication, Category, CategoryHome, Section, Article, get_latest_edition
+from core.templatetags.core_tags import remove_markup
 from faq.models import Question, Topic
 
 
+site = Site.objects.get_current()
 # Initialize the hashid object with salt from settings and custom length
 hashids = Hashids(settings.HASHIDS_SALT, 32)
 
@@ -133,9 +136,25 @@ def newsletter_preview(request, slug):
         except AttributeError:
             hashed_id = hashids.encode(0)
 
+        custom_subject = category.newsletter_automatic_subject is False and category.newsletter_subject
+        email_subject = custom_subject or (
+            getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category.slug, u'')
+            + remove_markup(cover_article.headline)
+        )
+
+        email_from = u'%s <%s>' % (
+            site.name if category.slug in getattr(
+                settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ()
+            ) else (u'%s %s' % (site.name, category.name)),
+            settings.NOTIFICATIONS_FROM_ADDR1,
+        )
+
+        headers = {'From': email_from, 'Subject': email_subject}
+
         site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
         unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
             '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
+        headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
 
         context = {
             'site_url': site_url,
@@ -148,6 +167,8 @@ def newsletter_preview(request, slug):
             'newsletter_campaign': category.slug,
             'hashed_id': hashed_id,
             'unsubscribe_url': unsubscribe_url,
+            'custom_subject': custom_subject,
+            'headers_preview': headers,
         }
 
         # override is_subscriber_any and _default only to "False"
