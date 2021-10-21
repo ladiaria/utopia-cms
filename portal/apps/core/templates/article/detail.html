@@ -864,6 +864,7 @@
           type: 'POST',
           data: {target_model: 'core.Article', target_object_id: {{ article.id }}},
           success: function(){
+            $('.fav .info').addClass('hide');
             $('a.fav__saved').next().addClass('hide').next().removeClass('hide');
             $('a.fav__saved').addClass('hide').prev().addClass('hide').siblings(":last").removeClass('hide');
           },
