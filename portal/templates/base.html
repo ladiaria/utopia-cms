@@ -315,31 +315,14 @@
 
       <div id="alert_placeholder"></div>
 
-      <script defer src="{% static 'materialize/js/initial.js' %}"></script>
+      {# js needed for the "dropdown" and "modal" menu items #}
       <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
-      <script defer src="{% static 'materialize/js/animation.js' %}"></script>
-      <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
-      <script defer src="{% static 'materialize/js/hammer.min.js' %}"></script>
-      <script defer src="{% static 'materialize/js/jquery.hammer.js' %}"></script>
       <script defer src="{% static 'materialize/js/global.js' %}"></script>
       <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
       <script defer src="{% static 'materialize/js/modal.js' %}"></script>
-      <script defer src="{% static 'materialize/js/materialbox.js' %}"></script>
-      <script defer src="{% static 'materialize/js/tabs.js' %}"></script>
-      <script defer src="{% static 'materialize/js/tooltip.js' %}"></script>
-      <script defer src="{% static 'materialize/js/toasts.js' %}"></script>
       <script defer src="{% static 'materialize/js/forms.js' %}"></script>
-      <script defer src="{% static 'materialize/js/slider.js' %}"></script>
-      <script defer src="{% static 'materialize/js/cards.js' %}"></script>
-      <script defer src="{% static 'materialize/js/buttons.js' %}"></script>
-      <script defer src="{% static 'materialize/js/transitions.js' %}"></script>
-      <script defer src="{% static 'materialize/js/date_picker/picker.js' %}"></script>
-      <script defer src="{% static 'materialize/js/date_picker/picker.date.js' %}"></script>
-      <script defer src="{% static 'materialize/js/tapTarget.js' %}"></script>
-      <script defer src="{% static 'materialize/js/collapsible.js' %}"></script>
-      <script defer src="{% static 'materialize/js/scrollspy.js' %}"></script>
-      <script defer src="{% static 'materialize/js/pushpin.js' %}"></script>
 
+      {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
       <script defer src="{% static 'js/ld.js' %}"></script>
       <script defer src="{% static 'js/resizeSubnav.js' %}" ></script>
 
@@ -356,13 +339,8 @@
       </script>
       <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
 
-      {# new universal image gallery #}
-      <script defer src="{% static 'lightGallery/src/js/lightgallery.js' %}"></script>
-      <script defer src="{% static 'lightGallery/modules/lg-pager.js' %}"></script>
-      <script defer src="{% static 'lightGallery/modules/lg-video.js' %}"></script>
-      <script defer src="{% static 'lightGallery/modules/lg-ladiaria.js' %}"></script>
-
       {# TODO: probably there is no reason to have 2 scripts blocks like this, investigate and eliminate one #}
+      {#       update: footer_scripts is less used, try to eliminate it #}
       {% block javascript %}{% endblock %}
       {% block footer_scripts %}{% endblock %}
     {% block main_close %}</main>{% endblock %}

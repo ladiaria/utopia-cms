@@ -757,14 +757,15 @@ def lista_lectura_historial(request):
     """
     # start the result set with mongo because these are the most recent viewed.
     historial, mids = [], []
-    for a in core_articleviewedby_mdb.posts.find({'user': request.user.id}).sort('viewed_at', pymongo.DESCENDING):
-        try:
-            article_id = a['article']
-            historial.append(Article.objects.get(id=article_id))
-            mids.append(article_id)
-        except Article.DoesNotExist:
-            # the article could be removed
-            pass
+    if core_articleviewedby_mdb:
+        for a in core_articleviewedby_mdb.posts.find({'user': request.user.id}).sort('viewed_at', pymongo.DESCENDING):
+            try:
+                article_id = a['article']
+                historial.append(Article.objects.get(id=article_id))
+                mids.append(article_id)
+            except Article.DoesNotExist:
+                # the article could be removed
+                pass
     # perform the union with the ones in the model
     historial += [
         avb.article for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at')]

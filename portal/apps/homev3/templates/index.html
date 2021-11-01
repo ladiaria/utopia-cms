@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load core_tags homev3_tags thumbnail %}
+{% load static core_tags homev3_tags thumbnail %}
 
 {% block page_title %}{{ site.name }} | Noticias de Uruguay y el mundo{% endblock %}
 
@@ -73,4 +73,9 @@
 
   {% block extra_homepage %}{% endblock %}
 
+{% endblock %}
+
+{% block javascript %}
+  <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
+  <script defer src="{% static 'materialize/js/tabs.js' %}"></script>
 {% endblock %}

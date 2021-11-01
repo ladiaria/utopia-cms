@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block page_title %}Lo más leído | {{ site.name }} | {{ country_name }}{% endblock %}
 
@@ -18,4 +19,9 @@
   <section id="mas-leidos" class="col s12">
     <div id="mas-leidos-content"></div>
   </section>
+{% endblock %}
+
+{% block javascript %}
+  <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
+  <script defer src="{% static 'materialize/js/tabs.js' %}"></script>
 {% endblock %}

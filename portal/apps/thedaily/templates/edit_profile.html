@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load static crispy_forms_tags %}
 
 {% block page_title %}Panel de opciones | la diaria{% endblock %}
 {% block body_class %}thedaily ld-profile-edit{% endblock %}
@@ -132,7 +132,9 @@
 
 {% endblock %}
 
-{% block footer_scripts %}
+{% block javascript %}
+  <script defer src="{% static 'materialize/js/scrollspy.js' %}"></script>
+  <script defer src="{% static 'materialize/js/pushpin.js' %}"></script>
   <script>
     $(document).ready(function(){
       $('.scrollspy').scrollSpy();
