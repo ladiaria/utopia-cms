@@ -1132,6 +1132,8 @@ def email_check_api(request):
         msg = u'OK'
     except MultipleObjectsReturned:
         msg = u'Hay más de un usuario con ese email en la web'
+    except Subscriber.DoesNotExist:
+        msg = u'No hay suscriptor asociado al usuario web'
 
     return HttpResponse(msg)
 
