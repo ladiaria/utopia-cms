@@ -71,7 +71,7 @@
             <ul class="news-wall__list">
               {% for section in category.section_set.all|slice:":3" %}
                 <li class="news-wall__item">
-                  {% with section.latest_article.0 as latest_article %}
+                  {% with latest_article=section.latest_article.0 %}
                     <a href="{{ latest_article.get_absolute_url }}" class="news-wall__link">
                       {{ latest_article.headline|ldmarkup:article.id|bleach }}
                     </a>
@@ -94,7 +94,7 @@
             <ul class="news-wall__list">
               {% for section in pub.section_set.all|slice:":3" %}
                 <li class="news-wall__item">
-                  {% with section.latest_article.0 as latest_article %}
+                  {% with latest_article=section.latest_article.0 %}
                     <a href="{{ latest_article.get_absolute_url }}" class="news-wall__link">
                       {{ latest_article.headline|ldmarkup:article.id|bleach }}
                     </a>

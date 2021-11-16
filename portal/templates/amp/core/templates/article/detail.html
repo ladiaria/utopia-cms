@@ -95,7 +95,7 @@
         {% if section %}
           <span class="small">
             {% if 'elecciones' in article.get_categories_slugs %}
-              {% with 'apuntes-de-campana datos-elecciones-2019' as special_sections %}
+              {% with special_sections='apuntes-de-campana datos-elecciones-2019' %}
                 {% if section.slug in special_sections.split %}
                   <a href="{{ section.get_absolute_url }}">{{ section }}</a>
                 {% else %}

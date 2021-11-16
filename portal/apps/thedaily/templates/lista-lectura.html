@@ -63,7 +63,7 @@
           {% include 'article/card_fav.html' %}
         {% endfor %}
         {% if leer_despues.has_other_pages %}
-          {% with leer_despues as pager %}
+          {% with pager=leer_despues %}
             {% include "pagination.html" %}
           {% endwith %}
         {% endif %}
@@ -80,7 +80,7 @@
           {% include 'article/card_fav.html' %}
         {% endfor %}
         {% if favoritos.has_other_pages %}
-          {% with favoritos as pager %}
+          {% with pager=favoritos %}
             {% include "pagination.html" %}
           {% endwith %}
         {% endif %}
@@ -97,7 +97,7 @@
           {% include 'article/card_fav.html' %}
         {% endfor %}
         {% if historial.has_other_pages %}
-          {% with historial as pager %}
+          {% with pager=historial %}
             {% include "pagination.html" %}
           {% endwith %}
         {% endif %}

@@ -44,7 +44,7 @@
   </li>
 </ul>
 
-{% with 'ciencia economia educacion feminismos justicia salud trabajo' as emergentes %}
+{% with emergentes='ciencia economia educacion feminismos justicia salud trabajo' %}
   {% if publication != default_pub and publication not in emergentes.split %}
     <ul id="secciones-dropdown" class="dropdown-content hide-on-small-and-down">
       {% for section in publication.primary_sections %}

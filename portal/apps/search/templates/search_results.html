@@ -84,7 +84,7 @@
 </div>
 
 {% if listaresultados.object_list %}
-            {% with listaresultados as pager %}
+            {% with pager=listaresultados %}
                 {% include "pagination.html" %}
             {% endwith %}
         {% endif %}

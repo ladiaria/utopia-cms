@@ -51,7 +51,7 @@
         {% ifnotequal editions.paginator.num_pages 1 %}
             <div class="pagination">
                 {% if editions.has_other_pages %}
-                    {% with editions as pager %}
+                    {% with pager=editions %}
                         {% include "pagination.html" %}
                     {% endwith %}
                 {% endif %}

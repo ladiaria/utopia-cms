@@ -3,7 +3,7 @@
   <a href="{{ pelicula.get_absolute_url }}" class="poster"><img src="/media/{{ pelicula.poster }}" alt="{{ pelicula }}" /></a>
     <p>{{ pelicula.description }}</p>
   <footer>
-    {% with pelicula as evento %}
+    {% with evento=pelicula %}
       {% include "comunidad/evento_toolbar.html" %}
     {% endwith %}
   </footer>

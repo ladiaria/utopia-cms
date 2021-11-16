@@ -69,7 +69,7 @@
     {% endfor %}
 
     {% if articles.has_other_pages %}
-      {% with articles as pager %}
+      {% with pager=articles %}
         {% include "pagination.html" %}
       {% endwith %}
     {% endif %}

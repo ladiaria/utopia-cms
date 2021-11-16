@@ -8,7 +8,7 @@
     <div class="media-body">
       <p>{{ pelicula.description }}</p>
       <footer class="navbar toolbar">
-        {% with pelicula as evento %}
+        {% with evento=pelicula %}
           {% include "comunidad/evento_toolbar.html" %}
         {% endwith %}
       </footer>
