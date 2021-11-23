@@ -1,0 +1,35 @@
+<section id="sections-grid-{{ category.slug }}" class="sections-grid">
+  <div class="container">
+    {% for section in category.section_set.all %}
+      {% if forloop.first %}
+        <div class="row">
+          <div class="ld-grid-thirds">
+      {% endif %}
+
+        <div class="ld-grid-thirds__area">
+          <div class="ld-card ld-card--reg">
+            <a href="{% url 'section_detail' section_slug=section.slug %}">
+              <img class="ld-card__img" src="{{ MEDIA_URL }}{{ section.imagen }}" alt="" title="" loading="lazy">
+            </a>
+            <div class="ld-card__body">
+              <h3 class="ld-card__title ">
+                <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section.name }}</a>
+              </h3>
+              {% if section.show_description %}
+                <div class="ld-card__intro">{{ section.description }}</div>
+              {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if forloop.last %}
+
+      {% elif forloop.counter|divisibleby:3 %}
+          </div>
+        </div>
+        <div class="row">
+          <div class="ld-grid-thirds">
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>

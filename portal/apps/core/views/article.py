@@ -55,9 +55,7 @@ def article_list(request, type_slug):
     pubdate = date.today()
     if datetime.now().hour < 8:
         pubdate -= timedelta(days=1)
-    articles = get_list_or_404(
-        Article, is_published=True, type=atype['slug'],
-        date_published__lte=pubdate)
+    articles = get_list_or_404(Article, is_published=True, type=atype['slug'], date_published__lte=pubdate)
     paginator = Paginator(articles, 10)
     try:
         page = request.GET.get('pagina', 1)
@@ -67,8 +65,7 @@ def article_list(request, type_slug):
         articles = paginator.page(page)
     except (EmptyPage, InvalidPage):
         articles = paginator.page(paginator.num_pages)
-    return '../section/detail.html', {
-        'articles': articles, 'section': atype}
+    return '../section/detail.html', {'articles': articles, 'section': atype}
 
 
 def article_detail(request, year, month, slug, domain_slug=None):
@@ -191,9 +188,9 @@ def article_detail_free(request, year, month, slug, domain_slug=None):
 
 
 def reorder_tag_list(article, tags):
-    """reorder all Tag in tags in the same order that article.tags
-    if there is a problem with the article.tags, returns the same list
-    (ordered alphabetycally)
+    """
+    Reorder all Tag in tags in the same order that article.tags
+    if there is a problem with the article.tags, returns the same list (ordered alphabetycally)
     """
     reordered_tags = []
     if not article.tags:

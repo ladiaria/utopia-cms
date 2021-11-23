@@ -10,7 +10,8 @@ from django.template import Library, Node, RequestContext, TemplateSyntaxError, 
 from django.template.defaultfilters import stringfilter
 from django.utils.text import Truncator
 
-from core.models import Article, Supplement, Category, Section
+from tagging.models import Tag, TaggedItem
+from core.models import Article, Supplement, Category
 from core.forms import SendByEmailForm
 from core.templatetags.ldml import ldmarkup, cleanhtml
 
@@ -270,8 +271,7 @@ def render_toolbar_for(context, toolbar_object):
 @register.simple_tag
 def render_supplements():
     supplements = Supplement.objects.all()[:2]
-    return loader.render_to_string(
-        'core/templates/supplement_list.html', {'supplements': supplements})
+    return loader.render_to_string('core/templates/supplement_list.html', {'supplements': supplements})
 
 
 @register.simple_tag
@@ -294,6 +294,34 @@ def render_hierarchy(article):
             )
         child = u'<a href="%s">%s</a>' % (section.get_absolute_url(), section)
         return u' › '.join([u'<a href="%s">%s</a>' % parent, child]) if parent else child
+    else:
+        return u''
+
+
+@register.simple_tag
+def render_tagcover(tagname):
+    try:
+        tag = Tag.objects.get(name=tagname)
+    except Tag.DoesNotExist:
+        return u''
+    articles = TaggedItem.objects.get_by_model(Article, tag).filter(is_published=True).exclude(type='OP')[:6]
+    if articles:
+        return loader.render_to_string(
+            'core/templates/tagcover.html', {'tag_cover_article': articles[0], 'tag_destacados': articles[1:]}
+        )
+    else:
+        return u''
+
+
+@register.simple_tag
+def render_tagrow(tagname, article_type):
+    try:
+        tag = Tag.objects.get(name=tagname)
+    except Tag.DoesNotExist:
+        return u''
+    articles = TaggedItem.objects.get_by_model(Article, tag).filter(is_published=True, type=article_type)[:4]
+    if articles:
+        return loader.render_to_string('core/templates/tagrow.html', {'latest_articles': articles})
     else:
         return u''
 

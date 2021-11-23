@@ -1,27 +1,30 @@
 {% load static %}
 
 {% if minimal_footer %}
-    <div class="container">
-        <div class="row">
-            <div class="col s12 center">
-                <a href="{% url 'home' %}" title="Ir a portada" class="header-logo"><img src="{% static HOMEV3_LOGO_FOOTER %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_FOOTER_WIDTH }}" height="40"></a>
-            </div>
-        </div>
-    </div>
+  <div class="container">
 {% else %}
-    <div id="mas-de-la-diaria" class="separador-franja"></div>
-    <div class="container latest_edition">
-        <div class="row white-text">
-            {% block resume %}
-                {% include 'core/templates/edition/resume.html' %}
-            {% endblock %}
-        </div>
+  <div class="separador-franja"></div>
+  <div class="container latest_edition">
+    <div class="row white-text">
+      {% block resume %}
+        {% include 'core/templates/edition/resume.html' %}
+      {% endblock %}
     </div>
-    <div class="row">
-        <div class="col s12 center">
-            <a href="{% url 'home' %}" title="Ir a portada" class="header-logo"><img src="{% static HOMEV3_LOGO_FOOTER %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_FOOTER_WIDTH }}" height="40"></a>
-        </div>
+  </div>
+{% endif %}
+
+  <div class="row">
+    <div class="col s12 center">
+      <a href="{% url 'home' %}" title="Ir a portada" class="header-logo">
+        {% block logo_footer %}
+          <img src="{% static HOMEV3_LOGO_FOOTER %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_FOOTER_WIDTH }}" height="40">
+        {% endblock %}
+      </a>
     </div>
+  </div>
+
+{% if minimal_footer %}
+  </div>
 {% endif %}
 
 {% block page_footer %}{% endblock %}

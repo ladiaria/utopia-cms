@@ -246,7 +246,7 @@
       {% endif %}
 
       {% block footer_block %}
-        <footer class="footer-portada">
+        <footer class="footer-portada{% if category %} footer-{{ category.slug }}{% endif %}">
           {% include footer_template %}
         </footer>
       {% endblock footer_block %}

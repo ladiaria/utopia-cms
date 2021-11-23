@@ -1,0 +1,54 @@
+{% load core_tags ldml bleach_tags %}
+
+<section class="art_count_4">
+  <div class="ld-grid-simple">
+
+    {% for article in latest_articles %}
+      <div class="ld-grid-simple__area">
+        <div class="ld-card" data-id="{{ article.id }}" data-template="article_card_new">
+          {% if article.photo %}
+            <a href="{{ article.get_absolute_url }}">
+              <img class="ld-card__img" src="{{ article.photo.get_350w_url }}" data-srcset="{{ article.photo.get_350w_url }} 320w, {{ article.photo.get_600w_url }} 450w" data-sizes="auto" title="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}" srcset="{{ article.photo.get_350w_url }} 320w, {{ article.photo.get_600w_url }} 450w"
+                   width="350"{% if article.photo_image_file_exists %} height="{{ article.photo.get_350w_size.1 }}"{% endif %}
+                   loading="lazy">
+            </a>
+          {% endif %}
+          <div class="ld-card__body">
+            <h3 class="ld-card__title ">
+              <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|bleach }}</a>
+            </h3>
+
+            {% if article.home_lead %}
+              <div class="ld-card__intro ld-card__intro--home_lead">
+                {{ article.home_lead|ldmarkup:article.id|bleach }}
+              </div>
+            {% endif %}
+
+            <div class="ld-card__byline">
+              {% if article.has_byline  %}
+                {% for author in article.get_authors %}
+                  {% if author.has_profile %}
+                    <a href="{% url 'journalist_detail' journalist_slug=author.slug %}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                  {% else %}
+                    {{ author.name }}{% if not forloop.last %}, {% endif %}
+                  {% endif %}
+                {% endfor %}
+                en
+              {% endif %}
+              {% autoescape off %}
+                {% publication_section article %}
+              {% endautoescape %}
+            </div>
+
+            {% if article.photo.extended.photographer %}
+              <div class="ld-card__byline">
+                {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+
+  </div>
+</section>
