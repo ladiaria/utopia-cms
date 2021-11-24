@@ -9,7 +9,7 @@
         <div class="ld-grid-thirds__area">
           <div class="ld-card ld-card--reg">
             <a href="{% url 'section_detail' section_slug=section.slug %}">
-              <img class="ld-card__img" src="{{ MEDIA_URL }}{{ section.imagen }}" alt="" title="" loading="lazy">
+              <img class="ld-card__img" src="{{ MEDIA_URL }}{{ section.imagen }}" alt="{{ section.name }}" loading="lazy">
             </a>
             <div class="ld-card__body">
               <h3 class="ld-card__title ">
