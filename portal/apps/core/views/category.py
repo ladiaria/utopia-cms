@@ -6,14 +6,13 @@ import traceback
 from hashids import Hashids
 
 from django.conf import settings
-from django.db.models import Q
 from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect
 from django.views.decorators.cache import never_cache
 from django.contrib.sites.models import Site
-from django.shortcuts import redirect, get_object_or_404, render
+from django.shortcuts import get_object_or_404, render
 from django.core.urlresolvers import reverse
 
-from core.models import Publication, Category, CategoryHome, Section, Article, get_latest_edition
+from core.models import Category, CategoryHome, Section, Article, get_latest_edition
 from core.templatetags.core_tags import remove_markup
 from faq.models import Question, Topic
 
@@ -25,10 +24,6 @@ hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 @never_cache
 def category_detail(request, slug):
-
-    # deporte custom redirect
-    if slug == u'deporte':
-        return redirect(Publication.objects.get(slug=u'garra').get_absolute_url(), permanent=True)
 
     category, inner_sections = get_object_or_404(Category, slug=slug), []
     question_list, questions_topic = [], None
@@ -46,17 +41,15 @@ def category_detail(request, slug):
     except (Section.DoesNotExist, Section.MultipleObjectsReturned):
         featured_section3 = None
 
-    # custom inner sections
-    if slug == u'elecciones':
-        # example dropdown menu (elecciones ir disabled now by redirect)
-        inner_sections = category.section_set.filter(
-            Q(slug__startswith='partido-')
-            | Q(slug__in=('frente-amplio', 'unidad-popular', 'cabildo-abierto', 'otros'))
-        )
-    if slug == u'coronavirus':
-        question_list = Question.published.filter(topic__slug='coronavirus')
+    # custom inner sections hardcoded example. TODO: should be done better, when needed.
+    if slug == u' ':
+        # inner_sections = category.section_set.filter(...)
+        pass
+
+    if slug in getattr(settings, 'CORE_CATEGORIES_ENABLE_QUESTIONS', ()):
+        question_list = Question.published.filter(topic__slug=slug)
         try:
-            questions_topic = Topic.objects.get(slug="coronavirus")
+            questions_topic = Topic.objects.get(slug=slug)
         except Topic.DoesNotExist:
             pass
 
