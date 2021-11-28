@@ -286,8 +286,10 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
     if action.startswith('post_'):
         try:
             updatecrmuser(
-                instance.contact_id, u'newsletters' + (u'_remove' if action == 'post_remove' else u''),
-                json.dumps(list(pk_set)) if pk_set else None)
+                instance.contact_id,
+                u'newsletters' + (u'_remove' if action == 'post_remove' else u''),
+                json.dumps(list(pk_set)) if pk_set else None,
+            )
         except requests.exceptions.RequestException:
             raise UpdateCrmEx(u"No se ha podido actualizar tu perfil, contactate con nosotros")
 
