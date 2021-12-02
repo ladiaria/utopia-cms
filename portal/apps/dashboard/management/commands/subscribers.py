@@ -62,7 +62,7 @@ class Command(BaseCommand):
 
         for article in target_articles.select_related('main_section__edition').iterator():
             filter_views_kwargs.update({'article': article})
-            views, article_publications = 0, article.publications()
+            views, digital_views, article_publications = 0, 0, article.publications()
 
             for article_view in ArticleViewedBy.objects.select_related(
                 'user__subscriber'
@@ -73,17 +73,22 @@ class Command(BaseCommand):
                     or any([article_view.user.subscriber.is_subscriber(p.slug) for p in article_publications])
                 ):
                     views += 1
+                    if article_view.user.subscriber.is_digital_only():
+                        digital_views += 1
 
             if views:
-                articles.append((article.id, views))
+                articles.append((article.id, views, digital_views))
 
                 main_section = article.main_section
                 if main_section:
                     main_publication_id = main_section.edition.publication_id
                     main_section_id = main_section.section_id
-                    section_views = articles_sections.get((main_publication_id, main_section_id), 0)
+                    section_views, section_digital_views = articles_sections.get(
+                        (main_publication_id, main_section_id), (0, 0)
+                    )
                     section_views += views
-                    articles_sections[(main_publication_id, main_section_id)] = section_views
+                    section_digital_views += digital_views
+                    articles_sections[(main_publication_id, main_section_id)] = (section_views, section_digital_views)
 
             if bar:
                 bar.next()
@@ -97,7 +102,7 @@ class Command(BaseCommand):
 
         w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, '%ssubscribers.csv' % out_prefix), 'w'))
         i = 0
-        for article_id, views in articles:
+        for article_id, views, digital_views in articles:
             article = Article.objects.get(id=article_id)
             i += 1
             w.writerow(
@@ -106,16 +111,23 @@ class Command(BaseCommand):
                     article.date_published.date(),
                     article.get_absolute_url(),
                     views,
+                    digital_views,
                     ', '.join(['%s' % ar for ar in article.articlerel_set.all()]),
                 ]
             )
 
-        as_list = [(p, s, v) for (p, s), v in articles_sections.iteritems()]
+        as_list = [(p, s, v, dv) for (p, s), (v, dv) in articles_sections.iteritems()]
         as_list.sort(key=operator.itemgetter(2), reverse=True)
         w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, '%ssubscribers_sections.csv' % out_prefix), 'w'))
         i = 0
-        for publication_id, section_id, views in as_list:
+        for publication_id, section_id, views, digital_views in as_list:
             i += 1
             w.writerow(
-                [i, Publication.objects.get(id=publication_id).name, Section.objects.get(id=section_id).name, views]
+                [
+                    i,
+                    Publication.objects.get(id=publication_id).name,
+                    Section.objects.get(id=section_id).name,
+                    views,
+                    digital_views,
+                ]
             )

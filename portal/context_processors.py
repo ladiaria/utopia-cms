@@ -94,7 +94,8 @@ def main_menus(request):
         'LOGIN_NO_REDIRECT_URLPATHS': ['/usuarios/sesion-cerrada/', '/usuarios/error/login/', '/admin/logout/'],
     }
 
-    mobile_nav_ths = 4 + getattr(settings, 'HOMEV3_MOBILE_NAV_EXTRA_THS', 0)
+    mobile_nav_search = getattr(settings, 'HOMEV3_MOBILE_NAV_SEARCH', 1)
+    mobile_nav_ths = 3 + mobile_nav_search + getattr(settings, 'HOMEV3_MOBILE_NAV_EXTRA_THS', 0)
 
     menu_lal = getattr(settings, 'HOMEV3_LATEST_ARTICLE_LINKS', ())
     if menu_lal:
@@ -110,5 +111,12 @@ def main_menus(request):
     except Exception:
         menu_publications = "no-menu"
 
-    result.update({'MENU_PUBLICATIONS': menu_publications, 'mobile_nav_ths': mobile_nav_ths})
+    result.update(
+        {
+            'MENU_PUBLICATIONS': menu_publications,
+            'mobile_nav_ths': mobile_nav_ths,
+            'mobile_nav_search': mobile_nav_search,
+            'mobile_nav_detail_more': getattr(settings, 'HOMEV3_MOBILE_NAV_DETAIL_MORE', 1) or 0,
+        }
+    )
     return result

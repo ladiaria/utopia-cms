@@ -1,0 +1,57 @@
+{% load thedaily_tags %}
+
+<li class="col s{{ mobile_nav_ths }}ths">
+  <a class="nav-menu-button" href="{% url 'home' %}">
+    <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="#262626"/></svg>
+    <span class="nav-mobile__icon-text">Portada</span>
+  </a>
+</li>
+{% if mobile_nav_search %}
+  <li class="col s{{ mobile_nav_ths }}ths">
+    <a class="nav-menu-button" href="{% url 'search' %}">
+      <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="#262626"/></svg>
+      <span class="nav-mobile__icon-text">Buscar</span>
+    </a>
+  </li>
+{% endif %}
+{% if is_detail %}
+  <li class="col s{{ mobile_nav_ths }}ths">
+    <a class="nav-menu-button js-nav-menu__share" href="#">
+      <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92 0-1.61-1.31-2.92-2.92-2.92z" fill="#262626"/></svg>
+      <span class="nav-mobile__icon-text">Compartir</span>
+    </a>
+  </li>
+{% endif %}
+{% if not is_detail or mobile_nav_detail_more %}
+  <li class="col s{{ mobile_nav_ths }}ths">
+    {% if user.is_authenticated %}
+      <a class="nav-menu-button" href="{% url 'lista-lectura-leer-despues' %}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M17,3H7A2.006,2.006,0,0,0,5,5V21l7-3,7,3V5A2.006,2.006,0,0,0,17,3Z" fill="#262626"/></svg>
+        <span class="nav-mobile__num">{{ request.user|count_following }}</span>
+        <span class="nav-mobile__icon-text">Leer después</span>
+      </a>
+    {% else %}
+      <a class="nav-menu-button" href="{% url 'mas_leidos' %}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M20.114,7.042,21.88,8.808,15.9,14.792l-4.034-4.034a1.221,1.221,0,0,0-1.729,0L2.776,18.127a1.223,1.223,0,0,0,1.729,1.729l6.487-6.5,4.034,4.034a1.221,1.221,0,0,0,1.729,0l6.854-6.842,1.766,1.766a.612.612,0,0,0,1.042-.429V6.613a.59.59,0,0,0-.6-.613h-5.26a.613.613,0,0,0-.441,1.042Z" transform="translate(-2.417 -1.19)" fill="#262626"/></svg>
+        <span class="nav-mobile__icon-text">Lo más leído</span>
+      </a>
+    {% endif %}
+  </li>
+{% endif %}
+{% if MENU_LATEST_ARTICLE_LINKS %}
+  <li class="col s{{ mobile_nav_ths }}ths">
+    <a class="nav-menu-button" href="{% url 'section-latest-article' section_slug=MENU_LATEST_ARTICLE_LINKS.0.0 %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M3,17.46V20.5a.5.5,0,0,0,.5.5H6.54a.469.469,0,0,0,.35-.15L17.81,9.94,14.06,6.19,3.15,17.1a.491.491,0,0,0-.15.36ZM20.71,7.04a1,1,0,0,0,0-1.41L18.37,3.29a1,1,0,0,0-1.41,0L15.13,5.12l3.75,3.75,1.83-1.83Z" fill="#262626"/></svg>
+      <span class="nav-mobile__icon-text">{{ MENU_LATEST_ARTICLE_LINKS.0.2 }}</span>
+    </a>
+  </li>
+{% endif %}
+{% if MOBILE_NAV_EXTRA_TEMPLATE %}
+  {% include MOBILE_NAV_EXTRA_TEMPLATE %}
+{% endif %}
+<li class="col s{{ mobile_nav_ths }}ths">
+  <a href="#" class="nav-menu-button right nav-menu-button-toggle js-ld-main-menu-toggle">
+    <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 18h16c.55 0 1-.45 1-1s-.45-1-1-1H4c-.55 0-1 .45-1 1s.45 1 1 1zm0-5h16c.55 0 1-.45 1-1s-.45-1-1-1H4c-.55 0-1 .45-1 1s.45 1 1 1zM3 7c0 .55.45 1 1 1h16c.55 0 1-.45 1-1s-.45-1-1-1H4c-.55 0-1 .45-1 1z" fill="#262626"/></svg>
+    <span class="nav-mobile__icon-text">Menú</span>
+  </a>
+</li>

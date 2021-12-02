@@ -8,16 +8,12 @@ from django.http import Http404
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect, get_object_or_404, render
-from django.template import RequestContext
 from django.forms import HiddenInput
 from django.contrib.auth.decorators import permission_required, login_required
 from django.views.decorators.cache import never_cache
-from django.contrib.auth.models import User, Permission
-from django.db.models import Q
 from django.contrib.admin.views.decorators import staff_member_required
 
 from decorators import render_response
-from thedaily.models import Subscriber
 
 from models import SubscriberEvento, SubscriberArticle, TopUser, Beneficio, Socio, Registro
 from forms import ArticleForm, EventoForm, RegistroForm
@@ -29,35 +25,29 @@ to_response = render_response('comunidad/templates/')
 @never_cache
 @staff_member_required
 def index(request):
-    articulos = SubscriberArticle.objects.all()[:20]
-    eventos = SubscriberEvento.objects.all()[:20]
+    # TODO: subscriber articles and events features should be reviewed
+    # articulos = SubscriberArticle.objects.all()[:20]
+    # eventos = SubscriberEvento.objects.all()[:20]
 
-    top_users_week = TopUser.objects.filter(type='WEEK').order_by(
-        '-date_created', '-points').select_related('user')
-    top_users_month = TopUser.objects.filter(type='MONTH').order_by(
-        '-date_created', '-points').select_related('user')
-    perm = Permission.objects.get(codename='es_suscriptor_ladiaria')
+    top_users_week = TopUser.objects.filter(type='WEEK').order_by('-date_created', '-points').select_related('user')
+    top_users_month = TopUser.objects.filter(type='MONTH').order_by('-date_created', '-points').select_related('user')
 
-    latest_users = Subscriber.objects.filter(
-        Q(user__groups__permissions=perm) | Q(user__user_permissions=perm)
-    ).distinct().order_by('-date_created')[:30]
-
-    return render(request,
-                  'comunidad/index.html', {
-                      'articulos': articulos,
-                      'eventos': eventos,
-                      'top_users_week': top_users_week,
-                      'top_users_month': top_users_month,
-                      'latest_users': latest_users}
-                  )
+    return render(
+        request,
+        'comunidad/index.html',
+        {
+            # 'articulos': articulos,
+            # 'eventos': eventos,
+            'top_users_week': top_users_week,
+            'top_users_month': top_users_month,
+        }
+    )
 
 
 @never_cache
 def article_detail(request, slug):
     article = get_object_or_404(SubscriberArticle, slug=slug)
-    return render(request, 'article/detail.html', {
-        'article': article, 'is_comunidad': True,
-        'is_detail': True})
+    return render(request, 'article/detail.html', {'article': article, 'is_comunidad': True, 'is_detail': True})
 
 
 @never_cache
@@ -84,15 +74,13 @@ def edit_article(request, slug):
         msg = "Article updated successfully"
         messages.success(request, msg, fail_silently=True)
         return redirect(article)
-    return render(request, 'comunidad/article_form.html',
-                  {'form': form, 'article': article})
+    return render(request, 'comunidad/article_form.html', {'form': form, 'article': article})
 
 
 @never_cache
 def evento_detail(request, slug):
     evento = get_object_or_404(SubscriberEvento, slug=slug)
-    return render(request, 'cartelera/evento_detail.html',
-                  {'evento': evento, 'is_comunidad': True})
+    return render(request, 'cartelera/evento_detail.html', {'evento': evento, 'is_comunidad': True})
 
 
 @never_cache
@@ -117,21 +105,7 @@ def edit_evento(request, slug):
     if form.is_valid():
         evento = form.save()
         return redirect(evento)
-    return render(request, 'comunidad/evento_form.html',
-                  {'form': form, 'article': article})
-
-
-@never_cache
-@staff_member_required
-def AllSubscribers(request):
-    from django.db.models import Q
-
-    perm = Permission.objects.get(codename='thedaily.es_suscriptor_ladiaria')
-    suscriptores = User.objects.filter(
-        Q(groups__permissions=perm) | Q(user_permissions=perm)).distinct()
-
-    return render(request, 'comunidad/suscriptores.html',
-                  {'suscriptores': suscriptores, 'is_comunidad': True})
+    return render(request, 'comunidad/evento_form.html', {'form': form, 'article': article})
 
 
 @never_cache
@@ -152,19 +126,17 @@ def beneficios(request):
         ), request.POST or None), False
         if form.is_valid():
             if request.POST.get('save'):
-                Registro.objects.create(subscriber=form.cleaned_data[
-                    'subscriber'], benefit=form.cleaned_data['benefit'])
+                Registro.objects.create(
+                    subscriber=form.cleaned_data['subscriber'], benefit=form.cleaned_data['benefit']
+                )
                 success = True
             else:
                 form.fields['document'].widget = HiddenInput()
                 form.fields['benefit'].widget = HiddenInput()
                 form.helper.layout = Layout(
-                    HTML(
-                        '¿Confirmar %(benefit)s para %(subscriber)s?' %
-                        form.cleaned_data),
+                    HTML(u'¿Confirmar %(benefit)s para %(subscriber)s?' % form.cleaned_data),
                     FormActions(Submit('save', u'Confirmar')))
-        return render(request, 'comunidad/beneficios.html',
-                      {'form': form, 'is_comunidad': True, 'success': success})
+        return render(request, 'comunidad/beneficios.html', {'form': form, 'is_comunidad': True, 'success': success})
 
     except Socio.DoesNotExist:
         # non socios cant access this view

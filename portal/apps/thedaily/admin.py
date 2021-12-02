@@ -24,12 +24,34 @@ class SubscriptionAdmin(ModelAdmin):
 
 class ExteriorSubscriptionAdmin(SubscriptionAdmin):
     list_display = (
-        'id', 'subscriber', 'first_name', 'document', 'email', 'telephone', 'country', 'city', 'address',
-        'observations')
+        'id',
+        'subscriber',
+        'first_name',
+        'document',
+        'email',
+        'telephone',
+        'country',
+        'city',
+        'address',
+        'observations',
+    )
     exclude = (
-        'subscription_type', 'last_name', 'province', 'subscription_plan', 'credit_card', 'friend1_name',
-        'friend1_email', 'friend1_telephone', 'friend2_name', 'friend2_email', 'friend2_telephone', 'friend3_name',
-        'friend3_email', 'friend3_telephone', 'public_profile', 'subscription_type_prices')
+        'subscription_type',
+        'last_name',
+        'province',
+        'subscription_plan',
+        'friend1_name',
+        'friend1_email',
+        'friend1_telephone',
+        'friend2_name',
+        'friend2_email',
+        'friend2_telephone',
+        'friend3_name',
+        'friend3_email',
+        'friend3_telephone',
+        'public_profile',
+        'subscription_type_prices',
+    )
 
 
 class SubscriberAdmin(ModelAdmin):

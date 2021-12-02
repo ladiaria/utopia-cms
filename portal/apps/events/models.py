@@ -1,17 +1,25 @@
 # -*- coding: utf-8 -*-
-from db.fields import AuthUserForeignKey
-
 from django.contrib.auth.models import User
-from django.db.models import Model, CharField, TextField, DateTimeField, \
-    BooleanField, SlugField, ManyToManyField, ForeignKey, ImageField, \
-    permalink, EmailField
+from django.db.models import (
+    Model,
+    CharField,
+    TextField,
+    DateTimeField,
+    BooleanField,
+    SlugField,
+    ManyToManyField,
+    ForeignKey,
+    ImageField,
+    permalink,
+    EmailField,
+)
 
 from thedaily.models import Subscriber
 
 
 class Location(Model):
     name = CharField('nombre', max_length=50)
-    address = CharField('dirección', max_length=100)
+    address = CharField(u'dirección', max_length=100)
 
     def __unicode__(self):
         return self.name
@@ -35,9 +43,9 @@ class Artist(Model):
 class BaseEvent(Model):
     location = ForeignKey(Location, verbose_name='lugar')
     date = DateTimeField('fecha')
-    title = CharField('título', max_length=255)
-    image = ImageField(u'imagen', blank=True, null=True, upload_to="eventos/")
-    description = TextField('descripción', blank=True, null=True)
+    title = CharField(u'título', max_length=255)
+    image = ImageField(u'imagen', blank=True, null=True, upload_to="eventos")
+    description = TextField(u'descripción', blank=True, null=True)
     published = BooleanField('publicado', default=False)
 
     def __unicode__(self):
@@ -56,19 +64,22 @@ class BaseEvent(Model):
 
 class Event(BaseEvent):
     slug = SlugField('slug', editable=False)
-    artists = ManyToManyField(Artist, verbose_name='artistas',
-        related_name='events', blank=True)
-    date_created = DateTimeField('fecha de creación', auto_now_add=True)
-    created_by = ForeignKey(User, editable=False, blank=False,
-        null=True, verbose_name='creado por', related_name='created_events')
-    modified_by = ForeignKey(User, blank=False, null=True,
-        verbose_name='actualizado por', related_name='modified_events')
+    artists = ManyToManyField(Artist, verbose_name='artistas', related_name='events', blank=True)
+    date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
+    created_by = ForeignKey(
+        User, editable=False, blank=False, null=True, verbose_name='creado por', related_name='created_events'
+    )
+    modified_by = ForeignKey(
+        User, blank=False, null=True, verbose_name='actualizado por', related_name='modified_events'
+    )
 
     @permalink
     def get_absolute_url(self):
-        return 'events-event_detail', (), {'year': self.date.year,
-            'month': self.date.month, 'day': self.date.day,
-            'event_slug': self.slug}
+        return (
+            'events-event_detail',
+            (),
+            {'year': self.date.year, 'month': self.date.month, 'day': self.date.day, 'event_slug': self.slug},
+        )
 
     def save(self, *args, **kwargs):
         from django.template.defaultfilters import slugify
@@ -84,8 +95,7 @@ class Event(BaseEvent):
 
 class Activity(BaseEvent):
     """
-    Activities are special events having also attendance info, attendants
-    can enter in only not closed activities.
+    Activities are special events having also attendance info, attendants can enter in only not closed activities.
     """
     closed = BooleanField('cerrada', default=False)
 
@@ -96,8 +106,7 @@ class Activity(BaseEvent):
 
 class Attendant(Model):
     """
-    An attendant to an activity, can be any person related or not with a
-    subscriber
+    An attendant to an activity, can be any person related or not with a subscriber
     """
     activity = ForeignKey(Activity)
     name = CharField(u'nombre', max_length=255)

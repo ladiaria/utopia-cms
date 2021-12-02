@@ -13,7 +13,7 @@ from emails.django import DjangoMessage as Message
 
 from django.conf import settings
 from django.db import close_old_connections, connection, IntegrityError, OperationalError
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.template import Engine, Context
 from django.contrib.sites.models import Site
 from django.utils import translation
@@ -46,7 +46,7 @@ log.addHandler(err_handler)
 hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 
-def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_ending_with, subscriber_ids):
+def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, partitions, mod, subscriber_ids):
 
     cover_article = category.home.cover()
     cover_article_section = cover_article.publication_section() if cover_article else None
@@ -89,14 +89,14 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
         # if both "starting_from" we can filter now with the minimum
         if starting_from_s and starting_from_ns:
             receivers = receivers.filter(user__email__gt=min(starting_from_s, starting_from_ns))
-        if ids_ending_with:
-            receivers = receivers.filter(id__iregex=r'^\d*[%s]$' % ids_ending_with)
+        if partitions is not None and mod is not None:
+            receivers = receivers.extra(where=['MOD(%s.id,%d)=%d' % (Subscriber._meta.db_table, partitions, mod)])
 
     # Connect to the SMTP server and send all emails
     try:
         smtp = None if no_deliver else smtp_connect()
     except error:
-        log.error("MTA down, '%s' was used for ids_ending_with" % ids_ending_with)
+        log.error("MTA down, '%s %s' was used for partitions and mod" % (partitions, mod))
         return
 
     subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
@@ -209,8 +209,8 @@ def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, ids_
             # the connection to databse can be killed, if that is the case print useful log to continue
             if isinstance(exc, (ProgrammingError, OperationalError)):
                 log.error(
-                    'DB connection error, (%s, %s, %s) was the last delivery attempt' % (
-                        s.user.email if s else None, is_subscriber, ids_ending_with
+                    'DB connection error, (%s, %s, %s, %s) was the last delivery attempt' % (
+                        s.user.email if s else None, is_subscriber, partitions, mod
                     )
                 )
             break
@@ -283,26 +283,40 @@ class Command(BaseCommand):
             help=u'Send to non-subscribers only if their email is alphabetically greater than',
         )
         parser.add_argument(
-            '--ids-ending-with',
+            '--partitions',
             action='store',
-            type=unicode,
-            dest='ids_ending_with',
-            help=u'Send only if the Subscriber object id ends with one of these numbers e.g.: --ids-ending-with=0123',
+            type=int,
+            dest='partitions',
+            help=u'Used with --mod, divide receipts in this quantity of partitions e.g.: --partitions=5',
+        )
+        parser.add_argument(
+            '--mod',
+            action='store',
+            type=int,
+            dest='mod',
+            help=u'When --partitions is set, only take receipts whose id MOD partitions == this value e.g.: --mod=0',
         )
 
     def handle(self, *args, **options):
+        partitions, mod = options.get('partitions'), options.get('mod')
+        if partitions is None and mod is not None or mod is None and partitions is not None:
+            raise CommandError(u'--partitions must be used with --mod')
         category_slug = options.get('category_slug')[0]
+        try:
+            category, no_deliver = Category.objects.get(slug=category_slug), options.get('no_deliver')
+        except Category.DoesNotExist:
+            raise CommandError(u'No category matching the slug given found')
         h = logging.FileHandler(filename=settings.SENDNEWSLETTER_LOGFILE % (category_slug, today.strftime('%Y%m%d')))
         h.setFormatter(log_formatter)
         log.addHandler(h)
-        category, no_deliver = Category.objects.get(slug=category_slug), options.get('no_deliver')
         start_time = time.time()
         build_and_send(
             category,
             no_deliver,
             options.get('starting_from_s'),
             options.get('starting_from_ns'),
-            options.get('ids_ending_with'),
+            partitions,
+            mod,
             options.get('subscriber_ids'),
         )
         log.info(

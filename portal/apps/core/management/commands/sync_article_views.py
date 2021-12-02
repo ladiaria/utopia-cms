@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 # utopia-cms 2020,2021. Aníbal Pacheco.
-import pymongo
-
 from django.core.management import BaseCommand
 from django.core.cache import cache
 from django.db import connection
@@ -15,27 +13,26 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         vlevel = options.get('verbosity')
-        query = {'views': {'$gt': 0}}
-        aviews = core_articlevisits_mdb.posts.find(query)
+        aviews = core_articlevisits_mdb.posts.find({'views': {'$gt': 0}})
         updates = {}
         for av in aviews:
             try:
                 article_id = av.get('article')
-                article = Article.objects.get(id=article_id)
-                updates[article_id] = av.get('views')
-                core_articlevisits_mdb.posts.update_one({'article': article_id}, {'$set': {'views': 0}})
-            except Article.DoesNotExist:
-                # deleted article, remove the entry from mongo
-                if vlevel > 1:
-                    print('removing deleted article %d from mongo' % article_id)
-                core_articlevisits_mdb.posts.delete_one({'article': article_id})
+                if Article.objects.filter(id=article_id).exists():
+                    updates[article_id] = av.get('views')
+                    core_articlevisits_mdb.posts.update_one({'article': article_id}, {'$set': {'views': 0}})
+                else:
+                    # deleted article, remove the entry from mongo
+                    if vlevel > 1:
+                        print('removing deleted article %d from mongo' % article_id)
+                    core_articlevisits_mdb.posts.delete_one({'article': article_id})
             except Exception as e:
                 print(e)
         if updates:
             # build and exec update sql
             article_ids = ','.join(str(k) for k in updates.keys())
             update_query = "UPDATE %s SET views=views+ELT(FIELD(id,%s),%s) WHERE id IN (%s)" % (
-                Article.objects.model._meta.db_table,
+                Article._meta.db_table,
                 article_ids,
                 ','.join(str(k) for k in updates.values()),
                 article_ids,
@@ -49,4 +46,3 @@ class Command(BaseCommand):
         cache.clear()
         if vlevel > 1:
             print('Sync completed.')
-

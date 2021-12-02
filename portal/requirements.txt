@@ -2,7 +2,7 @@ bleach
 bleach-whitelist
 django>1.11,<2
 django-activity-stream>0.5,<0.10
-django-bleach
+django-bleach<1
 freezegun
 social-auth-app-django>0.0.1,<4
 social-auth-core==4.0.2

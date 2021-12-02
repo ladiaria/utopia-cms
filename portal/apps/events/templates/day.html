@@ -1,32 +1,32 @@
 {% extends "base.html" %}
 {% load events_tags %}
 
-{% block page_title %}{{ day|date:"l j \de F \de Y"|capfirst }} - Café{% endblock %}
+{% block page_title %}Eventos para el {{ day|date:"l j \de F \de Y"|capfirst }}{% endblock %}
 {% block body_class %}events{% endblock %}
 
 {% block content %}
-    <div class="titlebar">
-        <h1>
-            Eventos para el {{ day|date:"l j \de F \de Y" }}
-        </h1>
-    </div>
-    {% regroup events by location as event_list %}
-    {% for event in event_list %}
-        <h2>
-            {{ event.grouper }}
-        </h2>
-        <ul>
-            {% for item in event.list %}
-                <li>
-                    <div>
-                        {{ item.date|date:"G:i" }} hs. {{ item.title }}
-                    <div>
-                    <p>
-                        {{ item.description|linebreaks }}
-                    </p>
-                </li>
-            {% endfor %}
-        </ul>
-    {% endfor %}
-    <a href="{% url 'events-calendar' day.year day.month %}">Ver eventos de {{ day|date:"F" }}</a>
+  <div class="titlebar">
+    <h1>
+      Eventos para el {{ day|date:"l j \de F \de Y" }}
+    </h1>
+  </div>
+  {% regroup events by location as event_list %}
+  {% for event in event_list %}
+    <h2>
+      {{ event.grouper }}
+    </h2>
+    <ul>
+      {% for item in event.list %}
+        <li>
+          <div>
+            {{ item.date|date:"G:i" }} hs. {{ item.title }}
+          <div>
+          <p>
+            {{ item.description|linebreaks }}
+          </p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+  <a href="{% url 'events-calendar' day.year day.month %}">Ver eventos de {{ day|date:"F" }}</a>
 {% endblock %}

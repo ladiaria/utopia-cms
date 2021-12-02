@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from django.conf import settings
-from django.contrib.auth import logout
-from django.contrib.sessions.models import Session
-from django.core.urlresolvers import reverse
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404
 from django.core.urlresolvers import resolve
-from django.utils import timezone
 
 from apps import core_articleviewedby_mdb, signupwall_visitor_mdb
-from signupwall import utils
+from signupwall.utils import get_ip
 from core.models import Article
 from thedaily.email_logic import limited_free_article_mail
 
@@ -58,13 +54,14 @@ def get_or_create_visitor(request):
     if debug:
         print('DEBUG: signupwall.middleware.get_or_create_visitor - session_key: %s' % session_key)
 
-    ip_address = utils.get_ip(request)
+    ip_address = get_ip(request)
     if debug:
         print('DEBUG: signupwall.middleware.get_or_create_visitor - ip_address: %s' % ip_address)
 
     if signupwall_visitor_mdb:
         result = signupwall_visitor_mdb.posts.insert_one(
-            {'session_key': session_key, 'ip_address': ip_address, 'timestamp': datetime.now()})
+            {'session_key': session_key, 'ip_address': ip_address, 'timestamp': datetime.now()}
+        )
         # generation time can be obtained in the returned value .get('_id').generation_time (TODO: re-check this)
         return signupwall_visitor_mdb.posts.find_one({'_id': result.inserted_id})
 

@@ -460,8 +460,8 @@ except ImportError as e:
 
 FREEZE_TIME = None
 
-# Override previous settings with values in local_settings.py settings file.
-from local_settings import *
+# Override previous settings with values in local_migration_settings.py settings file.
+from local_migration_settings import *
 
 SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
 ROBOTS_SITEMAP_URLS = [SITE_URL + 'sitemap.xml']

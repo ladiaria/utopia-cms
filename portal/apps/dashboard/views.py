@@ -1,6 +1,6 @@
 # coding=utf-8
 from os.path import join
-import csv
+from unicodecsv import reader, writer
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
@@ -81,9 +81,9 @@ def load_table(request, table_id):
             # From this table we need to grab the data from the database, not from a csv.
             rows = audio_statistics_dashboard(month, year)
         else:
-            rows = csv.reader(open(join(settings.DASHBOARD_REPORTS_PATH, filename)))
+            rows = reader(open(join(settings.DASHBOARD_REPORTS_PATH, filename)))
         if table_id == 'subscribers':
-            rows = [row for row in rows if row[1].startswith('%s-%s' % (year, month))]
+            rows = [(row[:-1] + [row[-1].split(u', ')]) for row in rows if row[1].startswith('%s-%s' % (year, month))]
     except Exception:
         rows = None
     else:
@@ -111,8 +111,8 @@ def export_csv(request, table_id):
     content = open(join(settings.DASHBOARD_REPORTS_PATH, '%s.csv' % table_id))
     if month and year and table_id == 'subscribers':
         resp = HttpResponse(content_type='text/csv')
-        w = csv.writer(resp)
-        w.writerows([row for row in csv.reader(content) if row[1].startswith('%s-%s' % (year, month))])
+        w = writer(resp)
+        w.writerows([row for row in reader(content) if row[1].startswith('%s-%s' % (year, month))])
     else:
         resp = HttpResponse(content=content.read(), content_type='text/csv')
     resp['Content-Disposition'] = 'attachment; filename=%s.csv' % table_id

@@ -15,13 +15,15 @@ from django.conf import settings
 try:
     client = MongoClient(serverSelectionTimeoutMS=1000)
     client.server_info()
-    global core_articleviewedby_mdb, core_articlevisits_mdb, signupwall_visitor_mdb
-    core_articleviewedby_mdb, core_articlevisits_mdb, signupwall_visitor_mdb = (
+    global core_articleviewedby_mdb, core_articlevisits_mdb, signupwall_visitor_mdb, adzone_mdb
+    core_articleviewedby_mdb, core_articlevisits_mdb, signupwall_visitor_mdb, adzone_mdb = (
         client[settings.CORE_MONGODB_ARTICLEVIEWEDBY] if settings.CORE_MONGODB_ARTICLEVIEWEDBY else None,
         client[settings.CORE_MONGODB_ARTICLEVISITS] if settings.CORE_MONGODB_ARTICLEVISITS else None,
-        client[settings.SIGNUPWALL_MONGODB_VISITOR] if settings.SIGNUPWALL_MONGODB_VISITOR else None)
+        client[settings.SIGNUPWALL_MONGODB_VISITOR] if settings.SIGNUPWALL_MONGODB_VISITOR else None,
+        client[settings.ADZONE_MONGODB] if settings.ADZONE_MONGODB else None,
+    )
 except ServerSelectionTimeoutError:
-    core_articleviewedby_mdb = core_articlevisits_mdb = signupwall_visitor_mdb = None
+    core_articleviewedby_mdb = core_articlevisits_mdb = signupwall_visitor_mdb = adzone_mdb = None
 
 # blacklisted emails
 global blacklisted

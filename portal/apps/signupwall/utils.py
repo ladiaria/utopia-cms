@@ -22,26 +22,22 @@ def get1st_valid_ip_address(ip_addresses):
 
 def get_ip(request):
     """
-    Retrieves the remote IP address from the request data.  If the user is
-    behind a proxy, they may have a comma-separated list of IP addresses, so
-    we need to account for that.  In such a case, only the first IP in the
-    list will be retrieved.  Also, some hosts that use a proxy will put the
-    REMOTE_ADDR into HTTP_X_FORWARDED_FOR.  This will handle pulling back the
-    IP from the proper place.
+    Retrieves the remote IP address from the request data. If the user is behind a proxy, they may have a
+    comma-separated list of IP addresses, so we need to account for that. In such a case, only the first IP in the list
+    will be retrieved. Also, some hosts that use a proxy will put the REMOTE_ADDR into HTTP_X_FORWARDED_FOR.
+    This will handle pulling back the IP from the proper place.
     But first of all be aware of cloudflare (HTTP_CF_CONNECTING_IP)
     """
 
     # if neither header contain a value, just use local loopback
     ip_addresses = request.META.get(
-        'HTTP_CF_CONNECTING_IP', request.META.get(
-            'HTTP_X_FORWARDED_FOR', request.META.get(
-                'REMOTE_ADDR', '127.0.0.1')))
+        'HTTP_CF_CONNECTING_IP', request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '127.0.0.1'))
+    )
     if ip_addresses:
         # make sure we have one and only one IP
         ip_address = get1st_valid_ip_address(ip_addresses)
         if not ip_address:
-            # no IP, probably from some dirty proxy or other device
-            # throw in some bogus IP
+            # no IP, probably from some dirty proxy or other device throw in some bogus IP
             ip_address = '10.0.0.1'
         return ip_address
     else:

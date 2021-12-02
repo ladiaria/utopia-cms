@@ -365,7 +365,7 @@ class EditionDownload(Model):
 
 class Subscription(Model):
     SUBSCRIPTION_CHOICES = (
-        ('PAP', u'Edición papel + Digital (Sólo para Uruguay)'),
+        ('PAP', u'Edición papel + Digital'),
         ('DIG', u'Digital (Edición web)'),
     )
     MONTHLY = u'MO'
@@ -377,16 +377,6 @@ class Subscription(Model):
         (QUARTERLY, u'Trimestral'),
         (BIANNUAL, u'Semestral'),
         (ANNUAL, u'Anual'),
-    )
-    OCA = u'OC'
-    VISA = u'VI'
-    CABAL = u'CA'
-    MASTER = u'MA'
-    CREDIT_CARD_CHOICES = (
-        (OCA, u'OCA'),
-        (VISA, u'VISA'),
-        (CABAL, u'CABAL'),
-        (MASTER, u'MASTER'),
     )
 
     subscriber = ForeignKey(User, related_name='suscripciones', verbose_name=u'usuario', null=True, blank=True)
@@ -406,7 +396,6 @@ class Subscription(Model):
     subscription_type = CharField(u'suscripción', max_length=3, choices=SUBSCRIPTION_CHOICES, default='DIG')
     subscription_plan = CharField(u'plan', max_length=2, choices=SUBSCRIPTION_PLAN_CHOICES)
     subscription_end = DateTimeField(u'última fecha de suscripción', auto_now_add=True, editable=False)
-    credit_card = CharField(u'tarjeta', max_length=2, blank=True, null=True, choices=CREDIT_CARD_CHOICES)
     friend1_name = CharField(u'nombre', max_length=150, blank=True, null=True)
     friend1_email = CharField(u'email', max_length=150, blank=True, null=True)
     friend1_telephone = CharField(u'teléfono', max_length=20, blank=True, null=True)

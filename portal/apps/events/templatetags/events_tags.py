@@ -15,10 +15,10 @@ class EventCountNode(Node):
 
     def render(self, context):
         day = self.day.resolve(context)
-        params = {'date__year': day.year, 'date__month': day.month,
-            'date__day': day.day}
+        params = {'date__year': day.year, 'date__month': day.month, 'date__day': day.day}
         context.update({self.keyword: Event.objects.filter(**params).count()})
         return ''
+
 
 @register.tag
 def get_event_count(parser, token):
@@ -42,9 +42,10 @@ class LatestEventsNode(Node):
         context.update({self.keyword: events})
         return ''
 
+
 @register.tag
 def get_latest_events(parser, token):
-    """Usage: {% get_latest_events "10" as event_list %}"""
+    """ Usage: {% get_latest_events "10" as event_list %} """
 
     bits = token.contents.split()
     if len(bits) != 4 or bits[2] != 'as':

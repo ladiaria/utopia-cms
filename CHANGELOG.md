@@ -1,3 +1,19 @@
+# version 0.1.5 (2021-12-02)
+
+- Fixes in the installation guide.
+- pip dependencies updates.
+- Cleaned custom values and unused fields in some migrations and models.
+- Improved syntax code style in many modules and templates.
+- not-maintained / duplicated features commented / removed in comunidad app.
+- Custom unneeded shell scripts removed.
+- Ad impressions and clicks logs registered in mongodb for better mysql performance.
+- "with" template tag usage syntax updated.
+- Better way to partitioning the receipts in the send_category_nl management command.
+- Some JavaScript loading optimizations, loaded in the pages that require them.
+- Support for new blocks like category sections and articles by tag.
+- Improvements in dashboard app.
+- Support for a better customization of the mobile footer navbar.
+
 # version 0.1.4 (2021-10-20)
 
 - Support for custom subject in category newsletters.

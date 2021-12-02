@@ -1,102 +1,91 @@
 {% extends "base.html" %}
 {% load core_tags avatar_tags %}
 {% block page_title %}Comunidad{% endblock %}
-{% block page_description %}Este es el espacio donde se expresan los suscriptores de la diaria.{% endblock %}
 
 {% block body_class %}comunidad{% endblock %}
+
 {% block content %}
 
-<h1>Comunidad <span class="small"> - aquí se expresan los <em>suscriptores</em></span></h1>
+  <h1>Comunidad</h1>
 
-<div class="row">
-    <section class="col-xs-3" id="columnas">
-	    <h2>Columnas <a href="#" rel="tooltip" title="Artículos escritos por nuestros suscriptores." class="pull-right"><span class="icon-question-sign large"></span></a></h2>
+  <div class="row">
 
-		<ul class="media-list articles-list">
-		    {% for article in articulos %}
-		    <li class="media">
-		        <article class="media-body">
-		            <header class="media-heading">
-		                {% if article.date_published %}
-		                    <span class="date">{{ article.date_published|date:"j.n.y" }}</span>
-					        <span class="byline">Por: <a href="{{ article.created_by.get_absolute_url }}">{{ article.created_by.get_full_name }}</a>
-					        </span>
-
-		                {% endif %}
-		            	<div class="deck">
-		    	          {% if article.get_keywords %}
-		    	          <div class="keywords-style">{{ article.keywords }}</div>
-		    	          {% endif %}
-		    		    </div>
-		                <h1><a href="{% url 'comunidad_article_detail' article.slug %}">{{ article.headline }}</a></h1>
-		            </header>
-		            <section>
-				      <p class="lead">
-			              {% if article.has_lead %}
-			                    {{ article.get_lead }}
-			              {% elif article.has_deck %}
-			                    {{ article.deck }}
-			              {% endif %}
-				      </p>
-		            </section>
-
-		        </article>
-		    </li>
-		    {% empty %}
-		    ¡Podes ser el primero en escribir una columna!
-		    {% endfor %}
-		</ul>
-
-      <div class="hr"><hr /></div>
-      <a href="{% url 'comunidad_article_add' %}" class="btn">
-        <span class="icon-ladiaria">e</span>
-        Escribí un artículo</a>
-    </section>
     {% comment %}
+
+    <section class="col-xs-3" id="columnas">
+      <h2>Columnas <a href="#" rel="tooltip" title="Artículos escritos por nuestros suscriptores." class="pull-right"><span class="icon-question-sign large"></span></a></h2>
+      <ul class="media-list articles-list">
+        {% for article in articulos %}
+          <li class="media">
+            <article class="media-body">
+              <header class="media-heading">
+                {% if article.date_published %}
+                  <span class="date">{{ article.date_published|date:"j.n.y" }}</span>
+                  <span class="byline">
+                    Por: <a href="{{ article.created_by.get_absolute_url }}">{{ article.created_by.get_full_name }}</a>
+                  </span>
+                {% endif %}
+                <div class="deck">
+                  {% if article.get_keywords %}
+                    <div class="keywords-style">{{ article.keywords }}</div>
+                  {% endif %}
+                </div>
+                <h1><a href="{% url 'comunidad_article_detail' article.slug %}">{{ article.headline }}</a></h1>
+              </header>
+              <section>
+                <p class="lead">
+                  {% if article.has_lead %}
+                    {{ article.get_lead }}
+                  {% elif article.has_deck %}
+                    {{ article.deck }}
+                  {% endif %}
+                </p>
+              </section>
+            </article>
+          </li>
+        {% empty %}
+          ¡Podes ser el primero en escribir una columna!
+        {% endfor %}
+      </ul>
+      <div class="hr"><hr /></div>
+      <a href="{% url 'comunidad_article_add' %}" class="btn">Escribí un artículo</a>
+    </section>
+
     <section class="col-xs-2 col-sm-2 col-md-2" id="eventos">
-	    <h2>Eventos <a href="#" rel="tooltip" title="Eventos publicados por Suscriptores" class="pull-right"><span class="icon-question-sign large"></span></a></h2>
-	    <ul class="media-list">
-	        {% for evento in eventos %}
-	        <li>
-	            <a href="{{ evento.get_absolute_ur }}">{{ evento.title }}</a>
-	        </li>
-		    {% empty %}
-		    <li>¡Podes ser el primero en crear un evento!</li>
-	        {% endfor %}
-	    </ul>
-	    <a href="{% url 'comunidad_evento_add' %}" class="btn">Agregar evento</a>
+      <h2>Eventos <a href="#" rel="tooltip" title="Eventos publicados por Suscriptores" class="pull-right"><span class="icon-question-sign large"></span></a></h2>
+      <ul class="media-list">
+        {% for evento in eventos %}
+          <li>
+            <a href="{{ evento.get_absolute_ur }}">{{ evento.title }}</a>
+          </li>
+        {% empty %}
+          <li>¡Podes ser el primero en crear un evento!</li>
+        {% endfor %}
+      </ul>
+      <a href="{% url 'comunidad_evento_add' %}" class="btn">Agregar evento</a>
     </section>
 
     {% endcomment %}
 
-	<section class="col-xs-3" id="usuarios">
-	  <h2>Suscriptores</h2>
-	  <div class="tabbable">
-		  <ul class="nav nav-tabs">
-			  <li class="active"><a href="#latest-users" data-toggle="tab">nuevos</a></li>
-			  <li><a href="#top-users-month" data-toggle="tab">+ activos</a></li>
-		  </ul>
-		  <div class="tab-content">
-			  <div class="tab-pane active" id="latest-users">
-			  	<p>Nuevos suscriptores, ¡bienvenidos!</p>
-				  <ul class="row icons-list">
-				      {% for s in latest_users %}
-				      	<li class="col-xs-6 col-sm-4"><a href="{{ s.user.get_absolute_url }}" title="{{ s.date_created }}">{% avatar s.user 48 %}  {{ s.user.get_full_name }}</a></li>
-				      {% endfor %}
-				  </ul>
-			  </div>
-			  <div class="tab-pane" id="top-users-month">
-			  	<p>Usuarios más activos de la semana</p>
-				  <ul class="row unstyled">
-				      {% for top_user in top_users_week %}
-				      	<li class="col-xs-12"><a href="{{ top_user.user.get_absolute_url }}" title="{{ top_user.points }}|{{ top_user.date_created }}">{% avatar top_user.user 28 %} {{ top_user.user }}</a></li>
-				      {% endfor %}
-				  </ul>
-			  </div>
-		  </div>
-	  </div>
-	</section>
+    <section class="col-xs-3" id="usuarios">
+      <h2>Suscriptores</h2>
+      <div class="tabbable">
+        <ul class="nav nav-tabs">
+          <li><a href="#top-users-month" data-toggle="tab">+ activos</a></li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane" id="top-users-month">
+            <p>Usuarios más activos de la semana</p>
+            <ul class="row unstyled">
+              {% for top_user in top_users_week %}
+                <li class="col-xs-12"><a href="{{ top_user.user.get_absolute_url }}" title="{{ top_user.points }}|{{ top_user.date_created }}">{% avatar top_user.user 28 %} {{ top_user.user }}</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
 
-</div>
+  </div>
 
 {% endblock %}

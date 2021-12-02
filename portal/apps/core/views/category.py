@@ -17,7 +17,6 @@ from core.templatetags.core_tags import remove_markup
 from faq.models import Question, Topic
 
 
-site = Site.objects.get_current()
 # Initialize the hashid object with salt from settings and custom length
 hashids = Hashids(settings.HASHIDS_SALT, 32)
 
@@ -94,6 +93,7 @@ def newsletter_preview(request, slug):
                 reverse('category-nl-preview', args=(settings.CORE_CATEGORY_REDIRECT[slug], ))
             )
 
+    site = Site.objects.get_current()
     category = get_object_or_404(Category, slug=slug)
     category_home = get_object_or_404(CategoryHome, category=category)
 

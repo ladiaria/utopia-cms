@@ -1,4 +1,22 @@
+# From version 0.1.4 to 0.1.5
+
+```
+git pull
+git checkout 0.1.5
+cd portal
+# activate your virtual env
+./manage.py migrate --sync-db
+./manage.py shell
+# inside the Django shell execute this sentences:
+from django.conf import settings
+from django.contrib.auth.models import Permission
+p = Permission.objects.get(codename='es_suscriptor_ladiaria')
+p.name, p.codename = 'Es suscriptor actualmente', 'es_suscriptor_' + settings.DEFAULT_PUB
+p.save()
+```
+
 # From version 0.1.3 to 0.1.4
+
 ```
 git pull
 git checkout 0.1.4

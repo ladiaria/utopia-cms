@@ -91,19 +91,29 @@
             <tr>
               <th>#</th>
               <th>Fecha</th>
-              <th>Artículo</th>
-              <th data-sortable="true">Visitas</th>
+              <th class="col-md-1">Artículo</th>
+              <th data-sortable="true">Total de<br>visitas</th>
+              <th data-sortable="true">Visitas sólo<br>de digitales</th>
               <th>Publicado en</th>
             </tr>
           </thead>
           <tbody>
-            {% for rank, date, article_url, views, published in rows %}
+            {% for rank, date, article_url, views, digital_views, published in rows %}
               <tr>
                 <td>{{ rank }}</td>
                 <td class="text-nowrap">{{ date }}</td>
                 <td><a href="{{ article_url }}">{{ article_url }}</a></td>
                 <td>{{ views }}</td>
-                <td>{{ published }}</td>
+                <td>{{ digital_views }}</td>
+                <td>
+                  {% if published.0 %}
+                    <ul>
+                      {% for p in published %}
+                        <li>{{ p }}</li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>
@@ -133,16 +143,18 @@
               <th>#</th>
               <th data-sortable="true">Publicación</th>
               <th data-sortable="true">Categoría</th>
-              <th data-sortable="true">Visitas</th>
+              <th data-sortable="true">Total de visitas</th>
+              <th data-sortable="true">Visitas sólo de digitales</th>
             </tr>
           </thead>
           <tbody>
-            {% for rank, publication, section, views in rows %}
+            {% for rank, publication, section, views, digital_views in rows %}
               <tr>
                 <td>{{ rank }}</td>
                 <td>{{ publication }}</td>
                 <td>{{ section }}</td>
                 <td>{{ views }}</td>
+                <td>{{ digital_views }}</td>
               </tr>
             {% endfor %}
           </tbody>

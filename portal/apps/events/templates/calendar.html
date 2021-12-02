@@ -1,67 +1,65 @@
 {% extends "base.html" %}
 {% load core_tags thumbnail %}
 
-{% block page_title %}{{ date|date:"F Y"|capfirst }} - Café{% endblock %}
+{% block page_title %}Eventos para {{ date|date:"F Y"|capfirst }}{% endblock %}
 {% block body_class %}events{% endblock %}
 
 {% block content %}
-    <div class="main">
-        <div class="titlebar">
-            <h1>
-                Eventos para {{ date|date:"F Y"|capfirst }}
-            </h1>
-        </div>
-        <div class="month">
-            <a href="{% url 'events-calendar' prev.year prev.month %}" class="prev">&laquo; {{ prev|date:"F"|capfirst }}</a>
-            <span class="current">{{ date|date:"F Y"|capfirst }}</span>
-            <a href="{% url 'events-calendar' next.year next.month %}" class="next">{{ next|date:"F"|capfirst }} &raquo;</a>
-        </div>
-
-        <h2>
-            Eventos
-        </h2>
-        {% if events %}
-            {% regroup events|dictsort:"date" by date as event_list %}
-            <div>
-                {% for event in event_list %}
-                <div class="fecha">
-                        {{ event.grouper|date:"l d"|capfirst }}
-                </div>
-
-                    {% for item in event.list %}
-                    <div class="princiapl">
-
-                                {% if item.image %}
-                                <div class="unit1">
-                                {% thumbnail item.image "90x90" crop="center" as im %}
-                                    <a href="{{ item.get_absolute_url }}" title="{{ item.title }}"><img alt="{{ item.title }}" src="{{ im.url }}"></a>
-                                {% endthumbnail %}
-                                </div>
-                                {% endif %}
-
-                                <div class="unit2">
-                                <h2>
-                                    <a href="{{ item.get_absolute_url }}" title="{{ item.title }}">{{ item.title }}</a>
-                                </h2>
-                                <p>
-                                    {{ item.short }} <br>
-                                    <a href="{{ item.get_absolute_url }}" title="{{ item.location }} - {{ item.date|date:"G:i" }} hs.">{{ item.location }} - {{ item.date|date:"G:i" }} hs.</a>
-                                </p>
-
-                                </div>
-
-                        </div>
-                    {% endfor %}
-                    {% if not forloop.last %}
-                        <div class="hr"></div>
-                    {% endif %}
-                {% endfor %}
-         </div>
-        {% else %}
-            <p>
-                Los eventos de este mes aun no han sido publicados, por informes comunicarse al Cafe La Diaria 2900 0808 int 191, Gracias.
-            </p>
-        {% endif %}
+  <div class="main">
+    <div class="titlebar">
+      <h1>
+        Eventos para {{ date|date:"F Y"|capfirst }}
+      </h1>
+    </div>
+    <div class="month">
+      <a href="{% url 'events-calendar' prev.year prev.month %}" class="prev">&laquo; {{ prev|date:"F"|capfirst }}</a>
+      <span class="current">{{ date|date:"F Y"|capfirst }}</span>
+      <a href="{% url 'events-calendar' next.year next.month %}" class="next">{{ next|date:"F"|capfirst }} &raquo;</a>
     </div>
 
+    <h2>
+      Eventos
+    </h2>
+    {% if events %}
+      {% regroup events|dictsort:"date" by date as event_list %}
+      <div>
+        {% for event in event_list %}
+          <div class="fecha">
+            {{ event.grouper|date:"l d"|capfirst }}
+          </div>
+
+          {% for item in event.list %}
+            <div class="princiapl">
+
+              {% if item.image %}
+                <div class="unit1">
+                  {% thumbnail item.image "90x90" crop="center" as im %}
+                    <a href="{{ item.get_absolute_url }}" title="{{ item.title }}"><img alt="{{ item.title }}" src="{{ im.url }}"></a>
+                  {% endthumbnail %}
+                </div>
+              {% endif %}
+
+              <div class="unit2">
+                <h2>
+                  <a href="{{ item.get_absolute_url }}" title="{{ item.title }}">{{ item.title }}</a>
+                </h2>
+                <p>
+                  {{ item.short }}<br>
+                  <a href="{{ item.get_absolute_url }}" title="{{ item.location }} - {{ item.date|date:"G:i" }} hs.">{{ item.location }} - {{ item.date|date:"G:i" }} hs.</a>
+                </p>
+              </div>
+
+            </div>
+          {% endfor %}
+          {% if not forloop.last %}
+            <div class="hr"></div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>
+        No hay eventos publicados en el mes.
+      </p>
+    {% endif %}
+  </div>
 {% endblock %}

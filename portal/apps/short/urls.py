@@ -3,8 +3,6 @@ from django.conf.urls import url
 
 from short.views import UrlDetailView
 from core.views.article import ArticleDetailView
-from core.models import Article
-from short.models import Url
 from short.views import redirect
 
 urlpatterns = [

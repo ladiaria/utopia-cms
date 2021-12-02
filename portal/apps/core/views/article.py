@@ -121,14 +121,16 @@ def article_detail(request, year, month, slug, domain_slug=None):
 
     signupwall_exclude_request_condition = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
     if settings.CORE_LOG_ARTICLE_VIEWS and not (
-            signupwall_exclude_request_condition(request) or request.flavour == 'amp'):
+        signupwall_exclude_request_condition(request) or request.flavour == 'amp'
+    ):
         if request.user.is_authenticated() and core_articleviewedby_mdb:
             # register this view
             set_values = {'viewed_at': datetime.now()}
             if article.is_public():
                 set_values['public'] = True
             core_articleviewedby_mdb.posts.update_one(
-                {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True)
+                {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
+            )
         # inc this article visits
         if core_articlevisits_mdb:
             core_articlevisits_mdb.posts.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
@@ -140,7 +142,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
                 talk_url + 'api/graphql',
                 headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
                 data='{"query":"query GetComments($id:ID!){story(id: $id){comments{nodes{status}}}}","variables":'
-                '{"id":%d},"operationName":"GetComments"}' % article.id).json()['data']['story']
+                '{"id":%d},"operationName":"GetComments"}' % article.id
+            ).json()['data']['story']
             comments_count = len(talk_story['comments']['nodes']) if talk_story else 0
         else:
             comments_count = 0

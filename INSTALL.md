@@ -57,9 +57,12 @@ MariaDB [(none)]> GRANT ALL PRIVILEGES ON utopiacms.* TO 'utopiacms_user'@'local
 (utopiacms) user@host:~/utopia-cms/portal $ vim portal/local_settings.py
 ```
 
-- Create needed tables using Django's `migrate` management command:
+- Create needed tables using Django's `migrate` management command twice, without and with the `--run-syncdb` argument:
 
-`(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py migrate`
+```
+(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py migrate
+(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py migrate --run-syncdb
+```
 
 #### Development environment setup
 
@@ -79,5 +82,9 @@ MariaDB [(none)]> GRANT ALL PRIVILEGES ON utopiacms.* TO 'utopiacms_user'@'local
 ```
 
 - Login with superuser created before, edit the default site domain and create a publication with the same slug to the one configured in `settings.DEFAULT_PUB`:
+
+NOTE: If you change the default `settings.DEFAULT_PUB` value from `default` to any `otherslug` value in your local settings, then you should update the permission codename used to check when a user is subscribed to this publication, to perform this update, run this SQL sentence below. Ignore this note and the sentence related if the setting was not modified.
+
+`UPDATE auth_permission SET codename='es_suscriptor_otherslug' WHERE codename='es_suscriptor_default';`
 
 Point your preferred web browser to https://yoogle.com/admin/sites/site/1/ and you will be redirected to the Django's admin site login page, after login you will be redirected again to the default site change form, change its domain to `yoogle.com` and optionally also change its display name to any name you want, save the changes and then go to https://yoogle.com/admin/core/publication/add/ fill the form to create the new publication, save it and then you will be able to see the home page working at https://yoogle.com/.

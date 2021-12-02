@@ -11,4 +11,3 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         AdImpression.objects.filter(impression_date__lt=date.today() - timedelta(90)).delete()
         AdClick.objects.filter(click_date__lt=date.today() - timedelta(90)).delete()
-

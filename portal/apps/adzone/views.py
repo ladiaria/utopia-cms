@@ -12,26 +12,26 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from django.views.decorators.cache import never_cache
 
+from apps import adzone_mdb
+
 from decorators import render_response
 
-from adzone.models import AdBase, AdClick
+from signupwall.utils import get_ip
+from adzone.models import AdBase
+
 
 to_response = render_response('adzone/templates/adzone/')
 
 
 @never_cache
 def ad_view(request, id, tracking=None):
-    """ Record the click in the database, then redirect to ad url """
+    """ Record the click in the mongo database, then redirect to ad url """
     ad = get_object_or_404(AdBase, id=id)
     if settings.ADZONE_LOG_AD_CLICKS:
-        AdClick.objects.create(
-            ad=ad,
-            click_date=datetime.now(),
-            source_ip=request.META.get('REMOTE_ADDR', '')
-        )
+        adzone_mdb.clicks.insert_one({'ad': ad.id, 'click_date': datetime.now(), 'source_ip': get_ip(request)})
     return HttpResponseRedirect(
-        (ad.mobile_url if ad.mobile_url and request.flavour == 'mobile'
-            else ad.url) % {'timestamp': time()})
+        (ad.mobile_url if ad.mobile_url and request.flavour == 'mobile' else ad.url) % {'timestamp': time()}
+    )
 
 
 @never_cache

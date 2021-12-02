@@ -12,6 +12,8 @@ from django import template
 from django.conf import settings
 from django.contrib.sites.models import Site
 
+from apps import adzone_mdb
+
 from adzone.models import AdBase, AdImpression
 
 register = template.Library()
@@ -36,23 +38,24 @@ def random_zone_ad(context, ad_zone):
     publication_slug = context['request'].GET.get('publication', settings.DEFAULT_PUB)
     # This is a hack to obtain ads related to sites, the sites should use the publication slug as their domain.
     # (the special case is the default publication which must use the correct domain to have a working site)
-    # TODO 2nd release: change this using Publications directly (and better using a fork of adzone outside our repo)
+    # TODO: change this using Publications directly
     publication_slug_or_domain = settings.SITE_DOMAIN if publication_slug == settings.DEFAULT_PUB else publication_slug
     ad = AdBase.objects.get_random_ad(ad_zone, site=Site.objects.get(domain=publication_slug_or_domain))
 
     if ad:
 
-        # Record a impression for the ad
-        if settings.ADZONE_LOG_AD_IMPRESSIONS and 'from_ip' in context and ad:
-            from_ip = context.get('from_ip')
+        # Record a impression for the ad.
+        from_ip = settings.ADZONE_LOG_AD_IMPRESSIONS and context.get('from_ip')
+        if from_ip:
             try:
-                AdImpression.objects.create(ad=ad, impression_date=datetime.now(), source_ip=from_ip)
+                adzone_mdb.impressions.insert_one(
+                    {'ad': ad.id, 'source_ip': from_ip, 'impression_date': datetime.now()}
+                )
             except Exception:
                 pass
 
         context.update({'ad': ad})
-        return template.loader.render_to_string(
-            'adzone/ad_tag.html', context=context.flatten(), request=context.request)
+        return template.loader.render_to_string('adzone/ad_tag.html', context=context.flatten())
     else:
         return u''
 

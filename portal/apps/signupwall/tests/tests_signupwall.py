@@ -70,8 +70,7 @@ class SignupwallTestCase(LiveServerTestCase):
 
     def test_subscriber_passes_wall(self):
         user = User.objects.create_user('user2', 'u2@ladiaria.com.uy', 'ldu2')
-        user.user_permissions.add(Permission.objects.get(
-            codename='es_suscriptor_ladiaria'))
+        user.user_permissions.add(Permission.objects.get(codename='es_suscriptor_default'))
         s = self.login(user.username, 'ldu2')
         a1 = Article(headline='test1')
         a1.save()

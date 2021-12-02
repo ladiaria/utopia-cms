@@ -83,11 +83,6 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 SENDNEWSLETTER_LOGFILE = '/home/user/utopia-cms-data/sendnewsletter/%s-%s.log'
 
-# TODO: remove this commented setting if not useful
-# SOUTH_DATABASE_ADAPTERS = {
-#     'default': "south.db.mysql"
-# }
-
 LAST_OLD_DAY = datetime(2013, 6, 15)
 EMAIL_EDITION_NUMBER_OFFSET = 0
 
