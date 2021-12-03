@@ -72,7 +72,7 @@ class Migration(migrations.Migration):
             name='SubscriberArticle',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('type', models.CharField(blank=True, choices=[(b'FE', b'Variedad'), (b'LI', b'Los Informantes'), (b'EF', b'El Faro del final del mundo'), (b'NE', b'Noticia'), (b'OM', b'Defensor del lector'), (b'CL', b'Cartas de lectores'), (b'OP', b'Opini\xc3\xb3n'), (b'LE', b'Lento'), (b'SU', b'Sumario'), (b'PA', b'Fotograf\xc3\xada'), (b'MA', b'Metro'), (b'SA', b'Recuadro Breves'), (b'RE', b'Recuadro'), (b'HT', b'HTML'), (b'CM', b'COMUNIDAD')], max_length=2, null=True, verbose_name='tipo')),
+                ('type', models.CharField(blank=True, choices=[(b'NE', b'Noticia'), (b'OP', 'Opini\xf3n'), (b'PA', 'Fotograf\xeda'), (b'HT', b'HTML'), (b'CM', b'COMUNIDAD')], max_length=2, null=True, verbose_name='tipo')),
                 ('headline', models.CharField(help_text='Se muestra en la portada y en la nota.', max_length=200, verbose_name='t\xedtulo')),
                 ('keywords', models.CharField(blank=True, help_text='Se muestra encima del t\xedtulo en portada.', max_length=45, null=True, verbose_name='titul\xedn')),
                 ('slug', models.SlugField(max_length=200, verbose_name='slug')),

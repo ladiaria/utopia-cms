@@ -363,6 +363,11 @@ else:
         url(r'^feeds/suplementos/$', LatestSupplements()),
     ]
 
+if 'debug_toolbar' in settings.INSTALLED_APPS:
+    # WARNING: more settings are needed to use django-debug-toolbar<1.11.1
+    import debug_toolbar
+    urlpatterns += [url(r'^__debug__/', include(debug_toolbar.urls))]
+
 if settings.DEBUG:
     urlpatterns += staticfiles_urlpatterns()
     urlpatterns += [

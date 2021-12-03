@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify
@@ -27,7 +28,7 @@ class SubscriberArticle(ArticleBase):
         return self.headline + ' ( por ' + str(self.created_by) + ' )'
 
     def save(self, *args, **kwargs):
-        self.type = self.COMUNIDAD
+        self.type = settings.CORE_COMUNIDAD_ARTICLE
         if not self.slug:
             self.slug = slugify(self.headline)
         super(SubscriberArticle, self).save(*args, **kwargs)

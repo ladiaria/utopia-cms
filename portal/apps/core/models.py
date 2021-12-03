@@ -33,6 +33,7 @@ from django.db.models import (
     ManyToManyField,
     PositiveSmallIntegerField,
     URLField,
+    Index,
     permalink,
     SET_NULL,
 )
@@ -595,7 +596,7 @@ class Section(Model):
         NOTE: ordering by position is not applied because this method can take articles in more than one edition and
               the position is an ordering that makes sense only inside a section in one edition.
         """
-        extra_where = ''
+        extra_where, extra_join = '', ''
 
         if not all_sections:
             extra_where = ' AND core_articlerel.section_id=%s' % self.id
@@ -607,18 +608,18 @@ class Section(Model):
             extra_where += ' AND core_article.id NOT IN (%s)' % ','.join([str(x) for x in exclude_articles_ids])
 
         if publications_ids:
+            extra_join += ' JOIN core_edition ON core_articlerel.edition_id = core_edition.id'
             extra_where += ' AND core_edition.publication_id IN (%s)' % ','.join([str(x) for x in publications_ids])
 
         query = """
             SELECT core_article.id
             FROM core_article
-                JOIN core_articlerel ON core_article.id = core_articlerel.article_id
-                JOIN core_edition ON core_articlerel.edition_id = core_edition.id
+                JOIN core_articlerel ON core_article.id = core_articlerel.article_id%s
             WHERE is_published%s
             GROUP BY id
             ORDER BY core_article.date_published DESC
             LIMIT %s
-        """ % (extra_where, limit)
+        """ % (extra_join, extra_where, limit)
 
         if settings.RAW_SQL_DEBUG:
             print(query)
@@ -779,39 +780,7 @@ class Location(Model):
 
 
 class ArticleBase(Model, CT):
-    FEATURE = 'FE'
-    LOSINFORMANTES = 'LI'
-    ELFARO = 'EF'
-    NEWS = 'NE'
-    OMBUDSMAN = 'OM'
-    CARTAS = 'CL'
-    OP_ED = 'OP'
-    LENTO = 'LE'
-    SUMMARY = 'SU'
-    PHOTO_ARTICLE = 'PA'
-    METRO_ARTICLE = 'MA'  # metro article
-    SHORT_ARTICLE = 'SA'  # short article
-    RECUADRO = 'RE'       # short article
-    HTML = 'HT'
-    COMUNIDAD = 'CM'
-
-    TYPE_CHOICES = (
-        (FEATURE, 'Variedad'),
-        (LOSINFORMANTES, 'Los Informantes'),
-        (ELFARO, 'El Faro del final del mundo'),
-        (NEWS, 'Noticia'),
-        (OMBUDSMAN, 'Defensor del lector'),
-        (CARTAS, 'Cartas de lectores'),
-        (OP_ED, 'Opinión'),
-        (LENTO, 'Lento'),
-        (SUMMARY, 'Sumario'),
-        (PHOTO_ARTICLE, 'Fotografía'),
-        (METRO_ARTICLE, 'Metro'),
-        (SHORT_ARTICLE, 'Recuadro Breves'),
-        (RECUADRO, 'Recuadro'),
-        (HTML, 'HTML'),
-        (COMUNIDAD, 'COMUNIDAD'),
-    )
+    TYPE_CHOICES = settings.CORE_ARTICLE_TYPES
 
     DISPLAY_CHOICES = (
         ('I', u'Imagen'),
@@ -837,7 +806,7 @@ class ArticleBase(Model, CT):
         null=True,
         related_name='articles_%(app_label)s',
     )
-    type = CharField(u'tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True)
+    type = CharField(u'tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True, db_index=True)
     headline = CharField(u'título', max_length=200, help_text=u'Se muestra en la portada y en la nota.')
     keywords = CharField(
         u'titulín', max_length=45, blank=True, null=True, help_text=u'Se muestra encima del título en portada.'
@@ -966,7 +935,7 @@ class ArticleBase(Model, CT):
         super(ArticleBase, self).save(*args, **kwargs)
 
     def is_photo_article(self):
-        return self.type == self.PHOTO_ARTICLE
+        return self.type == settings.CORE_PHOTO_ARTICLE
 
     def has_deck(self):
         return bool(self.deck)
@@ -1168,6 +1137,7 @@ class ArticleBase(Model, CT):
         ordering = ('-date_published', )
         verbose_name = u'artículo'
         verbose_name_plural = u'artículos'
+        indexes = [Index(fields=['type', 'date_published', 'is_published'])]
 
 
 class ArticleManager(Manager):
@@ -1220,7 +1190,7 @@ class Article(ArticleBase):
         # if self.home_top and self.top_position is None:
         #    self.top_position = Article.objects.filter(
         #        edition=self.edition, home_top=self.home_top).count() + 1
-        if self.type == ArticleBase.HTML:
+        if self.type == settings.CORE_HTML_ARTICLE:
             self.headline = u'HTML | %s | %s | %s' % (
                 unicode(self.edition), unicode(self.section), str(self.section_position)
             )

@@ -223,26 +223,6 @@ def get_articles_by_type(parser, token):
     return ArticlesByTypeNode(type=type, keyword=keyword, limit=limit)
 
 
-class DefensoriaNode(Node):
-    def render(self, context):
-        html = ''
-        defensoria_template = 'core/templates/article/lead.html'
-        articles = Article.objects.filter(
-            is_published=True, type=Article.OMBUDSMAN).order_by(
-                '-date_published')
-        for article in articles:
-            params = {'article': article, 'ignore_toolbar': True}
-            html += loader.render_to_string(
-                defensoria_template, params,
-                context=RequestContext(context['request']))
-        return html
-
-
-@register.tag
-def defensoria(parser, token):
-    return DefensoriaNode()
-
-
 @register.simple_tag(takes_context=True)
 def render_toolbar_for(context, toolbar_object):
     """ Usage example: {% render_toolbar_for article %} """

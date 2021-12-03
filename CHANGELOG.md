@@ -1,3 +1,10 @@
+# version 0.1.6 (2021-12-03)
+
+- Cleaned custom values and unused fields in some migrations and models.
+- Performance improvements with new database indexes and raw sql optimization.
+- "defensoria" custom deprecated template tag removed.
+- django-debug-toolbar usage support.
+
 # version 0.1.5 (2021-12-02)
 
 - Fixes in the installation guide.

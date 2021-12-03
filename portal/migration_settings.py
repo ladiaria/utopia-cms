@@ -331,6 +331,18 @@ CORE_UPDATE_CATEGORY_HOMES = []
 # log user visits, disbale on critical performance issues
 CORE_LOG_ARTICLE_VIEWS = True
 
+# Article types
+CORE_PHOTO_ARTICLE = 'PA'
+CORE_HTML_ARTICLE = 'HT'
+CORE_COMUNIDAD_ARTICLE = 'CM'
+CORE_ARTICLE_TYPES = (
+    ('NE', 'Noticia'),
+    ('OP', u'Opinión'),
+    (CORE_PHOTO_ARTICLE, u'Fotografía'),
+    (CORE_HTML_ARTICLE, 'HTML'),
+    (CORE_COMUNIDAD_ARTICLE, 'COMUNIDAD'),
+)
+
 # enable related articles in article detail
 CORE_ENABLE_RELATED_ARTICLES = True
 
