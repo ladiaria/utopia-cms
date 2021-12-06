@@ -13,4 +13,3 @@ class SectionTestCase(TestCase):
         # 1 - without params
         # article3 should be the first because is the one with the latest date_published
         self.assertEqual(s1.latest()[0].id, 3)
-
