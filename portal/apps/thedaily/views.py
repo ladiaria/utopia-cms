@@ -656,7 +656,6 @@ def edit_profile(request, user=None):
         'is_subscriber_digital': user.subscriber.is_digital_only(),
         'google_oauth2_assoc': oauth2_assoc,
         'google_oauth2_allow_disconnect': oauth2_assoc and (user.email != oauth2_assoc.uid),
-        'community_coupon': user.subscriber.is_subscriber_any() and getattr(settings, 'COMMUNITY_COUPON', None),
         'publication_newsletters': Publication.objects.filter(has_newsletter=True),
         'category_newsletters': Category.objects.filter(has_newsletter=True),
     }
