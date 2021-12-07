@@ -54,18 +54,6 @@
       {% endif %}
     </section>
 
-    {% comment 'disabled waiting for Almacen re-launch' %}
-      {% if community_coupon %}
-        <section class="ld-block">
-          <h2 class="ld-title ld-title--underlined">Almacén</h2>
-          <div>Almacén es una tienda online de productos, como suscriptor de la diaria tenés descuentos.</div>
-          <h3 class="ld-title-second">Cupón de descuento</h3>
-          <div>Ingresá este cupón al comprar los productos para recibir tu descuento</div>
-          <code>{{ community_coupon }}</code>
-        </section>
-      {% endif %}
-    {% endcomment %}
-
     <section class="ld-block section scrollspy" id="seguridad">
       <h2 class="ld-title ld-title--underlined">Seguridad</h2>
       <p><a href="{% url 'account-password_change' %}">Cambiar contraseña</a></p>
