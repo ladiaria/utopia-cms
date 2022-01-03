@@ -476,6 +476,8 @@
     .ld-card__img { border-bottom-right-radius: 0; border-bottom-left-radius: 0; border-top-right-radius: 3px; border-top-left-radius: 3px; display: block; width: 100%; }
     .ld-card__img-link { display: block; }
     .ld-card__body { padding: 16px; display: flex; flex-direction: column; flex-grow: 1; }
+    .ld-card__section {font-size: 12px; line-height: 17px; text-transform: uppercase; margin-bottom: 5px;}
+    .ld-card__section a { text-decoration: none;}
     .ld-card__title { font-family: 'Meta Serif', serif; width: 100%; font-size: 19px; line-height: 24px; margin: 0 0 5px; font-weight: 500; }
     .ld-card__title--mb { margin-bottom: 16px; }
     .ld-card__title a { color: #262626; font-weight: 500; text-decoration:none;}
@@ -487,10 +489,13 @@
     .ld-card__intro { font-family: 'Meta Serif', serif; line-height: 21px; font-size: 15px; margin: 0 0 16px 0; }
     .ld-card__intro p { margin: 0 0 15px 0; }
     .ld-card__intro p:last-child { margin-bottom: 0; }
-    .ld-card__byline { font-family: "Roboto", sans-serif; font-size: 12px; font-weight: 400; color: #262626; margin: 0; line-height: 1.5; }
-    .ld-card__byline a { color: #262626; text-decoration:underline; }
+    .ld-card__byline { font-family: "Roboto", sans-serif; font-size: 12px; font-weight: 400; color: #262626; margin:auto 0 0; line-height: 1.5; position: relative; }
+    .ld-card__byline a { color: #595959; text-decoration:none; }
+    .ld-card__byline a:hover { text-decoration: underline; }
     .ld-card__byline-wrap { margin-bottom: 16px; }
     .ld-card__date { font-size: 12px; margin-top: 15px; margin-top: auto; }
+    .ld-card__author { display: inline-block;}
+    .ld-card__photoauthor {display: block;}
     /* Audio audio.scss */
     .ld-audio { text-align: center; padding: 19px; font-size: 18px; border-radius: 10px; position: relative; overflow: hidden; border: none; }
     .ld-audio__overlay { font-family: 'Roboto'; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; -ms-flex-pack: center; justify-content: center; z-index: 1; opacity: 0; pointer-events: none; -webkit-transition: 300ms; transition: 300ms; }

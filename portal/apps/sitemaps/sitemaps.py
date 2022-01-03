@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
-
-from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 
 from core.models import Article
@@ -15,7 +12,7 @@ class ArticleSitemap(Sitemap):
     limit = 1000
 
     def items(self):
-        return Article.objects.filter(is_published=True, date_published__lte=datetime.now())
+        return Article.published.all()
 
 
 class ArticleNewsSitemap(NewsSitemap):
@@ -24,5 +21,4 @@ class ArticleNewsSitemap(NewsSitemap):
     protocol = 'https'
 
     def items(self):
-        return Article.objects.filter(
-            is_published=True, date_published__lte=datetime.now()).order_by('-date_published')
+        return Article.published.all()

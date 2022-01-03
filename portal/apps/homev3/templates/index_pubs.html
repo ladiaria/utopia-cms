@@ -18,9 +18,9 @@
         <h1 class="section-detail__title">{{ publication.name|capfirst }}</h1>
         <div class="section-detail__sub-cats">
           <ul class="section-detail__sub-cats-list">
-          {% for section in publication.primary_sections %}
-            <li><a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a></li>
-          {% endfor %}
+            {% for section in publication.primary_sections %}
+              <li><a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">{% section_name_in_publication_menu publication section %}</a></li>
+            {% endfor %}
           </ul>
         </div>
       </div>

@@ -58,8 +58,8 @@ class RenderSectionNode(Node):
                         latest_kwargs['exclude_articles_ids'] = top_articles_ids
 
                     if (
-                        self.article_type == 'OP' and
-                        edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL
+                        self.article_type == 'OP'
+                        and edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL
                     ):
                         # special case for opinion articles
                         latest_kwargs['all_sections'] = True  # use all section if article_type is given
@@ -94,17 +94,22 @@ class RenderPublicationRowNode(Node):
     def __init__(self, publication):
         self.publication = publication
 
-    def render(self):
+    def render(self, context):
         edition = get_current_edition(publication=self.publication)
-        return loader.render_to_string(
-            getattr(settings, 'HOMEV3_PUBLICATION_ROW_TEMPLATE', 'publication_row.html'),
-            {
-                'publication': self.publication,
-                'edition': edition, 'is_portada': True,  # both should be set
-                # force a blank first node because top_index should be > 0
-                'destacados': [None] + edition.top_articles[:4],
-            },
-        ) if edition else u''
+        if edition:
+            context.update(
+                {
+                    'publication': self.publication,
+                    'edition': edition, 'is_portada': True,  # both should be set
+                    # force a blank first node because top_index should be > 0
+                    'destacados': [None] + edition.top_articles[:4],
+                }
+            )
+            return loader.render_to_string(
+                getattr(settings, 'HOMEV3_PUBLICATION_ROW_TEMPLATE', 'publication_row.html'), context.flatten()
+            )
+        else:
+            return u''
 
 
 @register.simple_tag(takes_context=True)
@@ -116,7 +121,9 @@ def render_publication_row(context, publication_slug):
     else:
         # if not public => render only if saff user
         return (
-            RenderPublicationRowNode(publication).render() if publication.public or context['user'].is_staff else u''
+            RenderPublicationRowNode(publication).render(context) if (
+                publication.public or context['user'].is_staff
+            ) else u''
         )
 
 
@@ -124,32 +131,45 @@ class RenderCategoryRowNode(Node):
     def __init__(self, category_slug):
         self.category_slug = category_slug
 
-    def render(self):
+    def render(self, context):
         try:
             category = Category.objects.get(slug=self.category_slug)
         except Category.DoesNotExist:
             return u''
         else:
             latest_articles = category.latest_articles()[:4]
-            return loader.render_to_string('category_row.html', {
-                'category': category,
-                'edition': get_current_edition(), 'is_portada': True,  # both should be set
-                # force a blank first node because top_index should be > 0
-                'destacados': [None] + latest_articles}) if latest_articles else u''
+            if latest_articles:
+                context.update(
+                    {
+                        'category': category,
+                        # both next entries should be set
+                        'edition': get_current_edition(),
+                        'is_portada': True,
+                        # force a blank first node because top_index should be > 0
+                        'destacados': [None] + latest_articles,
+                    }
+                )
+                return loader.render_to_string('category_row.html', context.flatten())
+            else:
+                return u''
 
 
 @register.simple_tag()
 def render_publication_grid(data):
     publication_slug = data[0]
     return loader.render_to_string(
-        '%s/%s_grid.html' % (settings.HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR, publication_slug), {
-            'publication': Publication.objects.get(slug=publication_slug), 'top_articles': data[1],
-            'cover_article': data[2]})
+        '%s/%s_grid.html' % (settings.HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR, publication_slug),
+        {
+            'publication': Publication.objects.get(slug=publication_slug),
+            'top_articles': data[1],
+            'cover_article': data[2],
+        },
+    )
 
 
-@register.simple_tag()
-def render_category_row(category_slug):
-    return RenderCategoryRowNode(category_slug).render()
+@register.simple_tag(takes_context=True)
+def render_category_row(context, category_slug):
+    return RenderCategoryRowNode(category_slug).render(context)
 
 
 @register.simple_tag(takes_context=True)

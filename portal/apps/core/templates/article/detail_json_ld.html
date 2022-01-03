@@ -5,8 +5,8 @@
     "@type": "{% if section.is_satirical %}SatiricalArticle{% else %}NewsArticle{% endif %}",
     "mainEntityOfPage": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}",
     "headline": "{{ article.headline|remove_markup|truncatewords:25 }}",
-    "datePublished": "{{ article.date_published|date:'c' }}",
-    "dateModified": "{{ article.date_published|date:'c' }}",
+    {% if article.date_published %}"datePublished": "{{ article.date_published_isoformat }}",{% endif %}
+    "dateModified": "{{ article.last_modified_isoformat }}",
     "description": "{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
     "isAccessibleForFree": "{% if article.public %}True{% else %}False{% endif %}",
     "hasPart": {

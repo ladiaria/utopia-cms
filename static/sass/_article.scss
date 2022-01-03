@@ -661,6 +661,24 @@ body.article {
                     color:$off-black-3;
                 }
             }
+            + .article-date-author {
+                margin-top: 10px;
+            }
+            .ld-info-tooltip {
+                width: 16px;
+                height: 16px;
+                top:-2px;
+
+                .ld-info-tooltip-content {
+                    text-align: center;
+                    bottom: 20px;
+                    left: 50%;
+                    top: auto;
+                    transform: translateX(-50%);
+                    min-width: 365px;
+                }
+            }
+
         }
         .reading-time {
             margin-top: 10px;

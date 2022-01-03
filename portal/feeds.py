@@ -97,7 +97,7 @@ class ArticlesByJournalist(Feed):
         return u'Artículos escritos por %s' % obj.name
 
     def items(self, obj):
-        return Article.objects.filter(byline=obj, is_published=True).order_by('-date_published')[:10]
+        return Article.published.filter(byline=obj)[:10]
 
     def item_link(self, obj):
         return obj.get_absolute_url()

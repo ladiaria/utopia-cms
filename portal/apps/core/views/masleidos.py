@@ -11,11 +11,12 @@ to_response = render_response('core/templates/')
 
 def mas_leidos(days=1, cover=False):
     """
-    Returns the top 10 most viewed articles counting days days ago from now
-    If cover is True the "humor" section is excluded. (Issue4910)
+    Returns the top 10 most viewed articles counting days days ago from now.
+    If cover is True the "humor" section is excluded. (Issue4910).
+    Rare but possible: exclude articles with an empty slug because they will raise exception when computing their urls.
     """
     desde = datetime.now() - timedelta(days)
-    articles = Article.objects.filter(date_published__gt=desde, is_published=True)
+    articles = Article.published.filter(date_published__gt=desde).exclude(slug='')
     if cover:
         articles = articles.exclude(sections__slug__contains="humor")
     return articles.order_by('-views')[:10]

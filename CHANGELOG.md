@@ -1,3 +1,13 @@
+# version 0.1.7 (2022-01-03)
+
+- Tests documentation improvements.
+- Edition headers feature.
+- Improvements to display the published date in article cards.
+- Support to hide the photographer in article cards.
+- Many improvements, fixes and de-customizations in UX, migrations, modules and templates.
+- Performance improvements in some raw SQL sentences.
+- UX support to "read-later" articles from the article card.
+
 # version 0.1.6 (2021-12-03)
 
 - Cleaned custom values and unused fields in some migrations and models.

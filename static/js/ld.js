@@ -164,7 +164,6 @@
       $(this).parent('li').toggleClass('active');
       $(this).next('.collapsible-body').slideToggle();
     });
-
   }) // end of document ready
 
 })(jQuery) // end of jQuery name space

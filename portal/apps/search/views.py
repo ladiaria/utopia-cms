@@ -44,8 +44,7 @@ def search(request, token=''):
                     token = ''.join(dre.findall(token))
     if token and len(token) > 2:
         articles_query = get_query(token, ['headline', 'body', 'deck', 'lead'])
-        matches_query = Article.objects.filter(
-            articles_query, is_published=True).order_by('-date_published')
+        matches_query = Article.published.filter(articles_query)
         cont = matches_query.count()
         lista_resultados, page = _paginate(request, matches_query)
     else:

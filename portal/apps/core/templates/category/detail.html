@@ -22,9 +22,7 @@
           {% for section in category.section_set.all %}
             {# useful if a submenu should be rendered #}
             {% if section not in inner_sections %}
-              <li><a class="section-detail__header-sub-cat" href="{{ section.get_absolute_url }}">
-                {{ section.name_in_category_menu|default:section.name }}
-              </a></li>
+              <li><a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">{{ section.name_in_category_menu|default:section.name }}</a></li>
             {% endif %}
           {% endfor %}
         </ul>
@@ -40,51 +38,65 @@
 
     <section class="ld-grid-main ld-grid-main--two-cols">
 
-      <div class="ld-grid-area area-main">
+      {% if cover_article %}
 
-        <div class="ld-card ld-card--big">
-          {% render_toolbar_for cover_article %}
-          {% block image %}
-            {% if cover_article.photo %}
-              <a href="{{ cover_article.get_absolute_url }}">
-                <figure>
-                  <picture>
-                    <source srcset="{{ cover_article.photo.get_1200w_url }}" media="(min-width: 700px)">
-                    <source srcset="{{ cover_article.photo.get_700w_url }}" media="(min-width: 0)">
-                    <img class="ld-card__img" title="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}" alt="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}"
-                         width="700"{% if cover_article.photo_image_file_exists %} height="{{ cover_article.photo.get_700w_size.1 }}"{% endif %}
-                    >
-                  </picture>
-                </figure>
-              </a>
-            {% endif %}
-          {% endblock %}
-          <div class="ld-card__body">
-            {% if cover_article %}
-              <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
-                <a href="{{ cover_article.get_absolute_url }}">{{ cover_article.headline|ldmarkup:cover_article.id|bleach }}</a>
-              </h2>
-            {% endif %}
-            {% if cover_article.home_lead or cover_article.lead %}
-              <div class="ld-card__intro">
-                {{ cover_article.home_lead|default:cover_article.lead|ldmarkup:cover_article.id|bleach }}
-              </div>
-            {% endif %}
+        <div class="ld-grid-area area-main">
 
-            <div class="ld-card__byline">
-              {% if cover_article.has_byline %}
-                {% for author in cover_article.get_authors %}
-                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-                en
+          <div class="ld-card ld-card--big">
+            {% render_toolbar_for cover_article %}
+            {% block image %}
+              {% if cover_article.photo %}
+                <a href="{{ cover_article.get_absolute_url }}">
+                  <figure>
+                    <picture>
+                      <source srcset="{{ cover_article.photo.get_1200w_url }}" media="(min-width: 700px)">
+                      <source srcset="{{ cover_article.photo.get_700w_url }}" media="(min-width: 0)">
+                      <img class="ld-card__img" title="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}" alt="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}"
+                           width="700"{% if cover_article.photo_image_file_exists %} height="{{ cover_article.photo.get_700w_size.1 }}"{% endif %}
+                      >
+                    </picture>
+                  </figure>
+                </a>
               {% endif %}
+            {% endblock %}
+            <div class="ld-card__body">
+
               {% if cover_article.section %}
-                <a href="{{ cover_article.section.get_absolute_url }}">{{ cover_article.section }}</a>
+                <div class="ld-card__section">
+                  <a href="{{ cover_article.section.get_absolute_url }}">{{ cover_article.section }}</a>
+                </div>
               {% endif %}
+
+              {% if cover_article %}
+                <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
+                  <a href="{{ cover_article.get_absolute_url }}">{{ cover_article.headline|ldmarkup:cover_article.id|bleach }}</a>
+                </h2>
+              {% endif %}
+              {% if cover_article.home_lead or cover_article.lead %}
+                <div class="ld-card__intro">
+                  {{ cover_article.home_lead|default:cover_article.lead|ldmarkup:cover_article.id|bleach }}
+                </div>
+              {% endif %}
+
+              <div class="ld-card__byline">
+                {% if cover_article.has_byline %}
+                  <div class="ld-card__author">
+                    {% for author in cover_article.get_authors %}
+                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                {% autoescape off %}{% date_published_verbose cover_article %}{% endautoescape %}
+                {% with a=cover_article %}
+                  {% include 'article/article_card_read_later.html' %}
+                {% endwith %}
+              </div>
             </div>
           </div>
+
         </div>
-      </div>
+
+      {% endif %}
 
       <div class="ld-grid-area area-third">
 
@@ -101,6 +113,11 @@
                 </a>
               {% endif %}
               <div class="ld-card__body">
+                {% if a.section %}
+                  <div class="ld-card__section">
+                    <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
+                  </div>
+                {% endif %}
                 <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a></h3>
                 {% if a.home_lead or a.deck %}
                   <div class="ld-card__intro hide-on-med-and-up">
@@ -109,14 +126,14 @@
                 {% endif %}
                 <div class="ld-card__byline">
                   {% if a.has_byline %}
-                    {% for author in a.get_authors %}
-                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                    en
+                    <div class="ld-card__author">
+                      {% for author in a.get_authors %}
+                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                      {% endfor %}
+                    </div>
                   {% endif %}
-                  {% if a.section %}
-                    <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
-                  {% endif %}
+                  {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
+                  {% include 'article/article_card_read_later.html' %}
                 </div>
               </div>
               {% if a.photo.extended.square_version %}
@@ -149,24 +166,25 @@
               </a>
             {% endif %}
             <div class="ld-card__body">
+              {% if a.section %}
+                <div class="ld-card__section"><a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a></div>
+              {% endif %}
               <h3 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
                 <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a>
               </h3>
               {% if a.deck %}
-              <div class="ld-card__intro">
-                {{ a.deck|ldmarkup:a.id|bleach }}
-              </div>
+                <div class="ld-card__intro">{{ a.deck|ldmarkup:a.id|bleach }}</div>
               {% endif %}
               <div class="ld-card__byline">
                 {% if a.has_byline %}
-                  {% for author in a.get_authors %}
-                    <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                  {% endfor %}
-                  en
+                  <div class="ld-card__author">
+                    {% for author in a.get_authors %}
+                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
                 {% endif %}
-                {% if a.section %}
-                  <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
-                {% endif %}
+                {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
+                {% include 'article/article_card_read_later.html' %}
               </div>
             </div>
           </div>
@@ -225,7 +243,7 @@
 
 {% endblock %}
 
-{% block footer_scripts %}
+{% block javascript %}
   <script>
     $(document).ready(function(){
       resizeSubnav($('.section-detail__sub-cats'), $('.section-detail__sub-cats-list'), 2);

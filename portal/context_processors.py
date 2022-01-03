@@ -5,8 +5,9 @@ from django_mobile import get_flavour
 
 from django.conf import settings
 from django.contrib.sites.models import Site
+from django.contrib.contenttypes.models import ContentType
 
-from core.models import Publication, Category
+from core.models import Publication, Category, Article
 
 
 def urls(request):
@@ -74,6 +75,8 @@ def publications(request):
                 'HOMEV3_TWITTER_SITE_META',
                 'HOMEV3_EXTRA_META',
                 'CORE_ARTICLE_DETAIL_PUBLISHER_META',
+                'CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP',
+                'CORE_ARTICLE_ENABLE_PHOTO_BYLINE',
                 'PWA_MANIFEST_STATIC_PATH',
             )
         )
@@ -120,3 +123,7 @@ def main_menus(request):
         }
     )
     return result
+
+
+def article_content_type(request):
+    return {'article_ct_id': ContentType.objects.get_for_model(Article).id}

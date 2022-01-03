@@ -31,7 +31,7 @@
     "pdf_md5": "",
     "downloads": 0,
     "date_published": "2020-11-18",
-    "date_created": "2020-11-19T04:21:05Z"
+    "date_created": "2020-11-19T04:21:05"
   }
 },
 {
@@ -42,7 +42,7 @@
     "pdf_md5": "",
     "downloads": 0,
     "date_published": "2020-11-18",
-    "date_created": "2020-11-19T04:21:05Z"
+    "date_created": "2020-11-19T04:21:05"
   }
 },
 {
@@ -53,7 +53,7 @@
     "pdf_md5": "",
     "downloads": 0,
     "date_published": "2020-11-19",
-    "date_created": "2020-11-19T04:21:05Z"
+    "date_created": "2020-11-19T04:21:05"
   }
 },
 {
@@ -69,7 +69,7 @@
       1, 2
     ],
     "show_image": false,
-    "date_created": "2020-11-19T04:23:41Z",
+    "date_created": "2020-11-19T04:23:41",
     "in_home": false,
     "background_color": "#ffffff",
     "slug": "news",
@@ -88,7 +88,7 @@
     "home_block_show_featured": true,
     "publications": [],
     "show_image": false,
-    "date_created": "2020-11-19T07:19:20Z",
+    "date_created": "2020-11-19T07:19:20",
     "in_home": false,
     "background_color": "#ffffff",
     "slug": "areasection",
@@ -129,13 +129,13 @@
     "public": false,
     "body": "test.",
     "views": 0,
-    "date_published": "2020-11-19T04:20:02Z",
-    "last_modified": "2020-11-19T04:25:57Z",
+    "date_published": "2020-11-19T04:20:02",
+    "last_modified": "2020-11-19T04:25:57",
     "url_path": "/articulo/2020/11/test-article/",
     "slug": "test-article",
     "main_section": 1,
     "allow_comments": false,
-    "date_created": "2020-11-19T04:24:28Z",
+    "date_created": "2020-11-19T04:24:28",
     "is_published": true
   }
 },
@@ -152,13 +152,13 @@
     "public": false,
     "body": "test.",
     "views": 0,
-    "date_published": "2020-11-19T04:20:02Z",
-    "last_modified": "2020-11-19T04:25:57Z",
+    "date_published": "2020-11-19T04:20:02",
+    "last_modified": "2020-11-19T04:25:57",
     "url_path": "/spinoff/articulo/2020/11/test-article2/",
     "slug": "test-article2",
     "main_section": 1,
     "allow_comments": false,
-    "date_created": "2020-11-19T04:24:28Z",
+    "date_created": "2020-11-19T04:24:28",
     "is_published": true
   }
 },
@@ -175,13 +175,13 @@
     "public": false,
     "body": "test.",
     "views": 0,
-    "date_published": "2020-11-20T04:20:02Z",
-    "last_modified": "2020-11-20T04:25:57Z",
+    "date_published": "2020-11-20T04:20:02",
+    "last_modified": "2020-11-20T04:25:57",
     "url_path": "/test/articulo/2020/11/test-article3/",
     "slug": "test-article3",
     "main_section": 3,
     "allow_comments": false,
-    "date_created": "2020-11-19T04:24:28Z",
+    "date_created": "2020-11-19T04:24:28",
     "is_published": true
   }
 },

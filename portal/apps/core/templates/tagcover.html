@@ -62,9 +62,7 @@
             <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a>
           </h3>
           {% if a.home_lead or a.deck %}
-            <div class="ld-card__intro hide-on-med-and-up">
-              {{ a.home_lead|default:a.deck|ldmarkup:a.id|bleach }}
-            </div>
+            <div class="ld-card__intro hide-on-med-and-up">{{ a.home_lead|default:a.deck|ldmarkup:a.id|bleach }}</div>
           {% endif %}
           <div class="ld-card__byline">
             {% if a.has_byline %}

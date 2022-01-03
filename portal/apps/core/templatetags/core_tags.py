@@ -2,11 +2,11 @@
 import os
 import re
 import random
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.template import Library, Node, RequestContext, TemplateSyntaxError, Variable, loader
+from django.template import Library, Node, TemplateSyntaxError, Variable, loader
 from django.template.defaultfilters import stringfilter
 from django.utils.text import Truncator
 
@@ -14,6 +14,7 @@ from tagging.models import Tag, TaggedItem
 from core.models import Article, Supplement, Category
 from core.forms import SendByEmailForm
 from core.templatetags.ldml import ldmarkup, cleanhtml
+from core.utils import datetime_timezone
 
 
 register = Library()
@@ -26,31 +27,37 @@ def render_related(context, article):
     if not section:
         return u''
 
-    category, publication = section.category, context.get('publication')
+    category, publication, upd_dict = section.category, context.get('publication'), None
 
     if publication and section.slug not in getattr(settings, 'CORE_SECTIONS_EXCLUDE_RELATED', ()) and \
             publication.slug not in getattr(settings, 'CORE_PUBLICATIONS_EXCLUDE_RELATED', ()):
-        return loader.render_to_string('core/templates/article/related.html', {
-            'articles': section.latest4relatedbypublication(publication.id, article.id), 'is_detail': False,
-            'section': publication.name})
+        # use the publication
+        upd_dict = {
+            'articles': section.latest4relatedbypublication(publication.id, article.id), 'section': publication.name
+        }
 
     elif category and category.slug in getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', ()):
-        return loader.render_to_string('core/templates/article/related.html', {
-            'articles': section.latest4relatedbycategory(category.id, article.id), 'is_detail': False,
-            'section': category.name})
+        # use the category
+        upd_dict = {'articles': section.latest4relatedbycategory(category.id, article.id), 'section': category.name}
 
-    elif 'elecciones' in article.get_categories_slugs() and section.slug not in (
-            'apuntes-de-campana', 'entrevistas-elecciones-2019', 'datos-elecciones-2019'):
-        try:
-            category = Category.objects.get(slug='elecciones')
-            return loader.render_to_string('core/templates/article/related.html', {
-                'articles': section.latest4relatedbycategory(category.id, article.id), 'is_detail': False,
-                'section': category.name})
-        except Category.DoesNotExist:
-            pass
+    else:
+        # use a category also, defined in settings and if it belongs to the article and the section is not skipped.
+        use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY_SKIPPING_SECTIONS', [])
+        if use_category_skip_sections:
+            article_categories = article.get_categories_slugs()
+            for category_slug, section_slugs in use_category_skip_sections:
+                if category_slug in article_categories and section.slug not in section_slugs:
+                    category = Category.objects.get(slug=category_slug)
+                    upd_dict = {
+                        'articles': section.latest4relatedbycategory(category.id, article.id), 'section': category.name
+                    }
+                    break
 
-    return loader.render_to_string('core/templates/article/related.html', {
-        'articles': section.latest4related(article.id), 'is_detail': False, 'section': section.name})
+    if not upd_dict:
+        upd_dict = {'articles': section.latest4related(article.id), 'section': section.name}
+    upd_dict['is_detail'] = False
+    context.update(upd_dict)
+    return loader.render_to_string('core/templates/article/related.html', context.flatten())
 
 
 # Media select
@@ -87,8 +94,6 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
     if not card_size:
         card_size = article.header_display
 
-    verbose_date = None
-
     if not card_type:
         card_type = article.type
 
@@ -97,12 +102,6 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
         card_display = "horizontal"
     if article.photo and article.photo.extended.is_landscape:
         card_display = "vertical"
-
-    verbose_date = None
-    if article.date_published.date() == date.today():
-        verbose_date = "Hoy"
-    elif article.date_published.date() == date.today() - timedelta(1):
-        verbose_date = "Ayer"
 
     # WARN: template value assigned here may change in next if block. TODO: fix this anti-pattern.
     if card_size == "FW":
@@ -141,7 +140,6 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
             'card_size': card_size,
             'card_display': card_display,
             'card_type': card_type,
-            'verbose_date': verbose_date,
             'img_load_lazy': img_load_lazy,
         }
     )
@@ -194,7 +192,7 @@ class ArticlesByTypeNode(Node):
             type = getattr(Article, upper(self.type.resolve(context)))
         else:
             type = getattr(Article, upper(self.type))
-        articles = Article.objects.filter(is_published=True, type=type)
+        articles = Article.published.filter(type=type)
         if self.limit:
             articles = articles[:self.limit]
         context.update({self.keyword: articles})
@@ -306,6 +304,13 @@ def render_tagrow(tagname, article_type):
         return u''
 
 
+@register.simple_tag
+def section_name_in_publication_menu(publication, section):
+    return getattr(
+        settings, 'CORE_SECTIONS_NAME_IN_PUBLICATION_MENU', {}
+    ).get((publication.slug, section.slug), section.name)
+
+
 @register.simple_tag(takes_context=True)
 def publication_section(context, article, pub=None):
     """
@@ -332,6 +337,47 @@ def category_nl_subscribe_box(context):
     return u''
 
 
+@register.simple_tag
+def timezone_verbose():
+    return datetime_timezone()
+
+
+@register.simple_tag
+def date_published_verbose(article):
+    """
+    Use settings to control when and how the date should be rendered in article cards.
+    """
+    if not getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_ENABLED', True):
+        return u''
+    main_section_edition = article.main_section.edition if article.main_section else None
+    if (
+        not getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_ONLY_ROOT_PUBLICATIONS', False)
+        or main_section_edition and main_section_edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL
+    ):
+        today, now = date.today(), datetime.now()
+        publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
+        publishing = datetime(today.year, today.month, today.day, publishing_hour, publishing_minute)
+        if main_section_edition:
+            hide_delta = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_DELTA', None)
+            if hide_delta:
+                if main_section_edition.date_published == today and now < publishing + timedelta(hours=hide_delta):
+                    return u''
+        # in addition to the settings above, we also admit changes in a custom way using a custom module:
+        custom_module, custom_data = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_CUSTOM_MODULE', None), None
+        if custom_module:
+            custom_data = __import__(
+                custom_module, fromlist=['article_date_published_verbose']
+            ).article_date_published_verbose(article, main_section_edition, today, now, publishing)
+            # return empty string if the custom_data is not None but evaluates to False
+            if custom_data is not None and not custom_data:
+                return u''
+        return u'%s<div class="ld-card__date">%s</div>' % (
+            u' - ' if article.has_byline() else u'', custom_data or article.date_published_verbose()
+        )
+    else:
+        return u''
+
+
 # Inclusion tags
 @register.inclusion_tag("article/_send_by_email_form.html")
 def send_by_email_form(user):
@@ -340,13 +386,13 @@ def send_by_email_form(user):
 
 # Filters
 def name_wrap(name):
-    return loader.render_to_string(
-        'core/templates/byline.html', {'name': name})
+    return loader.render_to_string('core/templates/byline.html', {'name': name})
 
 
 @register.filter
 @stringfilter
 def initials(value, args=False):
+    # TODO: not used, should be refactored without using "name_wrap"
     from django.template.defaultfilters import safe
     ret = ''
     names = value.split(', ')

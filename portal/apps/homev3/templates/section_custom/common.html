@@ -8,9 +8,7 @@
           <h2 class="section-detail__title">{{ section.name_in_category_menu|default:section.name }}{% block extra_title %}{% endblock %}</h2>
         {% endblock %}
         {% block section-detail-head-description %}
-          {% if section.show_description %}
-            <p class="section-detail__subtitle">{{ section.description }}</p>
-          {% endif %}
+          {% if section.show_description %}<p class="section-detail__subtitle">{{ section.description }}</p>{% endif %}
         {% endblock %}
       </div>
 
@@ -32,6 +30,9 @@
                   </a>
                 {% endif %}
                 <div class="ld-card__body">
+                  <div class="ld-card__section">
+                    {% autoescape off %}{% publication_section article %}{% endautoescape %}
+                  </div>
                   <h3 class="ld-card__title ld-card__title{% if not article.home_lead %} ld-card__title--mb{% endif %}">
                     <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|bleach }}</a>
                   </h3>
@@ -43,22 +44,23 @@
                   {% endif %}
 
                   <div class="ld-card__byline">
-                    {% if article.has_byline  %}
-                      {% for author in article.get_authors %}
-                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                      {% endfor %}
-                      en
+                    {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo.extended.photographer %}
+                      <div class="ld-card__photoauthor">
+                        {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
+                      </div>
                     {% endif %}
-                    {% autoescape off %}
-                      {% publication_section article %}
-                    {% endautoescape %}
+                    {% if article.has_byline  %}
+                      <div class="ld-card__author">
+                        {% for author in article.get_authors %}
+                          <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                    {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
+                    {% with a=article %}
+                      {% include 'article/article_card_read_later.html' %}
+                    {% endwith %}
                   </div>
-
-                  {% if article.photo.extended.photographer %}
-                    <div class="ld-card__byline">
-                      {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
-                    </div>
-                  {% endif %}
                 </div>
               </div>
             </div>

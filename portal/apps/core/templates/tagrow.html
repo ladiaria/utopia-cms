@@ -35,9 +35,7 @@
                 {% endfor %}
                 en
               {% endif %}
-              {% autoescape off %}
-                {% publication_section article %}
-              {% endautoescape %}
+              {% autoescape off %}{% publication_section article %}{% endautoescape %}
             </div>
 
             {% if article.photo.extended.photographer %}

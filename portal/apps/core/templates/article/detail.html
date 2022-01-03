@@ -17,6 +17,7 @@
   <!-- Open Graph (http://ogp.me) -->
   <meta property="og:title" content="{{ article.headline|remove_markup }}">
 {% endblock %}
+
 {% block meta %}
   {% include 'article/detail_meta.html' %}
   <!-- AMP -->
@@ -140,38 +141,44 @@
           <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
         </div>
       {% endif %}
-      <h1 class="article-title after_foto">
-        {{ article.headline|ldmarkup:article.id|bleach }}
-      </h1>
+      <h1 class="article-title after_foto">{{ article.headline|ldmarkup:article.id|bleach }}</h1>
 
-      <div class="article-date-author">
       {% if article.date_published %}
-        <span class="date small"><time datetime="{{ article.date_published|date:'c' }}">{{ article.date_published|date:"j \d\e F \d\e Y"|lower }}</time> · </span>
-      {% endif %}
-      {% if article.has_byline %}
-        Escribe
-        {% for author in article.get_authors %}
-          <span class="small"><a href="{{ author.get_absolute_url }}">
-            {{ author.name }}</a></span>{% if not forloop.last %}, {% endif %}
-        {% endfor %}
-        {% if section %} <span class="small">en </span>{% endif %}
-      {% endif %}
-      {% if section %}
-        <span class="small">
-          {% if 'elecciones' in article.get_categories_slugs %}
-            {% with special_sections='apuntes-de-campana datos-elecciones-2019' %}
-              {% if section.slug in special_sections.split %}
-                <a href="{{ section.get_absolute_url }}">{{ section }}</a>
-              {% else %}
-                <a href="{% url 'section_detail' section_slug='elecciones-2019' %}">{{ section.category }}</a>
-              {% endif %}
-            {% endwith %}
-          {% else %}
-            <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
+        <div class="article-date-author">
+          Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
+          {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
+            <span class="ld-info-tooltip time">
+              <span class="ld-info-tooltip-content">
+                {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+              </span>
+            </span>
           {% endif %}
-        </span>
+        </div>
       {% endif %}
-
+      <div class="article-date-author">
+        {% if article.has_byline %}
+          Escribe
+          {% for author in article.get_authors %}
+            <span class="small"><a href="{{ author.get_absolute_url }}">
+              {{ author.name }}</a></span>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+          {% if section %} <span class="small">en </span>{% endif %}
+        {% endif %}
+        {% if section %}
+          <span class="small">
+            {% if 'elecciones' in article.get_categories_slugs %}
+              {% with special_sections='apuntes-de-campana datos-elecciones-2019' %}
+                {% if section.slug in special_sections.split %}
+                  <a href="{{ section.get_absolute_url }}">{{ section }}</a>
+                {% else %}
+                  <a href="{% url 'section_detail' section_slug='elecciones-2019' %}">{{ section.category }}</a>
+                {% endif %}
+              {% endwith %}
+            {% else %}
+              <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
+            {% endif %}
+          </span>
+        {% endif %}
       </div>
       <div class="reading-time"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/></svg> <span class="eta">{{ article.reading_time }}</span> de lectura</div>
       {% if user.is_authenticated and not followed %}
@@ -194,14 +201,10 @@
     {% endif %}
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
-          <h2 class="article-deck article__deck">
-            {{ article.deck|ldmarkup:article.id|bleach }}
-          </h2>
+          <h2 class="article-deck article__deck">{{ article.deck|ldmarkup:article.id|bleach }}</h2>
         {% endif %}
         {% if article.has_lead %}
-          <p class="article-lead">
-            {{ article.get_lead|urlize|ldmarkup:article.id|bleach }}
-          </p>
+          <p class="article-lead">{{ article.get_lead|urlize|ldmarkup:article.id|bleach }}</p>
         {% endif %}
       {% endif %}
 
@@ -482,12 +485,7 @@
     </div>
     {% endif %}
 
-    {# custom map hardcoded article id for rio abierto special articles #}
-    {% if article.id == 39530 or article.id == 39619 %}
-      <div class="center">
-        <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1yCIvghAEJrDn5eBechdeHvFR1iVgsQi-" width="720" height="600"></iframe>
-      </div>
-    {% endif %}
+    {% block after_content %}{% endblock %}
 
     <div class="ld-fin ld-block"></div>
 

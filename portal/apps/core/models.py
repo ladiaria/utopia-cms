@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import locale
 import tempfile
 import operator
 from copy import copy
@@ -15,6 +16,7 @@ from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User
 from django.contrib.sitemaps import ping_google
 from django.db.models import (
+    Q,
     Manager,
     Model,
     CharField,
@@ -42,11 +44,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from managers import PublishedArticleManager
-from utils import get_pdf_pdf_upload_to, get_pdf_cover_upload_to
-
 from apps import blacklisted
-from core.utils import CT, smart_quotes
 from core.templatetags.ldml import ldmarkup, cleanhtml
 from photologue_ladiaria.models import PhotoExtended
 from photologue.models import Gallery, Photo
@@ -54,6 +52,16 @@ from audiologue.models import Audio
 from tagging.fields import TagField
 from tagging.models import Tag
 from videologue.models import Video, YouTubeVideo
+
+from managers import PublishedArticleManager
+from utils import (
+    datetime_isoformat,
+    get_pdf_pdf_upload_to,
+    get_pdf_cover_upload_to,
+    CT,
+    smart_quotes,
+    update_article_url_in_coral_talk,
+)
 
 
 def remove_media_root(path):
@@ -218,12 +226,17 @@ class PortableDocumentFormatBaseModel(Model):
 
     @permalink
     def get_download_url(self):
-        return 'edition_download', (), {
-            'publication_slug': self.publication.slug,
-            'year': self.date_published.year,
-            'month': u'%02d' % self.date_published.month,
-            'day': u'%02d' % self.date_published.day,
-            'filename': os.path.basename(self.pdf.path)}
+        return (
+            'edition_download',
+            (),
+            {
+                'publication_slug': self.publication.slug,
+                'year': self.date_published.year,
+                'month': u'%02d' % self.date_published.month,
+                'day': u'%02d' % self.date_published.day,
+                'filename': os.path.basename(self.pdf.path),
+            },
+        )
 
     def download(self, request=None):
         try:
@@ -233,6 +246,12 @@ class PortableDocumentFormatBaseModel(Model):
         else:
             response['Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(self.pdf.path)
             return response
+
+    def date_published_verbose(self):
+        locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
+        return (
+            "{d:%a}. {d.day} {d:%b}." if date.today().year == self.date_published.year else "{d.day} {d:%b, %Y}"
+        ).format(d=self.date_published).title()
 
 
 """ TODO: better enable this after new structure works well (**)
@@ -247,11 +266,9 @@ class EditionSection(models.Model):
 
 
 class Edition(PortableDocumentFormatBaseModel):
-    """An edition of the newspaper."""
+    """ A publication's edition. """
     title = TextField(u'título', null=True)
-    publication = ForeignKey(
-        Publication, verbose_name=u'publicación',
-        related_name="%(app_label)s_%(class)s")
+    publication = ForeignKey(Publication, verbose_name=u'publicación', related_name="%(app_label)s_%(class)s")
     # (**) sections = ManyToManyField(Section, through='EditionSection')
 
     class Meta(PortableDocumentFormatBaseModel.Meta):
@@ -260,9 +277,7 @@ class Edition(PortableDocumentFormatBaseModel):
 
     def __unicode__(self):
         try:
-            display_name = u'%s - %s' % (
-                self.date_published.strftime('%d-%m-%Y'),
-                self.publication.name)
+            display_name = u'%s - %s' % (self.date_published.strftime('%d-%m-%Y'), self.publication.name)
         except Exception:
             display_name = self.date_published.strftime('%d-%m-%Y')
         return display_name
@@ -283,9 +298,7 @@ class Edition(PortableDocumentFormatBaseModel):
         return urlresolvers.reverse('edition_detail', kwargs=reverse_kwargs)
 
     def published_articles(self):
-        return Article.objects.filter(
-            is_published=True
-        ).extra(
+        return Article.published.extra(
             where=['core_article.id=core_articlerel.article_id', 'core_articlerel.edition_id=%d' % self.id],
             tables=['core_articlerel'],
         ).order_by('articlerel__top_position').distinct()
@@ -335,46 +348,22 @@ class Edition(PortableDocumentFormatBaseModel):
             return None
 
 
+class EditionHeader(Model):
+    edition = OneToOneField(Edition, verbose_name=u'edición')
+    title = CharField(u'título', max_length=127)
+    subtitle = CharField(u'subtítulo', max_length=255, null=True, blank=True)
+
+    class Meta:
+        verbose_name = u'encabezado de edición'
+        verbose_name_plural = u'encabezados de edición'
+
+    def __unicode__(self):
+        return u'%s - %s' % (self.edition, self.title)
+
+
 class Supplement(PortableDocumentFormatBaseModel):
-    SUPPLEMENT_NAME_CHOICES = (
-        ('cc', u'Cambio Climático'),
-        ('ag', u'Agenda Global'),
-        ('br', u'Brasil'),
-        ('cn', u'Cine nacional'),
-        ('cp', u'Ciudad puerto'),
-        ('cu', u'Cumbre'),
-        ('di', u'Dínamo'),
-        ('ed', u'Educación'),
-        ('uv', u'El Uruguay que viene'),
-        ('el', u'Elecciones'),
-        ('en', u'Energía'),
-        ('hp', u'El mundo hecho pelota'),
-        ('in', u'Incorrecta'),
-        ('iv', u'IVC'),
-        ('lf', u'la diaria del futuro'),
-        ('le', u'Lento'),
-        ('li', u'Los informantes'),
-        ('ec', u'Ecología'),
-        ('ma', u'Medio ambiente'),
-        ('me', u'Mercosur'),
-        ('pa', u'Patrimonio'),
-        ('rr', u'R'),
-        ('rl', u'Radios Locas'),
-        ('rn', u'RÑ'),
-        ('sa', u'Salud'),
-        ('tc', u'Tarjeta cultural'),
-        ('ts', u'Teatro Solís'),
-        ('yf', u'Yo firmé'),
-        ('dm', u'Día Mundial del Agua'),
-        ('al', u'א - Cultura Científica'),
-        ('ns', u'nosotros'),
-        ('df', u'día del futuro'),
-        ('dd', u'Día Internacional del Detenido Desaparecido'),
-        ('af', u'Agenda del Día del Futuro'),
-    )
-    edition = ForeignKey(
-        Edition, verbose_name=u'edición', related_name='supplements')
-    name = CharField(u'nombre', max_length=2, choices=SUPPLEMENT_NAME_CHOICES)
+    edition = ForeignKey(Edition, verbose_name=u'edición', related_name='supplements')
+    name = CharField(u'nombre', max_length=2, choices=settings.CORE_SUPPLEMENT_NAME_CHOICES)
     slug = SlugField(u'slug', unique=True)
     headline = CharField(u'titular', max_length=100)
     public = BooleanField(u'público', default=True)
@@ -694,8 +683,8 @@ class Section(Model):
         Returns this section's articles in the last 24 hours (or 48 on sundays)
         """
         return self.articles_core.filter(
-            is_published=True, date_published__gt=datetime.now() - timedelta(
-                2 if date.today().isoweekday() < 7 else 3)
+            is_published=True,
+            date_published__gt=datetime.now() - timedelta(2 if date.today().isoweekday() < 7 else 3),
         ).distinct()
 
     def articles_count(self):
@@ -719,15 +708,16 @@ class Journalist(Model):
     name = CharField(u'nombre', max_length=50, unique=True)
     email = EmailField(u'correo electrónico', blank=True, null=True)
     slug = SlugField(u'slug', unique=True)
-    image = ImageField(
-        u'imagen', upload_to='journalist', blank=True, null=True)
+    image = ImageField(u'imagen', upload_to='journalist', blank=True, null=True)
     job = CharField(
-        u'trabajo', max_length=2, choices=JOB_CHOICES, default='PE',
-        help_text=u'Rol en que se desempeña principalmente.')
-    bio = TextField(
-        u'bio', null=True, blank=True, help_text=u'Bio aprox 200 caracteres.')
-    sections = ManyToManyField(
-        Section, verbose_name=u'secciones', blank=True)
+        u'trabajo',
+        max_length=2,
+        choices=JOB_CHOICES,
+        default='PE',
+        help_text=u'Rol en que se desempeña principalmente.',
+    )
+    bio = TextField(u'bio', null=True, blank=True, help_text=u'Bio aprox 200 caracteres.')
+    sections = ManyToManyField(Section, verbose_name=u'secciones', blank=True)
     fb = CharField(u'facebook', max_length=255, blank=True, null=True)
     tt = CharField(u'twitter', max_length=255, blank=True, null=True)
     gp = CharField(u'google plus', max_length=255, blank=True, null=True)
@@ -742,8 +732,11 @@ class Journalist(Model):
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
-            'journalist_detail', kwargs={
-                'journalist_job': u'columnista' if self.job == 'CO' else u'periodista', 'journalist_slug': self.slug})
+            'journalist_detail',
+            kwargs={
+                'journalist_job': u'columnista' if self.job == 'CO' else u'periodista', 'journalist_slug': self.slug
+            },
+        )
 
     def get_published(self):
         if self.job == 'PE':
@@ -864,8 +857,8 @@ class ArticleBase(Model, CT):
         null=True,
     )
     is_published = BooleanField(u'publicado', default=True)
-    date_published = DateTimeField(u'fecha de publicación', blank=False, null=False, default=timezone.now)
-    date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
+    date_published = DateTimeField(u'fecha de publicación', null=True, db_index=True)
+    date_created = DateTimeField(u'fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField(u'última actualización', auto_now=True)
     views = PositiveIntegerField(u'vistas', default=0, db_index=True)
     allow_comments = BooleanField(u'Habilitar comentarios', default=True)
@@ -910,13 +903,6 @@ class ArticleBase(Model, CT):
 
     def save(self, *args, **kwargs):
         from utils import add_punctuation
-        if not self.id:
-            month, year = (self.date_published.month, self.date_published.year)
-            if Article.objects.filter(
-                    slug=self.slug, date_published__month=month,
-                    date_published__year=year).count():
-                # FIXME: Morir de manera más digna.
-                raise Exception
         for attr in ('headline', 'deck', 'lead', 'body'):
             if getattr(self, attr, None):
                 setattr(self, attr, getattr(self, attr).strip())
@@ -926,11 +912,33 @@ class ArticleBase(Model, CT):
                 setattr(self, attr, add_punctuation(getattr(self, attr, '')))
 
         self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
-        if self.is_published and not settings.DEBUG:
-            try:
-                ping_google()
-            except Exception:
-                pass
+
+        now = datetime.now()
+
+        if self.is_published:
+            if not self.date_published:
+                self.date_published = now
+            if not settings.DEBUG:
+                try:
+                    ping_google()
+                except Exception:
+                    pass
+        else:
+            self.date_published = None
+
+        date_value = self.date_published or self.date_created or now
+        # No puede haber otro publicado con date_published en el mismo mes que date_value o no publicado con
+        # date_created en el mismo mes que date_value, con el mismo slug. TODO: translate this comment to english.
+        targets = Article.objects.filter(
+            Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
+            | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
+            slug=self.slug,
+        )
+        if self.id:
+            targets = targets.exclude(id=self.id)
+        if targets:
+            # TODO: IntegrityError may be better exception to raise
+            raise Exception(u'Ya existe un artículo en ese mes con el mismo título.')
 
         super(ArticleBase, self).save(*args, **kwargs)
 
@@ -981,7 +989,8 @@ class ArticleBase(Model, CT):
         return self.url_path or self.build_url_path()  # TODO: remove this "or" after url paths saved for all articles
 
     def build_url_path(self):
-        reverse_kwargs = {'year': self.date_published.year, 'month': self.date_published.month, 'slug': self.slug}
+        date_value = self.date_published or self.date_created
+        reverse_kwargs = {'year': date_value.year, 'month': date_value.month, 'slug': self.slug}
         main_section = getattr(self, 'main_section', None)
         if main_section:
             if main_section.edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL:
@@ -1131,6 +1140,53 @@ class ArticleBase(Model, CT):
             mins = str(total_sec / 60) + ' minutos'
             return mins
 
+    def date_published_isoformat(self):
+        return datetime_isoformat(self.date_published)
+
+    def last_modified_isoformat(self):
+        return datetime_isoformat(self.last_modified)
+
+    def date_published_seconds_ago(self):
+        return (datetime.now() - self.date_published).total_seconds()
+
+    def datetime_published_verbose(self, day_name_and_time=True):
+        locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
+        format_st = "{dt.day} de {dt:%B de %Y}"
+
+        if day_name_and_time:
+            format_st = "{dt:%A} " + format_st + ", {dt:%H:%M}"
+        else:
+            # call for cards, allow to hide year and a custom fmt by settings
+            if (
+                getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_SAMEYEAR', False)
+                and date.today().year == self.date_published.year
+            ):
+                format_st = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_SAMEYEAR_FMT', "{dt.day} de {dt:%B}")
+
+        return format_st.format(dt=self.date_published).lower().capitalize()
+
+    def date_published_verbose(self):
+        verbose_date, total_seconds = None, self.date_published_seconds_ago()
+        if total_seconds < 60:
+            verbose_date = "Hace segundos"
+        elif total_seconds < 60 * 60:
+            minutes = int(total_seconds / 60)
+            verbose_date = "Hace %d minuto" % minutes
+            if minutes > 1:
+                verbose_date += 's'
+        elif total_seconds < 60 * 60 * 24:
+            hours = int(total_seconds / 60 / 60)
+            verbose_date = "Hace %d hora" % hours
+            if hours > 1:
+                verbose_date += 's'
+        elif total_seconds < 60 * 60 * 24 * 2:
+            verbose_date = "Ayer"
+        elif total_seconds < 60 * 60 * 24 * 8:
+            verbose_date = u"Hace %d días" % (total_seconds / 60 / 60 / 24)
+        else:
+            verbose_date = self.datetime_published_verbose(False)
+        return verbose_date
+
     class Meta:
         abstract = True
         get_latest_by = 'date_published'
@@ -1173,13 +1229,9 @@ class Article(ArticleBase):
     newsletter_featured = BooleanField(u'destacado en newsletter', default=False)
 
     def save(self, *args, **kwargs):
-        try:
-            super(Article, self).save(*args, **kwargs)
-        except Exception:
-            # we dont know why sometimes raises duplicate entry XXXX for key K
-            # I cant reproduce this error, better to do nothing more in method
-            return
-        if self.sections:
+
+        if self.pk and self.sections:
+            # Only valid if the instance has already been saved.
             # TODO: this should be reviewed, what happens if another article
             # in the same edition-section is viewed (viewed implies saving)
             for ar in ArticleRel.objects.filter(article=self):
@@ -1195,7 +1247,37 @@ class Article(ArticleBase):
                 unicode(self.edition), unicode(self.section), str(self.section_position)
             )
 
+        old_url_path = self.url_path
+
         super(Article, self).save(*args, **kwargs)
+
+        # execute this steps only if not called from admin, admin already does this work in a similar way and order.
+        from_admin = getattr(self, 'admin', False)
+        if not from_admin:
+            self.refresh_from_db()
+            new_url_path = self.build_url_path()
+            url_changed = old_url_path != new_url_path
+
+            if url_changed:
+                self.url_path = new_url_path
+                # the instance has already been saved, force_insert should be turned into False
+                kwargs['force_insert'] = False
+                super(Article, self).save(*args, **kwargs)
+
+                talk_url = getattr(settings, 'TALK_URL', None)
+                # if this is an insert, old_url_path is '', then skip talk update
+                if old_url_path and talk_url and not settings.DEBUG:
+                    # the article has a new url, we need to update it in Coral-Talk using the API
+                    # but don't do this in DEBUG mode to avoid updates with local urls in Coral
+                    try:
+                        update_article_url_in_coral_talk(self.id, new_url_path)
+                    except (ConnectionError, ValueError, KeyError, AssertionError, TypeError):
+                        # fail silently because we should not break any script or shell that is saving the article
+                        pass
+
+            # add to history the new url
+            if not ArticleUrlHistory.objects.filter(article=self, absolute_url=new_url_path).exists():
+                ArticleUrlHistory.objects.create(article=self, absolute_url=new_url_path)
 
     def publications(self):
         return set([ar.edition.publication for ar in self.articlerel_set.select_related('edition__publication')])
@@ -1719,7 +1801,7 @@ def get_current_feeds():
             [str(next_editions[0].id)] if next_editions else []
         )
 
-    return Article.objects.filter(is_published=True).extra(
+    return Article.published.extra(
         where=[
             'core_article.id=core_articlerel.article_id',
             'core_articlerel.edition_id IN (%s)' % ','.join(editions_ids),

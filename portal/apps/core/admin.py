@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from datetime import date, timedelta
-import requests
 from requests.exceptions import ConnectionError
 
 from django.conf import settings
 from django.conf.urls import url
+from django.db.models import Q
 from django.contrib import admin
 from django.contrib.admin import ModelAdmin, TabularInline, site
 from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField
@@ -13,6 +13,7 @@ from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
+from django.template.defaultfilters import slugify
 from django_markdown.widgets import MarkdownWidget
 
 from actstream.models import Action
@@ -21,11 +22,13 @@ from tasks import update_category_home
 from tagging.models import Tag, TaggedItem
 from tagging.forms import TagField
 from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
+from core.templatetags.ldml import ldmarkup, cleanhtml
 from models import (
     Article,
     ArticleExtension,
     ArticleBodyImage,
     Edition,
+    EditionHeader,
     Journalist,
     Location,
     PrintOnlyArticle,
@@ -39,6 +42,7 @@ from models import (
     ArticleUrlHistory,
     BreakingNewsModule,
 )
+from utils import update_article_url_in_coral_talk, smart_quotes
 
 
 class PrintOnlyArticleInline(TabularInline):
@@ -274,6 +278,22 @@ class ArticleAdminModelForm(ModelForm):
             tags = '"' + tags + '"'
         return tags
 
+    def clean(self):
+        cleaned_data = super(ArticleAdminModelForm, self).clean()
+        date_value = (
+            self.cleaned_data.get('date_published') if self.cleaned_data.get('is_published') else
+            self.cleaned_data.get('date_created')
+        ) or date.today()
+        targets = Article.objects.filter(
+            Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
+            | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
+            slug=slugify(cleanhtml(ldmarkup(smart_quotes(cleaned_data.get('headline'))))),
+        )
+        if self.instance.id:
+            targets = targets.exclude(id=self.instance.id)
+        if targets:
+            raise ValidationError(u'Ya existe un artículo en ese mes con el mismo título.')
+
     class Meta:
         model = Article
         fields = "__all__"
@@ -314,17 +334,33 @@ def get_editions():
 class ArticleAdmin(ModelAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     form = ArticleAdminModelForm
+
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
     list_display = (
-        'headline', 'type', 'get_publications', 'get_sections', 'date_published', 'is_published', has_photo, 'surl'
+        'headline', 'type', 'get_publications', 'get_sections', 'creation_date', 'publication_date', 'is_published', has_photo, 'surl'
     )
     list_select_related = True
     list_filter = ('type', 'date_created', 'is_published', 'date_published', 'newsletter_featured', 'byline')
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
+    ordering = ('-date_created',)
     raw_id_fields = ('photo', 'gallery', 'main_section')
+    readonly_fields = ('date_published', )
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
+
+    def creation_date(self, obj):
+        return obj.date_created.strftime("%d %b %Y %H:%M")
+    creation_date.admin_order_field = 'date_created'
+    creation_date.short_description = 'Creado'
+
+    def publication_date(self, obj):
+        if obj.date_published:
+            return obj.date_published.strftime("%d %b %Y %H:%M")
+        else:
+            return u''
+    publication_date.admin_order_field = 'date_published'
+    publication_date.short_description = 'Publicado'
 
     fieldsets = (
         (None, {'fields': ('type', 'headline', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide', )}),
@@ -387,11 +423,12 @@ class ArticleAdmin(ModelAdmin):
     def save_model(self, request, obj, form, change):
         if form.is_valid():
             try:
+                obj.admin = True  # tell model's save method that we are calling it from the admin
                 super(ArticleAdmin, self).save_model(request, obj, form, change)
                 self.obj = obj
             except Exception as e:
-                # TODO: how this print can help? review this ASAP
-                print(e)
+                if settings.DEBUG:
+                    print(e)
 
     def save_related(self, request, form, formsets, change):
         super(ArticleAdmin, self).save_related(request, form, formsets, change)
@@ -442,6 +479,7 @@ class ArticleAdmin(ModelAdmin):
         if change:
             # need refresh from db
             self.obj = Article.objects.get(id=self.obj.id)
+
         new_url_path = self.obj.build_url_path()
         url_changed = getattr(self, 'old_url_path', u'') != new_url_path
         if url_changed:
@@ -454,16 +492,7 @@ class ArticleAdmin(ModelAdmin):
                 # but don't do this in DEBUG mode to avoid updates with local urls in Coral
                 # TODO: do not message user if the story is not found in coral (use "code" value in response.errors)
                 try:
-                    requests.post(
-                        talk_url + 'api/graphql',
-                        headers={
-                            'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN
-                        },
-                        data='{"operationName":"updateStory","variables":{"input":{"id":%d,"story":{"url":"%s://%s%s"}'
-                        ',"clientMutationId":"url updated"}},"query":"mutation updateStory($input: UpdateStoryInput!)'
-                        '{updateStory(input:$input){story{id}}}"}' % (
-                            form.instance.id, settings.URL_SCHEME, settings.SITE_DOMAIN, new_url_path)
-                    ).json()['data']['updateStory']['story']
+                    update_article_url_in_coral_talk(form.instance.id, new_url_path)
                 except (ConnectionError, ValueError, KeyError, AssertionError, TypeError):
                     self.message_user(request, u'AVISO: No se pudo actualizar la nueva URL en Coral-Talk')
 
@@ -471,6 +500,7 @@ class ArticleAdmin(ModelAdmin):
         if not ArticleUrlHistory.objects.filter(article=form.instance, absolute_url=new_url_path).exists():
             ArticleUrlHistory.objects.create(article=form.instance, absolute_url=new_url_path)
 
+        # TODO: check if code below may be called also from the model save method
         update_category_home()
 
     def changelist_view(self, request, extra_context=None):
@@ -499,6 +529,13 @@ class ArticleAdmin(ModelAdmin):
             'js/markdown-help.js',
             'js/homev2/article_admin.js',
         )
+
+
+class EditionHeaderAdmin(ModelAdmin):
+    list_display = ('edition', 'title', 'subtitle')
+    fieldsets = ((None, {'fields': list_display}), )
+    search_fields = list_editable = ['title', 'subtitle']
+    raw_id_fields = ['edition']
 
 
 class SupplementAdmin(ModelAdmin):
@@ -781,7 +818,7 @@ class BreakingNewsModuleAdmin(ModelAdmin):
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "articles":
-            kwargs["queryset"] = Article.objects.filter(is_published=True)
+            kwargs["queryset"] = Article.published.all()
         return super(BreakingNewsModuleAdmin, self).formfield_for_manytomany(db_field, request, **kwargs)
 
 
@@ -801,6 +838,7 @@ site.register(Journalist, JournalistAdmin)
 site.register(Location, LocationAdmin)
 site.register(PrintOnlyArticle, PrintOnlyArticleAdmin)
 site.register(Section, SectionAdmin)
+site.register(EditionHeader, EditionHeaderAdmin)
 site.register(Supplement, SupplementAdmin)
 site.register(Publication, PublicationAdmin)
 site.register(Category, CategoryAdmin)

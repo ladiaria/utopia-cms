@@ -26,6 +26,7 @@
           {% endif %}
         {% endblock %}
         <div class="ld-card__body">
+          <div class="ld-card__section">{% autoescape off %}{% publication_section article %}{% endautoescape %}</div>
           <h{% if publication.is_emergente %}2{% else %}1{% endif %} class="ld-card__title home-title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
             <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|bleach }}</a>
           </h{% if publication.is_emergente %}2{% else %}1{% endif %}>
@@ -33,22 +34,23 @@
             <div class="ld-card__intro">{{ article.home_lead|ldmarkup:article.id|bleach }}</div>
           {% endif %}
           <div class="ld-card__byline">
-            {% if article.has_byline  %}
-              {% for author in article.get_authors %}
-                <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-              {% endfor %}
-              en
+            {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo.extended.photographer %}
+              <div class="ld-card__photoauthor">
+                {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
+              </div>
             {% endif %}
-            {% autoescape off %}
-              {% publication_section article %}
-            {% endautoescape %}
+            {% if article.has_byline  %}
+              <div class="ld-card__author">
+                {% for author in article.get_authors %}
+                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
+            {% with a=article %}
+              {% include 'article/article_card_read_later.html' %}
+            {% endwith %}
           </div>
-          {% if article.photo.extended.photographer %}
-            <div class="ld-card__byline">
-              {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
-            </div>
-          {% endif %}
-
         </div>
       </div>
     </div>
@@ -70,30 +72,29 @@
             </a>
           {% endif %}
           <div class="ld-card__body">
+            <div class="ld-card__section">{% autoescape off %}{% publication_section a %}{% endautoescape %}</div>
             <h{% if publication.is_emergente %}3{% else %}2{% endif %} class="ld-card__title ld-card__title--mb">
               <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|bleach }}</a>
             </h{% if publication.is_emergente %}3{% else %}2{% endif %}>
             {% if a.deck %}
-            <div class="ld-card__intro hide-on-med-and-up">
-              {{ a.deck|ldmarkup:a.id|bleach }}
-            </div>
+              <div class="ld-card__intro hide-on-med-and-up">{{ a.deck|ldmarkup:a.id|bleach }}</div>
             {% endif %}
             <div class="ld-card__byline">
-              {% if a.has_byline  %}
-                {% for author in a.get_authors %}
-                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-                en
+              {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and a.photo.extended.photographer %}
+                <div class="ld-card__photoauthor">
+                  {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}
+                </div>
               {% endif %}
-              {% autoescape off %}
-                {% publication_section a %}
-              {% endautoescape %}
+              {% if a.has_byline  %}
+                <div class="ld-card__author">
+                  {% for author in a.get_authors %}
+                    <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
+              {% include 'article/article_card_read_later.html' %}
             </div>
-            {% if a.photo.extended.photographer %}
-              <div class="ld-card__byline">
-                {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}
-              </div>
-            {% endif %}
           </div>
         </div>
       {% endfor %}
@@ -102,7 +103,7 @@
 
     <div class="ld-grid-area area-third">
 
-      {% for a in destacados|slice:"2:7" %}
+      {% for a in destacados|slice:"2:6" %}
         <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}">
           {% render_toolbar_for a %}
 
@@ -119,6 +120,7 @@
             </a>
           {% endif %}
           <div class="ld-card__body">
+            <div class="ld-card__section">{% autoescape off %}{% publication_section a %}{% endautoescape %}</div>
             <h{% if publication.is_emergente %}3{% else %}2{% endif %} class="ld-card__title ld-card__title--mb">
               <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|bleach }}</a>
             </h{% if publication.is_emergente %}3{% else %}2{% endif %}>
@@ -129,14 +131,14 @@
             {% endif %}
             <div class="ld-card__byline">
               {% if a.has_byline  %}
-                {% for author in a.get_authors %}
-                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-                en
+                <div class="ld-card__author">
+                  {% for author in a.get_authors %}
+                    <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                  {% endfor %}
+                </div>
               {% endif %}
-              {% autoescape off %}
-                {% publication_section a %}
-              {% endautoescape %}
+              {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
+              {% include 'article/article_card_read_later.html' %}
             </div>
           </div>
           {% if a.photo.extended.square_version %}
@@ -157,7 +159,7 @@
 
     <div class="ld-grid-clear"></div>
 
-      {% for a in destacados|slice:"7:11" %}
+      {% for a in destacados|slice:"6:10" %}
         <div class="ld-grid-area ld-grid-area-col area-col-{% cycle 'a' 'b' 'c' 'd' %}">
           {% include 'article/card_top_article_abcd.html' %}
         </div>

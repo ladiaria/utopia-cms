@@ -342,6 +342,8 @@ CORE_ARTICLE_TYPES = (
     (CORE_HTML_ARTICLE, 'HTML'),
     (CORE_COMUNIDAD_ARTICLE, 'COMUNIDAD'),
 )
+# Supplement names
+CORE_SUPPLEMENT_NAME_CHOICES = ()
 
 # enable related articles in article detail
 CORE_ENABLE_RELATED_ARTICLES = True

@@ -74,13 +74,11 @@
           <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
         </div>
       {% endifequal %}
-      <h1 class="article-title after_foto">
-        {{ article.headline|ldmarkup:article.id|bleach }}
-      </h1>
+      <h1 class="article-title after_foto">{{ article.headline|ldmarkup:article.id|bleach }}</h1>
 
       <div class="article-date-author">
         {% if article.date_published %}
-          <span class="date small">{{ article.date_published|date:"j \d\e F \d\e Y"|lower }} · </span>
+          Publicado{% if article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small">{{ article.date_published_verbose.lower }}{% if article.has_byline %} · {% endif %}</span>
         {% endif %}
         {% if article.has_byline %}
           Escribe
@@ -130,9 +128,7 @@
 
     {% if article.has_deck or article.has_lead %}
       {% if article.has_deck %}
-        <h2 class="article-deck article__deck">
-          {{ article.deck|ldmarkup:article.id|bleach }}
-        </h2>
+        <h2 class="article-deck article__deck">{{ article.deck|ldmarkup:article.id|bleach }}</h2>
       {% endif %}
       {% if article.has_lead %}
         <p class="article-lead">{{ article.get_lead|urlize|ldmarkup:article.id|bleach }}</p>

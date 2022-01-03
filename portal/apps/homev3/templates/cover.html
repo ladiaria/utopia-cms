@@ -12,6 +12,15 @@
   {% endif %}
 {% endif %}
 
+{% if edition.editionheader %}
+  <section id="edition-header">
+    <div class="container">
+      <span class="main-title">{{ edition.editionheader.title }}</span>
+      <span class="subtitle">{{ edition.editionheader.subtitle }}</span>
+    </div>
+  </section>
+{% endif %}
+
 {% if cover_article %}
   {% render_article_card article=cover_article media=cover_article.home_display card_size="FF" %}
 {% endif %}
@@ -40,14 +49,14 @@
 
 {% block featured_content %}{% endblock %}
 
-{% if destacados|length > 11 %}
+{% if destacados|length > 10 %}
   <div class="frontpage-section">
     <div class="container">
       <div class="section-detail__head">
         <h2 class="section-detail__title">Más destacados</h2>
       </div>
       {% for top_index_val in "159" %}
-        {% render_section None top_index=top_index_val|add:"10" %}
+        {% render_section None top_index=top_index_val|add:"9" %}
       {% endfor %}
     </div>
   </div>
@@ -55,4 +64,4 @@
 
 {% block extra_cover %}{% endblock %}
 
-{% block footer_scripts %}{% endblock %}
+{% block footer_scripts %}{% endblock %}{# TODO: check if needed #}

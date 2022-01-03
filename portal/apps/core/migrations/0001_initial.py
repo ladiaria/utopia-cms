@@ -362,7 +362,7 @@ class Migration(migrations.Migration):
                 ('cover', models.ImageField(blank=True, null=True, upload_to=core.utils.get_pdf_cover_upload_to, verbose_name='tapa')),
                 ('date_published', models.DateField(default=django.utils.timezone.now, verbose_name='fecha de publicaci\xf3n')),
                 ('date_created', models.DateTimeField(auto_now_add=True, verbose_name='fecha de creaci\xf3n')),
-                ('name', models.CharField(choices=[(b'cc', 'Cambio Clim\xe1tico'), (b'ag', 'Agenda Global'), (b'br', 'Brasil'), (b'cn', 'Cine nacional'), (b'cp', 'Ciudad puerto'), (b'cu', 'Cumbre'), (b'di', 'D\xednamo'), (b'ed', 'Educaci\xf3n'), (b'uv', 'El Uruguay que viene'), (b'el', 'Elecciones'), (b'en', 'Energ\xeda'), (b'hp', 'El mundo hecho pelota'), (b'in', 'Incorrecta'), (b'iv', 'IVC'), (b'lf', 'la diaria del futuro'), (b'le', 'Lento'), (b'li', 'Los informantes'), (b'ec', 'Ecolog\xeda'), (b'ma', 'Medio ambiente'), (b'me', 'Mercosur'), (b'pa', 'Patrimonio'), (b'rr', 'R'), (b'rl', 'Radios Locas'), (b'rn', 'R\xd1'), (b'sa', 'Salud'), (b'tc', 'Tarjeta cultural'), (b'ts', 'Teatro Sol\xeds'), (b'yf', 'Yo firm\xe9'), (b'dm', 'D\xeda Mundial del Agua'), (b'al', '\u05d0 - Cultura Cient\xedfica'), (b'ns', 'nosotros'), (b'df', 'd\xeda del futuro'), (b'dd', 'D\xeda Internacional del Detenido Desaparecido'), (b'af', 'Agenda del D\xeda del Futuro')], max_length=2, verbose_name='nombre')),
+                ('name', models.CharField(max_length=2, verbose_name='nombre')),
                 ('slug', models.SlugField(unique=True, verbose_name='slug')),
                 ('headline', models.CharField(max_length=100, verbose_name='titular')),
                 ('public', models.BooleanField(default=True, verbose_name='p\xfablico')),

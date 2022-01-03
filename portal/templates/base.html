@@ -163,17 +163,20 @@
     <!-- End legacy browsers support  -->
 
     {% if not debug %}
-      {% if user.is_authenticated %}
-        <!-- User data -->
-        <script>
-          LDUser = {};
+      <!-- User data -->
+      <script>
+        LDUser = {};
+        {% if user.is_authenticated %}
+          LDUser.is_authenticated = true;
           LDUser.id = {{ user.id }};
           LDUser.subscriber = {{ is_subscriber|lower }};
           LDUser.firstName = "{{ user.first_name }}";
           LDUser.lastName = "{{ user.last_name }}";
-        </script>
-        <!-- End user data -->
-      {% endif %}
+        {% else %}
+          LDUser.is_authenticated = false;
+        {% endif %}
+      </script>
+      <!-- End user data -->
     {% endif %}
 
     {% compress css %}
@@ -191,6 +194,7 @@
             notification.toggle();
           });
         });
+        {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
       });
     </script>
     {% block header_scripts %}{% endblock %}
@@ -276,6 +280,11 @@
       <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
       <script defer src="{% static 'materialize/js/modal.js' %}"></script>
       <script defer src="{% static 'materialize/js/forms.js' %}"></script>
+
+      {% if user.is_authenticated %}
+        {# used only in pages that show article cards #}
+        <script defer src="{% static 'js/read_later_events.js' %}"></script>
+      {% endif %}
 
       {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
       <script defer src="{% static 'js/ld.js' %}"></script>

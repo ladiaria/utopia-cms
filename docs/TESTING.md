@@ -2,7 +2,13 @@
 
 They are generated according to the testing documentation for Django 1.11: https://docs.djangoproject.com/en/1.11/topics/testing/
 
-To run the tests provided chdir to `portal` and execute the `runtests.sh` script.
+Before running the included tests, a required initial migration for the app `favit` should be created with:
+
+```
+(utopiacms) user@host:~/utopia-cms/portal $ python -W ignore manage.py makemigrations favit
+```
+
+After that, you can execute the `runtests.sh` script in the same directory also with the virtualenv activated, this will execute all the tests. It's safe to apply the created migration using `--fake` and obviously there's no need to run the "makemigrations" command again to execute again the tests script, unless you remove the created migration from your virtualenv.
 
 NOTE: To the command contained in said script you can add a `.tests.name_of_module_to_test` to test only a given module within the `tests` module of an app, and in turn adding to the above a `.ClassNameToTest` will only test that class inside the module.
 

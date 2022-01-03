@@ -1,18 +1,49 @@
 # -*- coding: utf-8 -*-
+import re
+from time import timezone
+from datetime import datetime, tzinfo, timedelta
+from dateutil import tz
+from math import copysign
 from os import path
-from email import Encoders
-from email.MIMEBase import MIMEBase
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEText import MIMEText
-from email.Utils import COMMASPACE
-from email.Utils import formatdate
-from django.utils.deconstruct import deconstructible
-
-import smtplib
+import pytz
+from pytz import country_timezones, country_names
+import requests
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-import re
+from django.utils.deconstruct import deconstructible
+
+
+class TZ(tzinfo):
+    def utcoffset(self, dt):
+        return timedelta(
+            seconds=int(copysign(timezone, int(datetime.now(pytz.timezone(settings.TIME_ZONE)).strftime('%z'))))
+        )
+
+
+tz_obj = TZ()
+
+
+def datetime_isoformat(dt):
+    return datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, 0, tz_obj).isoformat()
+
+
+def datetime_timezone():
+    local_tz, dt = tz.gettz(settings.TIME_ZONE), datetime.now()
+    dt = datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, 0, local_tz)
+    timezone_countries = {
+        timezone: country for country, timezones in country_timezones.iteritems() for timezone in timezones
+    }
+    tz_name = dt.strftime(u'%Z')
+    result = [tz_name if tz_name[0].isalpha() else u'GMT' + tz_name]
+    tz_parts = settings.TIME_ZONE.split(u'/')
+    if len(tz_parts) > 1:
+        result.append(tz_parts[-1])
+    try:
+        result.append(country_names[timezone_countries[settings.TIME_ZONE]])
+    except KeyError:
+        pass
+    return u'(%s)' % u', '.join(result)
 
 
 def get_pdf_pdf_upload_to(instance, filename):
@@ -61,37 +92,22 @@ def get_pdfpageimage_file_upload_to(instance, filename):
 
 
 def add_punctuation(text):
-    valid_chars = u'AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZ' \
-    u'aábcdeéfghiíjklmnñoópqrstuúvwxyz' \
-    u'0123456789"'
+    valid_chars = u'AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789"'
     if text != '':
         if text[-1] in valid_chars:
             return u'%s.' % text
     return text
 
 
-def send_mail(files, send_from='web-automatico@ladiaria.com.uy', send_to=['web-redaccion@ladiaria.com.uy'], subject='El PDF de hoy!', server='localhost'):
-    assert type(send_to) == list
-    assert type(files) == list
-    msg = MIMEMultipart()
-    msg['From'] = send_from
-    msg['To'] = COMMASPACE.join(send_to)
-    msg['Date'] = formatdate(localtime=True)
-    msg['Subject'] = subject
-
-    html = MIMEText('Se subió el siguiente PDF, corrobore que sea la edición de hoy!', 'html')
-    msg.attach(html)
-
-    for f in files:
-        part = MIMEBase('application', "octet-stream")
-        part.set_payload(open(f,"rb").read())
-        Encoders.encode_base64(part)
-        part.add_header('Content-Disposition', 'attachment; filename="%s"' % path.basename(f))
-        msg.attach(part)
-
-    smtp = smtplib.SMTP(server, port=settings.EMAIL_PORT)
-    smtp.sendmail(send_from, send_to, msg.as_string())
-    smtp.close()
+def update_article_url_in_coral_talk(article_id, new_url_path):
+    requests.post(
+        settings.TALK_URL + 'api/graphql',
+        headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
+        data='{"operationName":"updateStory","variables":{"input":{"id":%d,"story":{"url":"%s://%s%s"}'
+        ',"clientMutationId":"url updated"}},"query":"mutation updateStory($input: UpdateStoryInput!)'
+        '{updateStory(input:$input){story{id}}}"}' % (
+            article_id, settings.URL_SCHEME, settings.SITE_DOMAIN, new_url_path),
+    ).json()['data']['updateStory']['story']
 
 
 @deconstructible

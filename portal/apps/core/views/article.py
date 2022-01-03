@@ -11,10 +11,10 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.core.urlresolvers import reverse
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect, HttpResponse, BadHeaderError, HttpResponsePermanentRedirect
 from django.views.generic import DetailView
 from django.contrib.sites.models import Site
-from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache, cache_page
@@ -86,8 +86,13 @@ def article_detail(request, year, month, slug, domain_slug=None):
     try:
         # netloc splitted by port (to support local environment running in port)
         netloc, first_of_month = request.META['HTTP_HOST'].split(':')[0], date(year, month, 1)
+        first_of_month_plus1 = first_of_month + relativedelta(months=1)
+        # when the article is not published, it has no date_published, then date_created should be used
         article = Article.objects.select_related('main_section__edition__publication').get(
-            slug=slug, date_published__gte=first_of_month, date_published__lt=first_of_month + relativedelta(months=1)
+            Q(is_published=True) & Q(date_published__gte=first_of_month)
+            & Q(date_published__lt=first_of_month_plus1) | Q(is_published=False)
+            & Q(date_created__gte=first_of_month) & Q(date_created__lt=first_of_month_plus1),
+            slug=slug,
         )
         article_url = article.get_absolute_url()
         if request.path != article_url:
@@ -150,6 +155,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
     except (ConnectionError, ValueError, KeyError):
         comments_count = 0
 
+    publication = article.main_section.edition.publication if article.main_section else None
     context = {
         'article': article,
         'is_detail': True,
@@ -160,13 +166,14 @@ def article_detail(request, year, month, slug, domain_slug=None):
             domain == u'category' and category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_SIGNUP', ()),
         'section': article.publication_section(),
         'header_display': article.header_display,
-        'article_ct_id': ContentType.objects.get_for_model(Article).id,
         'tag_list': reorder_tag_list(article, get_article_tags(article)),
         'comments_count': comments_count,
-        'publication': article.main_section.edition.publication if article.main_section else None,
+        'publication': publication,
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
         'publication_newsletters':
             Publication.objects.filter(has_newsletter=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL),
+        'date_published_use_main_publication': publication and publication.slug in getattr(
+            settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ()),
     }
 
     if user_is_authenticated:

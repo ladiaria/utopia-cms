@@ -23,6 +23,7 @@ a.ut-btn.ut-admin-edit-card {
   font-size: 11px;
   padding: 4px 9px 5px;
   bottom: 15px;
+  z-index: 1;
 }
 @media screen and (min-width: 769px) {
   .ut-btn.ut-admin-edit-card,
@@ -49,10 +50,8 @@ span.ut-btn.ut-admin-order {
 @media screen and (min-width: 769px) {
   .ut-btn.ut-admin-order,
   span.ut-btn.ut-admin-order {
-    bottom: 15px;
     right: 15px;
     left: initial;
-    top: initial;
   }
 }
 

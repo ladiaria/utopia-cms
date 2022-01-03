@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import traceback
-from datetime import date
+from datetime import datetime
 
 from django.db.models import Manager
 
@@ -15,8 +15,8 @@ class PublishedArticleManager(ArticleManager):
 
     def get_queryset(self):
         return super(
-            PublishedArticleManager, self).get_queryset().filter(
-                is_published=True, date_published__lte=date.today()).order_by('-date_published')
+            PublishedArticleManager, self
+        ).get_queryset().filter(is_published=True, date_published__lte=datetime.now())
 
 
 class DebugManager(Manager):

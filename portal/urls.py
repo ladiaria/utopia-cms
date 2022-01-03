@@ -164,7 +164,7 @@ class SectionViewSet(viewsets.ModelViewSet):
 
 
 class ArticleViewSet(viewsets.ModelViewSet):
-    queryset = Article.objects.filter(is_published=True)
+    queryset = Article.published.all()
     serializer_class = ArticleSerializer
     http_method_names = ['get', 'head']
     filter_fields = ('headline', 'sections')

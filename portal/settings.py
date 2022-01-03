@@ -284,6 +284,7 @@ TEMPLATES = [
                 'context_processors.publications',
                 'context_processors.gtm',
                 'context_processors.main_menus',
+                'context_processors.article_content_type',
                 'django.template.context_processors.static',
                 'apps.core.context_processors.aniosdias',
                 'social_django.context_processors.backends',
@@ -342,6 +343,15 @@ CORE_ARTICLE_TYPES = (
     (CORE_HTML_ARTICLE, 'HTML'),
     (CORE_COMUNIDAD_ARTICLE, 'COMUNIDAD'),
 )
+# Supplement names
+CORE_SUPPLEMENT_NAME_CHOICES = ()
+
+# shows the date tooltip in article detail for all dates.
+# override to False to show the tooltip only since "Yesterday" dates.
+CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
+
+# show or hide photo credits in article cards
+CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 
 # enable related articles in article detail
 CORE_ENABLE_RELATED_ARTICLES = True
