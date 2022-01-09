@@ -99,7 +99,10 @@ class RenderPublicationRowNode(Node):
         if edition:
             context.update(
                 {
-                    'publication': self.publication,
+                    'publication_obj': self.publication,
+                    # TODO: next entries should be checked because template tags rendered after this template tag can
+                    #       be using these new values instead of the "unchanged" ones.
+                    #       ('publication' was changed to 'publication_obj' because it was breaking render_section)
                     'edition': edition, 'is_portada': True,  # both should be set
                     # force a blank first node because top_index should be > 0
                     'destacados': [None] + edition.top_articles[:4],

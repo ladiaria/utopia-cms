@@ -1404,6 +1404,7 @@ class CategoryHomeArticle(Model):
 
     class Meta:
         ordering = ('position', )
+        unique_together = ('home', 'position')
 
 
 class CategoryHome(Model):

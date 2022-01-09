@@ -1,3 +1,8 @@
+# version 0.1.8 (2022-01-08)
+
+- Fix one context variable value assignation between template tags rendering.
+- Uniqueness added on (home, position) columns in categoryhomearticle relation.
+
 # version 0.1.7 (2022-01-03)
 
 - Tests documentation improvements.
