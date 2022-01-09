@@ -16,9 +16,9 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import permission_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
-from audiologue.models import Audio
 
-from dashboard.models import AudioStatistics
+from core.models import Article
+from .models import AudioStatistics
 
 
 to_response = render_response('dashboard/templates/')
@@ -178,29 +178,29 @@ def audio_statistics_dashboard(month=None, year=None):
     NOTE: month and year are not being used yet, the date filter option was removed from the UX because more precise
           information about this filter requirement is needed.
     """
-    audios = Audio.objects.all().order_by('-id')
-    article_list = []
+    filter_kwargs = {'audio__isnull': False}
     if month and year:
-        audios = audios.filter(articles_core__date_published__month=month, articles_core__date_published__year=year)
+        filter_kwargs.update({'date_published__month': month, 'date_published__year': year})
 
-    for audio in audios:
-        articles = audio.articles_core.all().order_by('-date_published')  # This will show the most recent article only
-        if articles:
-            # TODO: duration calculation is commented, it raises a UnicodeDecodeError and should be investigated
-            # audio_info = mutagen.File(audio.file).info
-            article_list.append(
-                {
-                    'article': articles[0].headline,
-                    'article_url': articles[0].get_absolute_url,
-                    'area': articles[0].section,
-                    'date': articles[0].date_published,
-                    'clicks': audio.audiostatistics_set.filter(percentage__isnull=False).count(),
-                    'amp': audio.audiostatistics_set.filter(amp_click=True).count(),
-                    'percentage0': audio.audiostatistics_set.filter(percentage=0).count(),
-                    'percentage25': audio.audiostatistics_set.filter(percentage=25).count(),
-                    'percentage50': audio.audiostatistics_set.filter(percentage=50).count(),
-                    'percentage75': audio.audiostatistics_set.filter(percentage=75).count(),
-                    # 'duration': timedelta(seconds=int(audio_info.length))
-                }
-            )
+    article_list = []
+    for article in Article.published.filter(**filter_kwargs).select_related(
+        'main_section__section', 'audio'
+    ).prefetch_related('audio__audiostatistics').distinct().iterator():
+        # TODO: duration calculation is commented, it raises a UnicodeDecodeError and should be investigated
+        # audio_info = mutagen.File(article.audio.file).info
+        article_list.append(
+            {
+                'article': article.headline,
+                'article_url': article.get_absolute_url,
+                'area': article.section,
+                'date': article.date_published,
+                'clicks': article.audio.audiostatistics_set.filter(percentage__isnull=False).count(),
+                'amp': article.audio.audiostatistics_set.filter(amp_click=True).count(),
+                'percentage0': article.audio.audiostatistics_set.filter(percentage=0).count(),
+                'percentage25': article.audio.audiostatistics_set.filter(percentage=25).count(),
+                'percentage50': article.audio.audiostatistics_set.filter(percentage=50).count(),
+                'percentage75': article.audio.audiostatistics_set.filter(percentage=75).count(),
+                # 'duration': timedelta(seconds=int(audio_info.length))
+            }
+        )
     return article_list
