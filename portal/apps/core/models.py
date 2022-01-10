@@ -449,8 +449,8 @@ class Category(Model):
     def __unicode__(self):
         return self.name
 
-    def latest_articles(self):
-        return list(self.home.articles.all()) if hasattr(self, 'home') else []
+    def latest_articles(self, exclude=[]):
+        return list(self.home.articles.exclude(id__in=exclude)) if hasattr(self, 'home') else []
 
     def articles(self):
         """
