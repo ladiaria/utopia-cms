@@ -283,7 +283,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
 def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
     if (getattr(instance, "updatefromcrm", False)):
         return True
-    if action.startswith('post_'):
+    if instance.contact_id and action.startswith('post_'):
         try:
             updatecrmuser(
                 instance.contact_id,
