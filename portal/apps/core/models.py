@@ -1446,7 +1446,7 @@ class CategoryHome(Model):
 
 def update_category_home(dry_run=False):
     """
-    Updates categories homes based on articles dates
+    Updates categories homes based on articles publishing dates
     """
     # fill each category bucket with latest articles.
     # @dry_run: Do not change anything. It forces a debug message when a change would be made.
@@ -1476,7 +1476,7 @@ def update_category_home(dry_run=False):
                             if len(buckets[cat.slug]) < needed and \
                                     article not in [x[0] for x in buckets[cat.slug]] and \
                                     article_sections.intersection(category_sections[cat.slug]):
-                                buckets[cat.slug].append((article, edition.date_published))
+                                buckets[cat.slug].append((article, (edition.date_published, article.date_published)))
                     else:
                         stop = True
                         break
@@ -1499,14 +1499,7 @@ def update_category_home(dry_run=False):
             home_cover = None
         cover_id = home_cover.article_id if home_cover else None
         cover_fixed = home_cover.fixed if home_cover else False
-        cover_date = home_cover.article.last_published_by_category(category) if home_cover else None
-        if cover_fixed:
-            category_fixed_content = {cover_id: (0, cover_fixed, cover_date, home_cover.article)}
-            category_free_content = {}
-        else:
-            category_fixed_content = {}
-            category_free_content = {cover_id: (0, cover_id, cover_date)}
-        free_places = [0] if category_free_content else []
+        category_fixed_content, free_places = ([cover_id], []) if cover_fixed else ([], [0])
 
         try:
             for i in range(2, needed):
@@ -1514,11 +1507,9 @@ def update_category_home(dry_run=False):
                     position_i = CategoryHomeArticle.objects.get(home=home, position=i)
                     a = position_i.article
                     aid, afixed = a.id, position_i.fixed
-                    date_published = a.last_published_by_category(category)
                     if afixed:
-                        category_fixed_content[aid] = (i, afixed, date_published, a)
+                        category_fixed_content.append(aid)
                     else:
-                        category_free_content[aid] = (i, aid, date_published)
                         free_places.append(i)
                 except CategoryHomeArticle.DoesNotExist:
                     free_places.append(i)
@@ -1532,13 +1523,13 @@ def update_category_home(dry_run=False):
 
         # make list with the new articles based on the free places
         free_places2, category_content = copy(free_places), []
-        for article, date_published in articles:
+        for article, date_published_tuple in articles:
 
             if article.id in category_fixed_content:
                 continue
 
             # append in category_content to be reordered later
-            category_content.append((free_places.pop(), date_published, article))
+            category_content.append((free_places.pop(), date_published_tuple, article))
 
             if not len(free_places):
                 break
