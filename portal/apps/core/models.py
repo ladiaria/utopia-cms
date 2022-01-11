@@ -1431,6 +1431,13 @@ class CategoryHome(Model):
         except CategoryHomeArticle.DoesNotExist:
             CategoryHomeArticle.objects.create(home=self, article=article, position=position)
 
+    def dehole(self):
+        # rearrange positions without holes
+        for i, home_article in enumerate(self.categoryhomearticle_set.all(), 1):
+            if home_article.position != i:
+                home_article.position = i
+                home_article.save()
+
     class Meta:
         verbose_name = u'portada de área'
         verbose_name_plural = u'portadas de área'

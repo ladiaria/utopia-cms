@@ -765,6 +765,14 @@ class CategoryHomeAdmin(admin.ModelAdmin):
     exclude = ('articles', )
     inlines = [CategoryHomeArticleInline]
 
+    def save_related(self, request, form, formsets, change):
+        super(CategoryHomeAdmin, self).save_related(request, form, formsets, change)
+        form.instance.dehole()
+
+    def save_model(self, request, obj, form, change):
+        super(CategoryHomeAdmin, self).save_model(request, obj, form, change)
+        obj.dehole()
+
 
 class ArticleInline(TabularInline):
     model = BreakingNewsModule.articles.through
