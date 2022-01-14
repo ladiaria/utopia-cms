@@ -100,12 +100,12 @@ class RenderPublicationRowNode(Node):
             context.update(
                 {
                     'publication_obj': self.publication,
-                    # TODO: next entries should be checked because template tags rendered after this template tag can
+                    # TODO: next 2 entries should be checked because template tags rendered after this template tag can
                     #       be using these new values instead of the "unchanged" ones.
                     #       ('publication' was changed to 'publication_obj' because it was breaking render_section)
                     'edition': edition, 'is_portada': True,  # both should be set
                     # force a blank first node because top_index should be > 0
-                    'destacados': [None] + edition.top_articles[:4],
+                    'publication_destacados': [None] + edition.top_articles[:4],
                 }
             )
             return loader.render_to_string(
@@ -144,15 +144,19 @@ class RenderCategoryRowNode(Node):
             if latest_articles:
                 context.update(
                     {
+                        # TODO: check first 3 entries for the same reason commented in RenderPublicationRowNode
                         'category': category,
                         # both next entries should be set
                         'edition': get_current_edition(),
                         'is_portada': True,
                         # force a blank first node because top_index should be > 0
-                        'destacados': [None] + latest_articles,
+                        'category_destacados': [None] + latest_articles,
                     }
                 )
-                return loader.render_to_string('category_row.html', context.flatten())
+                template = 'category_row.html'
+                if category.slug in getattr(settings, 'HOMEV3_CATEGORIES_ROW_CUSTOM_TEMPLATES', ()):
+                    template = '%s/row/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug)
+                return loader.render_to_string(template, context.flatten())
             else:
                 return u''
 

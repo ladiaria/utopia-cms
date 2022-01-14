@@ -1,22 +1,26 @@
 {% load homev3_tags %}
 
-<section class="frontpage-section">
+<section id="home-category-{{ category.slug }}" class="frontpage-section">
   <div class="container">
 
     <div class="section-detail__head">
-      <h2 class="section-detail__title">{{ category.title|default:category }}{% if category.new_pill %} <span class="new-pill">Nuevo</span>{% endif %}</h2>
-      {% if category.description %}
-        <p class="section-detail__subtitle">{{ category.description }}</p>
-      {% endif %}
+      {% block category-detail-head-h2 %}
+        <h2 class="section-detail__title">{{ category.title|default:category }}{% if category.new_pill %} <span class="new-pill">Nuevo</span>{% endif %}</h2>
+      {% endblock %}
+      {% block category-detail-head-description %}
+        {% if category.description %}<p class="section-detail__subtitle">{{ category.description }}</p>{% endif %}
+      {% endblock %}
     </div>
 
-    {% render_section None top_index=1 %}
+    {% with destacados=category_destacados %}{% render_section None top_index=1 %}{% endwith %}
 
     <div class="row footer-section">
       <div class="col s12">
-        <a href="{% url 'home' domain_slug=category.slug %}" class="ut-btn ut-btn-outline">
-          {% if category.more_link_title %}{{ category.more_link_title }}{% else %}más de {{ category }}{% endif %}
-        </a>
+        {% block footer_links %}
+          <a href="{% url 'home' domain_slug=category.slug %}" class="ut-btn ut-btn-outline">
+            {% if category.more_link_title %}{{ category.more_link_title }}{% else %}más de {{ category }}{% endif %}
+          </a>
+        {% endblock %}
       </div>
     </div>
   </div>

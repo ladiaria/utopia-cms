@@ -1394,7 +1394,7 @@ class ArticleViewedBy(Model):
 
 class CategoryHomeArticle(Model):
     home = ForeignKey('CategoryHome')
-    article = ForeignKey(Article, related_name='home_articles')
+    article = ForeignKey(Article, related_name='home_articles', limit_choices_to={'is_published': True})
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
 
