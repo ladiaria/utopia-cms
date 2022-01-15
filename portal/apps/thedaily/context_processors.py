@@ -37,7 +37,8 @@ def permissions(request):
                 try:
                     article = ArticleUrlHistory.objects.get(absolute_url=request.path).article
                     is_subscriber = is_subscriber_default or any(
-                        [subscriber.is_subscriber(p.slug) for p in article.publications()])
+                        [subscriber.is_subscriber(p.slug) for p in article.publications()]
+                    )
                 except ArticleUrlHistory.DoesNotExist:
                     # no article found, treat as if it was any other page
                     is_subscriber = is_subscriber_default
@@ -63,16 +64,29 @@ def permissions(request):
     # A poll url path in google forms
     pu_path = getattr(settings, 'THEDAILY_POLL_URL_PATH', None) if request.user.is_authenticated() else None
 
-    result.update({
-        'is_subscriber': is_subscriber, 'is_subscriber_default': is_subscriber_default,
-        'is_subscriber_any': is_subscriber_any, 'poll_url': (u'https://forms.gle/' + pu_path) if pu_path else u''})
+    result.update(
+        {
+            'is_subscriber': is_subscriber,
+            'is_subscriber_default': is_subscriber_default,
+            'is_subscriber_any': is_subscriber_any,
+            'poll_url': (u'https://forms.gle/' + pu_path) if pu_path else u'',
+        }
+    )
 
     # if is_subscriber generate the JWT for Coral Talk integration (if TALK_URL is set)
     talk_url = getattr(settings, 'TALK_URL', None)
     if is_subscriber and talk_url:
         jti, exp = str(uuid4()), int(time()) + 60
-        result['talk_auth_token'] = jwt.encode({'jti': jti, 'exp': exp + 3600, 'user': {
-            'id': str(request.user.id), 'email': request.user.email,
-            'username': request.user.get_full_name() or request.user.username}}, settings.TALK_JWT_SECRET)
+        result['talk_auth_token'] = jwt.encode(
+            {
+                'jti': jti,
+                'exp': exp + 3600,
+                'user': {
+                    'id': str(request.user.id), 'email': request.user.email,
+                    'username': request.user.get_full_name() or request.user.username,
+                },
+            },
+            settings.TALK_JWT_SECRET,
+        )
 
     return result
