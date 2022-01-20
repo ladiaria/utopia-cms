@@ -459,17 +459,25 @@ class Category(Model):
         """
         Returns all articles published on this category
         """
-        return Article.objects.filter(id__in=[
-            a.id for a in Article.objects.raw("""
-            SELECT DISTINCT core_article.id
-            FROM core_article
-            JOIN core_articlerel ON
-                core_article.id = core_articlerel.article_id
-            JOIN core_section ON
-                core_articlerel.section_id = core_section.id
-            WHERE core_section.category_id = %d AND is_published
-            ORDER BY date_published DESC
-        """ % self.id)])
+        return Article.objects.filter(
+            id__in=[
+                a.id for a in Article.objects.raw(
+                    """
+                    SELECT DISTINCT core_article.id
+                    FROM core_article
+                    JOIN core_articlerel ON
+                        core_article.id = core_articlerel.article_id
+                    JOIN core_section ON
+                        core_articlerel.section_id = core_section.id
+                    JOIN core_edition ON
+                        core_articlerel.edition_id = core_edition.id
+                    WHERE core_section.category_id = %d
+                        AND is_published AND core_edition.date_published <= CURRENT_DATE
+                    ORDER BY core_article.date_published DESC
+                    """ % self.id
+                )
+            ]
+        )
 
     def articles_count(self, max=None):
         """
@@ -483,7 +491,9 @@ class Category(Model):
                     core_article.id = core_articlerel.article_id
                 JOIN core_section ON
                     core_articlerel.section_id = core_section.id
-                WHERE core_section.category_id = %d AND is_published
+                JOIN core_edition ON
+                    core_articlerel.edition_id = core_edition.id
+                WHERE core_section.category_id = %d AND is_published AND core_edition.date_published <= CURRENT_DATE
                 """ % self.id
             if max:
                 query = "SELECT COUNT(*) FROM (SELECT DISTINCT core_article.id %s LIMIT %d) final" % (
@@ -1477,38 +1487,37 @@ def update_category_home(dry_run=False):
     # fill each category bucket with latest articles.
     # @dry_run: Do not change anything. It forces a debug message when a change would be made.
     # TODO: calculate not fixed count before and better stop algorithm.
-    buckets, category_sections, needed, cat_needed, stop, start_time = {}, {}, 10, {}, False, time.time()
-    categories = Category.objects.filter(slug__in=settings.CORE_UPDATE_CATEGORY_HOMES)
+    buckets, category_sections, needed, cat_needed, start_time = {}, {}, 10, {}, time.time()
+    categories, categories_to_fill = Category.objects.filter(slug__in=settings.CORE_UPDATE_CATEGORY_HOMES), []
 
     for cat in categories:
-        buckets[cat.slug] = []
-        category_sections[cat.slug] = set(cat.section_set.values_list('id', flat=True))
-        cat_needed[cat.slug] = cat.articles_count(needed)
+        articles_count = cat.articles_count(needed)
+        if articles_count:
+            categories_to_fill.append(cat.slug)
+            buckets[cat.slug] = []
+            category_sections[cat.slug] = cat.section_set.values_list('id', flat=True)
+            cat_needed[cat.slug] = articles_count
 
-    if categories:
+    if categories_to_fill:
         if settings.DEBUG:
             print('DEBUG: update_category_home begin')
-        for edition in Edition.objects.order_by('-date_published').iterator():
 
-            for ar in edition.articlerel_set.select_related('article').filter(article__is_published=True).iterator():
+        for ar in ArticleRel.objects.select_related('article', 'edition').filter(
+            edition__date_published__lte=date.today(), article__is_published=True
+        ).order_by('-edition__date_published', '-article__date_published').iterator():
 
+            if categories_to_fill:
+                # insert the article (if matches criteria) limiting upto needed quantity with no dupe articles
                 article = ar.article
-                if any([len(bucket) < cat_needed[cat_slug] for cat_slug, bucket in buckets.items()]):
-                    # fill category buckets with articles
-                    # limiting upto needed quantity with no dupe articles
-                    article_sections = set(
-                        article.articlerel_set.filter(edition=edition).values_list('section', flat=True)
-                    )
-                    for cat in categories:
-                        if len(buckets[cat.slug]) < cat_needed[cat.slug] and \
-                                article not in [x[0] for x in buckets[cat.slug]] and \
-                                article_sections.intersection(category_sections[cat.slug]):
-                            buckets[cat.slug].append((article, (edition.date_published, article.date_published)))
-                else:
-                    stop = True
-                    break
-
-            if stop:
+                for cat_slug in categories_to_fill:
+                    if (
+                        article not in [x[0] for x in buckets[cat_slug]]
+                        and ar.section_id in category_sections[cat_slug]
+                    ):
+                        buckets[cat_slug].append((article, (ar.edition.date_published, article.date_published)))
+                        if len(buckets[cat_slug]) == cat_needed[cat_slug]:
+                            categories_to_fill.remove(cat_slug)
+            else:
                 break
 
     # iterate over the buckets and compute free places to fill
