@@ -6,6 +6,7 @@ import operator
 from copy import copy
 from datetime import date, datetime, timedelta
 from collections import OrderedDict
+from requests.exceptions import ConnectionError
 from sorl.thumbnail import get_thumbnail
 from PIL import Image
 import readtime
