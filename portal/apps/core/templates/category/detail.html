@@ -61,7 +61,11 @@
             {% endblock %}
             <div class="ld-card__body">
 
-              {% if cover_article.section %}
+              {% if render_hierarchy %}
+                <div class="ld-card__section">
+                  {% autoescape off %}{% render_hierarchy cover_article %}{% endautoescape %}
+                </div>
+              {% elif cover_article.section %}
                 <div class="ld-card__section">
                   <a href="{{ cover_article.section.get_absolute_url }}">{{ cover_article.section }}</a>
                 </div>
@@ -113,7 +117,11 @@
                 </a>
               {% endif %}
               <div class="ld-card__body">
-                {% if a.section %}
+                {% if render_hierarchy %}
+                  <div class="ld-card__section">
+                    {% autoescape off %}{% render_hierarchy a %}{% endautoescape %}
+                  </div>
+                {% elif a.section %}
                   <div class="ld-card__section">
                     <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
                   </div>
@@ -166,7 +174,11 @@
               </a>
             {% endif %}
             <div class="ld-card__body">
-              {% if a.section %}
+              {% if render_hierarchy %}
+                <div class="ld-card__section">
+                  {% autoescape off %}{% render_hierarchy a %}{% endautoescape %}
+                </div>
+              {% elif a.section %}
                 <div class="ld-card__section"><a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a></div>
               {% endif %}
               <h3 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
@@ -245,7 +257,7 @@
 
 {% block javascript %}
   <script>
-    $(document).ready(function(){
+    $(function(){
       resizeSubnav($('.section-detail__sub-cats'), $('.section-detail__sub-cats-list'), 2);
       $('#bn-module').load("{% url 'bn-content' %}?category={{ category.slug }}", function(response){
         if(response){
@@ -260,4 +272,3 @@
     });
   </script>
 {% endblock %}
-

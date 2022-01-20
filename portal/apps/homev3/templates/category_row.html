@@ -12,7 +12,9 @@
       {% endblock %}
     </div>
 
-    {% with destacados=category_destacados %}{% render_section None top_index=1 %}{% endwith %}
+    {% block destacados %}
+      {% with destacados=category_destacados %}{% render_section None top_index=1 %}{% endwith %}
+    {% endblock %}
 
     <div class="row footer-section">
       <div class="col s12">
