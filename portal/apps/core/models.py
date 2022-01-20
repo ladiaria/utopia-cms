@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import time
 import locale
 import tempfile
 import operator
@@ -16,6 +17,7 @@ from django.core import urlresolvers
 from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User
 from django.contrib.sitemaps import ping_google
+from django.db import connection
 from django.db.models import (
     Q,
     Manager,
@@ -459,15 +461,38 @@ class Category(Model):
         """
         return Article.objects.filter(id__in=[
             a.id for a in Article.objects.raw("""
-            SELECT core_article.id
+            SELECT DISTINCT core_article.id
             FROM core_article
             JOIN core_articlerel ON
                 core_article.id = core_articlerel.article_id
             JOIN core_section ON
                 core_articlerel.section_id = core_section.id
             WHERE core_section.category_id = %d AND is_published
-            GROUP BY core_article.id ORDER BY date_published DESC
+            ORDER BY date_published DESC
         """ % self.id)])
+
+    def articles_count(self, max=None):
+        """
+        Returns the number of articles published in this category.
+        If max is given, the result will be allways less or equal this max value.
+        """
+        with connection.cursor() as cursor:
+            subquery_part = """
+                FROM core_article
+                JOIN core_articlerel ON
+                    core_article.id = core_articlerel.article_id
+                JOIN core_section ON
+                    core_articlerel.section_id = core_section.id
+                WHERE core_section.category_id = %d AND is_published
+                """ % self.id
+            if max:
+                query = "SELECT COUNT(*) FROM (SELECT DISTINCT core_article.id %s LIMIT %d) final" % (
+                    subquery_part, max
+                )
+            else:
+                query = "SELECT COUNT(DISTINCT core_article.id) " + subquery_part
+            cursor.execute(query)
+            return cursor.fetchone()[0]
 
     # TODO: check if these mas_leidos* methods are still beeing used, because the "home" component and /masleidos url
     #       were migrated to views.
@@ -1452,35 +1477,36 @@ def update_category_home(dry_run=False):
     # fill each category bucket with latest articles.
     # @dry_run: Do not change anything. It forces a debug message when a change would be made.
     # TODO: calculate not fixed count before and better stop algorithm.
-    buckets, category_sections, needed, stop = {}, {}, 11, False
+    buckets, category_sections, needed, cat_needed, stop, start_time = {}, {}, 10, {}, False, time.time()
     categories = Category.objects.filter(slug__in=settings.CORE_UPDATE_CATEGORY_HOMES)
 
     for cat in categories:
         buckets[cat.slug] = []
-        category_sections[cat.slug] = cat.section_set.all()
+        category_sections[cat.slug] = set(cat.section_set.values_list('id', flat=True))
+        cat_needed[cat.slug] = cat.articles_count(needed)
 
     if categories:
         if settings.DEBUG:
             print('DEBUG: update_category_home begin')
         for edition in Edition.objects.order_by('-date_published').iterator():
 
-            for ar in ArticleRel.objects.filter(edition=edition).select_related('article').iterator():
+            for ar in edition.articlerel_set.select_related('article').filter(article__is_published=True).iterator():
 
                 article = ar.article
-                if article.is_published:
-
-                    if any([len(b) < needed for b in buckets.values()]):
-                        # fill category buckets with articles
-                        # limiting upto needed quantity with no dupe articles
-                        article_sections = set(article.sections.filter(articlerel__edition=edition))
-                        for cat in categories:
-                            if len(buckets[cat.slug]) < needed and \
-                                    article not in [x[0] for x in buckets[cat.slug]] and \
-                                    article_sections.intersection(category_sections[cat.slug]):
-                                buckets[cat.slug].append((article, (edition.date_published, article.date_published)))
-                    else:
-                        stop = True
-                        break
+                if any([len(bucket) < cat_needed[cat_slug] for cat_slug, bucket in buckets.items()]):
+                    # fill category buckets with articles
+                    # limiting upto needed quantity with no dupe articles
+                    article_sections = set(
+                        article.articlerel_set.filter(edition=edition).values_list('section', flat=True)
+                    )
+                    for cat in categories:
+                        if len(buckets[cat.slug]) < cat_needed[cat.slug] and \
+                                article not in [x[0] for x in buckets[cat.slug]] and \
+                                article_sections.intersection(category_sections[cat.slug]):
+                            buckets[cat.slug].append((article, (edition.date_published, article.date_published)))
+                else:
+                    stop = True
+                    break
 
             if stop:
                 break
@@ -1503,7 +1529,7 @@ def update_category_home(dry_run=False):
         category_fixed_content, free_places = ([cover_id], []) if cover_fixed else ([], [0])
 
         try:
-            for i in range(2, needed):
+            for i in range(2, needed + 1):
                 try:
                     position_i = CategoryHomeArticle.objects.get(home=home, position=i)
                     a = position_i.article
@@ -1556,6 +1582,9 @@ def update_category_home(dry_run=False):
                         home.set_article(art, 1)
             except IndexError:
                 pass
+
+    if settings.DEBUG:
+        print('DEBUG: update_category_home completed in %.0f seconds' % (time.time() - start_time))
 
 
 class ArticleExtension(Model):
