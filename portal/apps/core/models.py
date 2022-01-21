@@ -1502,23 +1502,36 @@ def update_category_home(dry_run=False):
         if settings.DEBUG:
             print('DEBUG: update_category_home begin')
 
-        for ar in ArticleRel.objects.select_related('article', 'edition').filter(
-            edition__date_published__lte=date.today(), article__is_published=True
-        ).order_by('-edition__date_published', '-article__date_published').iterator():
+        lowest_date, max_date = Edition.objects.last().date_published, date.today()
+        days_step = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DAYS_STEP', 30)
+        min_date_iter, max_date_iter, stop = max_date - timedelta(days_step), max_date, False
 
-            if categories_to_fill:
-                # insert the article (if matches criteria) limiting upto needed quantity with no dupe articles
-                article = ar.article
-                for cat_slug in categories_to_fill:
-                    if (
-                        article not in [x[0] for x in buckets[cat_slug]]
-                        and ar.section_id in category_sections[cat_slug]
-                    ):
-                        buckets[cat_slug].append((article, (ar.edition.date_published, article.date_published)))
-                        if len(buckets[cat_slug]) == cat_needed[cat_slug]:
-                            categories_to_fill.remove(cat_slug)
-            else:
+        while max_date_iter > lowest_date:
+
+            for ar in ArticleRel.objects.select_related('article', 'edition').filter(
+                edition__date_published__range=(min_date_iter, max_date_iter), article__is_published=True
+            ).order_by('-edition__date_published', '-article__date_published').iterator():
+
+                if categories_to_fill:
+                    # insert the article (if matches criteria) limiting upto needed quantity with no dupe articles
+                    article = ar.article
+                    for cat_slug in categories_to_fill:
+                        if (
+                            article not in [x[0] for x in buckets[cat_slug]]
+                            and ar.section_id in category_sections[cat_slug]
+                        ):
+                            buckets[cat_slug].append((article, (ar.edition.date_published, article.date_published)))
+                            if len(buckets[cat_slug]) == cat_needed[cat_slug]:
+                                categories_to_fill.remove(cat_slug)
+                else:
+                    stop = True
+                    break
+
+            if stop:
                 break
+            else:
+                max_date_iter = min_date_iter - timedelta(1)
+                min_date_iter = max_date_iter - timedelta(days_step)
 
     # iterate over the buckets and compute free places to fill
     for category_slug, articles in buckets.items():
