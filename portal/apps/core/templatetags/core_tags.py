@@ -276,30 +276,30 @@ def render_hierarchy(article):
         return u''
 
 
-@register.simple_tag
-def render_tagcover(tagname):
+@register.simple_tag(takes_context=True)
+def render_tagcover(context, tagname):
     try:
         tag = Tag.objects.get(name=tagname)
     except Tag.DoesNotExist:
         return u''
     articles = TaggedItem.objects.get_by_model(Article, tag).filter(is_published=True).exclude(type='OP')[:6]
     if articles:
-        return loader.render_to_string(
-            'core/templates/tagcover.html', {'tag_cover_article': articles[0], 'tag_destacados': articles[1:]}
-        )
+        context.update({'tag_cover_article': articles[0], 'tag_destacados': articles[1:]})
+        return loader.render_to_string('core/templates/tagcover.html', context.flatten())
     else:
         return u''
 
 
-@register.simple_tag
-def render_tagrow(tagname, article_type):
+@register.simple_tag(takes_context=True)
+def render_tagrow(context, tagname, article_type):
     try:
         tag = Tag.objects.get(name=tagname)
     except Tag.DoesNotExist:
         return u''
     articles = TaggedItem.objects.get_by_model(Article, tag).filter(is_published=True, type=article_type)[:4]
     if articles:
-        return loader.render_to_string('core/templates/tagrow.html', {'latest_articles': articles})
+        context.update({'latest_articles': articles})
+        return loader.render_to_string('core/templates/tagrow.html', context.flatten())
     else:
         return u''
 
