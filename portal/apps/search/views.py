@@ -1,18 +1,24 @@
 # -*- coding: utf-8 -*-
-from core.models import Article
-from forms import SearchForm
-from models import get_query
+import re
+from elasticsearch_dsl import Q
 
-from decorators import render_response
-
+from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.views.decorators.cache import never_cache
 
+from core.models import Article
 
-to_response = render_response('search/templates/')
+from decorators import render_response
+
+from .forms import SearchForm
+from .models import get_query
+from .documents import ArticleDocument
 
 
-def _paginate(request, query, results_per_page=15):
+to_response, dre, results_per_page = render_response('search/templates/'), re.compile(r'\w+[\w\s]+', re.UNICODE), 15
+
+
+def _paginate(request, query):
     paginator = Paginator(query, results_per_page)
 
     try:
@@ -28,12 +34,29 @@ def _paginate(request, query, results_per_page=15):
     return lista, page
 
 
+def _page_results(request, s, total):
+    try:
+        page = int(request.GET.get('pagina'))
+        # If page * results_per_page is greater than total , deliver last page of results.
+        if page * results_per_page > total:
+            from_ = total - results_per_page
+            return s[from_:total]
+        # deliver the resultset requested
+        end = page * results_per_page
+        from_ = abs(end - results_per_page)
+        results = s[from_:end]
+    except Exception:
+        # If error occurred, deliver first page.
+        results = s[:results_per_page]
+
+    return results
+
+
 @never_cache
 @to_response
 def search(request, token=''):
-    import re
-    dre = re.compile(r'\w+[\w\s]+', re.UNICODE)
-    search_form = SearchForm()
+    search_form, page_results, elastic_search = SearchForm(), [], False
+
     if not token:
         if request.method == 'GET':
             get = request.GET.copy()
@@ -42,17 +65,54 @@ def search(request, token=''):
                 if search_form.is_valid():
                     token = get.get('q', '')
                     token = ''.join(dre.findall(token))
-    if token and len(token) > 2:
-        articles_query = get_query(token, ['headline', 'body', 'deck', 'lead'])
-        matches_query = Article.published.filter(articles_query)
-        cont = matches_query.count()
-        lista_resultados, page = _paginate(request, matches_query)
-    else:
-        token = ''
-        cont = 0
-        lista_resultados, page = _paginate(request, '')
 
-    return 'search_results.html', \
-        {'form': search_form, 'token': token,
-         'listaresultados': lista_resultados, 'page': page,
-         'cont': cont}
+    if token and len(token) > 2:
+
+        if settings.ELASTICSEARCH_DSL:
+
+            fuzziness = {'fuzziness': 'auto'} if settings.SEARCH_ELASTIC_USE_FUZZY else {}
+            q = Q("multi_match", query=token, fields=['headline^3', 'body', 'deck', 'lead'], **fuzziness) \
+                & Q("match", is_published=True) & Q("range", date_published={'lte': 'now/d'})
+            s = ArticleDocument.search().query(q)
+            try:
+                if request.GET.get('full') == u'1':
+                    s = s.params(preserve_order=True)
+                    matches_query = list(s.scan())
+                else:
+                    r = s.execute()
+                    total = r.hits.total.value
+                    # ES hits cannot be paginated with the same django Paginator class, we need to take the results
+                    # for the page and simulate the dajngo pagination using a simple range list.
+                    page_results, matches_query = _page_results(request, s, total), range(total)
+            except Exception as exc:
+                if settings.DEBUG:
+                    print(u"search error: %s" % exc)
+                search_form.add_error('q', u'No es posible realizar la búsqueda en este momento.')
+                return 'search_results.html', {'form': search_form}
+            cont, elastic_search = len(matches_query), True
+
+        else:
+
+            articles_query = get_query(token, ['headline', 'body', 'deck', 'lead'])
+            matches_query = Article.published.filter(articles_query)
+            cont = matches_query.count()
+
+        results, page = _paginate(request, matches_query)
+
+    else:
+
+        token, cont = '', 0
+        results, page = _paginate(request, '')
+
+    return (
+        'search_results.html',
+        {
+            'form': search_form,
+            'token': token,
+            'results': results,
+            'page': page,
+            'cont': cont,
+            'page_results': page_results,
+            'elastic_search': elastic_search,
+        },
+    )

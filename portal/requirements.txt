@@ -42,6 +42,7 @@ pandas
 ebooklib
 django-tagging==0.4.6
 git+git://github.com/ladiaria/django-tagging-autocomplete-tag-it.git#egg=django-tagging-autocomplete
+django-elasticsearch-dsl
 django-model-utils<3
 django-photologue==3.6
 django-robots

@@ -80,6 +80,7 @@ INSTALLED_APPS = (
     'photologue_ladiaria',
     'robots',
     'search',
+    'django_elasticsearch_dsl',
     'sorl.thumbnail',
     'shorturls',
     'less',
@@ -321,6 +322,12 @@ SENDNEWSLETTER_LOGFILE = '/var/log/utopiacms/sendnewsletter/%s-%s.log'
 
 # background tasks
 MAX_ATTEMPTS = 1
+
+# Elasticsearch is disabled by default, to enable it you need to adjust this settings according to your Elasticsearch
+# installation, see https://django-elasticsearch-dsl.readthedocs.io/en/latest/quickstart.html#install-and-configure
+ELASTICSEARCH_DSL = {}
+ELASTICSEARCH_DSL_AUTOSYNC = False
+SEARCH_ELASTIC_USE_FUZZY = False
 
 # core
 # publications that use the root url as their home page

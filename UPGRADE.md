@@ -1,3 +1,12 @@
+# From version 0.1.8 to 0.1.9
+
+```
+git pull
+git checkout 0.1.9
+# activate your virtual env
+pip install django-elasticsearch-dsl
+```
+
 # From version 0.1.7 to 0.1.8
 
 ```

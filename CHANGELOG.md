@@ -1,3 +1,13 @@
+# version 0.1.9 (2022-01-27)
+
+- Elasticsearch support in search app.
+- Many important improvements in core.models.update_category_home function.
+- Allow more flexibility when using some of the custom child templates that can be configured by settings.
+- Templates and template tags used to render home 'row' components were improved with minor fixes, todo's and features.
+- Remove position holes after saving a CategoryHome using the admin.
+- Performance improvement for audio stats in dashboard app.
+- General improvements: de-customizations, syntax code style, UX, some method features using optional args.
+
 # version 0.1.8 (2022-01-08)
 
 - Fix one context variable value assignation between template tags rendering.
