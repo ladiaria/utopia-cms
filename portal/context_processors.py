@@ -75,6 +75,8 @@ def publications(request):
                 'HOMEV3_TWITTER_SITE_META',
                 'HOMEV3_EXTRA_META',
                 'CORE_ARTICLE_DETAIL_PUBLISHER_META',
+                'CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO',
+                'CORE_ARTICLE_DETAIL_DATE_TOOLTIP',
                 'CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP',
                 'CORE_ARTICLE_ENABLE_PHOTO_BYLINE',
                 'PWA_MANIFEST_STATIC_PATH',

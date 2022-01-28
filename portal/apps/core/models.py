@@ -1202,23 +1202,26 @@ class ArticleBase(Model, CT):
         return format_st.format(dt=self.date_published).lower().capitalize()
 
     def date_published_verbose(self):
-        verbose_date, total_seconds = None, self.date_published_seconds_ago()
-        if total_seconds < 60:
-            verbose_date = "Hace segundos"
-        elif total_seconds < 60 * 60:
-            minutes = int(total_seconds / 60)
-            verbose_date = "Hace %d minuto" % minutes
-            if minutes > 1:
-                verbose_date += 's'
-        elif total_seconds < 60 * 60 * 24:
-            hours = int(total_seconds / 60 / 60)
-            verbose_date = "Hace %d hora" % hours
-            if hours > 1:
-                verbose_date += 's'
-        elif total_seconds < 60 * 60 * 24 * 2:
-            verbose_date = "Ayer"
-        elif total_seconds < 60 * 60 * 24 * 8:
-            verbose_date = u"Hace %d días" % (total_seconds / 60 / 60 / 24)
+        if settings.CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO:
+            total_seconds = self.date_published_seconds_ago()
+            if total_seconds < 60:
+                verbose_date = "Hace segundos"
+            elif total_seconds < 60 * 60:
+                minutes = int(total_seconds / 60)
+                verbose_date = "Hace %d minuto" % minutes
+                if minutes > 1:
+                    verbose_date += 's'
+            elif total_seconds < 60 * 60 * 24:
+                hours = int(total_seconds / 60 / 60)
+                verbose_date = "Hace %d hora" % hours
+                if hours > 1:
+                    verbose_date += 's'
+            elif total_seconds < 60 * 60 * 24 * 2:
+                verbose_date = "Ayer"
+            elif total_seconds < 60 * 60 * 24 * 8:
+                verbose_date = u"Hace %d días" % (total_seconds / 60 / 60 / 24)
+            else:
+                verbose_date = self.datetime_published_verbose(False)
         else:
             verbose_date = self.datetime_published_verbose(False)
         return verbose_date

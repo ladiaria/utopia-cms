@@ -230,7 +230,7 @@ HOME_PUBLICATIONS = []
 
 HASHIDS_SALT = 'top_secret_salt_phrase'
 
-# A dictionary of urlconf module paths, keyed by their subdomain.
+# A dictionary of urlconf module paths, keyed by their subdomain
 SUBDOMAIN_URLCONFS = {
     None: 'urls',  # no subdomain, e.g. ``example.com``
 }
@@ -353,8 +353,12 @@ CORE_ARTICLE_TYPES = (
 # Supplement names
 CORE_SUPPLEMENT_NAME_CHOICES = ()
 
-# shows the date tooltip in article detail for all dates.
-# override to False to show the tooltip only since "Yesterday" dates.
+# shows "ago" timedeltas in article cards
+CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO = True
+# shows a date tooltip in article detail, override to False to disable the tooltip
+CORE_ARTICLE_DETAIL_DATE_TOOLTIP = True
+# shows the date tooltip in article detail for all dates (if prevoius setting is enabled)
+# override to False to show the tooltip only since "Yesterday" dates
 CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 
 # show or hide photo credits in article cards
@@ -489,7 +493,7 @@ except ImportError as e:
 
 FREEZE_TIME = None
 
-# Override previous settings with values in local_migration_settings.py settings file.
+# Override previous settings with values in local_migration_settings.py settings file
 from local_migration_settings import *
 
 SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)

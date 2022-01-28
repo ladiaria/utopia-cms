@@ -145,13 +145,15 @@
 
       {% if article.date_published %}
         <div class="article-date-author">
-          Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
-          {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
-            <span class="ld-info-tooltip time">
-              <span class="ld-info-tooltip-content">
-                {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+          Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
+          {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
+            {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
+              <span class="ld-info-tooltip time">
+                <span class="ld-info-tooltip-content">
+                  {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+                </span>
               </span>
-            </span>
+            {% endif %}
           {% endif %}
         </div>
       {% endif %}
