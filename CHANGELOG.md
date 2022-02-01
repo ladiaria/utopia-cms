@@ -1,3 +1,11 @@
+# version 0.2.0 (2022-02-01)
+
+- Inner sections support for category detail view.
+- Custom section detail templates support by settings.
+- Gruped tags new app allows grouping tags for customizations.
+- CSS updates and not ascii char error fixed.
+- More customization flexibility support on rendering dates in article cards.
+
 # version 0.1.9 (2022-01-27)
 
 - Elasticsearch support in search app.

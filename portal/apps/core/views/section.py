@@ -7,19 +7,14 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseRedirect, Http404
 from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.urlresolvers import reverse
 
-from decorators import render_response
-
 from core.models import Edition, Publication, Article, Section
-
-to_response = render_response('core/templates/section/')
 
 
 @never_cache
-@to_response
 def section_detail(request, section_slug, tag=None, year=None, month=None, day=None):
 
     # removed or changed sections redirects by settings
@@ -38,6 +33,12 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
 
     edition, articles, page = None, None, request.GET.get('pagina', 1)
 
+    # support custom templates
+    template = 'core/templates/section/detail.html'
+    template_dir = getattr(settings, 'CORE_SECTION_TEMPLATE_DIR', None)
+    if template_dir and section_slug in getattr(settings, 'CORE_SECTION_CUSTOM_TEMPLATES', ()):
+        template = '%s/%s.html' % (template_dir, section_slug)
+
     if section_slug in getattr(settings, 'CORE_SECTIONS_DETAIL_USE_CATEGORY', ()):
         articles = section.category.articles()
         paginator = Paginator(articles, 10)
@@ -49,7 +50,7 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
         except EmptyPage:
             articles = paginator.page(paginator.num_pages)
 
-        return 'detail.html', {'section': section, 'articles': articles, 'publication': None}
+        return render(request, template, {'section': section, 'articles': articles, 'publication': None})
 
     # TODO: implement a way to mark one publication as the main publication for the section
     publication = section.publications.exists() and section.publications.all()[0] or \
@@ -77,7 +78,7 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
     except EmptyPage:
         articles = paginator.page(paginator.num_pages)
 
-    return 'detail.html', {'section': section, 'articles': articles, 'publication': publication}
+    return render(request, template, {'section': section, 'articles': articles, 'publication': publication})
 
 
 @never_cache

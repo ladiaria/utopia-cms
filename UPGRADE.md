@@ -1,3 +1,12 @@
+# From version 0.1.9 to 0.2.0
+
+```
+git pull
+git checkout 0.2.0
+# activate your virtual env
+./manage.py migrate
+```
+
 # From version 0.1.8 to 0.1.9
 
 ```

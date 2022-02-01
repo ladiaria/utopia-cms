@@ -40,10 +40,11 @@ def category_detail(request, slug):
     except (Section.DoesNotExist, Section.MultipleObjectsReturned):
         featured_section3 = None
 
-    # custom inner sections hardcoded example. TODO: should be done better, when needed.
-    if slug == u' ':
-        # inner_sections = category.section_set.filter(...)
-        pass
+    for inner_section_slug in getattr(settings, 'CORE_CATEGORY_INNER_SECTIONS', {}).get(slug, ()):
+        try:
+            inner_sections.append(category.section_set.get(slug=inner_section_slug))
+        except Section.DoesNotExist:
+            pass
 
     if slug in getattr(settings, 'CORE_CATEGORIES_ENABLE_QUESTIONS', ()):
         question_list = Question.published.filter(topic__slug=slug)

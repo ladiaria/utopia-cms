@@ -1,0 +1,7 @@
+<ul class="item__list">
+  {% for tag in tg.tags.all %}
+    <li class="item__list-item">
+      <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
+    </li>
+  {% endfor %}
+</ul>

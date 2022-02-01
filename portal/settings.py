@@ -64,6 +64,7 @@ INSTALLED_APPS = (
     'tagging',
     'core.config.CoreConfig',
     'core.attachments',
+    'groupedtags.config.GroupedTagsConfig',
     'django_extensions',
     'generator',
     'memcached',
