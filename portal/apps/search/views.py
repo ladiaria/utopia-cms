@@ -55,7 +55,7 @@ def _page_results(request, s, total):
 @never_cache
 @to_response
 def search(request, token=''):
-    search_form, page_results, elastic_search = SearchForm(), [], False
+    search_form, page_results, elastic_search, elastic_match_phrase = SearchForm(), [], False, False
 
     if not token:
         if request.method == 'GET':
@@ -70,13 +70,23 @@ def search(request, token=''):
 
         if settings.ELASTICSEARCH_DSL:
 
-            fuzziness = {'fuzziness': 'auto'} if settings.SEARCH_ELASTIC_USE_FUZZY else {}
-            q = Q("multi_match", query=token, fields=['headline^3', 'body', 'deck', 'lead'], **fuzziness) \
-                & Q("match", is_published=True) & Q("range", date_published={'lte': 'now/d'})
-            s = ArticleDocument.search().query(q)
+            extra_kwargs = {}
+            if settings.SEARCH_ELASTIC_MATCH_PHRASE:
+                elastic_match_phrase = True
+                extra_kwargs['type'] = 'phrase'
+            elif settings.SEARCH_ELASTIC_USE_FUZZY:
+                extra_kwargs['fuzziness'] = 'auto'
+
+            s = ArticleDocument.search().query(
+                Q('multi_match', query=token, fields=['headline^3', 'body', 'deck', 'lead'], **extra_kwargs)
+                & Q("match", is_published=True)
+                & Q("range", date_published={'lte': 'now/d'})
+            )
+
             sort_arg = getattr(settings, 'SEARCH_ELASTIC_SORT_ARG', None)
             if sort_arg:
                 s = s.sort(sort_arg)
+
             try:
                 if request.GET.get('full') == u'1':
                     s = s.params(preserve_order=True)
@@ -117,5 +127,6 @@ def search(request, token=''):
             'cont': cont,
             'page_results': page_results,
             'elastic_search': elastic_search,
+            'elastic_match_phrase': elastic_match_phrase,
         },
     )

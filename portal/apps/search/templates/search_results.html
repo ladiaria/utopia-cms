@@ -58,7 +58,7 @@
         <p>No se han encontrado resultados para el término "<strong>{{ token }}</strong>".</p>
         <p>Pruebe con alguna de las siguientes opciones:</p>
         <ul class="browser-default">
-          {% if not elastic_search %}
+          {% if not elastic_search or elastic_match_phrase %}
             <li>Eliminar alguna de las palabras usadas.</li>
           {% endif %}
           <li>Verificar que los acentos sean correctos.</li>

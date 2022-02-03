@@ -328,7 +328,8 @@ MAX_ATTEMPTS = 1
 # installation, see https://django-elasticsearch-dsl.readthedocs.io/en/latest/quickstart.html#install-and-configure
 ELASTICSEARCH_DSL = {}
 ELASTICSEARCH_DSL_AUTOSYNC = False
-SEARCH_ELASTIC_USE_FUZZY = False
+SEARCH_ELASTIC_MATCH_PHRASE = False
+SEARCH_ELASTIC_USE_FUZZY = False  # Ignored when previous setting is True (not allowed by Elasticsearch).
 
 # core
 # publications that use the root url as their home page
