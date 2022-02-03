@@ -74,6 +74,9 @@ def search(request, token=''):
             q = Q("multi_match", query=token, fields=['headline^3', 'body', 'deck', 'lead'], **fuzziness) \
                 & Q("match", is_published=True) & Q("range", date_published={'lte': 'now/d'})
             s = ArticleDocument.search().query(q)
+            sort_arg = getattr(settings, 'SEARCH_ELASTIC_SORT_ARG', None)
+            if sort_arg:
+                s = s.sort(sort_arg)
             try:
                 if request.GET.get('full') == u'1':
                     s = s.params(preserve_order=True)
