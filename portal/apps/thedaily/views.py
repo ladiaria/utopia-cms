@@ -383,7 +383,7 @@ def subscribe(request, planslug, category_slug=None):
                 subscription.subscription_type_prices.add(sp)
                 if oauth2_state:
                     subscriber_form_v.save()
-                    subscription.telephone = post['phone']
+                    subscription.telephone = post.get('phone', post.get('telephone'))
                     subscription.promo_code = post.get('promo_code')
                 else:
                     subscription.first_name = post['first_name']
