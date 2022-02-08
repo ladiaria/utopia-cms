@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+import json
 import requests
 import pymongo
 
@@ -26,7 +27,6 @@ from django.db.models import (
 )
 from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.dispatch import receiver
-import json
 
 from apps import core_articleviewedby_mdb
 from core.models import Edition, Publication, Category, ArticleViewedBy
@@ -66,9 +66,12 @@ alphanumeric = RegexValidator(
 
 class Subscriber(Model):
     """
-    TODO 2nd release:
+    TODO:
      - Create an "extra" JSON field to save custom-bussiness-related subscriber data. (using plan_id for this now)
      - Many ladiaria custom fields like "lento_pdf" should be removed (ladiaria will be using them in "extra").
+     - Keep newsletters M2M relations for those newsletters that were discontinued (their publication or category have
+       changed its has_newsletter attr from True to False) now this M2M rows are removed when the subscriber is saved,
+       for example in the admin or by the user itself using the edit profile page.
     """
     contact_id = PositiveIntegerField(u'CRM id', unique=True, editable=True, blank=True, null=True)
     user = OneToOneField(User, verbose_name=u'usuario', related_name='subscriber', blank=True, null=True)
@@ -174,6 +177,20 @@ class Subscriber(Model):
             self.is_subscriber(pub_slug) for pub_slug in getattr(
                 settings, 'THEDAILY_IS_SUBSCRIBER_ANY', Publication.objects.values_list('slug', flat=True)))
 
+    def get_publication_newsletters_ids(self, exclude_slugs=[]):
+        return list(
+            self.newsletters.filter(
+                has_newsletter=True
+            ).exclude(slug__in=exclude_slugs).values_list('id', flat=True)
+        )
+
+    def get_category_newsletters_ids(self, exclude_slugs=[]):
+        return list(
+            self.category_newsletters.filter(
+                has_newsletter=True
+            ).exclude(slug__in=exclude_slugs).values_list('id', flat=True)
+        )
+
     def get_newsletters_slugs(self):
         return list(self.newsletters.values_list('slug', flat=True)) + \
             list(self.category_newsletters.values_list('slug', flat=True))
@@ -181,6 +198,24 @@ class Subscriber(Model):
     def get_newsletters(self):
         return ', '.join(self.get_newsletters_slugs())
     get_newsletters.short_description = u'newsletters'
+
+    def updatecrmuser_publication_newsletters(self, exclude_slugs=[]):
+        if self.contact_id:
+            try:
+                updatecrmuser(
+                    self.contact_id, u'newsletters', json.dumps(self.get_publication_newsletters_ids(exclude_slugs))
+                )
+            except requests.exceptions.RequestException:
+                pass
+
+    def updatecrmuser_category_newsletters(self, exclude_slugs=[]):
+        if self.contact_id:
+            try:
+                updatecrmuser(
+                    self.contact_id, u'area_newsletters', json.dumps(self.get_category_newsletters_ids(exclude_slugs))
+                )
+            except requests.exceptions.RequestException:
+                pass
 
     def get_downloads(self, edition=None):
         if not edition:
@@ -280,18 +315,29 @@ def subscriber_pre_save(sender, instance, **kwargs):
 
 
 @receiver(m2m_changed, sender=Subscriber.newsletters.through, dispatch_uid="subscriber_newsletters_changed")
+@receiver(
+    m2m_changed, sender=Subscriber.category_newsletters.through, dispatch_uid="subscriber_area_newsletters_changed"
+)
 def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
+    if settings.DEBUG:
+        print(
+            'DEBUG: thedaily.models.subscriber_newsletters_changed called with action=%s, pk_set=%s' % (action, pk_set)
+        )
     if (getattr(instance, "updatefromcrm", False)):
         return True
     if instance.contact_id and action.startswith('post_'):
-        try:
-            updatecrmuser(
-                instance.contact_id,
-                u'newsletters' + (u'_remove' if action == 'post_remove' else u''),
-                json.dumps(list(pk_set)) if pk_set else None,
-            )
-        except requests.exceptions.RequestException:
-            raise UpdateCrmEx(u"No se ha podido actualizar tu perfil, contactate con nosotros")
+        # post_add with empty pk_set means "unchanged", do not sync in such scenario
+        if action != 'post_add' or pk_set:
+            try:
+                updatecrmuser(
+                    instance.contact_id,
+                    (u'area_' if model is Category else u'') + u'newsletters'
+                    + (u'_remove' if action == 'post_remove' else u''),
+                    json.dumps(list(pk_set)) if pk_set else None,
+                )
+            except requests.exceptions.RequestException:
+                # TODO: write to error log, then this errors can be monitored someway
+                pass
 
 
 @receiver(post_save, sender=User, dispatch_uid="createUserProfile")

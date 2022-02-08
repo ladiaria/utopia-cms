@@ -217,6 +217,7 @@ def signup(request):
             user = signup_form.create_user()
             add_default_category_newsletters(user.subscriber)
             # TODO: check if request is needed
+            # TODO: handle smtp errors
             send_validation_email(
                 u'Verificá tu cuenta',
                 user,
@@ -377,8 +378,7 @@ def subscribe(request, planslug, category_slug=None):
                 if subscription_price.ga_category == 'D' else SubscriptionForm(post)
 
             if subscriber_form_v.is_valid(planslug) and subscription_form_v.is_valid():
-                subscription, created = Subscription.objects.get_or_create(
-                    email=oas.user.email if oauth2_state else post['email'])
+                subscription = Subscription.objects.create(email=oas.user.email if oauth2_state else post['email'])
                 sp = SubscriptionPrices.objects.get(subscription_type=post['subscription_type_prices'])
                 subscription.subscription_type_prices.add(sp)
                 if oauth2_state:
@@ -403,11 +403,16 @@ def subscribe(request, planslug, category_slug=None):
                             send_validation_email(
                                 u'Verificá tu cuenta de la diaria', user, 'notifications/account_signup.html',
                                 get_signup_validation_url)
-                        except SMTPRecipientsRefused:
+                        except Exception as smtp_exc:
+                            subscription.delete()
                             errors = subscriber_form_v._errors.setdefault("email", ErrorList())
                             errors.append(
-                                u'No se pudo enviar el email de verificación al '
-                                u'crear tu cuenta, ¿lo escribiste correctamente?')
+                                u'No se pudo enviar el email de verificación al crear tu cuenta, ' + (
+                                    u'¿lo escribiste correctamente?' if type(smtp_exc) is SMTPRecipientsRefused else
+                                    u'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
+                                    % reverse('account-confirm_email')
+                                )
+                            )
                             return 'subscribe.html', {
                                 'subscriber_form': subscriber_form_v, 'subscription_form': subscription_form_v}
                     subscription.subscriber = user
@@ -545,6 +550,7 @@ def password_reset(request, user_id=None, hash=None):
         reset_form = PasswordResetRequestForm(post)
         if reset_form.is_valid():
             if reset_form.user:
+                # TODO: handle smtp errors
                 send_validation_email(
                     u'Recuperación de contraseña',
                     reset_form.user,
@@ -562,6 +568,7 @@ def confirm_email(request):
     if request.method == 'POST':
         confirm_email_form = ConfirmEmailRequestForm(request.POST)
         if confirm_email_form.is_valid():
+            # TODO: handle smtp errors
             send_validation_email(
                 u'Verificá tu cuenta',
                 confirm_email_form.user,
@@ -631,8 +638,10 @@ def edit_profile(request, user=None):
                 if old_email != user.email:
                     user.is_active = False
                     user.save()
+                    # TODO: handle smtp errors
                     send_validation_email(
-                        u'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url)
+                        u'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url
+                    )
                     messages.success(
                         request, u'Perfil actualizado, revisá tu email para verificar el cambio de email.')
                     logout(request)
@@ -869,18 +878,37 @@ def update_user_from_crm(request):
                         mail_managers(msg, email)
                         return HttpResponseServerError()
                 if check_user and check_user != s.user:
-                    return HttpResponseBadRequest(
-                        'El correo ya existe en otro usuario de la web')
+                    return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
                 changeuseremail(s.user, email, newemail)
                 s.user.updatefromcrm = True
                 s.user.save()
             elif field == u'newsletters':
-                # in this case we clear the Subscriber's newsletters and then
-                # add all the ones that came in the value JSON list
-                s.updatefromcrm = True
-                s.newsletters.clear()
-                for pub_name in json.loads(value):
-                    s.newsletters.add(Publication.objects.get(name=pub_name))
+                # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add
+                # all the ones in the value JSON list that are missing.
+                s.updatefromcrm, pub_names = True, json.loads(value)
+                for pub in s.newsletters.filter(has_newsletter=True):
+                    if pub.name in pub_names:
+                        pub_names.remove(pub.name)
+                    else:
+                        s.newsletters.remove(pub)
+                for pub_name in pub_names:
+                    try:
+                        s.newsletters.add(Publication.objects.get(name=pub_name))
+                    except Publication.DoesNotExist:
+                        pass
+            elif field == u'area_newsletters':
+                # the same as above but for category newsletters
+                s.updatefromcrm, cat_names = True, json.loads(value)
+                for cat in s.category_newsletters.filter(has_newsletter=True):
+                    if cat.name in cat_names:
+                        cat_names.remove(cat.name)
+                    else:
+                        s.category_newsletters.remove(cat)
+                for category_name in cat_names:
+                    try:
+                        s.category_newsletters.add(Category.objects.get(name=category_name))
+                    except Category.DoesNotExist:
+                        pass
             else:
                 changesubscriberfield(s, field, value)
                 s.updatefromcrm = True
