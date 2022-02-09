@@ -1,7 +1,8 @@
 // Estilos de footers
 .footer-portada {
-    background: $primary-color;
+    background: $off-black;
     box-shadow: 0 0 7px rgba(0,0,0,0.65);
+    color: white;
 
     & > .container {
       padding:20px 0;
@@ -33,12 +34,13 @@
     }
 
     a {
-      color: $off-black;
+      color: white;
       text-decoration: none;
       display: inline-block;
 
       &:hover {
         text-decoration: none;
+        background: rgba($color: #ffffff, $alpha: 0.1);
       }
     }
 
@@ -61,7 +63,52 @@
     .navmenu-list  {
       margin:15px 0;
     }
-  }
+
+    .ld-main-menu {
+
+      &__title {
+          color: white;
+      }
+      &__item {
+          a {
+              color: white;
+
+              &:hover {
+                  background: rgba($color: #ffffff, $alpha: 0.1);
+              }
+          }
+          .num {
+              background: $primary-color;
+              color: $off-black;
+          }
+
+          a .icon  path{
+              fill: white;
+          }
+          .external g path {
+              fill: white;
+          }
+
+      }
+      &__divider::after {
+          background: white;
+      }
+    }
+    .header-logo {
+        svg .dofill {
+            fill: white;
+        }
+    }
+    .ut-btn-outline {
+        border-color: white;
+        color: white;
+
+        &:hover {
+            background-color: white;
+            color: $off-black;
+        }
+    }
+}
 
 // subscribe footer_popover
 #subscribe-footer {
