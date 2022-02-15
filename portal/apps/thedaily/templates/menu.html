@@ -11,7 +11,7 @@
       </li>
     {% endif %}
   {% endfor %}
-  {% if "no-menu" != MENU_PUBLICATIONS and MENU_PUBLICATIONS|length > 1 %}
+  {% if MENU_PUBLICATIONS %}
     <li>
       <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="emergentes-dropdown">
         <span class="inner">Emergentes
@@ -63,13 +63,9 @@
   {% endif %}
 {% endwith %}
 
-{% if "no-menu" != MENU_PUBLICATIONS and MENU_PUBLICATIONS|length > 1 %}
+{% if MENU_PUBLICATIONS %}
   <ul id="emergentes-dropdown" class="dropdown-content hide-on-small-and-down">
-    {% for pub in MENU_PUBLICATIONS %}
-      {% ifnotequal pub default_pub %}
-        <li><a href="{{ pub.get_absolute_url }}">{{ pub }}</a></li>
-      {% endifnotequal %}
-    {% endfor %}
+    {% for pub in MENU_PUBLICATIONS %}<li><a href="{{ pub.get_absolute_url }}">{{ pub }}</a></li>{% endfor %}
   </ul>
 {% endif %}
 

@@ -113,15 +113,11 @@
     {% endif %}
   </div>
   <div class="ld-main-menu__block">
-    {% if "no-menu" != MENU_PUBLICATIONS and MENU_PUBLICATIONS|length > 1 %}
+    {% if MENU_PUBLICATIONS %}
       <span class="ld-main-menu__title">Emergentes</span>
       <ul class="navmenu-list">
         {% for pub in MENU_PUBLICATIONS %}
-          {% ifnotequal pub default_pub %}
-            <li class="ld-main-menu__item">
-              <a href="{{ pub.get_absolute_url }}">{{ pub }}</a>
-            </li>
-          {% endifnotequal %}
+          <li class="ld-main-menu__item"><a href="{{ pub.get_absolute_url }}">{{ pub }}</a></li>
         {% endfor %}
       </ul>
     {% endif %}
@@ -141,7 +137,11 @@
         </li>
       {% endfor %}
       <li class="ld-main-menu__item ld-main-menu__divider"><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
-      {% block more_extra %}{% endblock %}
+      {% block more_extra %}
+        {% for pub in MENU_PUBLICATIONS_MORE_EXTRA %}
+          <li class="ld-main-menu__item"><a href="{{ pub.get_absolute_url }}">{{ pub }}</a></li>
+        {% endfor %}
+      {% endblock %}
     </ul>
   </div>
 

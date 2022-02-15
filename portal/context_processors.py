@@ -90,13 +90,18 @@ def publications(request):
 def main_menus(request):
     """
     Fills context variables to be shown or needed in the main menus.
-    Also fill another context variables using to the visualization of many ux "modules".
+    Also fill another context variables using to the visualization of many UX "modules".
     """
     result = {
         'MENU_CATEGORIES': Category.objects.filter(order__isnull=False),
         'CORE_ENABLE_PODCAST': getattr(settings, 'CORE_ENABLE_PODCAST', False),
         'MOBILE_NAV_EXTRA_TEMPLATE': getattr(settings, 'HOMEV3_MOBILE_NAV_EXTRA_TEMPLATE', None),
         'LOGIN_NO_REDIRECT_URLPATHS': ['/usuarios/sesion-cerrada/', '/usuarios/error/login/', '/admin/logout/'],
+        'MENU_PUBLICATIONS':
+            Publication.objects.filter(public=True, is_emergente=True).exclude(slug=settings.DEFAULT_PUB),
+        'MENU_PUBLICATIONS_MORE_EXTRA': Publication.objects.filter(
+            public=True, is_emergente=False
+        ).exclude(slug__in=getattr(settings, 'HOMEV3_EXCLUDE_MENU_PUBLICATIONS', (settings.DEFAULT_PUB, ))),
     }
 
     mobile_nav_search = getattr(settings, 'HOMEV3_MOBILE_NAV_SEARCH', 1)
@@ -110,15 +115,9 @@ def main_menus(request):
             result['MENU_LATEST_ARTICLE_LINKS_DROPDOWN'] = getattr(
                 settings, 'HOMEV3_LATEST_ARTICLE_LINKS_DROPDOWN', 'latest'
             )
-    try:
-        menu_publications = Publication.objects.filter(public=True).exclude(
-            slug__in=getattr(settings, 'HOMEV3_EXCLUDED_MENU_PUBLICATIONS', ()))
-    except Exception:
-        menu_publications = "no-menu"
 
     result.update(
         {
-            'MENU_PUBLICATIONS': menu_publications,
             'mobile_nav_ths': mobile_nav_ths,
             'mobile_nav_search': mobile_nav_search,
             'mobile_nav_detail_more': getattr(settings, 'HOMEV3_MOBILE_NAV_DETAIL_MORE', 1) or 0,
