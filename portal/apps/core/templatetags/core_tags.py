@@ -314,10 +314,13 @@ def section_name_in_publication_menu(publication, section):
 @register.simple_tag(takes_context=True)
 def publication_section(context, article, pub=None):
     """
-    Returns the anchor tag with the atricle.publication_section using the publication given by parameter or publication
-    context variable as publication argument (or default_pub if None).
+    Returns the anchor tag with the atricle.publication_section using the publication given by parameter or:
+    publication_obj or publication context variables as the publication argument (or default_pub if both are None).
+    TODO: why default_pub as last option instead of the article's "main_pub"?
     """
-    section = article.publication_section(pub or context.get('publication') or context.get('default_pub'))
+    section = article.publication_section(
+        pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
+    )
     return (u'<a href="%s">%s</a>' % (section.get_absolute_url(), section)) if section else u''
 
 

@@ -103,14 +103,17 @@ class RenderPublicationRowNode(Node):
                     # TODO: next 2 entries should be checked because template tags rendered after this template tag can
                     #       be using these new values instead of the "unchanged" ones.
                     #       ('publication' was changed to 'publication_obj' because it was breaking render_section)
+                    #       A simple solution can be update the flatten version only.
                     'edition': edition, 'is_portada': True,  # both should be set
                     # force a blank first node because top_index should be > 0
                     'publication_destacados': [None] + edition.top_articles[:4],
                 }
             )
-            return loader.render_to_string(
+            result = loader.render_to_string(
                 getattr(settings, 'HOMEV3_PUBLICATION_ROW_TEMPLATE', 'publication_row.html'), context.flatten()
             )
+            context['publication_obj'] = None
+            return result
         else:
             return u''
 
