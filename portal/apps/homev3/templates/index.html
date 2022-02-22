@@ -42,6 +42,7 @@
 {% block content %}
 
   {% render_cover %}
+
   {% if fcategory %}{% include 'category_grid.html' %}{% endif %}
   {% for section in featured_sections.0 %}
     {% render_section section %}

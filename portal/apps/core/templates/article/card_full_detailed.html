@@ -41,7 +41,9 @@
               {% endfor %}
             </div>
           {% endif %}
-          {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
+          {% if not hide_date_published %}
+            {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
+          {% endif %}
           {% with a=article %}
             {% include 'article/article_card_read_later.html' %}
           {% endwith %}
