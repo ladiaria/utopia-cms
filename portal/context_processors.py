@@ -94,7 +94,6 @@ def main_menus(request):
     """
     result = {
         'MENU_CATEGORIES': Category.objects.filter(order__isnull=False),
-        'CORE_ENABLE_PODCAST': getattr(settings, 'CORE_ENABLE_PODCAST', False),
         'MOBILE_NAV_EXTRA_TEMPLATE': getattr(settings, 'HOMEV3_MOBILE_NAV_EXTRA_TEMPLATE', None),
         'LOGIN_NO_REDIRECT_URLPATHS': ['/usuarios/sesion-cerrada/', '/usuarios/error/login/', '/admin/logout/'],
         'MENU_PUBLICATIONS':
