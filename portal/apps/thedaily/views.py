@@ -36,6 +36,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache, cache_control
+from django.template import TemplateDoesNotExist
 
 from actstream import actions
 from actstream.models import following
@@ -1340,9 +1341,25 @@ def disable_profile_property(request, property_id, hashed_id):
 
 @never_cache
 @staff_member_required
-@to_response
 def notification_preview(request, template, days=False):
-    return 'notifications/%s.html' % template, {'preview': True, 'days': days, 'seller_fullname': u'Seller Fullname'}
+    """
+    TODO: template override by app is a "work in progress".
+          When finished, this should be change and no extra setting should be required.
+    """
+    result = HttpResponseBadRequest()
+    try:
+        dir_prefix = getattr(settings, 'THEDAILY_NOTIFICATIONS_TEMPLATE_PREFIX', '')
+        ctx = {'logo_url': settings.HOMEV3_SECONDARY_LOGO, 'days': days, 'seller_fullname': u'Seller Fullname'}
+        result = render(request, dir_prefix + ('notifications/%s.html' % template), ctx)
+    except TemplateDoesNotExist:
+        if dir_prefix:
+            try:
+                result = render(request, 'notifications/%s.html' % template, ctx)
+            except TemplateDoesNotExist:
+                raise Http404
+        else:
+            raise Http404
+    return result
 
 
 @never_cache

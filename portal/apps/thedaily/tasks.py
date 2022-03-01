@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from os.path import basename
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
