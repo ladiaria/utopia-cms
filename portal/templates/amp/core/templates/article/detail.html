@@ -2,13 +2,13 @@
 {% load bleach_tags static core_tags ldml tagging_tags crispy_forms_tags videologue_tags %}
 
 {% autoescape on %}
-{% block page_title %}
-  {% if article.keywords %}{{ article.keywords }} - {% else %}{{ article.headline|remove_markup }} | {% endif %}{{ site.name }} | {{ country_name }}
-{% endblock %}
+  {% block page_title %}
+    {% if article.keywords %}{{ article.keywords }} - {% else %}{{ article.headline|remove_markup }} | {% endif %}{{ site.name }} | {{ country_name }}
+  {% endblock %}
 
-{% block page_description %}
-  {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
-{% endblock %}
+  {% block page_description %}
+    {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
+  {% endblock %}
 {% endautoescape %}
 
 {% block robots %}{% ifequal section.slug "humor" %}noindex{% else %}{{ block.super }}{% endifequal %}{% endblock %}
@@ -52,9 +52,9 @@
       {% elif header_display == 'BG' %}
         <div class="photo align-center">
           <figure class="principal">
-            <amp-img id="main-photo" layout="responsive" media="(min-width: 320px) and (max-width: 700px)"  height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" class="materialboxed responsive-img{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" src="{{ article.photo.get_700w_url }}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"></amp-img>
-            <amp-img id="main-photo" layout="responsive" media="(min-width: 701px) and (max-width: 900px)"  height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" class="materialboxed responsive-img{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" src="{{ article.photo.get_900w_url }}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"></amp-img>
-            <amp-img id="main-photo" layout="responsive" media="(min-width: 901px)"  height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" class="materialboxed responsive-img{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" src="{{ article.photo.get_1200w_url }}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"></amp-img>
+            <amp-img id="main-photo" layout="responsive" media="(min-width: 320px) and (max-width: 700px)" height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" class="materialboxed responsive-img{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" src="{{ article.photo.get_700w_url }}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"></amp-img>
+            <amp-img id="main-photo" layout="responsive" media="(min-width: 701px) and (max-width: 900px)" height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" class="materialboxed responsive-img{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" src="{{ article.photo.get_900w_url }}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"></amp-img>
+            <amp-img id="main-photo" layout="responsive" media="(min-width: 901px)" height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" class="materialboxed responsive-img{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" src="{{ article.photo.get_1200w_url }}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"></amp-img>
           </figure>
           <figcaption class="article-caption ld-caption">
             <div class="container">
@@ -69,6 +69,7 @@
     {% endif %}
 
     <div class="article-header">
+
       {% ifequal section.slug 'humor' %}
         <div class="align-center">
           <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
@@ -85,7 +86,8 @@
           {% for author in article.get_authors %}
             <span class="small">
               <a href="{{ author.get_absolute_url }}" title="Ver más artículos de {{ author.name }}.">
-                {{ author.name }}</a>
+                {{ author.name }}
+              </a>
             </span>{% if not forloop.last %}, {% endif %}
           {% endfor %}
           {% if section %}<span class="small">en</span>{% endif %}
@@ -105,10 +107,25 @@
             {% endif %}
           </span>
         {% endif %}
-
       </div>
-      <div class="reading-time"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/></svg> <span class="eta">{{ article.reading_time }}</span> de lectura</div>
-      <div amp-access="authenticated AND NOT followed" amp-access-hide>
+
+      <div class="reading-time" amp-access="article_allowed OR NOT article_restricted" amp-access-hide>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+          <path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/>
+        </svg>
+        <span class="eta">{{ article.reading_time }}</span>
+        de lectura
+      </div>
+      {% if not article.is_public %}
+        <div class="premium" amp-access="subscriber AND article_restricted" amp-access-hide>
+          <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12.1296 7.33325H4.87037C4.29763 7.33325 3.83333 7.93021 3.83333 8.66659V13.3333C3.83333 14.0696 4.29763 14.6666 4.87037 14.6666H12.1296C12.7024 14.6666 13.1667 14.0696 13.1667 13.3333V8.66659C13.1667 7.93021 12.7024 7.33325 12.1296 7.33325Z" fill="#262626" stroke="#262626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M5.16667 7.33344V4.66677C5.16584 3.84013 5.47219 3.04268 6.02625 2.42921C6.58031 1.81575 7.34255 1.43004 8.165 1.34696C8.98745 1.26389 9.81143 1.48937 10.477 1.97964C11.1425 2.46992 11.6022 3.19 11.7667 4.0001" stroke="#262626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          Contenido exclusivo con tu suscripción de pago
+        </div>
+      {% endif %}
+      <div amp-access="authenticated AND NOT followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         <div class="read-later">
           <button id="rl-toggle0" data-vars-event-label="add" class="read-later__btn read-later__add" [class]="hideClass" on="tap:rl-toggle0.hide,rl-info0.hide,rl-toggle1.show,rl-info1.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</button>
           <div id="rl-info0" class="info read-later__add__info" hidden [class]="secondaryText">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
@@ -116,7 +133,7 @@
           <div id="rl-info1" class="info read-later__saved__info first" hidden [class]="textClass">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
         </div>
       </div>
-      <div amp-access="NOT access AND authenticated AND followed" amp-access-hide>
+      <div amp-access="NOT access AND authenticated AND followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         <div class="read-later">
           <button id="rl-wall-0" data-vars-event-label="remove" class="read-later__btn read-later__saved" [class]="removeClass" on="tap:rl-wall-0.hide,rl-wall-3.hide,rl-wall-1.show,rl-wall-2.show"> Quitar de Leer después</button>
           <button id="rl-wall-2" data-vars-event-label="add" class="read-later__btn read-later__add" hidden [class]="hideClass" on="tap:rl-wall-2.hide,rl-wall-1.hide,rl-wall-0.show,rl-wall-3.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</button>
@@ -124,6 +141,7 @@
           <div id="rl-wall-3" class="info read-later__saved__info first" hidden [class]="textClass">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
         </div>
       </div>
+
     </div>
 
     {% if article.has_deck or article.has_lead %}
@@ -136,44 +154,48 @@
     {% endif %}
 
     {% if not article.public %}
-      <div amp-access="authenticated AND NOT subscriber AND access" amp-access-hide>
+      <div amp-access="authenticated AND NOT article_allowed AND article_restricted" amp-access-hide>
+        {% include 'amp/core/templates/article/pw_auth_restricted.html' %}
+      </div>
+      <div amp-access="NOT authenticated AND NOT article_allowed AND article_restricted" amp-access-hide>
+        {% include 'amp/core/templates/article/pw_anon_restricted.html' %}
+      </div>
+      <div amp-access="authenticated AND NOT subscriber AND access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         {% include 'amp/core/templates/article/pw_auth_with_credits.html' %}
       </div>
-
-      <div amp-access="NOT authenticated AND access" amp-access-hide>
+      <div amp-access="NOT authenticated AND access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         {% include 'amp/core/templates/article/pw_anon_with_credits.html' %}
       </div>
     {% endif %}
 
-    {% if article.audio %}
-      {% include 'core/templates/article/audio.html' %}
-    {% endif %}
+    {% if article.audio %}{% include 'core/templates/article/audio.html' %}{% endif %}{# TODO: not restricted only #}
 
     {% if not article.public %}
-      <div amp-access="authenticated AND NOT subscriber AND NOT access" amp-access-hide>
+      <div amp-access="authenticated AND NOT subscriber AND NOT access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         {% include 'amp/core/templates/article/pw_auth_wo_credits.html' %}
       </div>
-
-      <div amp-access="NOT authenticated AND NOT access" amp-access-hide>
+      <div amp-access="NOT authenticated AND NOT access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         {% include 'amp/core/templates/article/pw_anon_wo_credits.html' %}
       </div>
     {% endif %}
 
-    <div amp-access="access" amp-access-hide>
+    <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       {% include 'amp/core/templates/article/detail_content.html' %}
     </div>
 
-    <div amp-access="access" amp-access-hide>
+    <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       <div class="ld-fin ld-block"></div>
     </div>
-    <div amp-access="access AND NOT authenticated" amp-access-hide>
+
+    <div amp-access="access AND NOT authenticated AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       {% if publication in publication_newsletters %}
         {% include 'amp/core/templates/article/subscribe_box.html' %}
       {% else %}
         {% category_nl_subscribe_box %}
       {% endif %}
     </div>
-    <div amp-access="access AND authenticated" amp-access-hide>
+
+    <div amp-access="access AND authenticated AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       {% if publication in publication_newsletters %}
         {% include 'amp/core/templates/article/subscribe_box_authenticated.html' %}
       {% elif category.has_newsletter %}
@@ -181,7 +203,7 @@
       {% endif %}
     </div>
 
-    <div amp-access="access AND authenticated AND followed" amp-access-hide>
+    <div amp-access="access AND authenticated AND followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       <div class="read-later u-mb-60">
         <div id="rlt1" class="info read-later__saved__info" [class]="removeText">
           Este artículo está guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a><br>
@@ -195,14 +217,15 @@
       </div>
     </div>
 
-    <div class="fav u-mb-60" amp-access-hide amp-access="access AND authenticated AND favourited">
+    <div class="fav u-mb-60" amp-access-hide amp-access="access AND authenticated AND favourited AND (article_allowed OR NOT article_restricted)">
       <button id="rltf1" data-vars-event-label="favToggle" class="fav__btn fav__saved" [class]="hideClass" on="tap:rltf1.hide,rltf_favourited.hide,rltf2.show,rltf3.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-874 -9241)"><g transform="translate(874 9241)"><path d="M0,0H24V24H0Z" fill="none" /><path d="M0,0H24V24H0Z" fill="none"/></g><g transform="translate(874.557 9242.428)"  fill="none"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</button>
       <div id="rltf_favourited" class="info" [class]="textSaved">Guardaste este artículo como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
       <div id="rltf4" class="info" hidden [class]="secondaryText">El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
       <button id="rltf2" data-vars-event-label="favToggle" class="fav__btn fav__add" hidden [class]="showClass" on="tap:rltf2.hide,rltf3.hide,rltf1.show,rltf4.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-1433 -9241)"><path d="M0,0H24V24H0Z" transform="translate(1433 9241)" fill="none"/><path d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(1433.556 9242.438)" fill="#262626"/></g></svg> Guardar como favorito</button>
       <div id="rltf3" class="info" hidden [class]="textFavClass">El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
     </div>
-    <div class="fav u-mb-60" amp-access-hide amp-access="access AND authenticated AND NOT favourited">
+
+    <div class="fav u-mb-60" amp-access-hide amp-access="access AND authenticated AND NOT favourited AND (article_allowed OR NOT article_restricted)">
       <button id="rltf5" data-vars-event-label="favToggle" class="fav__btn fav__saved" hidden [class]="hideClass" on="tap:rltf5.hide,rltf8.hide,rltf7.show,rltf6.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-874 -9241)"><g transform="translate(874 9241)"><path d="M0,0H24V24H0Z" fill="none" /><path d="M0,0H24V24H0Z" fill="none"/></g><g transform="translate(874.557 9242.428)"  fill="none"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</button>
       <button id="rltf7" data-vars-event-label="favToggle" class="fav__btn fav__add" [class]="showClass" on="tap:rltf6.hide,rltf7.hide,rltf5.show,rltf8.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-1433 -9241)"><path d="M0,0H24V24H0Z" transform="translate(1433 9241)" fill="none"/><path d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(1433.556 9242.438)" fill="#262626"/></g></svg> Guardar como favorito</button>
       <div id="rltf6" class="info" hidden [class]="textClass">El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
@@ -210,7 +233,7 @@
     </div>
 
     {% if tag_list %}
-      <div class="article-tags align-center" amp-access="access" amp-access-hide>
+      <div class="article-tags align-center" amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         <span class="title">Temas en este artículo</span>
         {% for tag in tag_list %}
           <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
@@ -233,7 +256,7 @@
     {# Talk comments #}
 
     {% if article.allow_comments %}
-      <div class="container"  amp-access="access" amp-access-hide>
+      <div class="container" amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         <div class="talk-login align-center">
         <span class="title">Comentar este artículo</span>
           <a href="{{ request.path }}#comentarios" class="ld-btn--sm ld-btn-subscribe-to-comment">
@@ -243,7 +266,7 @@
       </div>
     {% endif %}
 
-    <div amp-access="access" amp-access-hide>
+    <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       <div class="center ld-share-widget">
         <span class="ld-share-widget__title">Compartir este artículo</span>
         <ul class="inline share ld-share-widget__list">
@@ -296,7 +319,7 @@
   </article>
 
   {% if article.show_related_articles %}
-    <div amp-access="access" amp-access-hide>
+    <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       {% render_related article %}
     </div>
   {% endif %}

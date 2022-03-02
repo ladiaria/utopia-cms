@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags %}
+{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags %}
 
 {% block page_title %}{{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endblock %}
 
@@ -7,9 +7,7 @@
   {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
 {% endblock %}
 
-{% block page_keywords %}
-  {{ article.tags }}
-{% endblock %}
+{% block page_keywords %}{{ article.tags }}{% endblock %}
 
 {% block robots %}{% if section.is_satirical %}noindex{% else %}{{ block.super }}{% endif %}{% endblock %}
 
@@ -26,9 +24,7 @@
   <!-- End AMP -->
 {% endblock %}
 
-{% block json_ld %}
-  {% include 'article/detail_json_ld.html' %}
-{% endblock %}
+{% block json_ld %}{% include 'article/detail_json_ld.html' %}{% endblock %}
 
 {% block header_scripts %}
   <script type="text/javascript">
@@ -62,145 +58,177 @@
   {% elif article.type == 'EF' %}
     elfaro
   {% endif %}
-  {{ header_display }}
-  article-section-{{ section.slug }}
+  {{ header_display }} article-section-{{ section.slug }}
   {% if not article.is_published %}draft{% endif %}
 {% endblock %}
 
 {% block main_open %}{% endblock %}
 
-{% block page_header %}
-  <div id="bn-module"></div>
-  {% render_live_embed_event_notification %}
-{% endblock %}
+{% block page_header %}<div id="bn-module"></div>{% render_live_embed_event_notification %}{% endblock %}
 
 {% block content %}
-<main>
-  <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
-    {% if article.photo %}
-    {% if header_display == 'FW' %}
-    <div class="fullwidth-container">
-    <div class="main-photo">
-      <div>
-        <figure class="js-figure principal {{ card_size }}"
-                alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                data-src="{{ article.photo.get_1200w_url }}">
-          <picture>
-            <!--[if IE 9]><video style="display: none;"><![endif]-->
-            <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-            <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
-            <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
-            <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
-            <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
-            <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
-            <!--[if IE 9]></video><![endif]-->
-            <img
-            class="ld-article__main-photo materialboxed responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
-            data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-            alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-            loading="lazy">
-          </picture>
-          <figcaption class="caption">
-            {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>{% endif %}
-            {% if article.photo.extended.photographer %}
-                <p>{{ article.photo.extended.type_verbose }}:
-                {{ article.photo.extended.photographer.name }}</p>
-            {% endif %}
-          </figcaption>
-        </figure>
-      </div>
-    </div>
-    {% else %}
-      <div class="container-photo photo{% if card_size %} {{ card_size }}{% else %} BG{% endif %}
-      {% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}">
-        <figure class="principal">
-          <picture class="materialboxed">
-            <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-            <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
-            <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
-            <img class="ld-article__main-photo responsive-img {% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}"
-                 data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                 alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                 width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}
-                 >
-          </picture>
-          <figcaption class="article-caption container ld-caption">
-            <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
-            {% if article.photo.extended.photographer %}
-              <p>{{ article.photo.extended.type_verbose }}:
-              {{ article.photo.extended.photographer.name }}</p>
-            {% endif %}
-          </figcaption>
-        </figure>
-      </div>
-    {% endif %}
-    {% endif %}
-    <div class="article-header">
-      {% if section.is_satirical %}
-        <div class="align-center">
-          <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
-        </div>
-      {% endif %}
-      <h1 class="article-title after_foto">{{ article.headline|ldmarkup:article.id|bleach }}</h1>
+  <main>
+    <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
 
-      {% if article.date_published %}
-        <div class="article-date-author">
-          Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
-          {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
-            {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
-              <span class="ld-info-tooltip time">
-                <span class="ld-info-tooltip-content">
-                  {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+      {% if article.photo %}
+        {% if header_display == 'FW' %}
+          <div>{# closed in line 230 #}
+            <div class="fullwidth-container">
+              <div class="main-photo">
+                <div>
+                  <figure class="js-figure principal {{ card_size }}"
+                          alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                          data-src="{{ article.photo.get_1200w_url }}">
+                    <picture>
+                      <!--[if IE 9]><video style="display: none;"><![endif]-->
+                      <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                      <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+                      <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
+                      <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+                      <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+                      <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+                      <!--[if IE 9]></video><![endif]-->
+                      <img class="ld-article__main-photo materialboxed responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
+                           data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                           alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                           loading="lazy">
+                    </picture>
+                    <figcaption class="caption">
+                      {% if article.photo.caption %}
+                        <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
+                      {% endif %}
+                      {% if article.photo.extended.photographer %}
+                        <p>
+                          {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
+                        </p>
+                      {% endif %}
+                    </figcaption>
+                  </figure>
+                </div>
+              </div>
+            </div>
+          {# missing close div here is closed correctly in line 230 #}
+        {% else %}
+          <div class="container-photo photo{% if card_size %} {{ card_size }}{% else %} BG{% endif %}
+                     {% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}">
+            <figure class="principal">
+              <picture class="materialboxed">
+                <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
+                <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
+                <img class="ld-article__main-photo responsive-img {% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}"
+                     data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                     alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                     width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}>
+              </picture>
+              <figcaption class="article-caption container ld-caption">
+                <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
+                {% if article.photo.extended.photographer %}
+                  <p>{{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}</p>
+                {% endif %}
+              </figcaption>
+            </figure>
+          </div>
+        {% endif %}
+      {% endif %}
+
+      <div class="article-header">
+        {% if section.is_satirical %}
+          <div class="align-center">
+            <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
+          </div>
+        {% endif %}
+        <h1 class="article-title after_foto">{{ article.headline|ldmarkup:article.id|bleach }}</h1>
+        {% if article.date_published %}
+          <div class="article-date-author">
+            Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
+            {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
+              {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
+                <span class="ld-info-tooltip time">
+                  <span class="ld-info-tooltip-content">
+                    {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+                  </span>
                 </span>
-              </span>
+              {% endif %}
             {% endif %}
+          </div>
+        {% endif %}
+        <div class="article-date-author">
+          {% if article.has_byline %}
+            Escribe
+            {% for author in article.get_authors %}
+              <span class="small"><a href="{{ author.get_absolute_url }}">{{ author.name }}</a></span>
+              {% if not forloop.last %}, {% endif %}
+            {% endfor %}
+            {% if section %} <span class="small">en </span>{% endif %}
+          {% endif %}
+          {% if section %}
+            <span class="small">
+              {% if 'elecciones' in article.get_categories_slugs %}
+                {% with special_sections='apuntes-de-campana datos-elecciones-2019' %}
+                  {% if section.slug in special_sections.split %}
+                    <a href="{{ section.get_absolute_url }}">{{ section }}</a>
+                  {% else %}
+                    <a href="{% url 'section_detail' section_slug='elecciones-2019' %}">{{ section.category }}</a>
+                  {% endif %}
+                {% endwith %}
+              {% else %}
+                <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
+              {% endif %}
+            </span>
           {% endif %}
         </div>
-      {% endif %}
-      <div class="article-date-author">
-        {% if article.has_byline %}
-          Escribe
-          {% for author in article.get_authors %}
-            <span class="small"><a href="{{ author.get_absolute_url }}">
-              {{ author.name }}</a></span>{% if not forloop.last %}, {% endif %}
-          {% endfor %}
-          {% if section %} <span class="small">en </span>{% endif %}
+        {% if not article.is_restricted or user|has_restricted_access:article %}
+          <div class="reading-time">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+              <path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/>
+            </svg> <span class="eta">{{ article.reading_time }}</span> de lectura
+          </div>
         {% endif %}
-        {% if section %}
-          <span class="small">
-            {% if 'elecciones' in article.get_categories_slugs %}
-              {% with special_sections='apuntes-de-campana datos-elecciones-2019' %}
-                {% if section.slug in special_sections.split %}
-                  <a href="{{ section.get_absolute_url }}">{{ section }}</a>
-                {% else %}
-                  <a href="{% url 'section_detail' section_slug='elecciones-2019' %}">{{ section.category }}</a>
-                {% endif %}
-              {% endwith %}
-            {% else %}
-              <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
-            {% endif %}
-          </span>
+        {% if article.is_restricted and user|has_restricted_access:article %}
+          <div class="premium">
+            <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.1296 7.33325H4.87037C4.29763 7.33325 3.83333 7.93021 3.83333 8.66659V13.3333C3.83333 14.0696 4.29763 14.6666 4.87037 14.6666H12.1296C12.7024 14.6666 13.1667 14.0696 13.1667 13.3333V8.66659C13.1667 7.93021 12.7024 7.33325 12.1296 7.33325Z" fill="#262626" stroke="#262626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M5.16667 7.33344V4.66677C5.16584 3.84013 5.47219 3.04268 6.02625 2.42921C6.58031 1.81575 7.34255 1.43004 8.165 1.34696C8.98745 1.26389 9.81143 1.48937 10.477 1.97964C11.1425 2.46992 11.6022 3.19 11.7667 4.0001" stroke="#262626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Contenido exclusivo con tu suscripción de pago
+          </div>
+        {% endif %}
+        {% if not article.is_restricted or user|has_restricted_access:article %}
+          {% if user.is_authenticated and not followed %}
+            <div class="read-later top">
+              <a class="read-later__btn read-later__add">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672">
+                  <path d="M0,0H17.672V17.672H0Z" fill="none"/>
+                  <path class="change-fill" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/>
+                </svg> Leer después
+              </a>
+              <div class="info read-later__add__info hide">
+                El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a>
+              </div>
+              <a class="read-later__btn read-later__saved first hide">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+                  <path d="M0,0H18V18H0Z" fill="none"/>
+                  <path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/>
+                </svg> Guardado
+              </a>
+              <div class="info read-later__saved__info first hide">
+                El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a>
+              </div>
+            </div>
+          {% endif %}
+          {% if user.is_authenticated and request.signupwall and followed %}
+            <div class="read-later top">
+              <a class="read-later__btn read-later__saved">Quitar de leer después</a>
+              <div class="info read-later__add__info first hide">
+                El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a>
+              </div>
+            </div>
+          {% endif %}
         {% endif %}
       </div>
-      <div class="reading-time"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/></svg> <span class="eta">{{ article.reading_time }}</span> de lectura</div>
-      {% if user.is_authenticated and not followed %}
-        <div class="read-later top">
-          <a class="read-later__btn read-later__add"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path class="change-fill" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</a>
-          <div class="info read-later__add__info hide">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-          <a class="read-later__btn read-later__saved first hide"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</a>
-          <div class="info read-later__saved__info first hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-        </div>
-      {% endif %}
-      {% if user.is_authenticated and request.signupwall and followed %}
-        <div class="read-later top">
-          <a class="read-later__btn read-later__saved">Quitar de leer después</a>
-          <div class="info read-later__add__info first hide">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-        </div>
-      {% endif %}
-    </div>
-    {% if header_display == 'FW' %}
-    </div>
-    {% endif %}
+      {% if article.photo and header_display == 'FW' %}</div>{# opened in line 75 #}{% endif %}
+
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
           <h2 class="article-deck article__deck">{{ article.deck|ldmarkup:article.id|bleach }}</h2>
@@ -210,146 +238,88 @@
         {% endif %}
       {% endif %}
 
-    {% if article.audio %}
-      {% include 'article/audio.html' %}
-    {% endif %}
+      {% if not article.is_restricted or user|has_restricted_access:article %}{# begin restricted content #}
 
-    {# signupwall #}
+        {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-    {% if not user.is_authenticated %}
+        {# signupwall #}
 
-      {% if not request.signupwall %}
-        {# Soft wall: Registro|Suscripción #}
+        {% if not user.is_authenticated %}
 
-        {% if not article.public %}
-          <div class="ld-snackbar ld-snackbar--active js-ld-snackbar softwall">
-            <div class="ld-snackbar__title">
-              Ingresá o suscribite
-              <button class="js-close-ld-snackbar ld-snackbar__close ld-snackbar__close-top" type="button" aria-pressed="false" aria-label="Cerrar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path fill="#fff" d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/></svg>
-              </button>
-            </div>
-            <div class="ld-snackbar__body ld-snackbar__body-sm">
-              <p class="desc">¿Ya tenés suscripción?</p>
-              <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
-              <p class="desc">No tenés suscripción?<br>
-              Accedé a 10 artículos gratis por mes con la suscripción gratuita.</p>
-              <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">
-                Suscribite gratis
-              </a>
-            </div>
-            <div class="ld-snackbar__body ld-snackbar__body-lg">
-              <div class="container">
-                <div class="row">
-                  <div class="ld-snackbar--option">
-                    <div class="ld-snackbar__text ld-snackbar__block">¿Ya tenés suscripción?</div>
-                    <div class="ld-snackbar__block">
-                      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
-                    </div>
-                  </div>
-                  <div class="ld-snackbar--option">
-                    <div class="ld-snackbar__text ld-snackbar__block">
-                      ¿No tenés suscripción?<br>
-                      Accedé a 10 artículos gratis por mes con la suscripción gratuita.
-                    </div>
-                    <div class="ld-snackbar__block">
-                      <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">Suscribite gratis</a>
+          {% if not request.signupwall %}
+            {# Soft wall: Registro|Suscripción #}
+            {% if not article.public %}
+              <div class="ld-snackbar ld-snackbar--active js-ld-snackbar softwall">
+                <div class="ld-snackbar__title">
+                  Ingresá o suscribite
+                  <button class="js-close-ld-snackbar ld-snackbar__close ld-snackbar__close-top" type="button" aria-pressed="false" aria-label="Cerrar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path fill="#fff" d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/></svg>
+                  </button>
+                </div>
+                <div class="ld-snackbar__body ld-snackbar__body-sm">
+                  <p class="desc">¿Ya tenés suscripción?</p>
+                  <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
+                  <p class="desc">No tenés suscripción?<br>
+                  Accedé a 10 artículos gratis por mes con la suscripción gratuita.</p>
+                  <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">
+                    Suscribite gratis
+                  </a>
+                </div>
+                <div class="ld-snackbar__body ld-snackbar__body-lg">
+                  <div class="container">
+                    <div class="row">
+                      <div class="ld-snackbar--option">
+                        <div class="ld-snackbar__text ld-snackbar__block">¿Ya tenés suscripción?</div>
+                        <div class="ld-snackbar__block">
+                          <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
+                        </div>
+                      </div>
+                      <div class="ld-snackbar--option">
+                        <div class="ld-snackbar__text ld-snackbar__block">
+                          ¿No tenés suscripción?<br>
+                          Accedé a 10 artículos gratis por mes con la suscripción gratuita.
+                        </div>
+                        <div class="ld-snackbar__block">
+                          <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">Suscribite gratis</a>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        {% endif %}
-      {% else %} {# signupwall raised #}
-        <!-- Hard wall -->
-        {# Hard wall -> Registro|Suscripción #}
-        <div class="article-body article-body--faded">
-          {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
-        </div>
-
-        <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
-          <div class="ld-snackbar__title">Para seguir leyendo ingresá o suscribite</div>
-          <div class="ld-snackbar__body ld-snackbar__body-sm">
-            <p class="desc">¿Ya tenés suscripción?</p>
-            <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
-            <p class="desc">¿No tenés suscripción?<br>
-            Accedé a 10 artículos gratis por mes con la suscripción gratuita.</p>
-            <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">Suscribite gratis</a>
-          </div>
-          <div class="ld-snackbar__body ld-snackbar__body-lg">
-              <div class="container">
-                <div class="row">
-                  <div class="ld-snackbar--option">
-                      <div class="ld-snackbar__text ld-snackbar__block">
-                        ¿Ya tenés suscripción?
-                      </div>
-                      <div class="ld-snackbar__block">
-                        <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
-                      </div>
-                  </div>
-                  <div class="ld-snackbar--option">
-                    <div class="ld-snackbar__text ld-snackbar__block">
-                      ¿No tenés suscripción?<br>
-                      Accedé a 10 artículos gratis por mes con la suscripción gratuita.
-                    </div>
-                    <div class="ld-snackbar__block">
-                      <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">Suscribite gratis</a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-        </div>
-      {% endif %}
-
-    {# Usuario Registrado #}
-    {% else %}
-
-      <!-- user is authenticated -->
-      {# Usuario Registrado, No-Suscriptor #}
-      {% if not is_subscriber %}
-      <!-- not is_subscriber -->
-        {% if not request.signupwall %}
-          {# Soft wall: Suscripción #}
-
-          {% if not article.public %}
-            <div class="ld-snackbar ld-snackbar--active ld-snackbar--narrow js-ld-snackbar softwall">
-              <div class="ld-snackbar__title">
-                {# show credits popup only if signupwall is enabled #}
-                {% if signupwall_enabled %}
-                  {% if request.credits %}
-                    {% if request.credits > 1 %}
-                      Te quedan {{ request.credits }} artículos gratuitos
-                    {% else %}
-                      Te queda {{ request.credits }} artículo gratuito
-                    {% endif %}
-                  {% else %}
-                    Este es tu último artículo gratuito
-                  {% endif %}
-                {% endif %}
-                <button class="js-close-ld-snackbar ld-snackbar__close ld-snackbar__close-top" type="button" aria-pressed="false" aria-label="Cerrar">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path fill="#fff" d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/></svg>
-                </button>
-              </div>
+            {% endif %}
+          {% else %}
+            {# signupwall raised #}
+            <!-- Hard wall -->
+            {# Hard wall -> Registro|Suscripción #}
+            <div class="article-body article-body--faded">{{ article.body|ldmarkup:article.id|truncatehtml:100 }}</div>
+            <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
+              <div class="ld-snackbar__title">Para seguir leyendo ingresá o suscribite</div>
               <div class="ld-snackbar__body ld-snackbar__body-sm">
-                <p class="desc">Pasate a suscripción ilimitada para lectura sin límites y más beneficios.</p>
-                {# TODO: conditional subscribe url if category_signup #}
-                <a href="{% url 'subscribe' planslug='DDIGM' %}"
-                   class="ut-btn ut-btn-l">
-                  Pasate a ilimitada
-                </a>
+                <p class="desc">¿Ya tenés suscripción?</p>
+                <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
+                <p class="desc">¿No tenés suscripción?<br>
+                Accedé a 10 artículos gratis por mes con la suscripción gratuita.</p>
+                <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">Suscribite gratis</a>
               </div>
               <div class="ld-snackbar__body ld-snackbar__body-lg">
                 <div class="container">
                   <div class="row">
                     <div class="ld-snackbar--option">
                       <div class="ld-snackbar__text ld-snackbar__block">
-                        Pasate a suscripción ilimitada para lectura sin límites y más beneficios.
+                        ¿Ya tenés suscripción?
                       </div>
                       <div class="ld-snackbar__block">
-                        {# TODO: conditional subscribe url if category_signup #}
-                        <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Pasate a ilimitada</a>
+                        <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-l">Ingresá</a>
+                      </div>
+                    </div>
+                    <div class="ld-snackbar--option">
+                      <div class="ld-snackbar__text ld-snackbar__block">
+                        ¿No tenés suscripción?<br>
+                        Accedé a 10 artículos gratis por mes con la suscripción gratuita.
+                      </div>
+                      <div class="ld-snackbar__block">
+                        <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}" class="ut-btn ut-btn-outline ut-btn-l">Suscribite gratis</a>
                       </div>
                     </div>
                   </div>
@@ -357,401 +327,483 @@
               </div>
             </div>
           {% endif %}
-        {% else %} {# signupwall raised #}
-          {# Hard wall -> Suscripción #}
-          <!-- Hard wall / suscripción-->
-          <div class="article-body article-body--faded">
-            {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
-          </div>
 
-          <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static ld-snackbar--narrow">
-            <div class="ld-snackbar__title">Llegaste al límite de artículos gratuitos</div>
-            <div class="ld-snackbar__body ld-snackbar__body-sm">
-              <p class="desc">Pasate a suscripción ilimitada para lectura sin límites y más beneficios.</p>
-              {# TODO: conditional subscribe url if category_signup #}
-              <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
-                Pasate a ilimitada
+        {% else %}
+
+          <!-- user is authenticated -->
+          {% if is_subscriber %}
+            <!-- user is subscriber -->
+          {% else %}
+            <!-- user is not subscriber -->
+            {% if not request.signupwall %}
+              {# Soft wall: Suscripción #}
+              {% if not article.public %}
+                <div class="ld-snackbar ld-snackbar--active ld-snackbar--narrow js-ld-snackbar softwall">
+                  <div class="ld-snackbar__title">
+                    {# show credits popup only if signupwall is enabled #}
+                    {% if signupwall_enabled %}
+                      {% if request.credits %}
+                        {% if request.credits > 1 %}
+                          Te quedan {{ request.credits }} artículos gratuitos
+                        {% else %}
+                          Te queda {{ request.credits }} artículo gratuito
+                        {% endif %}
+                      {% else %}
+                        Este es tu último artículo gratuito
+                      {% endif %}
+                    {% endif %}
+                    <button class="js-close-ld-snackbar ld-snackbar__close ld-snackbar__close-top" type="button" aria-pressed="false" aria-label="Cerrar">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path fill="#fff" d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/></svg>
+                    </button>
+                  </div>
+                  <div class="ld-snackbar__body ld-snackbar__body-sm">
+                    <p class="desc">Pasate a suscripción ilimitada para lectura sin límites y más beneficios.</p>
+                    {# TODO: conditional subscribe url if category_signup #}
+                    <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Pasate a ilimitada</a>
+                  </div>
+                  <div class="ld-snackbar__body ld-snackbar__body-lg">
+                    <div class="container">
+                      <div class="row">
+                        <div class="ld-snackbar--option">
+                          <div class="ld-snackbar__text ld-snackbar__block">
+                            Pasate a suscripción ilimitada para lectura sin límites y más beneficios.
+                          </div>
+                          <div class="ld-snackbar__block">
+                            {# TODO: conditional subscribe url if category_signup #}
+                            <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
+                              Pasate a ilimitada
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            {% else %}{# signupwall raised #}
+              {# Hard wall -> Suscripción #}
+              <!-- Hard wall / suscripción-->
+              <div class="article-body article-body--faded">
+                {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
+              </div>
+              <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static ld-snackbar--narrow">
+                <div class="ld-snackbar__title">Llegaste al límite de artículos gratuitos</div>
+                <div class="ld-snackbar__body ld-snackbar__body-sm">
+                  <p class="desc">Pasate a suscripción ilimitada para lectura sin límites y más beneficios.</p>
+                  {# TODO: conditional subscribe url if category_signup #}
+                  <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Pasate a ilimitada</a>
+                </div>
+                <div class="ld-snackbar__body ld-snackbar__body-lg">
+                  <div class="container">
+                    <div class="row">
+                      <div class="ld-snackbar--option">
+                        <div class="ld-snackbar__text ld-snackbar__block">
+                          Pasate a suscripción ilimitada para lectura sin límites y más beneficios.
+                        </div>
+                        <div class="ld-snackbar__block">
+                          {# TODO: conditional subscribe url if category_signup #}
+                          <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
+                            Pasate a ilimitada
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          {% endif %}
+
+        {% endif %}
+
+        {# END signupwall #}
+
+        {% if not request.signupwall %}{# closed in line 670 #}
+
+          <div class="article-body paywalled-content">{{ article.body|ldmarkup:article.id }}</div>
+
+          {% if article.type == "PA" or article.gallery.photos %}
+            <div class="thumbnails container gallery-wrap">
+              <div id="galeriadefotos" class="responsive-images">
+                <div class="row">
+                  {% for photo in article.gallery.photos.all %}
+                    <div data-responsive="{{ photo.get_400w_url }} 400px,
+                                          {{ photo.get_700w_url }} 700px,
+                                          {{ photo.get_900w_url }} 1000px"
+                         data-src="{{ photo.get_1200w_url }}"
+                         data-sub-html="{{ photo.caption }}"
+                         class="col s4 m4 l4 gallery_thumb">
+                      <a href="{{ photo.get_1200w_url }}" class="item img-{{ forloop.counter }}" data-sub-html=".caption">
+                        <img src="{{ photo.get_article_thumb_url }}" alt="{{ photo.caption }}" class="gallery_thumb">
+                        <div class="caption hide">
+                          {{ photo.caption }}
+                          {% if article.photo.extended.photographer %}
+                            <span class="small soft">
+                              {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
+                            </span>
+                          {% endif %}
+                        </div>
+                      </a>
+                    </div>
+                    {% if forloop.counter|divisibleby:3 %}</div><div class="row">{% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if article.attachments.count %}
+            <div class="container">
+              <div class="row">
+                <div id="video" class="center col s12">
+                  <ul class="center">
+                    <li><span class="icon-paper-clip gray"></span> Adjuntos:</li>
+                    {% for att in article.attachments.all %}
+                      {% if att.is_image %}
+                        <img src="{{ att.file.url }}" alt="{{ att.name }}">
+                      {% else %}
+                        <a href="{{ att.file.url }}">{{ att.name }}</a>
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if article.video %}
+            <div class="container">
+              <div class="row">
+                <div id="video" class="center col s12">
+                  <video controls width="560" height="315">
+                    <source type="video/mp4" src="{{ article.video.file.url }}">
+                  </video>
+                  <div class="caption">
+                    {% if article.video.caption %}
+                      <div class="caption small soft">{{ article.video.caption }}</div>
+                    {% endif %}
+                    {% if article.video.byline %}
+                      <div class="byline small">Video: {{ article.video.byline }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if article.youtube_video %}
+            <div class="container">
+              <div class="row">
+                <div id="external_video" class="center col s12">{{ article.youtube_video|render_video }}</div>
+              </div>
+            </div>
+          {% endif %}
+
+          {% block after_content %}{% endblock %}
+
+          <div class="ld-fin ld-block"></div>
+
+          {% if followed %}
+            <div class="read-later u-mb-60">
+              <div class="info read-later__saved__info">
+                Este artículo está guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a><br>
+                ¿Terminaste de leerlo?
+              </div>
+              <a class="read-later__btn read-later__saved">Quitar de leer después</a>
+              <div class="info hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+              <a class="read-later__btn read-later__add hide">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672">
+                  <path d="M0,0H17.672V17.672H0Z" fill="none"></path>
+                  <path class="change-fill" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"></path>
+                </svg> Leer después
               </a>
+              <div class="info read-later__add__info hide">
+                El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a>
+              </div>
+              <a class="read-later__btn read-later__saved hide">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+                  <path d="M0,0H18V18H0Z" fill="none"/>
+                  <path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/>
+                </svg> Guardado
+              </a>
+              <div class="info read-later__saved__info hide">
+                El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if user.is_authenticated %}
+            <div class="fav u-mb-60">
+              <a class="fav__btn fav__saved{% if not favourited %} hide{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+                  <g transform="translate(-1306 -11387)">
+                    <g transform="translate(1306 11387)">
+                      <path d="M0,0H18V18H0Z" fill="none"/>
+                      <path d="M0,0H18V18H0Z" fill="none"/>
+                    </g>
+                    <g transform="translate(1303.557 11385.428)">
+                      <path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/>
+                    </g>
+                  </g>
+                </svg> Quitar de favoritos
+              </a>
+              <div class="info hide">
+                El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a>
+              </div>
+              <a class="fav__btn fav__add{% if favourited %} hide{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+                  <g transform="translate(-870 -11388)">
+                    <path d="M0,0H18V18H0Z" transform="translate(870 11388)" fill="none"/>
+                    <path class="change-fill" d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(867.557 11386.438)" fill="#262626"/>
+                  </g>
+                </svg> Guardar como favorito
+              </a>
+              <div class="info{% if not favourited %} hide{% endif %}">
+                Guardaste este artículo como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a>
+              </div>
+              <div class="info hide">
+                El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if publication in publication_newsletters %}
+            {% if publication.slug in user.subscriber.get_newsletters_slugs %}
+              {# Already subscribed to publication newsletter #}
+            {% else %}
+              {% include 'article/subscribe_box.html' %}
+            {% endif %}
+          {% else %}
+            {% category_nl_subscribe_box %}
+          {% endif %}
+
+          {% if not user.is_authenticated %}
+            <!-- Modal Structure -->
+            <div id="paywallmodal" class="modal">
+              <!-- paywall begin -->
+              <div class="ld-snackbar ld-snackbar--active ld-snackbar--static">
+                <div class="ld-snackbar__title">
+                  Suscribite o ingresá
+                  <button class="ld-snackbar__close ld-snackbar__close-top modal-close"
+                          type="button" aria-pressed="false" aria-label="Cerrar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                         viewBox="0 0 24 24">
+                      <path fill="none" d="M0 0h24v24H0V0z"/>
+                      <path fill="#fff"
+                            d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="ld-snackbar__body ld-snackbar__body-sm">
+                  <!-- caso favorito -->
+                  <p class="desc">Suscribite para guardar este artículo como favorito</p>
+                  <!-- caso leer después -->
+                  <p class="desc">Suscribite para guardar este artículo para leer después</p>
+                  <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Suscribite a ilimitada</a>
+                  <p class="desc">¿Ya tenés suscripción?</p>
+                  <a href="{% url 'account-login' %}?next={{ request.path }}" class="ut-btn ut-btn-l ut-btn-outline">
+                    Ingresá
+                  </a>
+                </div>
+                <div class="ld-snackbar__body ld-snackbar__body-lg">
+                  <div class="container">
+                    <div class="row">
+                      <div class="ld-snackbar--option">
+                        <div class="ld-snackbar__text ld-snackbar__block">
+                          <!-- caso favorito -->
+                          Suscribite para guardar este artículo como favorito
+                          <!-- caso leer después -->
+                          Suscribite para guardar este artículo para leer después
+                        </div>
+                        <div class="ld-snackbar__block">
+                          <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
+                            Suscribite a ilimitada
+                          </a>
+                        </div>
+                      </div>
+                      <div class="ld-snackbar--option">
+                        <div class="ld-snackbar__text ld-snackbar__block">¿Ya tenés suscripción?</div>
+                        <div class="ld-snackbar__block">
+                          <a href="{% url 'account-login' %}?next={{ request.path }}" class="ut-btn ut-btn-l ut-btn-outline">
+                            Ingresá
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <!-- paywall end -->
+            </div>
+          {% endif %}
+
+          {% if tag_list %}
+            <div class="article-tags align-center">
+              <span class="title">Temas en este artículo</span>
+              {% for tag in tag_list %}
+                {% if forloop.counter < 4 %}
+                  <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
+                {% endif %}
+              {% endfor %}
+              {% if tag_list|length > 3 %}
+                <a href="#" class="tag expand" title="Mostrar todos los tags" aria-label="Mostrar todos los tags">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="6" viewBox="0 0 28 6">
+                    <g transform="translate(-684 -4183)">
+                      <circle cx="3" cy="3" r="3" transform="translate(706 4183)" fill="#262626"/>
+                      <circle cx="3" cy="3" r="3" transform="translate(695 4183)" fill="#262626"/>
+                      <circle cx="3" cy="3" r="3" transform="translate(684 4183)" fill="#262626"/>
+                    </g>
+                    <title>Mostrar todos los tags</title>
+                  </svg>
+                </a>
+              {% endif %}
+              <div class="more-tags hidden">
+                {% for tag in tag_list %}
+                  {% if forloop.counter > 3 %}
+                    <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+        {% endif %}{# opened in line 421 #}
+
+      {% else %}{# restricted content message #}
+
+        {% if restricted_content_msg_template %}
+          {% include restricted_content_msg_template %}
+        {% else %}
+          <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
+            <div class="ld-snackbar__title">Contenido exclusivo para suscripción digital de pago</div>
+            <div class="ld-snackbar__body ld-snackbar__body-sm">
+              {% if user.is_authenticated %}
+                {% if is_subscriber_any %}
+                  <p class="desc">
+                    Actualizá tu suscripción para tener acceso ilimitado a todos los contenidos del sitio
+                  </p>
+                  <a href="{{ upgrade_subscription_link|default:'/ayuda/' }}" class="ut-btn ut-btn-l">
+                    Actualizá tu suscripción
+                  </a>
+                {% else %}
+                  <p class="desc">Para acceder a todos los contenidos de manera ilimitada</p>
+                  <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Suscribite</a>
+                {% endif %}
+              {% else %}
+                <p class="desc">Para acceder a todos los contenidos del sitio</p>
+                <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Suscribite</a>
+                o
+                <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="link-underlined">
+                  Iniciá sesión
+                </a>
+              {% endif %}
             </div>
             <div class="ld-snackbar__body ld-snackbar__body-lg">
               <div class="container">
                 <div class="row">
-                  <div class="ld-snackbar--option">
-                    <div class="ld-snackbar__text ld-snackbar__block">
-                      Pasate a suscripción ilimitada para lectura sin límites y más beneficios.
+                  {% if user.is_authenticated %}
+                    <div class="ld-snackbar--option">
+                      {% if is_subscriber_any %}
+                        <div class="ld-snackbar__text ld-snackbar__block">
+                          Actualizá tu suscripción para tener acceso ilimitado a todos los contenidos del sitio
+                        </div>
+                        <div class="ld-snackbar__block">
+                          <a href="{{ upgrade_subscription_link|default:'/ayuda/' }}" class="ut-btn ut-btn-l">
+                            Actualizá tu suscripción
+                          </a>
+                        </div>
+                      {% else %}
+                        <div class="ld-snackbar__text ld-snackbar__block">
+                          Para acceder a todos los contenidos de manera ilimitada
+                        </div>
+                        <div class="ld-snackbar__block">
+                          <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Suscribite</a>
+                        </div>
+                      {% endif %}
                     </div>
-                    <div class="ld-snackbar__block">
-                      {# TODO: conditional subscribe url if category_signup #}
-                      <a href="{% url 'subscribe' planslug='DDIGM' %}"
-                         class="ut-btn ut-btn-l">Pasate a ilimitada</a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        {% endif %}
-      {% else %}
-      <!-- is_subscriber == true -->
-      {% endif %}
-
-    {% endif %}
-
-    {# END signupwall #}
-
-  {% if not request.signupwall %}
-    <div class="article-body paywalled-content">
-      {{ article.body|ldmarkup:article.id }}
-    </div>
-
-    {% if article.type == "PA" or article.gallery.photos %}
-      <div class="thumbnails container gallery-wrap">
-        <div id="galeriadefotos" class="responsive-images">
-          <div class="row">
-            {% for photo in article.gallery.photos.all %}
-            <div data-responsive="{{ photo.get_400w_url }} 400px,
-                                  {{ photo.get_700w_url }} 700px,
-                                  {{ photo.get_900w_url }} 1000px"
-                 data-src="{{ photo.get_1200w_url }}"
-                 data-sub-html="{{ photo.caption }}"
-                 class="col s4 m4 l4 gallery_thumb">
-              <a href="{{ photo.get_1200w_url }}" class="item img-{{ forloop.counter }}" data-sub-html=".caption">
-                <img src="{{ photo.get_article_thumb_url }}" alt="{{ photo.caption }}"  class="gallery_thumb">
-                <div class="caption hide">
-                  {{ photo.caption }}
-                  {% if article.photo.extended.photographer %}
-                  <span class="small soft">{{ article.photo.extended.type_verbose }}:
-                    {{ article.photo.extended.photographer.name }}</span>
-                  {% endif %}
-                </div>
-              </a>
-            </div>
-              {% if forloop.counter|divisibleby:3 %}
-            </div>
-          <div class="row">
-              {% endif %}
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-    {% endif %}
-
-    {% if article.attachments.count %}
-      <div class="container">
-        <div class="row">
-          <div id="video" class="center col s12">
-            <ul class="center">
-              <li><span class="icon-paper-clip gray"></span> Adjuntos:</li>
-              {% for att in article.attachments.all %}
-                  {% if att.is_image %}
-                    <img src="{{ att.file.url }}" alt="{{ att.name }}" >
                   {% else %}
-                    <a href="{{ att.file.url }}">{{ att.name }}</a>
+                    <div class="ld-snackbar--option">
+                      <div class="ld-snackbar__text ld-snackbar__block">
+                        Para acceder a todos los contenidos del sitio
+                      </div>
+                      <div class="ld-snackbar__block">
+                        <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Suscribite</a>
+                      </div>
+                    </div>
+                    <div class="ld-snackbar--option">
+                      <div class="ld-snackbar__block">
+                        o <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="link-underlined">Iniciá sesión</a>
+                      </div>
+                    </div>
                   {% endif %}
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-      </div>
-    {% endif %}
-
-    {% if article.video %}
-    <div class="container">
-      <div class="row">
-        <div id="video" class="center col s12">
-          <video controls width="560" height="315">
-            <source type="video/mp4" src="{{ article.video.file.url }}">
-          </video>
-          <div class="caption">
-            {% if article.video.caption %}
-              <div class="caption small soft">{{ article.video.caption }}</div>
-            {% endif %}
-            {% if article.video.byline %}
-              <div class="byline small">Video: {{ article.video.byline }}</div>
-            {% endif %}
-          </div>
-
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    {% if article.youtube_video %}
-    <div class="container">
-      <div class="row">
-        <div id="external_video" class="center col s12">
-          {{ article.youtube_video|render_video }}
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    {% block after_content %}{% endblock %}
-
-    <div class="ld-fin ld-block"></div>
-
-    {% if followed %}
-      <div class="read-later u-mb-60">
-          <div class="info read-later__saved__info">
-            Este artículo está guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a><br>
-            ¿Terminaste de leerlo?
-          </div>
-          <a class="read-later__btn read-later__saved">Quitar de leer después</a>
-          <div class="info hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-        <a class="read-later__btn read-later__add hide"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"></path><path class="change-fill" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"></path></svg> Leer después</a>
-          <div class="info read-later__add__info hide">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-        <a class="read-later__btn read-later__saved hide"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</a>
-          <div class="info read-later__saved__info hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-      </div>
-    {% endif %}
-    {% if user.is_authenticated %}
-    <div class="fav u-mb-60">
-      <a class="fav__btn fav__saved{% if not favourited %} hide{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><g transform="translate(-1306 -11387)"><g transform="translate(1306 11387)"><path d="M0,0H18V18H0Z" fill="none"/><path d="M0,0H18V18H0Z" fill="none"/></g><g transform="translate(1303.557 11385.428)"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</a>
-      <div class="info hide">El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-      <a class="fav__btn fav__add{% if favourited %} hide{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><g transform="translate(-870 -11388)"><path d="M0,0H18V18H0Z" transform="translate(870 11388)" fill="none"/><path class="change-fill" d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(867.557 11386.438)" fill="#262626"/></g></svg> Guardar como favorito</a>
-      <div class="info{% if not favourited %} hide{% endif %}">Guardaste este artículo como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-      <div class="info hide">El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-    </div>
-    {% endif %}
-
-    {% if publication in publication_newsletters %}
-      {% if publication.slug in user.subscriber.get_newsletters_slugs %}
-        {# Already subscribed to publication newsletter #}
-      {% else %}
-        {% include 'article/subscribe_box.html' %}
-      {% endif %}
-    {% else %}
-      {% category_nl_subscribe_box %}
-    {% endif %}
-
-    {% if not user.is_authenticated %}
-    <!-- Modal Structure -->
-    <div id="paywallmodal" class="modal">
-      <!-- paywall begin -->
-        <div class="ld-snackbar ld-snackbar--active ld-snackbar--static">
-          <div class="ld-snackbar__title">
-            Suscribite o ingresá
-            <button class="ld-snackbar__close ld-snackbar__close-top modal-close"
-                    type="button" aria-pressed="false" aria-label="Cerrar">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                   viewBox="0 0 24 24">
-                <path fill="none" d="M0 0h24v24H0V0z"/>
-                <path fill="#fff"
-                      d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/>
-              </svg>
-            </button>
-          </div>
-          <div class="ld-snackbar__body ld-snackbar__body-sm">
-            <!-- caso favorito -->
-            <p class="desc">Suscribite para guardar este artículo como
-              favorito</p>
-            <!-- caso leer después -->
-            <p class="desc">Suscribite para guardar este artículo para leer
-              después</p>
-            <a href="{% url 'subscribe' planslug='DDIGM' %}"
-               class="ut-btn ut-btn-l">Suscribite
-              a ilimitada</a>
-            <p class="desc">¿Ya tenés suscripción?</p>
-            <a href="{% url 'account-login' %}?next={{ request.path }}"
-               class="ut-btn ut-btn-l ut-btn-outline">Ingresá</a>
-          </div>
-          <div class="ld-snackbar__body ld-snackbar__body-lg">
-            <div class="container">
-              <div class="row">
-                <div class="ld-snackbar--option">
-                  <div class="ld-snackbar__text ld-snackbar__block">
-                    <!-- caso favorito -->
-                    Suscribite para guardar este artículo como favorito
-                    <!-- caso leer después -->
-                    Suscribite para guardar este artículo para leer después
-                  </div>
-                  <div class="ld-snackbar__block">
-                    <a href="{% url 'subscribe' planslug='DDIGM' %}"
-                       class="ut-btn ut-btn-l">Suscribite a ilimitada</a>
-                  </div>
-                </div>
-                <div class="ld-snackbar--option">
-                  <div class="ld-snackbar__text ld-snackbar__block">
-                    ¿Ya tenés suscripción?
-                  </div>
-                  <div class="ld-snackbar__block">
-                    <a href="{% url 'account-login' %}?next={{ request.path }}"
-                       class="ut-btn ut-btn-l ut-btn-outline">Ingresá</a>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      <!-- paywall end -->
-
-    </div>
-    {% endif %}
-
-    {% if tag_list %}
-      <div class="article-tags align-center">
-        <span class="title">Temas en este artículo</span>
-        {% for tag in tag_list %}
-          {% if forloop.counter < 4 %}
-            <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
-          {% endif %}
-        {% endfor %}
-        {% if tag_list|length > 3 %}
-          <a href="#" class="tag expand" title="Mostrar todos los tags" aria-label="Mostrar todos los tags"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="6" viewBox="0 0 28 6"><g transform="translate(-684 -4183)"><circle cx="3" cy="3" r="3" transform="translate(706 4183)" fill="#262626"/><circle cx="3" cy="3" r="3" transform="translate(695 4183)" fill="#262626"/><circle cx="3" cy="3" r="3" transform="translate(684 4183)" fill="#262626"/></g><title>Mostrar todos los tags</title></svg></a>
         {% endif %}
-        <div class="more-tags hidden">
-          {% for tag in tag_list %}
-            {% if forloop.counter > 3 %}
-              <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
-            {% endif %}
-          {% endfor %}
-        </div>
-      </div>
-    {% endif %}
 
-  </article>
-</main>
+      {% endif %}{# end restricted content #}
 
-<aside>
-  {% if article.public %}
+    </article>
+  </main>
 
-    <section class="ld-is-public align-center ld-block">
-      <span class="ld-public-pill" aria-label="Artículo libre">Artículo libre</span>
-      <span class="ld-info-tooltip">
-        <span class="ld-info-tooltip-content">
-          Artículo de acceso libre a todo público.
-          Es posible gracias a quienes financian nuestro trabajo con su suscripción de pago.
-        </span>
-      </span>
-    </section>
+  <aside>
 
-  {% endif %}
+    {% if not request.signupwall %}{# closed in line 875 #}
 
-  {% if TALK_URL and article.allow_comments %}
-    <div id="comentarios">
-      <div class="container">
+      {% if article.public %}
 
-        <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}" data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}" data-article-url="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-login-url="{{ URL_SCHEME }}://{{ site.domain }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
-          <span class="title">Comentar este artículo</span>
-          <button class="ut-btn">
-            {% if comments_count > 0 %}{{ comments_count }} comentario{{comments_count|pluralize:"s"}}{% else %}Comentar{% endif %}
-          </button>
+        <section class="ld-is-public align-center ld-block">
+          <span class="ld-public-pill" aria-label="Artículo libre">Artículo libre</span>
+          <span class="ld-info-tooltip">
+            <span class="ld-info-tooltip-content">
+              Artículo de acceso libre a todo público.
+              Es posible gracias a quienes financian nuestro trabajo con su suscripción de pago.
+            </span>
+          </span>
         </section>
 
-        <div class="talk-login align-center display-hidden">
-          {% if user.is_authenticated %}
-            {% if not is_subscriber %}
-              <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Pasate a Ilimitada para comentar</a>
-            {% endif %}
-          {% else %}
-            <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite a Ilimitada para comentar</a>
-            <span class="ld-caption ld-caption-subscribe-to-comment">
-              ¿Ya tenés suscripción?
-              <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
-            </span>
-          {% endif %}
-        </div>
+      {% endif %}
 
-      </div>
-    </div>
-  {% endif %}
+      {% if not article.is_restricted or user|has_restricted_access:article %}{# begin restricted content2 #}
 
-  <section class="col s12 center ld-share-widget ld-block">
-    <span class="small ld-share-widget__title" aria-label="Compartir">Compartir este artículo</span>
-    <ul class="inline share ld-share-widget__list">
-      <li class="whatsapp">
-        <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }}%20{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}"
-           data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#262626"/>
-            <title>Compartir en WhatsApp</title>
-          </svg>
-        </a>
-      </li>
-      <li>
-        <a href="https://www.facebook.com/sharer/sharer.php?u={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#262626"/>
-            <title>Compartir en Facebook</title>
-          </svg>
-        </a>
-      </li>
-      <li>
-        <a href="https://twitter.com/intent/tweet?original_referer={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}" target="_blank" rel="noopener" aria-label="Compartir en Twitter">
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#262626"/>
-            <title>Compartir en Twitter</title>
-          </svg>
-        </a>
-      </li>
-      <li>
-        <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M29 5H5C4.20695 5.00397 3.44774 5.32179 2.88837 5.88397C2.329 6.44615 2.01499 7.20694 2.015 8L2 26C2.00237 26.7949 2.31921 27.5566 2.8813 28.1187C3.4434 28.6808 4.20508 28.9976 5 29H29C29.7949 28.9976 30.5566 28.6808 31.1187 28.1187C31.6808 27.5566 31.9976 26.7949 32 26V8C31.9976 7.20508 31.6808 6.4434 31.1187 5.8813C30.5566 5.31921 29.7949 5.00237 29 5ZM28.4 11.375L17.8 18C17.5609 18.1471 17.2857 18.225 17.005 18.225C16.7243 18.225 16.4491 18.1471 16.21 18L5.6 11.375C5.45357 11.2886 5.32591 11.1737 5.22456 11.0372C5.12321 10.9007 5.05022 10.7452 5.00988 10.5801C4.96954 10.4149 4.96268 10.2433 4.98969 10.0754C5.0167 9.90755 5.07704 9.74679 5.16716 9.6026C5.25728 9.45841 5.37534 9.33372 5.5144 9.23588C5.65347 9.13804 5.81071 9.06902 5.97686 9.0329C6.14301 8.99678 6.31471 8.99428 6.48184 9.02555C6.64897 9.05683 6.80815 9.12124 6.95 9.215L17 15.5L27.05 9.215C27.1918 9.12124 27.351 9.05683 27.5182 9.02555C27.6853 8.99428 27.857 8.99678 28.0231 9.0329C28.1893 9.06902 28.3465 9.13804 28.4856 9.23588C28.6247 9.33372 28.7427 9.45841 28.8328 9.6026C28.923 9.74679 28.9833 9.90755 29.0103 10.0754C29.0373 10.2433 29.0305 10.4149 28.9901 10.5801C28.9498 10.7452 28.8768 10.9007 28.7754 11.0372C28.6741 11.1737 28.5464 11.2886 28.4 11.375Z" fill="#262626"/>
-            <title>Compartir vía email</title>
-          </svg>
-        </a>
-      </li>
-      <li class="hide-on-med-and-down">
-        <span class="a cur-p" onclick="window.print()" aria-label="Imprimir artículo"><svg class="share-print-icon"  width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M28.3075 10.5395H5.6945C5.05786 10.5386 4.42729 10.6633 3.83893 10.9065C3.25057 11.1497 2.71598 11.5066 2.26581 11.9568C1.81563 12.407 1.45871 12.9416 1.2155 13.5299C0.972295 14.1183 0.847579 14.7489 0.848501 15.3855V21.8465C0.851138 22.7023 1.19229 23.5224 1.79746 24.1275C2.40263 24.7327 3.22266 25.0739 4.0785 25.0765H7.3085V28.3065C7.31114 29.1623 7.65229 29.9824 8.25746 30.5875C8.86263 31.1927 9.68266 31.5339 10.5385 31.5365H23.4615C24.3173 31.5339 25.1374 31.1927 25.7425 30.5875C26.3477 29.9824 26.6889 29.1623 26.6915 28.3065V25.0765H29.9215C30.7773 25.0739 31.5974 24.7327 32.2025 24.1275C32.8077 23.5224 33.1489 22.7023 33.1515 21.8465V15.3855C33.1524 14.749 33.0278 14.1186 32.7847 13.5304C32.5416 12.9422 32.1849 12.4077 31.7349 11.9575C31.2849 11.5074 30.7506 11.1504 30.1625 10.9071C29.5743 10.6638 28.944 10.5388 28.3075 10.5395ZM21.8485 28.3065H12.1545C11.7266 28.3052 11.3166 28.1346 11.014 27.832C10.7114 27.5294 10.5408 27.1194 10.5395 26.6915V20.2305H23.4615V26.6915C23.4602 27.1191 23.2899 27.5288 22.9877 27.8313C22.6856 28.1338 22.2761 28.3047 21.8485 28.3065ZM28.3095 17.0005C27.9901 17.0005 27.6778 16.9058 27.4123 16.7283C27.1467 16.5509 26.9397 16.2986 26.8174 16.0035C26.6952 15.7084 26.6632 15.3837 26.7255 15.0704C26.7878 14.7572 26.9417 14.4694 27.1675 14.2435C27.3934 14.0177 27.6812 13.8638 27.9944 13.8015C28.3077 13.7392 28.6324 13.7712 28.9275 13.8934C29.2226 14.0157 29.4749 14.2227 29.6523 14.4883C29.8298 14.7538 29.9245 15.0661 29.9245 15.3855C29.9232 15.8138 29.7523 16.2241 29.4493 16.5267C29.1463 16.8294 28.7358 16.9997 28.3075 17.0005H28.3095ZM25.0765 2.4635H8.9245C8.49658 2.46482 8.08657 2.63539 7.78398 2.93798C7.48139 3.24057 7.31082 3.65058 7.3095 4.0785V7.3085C7.31082 7.73642 7.48139 8.14644 7.78398 8.44902C8.08657 8.75161 8.49658 8.92218 8.9245 8.9235H25.0765C25.5044 8.92218 25.9144 8.75161 26.217 8.44902C26.5196 8.14644 26.6902 7.73642 26.6915 7.3085V4.0785C26.6902 3.65058 26.5196 3.24057 26.217 2.93798C25.9144 2.63539 25.5044 2.46482 25.0765 2.4635Z" fill="#262626"/>
-          <title>Imprimir artículo</title>
-        </svg></span>
-      </li>
-      <li>
-        <span class="a cur-p btn-copy" onclick="copyToClipboard('#url', '.tooltip-article')" aria-label="Copiar enlace">
-          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/>
-          <title>Copiar enlace</title>
-          </svg>
-        </span>
-        <span class="copied-tooltip off tooltip-article"></span>
-        <span class="hide" id="url">{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}</span>
-      </li>
-    </ul>
-  </section>
+        {% if TALK_URL and article.allow_comments %}
+          <div id="comentarios">
+            <div class="container">
 
-  {% if user.is_authenticated %}
-    {% include 'pwa-module.html' %}
-  {% endif %}
+              <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}" data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}" data-article-url="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-login-url="{{ URL_SCHEME }}://{{ site.domain }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
+                <span class="title">Comentar este artículo</span>
+                <button class="ut-btn">
+                  {% if comments_count > 0 %}{{ comments_count }} comentario{{comments_count|pluralize:"s"}}{% else %}Comentar{% endif %}
+                </button>
+              </section>
 
-  {% block featured_content %}{% endblock %}
+              <div class="talk-login align-center display-hidden">
+                {% if user.is_authenticated %}
+                  {% if not is_subscriber %}
+                    <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Pasate a Ilimitada para comentar</a>
+                  {% endif %}
+                {% else %}
+                  <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite a Ilimitada para comentar</a>
+                  <span class="ld-caption ld-caption-subscribe-to-comment">
+                    ¿Ya tenés suscripción?
+                    <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
+                  </span>
+                {% endif %}
+              </div>
 
-  {% if article.show_related_articles %}
-    {% render_related article %}
-  {% endif %}
+            </div>
+          </div>
+        {% endif %}
 
-    {% if not is_subscriber %}
-      <section id="header-pub" class="col s12 center-align article__bottom-ad ld-block">
-        <div id="ad-container" class="container"></div>
-      </section>
-    {% endif %}
-
-    <section id="mas-leidos" class="col s12 ld-block">
-      <div id="mas-leidos-content" class="container"></div>
-    </section>
-
-  {% endif %}
-
-  {% block article_extra %}{% endblock %}
-
-  {% if not request.signupwall %}
-    <div class="align-center u-mb-50 footer-section">
-      <a href="{% url 'home' %}" class="ut-btn ut-btn-outline">Ir a la portada</a>
-    </div>
-  {% endif %}
-
-  <div id="article-share-full">
-    <span class="right modal-close"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z" fill="#fff"/></svg></span>
-  	<div class="modal-content">
-  		<div class="row">
-        <div class="col s12 center">
-          <span class="title">Compartir este artículo</span>
-          <ul class="inline share">
+        <section class="col s12 center ld-share-widget ld-block">
+          <span class="small ld-share-widget__title" aria-label="Compartir">Compartir este artículo</span>
+          <ul class="inline share ld-share-widget__list">
             <li class="whatsapp">
-              <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }}%20{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
+              <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }}%20{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}"
+                 data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#595959"/>
+                  <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#262626"/>
                   <title>Compartir en WhatsApp</title>
                 </svg>
               </a>
@@ -759,16 +811,15 @@
             <li>
               <a href="https://www.facebook.com/sharer/sharer.php?u={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#595959"/>
+                  <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#262626"/>
                   <title>Compartir en Facebook</title>
                 </svg>
               </a>
             </li>
             <li>
-              <a href="https://twitter.com/intent/tweet?original_referer={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url|urlencode }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}"
-                 target="_blank" rel="noopener" aria-label="Compartir en Twitter">
+              <a href="https://twitter.com/intent/tweet?original_referer={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}" target="_blank" rel="noopener" aria-label="Compartir en Twitter">
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#595959"/>
+                  <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#262626"/>
                   <title>Compartir en Twitter</title>
                 </svg>
               </a>
@@ -776,22 +827,115 @@
             <li>
               <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M29 5H5C4.20695 5.00397 3.44774 5.32179 2.88837 5.88397C2.329 6.44615 2.01499 7.20694 2.015 8L2 26C2.00237 26.7949 2.31921 27.5566 2.8813 28.1187C3.4434 28.6808 4.20508 28.9976 5 29H29C29.7949 28.9976 30.5566 28.6808 31.1187 28.1187C31.6808 27.5566 31.9976 26.7949 32 26V8C31.9976 7.20508 31.6808 6.4434 31.1187 5.8813C30.5566 5.31921 29.7949 5.00237 29 5ZM28.4 11.375L17.8 18C17.5609 18.1471 17.2857 18.225 17.005 18.225C16.7243 18.225 16.4491 18.1471 16.21 18L5.6 11.375C5.45357 11.2886 5.32591 11.1737 5.22456 11.0372C5.12321 10.9007 5.05022 10.7452 5.00988 10.5801C4.96954 10.4149 4.96268 10.2433 4.98969 10.0754C5.0167 9.90755 5.07704 9.74679 5.16716 9.6026C5.25728 9.45841 5.37534 9.33372 5.5144 9.23588C5.65347 9.13804 5.81071 9.06902 5.97686 9.0329C6.14301 8.99678 6.31471 8.99428 6.48184 9.02555C6.64897 9.05683 6.80815 9.12124 6.95 9.215L17 15.5L27.05 9.215C27.1918 9.12124 27.351 9.05683 27.5182 9.02555C27.6853 8.99428 27.857 8.99678 28.0231 9.0329C28.1893 9.06902 28.3465 9.13804 28.4856 9.23588C28.6247 9.33372 28.7427 9.45841 28.8328 9.6026C28.923 9.74679 28.9833 9.90755 29.0103 10.0754C29.0373 10.2433 29.0305 10.4149 28.9901 10.5801C28.9498 10.7452 28.8768 10.9007 28.7754 11.0372C28.6741 11.1737 28.5464 11.2886 28.4 11.375Z" fill="#595959"/>
+                  <path d="M29 5H5C4.20695 5.00397 3.44774 5.32179 2.88837 5.88397C2.329 6.44615 2.01499 7.20694 2.015 8L2 26C2.00237 26.7949 2.31921 27.5566 2.8813 28.1187C3.4434 28.6808 4.20508 28.9976 5 29H29C29.7949 28.9976 30.5566 28.6808 31.1187 28.1187C31.6808 27.5566 31.9976 26.7949 32 26V8C31.9976 7.20508 31.6808 6.4434 31.1187 5.8813C30.5566 5.31921 29.7949 5.00237 29 5ZM28.4 11.375L17.8 18C17.5609 18.1471 17.2857 18.225 17.005 18.225C16.7243 18.225 16.4491 18.1471 16.21 18L5.6 11.375C5.45357 11.2886 5.32591 11.1737 5.22456 11.0372C5.12321 10.9007 5.05022 10.7452 5.00988 10.5801C4.96954 10.4149 4.96268 10.2433 4.98969 10.0754C5.0167 9.90755 5.07704 9.74679 5.16716 9.6026C5.25728 9.45841 5.37534 9.33372 5.5144 9.23588C5.65347 9.13804 5.81071 9.06902 5.97686 9.0329C6.14301 8.99678 6.31471 8.99428 6.48184 9.02555C6.64897 9.05683 6.80815 9.12124 6.95 9.215L17 15.5L27.05 9.215C27.1918 9.12124 27.351 9.05683 27.5182 9.02555C27.6853 8.99428 27.857 8.99678 28.0231 9.0329C28.1893 9.06902 28.3465 9.13804 28.4856 9.23588C28.6247 9.33372 28.7427 9.45841 28.8328 9.6026C28.923 9.74679 28.9833 9.90755 29.0103 10.0754C29.0373 10.2433 29.0305 10.4149 28.9901 10.5801C28.9498 10.7452 28.8768 10.9007 28.7754 11.0372C28.6741 11.1737 28.5464 11.2886 28.4 11.375Z" fill="#262626"/>
                   <title>Compartir vía email</title>
                 </svg>
               </a>
             </li>
+            <li class="hide-on-med-and-down">
+              <span class="a cur-p" onclick="window.print()" aria-label="Imprimir artículo"><svg class="share-print-icon"  width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M28.3075 10.5395H5.6945C5.05786 10.5386 4.42729 10.6633 3.83893 10.9065C3.25057 11.1497 2.71598 11.5066 2.26581 11.9568C1.81563 12.407 1.45871 12.9416 1.2155 13.5299C0.972295 14.1183 0.847579 14.7489 0.848501 15.3855V21.8465C0.851138 22.7023 1.19229 23.5224 1.79746 24.1275C2.40263 24.7327 3.22266 25.0739 4.0785 25.0765H7.3085V28.3065C7.31114 29.1623 7.65229 29.9824 8.25746 30.5875C8.86263 31.1927 9.68266 31.5339 10.5385 31.5365H23.4615C24.3173 31.5339 25.1374 31.1927 25.7425 30.5875C26.3477 29.9824 26.6889 29.1623 26.6915 28.3065V25.0765H29.9215C30.7773 25.0739 31.5974 24.7327 32.2025 24.1275C32.8077 23.5224 33.1489 22.7023 33.1515 21.8465V15.3855C33.1524 14.749 33.0278 14.1186 32.7847 13.5304C32.5416 12.9422 32.1849 12.4077 31.7349 11.9575C31.2849 11.5074 30.7506 11.1504 30.1625 10.9071C29.5743 10.6638 28.944 10.5388 28.3075 10.5395ZM21.8485 28.3065H12.1545C11.7266 28.3052 11.3166 28.1346 11.014 27.832C10.7114 27.5294 10.5408 27.1194 10.5395 26.6915V20.2305H23.4615V26.6915C23.4602 27.1191 23.2899 27.5288 22.9877 27.8313C22.6856 28.1338 22.2761 28.3047 21.8485 28.3065ZM28.3095 17.0005C27.9901 17.0005 27.6778 16.9058 27.4123 16.7283C27.1467 16.5509 26.9397 16.2986 26.8174 16.0035C26.6952 15.7084 26.6632 15.3837 26.7255 15.0704C26.7878 14.7572 26.9417 14.4694 27.1675 14.2435C27.3934 14.0177 27.6812 13.8638 27.9944 13.8015C28.3077 13.7392 28.6324 13.7712 28.9275 13.8934C29.2226 14.0157 29.4749 14.2227 29.6523 14.4883C29.8298 14.7538 29.9245 15.0661 29.9245 15.3855C29.9232 15.8138 29.7523 16.2241 29.4493 16.5267C29.1463 16.8294 28.7358 16.9997 28.3075 17.0005H28.3095ZM25.0765 2.4635H8.9245C8.49658 2.46482 8.08657 2.63539 7.78398 2.93798C7.48139 3.24057 7.31082 3.65058 7.3095 4.0785V7.3085C7.31082 7.73642 7.48139 8.14644 7.78398 8.44902C8.08657 8.75161 8.49658 8.92218 8.9245 8.9235H25.0765C25.5044 8.92218 25.9144 8.75161 26.217 8.44902C26.5196 8.14644 26.6902 7.73642 26.6915 7.3085V4.0785C26.6902 3.65058 26.5196 3.24057 26.217 2.93798C25.9144 2.63539 25.5044 2.46482 25.0765 2.4635Z" fill="#262626"/>
+                <title>Imprimir artículo</title>
+              </svg></span>
+            </li>
             <li>
-              <span class="cur-p" onclick="copyToClipboard('#url', '.tooltip-navbar')" aria-label="Copiar enlace"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#ffffff"/><title>Copiar enlace</title></svg></span>
-              <span class="copied-tooltip off tooltip-navbar"></span>
+              <span class="a cur-p btn-copy" onclick="copyToClipboard('#url', '.tooltip-article')" aria-label="Copiar enlace">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/>
+                <title>Copiar enlace</title>
+                </svg>
+              </span>
+              <span class="copied-tooltip off tooltip-article"></span>
+              <span class="hide" id="url">{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}</span>
             </li>
           </ul>
-        </div>
-  		</div>
-  	</div>
-  </div>
+        </section>
 
-</aside>
+        {% if user.is_authenticated %}
+          {% include 'pwa-module.html' %}
+        {% endif %}
+
+        {% block featured_content %}{% endblock %}
+
+        {% if article.show_related_articles %}
+          {% render_related article %}
+        {% endif %}
+
+        {% if not is_subscriber %}
+          <section id="header-pub" class="col s12 center-align article__bottom-ad ld-block">
+            <div id="ad-container" class="container"></div>
+          </section>
+        {% endif %}
+
+        <section id="mas-leidos" class="col s12 ld-block">
+          <div id="mas-leidos-content" class="container"></div>
+        </section>
+
+      {% endif %}{# end restricted content2 #}
+
+    {% endif %}{# opened in line 752 #}
+
+    {% block article_extra %}{% endblock %}
+
+    {% if not request.signupwall %}
+      <div class="align-center u-mb-50 footer-section">
+        <a href="{% url 'home' %}" class="ut-btn ut-btn-outline">Ir a la portada</a>
+      </div>
+    {% endif %}
+
+    {# TODO: skip render many things bellow if the content is restricted #}
+
+    <div id="article-share-full">
+      <span class="right modal-close"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z" fill="#fff"/></svg></span>
+      <div class="modal-content">
+        <div class="row">
+          <div class="col s12 center">
+            <span class="title">Compartir este artículo</span>
+            <ul class="inline share">
+              <li class="whatsapp">
+                <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }}%20{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
+                  <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#595959"/>
+                    <title>Compartir en WhatsApp</title>
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
+                  <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#595959"/>
+                    <title>Compartir en Facebook</title>
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <a href="https://twitter.com/intent/tweet?original_referer={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url|urlencode }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}"
+                   target="_blank" rel="noopener" aria-label="Compartir en Twitter">
+                  <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#595959"/>
+                    <title>Compartir en Twitter</title>
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
+                  <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M29 5H5C4.20695 5.00397 3.44774 5.32179 2.88837 5.88397C2.329 6.44615 2.01499 7.20694 2.015 8L2 26C2.00237 26.7949 2.31921 27.5566 2.8813 28.1187C3.4434 28.6808 4.20508 28.9976 5 29H29C29.7949 28.9976 30.5566 28.6808 31.1187 28.1187C31.6808 27.5566 31.9976 26.7949 32 26V8C31.9976 7.20508 31.6808 6.4434 31.1187 5.8813C30.5566 5.31921 29.7949 5.00237 29 5ZM28.4 11.375L17.8 18C17.5609 18.1471 17.2857 18.225 17.005 18.225C16.7243 18.225 16.4491 18.1471 16.21 18L5.6 11.375C5.45357 11.2886 5.32591 11.1737 5.22456 11.0372C5.12321 10.9007 5.05022 10.7452 5.00988 10.5801C4.96954 10.4149 4.96268 10.2433 4.98969 10.0754C5.0167 9.90755 5.07704 9.74679 5.16716 9.6026C5.25728 9.45841 5.37534 9.33372 5.5144 9.23588C5.65347 9.13804 5.81071 9.06902 5.97686 9.0329C6.14301 8.99678 6.31471 8.99428 6.48184 9.02555C6.64897 9.05683 6.80815 9.12124 6.95 9.215L17 15.5L27.05 9.215C27.1918 9.12124 27.351 9.05683 27.5182 9.02555C27.6853 8.99428 27.857 8.99678 28.0231 9.0329C28.1893 9.06902 28.3465 9.13804 28.4856 9.23588C28.6247 9.33372 28.7427 9.45841 28.8328 9.6026C28.923 9.74679 28.9833 9.90755 29.0103 10.0754C29.0373 10.2433 29.0305 10.4149 28.9901 10.5801C28.9498 10.7452 28.8768 10.9007 28.7754 11.0372C28.6741 11.1737 28.5464 11.2886 28.4 11.375Z" fill="#595959"/>
+                    <title>Compartir vía email</title>
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <span class="cur-p" onclick="copyToClipboard('#url', '.tooltip-navbar')" aria-label="Copiar enlace"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#ffffff"/><title>Copiar enlace</title></svg></span>
+                <span class="copied-tooltip off tooltip-navbar"></span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
 {% endblock %}
 
 {% block javascript %}

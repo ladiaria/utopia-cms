@@ -262,7 +262,12 @@ class ArticleEditionInline(TabularInline):
 
 class ArticleAdminModelForm(ModelForm):
     body = CharField(widget=MarkdownWidget())
-    headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
+    headline = CharField(label=u'Título', widget=TextInput(attrs={'style': 'width:600px'}))
+    slug = CharField(
+        label='Slug',
+        widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
+        help_text=u'Se genera automáticamente en base al título.',
+    )
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
 
     def clean_tags(self):
@@ -335,16 +340,24 @@ class ArticleAdmin(ModelAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     form = ArticleAdminModelForm
 
-    prepopulated_fields = {'slug': ('headline',)}
-    filter_horizontal = ('byline',)
+    prepopulated_fields = {'slug': ('headline', )}
+    filter_horizontal = ('byline', )
     list_display = (
-        'headline', 'type', 'get_publications', 'get_sections', 'creation_date', 'publication_date', 'is_published', has_photo, 'surl'
+        'headline',
+        'type',
+        'get_publications',
+        'get_sections',
+        'creation_date',
+        'publication_date',
+        'is_published',
+        has_photo,
+        'surl',
     )
     list_select_related = True
     list_filter = ('type', 'date_created', 'is_published', 'date_published', 'newsletter_featured', 'byline')
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
-    ordering = ('-date_created',)
+    ordering = ('-date_created', )
     raw_id_fields = ('photo', 'gallery', 'main_section')
     readonly_fields = ('date_published', )
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
@@ -363,7 +376,7 @@ class ArticleAdmin(ModelAdmin):
     publication_date.short_description = 'Publicado'
 
     fieldsets = (
-        (None, {'fields': ('type', 'headline', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide', )}),
+        (None, {'fields': ('type', 'headline', 'slug', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide', )}),
         (
             'Portada',
             {
@@ -378,15 +391,16 @@ class ArticleAdmin(ModelAdmin):
             'Avanzado',
             {
                 'fields': (
-                    'slug',
-                    'allow_comments',
-                    'is_published',
-                    'public',
-                    'allow_related',
-                    'show_related_articles',
-                    'newsletter_featured',
-                    'latitude',
-                    'longitude',
+                    (
+                        'allow_comments',
+                        'is_published',
+                        'public',
+                        'allow_related',
+                        'show_related_articles',
+                        'newsletter_featured',
+                    ),
+                    'additional_access',
+                    ('latitude', 'longitude'),
                 ),
                 'classes': ('collapse', ),
             },

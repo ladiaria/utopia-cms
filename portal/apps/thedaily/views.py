@@ -947,6 +947,7 @@ def amp_access_authorization(request):
     visita que se está haciendo en este momento.
     El registro de dicha visita se hace en el endpoint de pingback (siguiente funcion).
     Return 'access' True if signupwall middleware is not enabled.
+    TODO: translate all this docstring to english.
     """
     try:
         url = request.GET['url']
@@ -955,13 +956,13 @@ def amp_access_authorization(request):
 
     path = urlparse(url).path
     authenticated = request.user.is_authenticated()
-    result = {'authenticated': authenticated}
-    has_subscriber = hasattr(request.user, 'subscriber')
+    result, has_subscriber = {'authenticated': authenticated}, hasattr(request.user, 'subscriber')
+    subscriber_any = authenticated and has_subscriber and request.user.subscriber.is_subscriber_any()
+    result['subscriber_any'] = subscriber_any
 
     if path == '/' or not settings.SIGNUPWALL_ENABLED:
 
-        result['subscriber'] = authenticated and has_subscriber and request.user.subscriber.is_subscriber_any()
-        result['access'], result['signupwall_enabled'] = True, False
+        result.update({'subscriber': subscriber_any, 'access': True, 'signupwall_enabled': False})
 
     else:
 
@@ -971,25 +972,34 @@ def amp_access_authorization(request):
             # search in url history
             article = get_object_or_404(ArticleUrlHistory, absolute_url=path).article
 
-        result['signupwall_enabled'] = True
+        result.update({'signupwall_enabled': True, 'article_restricted': article.is_restricted()})
 
+        # TODO: update logic using the "restricted" information
         if authenticated:
 
             if has_subscriber:
-                is_subscriber = request.user.subscriber.is_subscriber() or any(
-                    [request.user.subscriber.is_subscriber(p.slug) for p in article.publications()])
+                is_subscriber = (
+                    request.user.subscriber.is_subscriber()
+                    or any(request.user.subscriber.is_subscriber(p.slug) for p in article.publications())
+                    or any(request.user.subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+                )
                 # newsletters
                 result.update([('nl_' + slug, True) for slug in request.user.subscriber.get_newsletters_slugs()])
             else:
                 is_subscriber = False
-            result['subscriber'] = is_subscriber
-            result['followed'] = article in following(request.user, Article)
-            result['favourited'] = article in [f.target for f in Favorite.objects.for_user(request.user)]
+
+            result.update(
+                {
+                    'subscriber': is_subscriber,
+                    'article_allowed': is_subscriber or article.is_public(),
+                    'followed': article in following(request.user, Article),
+                    'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
+                }
+            )
 
             if is_subscriber:
 
-                result['access'] = True
-                result['edit'] = request.user.has_perm('core.change_article')
+                result.update({'access': True, 'edit': request.user.has_perm('core.change_article')})
 
             else:
 
@@ -1000,7 +1010,7 @@ def amp_access_authorization(request):
                 articles_visited_count = len(articles_visited)
 
                 if core_articleviewedby_mdb:
-                    for x in core_articleviewedby_mdb.posts.find({'user': request.user.id, 'public': None}):
+                    for x in core_articleviewedby_mdb.posts.find({'user': request.user.id, 'allowed': None}):
                         articles_visited.add(x['article'])
                         articles_visited_count = len(articles_visited)
                         if articles_visited_count >= MAX_CREDITS + 2:
@@ -1049,27 +1059,32 @@ def amp_access_pingback(request):
                 # Search in url history
                 article = get_object_or_404(ArticleUrlHistory, absolute_url=path).article
 
+            article_allowed = request.GET.get('article_allowed') == 'true'
+            blocked = not article_allowed and request.GET.get('article_restricted') == 'true'
+
             if request.user.is_authenticated():
 
-                if core_articleviewedby_mdb:
+                if core_articleviewedby_mdb and not blocked:
 
                     set_values = {'viewed_at': datetime.now()}
-                    if article.is_public():
-                        set_values['public'] = True
+                    if article_allowed:
+                        set_values['allowed'] = True
                     core_articleviewedby_mdb.posts.update_one(
-                        {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True)
+                        {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
+                    )
 
-            elif not article.is_public():
-                # dont spend a credit if the article is public
+            elif not article.is_public() and not blocked:
+                # only spend a credit if the article is not public and was not blocked
 
                 visitor = get_or_create_visitor(request)
 
                 if visitor and signupwall_visitor_mdb:
                     signupwall_visitor_mdb.posts.update_one(
-                        {'_id': visitor.get('_id')}, {'$set': {'path_visited': path}})
+                        {'_id': visitor.get('_id')}, {'$set': {'path_visited': path}}
+                    )
 
-            # inc this article visits
-            if core_articlevisits_mdb:
+            # inc this article visits if not blocked
+            if not blocked and core_articlevisits_mdb:
                 core_articlevisits_mdb.posts.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
 
     response = HttpResponse()
@@ -1348,8 +1363,13 @@ def notification_preview(request, template, days=False):
     """
     result = HttpResponseBadRequest()
     try:
+        seller_fullname = request.GET.get('seller_fullname')
+        ctx = {
+            'logo_url': settings.HOMEV3_SECONDARY_LOGO,
+            'days': days,
+            'seller_fullname': u'Seller Fullname' if seller_fullname is None else seller_fullname,
+        }
         dir_prefix = getattr(settings, 'THEDAILY_NOTIFICATIONS_TEMPLATE_PREFIX', '')
-        ctx = {'logo_url': settings.HOMEV3_SECONDARY_LOGO, 'days': days, 'seller_fullname': u'Seller Fullname'}
         result = render(request, dir_prefix + ('notifications/%s.html' % template), ctx)
     except TemplateDoesNotExist:
         if dir_prefix:

@@ -1,4 +1,5 @@
 {% load bleach_tags core_tags ldml %}
+
 <div class="ld-card ld-card--reg">
   {% render_toolbar_for a %}
   {% if a.photo %}
@@ -9,7 +10,10 @@
     </a>
   {% endif %}
   <div class="ld-card__body">
-    <div class="ld-card__section">{% autoescape off %}{% publication_section a %}{% endautoescape %}</div>
+    <div class="ld-card__section">
+      {% autoescape off %}{% publication_section a %}{% endautoescape %}
+      {% with article=a %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
+    </div>
     <h2 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
       <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|bleach }}</a>
     </h2>

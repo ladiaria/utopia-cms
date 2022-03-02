@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from os.path import basename
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
@@ -7,7 +6,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.sites.models import Site
 from django.utils.http import int_to_base36, base36_to_int
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.template import RequestContext, loader
+from django.template import loader
 
 from libs.utils import smtp_connect
 
@@ -67,8 +66,12 @@ class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
         # base 36, this gives us a 3 digit string until about 2121
         ts_b36 = int_to_base36(timestamp)
         hash = (
-            unicode(settings.SECRET_KEY) + unicode(user.id) + unicode(user.email) + unicode(bool(user.is_active)) +
-            unicode(timestamp))
+            unicode(settings.SECRET_KEY)
+            + unicode(user.id)
+            + unicode(user.email)
+            + unicode(bool(user.is_active))
+            + unicode(timestamp)
+        )
         if self.edition_download:
             hash += str(user.get_profile().get_downloads())
         else:

@@ -22,7 +22,7 @@
         {% elif publication != default_pub %}
           <a class="section-detail__toplink" href="{% url 'home' domain_slug=publication.slug %}">
             <svg xmlns="http://www.w3.org/2000/svg" width="8" height="13" viewBox="15451.996 -3655.987 6.105 9.902"><path d="M773.155,7312l3.8,3.8,3.8-3.8,1.155,1.155-4.951,4.951L772,7313.155l1.155-1.155" transform="translate(22770.102 -4427.987) rotate(90)" fill="#595959"/></svg>
-            {{ publication }}
+            {% if publication_use_headline %}{{ publication.headline }}{% else %}{{ publication }}{% endif %}
           </a>
         {% else %}
           <a class="section-detail__toplink" href="{% url 'home' %}">
@@ -52,9 +52,7 @@
       {% endif %}
     {% endfor %}
     {% if articles.has_other_pages %}
-      {% with pager=articles %}
-        {% include "pagination.html" %}
-      {% endwith %}
+      {% with pager=articles %}{% include "pagination.html" %}{% endwith %}
     {% endif %}
   </section>
 {% endblock %}

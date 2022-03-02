@@ -342,7 +342,7 @@ img{
 
   &--sm {
     position: relative;
-    overflow: hidden;
+
 
     .ld-card__title {
       @media (min-width: $gridMinWidth){
@@ -437,9 +437,47 @@ img{
     line-height: 17px;
     text-transform: uppercase;
     margin-bottom: 5px;
+    display: flex;
 
     a {
       text-decoration: none;
+    }
+
+
+    .lock-tooltip {
+      position: relative;
+
+
+      .lock {
+        margin-left:5px;
+      }
+
+      .lock-tooltip-content {
+        display: none;
+        position: absolute;
+        z-index: 1;
+        text-align: left;
+        background: $off-black;
+        color: white;
+        font-size: 12px;
+        line-height: 14px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        min-width: 185px;
+        left: -20px;
+        top: 18px;
+        text-transform: none;
+
+        @media (min-width: 640px) {
+          left: 24px;
+          top: -5px;
+        }
+
+      }
+
+      &:hover .lock-tooltip-content {
+        display: block;
+      }
     }
   }
   &__photoauthor {
@@ -453,7 +491,7 @@ img{
   &__addtrl {
     position: absolute;
     right: 0;
-    bottom: 0;
+    bottom: -3px;
     cursor: pointer;
     padding:3px;
     transition: background 0.2s ease-in-out;

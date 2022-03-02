@@ -1,3 +1,23 @@
+# version 0.2.1 (2022-03-02)
+
+- Restricted publications feature (articles content are completely locked to non-subscribers).
+- Additional access: A restricted -or any- article can behave as a regular one, if a publication is selected in this new article field.
+- Article detail template was fixed (closing tags were missing in some situations) and was reindented properly.
+- Signupwall middleware fixed keeping or spending credits in a more accurately way.
+- Article slug field changed to read-only widget because edits on it are ignored.
+- Article admin change form was reorganized better.
+- Elastic search results sort and phrase match support.
+- Area newsletters sync support with utopia-crm.
+- UX and CSS improvements.
+- Publications menu improvements.
+- Publication's headline attribute usage support when rendering the publication's name in many templates.
+- Improvements in context variables usage through template tags.
+- Allow more flexibility to hide dates in article cards.
+- A custom not used setting removed from a context processor.
+- Not used imports removed in some modules, more flexibility in notifications template preview view with an important "TODO" added.
+- Section in article cards are taken in a better way, giving a better publication precedence.
+- Many syntax code style improvements.
+
 # version 0.2.0 (2022-02-01)
 
 - Inner sections support for category detail view.

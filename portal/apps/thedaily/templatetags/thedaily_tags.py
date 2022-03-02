@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
-from django.template import Library, Node, NodeList, TemplateSyntaxError, \
-    Variable
+from datetime import datetime, timedelta
+
 from actstream.models import following
-from core.models import Article
-from datetime import date, datetime, timedelta
+
+from django.template import Library, Node, NodeList, TemplateSyntaxError, Variable
+
 
 register = Library()
 
 OPERATIONS = {
-    'lt': lambda x,y: x < y,
-    'lte': lambda x,y: x <= y,
-    'eq': lambda x,y: x == y,
-    'gte': lambda x,y: x >= y,
-    'gt': lambda x,y: x > y,
+    'lt': lambda x, y: x < y,
+    'lte': lambda x, y: x <= y,
+    'eq': lambda x, y: x == y,
+    'gte': lambda x, y: x >= y,
+    'gt': lambda x, y: x > y,
 }
 UNITS = {
     's': 'seconds',
@@ -20,6 +21,7 @@ UNITS = {
     'h': 'hours',
     'd': 'days',
 }
+
 
 class TimeNode(Node):
     def __init__(self, nodelist_true, nodelist_false, future, time, operator, elapsed, unit):
@@ -50,6 +52,12 @@ def count_following(user):
     return len(following(user))
 
 
+@register.filter(name='has_restricted_access')
+def has_restricted_access(user, article):
+    """ @pre: The article is restricted """
+    return hasattr(user, 'subscriber') and user.subscriber.is_subscriber(article.main_section.edition.publication.slug)
+
+
 def if_time(parser, token):
     bits = list(token.split_contents())
     tag_name = bits[0]
@@ -58,7 +66,7 @@ def if_time(parser, token):
     elif tag_name.endswith('until'):
         future = True
     if len(bits) != 4:
-        raise TemplateSyntaxError, "%r takes three arguments" % tag_name
+        raise TemplateSyntaxError("%r takes three arguments" % tag_name)
     end_tag = 'end' + tag_name
     nodelist_true = parser.parse(('else', end_tag))
     token = parser.next_token()
@@ -71,11 +79,12 @@ def if_time(parser, token):
     try:
         time_int, time_unit = int(bits[3][:-1]), bits[3][-1]
     except ValueError:
-        raise TemplateSyntaxError, "Invalid argument '%s'" % bits[3]
+        raise TemplateSyntaxError("Invalid argument '%s'" % bits[3])
     if time_unit not in 'smhd':
-        raise TemplateSyntaxError, "Invalid argument '%s'" % bits[3]
-    return TimeNode(nodelist_true, nodelist_false, future=future, time=bits[1],
-        operator=bits[2], elapsed=time_int, unit=time_unit)
+        raise TemplateSyntaxError("Invalid argument '%s'" % bits[3])
+    return TimeNode(
+        nodelist_true, nodelist_false, future=future, time=bits[1], operator=bits[2], elapsed=time_int, unit=time_unit
+    )
 
 
 register.tag('iftimesince', if_time)

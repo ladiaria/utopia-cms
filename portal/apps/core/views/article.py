@@ -131,8 +131,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
         if request.user.is_authenticated() and core_articleviewedby_mdb:
             # register this view
             set_values = {'viewed_at': datetime.now()}
-            if article.is_public():
-                set_values['public'] = True
+            if getattr(request, 'article_allowed', False):
+                set_values['allowed'] = True
             core_articleviewedby_mdb.posts.update_one(
                 {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
             )
@@ -177,12 +177,17 @@ def article_detail(request, year, month, slug, domain_slug=None):
     }
 
     if user_is_authenticated:
-        context.update({
-            'followed': article in following(request.user, Article),
-            'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
-        })
+        context.update(
+            {
+                'followed': article in following(request.user, Article),
+                'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
+            }
+        )
 
-    return render(request, getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE', 'article/detail.html'), context)
+    template = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE', 'article/detail.html')
+    if request.flavour == 'amp':
+        template = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_AMP', template)
+    return render(request, template, context)
 
 
 @never_cache

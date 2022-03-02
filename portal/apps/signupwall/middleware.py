@@ -93,13 +93,19 @@ class SignupwallMiddleware(object):
 
         user_is_authenticated = user.is_authenticated()
 
-        # ignore also signupwall if the user is subscribed to the default pub
-        # or to any pub that the article is published in
-        if (user_is_authenticated and hasattr(user, 'subscriber') and (
-                user.subscriber.is_subscriber() or any([
-                    user.subscriber.is_subscriber(p.slug) for p in article.publications()]))):
+        # ignore also signupwall if the user is subscribed to the default pub or to any pub that the article is
+        # published in, or to any pub in article's additional_access field.
+        # TODO: update conditions and logic using the Article.is_restricted new method.
+        if (
+            user_is_authenticated and hasattr(user, 'subscriber') and (
+                user.subscriber.is_subscriber()
+                or any(user.subscriber.is_subscriber(p.slug) for p in article.publications())
+                or any(user.subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+            )
+        ):
             if debug:
                 print('DEBUG: signupwall.middleware.process_request - subscribed user')
+            request.article_allowed = True
             return
         elif debug:
             print('DEBUG: signupwall.middleware.process_request - non subscribed user')
@@ -109,7 +115,8 @@ class SignupwallMiddleware(object):
 
         # dont spend a credit if the article is public
         if article.is_public():
-            raise_signupwall = False
+            # TODO: why not "return" here like above in line 107 when the user is subscribed?
+            request.article_allowed, raise_signupwall = True, False
         else:
             raise_signupwall = True
             # if log views is enabled, set the path_visited to this visitor.
@@ -120,15 +127,15 @@ class SignupwallMiddleware(object):
 
         if user_is_authenticated:
 
-            # at this point, the user is not anon and not subscribed, so we can count all non-public articles visited
+            # At this point the user is not anon and not subscribed, so we count all non-allowed articles visited
             # for the user in this month and add 1 if this article is not in the set and is not public, we not need to
             # know if there are more than credits+2.
-            # raise signupwall if the user has more than credits
+            # Raise signupwall if the user has more than credits
             credits = 10
             articles_visited = set() if article.is_public() else set([article.id])
             articles_visited_count = len(articles_visited)
             if core_articleviewedby_mdb:
-                for x in core_articleviewedby_mdb.posts.find({'user': user.id, 'public': None}):
+                for x in core_articleviewedby_mdb.posts.find({'user': user.id, 'allowed': None}):
                     articles_visited.add(x['article'])
                     articles_visited_count = len(articles_visited)
                     if articles_visited_count >= credits + 2:

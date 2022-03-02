@@ -117,7 +117,15 @@
       <span class="ld-main-menu__title">Emergentes</span>
       <ul class="navmenu-list">
         {% for pub in MENU_PUBLICATIONS %}
-          <li class="ld-main-menu__item"><a href="{{ pub.get_absolute_url }}">{{ pub }}</a></li>
+          <li class="ld-main-menu__item">
+            <a href="{{ pub.get_absolute_url }}">
+              {% if pub.slug in HOMEV3_MENU_PUBLICATIONS_USE_HEADLINE %}
+                {{ pub.headline }}
+              {% else %}
+                {{ pub }}
+              {% endif %}
+            </a>
+          </li>
         {% endfor %}
       </ul>
     {% endif %}
@@ -139,7 +147,15 @@
       <li class="ld-main-menu__item ld-main-menu__divider"><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
       {% block more_extra %}
         {% for pub in MENU_PUBLICATIONS_MORE_EXTRA %}
-          <li class="ld-main-menu__item"><a href="{{ pub.get_absolute_url }}">{{ pub }}</a></li>
+          <li class="ld-main-menu__item{% if divider_at_end and forloop.last %} ld-main-menu__divider{% endif %}">
+            <a href="{{ pub.get_absolute_url }}">
+              {% if pub.slug in HOMEV3_MENU_PUBLICATIONS_USE_HEADLINE %}
+                {{ pub.headline }}
+              {% else %}
+                {{ pub }}
+              {% endif %}
+            </a>
+          </li>
         {% endfor %}
       {% endblock %}
     </ul>

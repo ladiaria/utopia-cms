@@ -31,14 +31,15 @@ def permissions(request):
             try:
                 article = get_article_by_url_kwargs(path_resolved.kwargs)
                 is_subscriber = is_subscriber_default or any(
-                    [subscriber.is_subscriber(p.slug) for p in article.publications()])
+                    subscriber.is_subscriber(p.slug) for p in article.publications()
+                ) or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
             except Article.DoesNotExist:
                 # use url history and search again
                 try:
                     article = ArticleUrlHistory.objects.get(absolute_url=request.path).article
                     is_subscriber = is_subscriber_default or any(
-                        [subscriber.is_subscriber(p.slug) for p in article.publications()]
-                    )
+                        subscriber.is_subscriber(p.slug) for p in article.publications()
+                    ) or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
                 except ArticleUrlHistory.DoesNotExist:
                     # no article found, treat as if it was any other page
                     is_subscriber = is_subscriber_default

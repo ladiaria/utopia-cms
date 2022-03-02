@@ -3,64 +3,72 @@
 <section class="frontpage-section" data-template="category_grid">
   <div class="container">
 
-    <div class="section-detail__head">
-      <h2 class="section-detail__title">{{ fcategory.name|capfirst }}</h2>
-    </div>
+    <div class="section-detail__head"><h2 class="section-detail__title">{{ fcategory.name|capfirst }}</h2></div>
 
     <div class="ld-grid-main ld-grid-main--two-cols ld-section-home">
-      <div class="ld-grid-area area-main grid-home">
-        <div class="ld-card ld-card--big">
-          {% render_toolbar_for category_cover_article %}
-          {% block image %}
-            {% if category_cover_article.photo %}
-              <a href="{{ category_cover_article.get_absolute_url }}">
-                <figure  data-src="{{ category_cover_article.photo.get_1200w_url }}">
-                  <picture>
-                    <source srcset="{{ category_cover_article.photo.get_1200w_url }}" media="(min-width: 700px)">
-                    <source srcset="{{ category_cover_article.photo.get_700w_url }}" media="(min-width: 0)">
-                    <img class="ld-card__img" alt="{% if category_cover_article.photo.caption %}{{ category_cover_article.photo.caption }}{% if category_cover_article.photo.extended.photographer %} · {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ category_cover_article.headline|remove_markup }}'{% if category_cover_article.photo.extended.photographer %} · {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}{% endif %}{% endif %}" title="{% if category_cover_article.photo.caption %}{{ category_cover_article.photo.caption }}{% if category_cover_article.photo.extended.photographer %} · {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ category_cover_article.headline|remove_markup }}'{% if category_cover_article.photo.extended.photographer %} · {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                         width="700"{% if category_cover_article.photo_image_file_exists %} height="{{ category_cover_article.photo.get_700w_size.1 }}"{% endif %}
-                         loading="lazy">
-                  </picture>
-                </figure>
-              </a>
-            {% endif %}
-          {% endblock %}
-          <div class="ld-card__body">
-            <div class="ld-card__section">
-              <a href="{{ category_cover_article.section.get_absolute_url }}">{{ category_cover_article.section }}</a>
-            </div>
-            {% if category_cover_article %}
+
+      {% if category_cover_article %}
+
+        <div class="ld-grid-area area-main grid-home">
+          <div class="ld-card ld-card--big">
+            {% render_toolbar_for category_cover_article %}
+            {% block image %}
+              {% if category_cover_article.photo %}
+                <a href="{{ category_cover_article.get_absolute_url }}">
+                  <figure  data-src="{{ category_cover_article.photo.get_1200w_url }}">
+                    <picture>
+                      <source srcset="{{ category_cover_article.photo.get_1200w_url }}" media="(min-width: 700px)">
+                      <source srcset="{{ category_cover_article.photo.get_700w_url }}" media="(min-width: 0)">
+                      <img class="ld-card__img" alt="{% if category_cover_article.photo.caption %}{{ category_cover_article.photo.caption }}{% if category_cover_article.photo.extended.photographer %} · {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ category_cover_article.headline|remove_markup }}'{% if category_cover_article.photo.extended.photographer %} · {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}{% endif %}{% endif %}" title="{% if category_cover_article.photo.caption %}{{ category_cover_article.photo.caption }}{% if category_cover_article.photo.extended.photographer %} · {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ category_cover_article.headline|remove_markup }}'{% if category_cover_article.photo.extended.photographer %} · {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                           width="700"{% if category_cover_article.photo_image_file_exists %} height="{{ category_cover_article.photo.get_700w_size.1 }}"{% endif %}
+                           loading="lazy">
+                    </picture>
+                  </figure>
+                </a>
+              {% endif %}
+            {% endblock %}
+            <div class="ld-card__body">
+              <div class="ld-card__section">
+                <a href="{{ category_cover_article.section.get_absolute_url }}">{{ category_cover_article.section }}</a>
+                {% with article=category_cover_article %}
+                  {% include 'article/article_card_lock_tooltip.html' %}
+                {% endwith %}
+              </div>
               <h3 class="ld-card__title">
-                <a href="{{ category_cover_article.get_absolute_url }}">{{ category_cover_article.headline|ldmarkup:category_cover_article.id|bleach }}</a>
+                <a href="{{ category_cover_article.get_absolute_url }}">
+                  {{ category_cover_article.headline|ldmarkup:category_cover_article.id|bleach }}
+                </a>
               </h3>
-            {% endif %}
-            {% if category_cover_article.home_lead %}
-              <div class="ld-card__intro">{{ category_cover_article.home_lead|ldmarkup:category_cover_article.id|bleach }}</div>
-            {% endif %}
-            <div class="ld-card__byline">
-              {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and category_cover_article.photo.extended.photographer %}
-                <div class="ld-card__photoauthor">
-                  {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}
+              {% if category_cover_article.home_lead %}
+                <div class="ld-card__intro">
+                  {{ category_cover_article.home_lead|ldmarkup:category_cover_article.id|bleach }}
                 </div>
               {% endif %}
-              {% if category_cover_article.has_byline %}
-                <div class="ld-card__author">
-                  {% for author in category_cover_article.get_authors %}
-                    <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                  {% endfor %}
-                </div>
-              {% endif %}
-              {% if not hide_date_published %}
-                {% autoescape off %}{% date_published_verbose category_cover_article %}{% endautoescape %}
-              {% endif %}
-              {% with a=category_cover_article %}
-                {% include 'article/article_card_read_later.html' %}
-              {% endwith %}
+              <div class="ld-card__byline">
+                {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and category_cover_article.photo.extended.photographer %}
+                  <div class="ld-card__photoauthor">
+                    {{ category_cover_article.photo.extended.type_verbose }}: {{ category_cover_article.photo.extended.photographer.name }}
+                  </div>
+                {% endif %}
+                {% if category_cover_article.has_byline %}
+                  <div class="ld-card__author">
+                    {% for author in category_cover_article.get_authors %}
+                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>
+                      {% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                {% if not hide_date_published %}
+                  {% autoescape off %}{% date_published_verbose category_cover_article %}{% endautoescape %}
+                {% endif %}
+                {% with a=category_cover_article %}{% include 'article/article_card_read_later.html' %}{% endwith %}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+      {% endif %}
+
       <div class="ld-grid-area area-third">
         {% for a in category_destacados|slice:":5" %}
           <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}">
@@ -73,7 +81,10 @@
               </a>
             {% endif %}
             <div class="ld-card__body">
-              <div class="ld-card__section"><a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a></div>
+              <div class="ld-card__section">
+                <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
+                {% with article=a %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
+              </div>
               <h3 class="ld-card__title ld-card__title--mb">
                 <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a>
               </h3>
@@ -86,7 +97,8 @@
                 {% if a.has_byline %}
                   <div class="ld-card__author">
                     {% for author in a.get_authors %}
-                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>
+                      {% if not forloop.last %}, {% endif %}
                     {% endfor %}
                   </div>
                 {% endif %}
@@ -98,8 +110,12 @@
             </div>
             {% if a.photo.extended.square_version %}
               <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
-                <img class="ld-card__img" src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}" alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}" title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                     width="700" height="700" loading="lazy">
+                <img class="ld-card__img"
+                     src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}"
+                     alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}" title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                     width="700"
+                     height="700"
+                     loading="lazy">
               </a>
             {% endif %}
           </div>

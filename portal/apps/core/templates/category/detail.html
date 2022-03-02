@@ -59,23 +59,31 @@
                 </a>
               {% endif %}
             {% endblock %}
+
             <div class="ld-card__body">
 
-              {% if render_hierarchy %}
-                <div class="ld-card__section">
-                  {% autoescape off %}{% render_hierarchy cover_article %}{% endautoescape %}
-                </div>
-              {% elif cover_article.section %}
-                <div class="ld-card__section">
-                  <a href="{{ cover_article.section.get_absolute_url }}">{{ cover_article.section }}</a>
-                </div>
-              {% endif %}
+              {% with article=cover_article %}
+                {% if render_hierarchy %}
+                  <div class="ld-card__section">
+                    {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
+                    {% include 'article/article_card_lock_tooltip.html' %}
+                  </div>
+                {% elif article.section %}
+                  <div class="ld-card__section">
+                    <a href="{{ article.section.get_absolute_url }}">{{ article.section }}</a>
+                    {% include 'article/article_card_lock_tooltip.html' %}
+                  </div>
+                {% elif article.is_restricted %}
+                  <div class="ld-card__section">{% include 'article/article_card_lock_tooltip.html' %}</div>
+                {% endif %}
+              {% endwith %}
 
-              {% if cover_article %}
-                <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
-                  <a href="{{ cover_article.get_absolute_url }}">{{ cover_article.headline|ldmarkup:cover_article.id|bleach }}</a>
-                </h2>
-              {% endif %}
+              <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
+                <a href="{{ cover_article.get_absolute_url }}">
+                  {{ cover_article.headline|ldmarkup:cover_article.id|bleach }}
+                </a>
+              </h2>
+
               {% if cover_article.home_lead or cover_article.lead %}
                 <div class="ld-card__intro">
                   {{ cover_article.home_lead|default:cover_article.lead|ldmarkup:cover_article.id|bleach }}
@@ -107,59 +115,65 @@
       <div class="ld-grid-area area-third">
 
         {% for a in destacados|slice:":5" %}
-            <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}">
-              {% render_toolbar_for a %}
-              {% if a.photo %}
-                <a href="{{ a.get_absolute_url }}" class="ld-card__img-link">
-                  <img class="ld-card__img" src="{{ a.photo.get_700w_url }}"
-                       title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                       alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                       width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}
-                       loading="lazy">
-                </a>
-              {% endif %}
-              <div class="ld-card__body">
+          <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}">
+            {% render_toolbar_for a %}
+            {% if a.photo %}
+              <a href="{{ a.get_absolute_url }}" class="ld-card__img-link">
+                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}"
+                     title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                     alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                     width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}
+                     loading="lazy">
+              </a>
+            {% endif %}
+            <div class="ld-card__body">
+              {% with article=a %}
                 {% if render_hierarchy %}
                   <div class="ld-card__section">
-                    {% autoescape off %}{% render_hierarchy a %}{% endautoescape %}
+                    {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
+                    {% include 'article/article_card_lock_tooltip.html' %}
                   </div>
-                {% elif a.section %}
+                {% elif article.section %}
                   <div class="ld-card__section">
-                    <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
+                    <a href="{{ article.section.get_absolute_url }}">{{ article.section }}</a>
+                    {% include 'article/article_card_lock_tooltip.html' %}
                   </div>
+                {% elif article.is_restricted %}
+                  <div class="ld-card__section">{% include 'article/article_card_lock_tooltip.html' %}</div>
                 {% endif %}
-                <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a></h3>
-                {% if a.home_lead or a.deck %}
-                  <div class="ld-card__intro hide-on-med-and-up">
-                    {{ a.home_lead|default:a.deck|ldmarkup:a.id|bleach }}
-                  </div>
-                {% endif %}
-                <div class="ld-card__byline">
-                  {% if a.has_byline %}
-                    <div class="ld-card__author">
-                      {% for author in a.get_authors %}
-                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                      {% endfor %}
-                    </div>
-                  {% endif %}
-                  {% if not hide_date_published %}
-                    {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
-                  {% endif %}
-                  {% include 'article/article_card_read_later.html' %}
+              {% endwith %}
+              <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a></h3>
+              {% if a.home_lead or a.deck %}
+                <div class="ld-card__intro hide-on-med-and-up">
+                  {{ a.home_lead|default:a.deck|ldmarkup:a.id|bleach }}
                 </div>
-              </div>
-              {% if a.photo.extended.square_version %}
-                <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
-                  <img class="ld-card__img"
-                       src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}"
-                       title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                       alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                       width="700"
-                       height="700"
-                       loading="lazy">
-                </a>
               {% endif %}
+              <div class="ld-card__byline">
+                {% if a.has_byline %}
+                  <div class="ld-card__author">
+                    {% for author in a.get_authors %}
+                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                {% if not hide_date_published %}
+                  {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
+                {% endif %}
+                {% include 'article/article_card_read_later.html' %}
+              </div>
             </div>
+            {% if a.photo.extended.square_version %}
+              <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
+                <img class="ld-card__img"
+                     src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}"
+                     title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                     alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
+                     width="700"
+                     height="700"
+                     loading="lazy">
+              </a>
+            {% endif %}
+          </div>
         {% endfor %}
 
       </div>
@@ -178,13 +192,21 @@
               </a>
             {% endif %}
             <div class="ld-card__body">
-              {% if render_hierarchy %}
-                <div class="ld-card__section">
-                  {% autoescape off %}{% render_hierarchy a %}{% endautoescape %}
-                </div>
-              {% elif a.section %}
-                <div class="ld-card__section"><a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a></div>
-              {% endif %}
+              {% with article=a %}
+                {% if render_hierarchy %}
+                  <div class="ld-card__section">
+                    {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
+                    {% include 'article/article_card_lock_tooltip.html' %}
+                  </div>
+                {% elif article.section %}
+                  <div class="ld-card__section">
+                    <a href="{{ article.section.get_absolute_url }}">{{ article.section }}</a>
+                    {% include 'article/article_card_lock_tooltip.html' %}
+                  </div>
+                {% elif article.is_restricted %}
+                  <div class="ld-card__section">{% include 'article/article_card_lock_tooltip.html' %}</div>
+                {% endif %}
+              {% endwith %}
               <h3 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
                 <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a>
               </h3>

@@ -1,0 +1,32 @@
+<div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
+
+  <div class="ld-snackbar__title">Contenido exclusivo para suscripción digital de pago</div>
+
+  <div class="ld-snackbar__body ld-snackbar__body-sm">
+    <p class="desc">Para acceder a todos los contenidos del sitio</p>
+    <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-regular ld-snackbar__btn--white ld-snackbar__btn">
+      Suscribite
+    </a>
+    <br>
+    <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="link">o Iniciá sesión</a>
+  </div>
+
+  <div class="ld-snackbar__body ld-snackbar__body-lg">
+    <div class="container">
+      <div class="row">
+        <div class="col s6 ld-snackbar__col">
+          <div class="ld-snackbar__text ld-snackbar__block">Para acceder a todos los contenidos del sitio</div>
+          <div class="ld-snackbar__block">
+            <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-default">Suscribite</a>
+          </div>
+        </div>
+        <div class="col s6 ld-snackbar__col ld-snackbar__col--bordered">
+          <div class="ld-snackbar__block">
+            <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="link">o Iniciá sesión</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

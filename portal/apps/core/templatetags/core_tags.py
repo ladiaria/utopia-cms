@@ -29,11 +29,17 @@ def render_related(context, article):
 
     category, publication, upd_dict = section.category, context.get('publication'), None
 
-    if publication and section.slug not in getattr(settings, 'CORE_SECTIONS_EXCLUDE_RELATED', ()) and \
-            publication.slug not in getattr(settings, 'CORE_PUBLICATIONS_EXCLUDE_RELATED', ()):
+    if (
+        publication
+        and section.slug not in getattr(settings, 'CORE_SECTIONS_EXCLUDE_RELATED', ())
+        and publication.slug not in getattr(settings, 'CORE_PUBLICATIONS_EXCLUDE_RELATED', ())
+    ):
         # use the publication
         upd_dict = {
-            'articles': section.latest4relatedbypublication(publication.id, article.id), 'section': publication.name
+            'articles': section.latest4relatedbypublication(publication.id, article.id),
+            'section': publication.headline if publication.slug in getattr(
+                settings, 'CORE_PUBLICATIONS_RELATED_USE_HEADLINE', ()
+            ) else publication.name,
         }
 
     elif category and category.slug in getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', ()):

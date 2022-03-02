@@ -50,7 +50,8 @@ def publications(request):
     }
 
     for p in Publication.objects.exclude(slug=DEFAULT_PUB).iterator():
-        result.update({p.slug.upper() + '_SUB': p.slug, p.slug + '_pub': p})
+        slug_var = p.slug.replace('-', '_')
+        result.update({slug_var.upper() + '_SUB': p.slug, slug_var + '_pub': p})
 
     if get_flavour(request) == 'amp':
         result['extra_header_template'] = getattr(settings, 'HOMEV3_EXTRA_HEADER_TEMPLATE_AMP', None)
@@ -74,6 +75,7 @@ def publications(request):
                 'HOMEV3_LOGO_ALT_TEXT',
                 'HOMEV3_TWITTER_SITE_META',
                 'HOMEV3_EXTRA_META',
+                'HOMEV3_MENU_PUBLICATIONS_USE_HEADLINE',
                 'CORE_ARTICLE_DETAIL_PUBLISHER_META',
                 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO',
                 'CORE_ARTICLE_DETAIL_DATE_TOOLTIP',

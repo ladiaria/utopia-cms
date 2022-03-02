@@ -1265,6 +1265,15 @@ class Article(ArticleBase):
         through='ArticleViewedBy',
         related_name='viewed_articles_%(app_label)s',
     )
+    additional_access = ManyToManyField(
+        Publication,
+        verbose_name=u'Extender acceso a suscriptores por publicación',
+        help_text=(
+            u'Además de los permisos que automáticamente se establecen según dónde se publica el artículo, '
+            u'se dará el mismo nivel de acceso a los suscriptores de las publicaciones marcadas aquí.'
+        ),
+        blank=True,
+    )
     newsletter_featured = BooleanField(u'destacado en newsletter', default=False)
 
     def save(self, *args, **kwargs):
@@ -1394,6 +1403,16 @@ class Article(ArticleBase):
                 imagen__isnull=False).values_list('imagen', flat=True)
             if section_imgs:
                 return PhotoExtended(image=section_imgs[0])
+
+    def is_restricted(self):
+        """
+        When the article's main pub is a restricted publication (by settings), also if no public and has no extra-perms
+        """
+        return (
+            not self.is_public() and self.main_section
+            and self.main_section.edition.publication.slug in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
+            and not self.additional_access.exists()
+        )
 
 
 class ArticleRel(Model):

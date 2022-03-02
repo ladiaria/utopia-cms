@@ -78,7 +78,17 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
     except EmptyPage:
         articles = paginator.page(paginator.num_pages)
 
-    return render(request, template, {'section': section, 'articles': articles, 'publication': publication})
+    return render(
+        request,
+        template,
+        {
+            'section': section,
+            'articles': articles,
+            'publication': publication,
+            'publication_use_headline':
+                publication.slug in getattr(settings, 'CORE_PUBLICATIONS_SECTION_DETAIL_USE_HEADLINE', ()),
+        },
+    )
 
 
 @never_cache

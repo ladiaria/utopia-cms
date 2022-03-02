@@ -23,6 +23,7 @@
       <div class="ld-card__body">
         <div class="ld-card__section">
           <a href="{{ tag_cover_article.section.get_absolute_url }}">{{ tag_cover_article.section }}</a>
+          {% with article=tag_cover_article %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
         </div>
         {% if tag_cover_article %}
           <h3 class="ld-card__title">
@@ -52,7 +53,6 @@
             {% include 'article/article_card_read_later.html' %}
           {% endwith %}
         </div>
-
       </div>
     </div>
   </div>
@@ -70,6 +70,7 @@
         <div class="ld-card__body">
           <div class="ld-card__section">
             <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
+            {% with article=a %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
           </div>
           <h3 class="ld-card__title ld-card__title--mb">
             <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a>

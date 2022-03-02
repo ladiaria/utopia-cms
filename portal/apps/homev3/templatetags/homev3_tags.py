@@ -90,34 +90,6 @@ def render_section(context, section_slug, article_type=None, top_index=None):
     return RenderSectionNode(context, section_slug, article_type, top_index).render(context)
 
 
-class RenderPublicationRowNode(Node):
-    def __init__(self, publication):
-        self.publication = publication
-
-    def render(self, context):
-        edition = get_current_edition(publication=self.publication)
-        if edition:
-            context.update(
-                {
-                    'publication_obj': self.publication,
-                    # TODO: next 2 entries should be checked because template tags rendered after this template tag can
-                    #       be using these new values instead of the "unchanged" ones.
-                    #       ('publication' was changed to 'publication_obj' because it was breaking render_section)
-                    #       A simple solution can be update the flatten version only.
-                    'edition': edition, 'is_portada': True,  # both should be set
-                    # force a blank first node because top_index should be > 0
-                    'publication_destacados': [None] + edition.top_articles[:4],
-                }
-            )
-            result = loader.render_to_string(
-                getattr(settings, 'HOMEV3_PUBLICATION_ROW_TEMPLATE', 'publication_row.html'), context.flatten()
-            )
-            context['publication_obj'] = None
-            return result
-        else:
-            return u''
-
-
 @register.simple_tag(takes_context=True)
 def render_publication_row(context, publication_slug):
     try:
@@ -125,12 +97,29 @@ def render_publication_row(context, publication_slug):
     except Publication.DoesNotExist:
         return u''
     else:
+        user = context.get('user')
         # if not public => render only if saff user
-        return (
-            RenderPublicationRowNode(publication).render(context) if (
-                publication.public or context['user'].is_staff
-            ) else u''
-        )
+        if publication.public or user.is_staff:
+            edition = get_current_edition(publication)
+            if edition:
+                flatten_ctx = context.flatten()
+                flatten_ctx.update(
+                    {
+                        'publication_obj': publication,
+                        'edition': edition, 'is_portada': True,  # both should be set
+                        # force a blank first node because top_index should be > 0
+                        'publication_destacados': [None] + edition.top_articles[:4],
+                    }
+                )
+                if hasattr(user, 'subscriber') and user.subscriber.is_subscriber(publication.slug):
+                    flatten_ctx['publication_obj_is_subscriber'] = True
+                return loader.render_to_string(
+                    getattr(settings, 'HOMEV3_PUBLICATION_ROW_TEMPLATE', 'publication_row.html'), flatten_ctx
+                )
+            else:
+                return u''
+        else:
+            return u''
 
 
 class RenderCategoryRowNode(Node):
@@ -145,9 +134,9 @@ class RenderCategoryRowNode(Node):
         else:
             latest_articles = category.latest_articles()[:4]
             if latest_articles:
-                context.update(
+                flatten_ctx = context.flatten()
+                flatten_ctx.update(
                     {
-                        # TODO: check first 3 entries for the same reason commented in RenderPublicationRowNode
                         'category': category,
                         # both next entries should be set
                         'edition': get_current_edition(),
@@ -159,21 +148,23 @@ class RenderCategoryRowNode(Node):
                 template = 'category_row.html'
                 if category.slug in getattr(settings, 'HOMEV3_CATEGORIES_ROW_CUSTOM_TEMPLATES', ()):
                     template = '%s/row/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug)
-                return loader.render_to_string(template, context.flatten())
+                return loader.render_to_string(template, flatten_ctx)
             else:
                 return u''
 
 
-@register.simple_tag()
-def render_publication_grid(data):
-    publication_slug = data[0]
-    return loader.render_to_string(
-        '%s/%s_grid.html' % (settings.HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR, publication_slug),
+@register.simple_tag(takes_context=True)
+def render_publication_grid(context, data):
+    publication_slug, flatten_ctx = data[0], context.flatten()
+    flatten_ctx.update(
         {
             'publication': Publication.objects.get(slug=publication_slug),
             'top_articles': data[1],
             'cover_article': data[2],
-        },
+        }
+    )
+    return loader.render_to_string(
+        '%s/%s_grid.html' % (settings.HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR, publication_slug), flatten_ctx
     )
 
 

@@ -16,6 +16,7 @@
           <div class="ld-card__body">
             <div class="ld-card__section">
               {% autoescape off %}{% publication_section article %}{% endautoescape %}
+              {% include 'article/article_card_lock_tooltip.html' %}
             </div>
             <h3 class="ld-card__title ">
               <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|bleach }}</a>
