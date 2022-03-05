@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='article',
             name='additional_access',
-            field=models.ManyToManyField(blank=True, help_text='Adem\xe1s de los permisos que autom\xe1ticamente se establecen seg\xfan d\xf3nde se publica el art\xedculo, se dar\xe1 el mismo nivel de acceso a los suscriptores de las publicaciones marcadas aqu\xed.', to='core.Publication', verbose_name='Extender acceso a suscriptores por publicaci\xf3n'),
+            field=models.ManyToManyField(blank=True, help_text='Adem\xe1s de los permisos que autom\xe1ticamente se establecen seg\xfan d\xf3nde se publica el art\xedculo, se dar\xe1 el mismo nivel de acceso a los suscriptores de las publicaciones marcadas aqu\xed.', to='core.Publication', verbose_name='extender acceso a suscriptores por publicaci\xf3n'),
         ),
     ]

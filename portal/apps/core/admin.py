@@ -5,15 +5,21 @@ from requests.exceptions import ConnectionError
 from django.conf import settings
 from django.conf.urls import url
 from django.db.models import Q
+from django.http import HttpResponseRedirect, Http404
+from django.urls import reverse
+from django.urls.exceptions import NoReverseMatch
 from django.contrib import admin
-from django.contrib.admin import ModelAdmin, TabularInline, site
+from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
+from django.contrib.admin.options import get_ul_class
 from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
-from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import slugify
+from django.utils.text import Truncator
+from django.utils.translation import ugettext as _
+
 from django_markdown.widgets import MarkdownWidget
 
 from actstream.models import Action
@@ -39,6 +45,8 @@ from models import (
     Category,
     CategoryHome,
     CategoryHomeArticle,
+    CategoryNewsletter,
+    CategoryNewsletterArticle,
     ArticleUrlHistory,
     BreakingNewsModule,
 )
@@ -86,6 +94,7 @@ class HomeTopArticleInline(TabularInline):
 
     class Media:
         # jquery loaded again (admin uses custom js namespaces)
+        # TODO: check this Media class (is collectstatic seeing it?)
         js = (
             'admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'),
             'js/jquery-ui-1.12.1.custom.min.js',
@@ -743,8 +752,35 @@ class CategoryAdmin(ModelAdmin):
     raw_id_fields = ('full_width_cover_image', )
 
 
+class ForeignKeyRawIdWidgetMoreWords(widgets.ForeignKeyRawIdWidget):
+    """
+    Overrided from django/contrib/admin/widgets.py
+    To rise the quantity of words truncated in the last line of method.
+    """
+    def label_and_url_for_value(self, value):
+        key = self.rel.get_related_field().name
+        try:
+            obj = self.rel.model._default_manager.using(self.db).get(**{key: value})
+        except (ValueError, self.rel.model.DoesNotExist, ValidationError):
+            return '', ''
+
+        try:
+            url = reverse(
+                '%s:%s_%s_change' % (
+                    self.admin_site.name,
+                    obj._meta.app_label,
+                    obj._meta.object_name.lower(),
+                ),
+                args=(obj.pk,)
+            )
+        except NoReverseMatch:
+            url = ''  # Admin not registered for target model.
+
+        return Truncator(obj).words(30, truncate='...'), url
+
+
 class CategoryHomeArticleForm(ModelForm):
-    pos = IntegerField(label='orden', widget=TextInput(attrs={'size': 5, 'readonly': True}))
+    pos = IntegerField(label='orden', widget=TextInput(attrs={'size': 3, 'readonly': True}))
 
     class Meta:
         fields = ['position', 'pos', 'home', 'article', 'fixed']
@@ -773,9 +809,34 @@ class CategoryHomeArticleInline(TabularInline):
     raw_id_fields = ('article', )
     verbose_name_plural = u'Artículos en portada'
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Overrided from django/contrib/admin/options.py
+        # Overrided with the only purpose to use the custom ForeignKeyRawIdWidgetMoreWords widget
+        """
+        Get a form Field for a ForeignKey.
+        """
+        db = kwargs.get('using')
+        if db_field.name in self.raw_id_fields:
+            kwargs['widget'] = ForeignKeyRawIdWidgetMoreWords(db_field.remote_field, self.admin_site, using=db)
+        elif db_field.name in self.radio_fields:
+            kwargs['widget'] = widgets.AdminRadioSelect(attrs={
+                'class': get_ul_class(self.radio_fields[db_field.name]),
+            })
+            kwargs['empty_label'] = _('None') if db_field.blank else None
+
+        if 'queryset' not in kwargs:
+            queryset = self.get_field_queryset(db, db_field, request)
+            if queryset is not None:
+                kwargs['queryset'] = queryset
+
+        return db_field.formfield(**kwargs)
+
+    class Media:
+        css = {'all': ('css/category_home.css', )}
+
 
 class CategoryHomeAdmin(admin.ModelAdmin):
-    list_display = ('category', )
+    list_display = ('category', 'cover')
     exclude = ('articles', )
     inlines = [CategoryHomeArticleInline]
 
@@ -786,6 +847,57 @@ class CategoryHomeAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         super(CategoryHomeAdmin, self).save_model(request, obj, form, change)
         obj.dehole()
+
+
+class CategoryNewsletterArticleForm(ModelForm):
+
+    class Meta:
+        fields = ['order', 'featured', 'article']
+        model = CategoryNewsletterArticle
+        widgets = {'order': TextInput(attrs={'size': 3})}
+
+
+class CategoryNewsletterArticleInline(TabularInline):
+    model = CategoryNewsletter.articles.through
+    extra = 20
+    max_num = 20
+    form = CategoryNewsletterArticleForm
+    raw_id_fields = ('article', )
+    verbose_name_plural = u'Artículos en newsletter'
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Overrided from django/contrib/admin/options.py
+        # Overrided with the only purpose to use the custom ForeignKeyRawIdWidgetMoreWords widget
+        """
+        Get a form Field for a ForeignKey.
+        """
+        db = kwargs.get('using')
+        if db_field.name in self.raw_id_fields:
+            kwargs['widget'] = ForeignKeyRawIdWidgetMoreWords(db_field.remote_field, self.admin_site, using=db)
+        elif db_field.name in self.radio_fields:
+            kwargs['widget'] = widgets.AdminRadioSelect(attrs={
+                'class': get_ul_class(self.radio_fields[db_field.name]),
+            })
+            kwargs['empty_label'] = _('None') if db_field.blank else None
+
+        if 'queryset' not in kwargs:
+            queryset = self.get_field_queryset(db, db_field, request)
+            if queryset is not None:
+                kwargs['queryset'] = queryset
+
+        return db_field.formfield(**kwargs)
+
+    class Media:
+        css = {'all': ('css/category_newsletter.css', )}
+
+
+class CategoryNewsletterAdmin(admin.ModelAdmin):
+    list_display = ('category', 'valid_until', 'cover')
+    exclude = ('articles', )
+    inlines = [CategoryNewsletterArticleInline]
+    fieldsets = (
+        (None, {'fields': (('category', 'valid_until'), )}),
+    )
 
 
 class ArticleInline(TabularInline):
@@ -865,6 +977,7 @@ site.register(Supplement, SupplementAdmin)
 site.register(Publication, PublicationAdmin)
 site.register(Category, CategoryAdmin)
 site.register(CategoryHome, CategoryHomeAdmin)
+site.register(CategoryNewsletter, CategoryNewsletterAdmin)
 site.register(BreakingNewsModule, BreakingNewsModuleAdmin)
 site.unregister(Tag)
 site.unregister(TaggedItem)

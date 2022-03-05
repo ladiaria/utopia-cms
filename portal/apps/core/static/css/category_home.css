@@ -1,0 +1,18 @@
+td.field-pos {
+  width: 60px;
+}
+td.field-article {
+  padding-bottom: 1em;
+}
+td.field-article strong {
+  display: inline-block;
+  position: absolute;
+  margin-right: 160px;
+  margin-top: 5px;
+}
+td.field-fixed {
+  width: 50px;
+}
+td.delete {
+  width: 70px;
+}

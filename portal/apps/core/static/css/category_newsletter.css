@@ -1,0 +1,31 @@
+th.original {
+  width: 60px !important;
+  padding: initial !important;
+}
+td.original {
+  padding: initial !important;
+}
+tr.dynamic-categorynewsletterarticle_set td {
+  padding-top: 1.4em !important;
+}
+td.field-order {
+  width: 60px;
+}
+td.field-featured {
+  width: 76px;
+}
+td.field-article {
+  padding-bottom: 1em;
+}
+td.field-article strong {
+  display: inline-block;
+  position: absolute;
+  margin-right: 90px;
+  margin-top: 5px;
+}
+td.delete {
+  width: 70px;
+}
+.vForeignKeyRawIdAdminField {
+  width: 4em;
+}

@@ -46,6 +46,7 @@ from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.formats import date_format
 
 from apps import blacklisted
 from core.templatetags.ldml import ldmarkup, cleanhtml
@@ -1267,7 +1268,7 @@ class Article(ArticleBase):
     )
     additional_access = ManyToManyField(
         Publication,
-        verbose_name=u'Extender acceso a suscriptores por publicación',
+        verbose_name=u'extender acceso a suscriptores por publicación',
         help_text=(
             u'Además de los permisos que automáticamente se establecen según dónde se publica el artículo, '
             u'se dará el mismo nivel de acceso a los suscriptores de las publicaciones marcadas aquí.'
@@ -1452,13 +1453,19 @@ class ArticleViewedBy(Model):
 
 class CategoryHomeArticle(Model):
     home = ForeignKey('CategoryHome')
-    article = ForeignKey(Article, related_name='home_articles', limit_choices_to={'is_published': True})
+    article = ForeignKey(
+        Article, verbose_name=u'artículo', related_name='home_articles', limit_choices_to={'is_published': True}
+    )
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
 
     def __unicode__(self):
         # also a custom text version to be useful in the CategoryHome admin change form
-        return u'%s' % self.article.last_published_by_category(self.home.category)
+        return date_format(
+            self.article.last_published_by_category(self.home.category),
+            format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
+            use_l10n=True,
+        ) + (u'-F' if self.article.photo else u'')
 
     class Meta:
         ordering = ('position', )
@@ -1629,6 +1636,68 @@ def update_category_home(dry_run=False):
 
     if settings.DEBUG:
         print('DEBUG: update_category_home completed in %.0f seconds' % (time.time() - start_time))
+
+
+class CategoryNewsletterArticle(Model):
+    newsletter = ForeignKey('CategoryNewsletter')
+    article = ForeignKey(
+        Article, verbose_name=u'artículo', related_name='newsletter_articles', limit_choices_to={'is_published': True}
+    )
+    order = PositiveSmallIntegerField('orden', null=True, blank=True)
+    featured = BooleanField(u'incluir sólo en bloque destacado', default=False)
+
+    def __unicode__(self):
+        # also a custom text version to be useful in the CategoryNewsletter admin change form
+        return date_format(
+            self.article.last_published_by_category(self.newsletter.category),
+            format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
+            use_l10n=True,
+        ) + (u'-F' if self.article.photo else u'')
+
+    class Meta:
+        ordering = ('order', )
+
+
+class CategoryNewsletter(Model):
+    valid_until = DateTimeField(u'válida hasta')
+    category = OneToOneField(Category, verbose_name=u'área', related_name='newsletter')
+    articles = ManyToManyField(Article, through=CategoryNewsletterArticle)
+
+    def __unicode__(self):
+        return u'%s - %s' % (self.category, self.cover())
+
+    def non_featured_articles(self):
+        """ Returns the non-featured articles qs """
+        return self.articles.filter(newsletter_articles__featured=False)
+
+    def cover(self):
+        """ Returns the non-featured article in the 1st position """
+        non_featured = self.non_featured_articles()
+        return non_featured.exists() and non_featured.order_by('newsletter_articles')[0]
+
+    def non_cover_articles(self):
+        """ Returns the non-featured articles from 2nd position """
+        non_featured = self.non_featured_articles()
+        return non_featured.order_by('newsletter_articles')[1:] if non_featured.exists() else []
+
+    def featured_articles(self):
+        """ Returns the featured articles qs """
+        return self.articles.filter(newsletter_articles__featured=True)
+
+    def featured_article(self):
+        """ Returns the featured article in the 1st position """
+        featured = self.featured_articles()
+        return featured.exists() and featured.order_by('newsletter_articles')[0]
+
+    def non_cover_featured_articles(self):
+        """ Returns the featured articles from 2nd position """
+        featured = self.featured_articles()
+        return featured.order_by('newsletter_articles')[1:] if featured.exists() else []
+
+    class Meta:
+        verbose_name = u'newsletter de área'
+        verbose_name_plural = u'newsletters de área'
+        ordering = ('category', )
 
 
 class ArticleExtension(Model):

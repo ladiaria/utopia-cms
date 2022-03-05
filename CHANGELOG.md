@@ -1,3 +1,8 @@
+# version 0.2.2 (2022-03-05)
+
+- Support for custom area newsletters content independent from area's home.
+- UX Improvements in the admin of area homes and a related "TODO" added.
+
 # version 0.2.1 (2022-03-02)
 
 - Restricted publications feature (articles content are completely locked to non-subscribers).

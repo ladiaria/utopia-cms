@@ -12,7 +12,7 @@ from django.contrib.sites.models import Site
 from django.shortcuts import get_object_or_404, render
 from django.core.urlresolvers import reverse
 
-from core.models import Category, CategoryHome, Section, Article, get_latest_edition
+from core.models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
 from core.templatetags.core_tags import remove_markup
 from faq.models import Question, Topic
 
@@ -96,34 +96,61 @@ def newsletter_preview(request, slug):
 
     site = Site.objects.get_current()
     category = get_object_or_404(Category, slug=slug)
-    category_home = get_object_or_404(CategoryHome, category=category)
 
     try:
-        cover_article = category_home.cover()
-        cover_article_section = cover_article.publication_section() if cover_article else None
-        top_articles = [(a, a.publication_section()) for a in category_home.non_cover_articles()]
 
-        listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
-        if listonly_section:
-            top_articles = [t for t in top_articles if t[1].slug == listonly_section]
-            if cover_article_section.slug != listonly_section:
-                cover_article = top_articles.pop(0)[0] if top_articles else None
-                cover_article_section = cover_article.publication_section() if cover_article else None
+        context = {'category': category, 'newsletter_campaign': category.slug}
 
-        opinion_article = None
-        nl_featured = Article.objects.filter(id=settings.NEWSLETTER_FEATURED_ARTICLE) if \
-            getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False) else \
-            get_latest_edition().newsletter_featured_articles()
-        if nl_featured:
-            opinion_article = nl_featured[0]
-
-        # featured_article (a featured section in the category)
         try:
-            featured_section, days_ago = settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[category.slug]
-            featured_article = category.section_set.get(slug=featured_section).latest_article()[0]
-            assert (featured_article.date_published >= datetime.now() - timedelta(days_ago))
-        except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
-            featured_article = None
+            category_nl = CategoryNewsletter.objects.get(category=category, valid_until__gt=datetime.now())
+            cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
+            context.update(
+                {
+                    'cover_article_section': cover_article.publication_section() if cover_article else None,
+                    'articles': [(a, a.publication_section()) for a in category_nl.non_cover_articles()],
+                    'featured_article_section': featured_article.publication_section() if featured_article else None,
+                    'featured_articles':
+                        [(a, a.publication_section()) for a in category_nl.non_cover_featured_articles()],
+                }
+            )
+
+        except CategoryNewsletter.DoesNotExist:
+
+            category_home = get_object_or_404(CategoryHome, category=category)
+
+            cover_article = category_home.cover()
+            cover_article_section = cover_article.publication_section() if cover_article else None
+            top_articles = [(a, a.publication_section()) for a in category_home.non_cover_articles()]
+
+            listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
+            if listonly_section:
+                top_articles = [t for t in top_articles if t[1].slug == listonly_section]
+                if cover_article_section.slug != listonly_section:
+                    cover_article = top_articles.pop(0)[0] if top_articles else None
+                    cover_article_section = cover_article.publication_section() if cover_article else None
+
+            opinion_article = None
+            nl_featured = Article.objects.filter(id=settings.NEWSLETTER_FEATURED_ARTICLE) if \
+                getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False) else \
+                get_latest_edition().newsletter_featured_articles()
+            if nl_featured:
+                opinion_article = nl_featured[0]
+
+            # featured_article (a featured section in the category)
+            try:
+                featured_section, days_ago = settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[category.slug]
+                featured_article = category.section_set.get(slug=featured_section).latest_article()[0]
+                assert (featured_article.date_published >= datetime.now() - timedelta(days_ago))
+            except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
+                featured_article = None
+
+            context.update(
+                {
+                    'opinion_article': opinion_article,
+                    'cover_article_section': cover_article_section,
+                    'articles': top_articles,
+                }
+            )
 
         try:
             hashed_id = hashids.encode(int(request.user.subscriber.id))
@@ -150,20 +177,17 @@ def newsletter_preview(request, slug):
             '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
         headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
 
-        context = {
-            'site_url': site_url,
-            'category': category,
-            'featured_article': featured_article,
-            'opinion_article': opinion_article,
-            'cover_article': cover_article,
-            'cover_article_section': cover_article_section,
-            'articles': top_articles,
-            'newsletter_campaign': category.slug,
-            'hashed_id': hashed_id,
-            'unsubscribe_url': unsubscribe_url,
-            'custom_subject': custom_subject,
-            'headers_preview': headers,
-        }
+        context.update(
+            {
+                'site_url': site_url,
+                'hashed_id': hashed_id,
+                'unsubscribe_url': unsubscribe_url,
+                'custom_subject': custom_subject,
+                'headers_preview': headers,
+                'cover_article': cover_article,
+                'featured_article': featured_article,
+            }
+        )
 
         # override is_subscriber_any and _default only to "False"
         for suffix in ('any', 'default'):
