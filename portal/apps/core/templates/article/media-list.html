@@ -1,11 +1,15 @@
 {% load bleach_tags core_tags tagging_tags adzone_tags ldml %}
-    {% for article in articles %}
-    <li data-id="{{ article.id }}" class="">
-        <article>
-            <span class="num-recomendados col s1 iter-{{forloop.parentloop.counter}}">
-            {{forloop.parentloop.counter}}
-            </span>
-            <a href="{{ article.get_absolute_url }}" class="title-recomendados col">{{ article.headline|ldmarkup:article.id|bleach }}</a>
-        </article>
-    </li>
-    {% endfor %}
+
+{% for article in articles %}
+  <li data-id="{{ article.id }}" class="item">
+    <article>
+      <span class="num-recomendados col iter-{{ forloop.parentloop.counter }}">{{ forloop.parentloop.counter }}</span>
+      <div class="col">
+        <div class="article-section">{% autoescape off %}{% publication_section article %}{% endautoescape %}</div>
+        <a href="{{ article.get_absolute_url }}" class="title-recomendados">
+          {{ article.headline|ldmarkup:article.id|bleach }}
+        </a>
+      </div>
+    </article>
+  </li>
+{% endfor %}

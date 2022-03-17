@@ -87,7 +87,6 @@ INSTALLED_APPS = (
     'less',
     'django_user_agents',
     'updown',
-    'materialize',
     'crispy_forms',
     'crispy_forms_materialize',
     'actstream',

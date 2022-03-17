@@ -1,3 +1,12 @@
+# version 0.2.3 (2022-03-17)
+
+- The "Most readed" articles feature was refactored and improved.
+- Fixed an error in Publication's admin when the logo image is missing from filesystem.
+- Many syntax code style improvements.
+- Improvements on subscription forms validations and generated email messages.
+- The "materialize" Python module is not required and was removed from requirements and installed apps.
+- UX and CSS improvements.
+
 # version 0.2.2 (2022-03-05)
 
 - Support for custom area newsletters content independent from area's home.

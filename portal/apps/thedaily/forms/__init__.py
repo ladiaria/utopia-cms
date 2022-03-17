@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from datetime import date
 import re
 
 from captcha.fields import ReCaptchaField
@@ -285,18 +287,24 @@ class SubscriberForm(ModelForm):
             raise UnreadablePostError
         return telephone
 
-    def is_valid(self, subscription_type):
+    def clean_email(self):
+        return self.cleaned_data.get('email').lower()
+
+    def is_valid(self, subscription_type, payment_type='tel'):
         result = super(SubscriberForm, self).is_valid()
-        if result:
-            # continue validation to check for repeated email and subsc. type:
+        if result and payment_type == 'tel':
+            # continue validation to check for repeated email and subsc. type, for "tel" subscriptions in same day:
             try:
                 s = Subscription.objects.get(
-                    email__iexact=self.cleaned_data.get('email'))
+                    email__iexact=self.cleaned_data.get('email'), date_created__date=date.today()
+                )
                 if subscription_type in s.subscription_type_prices.values_list('subscription_type', flat=True):
-                    self._errors['email'] = self.error_class([u"Su email ya posee una suscripción"])
+                    self._errors['email'] = self.error_class(["Su email ya posee una suscripción en proceso"])
                     result = False
             except Subscription.MultipleObjectsReturned:
-                self._errors['email'] = self.error_class([u"Su email ya posee más de una suscripción"])
+                # TODO: this can be relaxed using the same "if" above and only invalidate when all objects found
+                #       evaluates the "if" to True, and also the view should be changed to be aware of this.
+                self._errors['email'] = self.error_class(["Su email ya posee más de una suscripción en proceso"])
                 result = False
             except Subscription.DoesNotExist:
                 pass
@@ -393,11 +401,12 @@ class SubscriberSignupForm(SubscriberForm):
         )
     )
 
-    def is_valid(self, subscription_type):
-        result = super(SubscriberSignupForm, self).is_valid(subscription_type)
+    def is_valid(self, subscription_type, payment_type=None):
+        # call is_valid first with the parent class, only to fill the cleaned_data
+        result = super(SubscriberForm, self).is_valid()
         if result:
-            # continue validation to check for the new signup:
-            self.signup_form = SignupForm(
+            # validate signup first
+            signup_form = SignupForm(
                 {
                     'first_name': self.cleaned_data.get('first_name'),
                     'email': self.cleaned_data.get('email'),
@@ -405,9 +414,16 @@ class SubscriberSignupForm(SubscriberForm):
                     'password': self.cleaned_data.get('password'),
                 }
             )
-            result = self.signup_form.is_valid()
-            if not result:
-                self._errors = self.signup_form._errors
+            signup_form_valid = signup_form.is_valid()
+            result = signup_form_valid and (
+                super(SubscriberSignupForm, self).is_valid(subscription_type, payment_type) if payment_type else
+                super(SubscriberSignupForm, self).is_valid(subscription_type)
+            )
+            if result:
+                self.signup_form = signup_form
+            else:
+                if not signup_form_valid:
+                    self._errors = signup_form._errors
                 # TODO: telephone an phone should have same name to avoid this
                 if 'phone' in self._errors:
                     self._errors['telephone'] = self._errors.pop('phone')
@@ -453,11 +469,12 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
         )
     )
 
-    def is_valid(self, subscription_type):
-        result = super(SubscriberSignupAddressForm, self).is_valid(subscription_type)
+    def is_valid(self, subscription_type, payment_type=None):
+        # call is_valid first with the parent class, only to fill the cleaned_data
+        result = super(SubscriberForm, self).is_valid()
         if result:
-            # continue validation to check for the new signup:
-            self.signup_form = SignupForm(
+            # validate signup first
+            signup_form = SignupForm(
                 {
                     'first_name': self.cleaned_data.get('first_name'),
                     'email': self.cleaned_data.get('email'),
@@ -465,9 +482,16 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
                     'password': self.cleaned_data.get('password'),
                 }
             )
-            result = self.signup_form.is_valid()
-            if not result:
-                self._errors = self.signup_form._errors
+            signup_form_valid = signup_form.is_valid()
+            result = signup_form_valid and (
+                super(SubscriberSignupAddressForm, self).is_valid(subscription_type, payment_type) if payment_type else
+                super(SubscriberSignupAddressForm, self).is_valid(subscription_type)
+            )
+            if result:
+                self.signup_form = signup_form
+            else:
+                if not signup_form_valid:
+                    self._errors = self.signup_form._errors
                 # TODO: telephone an phone should have same name to avoid this
                 if 'phone' in self._errors:
                     self._errors['telephone'] = self._errors.pop('phone')
@@ -655,8 +679,8 @@ class GoogleSignupForm(GoogleSigninForm):
         Fieldset(u'', 'phone'),
     )
 
-    def is_valid(self, arg=None):
-        # wrapper to allow compatibility with calls with an argument
+    def is_valid(self, *args):
+        # wrapper to allow compatibility with calls with arguments
         return super(GoogleSignupForm, self).is_valid()
 
 

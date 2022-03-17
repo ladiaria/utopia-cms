@@ -1,3 +1,17 @@
+# From version 0.2.2 to 0.2.3
+
+```
+git pull
+git checkout 0.2.3
+# activate your virtual env
+./manage.py migrate
+# optionally uninstall materialize:
+pip uninstall materialize
+```
+
+In a production environment, to keep the most read articles table synced correctly, you should run the command
+`sync_article_views` everyday before day-end.
+
 # From version 0.2.1 to 0.2.2
 
 ```

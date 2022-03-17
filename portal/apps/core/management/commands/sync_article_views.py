@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.db import connection
 
 from apps import core_articlevisits_mdb
-from core.models import Article
+from core.models import Article, ArticleViews
 
 
 class Command(BaseCommand):
@@ -29,19 +29,28 @@ class Command(BaseCommand):
             except Exception as e:
                 print(e)
         if updates:
-            # build and exec update sql
+            # build and exec insert and update sqls (for ArticleViews and Article models)
+            # NOTE: ArticleViews will take today as the date viewed for all views synced
+            articleviews_table, article_table = ArticleViews._meta.db_table, Article._meta.db_table
+            insert_query = """
+                INSERT INTO %s(article_id,day,views) VALUES %s ON DUPLICATE KEY UPDATE views=views+VALUES(views)
+            """ % (articleviews_table, ','.join('(%d,CURRENT_DATE,%d)' % t for t in updates.items()))
             article_ids = ','.join(str(k) for k in updates.keys())
             update_query = "UPDATE %s SET views=views+ELT(FIELD(id,%s),%s) WHERE id IN (%s)" % (
-                Article._meta.db_table,
-                article_ids,
-                ','.join(str(k) for k in updates.values()),
-                article_ids,
+                article_table, article_ids, ','.join(str(k) for k in updates.values()), article_ids,
             )
             try:
                 with connection.cursor() as cursor:
-                    cursor.execute(update_query)
+                    try:
+                        cursor.execute(insert_query)
+                    except Exception:
+                        print('ERROR inserting/updating %s table, query:\n%s' % (articleviews_table, insert_query))
+                    try:
+                        cursor.execute(update_query)
+                    except Exception:
+                        print('ERROR updating %s table, query:\n%s' % (article_table, update_query))
             except Exception:
-                print('ERROR updating views, update query: ' + update_query)
+                print('ERROR: sql queries were not executed:\n%s\n%s' % (insert_query, update_query))
         # clear cache at the end
         cache.clear()
         if vlevel > 1:

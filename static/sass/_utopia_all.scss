@@ -827,199 +827,190 @@ i.material-icons.icon-lo_mas_leido {
         margin-bottom: 24px;
     }
 }
-// mas leidos
+// mas leido component
 #mas-leidos {
+  padding: 40px 0;
+  background: #f3f3f3;
 
-    > .container {
-        width: 700px;
-        max-width: 100%;
 
-        @media (max-width: 699px) {
-            width: 90%;
-        }
-      }
+  .card-header {
+      display: flex;
 
-    .reading-time {
-      margin-top: 10px;
-      svg {
-        display: inline-block;
-        position: relative;
-        top:2px;
+      .card-title {
+        flex-grow: 1;
       }
     }
 
-    .article-title {
-      font-size: 32px;
-      line-height: 1.2;
+  .card-title {
+      padding: 0;
       font-weight: 500;
+      font-size: 28px;
+      line-height: 36px;
+      color: $off-black;
+      margin: 0;
+      font-family: 'Meta Serif', serif;
 
-      padding-left: 20px;
-      padding-right: 20px;
+      .ico {
+      vertical-align: middle;
 
-        .row {
-            margin-bottom: 0;
-        }
-    }
-    .card {
-        border: none;
-    }
+          svg {
+              fill: #262626;
+          }
+      }
 
-    .card-title {
-        text-align: center;
-        padding: 12px;
-        font-weight: 500;
-        background-color: $off-black;
-        font-size: 22px;
-        color: #fff;
-        margin: 0;
-        border-radius: 10px 10px 0 0;
-
+      @media screen and (max-width:768px) {
         .ico {
-        vertical-align: middle;
-
-            svg {
-                fill: #fff;
-            }
+            display: none;
         }
-
-            @media screen and (max-width:768px) {
-            .ico {
-                display: none;
-            }
-        }
+      }
     }
 
-    .tabs.tabs-transparent .indicator {
-        background-color: white;
-        height: 3px;
+  > .container {
+    width: 90%;
+
+    @media only screen and (min-width: 601px) {
+      max-width: 600px;
+    }
+    @media only screen and (min-width: 800px) {
+      max-width: 1170px;
+    }
+  }
+
+  .mas-leidos-list {
+
+    @media (min-width:900px) {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+      grid-column-gap: 15px;
     }
 
-    .tablist {
-        background: $off-black;
-        position: relative;
-        height: 48px;
-        width: 100%;
-        margin: 0 auto;
-        text-align: center;
+    > li {
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+      border-bottom: 1px solid #D8D8D8;
 
-        .tab {
-        display: inline-block;
-        line-height: 48px;
-        height: 48px;
+
+      @media (min-width:900px) {
+        min-height: 122px;
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-left: 1px solid #D8D8D8;
+        padding-left: 8px;
+      }
+
+    }
+
+    article {
+      display: flex;
+
+      > .col {
         padding: 0;
-        margin: 0;
-        text-transform: uppercase;
+      }
 
-            a {
-                color: rgba(255,255,255,0.7);
+      .num-recomendados {
+        margin-right: 10px;
+        font-size: 18px;
+        line-height: 21px;
+        color: #858585;
+      }
 
-                display: block;
-                width: 100%;
-                height: 100%;
-                padding: 0 24px;
-                font-size: 14px;
-                text-overflow: ellipsis;
-                overflow: hidden;
-                transition: color .28s ease;
-                font-weight: 500;
-
-                &.active {
-                color: #fff;
-                border-bottom: 2px solid #fff;
-                }
-            }
-
-        }
-    }
-
-    .card-tabs {
-        background-color: $primary-color;
-
+      .article-section {
         a {
-        font-size: 14px;
-        font-weight: 500;
-        text-decoration: none;
-
-            &:hover {
-                text-decoration: underline;
-            }
+          font-size: 12px;
+          line-height: 14px;
+          text-transform: uppercase;
+          color:#595959;
+          text-decoration: none;
+          padding-left: 5px;
+          display: block;
+          margin-bottom: 5px;
         }
-    }
+      }
+      .title-recomendados {
+        font-size: 16px;
+        line-height: 20px;
+        text-decoration: none;
+        font-family: 'Meta Serif', serif;
+        padding: 0 5px 5px;
+        display: block;
 
-    .card-content {
-        background: $color-light-blue;
-        display: none;
-        padding: 24px;
-        border-radius: 0 0 10px 10px;
-        min-height: 562px;
+        &:hover {
+          background: #ECECEC;
+          border-radius: 4px;
+          color: $off-black;
+        }
+      }
+    }
+  }
+}
+// mas leido view
+#mas-leidos-view {
+  padding-bottom: 100px;
+
+  .tabs {
+    display: flex;
+
+    .tab {
+      width: 33%;
+      border-bottom: 2px solid #F3F3F3;
+      a {
+        display: block;
+        color: $off-black;
+        font-size: 14px;
 
         &.active {
-        display: block !important;
+          background: #F3F3F3;
         }
+      }
+
+    }
+    .indicator {
+      background-color: $off-black;
+    }
+  }
+  .ml-list {
+    display: block;
+
+    .item {
+      margin-bottom: 20px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #D8D8D8;
+
+      > article {
+        display: flex;
 
         .num-recomendados {
-        color: $grey;
-        line-height: 1.4;
-        font-size: 16px;
-        text-align: right;
-        padding-top: 10px;
+          font-size: 18px;
+          font-weight: bold;
+          color: #858585;
+          margin-right: 15px;
+          padding-top: 2px;
         }
-
+        .article-section a {
+          font-size: 12px;
+          line-height: 14px;
+          text-transform: uppercase;
+          color: #595959;
+          text-decoration: none;
+        }
         .title-recomendados {
-            border-radius: 4px;
-            transition: all 0.2s ease-in-out;
-            max-width: 86.667%;
-            padding:10px;
-
-            &:hover {
-                background: rgba($color: #000000, $alpha: 0.1);
-                text-decoration: none;
-            }
-
-            &:active {
-                background: rgba($color: #000000, $alpha: 0.2);
-                text-decoration: none;
-            }
+          font-size: 18px;
+          font-weight: bold;
+          line-height: 23px;
+          font-family: 'Meta Serif', serif;
+          text-decoration: none;
         }
-
-        a {
-        font-size: 16px;
-        color: $off-black;
-        text-decoration: none;
-
-            &:hover {
-                text-decoration: underline;
-            }
-        }
-
-        ul {
-        list-style: none;
-        margin:0;
-        padding:0;
-
-            li {
-
-                margin-bottom: 10px;
-
-                article {
-                    margin-left: -10px;
-                    margin-right: -10px;
-
-                    &:after {
-                        content: "";
-                        display: block;
-                        clear: both;
-                    }
-                }
-
-            }
-        }
+      }
     }
+  }
 }
 body.masleidos {
-    #mas-leidos {
-        margin:50px 0 100px;
+  #main-content {
+    .container {
+      max-width: 90%;
     }
+  }
 }
 
 .journalist {
@@ -2238,31 +2229,7 @@ nav.subscription_black {
     }
 }
 
-/* los mas leidos - TODO: juntar con mas leidos de arriba */
-.mas-leidos-tabs {
-    .tabs {
-        background: $off-black;
-        text-align: center;
 
-        li.tab {
-        font-size: 14px;
-        line-height: 48px;
-
-            a {
-                color: rgba(255, 255, 255, 0.7);
-            }
-            .active {
-                font-size: 100%;
-                color: white;
-            }
-
-        }
-
-        .indicator {
-        background-color: white;
-        }
-    }
-}
 // sections footer
 .footer-section {
     text-align: center;

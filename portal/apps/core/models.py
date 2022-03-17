@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import os
 import time
 import locale
@@ -169,17 +170,21 @@ class Publication(Model):
         url = None
         if self.image:
             logo_filename = self.image.path
-            logo_image = Image.open(logo_filename)
-            if logo_image.size[0] > 120:
+            try:
+                logo_image = Image.open(logo_filename)
+            except IOError:
+                logo_image = None
+            if logo_image and logo_image.size[0] > 120:
                 tmpfile, f = tempfile.mkstemp('.png', dir=settings.MEDIA_ROOT)
                 logo_image.convert('RGB').save(f, optimize=True)
                 url = get_thumbnail(f, '120', crop='center', quality=99).url
             else:
-                url = u'%s%s' % (settings.MEDIA_URL, self.image)
+                url = '%s%s' % (settings.MEDIA_URL, self.image)
         return (
-            u'<a href="/admin/core/publication/%d/">'
-            u'<img src="%s" style="background:%s;"/></a>' % (
-                self.id, url, self.newsletter_header_color) if url else u'')
+            '<a href="/admin/core/publication/%d/"><img src="%s" style="background:%s;"/></a>' % (
+                self.id, url, self.newsletter_header_color
+            )
+        ) if url else ''
     image_tag.short_description = u'logo / Logo para NL'
     image_tag.allow_tags = True
 
@@ -1449,6 +1454,16 @@ class ArticleViewedBy(Model):
 
     class Meta:
         unique_together = ('article', 'user')
+
+
+class ArticleViews(Model):
+    article = ForeignKey(Article)
+    day = DateField(db_index=True)
+    views = PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('article', 'day')
+        index_together = [('day', 'views')]
 
 
 class CategoryHomeArticle(Model):

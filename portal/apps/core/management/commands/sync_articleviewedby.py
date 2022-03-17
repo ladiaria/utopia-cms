@@ -21,7 +21,8 @@ class Command(BaseCommand):
             except ArticleViewedBy.DoesNotExist:
                 try:
                     ArticleViewedBy.objects.create(
-                        article_id=mdb_view['article'], user_id=mdb_view['user'], viewed_at=mdb_view['viewed_at'])
+                        article_id=mdb_view['article'], user_id=mdb_view['user'], viewed_at=mdb_view['viewed_at']
+                    )
                 except IntegrityError:
                     pass
             mdb_view = core_articleviewedby_mdb.posts.find_one_and_delete({})

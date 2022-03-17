@@ -164,10 +164,9 @@ class RenderArticleMediaNode(Node):
             return ''
         media = self.media.resolve(context)
         context.update({'articles': [article], 'media': media, 'separador': True})
-        article_html = loader.render_to_string(
-            'core/templates/article/media-list.html',
-            context=context.flatten(), request=context.request)
-        return article_html
+        return loader.render_to_string(
+            'core/templates/article/media-list.html', context=context.flatten(), request=context.request
+        )
 
 
 @register.tag

@@ -1,14 +1,12 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static core_tags %}
 
 {% block page_title %}Lo más leído | {{ site.name }} | {{ country_name }}{% endblock %}
 
 {% block header_scripts %}
   <script type="text/javascript">
     $(function(){
-      $('#mas-leidos-content').load('/masleidos/content/', function(){
-        $('ul.tablist').tabs();
-      });
+      $('ul.tablist').tabs();
     });
   </script>
 {% endblock %}
@@ -16,8 +14,47 @@
 {% block body_class %}interior masleidos{% endblock %}
 
 {% block content %}
-  <section id="mas-leidos" class="col s12">
-    <div id="mas-leidos-content"></div>
+  <div class="section-detail__head">
+    <a class="section-detail__toplink" href="{% url 'home' %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="8" height="13" viewBox="15451.996 -3655.987 6.105 9.902">
+        <path d="M773.155,7312l3.8,3.8,3.8-3.8,1.155,1.155-4.951,4.951L772,7313.155l1.155-1.155" transform="translate(22770.102 -4427.987) rotate(90)" fill="#595959"></path>
+      </svg>
+      Portada
+    </a>
+  </div>
+  <h1 class="title" aria-label="Lo más leído ">Lo más leído <span class="ico"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M16.85 6.85l1.44 1.44-4.88 4.88-3.29-3.29c-.39-.39-1.02-.39-1.41 0l-6 6.01c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L9.41 12l3.29 3.29c.39.39 1.02.39 1.41 0l5.59-5.58 1.44 1.44c.31.31.85.09.85-.35V6.5c.01-.28-.21-.5-.49-.5h-4.29c-.45 0-.67.54-.36.85z"/></svg></span></h1>
+  <section id="mas-leidos-view" class="col s12">
+    <div id="mas-leidos-content">
+      <ul class="tabs" role="tablist">
+        <li class="tab" role="tab"><a href="#ml_dia" title="Artículos más leidos el día de hoy" class="active">Hoy</a></li>
+        <li class="tab" role="tab"><a href="#ml_semana" title="Artículos más leidos de la semana">Semana</a></li>
+        <li class="tab" role="tab"><a href="#ml_mes" title="Artículos más leidos del mes">Mes</a></li>
+      </ul>
+      <!-- by day -->
+      <div class="card-content active" id="ml_dia" role="tabpanel">
+        <ul class="ml-list">
+          {% for masv in mas_leidos_daily %}
+            {% render_article_media with article=masv media=masv.home_display %}
+          {% endfor %}
+        </ul>
+      </div>
+      <!-- by week -->
+      <div class="card-content" id="ml_semana" role="tabpanel">
+        <ul class="ml-list">
+          {% for masv in mas_leidos_weekly %}
+            {% render_article_media with article=masv media=masv.home_display %}
+          {% endfor %}
+        </ul>
+      </div>
+      <!-- by month -->
+      <div class="card-content" id="ml_mes" role="tabpanel">
+        <ul  class="ml-list">
+          {% for masv in mas_leidos_monthly %}
+            {% render_article_media with article=masv media=masv.home_display %}
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
   </section>
 {% endblock %}
 

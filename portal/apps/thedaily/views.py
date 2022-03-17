@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import os
 import json
 import requests
@@ -32,6 +33,7 @@ from django.contrib.auth import authenticate, logout, login as do_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -361,6 +363,7 @@ def subscribe(request, planslug, category_slug=None):
 
         if not is_subscriber and request.method == 'POST':
             post = request.POST.copy()
+
             if request.user.is_authenticated():
                 subscription = request.session.get('subscription')
                 subscription_type = request.session.get('subscription_type')
@@ -375,13 +378,37 @@ def subscribe(request, planslug, category_slug=None):
             else:
                 subscriber_form_v = SubscriberSignupForm(post) \
                     if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm(post)
+
             subscription_form_v = subscription_formclass(post) \
                 if subscription_price.ga_category == 'D' else SubscriptionForm(post)
 
             if subscriber_form_v.is_valid(planslug) and subscription_form_v.is_valid():
-                subscription = Subscription.objects.create(email=oas.user.email if oauth2_state else post['email'])
+                # TODO: use form.cleaned_data instead of post.get
+                email = oas.user.email if oauth2_state else subscriber_form_v.cleaned_data['email']
+                subscriptions = Subscription.objects.filter(email=email)
+
+                if subscriptions:
+                    try:
+                        subscription = subscriptions.get(subscriber=None)
+                    except Subscription.DoesNotExist:
+                        try:
+                            if request.user.is_authenticated:
+                                subscription = subscriptions.get(subscriber=request.user)
+                            else:
+                                subscription = subscriptions.get(subscriber__email=email)
+                        except Subscription.DoesNotExist:
+                            # TODO: notify managers/admin "Data inconsistency in subscriptions"
+                            subscription = Subscription.objects.create(email=email)
+                        except Subscription.MultipleObjectsReturned:
+                            subscription = subscriptions.latest()
+                    except Subscription.MultipleObjectsReturned:
+                        subscription = subscriptions.latest()
+                else:
+                    subscription = Subscription.objects.create(email=email)
+
                 sp = SubscriptionPrices.objects.get(subscription_type=post['subscription_type_prices'])
                 subscription.subscription_type_prices.add(sp)
+
                 if oauth2_state:
                     subscriber_form_v.save()
                     subscription.telephone = post.get('phone', post.get('telephone'))
@@ -402,8 +429,11 @@ def subscribe(request, planslug, category_slug=None):
                         user = subscriber_form_v.signup_form.create_user()
                         try:
                             send_validation_email(
-                                u'Verificá tu cuenta de la diaria', user, 'notifications/account_signup.html',
-                                get_signup_validation_url)
+                                'Verificá tu cuenta de ' + Site.objects.get_current().name,
+                                user,
+                                'notifications/account_signup.html',
+                                get_signup_validation_url,
+                            )
                         except Exception as smtp_exc:
                             subscription.delete()
                             errors = subscriber_form_v._errors.setdefault("email", ErrorList())
@@ -1391,7 +1421,8 @@ def phone_subscription(request):
         rcv = settings.SUBSCRIPTION_BY_PHONE_EMAIL_TO
         from_mail = getattr(settings, 'DEFAULT_FROM_EMAIL')
         text = u"Nombre: %s\nTeléfono: %s\nContactar: %s" % (
-            form.get('full_name'), form.get('phone'), form.get('time'))
+            form.get('full_name'), form.get('phone'), form.get('time')
+        )
         send_mail(subject, text, from_mail, rcv, fail_silently=True)
         return 'phone_subscription_thankyou.html'
     elif request.session.get('notify_phone_subscription'):
@@ -1411,7 +1442,10 @@ def phone_subscription(request):
             text=body, mail_to=settings.SUBSCRIPTION_BY_PHONE_EMAIL_TO,
             mail_from=getattr(settings, 'DEFAULT_FROM_EMAIL'), subject=subject)
         message.send()
+        # TODO: handle send possible errors
         request.session.pop('notify_phone_subscription')
+        # delete this subscription successful attemp in session
+        request.session.pop('subscription', None)
         is_google = request.session.get('google-oauth2_state')
         display = not is_google and not is_authenticated
         return 'phone_subscription_thankyou.html', {'display': display, 'email': user.email}
