@@ -1251,10 +1251,10 @@ def custom_api(request):
         msg = u''
         try:
             operation = request.POST['operation']
-            if not operation or request.POST['ldsocial_users_api_key'] != \
-                    settings.LDSOCIAL_USERS_API_KEY:
+            if not operation or request.POST['ldsocial_users_api_key'] != settings.LDSOCIAL_USERS_API_KEY:
                 return HttpResponseForbidden()
             os.system(settings.LDSOCIAL_CUSTOM_API_CMD[operation])
+            return HttpResponse()
         except KeyError:
             msg = u'Parameter or setting missing'
         return HttpResponseBadRequest(msg)
