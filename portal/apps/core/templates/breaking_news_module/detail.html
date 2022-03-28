@@ -13,30 +13,34 @@
 {% else %}
   <section class="frontpage-section frontpage-section--padding live">
     <div class="container">
-      <div class="ld-card breaking">
-        <div class="ld-card__body">
-          <h3 class="ld-card__subtitle">{{ bn_mod.headline }}</h3>
-          {% if bn_mod.deck %}
-            <h2 class="ld-card__title">{{ bn_mod.deck }}</h2>
-          {% endif %}
-          {% if bn_mod.articles %}
-            <ul class="newslist">
-              {% for article in bn_mod.articles.all %}
-                <li class="newslist__item">
-                  <a href="{{ article.get_absolute_url }}">{{ article }}</a>
-                </li>
-              {% endfor %}
-            </ul>
-          {% endif %}
+      {% block headline %}
+        <div class="ld-card breaking">
+          <div class="ld-card__body">
+            <h3 class="ld-card__subtitle">{{ bn_mod.headline }}</h3>
+            {% if bn_mod.deck %}
+              <h2 class="ld-card__title">{{ bn_mod.deck }}</h2>
+            {% endif %}
+            {% if bn_mod.articles %}
+              <ul class="newslist">
+                {% for article in bn_mod.articles.all %}
+                  <li class="newslist__item">
+                    <a href="{{ article.get_absolute_url }}">{{ article }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
         </div>
-      </div>
+      {% endblock %}
       {% if bn_mod.has_embeds12 or bn_mod.has_embeds34 or bn_mod.has_embeds56 or bn_mod.has_embeds78 %}
-        {% if bn_mod.embeds_headline %}
-          <h2 class="section-detail__title">{{ bn_mod.embeds_headline }}</h2>
-          {% if bn_mod.embeds_description %}
-            <p class="section-detail__subtitle">{{ bn_mod.embeds_description }}</p>
+        {% block embeds_headline %}
+          {% if bn_mod.embeds_headline %}
+            <h2 class="section-detail__title">{{ bn_mod.embeds_headline }}</h2>
+            {% if bn_mod.embeds_description %}
+              <p class="section-detail__subtitle">{{ bn_mod.embeds_description }}</p>
+            {% endif %}
           {% endif %}
-        {% endif %}
+        {% endblock %}
         {% if bn_mod.has_embeds12 %}
           <div class="row">
             <div class="col s12 m12 l{% if bn_mod.has_embed2 %}6{% else %}12{% endif %}">
@@ -221,5 +225,6 @@
         {% endif %}
       {% endif %}
     </div>
+    {% block footer %}{% endblock %}
   </section>
 {% endif %}

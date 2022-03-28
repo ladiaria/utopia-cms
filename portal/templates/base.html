@@ -224,89 +224,89 @@
 
     <!-- Main -->
     {% block main_open %}<main class="main" id="main-content">{% endblock %}
-      {% if messages %}
-        <ul class="messages unstyled ld-messages">
-          {% for message in messages %}
-            <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
-              {{ message }}
-              <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
-            </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
+    {% if messages %}
+      <ul class="messages unstyled ld-messages">
+        {% for message in messages %}
+          <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
+            {{ message }}
+            <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
 
-      <!-- /container -->
-      {% block page_header %}{% endblock %}
-      {% if user_form %}
-        <div class="profile-container">
-      {% elif not is_portada and not is_detail %}
-        <div class="container {% block container_class %}{% endblock %}">
-      {% endif %}
-      {% block content_pre %}{% endblock %}
-      {% block content %}{% endblock %}
-      {% block content_pos %}{% endblock %}
-      {% if not is_portada and not is_detail %}
-        </div>
-      {% endif %}
-
-      {% block footer_block %}
-        <footer class="footer-portada{% if category %} footer-{{ category.slug }}{% endif %}">
-          {% include footer_template %}
-        </footer>
-      {% endblock footer_block %}
-
-      <!-- Modal Structure -->
-      <div id="nav-mobile" class="nav-mobile navbar-fixed">
-        <nav>
-          <div class="nav-wrapper">
-            <ul class="center row">
-              {% if is_detail %}
-                {% with mobile_nav_ths=mobile_nav_ths|add:mobile_nav_detail_more %}
-                  {% include 'mobile_nav_items.html' %}
-                {% endwith %}
-              {% else %}
-                {% include 'mobile_nav_items.html' %}
-              {% endif %}
-            </ul>
-          </div>
-        </nav>
+    <!-- /container -->
+    {% block page_header %}{% endblock %}
+    {% if user_form %}
+      <div class="profile-container">
+    {% elif not is_portada and not is_detail %}
+      <div class="container {% block container_class %}{% endblock %}">
+    {% endif %}
+    {% block content_pre %}{% endblock %}
+    {% block content %}{% endblock %}
+    {% block content_pos %}{% endblock %}
+    {% if not is_portada and not is_detail %}
       </div>
+    {% endif %}
 
-      <div id="alert_placeholder"></div>
+    {% block footer_block %}
+      <footer class="footer-portada{% if category %} footer-{{ category.slug }}{% endif %}">
+        {% include footer_template %}
+      </footer>
+    {% endblock footer_block %}
 
-      {# js needed for the "dropdown" and "modal" menu items #}
-      <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
-      <script defer src="{% static 'materialize/js/global.js' %}"></script>
-      <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
-      <script defer src="{% static 'materialize/js/modal.js' %}"></script>
-      <script defer src="{% static 'materialize/js/forms.js' %}"></script>
+    <!-- Modal Structure -->
+    <div id="nav-mobile" class="nav-mobile navbar-fixed">
+      <nav>
+        <div class="nav-wrapper">
+          <ul class="center row">
+            {% if is_detail %}
+              {% with mobile_nav_ths=mobile_nav_ths|add:mobile_nav_detail_more %}
+                {% include 'mobile_nav_items.html' %}
+              {% endwith %}
+            {% else %}
+              {% include 'mobile_nav_items.html' %}
+            {% endif %}
+          </ul>
+        </div>
+      </nav>
+    </div>
 
-      {% if user.is_authenticated %}
-        {# used only in pages that show article cards #}
-        <script defer src="{% static 'js/read_later_events.js' %}"></script>
-      {% endif %}
+    <div id="alert_placeholder"></div>
 
-      {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
-      <script defer src="{% static 'js/ld.js' %}"></script>
-      <script defer src="{% static 'js/resizeSubnav.js' %}" ></script>
+    {# js needed for the "dropdown" and "modal" menu items #}
+    <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
+    <script defer src="{% static 'materialize/js/global.js' %}"></script>
+    <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
+    <script defer src="{% static 'materialize/js/modal.js' %}"></script>
+    <script defer src="{% static 'materialize/js/forms.js' %}"></script>
 
-      {# Modernizr - Detect CSS Grid #}
-      <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
+    {% if user.is_authenticated %}
+      {# used only in pages that show article cards #}
+      <script defer src="{% static 'js/read_later_events.js' %}"></script>
+    {% endif %}
 
-      {# js.cookie #}
-      <script src="{% static 'js/vendor/js.cookie.js' %}"></script>
+    {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
+    <script defer src="{% static 'js/ld.js' %}"></script>
+    <script defer src="{% static 'js/resizeSubnav.js' %}" ></script>
 
-      {# picturefill #}
-      <script>
-        // Picture element HTML5 shiv
-        document.createElement("picture");
-      </script>
-      <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
+    {# Modernizr - Detect CSS Grid #}
+    <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
 
-      {# TODO: probably there is no reason to have 2 scripts blocks like this, investigate and eliminate one #}
-      {#       update: footer_scripts is less used, try to eliminate it #}
-      {% block javascript %}{% endblock %}
-      {% block footer_scripts %}{% endblock %}
+    {# js.cookie #}
+    <script src="{% static 'js/vendor/js.cookie.js' %}"></script>
+
+    {# picturefill #}
+    <script>
+      // Picture element HTML5 shiv
+      document.createElement("picture");
+    </script>
+    <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
+
+    {# TODO: probably there is no reason to have 2 scripts blocks like this, investigate and eliminate one #}
+    {#       update: footer_scripts is less used, try to eliminate it #}
+    {% block javascript %}{% endblock %}
+    {% block footer_scripts %}{% endblock %}
     {% block main_close %}</main>{% endblock %}
   </body>
 </html>
