@@ -38,7 +38,7 @@
       text-decoration: none;
       display: inline-block;
 
-      &:hover {
+      &:not(.header-logo):hover {
         text-decoration: none;
         background: rgba($color: #ffffff, $alpha: 0.1);
       }
