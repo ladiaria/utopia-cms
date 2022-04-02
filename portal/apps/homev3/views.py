@@ -18,7 +18,11 @@ from cartelera.models import LiveEmbedEvent
 
 @decorate_if_staff(decorator=never_cache)
 @decorate_if_no_staff(decorator=vary_on_cookie)
-@decorate_if_no_staff(decorator=cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=120))
+@decorate_if_no_staff(
+    decorator=cache_control(
+        no_cache=True, no_store=True, must_revalidate=True, max_age=getattr(settings, 'HOMEV3_INDEX_CACHE_MAXAGE', 120)
+    )
+)
 def index(request, year=None, month=None, day=None, domain_slug=None):
     """
     View to display the current edition page. Or the edition in the date and publication matching domain_slug.
