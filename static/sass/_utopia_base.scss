@@ -445,7 +445,7 @@ fieldset {
 .toggle-password {
   width: 20px;
   height: 20px;
-  background-image:url(../img/icon-visibility_off.svg);
+  background-image:url(../img/icon-visibility_on.svg);
   background-size: cover;
   background-repeat: no-repeat;
   display: block;
@@ -455,7 +455,7 @@ fieldset {
   cursor: pointer;
 
   &.visibility-on {
-    background-image:url(../img/icon-visibility_on.svg);
+    background-image:url(../img/icon-visibility_off.svg);
   }
 }
 
