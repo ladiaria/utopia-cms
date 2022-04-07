@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # utopia-cms, 2018-2021, Aníbal Pacheco
 import sys
-import os
+from os.path import basename, join
 import logging
 import smtplib
 import time
+import json
+from unicodecsv import reader, writer
 from MySQLdb import ProgrammingError
 from datetime import date, datetime, timedelta
 from socket import error
@@ -28,9 +30,7 @@ from libs.utils import smtp_connect
 
 
 # CFG
-today = date.today()
-site = Site.objects.get_current()
-EMAIL_ATTACH, ATTACHMENTS = True, []
+today, EMAIL_ATTACH, ATTACHMENTS = date.today(), True, []
 
 # log
 log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
@@ -46,237 +46,329 @@ log.addHandler(err_handler)
 hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 
-def build_and_send(category, no_deliver, starting_from_s, starting_from_ns, partitions, mod, subscriber_ids):
+def build_and_send(
+    category,
+    no_deliver,
+    offline,
+    export_only,
+    site_id,
+    starting_from_s,
+    starting_from_ns,
+    partitions,
+    mod,
+    subscriber_ids,
+):
 
-    context = {'category': category, 'newsletter_campaign': category.slug}
+    site = Site.objects.get(id=site_id) if site_id else Site.objects.get_current()
+    category_slug = category if offline else category.slug
+    context, export_ctx = {'category': category, 'newsletter_campaign': category_slug}, {}
 
     try:
 
-        category_nl = CategoryNewsletter.objects.get(category=category, valid_until__gt=datetime.now())
-        cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
-        context.update(
-            {
-                'cover_article_section': cover_article.publication_section() if cover_article else None,
-                'articles': [(a, a.publication_section()) for a in category_nl.non_cover_articles()],
-                'featured_article_section': featured_article.publication_section() if featured_article else None,
-                'featured_articles': [(a, a.publication_section()) for a in category_nl.non_cover_featured_articles()],
-            }
-        )
+        offline_ctx_file = join(settings.SENDNEWSLETTER_EXPORT_DIR, '%s_ctx.json' % category_slug)
+        offline_csv_file = join(settings.SENDNEWSLETTER_EXPORT_DIR, '%s_subscribers.csv' % category_slug)
+        if offline:
+            if any((starting_from_s, starting_from_ns, partitions, mod, subscriber_ids)):
+                log.error('Not allowed options for offline usage')
+                return
+            context = json.loads(open(offline_ctx_file).read())
+        else:
+            category_nl = CategoryNewsletter.objects.get(category=category, valid_until__gt=datetime.now())
+            cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
+            if export_only:
+                export_ctx.update(
+                    {
+                        'articles': [
+                            (
+                                a.nl_serialize(), {'name': section.name, 'slug': section.slug}
+                            ) for a, section in [
+                                (a, a.publication_section()) for a in category_nl.non_cover_articles()
+                            ]
+                        ],
+                        # TODO: featured_* entries
+                    }
+                )
+            else:
+                context.update(
+                    {
+                        'cover_article_section': cover_article.publication_section().name if cover_article else None,
+                        'articles': [(a, a.publication_section()) for a in category_nl.non_cover_articles()],
+                        'featured_article_section':
+                            featured_article.publication_section() if featured_article else None,
+                        'featured_articles': [
+                            (a, a.publication_section()) for a in category_nl.non_cover_featured_articles()
+                        ],
+                    }
+                )
 
     except CategoryNewsletter.DoesNotExist:
 
-        cover_article = category.home.cover()
-        cover_article_section = cover_article.publication_section() if cover_article else None
-        top_articles = [(a, a.publication_section()) for a in category.home.non_cover_articles()]
+        # TODO: offline version
+        if not offline:
+            cover_article = category.home.cover()
+            cover_article_section = cover_article.publication_section() if cover_article else None
+            top_articles = [(a, a.publication_section()) for a in category.home.non_cover_articles()]
 
-        listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
-        if listonly_section:
-            top_articles = [t for t in top_articles if t[1].slug == listonly_section]
-            if cover_article_section.slug != listonly_section:
-                cover_article = top_articles.pop(0)[0] if top_articles else None
-                cover_article_section = cover_article.publication_section() if cover_article else None
+            listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category_slug)
+            if listonly_section:
+                top_articles = [t for t in top_articles if t[1].slug == listonly_section]
+                if cover_article_section.slug != listonly_section:
+                    cover_article = top_articles.pop(0)[0] if top_articles else None
+                    cover_article_section = cover_article.publication_section() if cover_article else None
 
-        opinion_article = None
-        nl_featured = Article.objects.filter(
-            id=settings.NEWSLETTER_FEATURED_ARTICLE
-        ) if getattr(
-            settings, 'NEWSLETTER_FEATURED_ARTICLE', False
-        ) else get_latest_edition().newsletter_featured_articles()
-        if nl_featured:
-            opinion_article = nl_featured[0]
+            opinion_article = None
+            nl_featured = Article.objects.filter(
+                id=settings.NEWSLETTER_FEATURED_ARTICLE
+            ) if getattr(
+                settings, 'NEWSLETTER_FEATURED_ARTICLE', False
+            ) else get_latest_edition().newsletter_featured_articles()
+            if nl_featured:
+                opinion_article = nl_featured[0]
 
-        # featured_article (a featured section in the category)
-        try:
-            featured_section, days_ago = settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[category.slug]
-            featured_article = category.section_set.get(slug=featured_section).latest_article()[0]
-            assert (featured_article.date_published >= datetime.now() - timedelta(days_ago))
-        except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
-            featured_article = None
+            # featured_article (a featured section in the category)
+            try:
+                featured_section, days_ago = settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[category_slug]
+                featured_article = category.section_set.get(slug=featured_section).latest_article()[0]
+                assert (featured_article.date_published >= datetime.now() - timedelta(days_ago))
+            except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
+                featured_article = None
 
-        context.update(
-            {
-                'opinion_article': opinion_article,
-                'cover_article_section': cover_article_section,
-                'articles': top_articles,
-            }
-        )
+            if export_only:
+                export_ctx['articles'] = [
+                    (t[0].nl_serialize(), {'name': t[1].name, 'slug': t[1].slug}) for t in top_articles
+                ]
+            else:
+                context.update(
+                    {
+                        'opinion_article': opinion_article,
+                        'cover_article_section': cover_article_section,
+                        'articles': top_articles,
+                    }
+                )
 
     # any custom attached files
     # TODO: make this a feature in the admin using adzone also make it path-setting instead of absolute
     # f_ads = ['/srv/ldsocial/portal/media/document.pdf']
     f_ads = []
 
-    receivers = Subscriber.objects.filter(user__is_active=True).exclude(user__email='')
-    if subscriber_ids:
-        receivers = receivers.filter(id__in=subscriber_ids)
-    else:
-        receivers = receivers.filter(category_newsletters__slug=category.slug).exclude(user__email__in=blacklisted)
-        # if both "starting_from" we can filter now with the minimum
-        if starting_from_s and starting_from_ns:
-            receivers = receivers.filter(user__email__gt=min(starting_from_s, starting_from_ns))
-        if partitions is not None and mod is not None:
-            receivers = receivers.extra(where=['MOD(%s.id,%d)=%d' % (Subscriber._meta.db_table, partitions, mod)])
+    if not offline:
+        receivers = Subscriber.objects.filter(user__is_active=True).exclude(user__email='')
+        if subscriber_ids:
+            receivers = receivers.filter(id__in=subscriber_ids)
+        else:
+            receivers = receivers.filter(category_newsletters__slug=category_slug).exclude(user__email__in=blacklisted)
+            # if both "starting_from" we can filter now with the minimum
+            if starting_from_s and starting_from_ns:
+                receivers = receivers.filter(user__email__gt=min(starting_from_s, starting_from_ns))
+            if partitions is not None and mod is not None:
+                receivers = receivers.extra(where=['MOD(%s.id,%d)=%d' % (Subscriber._meta.db_table, partitions, mod)])
 
     # Connect to the SMTP server and send all emails
     try:
-        smtp = None if no_deliver else smtp_connect()
+        smtp = None if no_deliver or export_only else smtp_connect()
     except error:
         log.error("MTA down, '%s %s' was used for partitions and mod" % (partitions, mod))
         return
 
     subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
-    site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
-    list_id = '%s <%s.%s>' % (category.slug, __name__, settings.SITE_DOMAIN)
 
     # fixed email data
     email_template = Engine.get_default().get_template(
-        '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug)
-    )
-    ga_property_id = getattr(settings, 'GA_PROPERTY_ID', None)
-    custom_subject = category.newsletter_automatic_subject is False and category.newsletter_subject
-    email_subject = custom_subject or (
-        getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category.slug, u'')
-        + remove_markup(cover_article.headline)
+        '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category_slug)
     )
 
-    email_from = (
-        site.name if category.slug in getattr(
-            settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ()
-        ) else (u'%s %s' % (site.name, category.name)),
-        settings.NOTIFICATIONS_FROM_ADDR1,
-    )
+    if offline:
+        custom_subject = context['custom_subject']
+        email_subject = context['email_subject']
+        email_from = context['email_from']
+        site_url = context['site_url']
+        list_id = context['list_id']
+        ga_property_id = context['ga_property_id']
+    else:
+        site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
+        list_id = '%s <%s.%s>' % (category_slug, __name__, settings.SITE_DOMAIN)
+        ga_property_id = getattr(settings, 'GA_PROPERTY_ID', None)
+        custom_subject = category.newsletter_automatic_subject is False and category.newsletter_subject
+        email_subject = custom_subject or (
+            getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category_slug, u'')
+            + remove_markup(cover_article.headline)
+        )
+
+        email_from = (
+            site.name if category_slug in getattr(
+                settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ()
+            ) else (u'%s %s' % (site.name, category.name)),
+            settings.NOTIFICATIONS_FROM_ADDR1,
+        )
+
     translation.activate(settings.LANGUAGE_CODE)
-    context.update(
-        {
-            'site_url': site_url,
-            'ga_property_id': ga_property_id,
-            'custom_subject': custom_subject,
-            'cover_article': cover_article,
-            'featured_article': featured_article,
-        }
-    )
+
+    common_ctx = {'site_url': site_url, 'ga_property_id': ga_property_id, 'custom_subject': custom_subject}
+    if export_only:
+        export_ctx.update(common_ctx)
+        export_ctx.update(
+            {
+                'email_subject': email_subject,
+                'email_from': email_from,
+                'list_id': list_id,
+                'cover_article': cover_article.nl_serialize(True),
+            }
+        )
+        # TODO: 'featured_article' entry
+        open(offline_ctx_file, 'w').write(json.dumps(export_ctx))
+        export_subscribers = writer(open(offline_csv_file, 'w'))
+    elif not offline:
+        context.update(common_ctx)
+        context.update({'cover_article': cover_article, 'featured_article': featured_article})
 
     # iterate and send
-    retry_last_delivery, s, is_subscriber = False, None, None
-    subscribers_iter = subscribers_nl_iter(receivers, starting_from_s, starting_from_ns)
+    retry_last_delivery, s_id, is_subscriber = False, None, None
+
+    if offline:
+        subscribers_iter = reader(open(offline_csv_file))
+    else:
+        subscribers_iter = subscribers_nl_iter(receivers, starting_from_s, starting_from_ns)
+
     while True:
 
         try:
             if not retry_last_delivery:
-                s, is_subscriber = subscribers_iter.next()
-            headers, hashed_id = {'List-ID': list_id}, hashids.encode(int(s.id))
-            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
-            headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
-
-            context.update(
-                {
-                    'hashed_id': hashed_id,
-                    'unsubscribe_url': unsubscribe_url,
-                    'subscriber_id': s.id,
-                    'is_subscriber': is_subscriber,
-                    'is_subscriber_any': s.is_subscriber_any(),
-                    'is_subscriber_default': s.is_subscriber(settings.DEFAULT_PUB),
-                }
-            )
-
-            msg = Message(
-                html=email_template.render(Context(context)),
-                mail_to=(s.name, s.user.email),
-                subject=email_subject,
-                mail_from=email_from,
-                headers=headers,
-            )
-
-            # attach ads if any
-            for f_ad in f_ads:
-                f_ad_basename = os.path.basename(f_ad)
-                msg.attach(filename=f_ad_basename, data=open(f_ad, "rb"))
-
-            # send using smtp to receive bounces in another mailbox
-            try:
-                if not no_deliver:
-                    smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [s.user.email], msg.as_string())
-                log.info(
-                    "Email %s to %ssubscriber %s\t%s" % (
-                        'simulated' if no_deliver else 'sent', '' if is_subscriber else 'non-', s.id, s.user.email
+                if offline:
+                    s_id, s_name, s_user_email, hashed_id, is_subscriber, is_subscriber_any, is_subscriber_default = (
+                        subscribers_iter.next()
                     )
+                    is_subscriber = eval(is_subscriber)
+                    is_subscriber_any = eval(is_subscriber_any)
+                    is_subscriber_default = eval(is_subscriber_default)
+                else:
+                    s, is_subscriber = subscribers_iter.next()
+                    s_id, s_name, s_user_email = s.id, s.name, s.user.email
+                    hashed_id = hashids.encode(int(s_id))
+                    is_subscriber_any = s.is_subscriber_any()
+                    is_subscriber_default = s.is_subscriber(settings.DEFAULT_PUB)
+
+            if export_only:
+                export_subscribers.writerow(
+                    [s_id, s_name, s_user_email, hashed_id, is_subscriber, is_subscriber_any, is_subscriber_default]
                 )
-                if is_subscriber:
-                    subscriber_sent += 1
-                else:
-                    user_sent += 1
-            except smtplib.SMTPRecipientsRefused:
-                log.warning(
-                    "Email refused for %ssubscriber %s\t%s" % ('' if is_subscriber else 'non-', s.id, s.user.email)
-                )
-                if is_subscriber:
-                    subscriber_refused += 1
-                else:
-                    user_refused += 1
-            except smtplib.SMTPServerDisconnected:
-                # Retries are made only once per iteration to avoid infinite loop if MTA got down at all
-                retry_last_delivery = not retry_last_delivery
-                log_message = "MTA down, email to %s not sent. Reconnecting " % s.user.email
-                if retry_last_delivery:
-                    log.warning(log_message + "to retry ...")
-                else:
-                    log.error(log_message + "for the next delivery ...")
-                try:
-                    smtp = smtp_connect()
-                except error:
-                    log.warning('MTA reconnect failed')
             else:
-                retry_last_delivery = False
+                headers = {'List-ID': list_id}
+                unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
+                    '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category_slug, hashed_id, category_slug)
+                headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
+                context.update(
+                    {
+                        'hashed_id': hashed_id,
+                        'unsubscribe_url': unsubscribe_url,
+                        'subscriber_id': s_id,
+                        'is_subscriber': is_subscriber,
+                        'is_subscriber_any': is_subscriber_any,
+                        'is_subscriber_default': is_subscriber_default,
+                    }
+                )
+
+                msg = Message(
+                    html=email_template.render(Context(context)),
+                    mail_to=(s_name, s_user_email),
+                    subject=email_subject,
+                    mail_from=email_from,
+                    headers=headers,
+                )
+
+                # attach ads if any
+                for f_ad in f_ads:
+                    f_ad_basename = basename(f_ad)
+                    msg.attach(filename=f_ad_basename, data=open(f_ad, "rb"))
+
+                # send using smtp to receive bounces in another mailbox
+                try:
+                    if not no_deliver:
+                        smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [s_user_email], msg.as_string())
+                    log.info(
+                        "Email %s to %ssubscriber %s\t%s" % (
+                            'simulated' if no_deliver else 'sent', '' if is_subscriber else 'non-', s_id, s_user_email
+                        )
+                    )
+                    if is_subscriber:
+                        subscriber_sent += 1
+                    else:
+                        user_sent += 1
+                except smtplib.SMTPRecipientsRefused:
+                    log.warning(
+                        "Email refused for %ssubscriber %s\t%s" % ('' if is_subscriber else 'non-', s_id, s_user_email)
+                    )
+                    if is_subscriber:
+                        subscriber_refused += 1
+                    else:
+                        user_refused += 1
+                except smtplib.SMTPServerDisconnected:
+                    # Retries are made only once per iteration to avoid infinite loop if MTA got down at all
+                    retry_last_delivery = not retry_last_delivery
+                    log_message = "MTA down, email to %s not sent. Reconnecting " % s_user_email
+                    if retry_last_delivery:
+                        log.warning(log_message + "to retry ...")
+                    else:
+                        log.error(log_message + "for the next delivery ...")
+                    try:
+                        smtp = smtp_connect()
+                    except error:
+                        log.warning('MTA reconnect failed')
+                else:
+                    retry_last_delivery = False
 
         except (ProgrammingError, OperationalError, StopIteration) as exc:
             # the connection to databse can be killed, if that is the case print useful log to continue
             if isinstance(exc, (ProgrammingError, OperationalError)):
                 log.error(
                     'DB connection error, (%s, %s, %s, %s) was the last delivery attempt' % (
-                        s.user.email if s else None, is_subscriber, partitions, mod
+                        s_user_email if s_id else None, is_subscriber, partitions, mod
                     )
                 )
             break
 
-    if not no_deliver:
-        try:
-            smtp.quit()
-        except smtplib.SMTPServerDisconnected:
-            pass
+    if not export_only:
+        if not no_deliver:
+            try:
+                smtp.quit()
+            except smtplib.SMTPServerDisconnected:
+                pass
 
-    # update log stats counters only if subscriber_ids not given
-    if not subscriber_ids:
-        try:
-            # close connections because reach this point can take several minutes
-            close_old_connections()
-            # A transaction is needed because autocommit in django is broken in concurrent management processes
-            cursor = connection.cursor()
-            cursor.execute('BEGIN')
-            cursor.execute(
-                """
-                INSERT INTO dashboard_newsletterdelivery(
-                    delivery_date,newsletter_name,user_sent,subscriber_sent,user_refused,subscriber_refused
+        # update log stats counters only if subscriber_ids not given
+        if not subscriber_ids:
+            try:
+                # close connections because reach this point can take several minutes
+                close_old_connections()
+                # A transaction is needed because autocommit in django is broken in concurrent management processes
+                cursor = connection.cursor()
+                cursor.execute('BEGIN')
+                cursor.execute(
+                    """
+                    INSERT INTO dashboard_newsletterdelivery(
+                        delivery_date,newsletter_name,user_sent,subscriber_sent,user_refused,subscriber_refused
+                    )
+                    VALUES('%s','%s',%d,%d,%d,%d)
+                    """ % (today, category_slug, user_sent, subscriber_sent, user_refused, subscriber_refused)
                 )
-                VALUES('%s','%s',%d,%d,%d,%d)
-                """ % (today, category.slug, user_sent, subscriber_sent, user_refused, subscriber_refused)
-            )
-            cursor.execute('COMMIT')
-        except IntegrityError:
-            nl_delivery = NewsletterDelivery.objects.get(delivery_date=today, newsletter_name=category.slug)
-            nl_delivery.user_sent = (nl_delivery.user_sent or 0) + user_sent
-            nl_delivery.subscriber_sent = (nl_delivery.subscriber_sent or 0) + subscriber_sent
-            nl_delivery.user_refused = (nl_delivery.user_refused or 0) + user_refused
-            nl_delivery.subscriber_refused = (nl_delivery.subscriber_refused or 0) + subscriber_refused
-            nl_delivery.save()
-        except Exception as e:
-            log.error(u'Delivery stats not updated: %s' % e)
+                cursor.execute('COMMIT')
+            except IntegrityError:
+                nl_delivery = NewsletterDelivery.objects.get(delivery_date=today, newsletter_name=category_slug)
+                nl_delivery.user_sent = (nl_delivery.user_sent or 0) + user_sent
+                nl_delivery.subscriber_sent = (nl_delivery.subscriber_sent or 0) + subscriber_sent
+                nl_delivery.user_refused = (nl_delivery.user_refused or 0) + user_refused
+                nl_delivery.subscriber_refused = (nl_delivery.subscriber_refused or 0) + subscriber_refused
+                nl_delivery.save()
+            except Exception as e:
+                log.error(u'Delivery stats not updated: %s' % e)
 
-    log.info(
-        u'%s stats: user_sent: %d, subscriber_sent: %s, user_refused: %d, subscriber_refused: %d' % (
-            'Simulation' if no_deliver else 'Delivery', user_sent, subscriber_sent, user_refused, subscriber_refused
+        log.info(
+            u'%s stats: user_sent: %d, subscriber_sent: %s, user_refused: %d, subscriber_refused: %d' % (
+                'Simulation' if no_deliver else 'Delivery',
+                user_sent,
+                subscriber_sent,
+                user_refused,
+                subscriber_refused,
+            )
         )
-    )
 
 
 class Command(BaseCommand):
@@ -291,6 +383,27 @@ class Command(BaseCommand):
             default=False,
             dest='no_deliver',
             help=u'Do not send the emails, only log',
+        )
+        parser.add_argument(
+            '--offline',
+            action='store_true',
+            default=False,
+            dest='offline',
+            help='Do not use the database to fetch email data, get it from datasets previously generated',
+        )
+        parser.add_argument(
+            '--export-only',
+            action='store_true',
+            default=False,
+            dest='export_only',
+            help='Only export datasets for offline usage later with the option --offline',
+        )
+        parser.add_argument(
+            '--site-id',
+            action='store',
+            type=int,
+            dest='site_id',
+            help='Use another site instead of the current site to build the URLs inside the message',
         )
         parser.add_argument(
             '--starting-from-s',
@@ -322,27 +435,38 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        partitions, mod = options.get('partitions'), options.get('mod')
+        partitions, mod, offline = options.get('partitions'), options.get('mod'), options.get('offline')
+        export_only = options.get('export_only')
+        if offline and export_only:
+            raise CommandError('--export-only can not be used with --offline')
         if partitions is None and mod is not None or mod is None and partitions is not None:
             raise CommandError(u'--partitions must be used with --mod')
         category_slug = options.get('category_slug')[0]
         try:
-            category, no_deliver = Category.objects.get(slug=category_slug), options.get('no_deliver')
+            no_deliver = options.get('no_deliver')
+            category = category_slug if offline else Category.objects.get(slug=category_slug)
         except Category.DoesNotExist:
             raise CommandError(u'No category matching the slug given found')
-        h = logging.FileHandler(filename=settings.SENDNEWSLETTER_LOGFILE % (category_slug, today.strftime('%Y%m%d')))
-        h.setFormatter(log_formatter)
-        log.addHandler(h)
-        start_time = time.time()
+        if not export_only:
+            h = logging.FileHandler(
+                filename=settings.SENDNEWSLETTER_LOGFILE % (category_slug, today.strftime('%Y%m%d'))
+            )
+            h.setFormatter(log_formatter)
+            log.addHandler(h)
+            start_time = time.time()
         build_and_send(
             category,
             no_deliver,
+            offline,
+            export_only,
+            options.get('site_id'),
             options.get('starting_from_s'),
             options.get('starting_from_ns'),
             partitions,
             mod,
             options.get('subscriber_ids'),
         )
-        log.info(
-            "%s completed in %.0f seconds" % ('Simulation' if no_deliver else 'Delivery', time.time() - start_time)
-        )
+        if not export_only:
+            log.info(
+                "%s completed in %.0f seconds" % ('Simulation' if no_deliver else 'Delivery', time.time() - start_time)
+            )

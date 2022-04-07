@@ -56,3 +56,9 @@ def subscribers_nl_iter(receivers, starting_from_s, starting_from_ns):
         except Subscriber.DoesNotExist:
             # rare, but could be recently deleted
             continue
+
+
+def subscribers_nl_iter_filter(iter, filter_func):
+    for item in iter:
+        if filter_func(item):
+            yield item

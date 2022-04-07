@@ -356,6 +356,17 @@ class Edition(PortableDocumentFormatBaseModel):
         except Exception:
             return None
 
+    def nl_serialize(self):
+        return {
+            'publication': {
+                'newsletter_header_color': self.publication.newsletter_header_color,
+                'newsletter_campaign': self.publication.newsletter_campaign,
+            },
+            'pdf': {'path': self.pdf.path} if self.pdf else None,
+            'date_published': str(self.date_published),
+            'supplements': [s.pdf.path for s in Supplement.objects.filter(date_published=self.date_published)],
+        }
+
 
 class EditionHeader(Model):
     edition = OneToOneField(Edition, verbose_name=u'edición')
@@ -1382,11 +1393,11 @@ class Article(ArticleBase):
             if publication:
                 # Return the first match with the pub given or the first if no matches
                 s = self.articlerel_set.filter(edition__publication=publication)[:1]
-                return s[0].section if s else self.sections.all()[0]
+                return s[0].section if s else self.sections.first()
 
             else:
                 # Return the first
-                return self.sections.all()[0]
+                return self.sections.first()
 
     def get_sections(self):
         return ', '.join([s.name for s in self.sections.distinct()])
@@ -1419,6 +1430,28 @@ class Article(ArticleBase):
             and self.main_section.edition.publication.slug in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
             and not self.additional_access.exists()
         )
+
+    def nl_serialize(self, for_cover=False):
+        authors = self.get_authors()
+        result = {
+            'id': self.id,
+            'get_absolute_url': self.get_absolute_url(),
+            'headline': self.headline,
+            'home_lead': self.home_lead,
+            'deck': self.deck,
+            'has_byline': self.has_byline(),
+            'get_authors': [a.name for a in authors] if authors else None,
+        }
+        if for_cover:
+            result['body'] = self.body
+            if self.photo:
+                result['photo'] = {'get_700w_url': self.photo.get_700w_url(), 'caption': self.photo.caption}
+                if self.photo.extended.photographer:
+                    result['photo']['extended'] = {
+                        'photographer': {'name': self.photo.extended.photographer.name},
+                        'type_verbose': self.photo.extended.type_verbose(),
+                    }
+        return result
 
 
 class ArticleRel(Model):

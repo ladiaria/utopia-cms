@@ -316,6 +316,7 @@ NOTIFICATIONS_FROM_MX = NOTIFICATIONS_FROM_ADDR1
 
 NEWSLETTER_IMG_FORMAT = 'jpg'
 
+SENDNEWSLETTER_EXPORT_DIR = '/var/local/utopiacms/sendnewsletter_export'
 SENDNEWSLETTER_LOGFILE = '/var/log/utopiacms/sendnewsletter/%s-%s.log'
 
 # apps
