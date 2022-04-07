@@ -14,16 +14,43 @@
     <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
     <!-- End Progressive Web App (PWA) -->
     {% block head_first_content %}{% endblock %}
-    {% if not debug and GTM_CONTAINER_ID %}
-      <!-- Google Tag Manager -->
-      <script>
-        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-        })(window,document,'script','dataLayer','{{ GTM_CONTAINER_ID }}');
-      </script>
-      <!-- End Google Tag Manager -->
+    {% if not debug %}
+      {# The preferred way to load GA is using GTM #}
+      {% if GTM_CONTAINER_ID %}
+        <!-- Google Tag Manager -->
+        <script>
+          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer','{{ GTM_CONTAINER_ID }}');
+        </script>
+        <!-- End Google Tag Manager -->
+      {% else %}
+        {# If GTM is not used, GA will be loaded here in both versions, V4 and Universal #}
+        {% if GA_MEASUREMENT_ID %}
+          <!-- Global site tag (gtag.js) - Google Analytics -->
+          <script async src="https://www.googletagmanager.com/gtag/js?id={{ GA_MEASUREMENT_ID }}"></script>
+          <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('set', {cookie_domain: '.{{ site.domain }}', cookie_flags: 'SameSite=None;Secure'});
+            gtag('config', '{{ GA_MEASUREMENT_ID }}');
+          </script>
+        {% endif %}
+        {% if GA_PROPERTY_ID %}
+          <!-- Global site tag (gtag.js) - Google Analytics -->
+          <script async src="https://www.googletagmanager.com/gtag/js?id={{ GA_PROPERTY_ID }}"></script>
+          <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('set', {cookieDomain: '.{{ site.domain }}', cookieFlags: 'SameSite=None;Secure'});
+            gtag('config', '{{ GA_PROPERTY_ID }}');
+          </script>
+        {% endif %}
+      {% endif %}
     {% endif %}
 
     <!-- Title and description -->
@@ -203,12 +230,14 @@
   </head>
   <body class="{% if user.is_authenticated %}logged-in{% endif %} {% if is_portada %}frontpage {% else %}interior {% endif %}{% block body_class %}{% endblock %} {{ publication.slug|default:DEFAULT_PUB }}-pub">
     <a class="skip-main" href="#main-content">Saltar a contenido</a>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript>
-      <iframe src="https://www.googletagmanager.com/ns.html?id={{ GTM_CONTAINER_ID }}"
-              height="0" width="0" style="display:none;visibility:hidden"></iframe>
-    </noscript>
-    <!-- End Google Tag Manager (noscript) -->
+    {% if not debug and GTM_CONTAINER_ID %}
+      <!-- Google Tag Manager (noscript) -->
+      <noscript>
+        <iframe src="https://www.googletagmanager.com/ns.html?id={{ GTM_CONTAINER_ID }}"
+                height="0" width="0" style="display:none;visibility:hidden"></iframe>
+      </noscript>
+      <!-- End Google Tag Manager (noscript) -->
+    {% endif %}
     <!-- Legacy browser alert -->
     <!--[if lte IE 11]>
       <p class="browserupgrade">El sitio web de {{ site.name }} no funciona apropiadamente en Internet Explorer. Para una experiencia óptima te recomendamos instalar un navegador moderno como <a href="https://www.mozilla.org/firefox">Firefox</a>, <a href="https://www.google.com/chrome">Chrome</a> o <a href="https://microsoft.com/edge">Edge</a>.</p>

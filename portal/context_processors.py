@@ -23,7 +23,11 @@ def urls(request):
 
 
 def gtm(request):
-    return {'GTM_CONTAINER_ID': settings.GTM_CONTAINER_ID, 'GTM_AMP_CONTAINER_ID': settings.GTM_AMP_CONTAINER_ID}
+    return {
+        'GTM_CONTAINER_ID': settings.GTM_CONTAINER_ID,
+        'GTM_AMP_CONTAINER_ID': settings.GTM_AMP_CONTAINER_ID,
+        'GA_MEASUREMENT_ID': settings.GA_MEASUREMENT_ID,
+    }
 
 
 def site(request):
