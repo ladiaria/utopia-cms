@@ -24,7 +24,7 @@ from apps import blacklisted
 from core.models import Category, CategoryNewsletter, Section, Article, get_latest_edition
 from core.templatetags.core_tags import remove_markup
 from thedaily.models import Subscriber
-from thedaily.utils import subscribers_nl_iter
+from thedaily.utils import subscribers_nl_iter, subscribers_nl_iter_filter
 from dashboard.models import NewsletterDelivery
 from libs.utils import smtp_connect
 
@@ -68,8 +68,8 @@ def build_and_send(
         offline_ctx_file = join(settings.SENDNEWSLETTER_EXPORT_DIR, '%s_ctx.json' % category_slug)
         offline_csv_file = join(settings.SENDNEWSLETTER_EXPORT_DIR, '%s_subscribers.csv' % category_slug)
         if offline:
-            if any((starting_from_s, starting_from_ns, partitions, mod, subscriber_ids)):
-                log.error('Not allowed options for offline usage')
+            if starting_from_s or starting_from_ns:
+                log.error('--starting-from* options for offline usage not yet implemented')
                 return
             context = json.loads(open(offline_ctx_file).read())
         else:
@@ -225,7 +225,13 @@ def build_and_send(
     retry_last_delivery, s_id, is_subscriber = False, None, None
 
     if offline:
-        subscribers_iter = reader(open(offline_csv_file))
+        r = reader(open(offline_csv_file))
+        if subscriber_ids:
+            subscribers_iter = subscribers_nl_iter_filter(r, lambda row: int(row[0]) in subscriber_ids)
+        elif partitions is not None and mod is not None:
+            subscribers_iter = subscribers_nl_iter_filter(r, lambda row: int(row[0]) % partitions == mod)
+        else:
+            subscribers_iter = r
     else:
         subscribers_iter = subscribers_nl_iter(receivers, starting_from_s, starting_from_ns)
 
