@@ -50,7 +50,8 @@ def build_and_send(
     category,
     no_deliver,
     offline,
-    export_only,
+    export_subscribers,
+    export_context,
     site_id,
     starting_from_s,
     starting_from_ns,
@@ -60,7 +61,7 @@ def build_and_send(
 ):
 
     site = Site.objects.get(id=site_id) if site_id else Site.objects.get_current()
-    category_slug = category if offline else category.slug
+    category_slug, export_only = category if offline else category.slug, export_subscribers or export_context
     context, export_ctx = {'category': category, 'newsletter_campaign': category_slug}, {}
 
     try:
@@ -72,10 +73,10 @@ def build_and_send(
                 log.error('--starting-from* options for offline usage not yet implemented')
                 return
             context = json.loads(open(offline_ctx_file).read())
-        else:
+        elif not export_subscribers or export_context:
             category_nl = CategoryNewsletter.objects.get(category=category, valid_until__gt=datetime.now())
             cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
-            if export_only:
+            if export_context:
                 export_ctx.update(
                     {
                         'articles': [
@@ -103,8 +104,7 @@ def build_and_send(
 
     except CategoryNewsletter.DoesNotExist:
 
-        # TODO: offline version
-        if not offline:
+        if not (offline or export_subscribers) or export_context:
             cover_article = category.home.cover()
             cover_article_section = cover_article.publication_section() if cover_article else None
             top_articles = [(a, a.publication_section()) for a in category.home.non_cover_articles()]
@@ -133,7 +133,7 @@ def build_and_send(
             except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
                 featured_article = None
 
-            if export_only:
+            if export_context:
                 export_ctx['articles'] = [
                     (t[0].nl_serialize(), {'name': t[1].name, 'slug': t[1].slug}) for t in top_articles
                 ]
@@ -163,20 +163,6 @@ def build_and_send(
             if partitions is not None and mod is not None:
                 receivers = receivers.extra(where=['MOD(%s.id,%d)=%d' % (Subscriber._meta.db_table, partitions, mod)])
 
-    # Connect to the SMTP server and send all emails
-    try:
-        smtp = None if no_deliver or export_only else smtp_connect()
-    except error:
-        log.error("MTA down, '%s %s' was used for partitions and mod" % (partitions, mod))
-        return
-
-    subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
-
-    # fixed email data
-    email_template = Engine.get_default().get_template(
-        '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category_slug)
-    )
-
     if offline:
         custom_subject = context['custom_subject']
         email_subject = context['email_subject']
@@ -184,7 +170,14 @@ def build_and_send(
         site_url = context['site_url']
         list_id = context['list_id']
         ga_property_id = context['ga_property_id']
-    else:
+        r = reader(open(offline_csv_file))
+        if subscriber_ids:
+            subscribers_iter = subscribers_nl_iter_filter(r, lambda row: int(row[0]) in subscriber_ids)
+        elif partitions is not None and mod is not None:
+            subscribers_iter = subscribers_nl_iter_filter(r, lambda row: int(row[0]) % partitions == mod)
+        else:
+            subscribers_iter = r
+    elif not export_subscribers or export_context:
         site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
         list_id = '%s <%s.%s>' % (category_slug, __name__, settings.SITE_DOMAIN)
         ga_property_id = getattr(settings, 'GA_PROPERTY_ID', None)
@@ -203,37 +196,44 @@ def build_and_send(
 
     translation.activate(settings.LANGUAGE_CODE)
 
-    common_ctx = {'site_url': site_url, 'ga_property_id': ga_property_id, 'custom_subject': custom_subject}
+    if not export_subscribers or export_context:
+        common_ctx = {'site_url': site_url, 'ga_property_id': ga_property_id, 'custom_subject': custom_subject}
     if export_only:
-        export_ctx.update(common_ctx)
-        export_ctx.update(
-            {
-                'email_subject': email_subject,
-                'email_from': email_from,
-                'list_id': list_id,
-                'cover_article': cover_article.nl_serialize(True),
-            }
-        )
-        # TODO: 'featured_article' entry
-        open(offline_ctx_file, 'w').write(json.dumps(export_ctx))
-        export_subscribers = writer(open(offline_csv_file, 'w'))
+        if export_context:
+            export_ctx.update(common_ctx)
+            export_ctx.update(
+                {
+                    'email_subject': email_subject,
+                    'email_from': email_from,
+                    'list_id': list_id,
+                    'cover_article': cover_article.nl_serialize(True),
+                }
+            )
+            # TODO: 'featured_article' entry
+            open(offline_ctx_file, 'w').write(json.dumps(export_ctx))
+        if export_subscribers:
+            export_subscribers_writer = writer(open(offline_csv_file, 'w'))
+        else:
+            return
     elif not offline:
         context.update(common_ctx)
         context.update({'cover_article': cover_article, 'featured_article': featured_article})
 
-    # iterate and send
-    retry_last_delivery, s_id, is_subscriber = False, None, None
-
-    if offline:
-        r = reader(open(offline_csv_file))
-        if subscriber_ids:
-            subscribers_iter = subscribers_nl_iter_filter(r, lambda row: int(row[0]) in subscriber_ids)
-        elif partitions is not None and mod is not None:
-            subscribers_iter = subscribers_nl_iter_filter(r, lambda row: int(row[0]) % partitions == mod)
-        else:
-            subscribers_iter = r
-    else:
+    if not offline:
         subscribers_iter = subscribers_nl_iter(receivers, starting_from_s, starting_from_ns)
+
+    # Connect to the SMTP server and send all emails
+    try:
+        smtp = None if no_deliver or export_only else smtp_connect()
+    except error:
+        log.error("MTA down, '%s %s' was used for partitions and mod" % (partitions, mod))
+        return
+
+    subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
+    retry_last_delivery, s_id, is_subscriber = False, None, None
+    email_template = Engine.get_default().get_template(
+        '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category_slug)
+    )
 
     while True:
 
@@ -253,11 +253,11 @@ def build_and_send(
                     is_subscriber_any = s.is_subscriber_any()
                     is_subscriber_default = s.is_subscriber(settings.DEFAULT_PUB)
 
-            if export_only:
-                export_subscribers.writerow(
+            if export_subscribers:
+                export_subscribers_writer.writerow(
                     [s_id, s_name, s_user_email, hashed_id, is_subscriber, is_subscriber_any, is_subscriber_default]
                 )
-            else:
+            elif not export_context:
                 headers = {'List-ID': list_id}
                 unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
                     '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category_slug, hashed_id, category_slug)
@@ -398,11 +398,18 @@ class Command(BaseCommand):
             help='Do not use the database to fetch email data, get it from datasets previously generated',
         )
         parser.add_argument(
-            '--export-only',
+            '--export-subscribers',
             action='store_true',
             default=False,
-            dest='export_only',
-            help='Only export datasets for offline usage later with the option --offline',
+            dest='export_subscribers',
+            help='Not send and export the subscribers dataset for offline usage later with the option --offline',
+        )
+        parser.add_argument(
+            '--export-context',
+            action='store_true',
+            default=False,
+            dest='export_context',
+            help='Not send and export the context dataset for offline usage later with the option --offline',
         )
         parser.add_argument(
             '--site-id',
@@ -442,9 +449,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         partitions, mod, offline = options.get('partitions'), options.get('mod'), options.get('offline')
-        export_only = options.get('export_only')
+        export_subscribers, export_context = options.get('export_subscribers'), options.get('export_context')
+        export_only = export_subscribers or export_context
         if offline and export_only:
-            raise CommandError('--export-only can not be used with --offline')
+            raise CommandError('--export-* options can not be used with --offline')
         if partitions is None and mod is not None or mod is None and partitions is not None:
             raise CommandError(u'--partitions must be used with --mod')
         category_slug = options.get('category_slug')[0]
@@ -464,7 +472,8 @@ class Command(BaseCommand):
             category,
             no_deliver,
             offline,
-            export_only,
+            export_subscribers,
+            export_context,
             options.get('site_id'),
             options.get('starting_from_s'),
             options.get('starting_from_ns'),

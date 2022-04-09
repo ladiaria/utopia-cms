@@ -365,6 +365,7 @@ class Edition(PortableDocumentFormatBaseModel):
             'pdf': {'path': self.pdf.path} if self.pdf else None,
             'date_published': str(self.date_published),
             'supplements': [s.pdf.path for s in Supplement.objects.filter(date_published=self.date_published)],
+            'download_url': self.get_download_url(),
         }
 
 
