@@ -3,6 +3,7 @@
 *.pot
 ._*
 *.swp
+__pycache__
 /portal/local_*settings.py
 /portal/bin/pdffonts
 /portal/bin/pdfimages

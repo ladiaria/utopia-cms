@@ -95,44 +95,48 @@ class SignupwallMiddleware(object):
 
         # ignore also signupwall if the user is subscribed to the default pub or to any pub that the article is
         # published in, or to any pub in article's additional_access field.
-        # TODO: update conditions and logic using the Article.is_restricted new method.
+        restricted_article = article.is_restricted()
         if (
-            user_is_authenticated and hasattr(user, 'subscriber') and (
+            article.is_public()
+
+            or user_is_authenticated
+            and hasattr(user, 'subscriber')
+            and (
                 user.subscriber.is_subscriber()
-                or any(user.subscriber.is_subscriber(p.slug) for p in article.publications())
+
+                or not restricted_article
+                and any(user.subscriber.is_subscriber(p.slug) for p in article.publications())
+
+                or restricted_article
+                and user.subscriber.is_subscriber(article.main_section.edition.publication.slug)
+
                 or any(user.subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
             )
         ):
             if debug:
-                print('DEBUG: signupwall.middleware.process_request - subscribed user')
+                print('DEBUG: signupwall.middleware.process_request - subscribed user or public article')
             request.article_allowed = True
             return
         elif debug:
             print('DEBUG: signupwall.middleware.process_request - non subscribed user')
             print('DEBUG: signupwall.middleware.process_request - requested URL: %s' % request.get_full_path())
 
-        visitor = None
+        visitor, raise_signupwall = None, True
 
-        # dont spend a credit if the article is public
-        if article.is_public():
-            # TODO: why not "return" here like above in line 107 when the user is subscribed?
-            request.article_allowed, raise_signupwall = True, False
-        else:
-            raise_signupwall = True
-            # if log views is enabled, set the path_visited to this visitor.
-            if settings.CORE_LOG_ARTICLE_VIEWS and signupwall_visitor_mdb:
-                visitor = get_or_create_visitor(request)
-                signupwall_visitor_mdb.posts.update_one(
-                    {'_id': visitor.get('_id')}, {'$set': {'path_visited': request.path}})
+        # if log views is enabled, set the path_visited to this visitor.
+        if not restricted_article and settings.CORE_LOG_ARTICLE_VIEWS and signupwall_visitor_mdb:
+            visitor = get_or_create_visitor(request)
+            signupwall_visitor_mdb.posts.update_one(
+                {'_id': visitor.get('_id')}, {'$set': {'path_visited': request.path}}
+            )
 
         if user_is_authenticated:
 
             # At this point the user is not anon and not subscribed, so we count all non-allowed articles visited
-            # for the user in this month and add 1 if this article is not in the set and is not public, we not need to
-            # know if there are more than credits+2.
-            # Raise signupwall if the user has more than credits
-            credits = 10
-            articles_visited = set() if article.is_public() else set([article.id])
+            # for the user in this month and add 1 if this article is not restricted and is not in the set,
+            # we not need to know if there are more than credits+2.
+            # Raise signupwall if the user has more than credits.
+            credits, articles_visited = 10, set() if restricted_article else set([article.id])
             articles_visited_count = len(articles_visited)
             if core_articleviewedby_mdb:
                 for x in core_articleviewedby_mdb.posts.find({'user': user.id, 'allowed': None}):
@@ -142,8 +146,11 @@ class SignupwallMiddleware(object):
                         break
 
             if debug:
-                print('DEBUG: signupwall.middleware.process_request - articles_visited_count (logged-in): %s' % (
-                    articles_visited_count))
+                print(
+                    'DEBUG: signupwall.middleware.process_request - articles_visited_count (logged-in): %s' % (
+                        articles_visited_count
+                    )
+                )
         else:
 
             # anon users, they will face the signupwall.
@@ -153,7 +160,7 @@ class SignupwallMiddleware(object):
             if articles_visited_count == credits + 1:
                 limited_free_article_mail(user)
 
-        if raise_signupwall and (articles_visited_count > credits):
+        if raise_signupwall and (articles_visited_count > credits) or restricted_article:
             # TODO: Why is this next function set here?
             request.signupwall = {'next': next}
         else:

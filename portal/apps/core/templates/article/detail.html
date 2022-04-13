@@ -238,7 +238,8 @@
         {% endif %}
       {% endif %}
 
-      {% if not article.is_restricted or user|has_restricted_access:article %}{# begin restricted content #}
+      {# begin restricted content #}
+      {% if not article.is_restricted or user|has_restricted_access:article or not request.signupwall %}
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
@@ -418,7 +419,7 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall %}{# closed in line 670 #}
+        {% if not request.signupwall %}{# closed in line 671 #}
 
           <div class="article-body paywalled-content">{{ article.body|ldmarkup:article.id }}</div>
 
@@ -667,7 +668,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 421 #}
+        {% endif %}{# opened in line 422 #}
 
       {% else %}{# restricted content message #}
 
@@ -749,7 +750,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 875 #}
+    {% if not request.signupwall %}{# closed in line 880 #}
 
       {% if article.public %}
 
@@ -876,11 +877,11 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 752 #}
+    {% endif %}{# opened in line 753 #}
 
     {% block article_extra %}{% endblock %}
 
-    {% if not request.signupwall %}
+    {% if not request.signupwall or article.is_restricted and not user|has_restricted_access:article %}
       <div class="align-center u-mb-50 footer-section">
         <a href="{% url 'home' %}" class="ut-btn ut-btn-outline">Ir a la portada</a>
       </div>
