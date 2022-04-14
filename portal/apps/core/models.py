@@ -357,7 +357,7 @@ class Edition(PortableDocumentFormatBaseModel):
             return None
 
     def nl_serialize(self):
-        return {
+        result = {
             'publication': {
                 'newsletter_header_color': self.publication.newsletter_header_color,
                 'newsletter_campaign': self.publication.newsletter_campaign,
@@ -365,8 +365,10 @@ class Edition(PortableDocumentFormatBaseModel):
             'pdf': {'path': self.pdf.path} if self.pdf else None,
             'date_published': str(self.date_published),
             'supplements': [s.pdf.path for s in Supplement.objects.filter(date_published=self.date_published)],
-            'download_url': self.get_download_url(),
         }
+        if self.publication.slug in getattr(settings, 'CORE_PUBLICATIONS_EDITION_DOWNLOAD', ()):
+            result['download_url'] = self.get_download_url()
+        return result
 
 
 class EditionHeader(Model):
@@ -1437,6 +1439,7 @@ class Article(ArticleBase):
         result = {
             'id': self.id,
             'get_absolute_url': self.get_absolute_url(),
+            'date_published': str(self.date_published.date()),
             'headline': self.headline,
             'home_lead': self.home_lead,
             'deck': self.deck,
