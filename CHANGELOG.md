@@ -1,3 +1,15 @@
+# version 0.2.4 (2022-04-17)
+
+- Signupwall improvements and fixes.
+- Robots meta tag de-customization and improvements.
+- Offline support in send_category_nl command.
+- Better support to load GTM and GA.
+- Better default configuration.
+- UX and CSS improvements.
+- Requirements fix.
+- More flexibility to customize the breaking news module.
+- Custom users api view updates.
+
 # version 0.2.3 (2022-03-17)
 
 - The "Most readed" articles feature was refactored and improved.

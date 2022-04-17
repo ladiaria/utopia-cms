@@ -1,3 +1,13 @@
+# From version 0.2.3 to 0.2.4
+
+```
+git pull
+git checkout 0.2.4
+# Update your local_settings.py file, GA_MEASUREMENT_ID (GA v4) is needed, can be set to '' like in sample file.
+# activate your virtual env
+pip install -r portal/requirements.txt
+```
+
 # From version 0.2.2 to 0.2.3
 
 ```
