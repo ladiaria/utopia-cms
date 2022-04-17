@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# utopia-cms, 2018-2021, Aníbal Pacheco
+# utopia-cms, 2018-2022, Aníbal Pacheco
 import sys
 from os.path import basename, join
 import logging
@@ -74,6 +74,15 @@ def build_and_send(
                 log.error('--starting-from* options for offline usage not yet implemented')
                 return
             context = json.loads(open(offline_ctx_file).read())
+            # de-serialize dates
+            dp_cover = datetime.strptime(context['cover_article']['date_published'], '%Y-%m-%d').date()
+            context['cover_article']['date_published'] = dp_cover
+            dp_articles = []
+            for a, a_section in context['articles']:
+                dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
+                a['date_published'] = dp_article
+                dp_articles.append((a, a_section))
+            context['articles'] = dp_articles
         elif not export_subscribers or export_context:
             category_nl = CategoryNewsletter.objects.get(category=category, valid_until__gt=datetime.now())
             cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
@@ -82,10 +91,10 @@ def build_and_send(
                     {
                         'articles': [
                             (
-                                a.nl_serialize(), {'name': section.name, 'slug': section.slug}
-                            ) for a, section in [
-                                (a, a.publication_section()) for a in category_nl.non_cover_articles()
-                            ]
+                                a.nl_serialize(position == 0), {'name': section.name, 'slug': section.slug}
+                            ) for position, (a, section) in enumerate(
+                                [(a, a.publication_section()) for a in category_nl.non_cover_articles()]
+                            )
                         ],
                         # TODO: featured_* entries
                     }
@@ -136,7 +145,9 @@ def build_and_send(
 
             if export_context:
                 export_ctx['articles'] = [
-                    (t[0].nl_serialize(), {'name': t[1].name, 'slug': t[1].slug}) for t in top_articles
+                    (
+                        t[0].nl_serialize(position == 0), {'name': t[1].name, 'slug': t[1].slug}
+                    ) for position, t in enumerate(top_articles)
                 ]
             else:
                 context.update(
