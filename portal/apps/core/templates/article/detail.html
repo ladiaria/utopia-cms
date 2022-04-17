@@ -9,7 +9,14 @@
 
 {% block page_keywords %}{{ article.tags }}{% endblock %}
 
-{% block robots %}{% if section.is_satirical %}noindex{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block robots %}{% spaceless %}
+  {# only override if allowed by robots app #}
+  {% ifnotequal meta_robots_content 'noindex' %}
+    {% if section.is_satirical %}noindex{% elif not article.public %}noarchive{% else %}{{ block.super }}{% endif %}
+  {% else %}
+    {{ block.super }}
+  {% endifnotequal %}
+{% endspaceless %}{% endblock %}
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->

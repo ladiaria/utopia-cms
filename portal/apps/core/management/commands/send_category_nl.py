@@ -62,7 +62,8 @@ def build_and_send(
 
     site = Site.objects.get(id=site_id) if site_id else Site.objects.get_current()
     category_slug, export_only = category if offline else category.slug, export_subscribers or export_context
-    context, export_ctx = {'category': category, 'newsletter_campaign': category_slug}, {}
+    context = {'category': category, 'newsletter_campaign': category_slug}
+    export_ctx = {'newsletter_campaign': category_slug}
 
     try:
 

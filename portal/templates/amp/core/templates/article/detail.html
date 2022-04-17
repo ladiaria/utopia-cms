@@ -11,7 +11,14 @@
   {% endblock %}
 {% endautoescape %}
 
-{% block robots %}{% ifequal section.slug "humor" %}noindex{% else %}{{ block.super }}{% endifequal %}{% endblock %}
+{% block robots %}{% spaceless %}
+  {# only override if allowed by robots app #}
+  {% ifnotequal meta_robots_content 'noindex' %}
+    {% if section.is_satirical %}noindex{% elif not article.public %}noarchive{% else %}{{ block.super }}{% endif %}
+  {% else %}
+    {{ block.super }}
+  {% endifnotequal %}
+{% endspaceless %}{% endblock %}
 
 {% block meta %}
   <!-- Open Graph (http://ogp.me) -->

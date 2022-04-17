@@ -8,10 +8,10 @@
     {% if article.date_published %}"datePublished": "{{ article.date_published_isoformat }}",{% endif %}
     "dateModified": "{{ article.last_modified_isoformat }}",
     "description": "{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
-    "isAccessibleForFree": "{% if article.public %}True{% else %}False{% endif %}",
+    "isAccessibleForFree": "{{ article.public }}",
     "hasPart": {
       "@type": "WebPageElement",
-      "isAccessibleForFree": "{% if article.public %}True{% else %}False{% endif %}",
+      "isAccessibleForFree": "{{ article.public }}",
       "cssSelector" : ".paywalled-content"
     },
     "isPartOf": {
