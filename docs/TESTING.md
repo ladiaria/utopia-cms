@@ -23,9 +23,9 @@ IMPORTANT: on the mysql server `character-set-server=utf8` (in the `mysqld` sect
 Execute this commands in the repo "root" dir:
 
 ```
-composer require codeception/codeception --dev
-composer require codeception/module-webdriver --dev
-composer require codeception/module-asserts --dev
+composer require --dev codeception/codeception:^5.0.0-alpha3
+composer require --dev codeception/module-webdriver
+composer require --dev codeception/module-asserts
 cp codeception.sample.yml codeception.yml
 ```
 

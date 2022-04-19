@@ -38,7 +38,7 @@ cache
 
 # codeception stuff
 /codeception.yml
-/composer.lock
+/composer.*
 /tests/_data/
 /tests/_output/
 /tests/log/
