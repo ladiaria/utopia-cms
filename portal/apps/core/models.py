@@ -361,6 +361,7 @@ class Edition(PortableDocumentFormatBaseModel):
             'publication': {
                 'newsletter_header_color': self.publication.newsletter_header_color,
                 'newsletter_campaign': self.publication.newsletter_campaign,
+                'get_absolute_url': self.publication.get_absolute_url(),
             },
             'pdf': {'path': self.pdf.path} if self.pdf else None,
             'date_published': str(self.date_published),
