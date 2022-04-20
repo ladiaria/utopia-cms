@@ -2,53 +2,7 @@
 
 @import '_variables';
 @import '../materialize/sass/components/variables';
-@import '../materialize/sass/components/normalize';
-@import '../materialize/sass/components/global';
-@import '../materialize/sass/components/icons-material-design';
-@import '../materialize/sass/components/grid';
-@import '../materialize/sass/components/navbar';
-@import '../materialize/sass/components/typography';
-@import '../materialize/sass/components/transitions';
-@import '../materialize/sass/components/cards';
-@import '../materialize/sass/components/toast';
-@import '../materialize/sass/components/tabs';
-@import '../materialize/sass/components/buttons';
-@import '../materialize/sass/components/dropdown';
-@import '../materialize/sass/components/modal';
-@import '../materialize/sass/components/materialbox';
-@import '../materialize/sass/components/forms/forms';
-@import '../materialize/sass/components/slider';
-@import '../materialize/sass/components/tapTarget';
-@import '../materialize/sass/components/date_picker/default';
-@import '../materialize/sass/components/date_picker/default.date';
-@import '../materialize/sass/components/date_picker/default.time';
-@import '../materialize/sass/components/collapsible.scss';
-@import '../lightGallery/dist/css/lightgallery.min.css';
-@import 'utopia_base';
-@import 'utopia_fonts';
-@import 'utopia_btn';
-@import 'utopia_snackbar';
-@import 'utopia_modal';
-@import 'utopia_navbar';
-@import 'utopia_footer';
-@import 'utopia_cards';
-@import 'components/big_photo';
-@import 'article';
-@import '_materialbox';
-@import 'components/news_wall.scss';
-@import 'utopia_all';
-@import 'components/subscribe_box';
-@import 'subscription';
-@import 'components/audio';
-@import 'components/popup-talk';
-@import 'pages/notice';
-@import 'pages/contact';
-@import 'pages/unsubscribe';
-@import 'pages/search';
-@import 'pages/edit-profile';
+@import 'pages/frontpage';
 @import 'components/faq';
 @import 'components/live';
-/*
-* Do not include styles directly here.
-* Add in separate stylesheet or add to _ladiaria_all.scss
-*/
+

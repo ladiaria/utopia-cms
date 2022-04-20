@@ -350,12 +350,6 @@ i.material-icons.icon-lo_mas_leido {
   }
 }
 
-@media (max-width: 1000px) {
-  .lg-caption-active .lg-toolbar #lg-share-flat {
-    display: none !important;
-  }
-}
-
 .share {
   li {
     margin: 0 12px;
@@ -452,6 +446,8 @@ i.material-icons.icon-lo_mas_leido {
     figure {
       height: calc(100vh - #{$line-height} * 2);
 
+      img {
+      }
 
       &::after {
         display: block;
@@ -633,386 +629,14 @@ i.material-icons.icon-lo_mas_leido {
   }
 }
 
-// Publication cover sections
-.frontpage-section {
-    background: $color-light-blue;
-    margin: 120px 0;
-    cursor: default;
-    font-size: 16px;
 
-    &:after {
-        content: "";
-        display: table;
-        clear: both;
-    }
-
-    &--white {
-        background-color: white;
-    }
-
-    &--margin-sm {
-        margin-top: $line-height * 2 - 40px;
-    }
-
-    &--padding {
-        padding:40px 0;
-    }
-
-    // component ultimo momento
-    &.live {
-        margin-top: 0;
-
-        .row {
-            .col {
-                &.s12 {
-
-                + .s12 {
-                        @media (max-width: 992px){
-                        margin-top: 20px;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    &#home-section-humor,
-    &#home-section-humor-ladiaria {
-        background-color: $humor-primary-color;
-
-        .footer-section .btn {
-        color: $off-black;
-        border-color: $off-black;
-
-            &:hover {
-                background: $off-black !important;
-                color: white;
-            }
-        }
-    }
-
-    // Frontpage section without title pill.
-    &--no-header {
-        padding: 50px 0 26px 0;
-
-        .container .row {
-        margin-bottom: 0;
-        }
-    }
-
-    header.section-title {
-        text-align: center;
-        margin-bottom: 5vh;
-
-        h2 {
-        position: relative;
-        bottom: 16px;
-        font-size: 16px;
-        text-transform: uppercase;
-        font-weight: 500;
-        padding: 9px 11px 6px 11px;
-        line-height: 1;
-        border-radius: 5px;
-        margin: 0;
-        }
-
-        i {
-        font-size: 20px;
-        }
-    }
-
-    .card {
-        height: 100%;
-
-        .card-content {
-        margin-bottom: 36px;
-        }
-    }
-
-    &--ad {
-        margin-top: 0;
-    }
-    .ld-grid-main--two-cols   {
-        margin-bottom: 0;
-
-        + .footer-section{
-        margin-top:40px ;
-        }
-
-    }
-    @media (max-width:1000px) {
-        .ld-grid-main {
-        display: block;
-        margin-bottom: 60px;
-
-            .ld-grid-area.area-main {
-                margin-bottom: 48px;
-            }
-        }
-        .ld-grid-simple {
-        display: block;
-
-            .ld-grid-simple__area + .ld-grid-simple__area {
-                margin-top: 24px;
-            }
-        }
-    }
-
-  .multi-buttons {
-
-      .ld-btn, .btn, .ut-btn {
-        margin-right: 0;
-        margin-bottom: 20px;
-        vertical-align: top;
-        margin-right: 10px;
-
-        @media (min-width: 450px) and (max-width:475px) {
-          margin-left: 10px;
-
-        }
-
-        + .ld-btn {
-          margin-bottom:0;
-          margin-left: 0;
-
-
-          @media (min-width: 476px) {
-            margin-right: 0;
-          }
-        }
-
-        + .btn {
-          margin-left: 0;
-          margin-bottom:0;
-
-          @media (min-width: 476px) {
-            margin-right: 0;
-          }
-        }
-
-        + .ut-btn {
-          margin-left: 0;
-          margin-bottom:0;
-
-          @media (min-width: 476px) {
-            margin-right: 0;
-          }
-        }
-
-    }
-  }
-  .section-footer {
-    background: #fff;
-    text-align: center;
-    padding: 20px 0;
-
-      a {
-        font-size:12px;
-        text-decoration: underline;
-        display: inline-block;
-
-        svg {
-          vertical-align: middle;
-          margin-left:5px;
-        }
-
-        &:hover {
-          text-decoration: none;
-        }
-      }
-  }
-}
 
 .section-opinion {
     .ld-card {
         margin-bottom: 24px;
     }
 }
-// mas leido component
-#mas-leidos {
-  padding: 40px 0;
-  background: #f3f3f3;
 
-
-  .card-header {
-      display: flex;
-
-      .card-title {
-        flex-grow: 1;
-      }
-    }
-
-  .card-title {
-      padding: 0;
-      font-weight: 500;
-      font-size: 28px;
-      line-height: 36px;
-      color: $off-black;
-      margin: 0;
-      font-family: 'Meta Serif', serif;
-
-      .ico {
-      vertical-align: middle;
-
-          svg {
-              fill: #262626;
-          }
-      }
-
-      @media screen and (max-width:768px) {
-        .ico {
-            display: none;
-        }
-      }
-    }
-
-  > .container {
-    width: 90%;
-
-    @media only screen and (min-width: 601px) {
-      max-width: 600px;
-    }
-    @media only screen and (min-width: 800px) {
-      max-width: 1170px;
-    }
-  }
-
-  .mas-leidos-list {
-
-    @media (min-width:900px) {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-      grid-column-gap: 15px;
-    }
-
-    > li {
-      padding-bottom: 20px;
-      margin-bottom: 30px;
-      border-bottom: 1px solid #D8D8D8;
-
-
-      @media (min-width:900px) {
-        min-height: 122px;
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-        border-left: 1px solid #D8D8D8;
-        padding-left: 8px;
-      }
-
-    }
-
-    article {
-      display: flex;
-
-      > .col {
-        padding: 0;
-      }
-
-      .num-recomendados {
-        margin-right: 10px;
-        font-size: 18px;
-        line-height: 21px;
-        color: #858585;
-      }
-
-      .article-section {
-        a {
-          font-size: 12px;
-          line-height: 14px;
-          text-transform: uppercase;
-          color:#595959;
-          text-decoration: none;
-          padding-left: 5px;
-          display: block;
-          margin-bottom: 5px;
-        }
-      }
-      .title-recomendados {
-        font-size: 16px;
-        line-height: 20px;
-        text-decoration: none;
-        font-family: 'Meta Serif', serif;
-        padding: 0 5px 5px;
-        display: block;
-
-        &:hover {
-          background: #ECECEC;
-          border-radius: 4px;
-          color: $off-black;
-        }
-      }
-    }
-  }
-}
-// mas leido view
-#mas-leidos-view {
-  padding-bottom: 100px;
-
-  .tabs {
-    display: flex;
-
-    .tab {
-      width: 33%;
-      border-bottom: 2px solid #F3F3F3;
-      a {
-        display: block;
-        color: $off-black;
-        font-size: 14px;
-
-        &.active {
-          background: #F3F3F3;
-        }
-      }
-
-    }
-    .indicator {
-      background-color: $off-black;
-    }
-  }
-  .ml-list {
-    display: block;
-
-    .item {
-      margin-bottom: 20px;
-      padding-bottom: 30px;
-      border-bottom: 1px solid #D8D8D8;
-
-      > article {
-        display: flex;
-
-        .num-recomendados {
-          font-size: 18px;
-          font-weight: bold;
-          color: #858585;
-          margin-right: 15px;
-          padding-top: 2px;
-        }
-        .article-section a {
-          font-size: 12px;
-          line-height: 14px;
-          text-transform: uppercase;
-          color: #595959;
-          text-decoration: none;
-        }
-        .title-recomendados {
-          font-size: 18px;
-          font-weight: bold;
-          line-height: 23px;
-          font-family: 'Meta Serif', serif;
-          text-decoration: none;
-        }
-      }
-    }
-  }
-}
-body.masleidos {
-  #main-content {
-    .container {
-      max-width: 90%;
-    }
-  }
-}
 
 .journalist {
     text-align: center;
@@ -1083,7 +707,6 @@ a.ladiaria {
     }
 }
 
-// revisar
 .section-detail {
     &__head {
         padding-top: 25px;
@@ -1476,43 +1099,7 @@ a.ladiaria {
         }
     }
 
-    .frontpage.homepage {
-      #main-header.install-pwa {
-        .nav-wrapper {
-          justify-content: unset;
-        }
-        .header-logo.emergentes{
-          img {
-              margin-left: 15px;
-          }
-        }
-        .instalar-app {
-          min-width: 121px;
-          margin: 13px 0 15px 15px;
-          line-height: 28px !important;
-          height: 30px;
-          padding: 0 14px;
-          text-decoration: none !important;
-          border:2px solid white;
-          color:white !important;
-          box-sizing: border-box;
-          background-color: transparent;
-          font-size: 12px;
-          font-weight: 500;
-          text-transform: uppercase;
 
-          &:hover {
-          background-color: white;
-          color: $off-black !important;
-          }
-        }
-      }
-
-    }
-    .frontpage-section .card h1 {
-      font-size: 1.375rem;
-      line-height: 120%;
-    }
 
     .navbar-fixed nav {
         position: relative;
@@ -1549,13 +1136,7 @@ a.ladiaria {
     }
 }
 
-@media only screen and (max-width: 700px) {
-    article.BG > .container {
-        &.photo {
-        min-width: auto !important;
-        }
-    }
-}
+
 
 @media #{$medium-and-up} {
     .container {
@@ -1606,164 +1187,7 @@ a.ladiaria {
     }
 }
 //
-.lg-backdrop {
-  background: $off-black;
-}
 
-.lg-caption-active {
-    .lg-img-wrap {
-        padding-right: 400px;
-    }
-    .lg-sub-html {
-        right: 80px;
-    }
-}
-
-.lg-actions {
-  top: 0;
-  display: inline;
-}
-
-.lg-sub-html {
-    position: absolute;
-    top: 0px;
-    right: -300px;
-    width: 300px;
-    padding: 20px;
-    background: $off-black-1;
-    position: absolute;
-    left: auto;
-    overflow: auto;
-    height: 100%;
-    overflow: auto;
-    z-index: 0;
-    text-align: left;
-}
-
-.lg-hide-items {
-    .lg-img-wrap {
-        padding-right: 0rem;
-    }
-}
-
-.lg-toolbar {
-  left: auto;
-  right: 0;
-  bottom: 0;
-  width: 80px;
-  background: $off-black-1;
-  border-left: 1px solid $off-black;
-  text-align: center;
-  // .lg-counter, .lg-share, .lg-caption-icon, .lg-actions{
-  //   display: inline;
-  //   position: relative;
-  //   width: 80px;
-  // }
-    .lg-icon,
-    .lg-share,
-    .lg-actions {
-        float: none;
-        height: 60px;
-        line-height: 60px;
-        width: 60px;
-        font-size: 24px;
-        padding: 10px;
-        background: none;
-        display: inline;
-        vertical-align: middle;
-    }
-
-    #lg-counter {
-        padding: 0;
-    }
-
-    #lg-share {
-        display: block;
-        visibility: visible;
-        position: relative;
-
-        .lg-dropdown a {
-        line-height: 25px;
-        }
-    }
-
-    #lg-share-flat {
-        display: none;
-        visibility: hidden;
-
-        li {
-        display: inline;
-        }
-    }
-
-    .lg-actions .lg-icon {
-        position: relative;
-        top: auto;
-        right: auto;
-        left: auto;
-        margin-top: 0;
-    }
-}
-
-.lg-progress-bar .lg-progress {
-  background-color: $primary-color !important;
-}
-
-@media (max-width: 1000px) {
-    .lg-toolbar {
-        display: none;
-        visibility: hidden;
-    }
-
-    .lg-caption-active {
-        .lg-toolbar {
-        position: absolute;
-        top: auto;
-        right: 0;
-        width: 100%;
-        left: 0;
-        height: 200px;
-        display: block;
-        visibility: visible;
-        text-align: left;
-
-            .lg-next,
-            .lg-prev,
-            .lg-caption-icon {
-                display: none;
-                visibility: hidden;
-            }
-
-            #lg-share-flat {
-                display: inline;
-                visibility: visible;
-            }
-
-            #lg-share {
-                display: none;
-                visibility: hidden;
-            }
-        }
-
-        .lg-img-wrap {
-        padding-right: 5px;
-        }
-
-        .lg-sub-html {
-        right: 0px;
-        width: 100%;
-        bottom: auto;
-        top: 60px;
-        padding-top: 0;
-        height: 120px;
-        }
-
-        .lg-icons {
-        float: left;
-        }
-
-    }
-}
 
 .ld-divider {
   width: 100%;
@@ -1899,18 +1323,6 @@ a.ld-link-low {
   // Hide Redpagos option for digital subscriptions
   .payment-option-4 {
     display: none;
-  }
-}
-
-.ld-related {
-  background-color: rgba(0, 0, 0, 0.02);
-  padding-bottom: 50px;
-
-  .section-detail__title {
-    font-size: 30px;
-    @media (min-width: 769px) {
-      font-size: 50px;
-    }
   }
 }
 

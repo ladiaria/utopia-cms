@@ -102,14 +102,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- End Icons -->
 
-    {% ifequal category.slug 'elecciones' %}
-      <link href="https://fonts.googleapis.com/css?family=Poppins:400,400i,700" rel="stylesheet">
-      <link href="https://fonts.googleapis.com/css?family=Source+Serif+Pro:600" rel="stylesheet">
-    {% endifequal %}
-
     <!-- CSS -->
     {% compress css %}
-      <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+      <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% if HOMEV3_CUSTOM_CSS %}
         <link href="{% static HOMEV3_CUSTOM_CSS %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endif %}
@@ -209,6 +204,7 @@
     {% compress css %}
       {% block css %}{% endblock %}
     {% endcompress %}
+    {% block extra_css %}{% endblock %}
 
     <!-- JavaScript -->
     <script src="{% static 'js/index.js' %}"></script>

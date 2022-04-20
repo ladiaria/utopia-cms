@@ -1,0 +1,185 @@
+// mas leido component
+#mas-leidos {
+    padding: 40px 0;
+    background: #f3f3f3;
+
+
+    .card-header {
+        display: flex;
+
+        .card-title {
+          flex-grow: 1;
+        }
+      }
+
+    .card-title {
+        padding: 0;
+        font-weight: 500;
+        font-size: 28px;
+        line-height: 36px;
+        color: $off-black;
+        margin: 0;
+        font-family: 'Meta Serif', serif;
+
+        .ico {
+        vertical-align: middle;
+
+            svg {
+                fill: #262626;
+            }
+        }
+
+        @media screen and (max-width:768px) {
+          .ico {
+              display: none;
+          }
+        }
+      }
+
+    > .container {
+      width: 90%;
+
+      @media only screen and (min-width: 601px) {
+        max-width: 600px;
+      }
+      @media only screen and (min-width: 800px) {
+        max-width: 1170px;
+      }
+    }
+
+    .mas-leidos-list {
+
+      @media (min-width:900px) {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+        grid-column-gap: 15px;
+      }
+
+      > li {
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+        border-bottom: 1px solid #D8D8D8;
+
+
+        @media (min-width:900px) {
+          min-height: 122px;
+          border-bottom: none;
+          margin-bottom: 0;
+          padding-bottom: 0;
+          border-left: 1px solid #D8D8D8;
+          padding-left: 8px;
+        }
+
+      }
+
+      article {
+        display: flex;
+
+        > .col {
+          padding: 0;
+        }
+
+        .num-recomendados {
+          margin-right: 10px;
+          font-size: 18px;
+          line-height: 21px;
+          color: #858585;
+        }
+
+        .article-section {
+          a {
+            font-size: 12px;
+            line-height: 14px;
+            text-transform: uppercase;
+            color:#595959;
+            text-decoration: none;
+            padding-left: 5px;
+            display: block;
+            margin-bottom: 5px;
+          }
+        }
+        .title-recomendados {
+          font-size: 16px;
+          line-height: 20px;
+          text-decoration: none;
+          font-family: 'Meta Serif', serif;
+          padding: 0 5px 5px;
+          display: block;
+
+          &:hover {
+            background: #ECECEC;
+            border-radius: 4px;
+            color: $off-black;
+          }
+        }
+      }
+    }
+  }
+  // mas leido view
+  #mas-leidos-view {
+    padding-bottom: 100px;
+
+    .tabs {
+      display: flex;
+
+      .tab {
+        width: 33%;
+        border-bottom: 2px solid #F3F3F3;
+        a {
+          display: block;
+          color: $off-black;
+          font-size: 14px;
+
+          &.active {
+            background: #F3F3F3;
+          }
+        }
+
+      }
+      .indicator {
+        background-color: $off-black;
+      }
+    }
+    .ml-list {
+      display: block;
+
+      .item {
+        margin-bottom: 20px;
+        padding-bottom: 30px;
+        border-bottom: 1px solid #D8D8D8;
+
+        > article {
+          display: flex;
+
+          .num-recomendados {
+            font-size: 18px;
+            font-weight: bold;
+            color: #858585;
+            margin-right: 15px;
+            padding-top: 2px;
+          }
+          .article-section a {
+            font-size: 12px;
+            line-height: 14px;
+            text-transform: uppercase;
+            color: #595959;
+            text-decoration: none;
+          }
+          .title-recomendados {
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 23px;
+            font-family: 'Meta Serif', serif;
+            text-decoration: none;
+          }
+        }
+      }
+    }
+  }
+  body.masleidos {
+    #main-content {
+      .container {
+        max-width: 90%;
+      }
+    }
+  }

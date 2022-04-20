@@ -33,6 +33,10 @@
 
 {% block json_ld %}{% include 'article/detail_json_ld.html' %}{% endblock %}
 
+{% block css %}
+  <link href="{% static 'sass/utopia_article.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
 {% block header_scripts %}
   <script type="text/javascript">
     $(function(){

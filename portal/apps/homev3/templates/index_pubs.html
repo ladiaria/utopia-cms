@@ -1,11 +1,15 @@
 {% extends "base.html" %}
-{% load core_tags homev3_tags %}
+{% load static core_tags homev3_tags %}
 
 {% block page_title %}{{ publication.headline }} | {{ site.name }} | {{ country_name }}{% endblock %}
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
   <meta property="og:title" content="{{ publication.headline }} | {{ site.name }} | {{ country_name }}">
+{% endblock %}
+
+{% block css %}
+  <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block body_class %}{{ publication.slug }}-pub{% endblock %}
