@@ -47,26 +47,30 @@
 
   {% render_cover %}
 
-  {% if fcategory %}{% include 'category_grid.html' %}{% endif %}
-  {% for section in featured_sections.0 %}
-    {% render_section section %}
-  {% endfor %}
+  {% if fcategory %}{% with prefetched_article_data=True %}{% include 'category_grid.html' %}{% endwith %}{% endif %}
 
-  {% for publication_slug in home_publications %}
-    {% render_publication_row publication_slug %}
-  {% endfor %}
+  {# "with" variable should be reset for the content that is not yet "prefetch-aware" #}
 
-  {% if featured_publications.0 %}{% render_publication_grid featured_publications.0 %}{% endif %}
+  {% with prefetched_article_data=False %}
+    {% for section in featured_sections.0 %}{% render_section section %}{% endfor %}
+    {% for publication_slug in home_publications %}{% render_publication_row publication_slug %}{% endfor %}
+  {% endwith %}
 
-  {% for section in featured_sections.1 %}
-    {% render_section section %}
-  {% endfor %}
+  {% if featured_publications.0 %}
+    {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.0 %}{% endwith %}
+  {% endif %}
 
-  {% if featured_publications.1 %}{% render_publication_grid featured_publications.1 %}{% endif %}
+  {% with prefetched_article_data=False %}
+    {% for section in featured_sections.1 %}{% render_section section %}{% endfor %}
+  {% endwith %}
 
-  {% for section in featured_sections.2 %}
-    {% render_section section %}
-  {% endfor %}
+  {% if featured_publications.1 %}
+    {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.1 %}{% endwith %}
+  {% endif %}
+
+  {% with prefetched_article_data=False %}
+    {% for section in featured_sections.2 %}{% render_section section %}{% endfor %}
+  {% endwith %}
 
   {# news wall commented out due to performance issues #}
   {# include 'news_wall.html' #}

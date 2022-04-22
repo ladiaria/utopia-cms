@@ -34,14 +34,16 @@
               {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
             </div>
           {% endif %}
-          {% if article.has_byline %}
-          <div class="ld-card__author">
-            {% for author in article.get_authors %}
-              <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </div>
-          {% endif %}
-          <div class="ld-card__date">{% if article.get_authors %} - {% endif %}{{ article.date_published|date:"j \d\e F \d\e o"|lower }}</div>
+          {% with authors=article.get_authors %}
+            {% if authors %}
+              <div class="ld-card__author">
+                {% for author in authors %}
+                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+            <div class="ld-card__date">{% if authors %} - {% endif %}{{ article.date_published|date:"j \d\e F \d\e o"|lower }}</div>
+          {% endwith %}
           {% with a=article %}
             {% include 'article/article_card_read_later.html' %}
           {% endwith %}

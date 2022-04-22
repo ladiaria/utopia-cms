@@ -7,13 +7,30 @@ from django.http import Http404, HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import never_cache, cache_control
+from django.contrib.contenttypes.models import ContentType
 
 from decorators import decorate_if_no_staff, decorate_if_staff
 
-from core.models import Edition, get_current_edition, Section, Publication, Category, CategoryHome
+from core.models import Edition, get_current_edition, Publication, Category, CategoryHome, Article
 from core.views.category import category_detail
 from faq.models import Question, Topic
 from cartelera.models import LiveEmbedEvent
+
+
+def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set, articles):
+    for a in articles:
+        is_restricted, compute_follow = a.is_restricted(), False
+        if is_restricted:
+            context['restricteds'].append(a.id)
+            if user_has_subscriber and user.subscriber.is_subscriber(a.main_section.edition.publication.slug):
+                context['restricteds_allowed'].append(a.id)
+                compute_follow = True
+        else:
+            compute_follow = True
+        if compute_follow:
+            context['compute_follows'].append(a.id)
+            if str(a.id) in follow_set:
+                context['follows'].append(a.id)
 
 
 @decorate_if_staff(decorator=never_cache)
@@ -68,11 +85,22 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ()),
         'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
     }
+
+    is_authenticated = request.user.is_authenticated()
+    if is_authenticated:
+        context.update({'restricteds': [], 'restricteds_allowed': [], 'compute_follows': [], 'follows': []})
+        user_has_subscriber = hasattr(request.user, 'subscriber')
+        follow_set = request.user.follow_set.filter(
+            content_type=ContentType.objects.get_for_model(Article)
+        ).values_list('object_id', flat=True)
+
     for publication_slug in getattr(settings, 'HOMEV3_FEATURED_PUBLICATIONS', ()):
         try:
             ftop_articles = \
                 get_current_edition(publication=Publication.objects.get(slug=publication_slug)).top_articles
             if ftop_articles:
+                if is_authenticated:
+                    ctx_update_article_extradata(context, request.user, user_has_subscriber, follow_set, ftop_articles)
                 fcover_article = ftop_articles[0]
                 ftop_articles.pop(0)
             else:
@@ -87,19 +115,29 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     if featured_category_slug:
         category = get_object_or_404(Category, slug=featured_category_slug)
         category_home = get_object_or_404(CategoryHome, category=category)
+        category_cover_article, category_destacados = category_home.cover(), category_home.non_cover_articles()
+        if is_authenticated:
+            ctx_update_article_extradata(
+                context, request.user, user_has_subscriber, follow_set, [category_cover_article]
+            )
+            ctx_update_article_extradata(context, request.user, user_has_subscriber, follow_set, category_destacados)
         context.update(
             {
                 'fcategory': category,
-                'category_cover_article': category_home.cover(),
-                'category_destacados': category_home.non_cover_articles(),
+                'category_cover_article': category_cover_article,
+                'category_destacados': category_destacados,
             }
         )
 
-    question_list = Question.published.filter(topic__slug='coronavirus')
-    try:
-        questions_topic = Topic.objects.get(slug="coronavirus")
-    except Topic.DoesNotExist:
-        questions_topic = None
+    questions_topic_slug = getattr(settings, 'HOMEV3_QUESTIONS_TOPIC_SLUG', None)
+    if questions_topic_slug:
+        question_list = Question.published.filter(topic__slug=questions_topic_slug)
+        try:
+            questions_topic = Topic.objects.get(slug=questions_topic_slug)
+        except Topic.DoesNotExist:
+            questions_topic = None
+    else:
+        question_list, questions_topic = [], None
 
     if publication.slug != settings.DEFAULT_PUB:
         if year and month and day:
@@ -114,22 +152,11 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             edition = get_current_edition(publication=publication)
 
         top_articles = edition.top_articles if edition else []
-        if top_articles:
-            cover_article = top_articles[0]
-            top_articles.pop(0)
-        else:
-            cover_article = None
 
         context.update(
             {
-                'cover_article': cover_article,
                 'edition': edition,
-                'destacados': top_articles,
                 'mas_leidos': False,
-                'big_photo': publication.full_width_cover_image,
-                'is_portada': True,
-                'question_list': question_list,
-                'questions_topic': questions_topic,
                 'allow_ads': getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_ALLOW_ADS', True),
             }
         )
@@ -150,20 +177,9 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
 
         top_articles = ld_edition.top_articles if ld_edition else []
 
-        if top_articles:
-            cover_article = top_articles[0]
-            top_articles.pop(0)
-        else:
-            cover_article = None
-
         try:
             context['event'] = LiveEmbedEvent.objects.get(active=True, in_home=True)
         except LiveEmbedEvent.DoesNotExist:
-            pass
-
-        try:
-            context['photo_section'] = Section.objects.get(slug='fotografia')
-        except Section.DoesNotExist:
             pass
 
         if settings.DEBUG:
@@ -171,19 +187,35 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         context.update(
             {
                 'edition': ld_edition,
-                'destacados': top_articles,
-                'is_portada': True,
-                'cover_article': cover_article,
-                'big_photo': publication.full_width_cover_image,
                 'mas_leidos': True,
                 'allow_ads': True,
                 'publications': Publication.objects.filter(public=True),
                 'home_publications': settings.HOME_PUBLICATIONS,
-                'question_list': question_list,
-                'questions_topic': questions_topic,
             }
         )
         template = 'index.html'
+
+    if top_articles:
+
+        if is_authenticated:
+            ctx_update_article_extradata(context, request.user, user_has_subscriber, follow_set, top_articles)
+
+        cover_article = top_articles[0]
+        top_articles.pop(0)
+
+    else:
+        cover_article = None
+
+    context.update(
+        {
+            'is_portada': True,
+            'cover_article': cover_article,
+            'destacados': top_articles,
+            'question_list': question_list,
+            'questions_topic': questions_topic,
+            'big_photo': publication.full_width_cover_image,
+        }
+    )
 
     if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_CUSTOM_TEMPLATES', ()):
         template_dir = getattr(settings, 'CORE_PUBLICATIONS_TEMPLATE_DIR', None)

@@ -321,14 +321,18 @@ class Edition(PortableDocumentFormatBaseModel):
     @property
     def top_articles(self):
         return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.prefetch_related(
-            'article__main_section__edition__publication', 'article__main_section__section',
-            'article__photo__extended__photographer'
+            'article__main_section__edition__publication',
+            'article__main_section__section',
+            'article__photo__extended__photographer',
+            'article__byline',
         ).filter(article__is_published=True, home_top=True).order_by('top_position')]))
 
     def get_articles_in_section(self, section):
         return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.select_related(
-            'article__main_section__edition__publication', 'article__main_section__section',
-            'article__photo__extended__photographer'
+            'article__main_section__edition__publication',
+            'article__main_section__section',
+            'article__photo__extended__photographer',
+            'article__byline',
         ).filter(article__is_published=True, section=section).order_by('position')]))
 
     def previous_section(self, section):
@@ -1026,18 +1030,10 @@ class ArticleBase(Model, CT):
         return None
 
     def has_byline(self):
-        byline = ''
-        for author in self.byline.all():
-            byline += '%s, ' % author
-        if byline == '':
-            return False
-        self.get_byline = byline[:-2]
-        return True
+        return self.byline.exists()
 
     def get_authors(self):
-        if self.byline:
-            return list(self.byline.all())
-        return None
+        return self.byline.all()
 
     def get_tags(self):
         return Tag.objects.get_for_object(self)
@@ -1408,9 +1404,13 @@ class Article(ArticleBase):
     get_sections.short_description = u'secciones'
 
     def get_categories_slugs(self):
-        return set([
-            s.category.slug for s in self.sections.filter(
-                category__isnull=False).distinct().select_related('category')])
+        return set(
+            [
+                s.category.slug for s in self.sections.filter(
+                    category__isnull=False
+                ).distinct().select_related('category')
+            ]
+        )
 
     def get_app_photo(self):
         """
@@ -1532,13 +1532,20 @@ class CategoryHome(Model):
     def __unicode__(self):
         return u'%s - %s' % (self.category, self.cover())
 
+    def articles_ordered(self):
+        return self.articles.order_by(
+            'home_articles'
+        ).prefetch_related(
+            'main_section__edition__publication', 'main_section__section', 'photo__extended__photographer', 'byline'
+        )
+
     def cover(self):
         """ Returns the article in the 1st position """
-        return self.articles.exists() and self.articles.order_by('home_articles')[0]
+        return self.articles_ordered().first()
 
     def non_cover_articles(self):
         """ Returns the articles from 2nd position """
-        return self.articles.order_by('home_articles')[1:] if self.articles.exists() else []
+        return self.articles_ordered()[1:]
 
     def set_article(self, article, position):
         try:

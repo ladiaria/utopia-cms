@@ -85,20 +85,22 @@
       <h1 class="article-title after_foto">{{ article.headline|ldmarkup:article.id|bleach }}</h1>
 
       <div class="article-date-author">
-        {% if article.date_published %}
-          Publicado{% if article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small">{{ article.date_published_verbose.lower }}{% if article.has_byline %} · {% endif %}</span>
-        {% endif %}
-        {% if article.has_byline %}
-          Escribe
-          {% for author in article.get_authors %}
-            <span class="small">
-              <a href="{{ author.get_absolute_url }}" title="Ver más artículos de {{ author.name }}.">
-                {{ author.name }}
-              </a>
-            </span>{% if not forloop.last %}, {% endif %}
-          {% endfor %}
-          {% if section %}<span class="small">en</span>{% endif %}
-        {% endif %}
+        {% with authors=article.get_authors %}
+          {% if article.date_published %}
+            Publicado{% if article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small">{{ article.date_published_verbose.lower }}{% if authors %} · {% endif %}</span>
+          {% endif %}
+          {% if authors %}
+            Escribe
+            {% for author in authors %}
+              <span class="small">
+                <a href="{{ author.get_absolute_url }}" title="Ver más artículos de {{ author.name }}.">
+                  {{ author.name }}
+                </a>
+              </span>{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+            {% if section %}<span class="small">en</span>{% endif %}
+          {% endif %}
+        {% endwith %}
         {% if section %}
           <span class="small">
             {% if 'elecciones' in article.get_categories_slugs %}

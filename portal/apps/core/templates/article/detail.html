@@ -165,14 +165,16 @@
           </div>
         {% endif %}
         <div class="article-date-author">
-          {% if article.has_byline %}
-            Escribe
-            {% for author in article.get_authors %}
-              <span class="small"><a href="{{ author.get_absolute_url }}">{{ author.name }}</a></span>
-              {% if not forloop.last %}, {% endif %}
-            {% endfor %}
-            {% if section %} <span class="small">en </span>{% endif %}
-          {% endif %}
+          {% with authors=article.get_authors %}
+            {% if authors %}
+              Escribe
+              {% for author in authors %}
+                <span class="small"><a href="{{ author.get_absolute_url }}">{{ author.name }}</a></span>
+                {% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              {% if section %} <span class="small">en </span>{% endif %}
+            {% endif %}
+          {% endwith %}
           {% if section %}
             <span class="small">
               {% if 'elecciones' in article.get_categories_slugs %}

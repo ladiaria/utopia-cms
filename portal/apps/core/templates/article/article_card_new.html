@@ -34,19 +34,19 @@
 
     {% ifnotequal card_type 'AC' %}
       <div class="ld-card__byline">
-        {% if article.has_byline %}
-          <div class="ld-card__author">
-            {% for author in article.get_authors %}
-              <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </div>
-        {% endif %}
+        {% with authors=article.get_authors %}
+          {% if authors %}
+            <div class="ld-card__author">
+              {% for author in authors %}
+                <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
         {% if not hide_date_published %}
           {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
         {% endif %}
-        {% with a=article %}
-          {% include 'article/article_card_read_later.html' %}
-        {% endwith %}
+        {% with a=article %}{% include 'article/article_card_read_later.html' %}{% endwith %}
       </div>
     {% endifnotequal %}
     {% block footer %}{% endblock %}{# TODO: check if needed #}

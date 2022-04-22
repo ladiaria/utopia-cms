@@ -95,19 +95,19 @@
               {% endif %}
 
               <div class="ld-card__byline">
-                {% if cover_article.has_byline %}
-                  <div class="ld-card__author">
-                    {% for author in cover_article.get_authors %}
-                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                  </div>
-                {% endif %}
+                {% with authors=cover_article.get_authors %}
+                  {% if authors %}
+                    <div class="ld-card__author">
+                      {% for author in authors %}
+                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
                 {% if not hide_date_published %}
                   {% autoescape off %}{% date_published_verbose cover_article %}{% endautoescape %}
                 {% endif %}
-                {% with a=cover_article %}
-                  {% include 'article/article_card_read_later.html' %}
-                {% endwith %}
+                {% with a=cover_article %}{% include 'article/article_card_read_later.html' %}{% endwith %}
               </div>
             </div>
           </div>
@@ -153,13 +153,16 @@
                 </div>
               {% endif %}
               <div class="ld-card__byline">
-                {% if a.has_byline %}
-                  <div class="ld-card__author">
-                    {% for author in a.get_authors %}
-                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                  </div>
-                {% endif %}
+                {% with authors=a.get_authors %}
+                  {% if authors %}
+                    <div class="ld-card__author">
+                      {% for author in authors %}
+                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>
+                        {% if not forloop.last %}, {% endif %}
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
                 {% if not hide_date_published %}
                   {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
                 {% endif %}
@@ -218,13 +221,16 @@
                 <div class="ld-card__intro">{{ a.deck|ldmarkup:a.id|bleach }}</div>
               {% endif %}
               <div class="ld-card__byline">
-                {% if a.has_byline %}
-                  <div class="ld-card__author">
-                    {% for author in a.get_authors %}
-                      <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                  </div>
-                {% endif %}
+                {% with authors=a.get_authors %}
+                  {% if authors %}
+                    <div class="ld-card__author">
+                      {% for author in authors %}
+                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>
+                        {% if not forloop.last %}, {% endif %}
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
                 {% if not hide_date_published %}
                   {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
                 {% endif %}

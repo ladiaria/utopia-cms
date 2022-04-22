@@ -176,7 +176,8 @@ def render_category_row(context, category_slug):
 @register.simple_tag(takes_context=True)
 def render_cover(context):
     context.update({'is_cover': True})
-    return loader.render_to_string(getattr(settings, 'HOMEV3_COVER_TEMPLATE', 'cover.html'), context.flatten())
+    flatten_ctx = context.flatten()
+    return loader.render_to_string(getattr(settings, 'HOMEV3_COVER_TEMPLATE', 'cover.html'), flatten_ctx)
 
 
 class RenderHeaderNode(Node):

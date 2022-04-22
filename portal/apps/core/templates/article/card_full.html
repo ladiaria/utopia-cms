@@ -45,13 +45,11 @@
       {% if article.date_published %}
         <span class="date small">{{ article.date_published|date:"d \• N \• o"|capfirst }}</span>
       {% endif %}
-      {% if article.has_byline %}
-        {% for author in authors %}
-          <span class="small">
-            <a href="{% url 'journalist_detail' journalist_slug=article.author.slug %}" title="Ver más artículos de {{ article.author.name }}">{{ author.name }}</a>
-          </span>
-        {% endfor %}
-      {% endif %}
+      {% for author in article.get_authors %}
+        <span class="small">
+          <a href="{{ author.get_absolute_url }}" title="Ver más artículos de {{ author.name }}">{{ author.name }}</a>
+        </span>
+      {% endfor %}
       {% if article.section %}
         <span class="small">
           en

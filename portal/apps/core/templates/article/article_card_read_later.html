@@ -1,8 +1,19 @@
 {% load activity_tags thedaily_tags %}
 
+{# TODO: change variable name a to article for better understanding #}
 {% if user.is_authenticated %}
-  {% if not a.is_restricted or user|has_restricted_access:a %}
-    {# TODO: change variable name a to article for better understanding #}
+  {% if prefetched_article_data %}
+    {% if a.id in follows %}
+      <div class="ld-card__addtrl added" title="Quitar de leer después" data-article-id="{{ a.id }}">
+    {% else %}
+      <div class="ld-card__addtrl" title="Guardar para leer después" data-article-id="{{ a.id }}">
+    {% endif %}
+    <svg fill="none" height="18" viewBox="0 0 18 18" width="18" xmlns="http://www.w3.org/2000/svg">
+      <path d="m13.9 2.75h-9.8c-.05523 0-.1.04477-.1.1v12.4l5-2 5 2v-12.4c0-.05523-.0448-.1-.1-.1z" fill="#fff"/>
+      <path clip-rule="evenodd" d="m3.25 2.85c0-.46944.38056-.85.85-.85h9.8c.4694 0 .85.38055.85.85v13.5078l-5.75-2.3-5.75 2.3zm1.5.65v10.6422l4.25-1.7 4.25 1.7v-10.6422z" fill="#8C8C8C" fill-rule="evenodd"/>
+    </svg>
+    </div>{# opened in the "if" #}
+  {% elif not a.is_restricted or user|has_restricted_access:a %}
     {% if user|is_following:a %}
       <div class="ld-card__addtrl added" title="Quitar de leer después" data-article-id="{{ a.id }}">
     {% else %}

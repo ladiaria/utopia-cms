@@ -36,17 +36,17 @@
     {% endif %}
     <div class="ld-card__byline-wrap">
       <div class="ld-card__byline">
-        {% if article.has_byline %}
-          <div class="ld-card__author">
-            {% for author in article.get_authors %}
-              <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </div>
-        {% endif %}
-        {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
-        {% with a=article %}
-          {% include 'article/article_card_read_later.html' %}
+        {% with authors=article.get_authors %}
+          {% if authors %}
+            <div class="ld-card__author">
+              {% for author in authors %}
+                <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
         {% endwith %}
+        {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
+        {% with a=article %}{% include 'article/article_card_read_later.html' %}{% endwith %}
       </div>
     </div>
   </div>

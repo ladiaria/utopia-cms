@@ -1,6 +1,23 @@
 {% load thedaily_tags %}
 
-{% if article.is_restricted %}
+{% if prefetched_article_data and user.is_authenticated %}
+  {% if article.id in restricteds %}
+    <span class="lock-tooltip">
+      {% if article.id in restricteds_allowed %}
+        <svg class="lock" fill="none" height="14" viewBox="0 0 14 14" width="14" xmlns="http://www.w3.org/2000/svg"><g stroke="#a4a4a4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="m10.176 6.41666h-6.35184c-.50115 0-.90741.52233-.90741 1.16666v4.08338c0 .6443.40626 1.1666.90741 1.1666h6.35184c.5012 0 .9074-.5223.9074-1.1666v-4.08338c0-.64433-.4062-1.16666-.9074-1.16666z" fill="#a4a4a4"/><path d="m4.08325 6.41666v-2.33333c-.00072-.7233.26733-1.42108.75214-1.95786.4848-.53678 1.15176-.87428 1.87141-.94697.71964-.07269 1.44062.12461 2.02298.5536"/></g></svg>
+      {% else %}
+        <svg class="lock" fill="none" height="14" viewBox="0 0 14 14" width="14" xmlns="http://www.w3.org/2000/svg"><g stroke="#a4a4a4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="m10.176 6.41666h-6.35184c-.50115 0-.90741.52233-.90741 1.16666v4.08338c0 .6443.40626 1.1666.90741 1.1666h6.35184c.5012 0 .9074-.5223.9074-1.1666v-4.08338c0-.64433-.4062-1.16666-.9074-1.16666z" fill="#a4a4a4"/><path d="m4.08325 6.41666v-2.33334c0-.77355.30729-1.51541.85427-2.06239s1.28885-.85427 2.0624-.85427 1.51541.30729 2.06239.85427.85428 1.28884.85428 2.06239v2.33334"/></g></svg>
+      {% endif %}
+      <span class="lock-tooltip-content">
+        {% if article.id in restricteds_allowed %}
+          Accedés a este contenido por tener suscripción de pago
+        {% else %}
+          Contenido exclusivo para suscripciones de pago
+        {% endif %}
+      </span>
+    </span>
+  {% endif %}
+{% elif article.is_restricted %}
   <span class="lock-tooltip">
     {% if user|has_restricted_access:article %}
       <svg class="lock" fill="none" height="14" viewBox="0 0 14 14" width="14" xmlns="http://www.w3.org/2000/svg"><g stroke="#a4a4a4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="m10.176 6.41666h-6.35184c-.50115 0-.90741.52233-.90741 1.16666v4.08338c0 .6443.40626 1.1666.90741 1.1666h6.35184c.5012 0 .9074-.5223.9074-1.1666v-4.08338c0-.64433-.4062-1.16666-.9074-1.16666z" fill="#a4a4a4"/><path d="m4.08325 6.41666v-2.33333c-.00072-.7233.26733-1.42108.75214-1.95786.4848-.53678 1.15176-.87428 1.87141-.94697.71964-.07269 1.44062.12461 2.02298.5536"/></g></svg>

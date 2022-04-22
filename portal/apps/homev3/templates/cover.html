@@ -23,7 +23,9 @@
 
 {% block cover_cards %}
   {% if cover_article %}
-    {% render_article_card article=cover_article media=cover_article.home_display card_size="FF" %}
+    {% with prefetched_article_data=True %}
+      {% render_article_card article=cover_article media=cover_article.home_display card_size="FF" %}
+    {% endwith %}
   {% endif %}
 {% endblock %}
 
@@ -53,16 +55,18 @@
 
 {% block cover_cards_more %}
   {% if destacados|length > 10 %}
-    <div class="frontpage-section">
-      <div class="container">
-        <div class="section-detail__head">
-          <h2 class="section-detail__title">Más destacados</h2>
+    {% with prefetched_article_data=True %}
+      <div class="frontpage-section">
+        <div class="container">
+          <div class="section-detail__head">
+            <h2 class="section-detail__title">Más destacados</h2>
+          </div>
+          {% for top_index_val in "159" %}
+            {% render_section None top_index=top_index_val|add:"9" %}
+          {% endfor %}
         </div>
-        {% for top_index_val in "159" %}
-          {% render_section None top_index=top_index_val|add:"9" %}
-        {% endfor %}
       </div>
-    </div>
+    {% endwith %}
   {% endif %}
 {% endblock %}
 

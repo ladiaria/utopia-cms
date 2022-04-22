@@ -27,13 +27,15 @@
               {{ article.photo.type_verbose }}: {{ article.photo.photographer.name }}
             </div>
           {% endif %}
-          {% if article.has_byline  %}
-            <div class="ld-card__author">
-              {% for author in article.get_authors %}
-                <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-              {% endfor %}
-            </div>
-          {% endif %}
+          {% with authors=article.get_authors %}
+            {% if authors %}
+              <div class="ld-card__author">
+                {% for author in authors %}
+                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
           {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
         </div>
       </div>

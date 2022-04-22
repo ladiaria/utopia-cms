@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 
-from actstream.models import following
-
 from django.template import Library, Node, NodeList, TemplateSyntaxError, Variable
+from django.contrib.contenttypes.models import ContentType
+
+from core.models import Article
 
 
 register = Library()
@@ -49,7 +50,7 @@ class TimeNode(Node):
 
 @register.filter(name='count_following')
 def count_following(user):
-    return len(following(user))
+    return user.follow_set.filter(content_type=ContentType.objects.get_for_model(Article)).count()
 
 
 @register.filter(name='has_restricted_access')
