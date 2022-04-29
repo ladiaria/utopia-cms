@@ -64,6 +64,7 @@ from thedaily.forms import (
     PasswordResetRequestForm,
     PasswordChangeForm,
     GoogleSignupForm,
+    GoogleSignupAddressForm,
     SubscriberSignupForm,
     SubscriberSignupAddressForm,
     ConfirmEmailRequestForm,
@@ -341,10 +342,17 @@ def subscribe(request, planslug, category_slug=None):
             if oauth2_state:
                 oauth2_button = False
                 profile = get_or_create_user_profile(oas.user)
-                subscriber_form = GoogleSignupForm(instance=profile)
+                if subscription_price.ga_category == 'D':
+                    subscriber_form = GoogleSignupForm(instance=profile)
+                else:
+                    if not profile.province:
+                        default_province = getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None)
+                        if default_province:
+                            profile.province = default_province
+                    subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
-                subscriber_form = \
-                    SubscriberSignupForm() if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm()
+                subscriber_form = SubscriberSignupForm(
+                ) if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm()
             # check session and if a new user was created, encourage login
             if request.method == 'GET':
                 subscription = request.session.get('subscription')
@@ -358,8 +366,9 @@ def subscribe(request, planslug, category_slug=None):
             else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
 
         initial = {'subscription_type_prices': planslug}
-        subscription_form = subscription_formclass(initial=initial) \
-            if subscription_price.ga_category == 'D' else SubscriptionForm(initial=initial)
+        subscription_form = (
+            subscription_formclass if subscription_price.ga_category == 'D' else SubscriptionForm
+        )(initial=initial)
 
         if not is_subscriber and request.method == 'POST':
             post = request.POST.copy()
@@ -370,17 +379,22 @@ def subscribe(request, planslug, category_slug=None):
                 if subscription and subscription_type:
                     # delete possible in-process subscription
                     subscription.subscription_type_prices.remove(subscription_type)
-                subscriber_form_v = SubscriberForm(post) \
-                    if subscription_price.ga_category == 'D' else SubscriberAddressForm(post)
+                subscriber_form_v = (
+                    SubscriberForm if subscription_price.ga_category == 'D' else SubscriberAddressForm
+                )(post)
             elif oauth2_state:
                 profile = get_or_create_user_profile(oas.user)
-                subscriber_form_v = GoogleSignupForm(post, instance=profile)
+                subscriber_form_v = (
+                    GoogleSignupForm if subscription_price.ga_category == 'D' else GoogleSignupAddressForm
+                )(post, instance=profile)
             else:
-                subscriber_form_v = SubscriberSignupForm(post) \
-                    if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm(post)
+                subscriber_form_v = (
+                    SubscriberSignupForm if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm
+                )(post)
 
-            subscription_form_v = subscription_formclass(post) \
-                if subscription_price.ga_category == 'D' else SubscriptionForm(post)
+            subscription_form_v = (
+                subscription_formclass if subscription_price.ga_category == 'D' else SubscriptionForm
+            )(post)  # TODO: is initial=initial also needed here?
 
             if subscriber_form_v.is_valid(planslug) and subscription_form_v.is_valid():
                 # TODO: use form.cleaned_data instead of post.get
@@ -412,14 +426,15 @@ def subscribe(request, planslug, category_slug=None):
                 if oauth2_state:
                     subscriber_form_v.save()
                     subscription.telephone = post.get('phone', post.get('telephone'))
-                    subscription.promo_code = post.get('promo_code')
                 else:
                     subscription.first_name = post['first_name']
                     subscription.telephone = post['telephone']
-                    subscription.address = post.get('address')
-                    subscription.city = post.get('city')
-                    subscription.province = post.get('province')
-                    subscription.promo_code = post.get('promo_code')
+
+                for post_key in ('address', 'city', 'province', 'promo_code'):
+                    post_value = post.get(post_key)
+                    if post_value:
+                        setattr(subscription, post_key, post_value)
+
                 if request.user.is_authenticated():
                     subscription.subscriber = request.user
                 else:

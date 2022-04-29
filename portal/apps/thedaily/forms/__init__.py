@@ -1,32 +1,30 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from datetime import date
 import re
-
-from captcha.fields import ReCaptchaField
 
 from django.template.defaultfilters import slugify
 from django.conf import settings
 from django.http import UnreadablePostError
 from django.contrib.auth.models import User
-
-from libs.tokens.email_confirmation import default_token_generator
 from django.shortcuts import get_object_or_404
-
 from django.core.mail import mail_managers
 from django.forms import (
     Form, ModelForm, CharField, EmailField, PasswordInput, TextInput, HiddenInput, ChoiceField, ValidationError
 )
-
 from django.core.urlresolvers import reverse
 from django.core.exceptions import MultipleObjectsReturned
 
+from captcha.fields import ReCaptchaField
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, BaseInput, Field, Fieldset, HTML
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.utils import get_template_pack
 
 from thedaily.models import Subscription, Subscriber
+
+from libs.tokens.email_confirmation import default_token_generator
 
 
 CSS_CLASS = 'form-input1'
@@ -491,7 +489,7 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
                 self.signup_form = signup_form
             else:
                 if not signup_form_valid:
-                    self._errors = self.signup_form._errors
+                    self._errors = signup_form._errors
                 # TODO: telephone an phone should have same name to avoid this
                 if 'phone' in self._errors:
                     self._errors['telephone'] = self._errors.pop('phone')
@@ -682,6 +680,12 @@ class GoogleSignupForm(GoogleSigninForm):
     def is_valid(self, *args):
         # wrapper to allow compatibility with calls with arguments
         return super(GoogleSignupForm, self).is_valid()
+
+
+class GoogleSignupAddressForm(GoogleSigninForm):
+    """ Child class to not exclude address info (address, city and province) """
+    # TODO: finish this class when "custom" fields like "lento_pdf" where removed from this project
+    pass
 
 
 class PasswordResetRequestForm(Form):
