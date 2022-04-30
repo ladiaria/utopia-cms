@@ -76,9 +76,11 @@ def build_and_send(
             context = json.loads(open(offline_ctx_file).read())
             # de-serialize dates
             dp_cover = datetime.strptime(context['cover_article']['date_published'], '%Y-%m-%d').date()
-            dp_featured = datetime.strptime(context['featured_article']['date_published'], '%Y-%m-%d').date()
             context['cover_article']['date_published'] = dp_cover
-            context['featured_article']['date_published'] = dp_featured
+            featured_article = context['featured_article']
+            if featured_article:
+                dp_featured = datetime.strptime(featured_article['date_published'], '%Y-%m-%d').date()
+                context['featured_article']['date_published'] = dp_featured
             dp_articles = []
             for a, a_section in context['articles']:
                 dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
@@ -220,7 +222,7 @@ def build_and_send(
                     'email_from': email_from,
                     'list_id': list_id,
                     'cover_article': cover_article.nl_serialize(True),
-                    'featured_article': featured_article.nl_serialize(True),
+                    'featured_article': featured_article.nl_serialize(True) if featured_article else None,
                 }
             )
             open(offline_ctx_file, 'w').write(json.dumps(export_ctx))
