@@ -129,12 +129,11 @@ def newsletter_preview(request, slug):
                     cover_article = top_articles.pop(0)[0] if top_articles else None
                     cover_article_section = cover_article.publication_section() if cover_article else None
 
-            opinion_article = None
-            nl_featured = Article.objects.filter(id=settings.NEWSLETTER_FEATURED_ARTICLE) if \
-                getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False) else \
-                get_latest_edition().newsletter_featured_articles()
-            if nl_featured:
-                opinion_article = nl_featured[0]
+            featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
+            nl_featured = Article.objects.filter(
+                id=featured_article_id
+            ) if featured_article_id else get_latest_edition().newsletter_featured_articles()
+            opinion_article = nl_featured[0] if nl_featured else None
 
             # featured_article (a featured section in the category)
             try:

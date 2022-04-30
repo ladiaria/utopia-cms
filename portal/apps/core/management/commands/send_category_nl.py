@@ -76,7 +76,9 @@ def build_and_send(
             context = json.loads(open(offline_ctx_file).read())
             # de-serialize dates
             dp_cover = datetime.strptime(context['cover_article']['date_published'], '%Y-%m-%d').date()
+            dp_featured = datetime.strptime(context['featured_article']['date_published'], '%Y-%m-%d').date()
             context['cover_article']['date_published'] = dp_cover
+            context['featured_article']['date_published'] = dp_featured
             dp_articles = []
             for a, a_section in context['articles']:
                 dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
@@ -86,6 +88,7 @@ def build_and_send(
         elif not export_subscribers or export_context:
             category_nl = CategoryNewsletter.objects.get(category=category, valid_until__gt=datetime.now())
             cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
+            featured_article_section = featured_article.publication_section() if featured_article else None
             if export_context:
                 export_ctx.update(
                     {
@@ -96,7 +99,9 @@ def build_and_send(
                                 [(a, a.publication_section()) for a in category_nl.non_cover_articles()]
                             )
                         ],
-                        # TODO: featured_* entries
+                        'featured_article_section':
+                            featured_article_section.name if featured_article_section else None,
+                        # TODO: check if cover_article_section and featured_articles entries are needed
                     }
                 )
             else:
@@ -104,8 +109,7 @@ def build_and_send(
                     {
                         'cover_article_section': cover_article.publication_section().name if cover_article else None,
                         'articles': [(a, a.publication_section()) for a in category_nl.non_cover_articles()],
-                        'featured_article_section':
-                            featured_article.publication_section() if featured_article else None,
+                        'featured_article_section': featured_article_section,
                         'featured_articles': [
                             (a, a.publication_section()) for a in category_nl.non_cover_featured_articles()
                         ],
@@ -126,14 +130,11 @@ def build_and_send(
                     cover_article = top_articles.pop(0)[0] if top_articles else None
                     cover_article_section = cover_article.publication_section() if cover_article else None
 
-            opinion_article = None
+            featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
             nl_featured = Article.objects.filter(
-                id=settings.NEWSLETTER_FEATURED_ARTICLE
-            ) if getattr(
-                settings, 'NEWSLETTER_FEATURED_ARTICLE', False
-            ) else get_latest_edition().newsletter_featured_articles()
-            if nl_featured:
-                opinion_article = nl_featured[0]
+                id=featured_article_id
+            ) if featured_article_id else get_latest_edition().newsletter_featured_articles()
+            opinion_article = nl_featured[0] if nl_featured else None
 
             # featured_article (a featured section in the category)
             try:
@@ -219,9 +220,9 @@ def build_and_send(
                     'email_from': email_from,
                     'list_id': list_id,
                     'cover_article': cover_article.nl_serialize(True),
+                    'featured_article': featured_article.nl_serialize(True),
                 }
             )
-            # TODO: 'featured_article' entry
             open(offline_ctx_file, 'w').write(json.dumps(export_ctx))
         if export_subscribers:
             export_subscribers_writer = writer(open(offline_csv_file, 'w'))
