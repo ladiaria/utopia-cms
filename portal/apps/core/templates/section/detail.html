@@ -35,7 +35,7 @@
           <p class="section-detail__description">{{ section.description }}</p>
         {% endif %}
         {% if section.show_image %}
-          <img class="responsive-img" src="{{ MEDIA_URL }}{{ section.imagen }}" width="500px" alt="{{ section.name }}"><br><br>
+          <img class="responsive-img" src="{{ MEDIA_URL }}{{ section.imagen }}" width="500px" alt="{{ section.name }}" loading="lazy"><br><br>
         {% endif %}
       </div>
     </div>

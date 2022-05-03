@@ -2,7 +2,7 @@
 <article class="{% if article.photo.extended.is_portrait %}portrait {% endif %}{% ifequal article.media "I" %}{% ifnotequal article.photo None %} has_foto{% endifnotequal %}{% endifequal %}">
   {% if article.photo %}
   <figure>
-        <a href="{{ article.get_absolute_url }}" title="{{ article.photo.caption }} {{ article.photo.extended.type_verbose }}: {{ article.photo.get_byline }}" class="related_thumb"><img rel="tooltip" src="{{ article.photo.get_article_thumb_url }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% endif %} {{ photo.extended.type_verbose }}: {{ photo.get_byline }}"></a>
+        <a href="{{ article.get_absolute_url }}" title="{{ article.photo.caption }} {{ article.photo.extended.type_verbose }}: {{ article.photo.get_byline }}" class="related_thumb"><img rel="tooltip" src="{{ article.photo.get_article_thumb_url }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% endif %} {{ photo.extended.type_verbose }}: {{ photo.get_byline }}" loading="lazy"></a>
   </figure>
   {% endif %}
   <header>

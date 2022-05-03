@@ -16,7 +16,7 @@
                 {% thumbnail edition_obj.cover "500x999" as cover_lg %}
                     <a href="{{ cover_lg.url }}" class="jbox" title="{{ edition_obj.date_published|date:"l j \d\e F \d\e Y"|capfirst }}">
                     {% thumbnail edition_obj.cover "204x500" as cover_sm %}
-                        <img src="{{ cover_sm.url }}" alt="Tapa de la diaria del {{ edition_obj.date_published|date:"l j \d\e F \d\e Y" }}"></a>
+                        <img src="{{ cover_sm.url }}" alt="Tapa de la diaria del {{ edition_obj.date_published|date:"l j \d\e F \d\e Y" }}" loading="lazy"></a>
                     {% endthumbnail %}
                 {% endthumbnail %}
             {% endif %}

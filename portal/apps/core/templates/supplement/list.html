@@ -14,7 +14,7 @@
                 </h2>
                 <a href="{{ supplement.cover.url }}" class="jbox">
                     {% thumbnail supplement.cover "204x500" as im %}
-                        <img src="{{ im.url }}" alt="Tapa del suplemento {{ supplement.name }} publicado el {{ supplement.date_published|date:"l j \de F \de Y" }}">
+                        <img src="{{ im.url }}" alt="Tapa del suplemento {{ supplement.name }} publicado el {{ supplement.date_published|date:"l j \de F \de Y" }}" loading="lazy">
                     {% endthumbnail %}
                 </a>
                 {% ifnotequal supplement.name "hp" %}

@@ -474,7 +474,7 @@
                     <li><span class="icon-paper-clip gray"></span> Adjuntos:</li>
                     {% for att in article.attachments.all %}
                       {% if att.is_image %}
-                        <img src="{{ att.file.url }}" alt="{{ att.name }}">
+                        <img src="{{ att.file.url }}" alt="{{ att.name }}" loading="lazy">
                       {% else %}
                         <a href="{{ att.file.url }}">{{ att.name }}</a>
                       {% endif %}
