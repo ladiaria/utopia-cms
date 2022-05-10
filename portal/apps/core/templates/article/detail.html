@@ -252,7 +252,7 @@
       {% endif %}
 
       {# begin restricted content #}
-      {% if not article.is_restricted or user|has_restricted_access:article or not request.signupwall %}
+      {% if not request.signupwall or not article.is_restricted or user|has_restricted_access:article %}
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
