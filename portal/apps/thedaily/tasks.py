@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
@@ -39,7 +41,7 @@ def notify_digital(user, seller_fullname=None):
     send_notification(
         user,
         welcome_email_template,
-        welcome_email_sub % u'digital ilimitada',
+        welcome_email_sub % 'digital',
         {'seller_fullname': seller_fullname} if seller_fullname else {},
     )
     SentMail.objects.create(subscriber=user.subscriber, subject="Bienvenida DI")

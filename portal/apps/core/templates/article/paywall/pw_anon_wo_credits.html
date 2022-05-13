@@ -1,20 +1,18 @@
-{% load ldml core_tags thedaily_tags %}
-
-<div class="article-body article-body--faded">{{ article.body|amp_ldmarkup:article.id|truncatehtml:100 }}</div>
+{% load thedaily_tags %}
 
 <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
   <div class="ld-snackbar__title">Para seguir leyendo ingresá o suscribite</div>
   <div class="ld-snackbar__body">
     <div class="ld-snackbar__block">
-      <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-default">
+      <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
         Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
       </a>
     </div>
-    <div class="ld-snackbar__text ld-snackbar__block">Si ya tenés una cuenta</div>
+    <div class="ld-snackbar__text u-mb-10">Si ya tenés una cuenta</div>
     <div class="ld-snackbar__block">
-      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn bordered">ingresá</a>
+      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-outline">ingresá</a>
     </div>
-    <div class="ld-snackbar__text ld-snackbar__block">
+    <div class="ld-snackbar__text">
       o
       <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}">registrate</a>
       para acceder a 10 artículos gratis por mes

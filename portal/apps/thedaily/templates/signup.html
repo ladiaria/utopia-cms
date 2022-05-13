@@ -2,7 +2,7 @@
 
 {% load crispy_forms_tags static %}
 
-{% block page_title %}Suscripción digital gratuita{% endblock %}
+{% block page_title %}Cuenta gratuita{% endblock %}
 
 {% block body_class %}thedaily subscribe hide-mobile-nav{% endblock %}
 
@@ -21,11 +21,11 @@
     <div class="row">
 
       <div class="subscribe-header center-align">
-        <h1 class="ld-title-big">Suscripción digital gratuita</h1>
+        <h1 class="ld-title-big">Cuenta gratuita</h1>
         <div class="price">$0/mes</div>
         <span class="ld-text-secondary">
           10 artículos gratuitos al mes y newsletters.<br>
-          Para acceso ilimitado <a href="{% url 'subscribe' planslug='DDIGM' %}">suscribite a digital ilimitada</a>.
+          Para acceso ilimitado <a href="{% url 'subscribe' planslug='DDIGM' %}">suscribite</a>.
         </span>
       </div>
 
@@ -64,7 +64,7 @@
       <div class="col s12">
         <div>
           {% if not user.is_authenticated %}
-          ¿Ya tenés suscripción? <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
+          ¿Ya tenés cuenta? <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
           {% endif %}
           <br>
           ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.

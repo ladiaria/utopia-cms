@@ -380,6 +380,7 @@
       .ld-btn-squared-outline:hover { color: white; }
       /* Nuevos botones con sombra y solidos por defecto */
       .ld-btn-default, a.ld-btn-default { background: #262626;  color: #fff; font-family: "Roboto", sans-serif; font-size: 18px; font-weight: 500; -webkit-transition: .1s ease-out; transition: .1s ease-out; text-transform: uppercase; cursor: pointer; text-align: center; vertical-align: middle; -webkit-tap-highlight-color: transparent; line-height: 1; height: auto; padding: 16px 23px 15px; border-radius: 100px; display: inline-block; box-shadow: rgba(0, 0, 0, 0.29) 0 4px 12px; text-decoration:none; }
+      .ld-btn-default i { font-style: normal; font-weight: normal; }
       .ld-btn-default:hover, a.ld-btn-default:hover { box-shadow: rgba(0, 0, 0, 0.29) 0 4px 6px; }
       .ld-btn-default:active, a.ld-btn-default:active { -webkit-transition: .1s ease-out; transition: .1s ease-out; -webkit-transform: translateY(1px); transform: translateY(1px); box-shadow: rgba(0, 0, 0, 0.29) -1px 0px 3px; }
       .ld-btn-default[disabled], a.ld-btn-default[disabled] { cursor: not-allowed; background-color: #CBCBCB; box-shadow: none; }
@@ -401,7 +402,7 @@
       @keyframes ld-slideDown { 0% { -webkit-transform: translate3d(-50%, 45px, 0); transform: translate3d(-50%, 45px, 0); }
         25% { -webkit-transform: translate3d(-50%, 25px, 0); transform: translate3d(-50%, 25px, 0); }
         100% { -webkit-transform: translate3d(-50%, 100%, 0); transform: translate3d(-50%, 100%, 0); } }
-      .ld-snackbar { text-align: center; background-color: #fff; bottom: 0; color: white; font-family: "Roboto", sans-serif; left: 0; position: fixed; width: 99%; border-radius: 10px 10px 0 0; z-index: 1010; font-weight: 400; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2); overflow: hidden; padding-top: 0; -webkit-backface-visibility: hidden; left: 50%; border-bottom: 65px solid #fff; -webkit-transform: translate3d(-50%, 45px, 0); transform: translate3d(-50%, 45px, 0); -webkit-animation-duration: 400ms; animation-duration: 400ms; -webkit-animation-name: ld-slideDown; animation-name: ld-slideDown; -webkit-animation-fill-mode: forwards; animation-fill-mode: forwards; -webkit-animation-timing-function: cubic-bezier(0.33, 0.07, 0, 0.98); animation-timing-function: cubic-bezier(0.33, 0.07, 0, 0.98);
+      .ld-snackbar { text-align: center; background-color: #fff; bottom: 0; color: #262626; font-family: "Roboto", sans-serif; left: 0; position: fixed; width: 99%; border-radius: 10px 10px 0 0; z-index: 1010; font-weight: 400; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2); overflow: hidden; padding-top: 0; -webkit-backface-visibility: hidden; left: 50%; padding-bottom: 30px; border: 1px solid #c3c3c3;  -webkit-transform: translate3d(-50%, 45px, 0); transform: translate3d(-50%, 45px, 0); -webkit-animation-duration: 400ms; animation-duration: 400ms; -webkit-animation-name: ld-slideDown; animation-name: ld-slideDown; -webkit-animation-fill-mode: forwards; animation-fill-mode: forwards; -webkit-animation-timing-function: cubic-bezier(0.33, 0.07, 0, 0.98); animation-timing-function: cubic-bezier(0.33, 0.07, 0, 0.98);
       }
       .ld-snackbar p.desc { color:#262626; font-size:16px;}
       .ld-snackbar .btn.bordered { font-size: 18px;  text-transform: uppercase;  padding: 14px 23px 13px; line-height: 1; height: auto; background:none; border:2px solid #262626; color:#262626;}
@@ -411,13 +412,9 @@
       .ld-snackbar--narrow .ld-snackbar__text { max-width: 450px; margin-left: auto; margin-right: auto; }
       .ld-snackbar--active { -webkit-animation: none; animation: none; }
       .ld-snackbar__body { padding: 25px 25px 0; }
-      .ld-snackbar__body .container { width: 100%; }
       .ld-snackbar__block { margin-bottom: 20px; }
       .ld-snackbar__block:last-of-type { margin-bottom: 0; }
-      .ld-snackbar__body-lg { display: none; }
-      .row .col.s6.ld-snackbar__col { padding: 35px 20px 40px 20px; margin: 0; }
-      .ld-snackbar__col--bordered { border-left: 1px solid #dadada; }
-      .ld-snackbar__title { background-color: #262626; text-align: center; padding: 15px 40px 15px 40px; font-size: 18px; line-height:25px; font-weight: 400; }
+      .ld-snackbar__title { background-color: #C2FCFF; text-align: center; padding: 15px 40px 15px 40px; font-size: 18px; line-height:25px; font-weight: 400; }
       .ld-snackbar__cross { display: none; font: 0/0 a; color: transparent; text-shadow: none; background-color: transparent; border: 0; }
       .ld-snackbar__benefit { margin-bottom: 25px; font-size: 15px; }
       .ld-snackbar__login-area { color: #262626;}

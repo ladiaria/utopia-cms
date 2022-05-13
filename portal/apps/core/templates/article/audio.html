@@ -8,11 +8,11 @@
             </button>
             <div class="ld-audio__overlay-content">
               <div class="ld-audio__overlay-title">
-                Este audio es una característica exclusiva de la suscripción ilimitada.
+                Este audio es una característica exclusiva para suscripciones.
               </div>
               <div class="ld-audio__overlay-links">
                 {% if user.is_authenticated and not is_subscriber %}
-                  <a href="{% url 'subscribe' planslug='DDIGM' %}">Pasate a ilimitada</a>
+                  <a href="{% url 'subscribe' planslug='DDIGM' %}">Suscribite</a>
                 {% else %}
                   <a href="{% url 'subscribe' planslug='DDIGM' %}">Suscribite</a>
                   o

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
+from __future__ import unicode_literals
 
 from django.conf import settings
 from django.db.models import (
@@ -56,7 +57,7 @@ class NewsletterDelivery(Model):
     def user_stats(self):
         return nl_delivery_stats_cell(self.user_sent, self.user_opened)
 
-    user_stats.short_description, user_stats.allow_tags = u'suscripción gratuita', True
+    user_stats.short_description, user_stats.allow_tags = 'cuenta gratuita', True
 
     def subscriber_stats(self):
         return nl_delivery_stats_cell(self.subscriber_sent, self.subscriber_opened)

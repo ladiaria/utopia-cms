@@ -5,6 +5,7 @@ from django.template import Library, Node, NodeList, TemplateSyntaxError, Variab
 from django.contrib.contenttypes.models import ContentType
 
 from core.models import Article
+from thedaily.models import SubscriptionPrices
 
 
 register = Library()
@@ -90,6 +91,14 @@ def if_time(parser, token):
 
 register.tag('iftimesince', if_time)
 register.tag('iftimeuntil', if_time)
+
+
+@register.simple_tag
+def subscriptionprice(subscription_type):
+    try:
+        return int(SubscriptionPrices.objects.get(subscription_type=subscription_type).price)
+    except SubscriptionPrices.DoesNotExist:
+        return u''
 
 
 # filters

@@ -1,0 +1,39 @@
+{% load thedaily_tags %}
+
+<div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
+  <div class="ld-snackbar__title">Contenido exclusivo para suscripción digital</div>
+  <div class="ld-snackbar__body">
+    {% if user.is_authenticated %}
+      {% if is_subscriber_any %}
+        <div class="ld-snackbar__text ld-snackbar__block">
+          Actualizá tu suscripción para tener acceso ilimitado a todos los contenidos del sitio
+        </div>
+        <div class="ld-snackbar__block">
+          <a href="{{ upgrade_subscription_link|default:'/ayuda/' }}" class="ut-btn ut-btn-l">
+            Actualizá tu suscripción
+          </a>
+        </div>
+      {% else %}
+        <div class="ld-snackbar__text ld-snackbar__block">Para acceder a todos los contenidos de manera ilimitada</div>
+        <div class="ld-snackbar__block">
+          <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
+            Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
+          </a>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="ld-snackbar__text ld-snackbar__block">Para acceder a todos los contenidos del sitio</div>
+      <div class="ld-snackbar__block">
+        <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
+          Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
+        </a>
+      </div>
+      <div class="ld-snackbar__text u-mb-10">Si ya tenés una cuenta</div>
+      <div class="ld-snackbar__block">
+        <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-outline">
+          Ingresá
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>

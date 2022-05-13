@@ -23,7 +23,7 @@ $minWidth: 1040px;
   text-align: center;
   background-color: white;
   bottom: 0;
-  color: white;
+  color: $off-black;
   font-family: "Roboto", sans-serif;
   left: 0;
   position: fixed;
@@ -35,12 +35,10 @@ $minWidth: 1040px;
   padding-top: 0;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
+  border: 1px solid #c3c3c3;
 
   -webkit-backface-visibility: hidden;
-
   left: 50%;
-
-  border-bottom: 45px solid white;
   transform: translate3d(-50%, $extraPadding, 0);
 
   animation-duration: 400ms;
@@ -49,8 +47,6 @@ $minWidth: 1040px;
   animation-timing-function: cubic-bezier(0.33, 0.07, 0, 0.98);
 
   @media (min-width: $minWidth){
-    // Adds some extra height for dismiss effect (goes up a bit)
-    border-bottom: $extraPadding solid white;
     background-color: white;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
@@ -100,7 +96,7 @@ $minWidth: 1040px;
   }
 
   &__body{
-    padding: 0 $paddingDefault;
+    padding: $paddingDefault;
     @media (min-width: $minWidth){
       background-color: white;
       color: #262626;
@@ -119,38 +115,14 @@ $minWidth: 1040px;
     }
   }
 
-  &__body-lg{
-    display: none;
-    @media (min-width: $minWidth){
-      display: block;
-    }
-  }
-
-  &__body-sm{
-    padding-top: $paddingDefault;
-    padding-bottom: $paddingDefault;
-
-
-    @media (min-width: $minWidth) {
-      display: none;
-    }
-  }
-
-  &__col{
-    padding: (60px - $paddingDefault) 20px 40px 20px !important;
-    margin: 0;
-    &--bordered{
-      border-left: 1px solid #dadada;
-    }
-  }
-
 
   &__title{
-    background-color: $off-black;
+    background-color: $secondary-color;
     text-align: center;
     padding: 15px 40px;
     font-size: 18px;
     font-weight: 400;
+    font-family: AntennaCond, sans-serif;
   }
 
   &__cross{
@@ -228,21 +200,9 @@ $minWidth: 1040px;
   .row{
     margin-bottom: 0;
   }
+
   &--option {
     margin: 25px 0 30px;
-  }
-  .btn.bordered {
-    font-size: 18px;
-    text-transform: uppercase;
-    padding: 14px 23px 13px;
-    line-height: 1;
-    height: auto;
-    border-color: $off-black !important;
-    color: $off-black !important;
-
-    &:hover {
-      color: white !important;
-    }
   }
 
 
@@ -260,7 +220,6 @@ $minWidth: 1040px;
   &.softwall {
       position: relative;
       z-index: 1;
-      border-bottom: 20px solid white;
       transform: none;
       left:0;
       margin: 0 20px 50px;

@@ -316,6 +316,7 @@ NOTIFICATIONS_FROM_MX = NOTIFICATIONS_FROM_ADDR1
 
 NEWSLETTER_IMG_FORMAT = 'jpg'
 
+SENDNEWSLETTER_EXPORT_DIR = '/var/local/utopiacms/sendnewsletter_export'
 SENDNEWSLETTER_LOGFILE = '/var/log/utopiacms/sendnewsletter/%s-%s.log'
 
 # apps
@@ -385,7 +386,7 @@ SUBSCRIPTION_EMAIL_TO = [NOTIFICATIONS_TO_ADDR]
 SUBSCRIPTION_BY_PHONE_EMAIL_TO = SUBSCRIPTION_EMAIL_TO
 MAX_USERS_API_SESSIONS = 3
 THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
-    ('DDIGM', u'Suscripción Ilimitada'),
+    ('DDIGM', u'Suscripción digital'),
     ('PAPYDIM', u'Suscripción papel'),
 )
 THEDAILY_PROVINCE_CHOICES = []

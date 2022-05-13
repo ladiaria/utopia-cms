@@ -1,3 +1,10 @@
+# version 0.2.5 (2022-05-13)
+
+- Fixes and improvements in the signup and subscription UX.
+- Home page performance improvements for authenticated users.
+- Test documentation fixes.
+- Many other minor fixes and improvements.
+
 # version 0.2.4 (2022-04-17)
 
 - Signupwall improvements and fixes.

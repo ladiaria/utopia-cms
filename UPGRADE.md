@@ -1,3 +1,11 @@
+# From version 0.2.4 to 0.2.5
+
+```
+git pull
+git checkout 0.2.5
+# Update your local_settings.py file, see sample file, two variables have been renamed.
+```
+
 # From version 0.2.3 to 0.2.4
 
 ```

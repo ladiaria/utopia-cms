@@ -124,12 +124,6 @@ urlpatterns = [
     url(r'^session_refresh/$', session_refresh, name='session-refresh'),
 
     # TODO: enter "bienvenido/" directly should not be allowed
-    # TODO: first 2 urls are custom and should be removed
-    url(r'^ldfs/bienvenido/$', never_cache(TemplateView.as_view(
-        template_name='thedaily/templates/ldfs_thankyou.html')), name="ldfssubscribe_success"),
-    url(r'^educacion/bienvenido/$', never_cache(TemplateView.as_view(
-        template_name='thedaily/templates/edu_thankyou.html')),
-        name="edusubscribe_success"),
     url(r'^bienvenido/tel/$', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/phone_subscription_thankyou.html')),
         name="telsubscribe_success"),

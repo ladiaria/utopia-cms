@@ -148,7 +148,7 @@ class SignupForm(ModelForm):
                 'next_page',
             ),
             HTML('<div class="align-center">'),
-            Submit('save', u'Suscribite', css_class='u-mt-50 ut-btn ut-btn-l'),
+            Submit('save', 'Crear cuenta', css_class='u-mt-50 ut-btn ut-btn-l'),
             HTML('</div">'),
         )
         super(SignupForm, self).__init__(*args, **kwargs)
@@ -179,7 +179,7 @@ class SignupForm(ModelForm):
 
         if User.objects.filter(email__iexact=email).exists():
             msg = u'El email ingresado ya posee una cuenta de usuario.'
-            msg += u' <a href="/usuarios/entrar">Ingresar</a>.'
+            msg += u' <a href="/usuarios/entrar/?next=%s">Ingresar</a>.' % self.cleaned_data.get('next_page', '/')
             self._errors['email'] = self.error_class([msg])
             raise ValidationError(msg)
 
@@ -250,6 +250,7 @@ class SubscriberForm(ModelForm):
         label=u'Teléfono',
         widget=PhoneInput(attrs={'class': 'textinput textInput', 'autocomplete': 'tel', 'spellcheck': 'false'}),
     )
+    next_page = CharField(required=False, widget=HiddenInput())
 
     helper = FormHelper()
     helper.form_tag = False
@@ -395,6 +396,7 @@ class SubscriberSignupForm(SubscriberForm):
             'first_name',
             'email',
             'telephone',
+            'next_page',
             Field('password', template='materialize_css_forms/layout/password.html'),
         )
     )
@@ -410,6 +412,7 @@ class SubscriberSignupForm(SubscriberForm):
                     'email': self.cleaned_data.get('email'),
                     'phone': self.cleaned_data.get('telephone'),
                     'password': self.cleaned_data.get('password'),
+                    'next_page': self.cleaned_data.get('next_page'),
                 }
             )
             signup_form_valid = signup_form.is_valid()
@@ -455,6 +458,7 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
             'first_name',
             'email',
             'telephone',
+            'next_page',
             Field('password', template='materialize_css_forms/layout/password.html'),
             HTML(
                 u'<div class="validate col s12">'
@@ -478,6 +482,7 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
                     'email': self.cleaned_data.get('email'),
                     'phone': self.cleaned_data.get('telephone'),
                     'password': self.cleaned_data.get('password'),
+                    'next_page': self.cleaned_data.get('next_page'),
                 }
             )
             signup_form_valid = signup_form.is_valid()
@@ -553,7 +558,7 @@ class SubscriptionPromoCodeForm(SubscriptionForm):
         fields = ['subscription_type_prices', 'promo_code']
 
     def clean_promo_code(self):
-        # TODO post release: write better documentation (can be here in a doctring) instead refer to a commit:
+        # TODO: write better documentation (can be here in a doctring) instead refer to a commit:
         # see 2bz2cT4R to disable the promo code
         promo_code = self.cleaned_data.get('promo_code')
         if promo_code and promo_code != getattr(settings, 'PROMO_CODE'):
@@ -619,7 +624,7 @@ class GoogleSigninForm(ModelForm):
     helper.error_text_inline = True
     helper.layout = Layout(
         Fieldset(u'', 'phone'),
-        FormActions(Submit('save', u'suscribite', css_class='ut-btn ut-btn-l')),
+        FormActions(Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l')),
     )
 
     class Meta:

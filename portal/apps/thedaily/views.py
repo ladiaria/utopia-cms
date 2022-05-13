@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import os
 import json
 import requests
@@ -222,6 +223,7 @@ def signup(request):
             add_default_category_newsletters(user.subscriber)
             # TODO: check if request is needed
             # TODO: handle smtp errors
+            # TODO: notifications/signup.html is also used for this purpose (why having 2 templates to the same thing?)
             send_validation_email(
                 u'Verificá tu cuenta',
                 user,
@@ -351,19 +353,26 @@ def subscribe(request, planslug, category_slug=None):
                             profile.province = default_province
                     subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
-                subscriber_form = SubscriberSignupForm(
-                ) if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm()
+                subscriber_form = (
+                    SubscriberSignupForm if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm
+                )(initial={'next_page': request.path})
             # check session and if a new user was created, encourage login
             if request.method == 'GET':
                 subscription = request.session.get('subscription')
                 subscription_in_process = subscription and subscription.subscriber
 
         PROMOCODE_ENABLED = getattr(settings, 'THEDAILY_PROMOCODE_ENABLED', False)
-        # TODO post release: do not asume CF for getting the country (do it like signupwall gets the ip_address)
-        ipcountry = request.META.get('HTTP_CF_IPCOUNTRY', settings.SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY)
-        subscription_formclass = (SubscriptionPromoCodeForm if PROMOCODE_ENABLED else SubscriptionForm) \
-            if ipcountry in settings.SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED \
-            else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
+        # captcha when enabled and not ignored => nocaptcha = not(enabled and not ignored) = not enabled or ignored
+        # TODO: do not asume CF for getting the country (do it like signupwall gets the ip_address)
+        nocaptcha = (
+            not getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_ENABLED', True)
+            or request.META.get(
+                'HTTP_CF_IPCOUNTRY', settings.THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY
+            ) in getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED', [])
+        )
+        subscription_formclass = (
+            SubscriptionPromoCodeForm if PROMOCODE_ENABLED else SubscriptionForm
+        ) if nocaptcha else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
 
         initial = {'subscription_type_prices': planslug}
         subscription_form = (
@@ -425,6 +434,9 @@ def subscribe(request, planslug, category_slug=None):
 
                 if oauth2_state:
                     subscriber_form_v.save()
+                    if not subscription.first_name:
+                        # take first_name from oas (it can be not present due a previous not finished google signup)
+                        subscription.first_name = oas.fullname
                     subscription.telephone = post.get('phone', post.get('telephone'))
                 else:
                     subscription.first_name = post['first_name']
@@ -446,7 +458,7 @@ def subscribe(request, planslug, category_slug=None):
                             send_validation_email(
                                 'Verificá tu cuenta de ' + Site.objects.get_current().name,
                                 user,
-                                'notifications/account_signup.html',
+                                'notifications/account_signup_subscribed.html',
                                 get_signup_validation_url,
                             )
                         except Exception as smtp_exc:
@@ -459,8 +471,10 @@ def subscribe(request, planslug, category_slug=None):
                                     % reverse('account-confirm_email')
                                 )
                             )
-                            return 'subscribe.html', {
-                                'subscriber_form': subscriber_form_v, 'subscription_form': subscription_form_v}
+                            return (
+                                'subscribe.html',
+                                {'subscriber_form': subscriber_form_v, 'subscription_form': subscription_form_v},
+                            )
                     subscription.subscriber = user
 
                 subscription.save()
@@ -479,15 +493,29 @@ def subscribe(request, planslug, category_slug=None):
                     return HttpResponseRedirect(reverse('phone-subscription'))
 
             else:
-                return 'subscribe.html', {
-                    'subscriber_form': subscriber_form_v, 'subscription_form': subscription_form_v,
-                    'oauth2_button': oauth2_button}
+                return (
+                    'subscribe.html',
+                    {
+                        'subscriber_form': subscriber_form_v,
+                        'subscription_form': subscription_form_v,
+                        'oauth2_button': oauth2_button,
+                        'product': product,
+                    },
+                )
 
-        return 'subscribe.html', {
-            'subscriber_form': subscriber_form, 'oauth2_button': oauth2_button, 'subscription_form': subscription_form,
-            'is_already_subscribed': is_subscriber, 'product': product, 'planslug': planslug,
-            'subscription_price': SubscriptionPrices.objects.get(subscription_type=planslug),
-            'subscription_in_process': subscription_in_process}
+        return (
+            'subscribe.html',
+            {
+                'subscriber_form': subscriber_form,
+                'oauth2_button': oauth2_button,
+                'subscription_form': subscription_form,
+                'is_already_subscribed': is_subscriber,
+                'product': product,
+                'planslug': planslug,
+                'subscription_price': SubscriptionPrices.objects.get(subscription_type=planslug),
+                'subscription_in_process': subscription_in_process,
+            },
+        )
 
 
 @never_cache
@@ -570,7 +598,7 @@ def complete_signup(request, user_id, hash):
                 notify_paper(user)
 
     if send_default_welcome:
-        send_notification(user, 'notifications/signup.html', u'Tu suscripción digital gratuita está activa')
+        send_notification(user, 'notifications/signup.html', 'Tu cuenta gratuita está activa')
 
     request.session['welcome'] = 'account-welcome' + ('-s' if is_subscriber_any else '')
 
@@ -615,10 +643,13 @@ def confirm_email(request):
         confirm_email_form = ConfirmEmailRequestForm(request.POST)
         if confirm_email_form.is_valid():
             # TODO: handle smtp errors
+            user = confirm_email_form.user
             send_validation_email(
                 u'Verificá tu cuenta',
-                confirm_email_form.user,
-                'notifications/account_signup.html',
+                user,
+                'notifications/account_signup%s.html' % (
+                    '_subscribed' if hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any() else ''
+                ),
                 get_signup_validation_url,
             )
             return 'confirm_email.html', {'sent': True, 'email': confirm_email_form.cleaned_data['email']}
@@ -1467,26 +1498,10 @@ def phone_subscription(request):
     return 'phone_subscription_form.html'
 
 
-# TODO post release: unhardcode subscription_type and preferred_time
+# TODO unhardcode preferred_time
 def telephone_subscription_msg(user, preferred_time):
     """ Returns a tuple with (subject, body) """
     name = user.get_full_name() or user.subscriber.name
-    subject = u'Nueva suscripción telefónica para %s' % (name)
-    st = user.suscripciones.all()[0].subscription_type_prices
-    subscription_type = st.all()[0].subscription_type
-    st_text = '-'
-    if subscription_type == u'DDIGM':
-        st_text = 'digital ilimitada'
-    elif subscription_type == u'DDIGMFS':
-        st_text = 'digital recargada'
-    elif subscription_type == u'PAPYDIM':
-        st_text = 'papel lunes a viernes'
-    elif subscription_type == u'PAPYLAS':
-        st_text = 'papel lunes a sabado'
-    elif subscription_type == u'LDFS':
-        st_text = 'papel fin de semana'
-    elif subscription_type == u'LENM':
-        st_text = 'Revista Lento'
     pt_text = '-'
     if preferred_time == '1':
         pt_text = u'Cualquier hora (9:00 a 20:00)'
@@ -1496,13 +1511,22 @@ def telephone_subscription_msg(user, preferred_time):
         pt_text = u'En la tarde (12:00 a 18:00)'
     elif preferred_time == '4':
         pt_text = u'En la tarde-noche (18:00 a 20:00)'
-    body = (u'Nombre: %s\nTipo suscripción: %s\nEmail: %s\n'
-            u'Teléfono: %s\nHorario preferido: %s\nDirección: %s\n'
-            u'Ciudad: %s\nDepartamento: %s\n') % (
-                name,
-                st_text,
-                user.email,
-                user.subscriber.phone,
-                pt_text, user.subscriber.address, user.subscriber.city,
-                user.subscriber.province)
-    return subject, body
+    return (
+        ('Nueva suscripción telefónica para %s' % name),
+        (
+            'Nombre: %s\nTipo suscripción: %s\nEmail: %s\n'
+            'Teléfono: %s\nHorario preferido: %s\nDirección: %s\n'
+            'Ciudad: %s\nDepartamento: %s\n'
+        ) % (
+            name,
+            dict(
+                settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES
+            ).get(user.suscripciones.all()[0].subscription_type_prices.all()[0].subscription_type, '-'),
+            user.email,
+            user.subscriber.phone,
+            pt_text,
+            user.subscriber.address,
+            user.subscriber.city,
+            user.subscriber.province,
+        ),
+    )

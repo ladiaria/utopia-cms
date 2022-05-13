@@ -5,19 +5,19 @@
     {% if is_subscriber_any %}
 
       <div class="card-plan">
-        <h3 class="ld-title-second">Digital ilimitada</h3>
+        <h3 class="ld-title-second">Suscripción digital</h3>
         <p>Acceso a los contenidos digitales.</p>
       </div>
 
     {% else %}
 
       <div class="card-plan">
-        <h3 class="ld-title-second">Digital gratuita</h3>
+        <h3 class="ld-title-second">Cuenta gratuita</h3>
         <p>
           Hasta 10 artículos gratuitos al mes y newsletters.<br>
-          Para acceso ilimitado de artículos y más beneficios pasate a digital ilimitada.
+          Para acceso ilimitado de artículos y más beneficios suscribite.
         </p>
-        <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn">Pasate a ilimitada</a>
+        <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn">Suscribite</a>
       </div>
 
     {% endif %}
