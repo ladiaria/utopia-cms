@@ -1,3 +1,5 @@
+from __future__ import division
+
 import os
 from os.path import join
 import operator
@@ -11,7 +13,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import resolve
 
 from apps import signupwall_visitor_mdb
-from core.models import Article, Section, Publication, ArticleUrlHistory
+from core.models import Article, Section, Publication, ArticleUrlHistory, Category
 from signupwall.middleware import get_article_by_url_kwargs
 
 
@@ -43,6 +45,7 @@ class Command(BaseCommand):
             return
 
         articles, main_sections, live, out_prefix = {}, {}, options.get('live'), options.get('out-prefix')
+        main_categories = {}
         if live and not out_prefix:
             print(u'ERROR: --live option should also specify a value for --out-prefix option')
             return
@@ -67,7 +70,6 @@ class Command(BaseCommand):
         bar = Bar('Processing', max=visitors.count()) if options.get('progress') else None
 
         for v in visitors:
-
             try:
 
                 u = User.objects.get(id=v.get('user'))
@@ -91,6 +93,10 @@ class Command(BaseCommand):
                     articles[u.id] = viewed
                     if article.main_section:
                         main_sections[u.id] = article.main_section
+                        if article.main_section.section and article.main_section.section.category:
+                            main_categories[u.id] = article.main_section.section.category
+                        elif article.main_section.edition.publication:
+                            main_categories[u.id] = article.main_section.edition.publication
 
             except User.DoesNotExist:
                 continue
@@ -130,12 +136,19 @@ class Command(BaseCommand):
         for article_id, score in sorted_x:
             a = Article.objects.get(id=article_id)
             i += 1
+            if a.main_section.section and a.main_section.section.category:
+                category_or_publication = a.main_section.section.category
+            else:
+                category_or_publication = a.main_section.edition.publication
+            pub_section = a.publication_section()
             w.writerow(
                 [
                     i,
                     a.get_absolute_url(),
                     a.views,
                     ', '.join(['%s' % ar for ar in a.articlerel_set.all()]),
+                    pub_section.name if pub_section else None,
+                    category_or_publication,
                     score,
                 ]
             )
@@ -162,3 +175,50 @@ class Command(BaseCommand):
         for ar_id, score in sorted_y:
             i += 1
             w.writerow([i, Publication.objects.get(slug=ar_id[0]).name, Section.objects.get(pk=ar_id[1]).name, score])
+
+        # Categories and publications
+        counters = {}
+        for user_id, main_category in main_categories.iteritems():
+            ar_id = (main_category, main_category.id)
+            counter = counters.get(ar_id, 0)
+            counter += 1
+            counters[ar_id] = counter
+
+        sorted_y = sorted(counters.items(), key=operator.itemgetter(1), reverse=True)
+        if not out_prefix:
+            os.rename(
+                join(settings.DASHBOARD_REPORTS_PATH, 'categories.csv'),
+                join(
+                    settings.DASHBOARD_REPORTS_PATH, '%s%.2d_categories.csv' % (
+                        month_before_last.year, month_before_last.month
+                    )
+                ),
+            )
+        w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, '%scategories.csv' % out_prefix), 'w'))
+        i = 0
+        for ar_id, score in sorted_y:
+            i += 1
+            if isinstance(ar_id[0], Category):
+                category_or_publication = ar_id[0]
+                articles_count = category_or_publication.articles().filter(
+                    date_published__gte=last_month_first,
+                    date_published__lte=dt_until,
+                ).count()
+            elif isinstance(ar_id[0], Publication):
+                articles_count = 0
+                category_or_publication = ar_id[0]
+                for section in category_or_publication.section_set.all():
+                    articles_count += section.articles_core.filter(
+                        date_published__gte=last_month_first,
+                        date_published__lte=dt_until,
+                    ).count()
+            else:
+                continue
+
+            w.writerow([
+                i,
+                category_or_publication.name,
+                articles_count,
+                score,
+                score / (articles_count or 1),
+            ])

@@ -2,7 +2,6 @@
 from os.path import join
 from unicodecsv import writer
 from progress.bar import Bar
-from optparse import make_option
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -14,8 +13,10 @@ from thedaily.management.commands.automatic_mail import latest_activity
 class Command(BaseCommand):
     help = 'Generates the activity report content'
 
-    option_list = BaseCommand.option_list + (
-        make_option('--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'), )
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+        )
 
     def handle(self, *args, **options):
 

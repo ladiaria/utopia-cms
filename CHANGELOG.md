@@ -1,3 +1,7 @@
+# version 0.2.6 (2022-05-15)
+
+- Dashboard app updates and new features.
+
 # version 0.2.5 (2022-05-13)
 
 - Fixes and improvements in the signup and subscription UX.

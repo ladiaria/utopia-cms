@@ -5,16 +5,29 @@ from views import (
     index, export_csv, load_table, audio_statistics_api, audio_statistics_dashboard, audio_statistics_api_amp
 )
 
+tables = (
+    'activity',
+    'activity_only_digital',
+    'articles',
+    'sections',
+    'subscribers',
+    'subscribers_sections',
+    'audio_statistics',
+    'categories',
+    'article_views',
+)
+
+formatted_tables = "|".join(table_name for table_name in tables)
 
 urlpatterns = [
     url(r'^$', index, name="index"),
     url(
-        r'^export/(?P<table_id>activity|activity_only_digital|articles|sections|subscribers|subscribers_sections|audio_statistics)/$',
+        r'^export/(?P<table_id>{})/$'.format(formatted_tables),
         export_csv,
         name="export_csv",
     ),
     url(
-        r'^table/(?P<table_id>activity|activity_only_digital|articles|sections|subscribers|subscribers_sections|audio_statistics)/$',
+        r'^table/(?P<table_id>{})/$'.format(formatted_tables),
         load_table,
         name="load_table",
     ),

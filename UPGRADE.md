@@ -1,3 +1,15 @@
+# From version 0.2.5 to 0.2.6
+
+```
+git pull
+git checkout 0.2.6
+# Following steps needed only if you ever generated any *articles.csv datasets for the dashboard app:
+cd portal
+# activate your virtual env
+pip install tqdm
+./manage.py shell -c "execfile('libs/scripts/one_time/add_extra_columns_to_articles_csv.py')"
+```
+
 # From version 0.2.4 to 0.2.5
 
 ```
@@ -21,6 +33,7 @@ pip install -r portal/requirements.txt
 ```
 git pull
 git checkout 0.2.3
+cd portal
 # activate your virtual env
 ./manage.py migrate
 # optionally uninstall materialize:
@@ -35,6 +48,7 @@ In a production environment, to keep the most read articles table synced correct
 ```
 git pull
 git checkout 0.2.2
+cd portal
 # activate your virtual env
 ./manage.py migrate
 ```
@@ -44,6 +58,7 @@ git checkout 0.2.2
 ```
 git pull
 git checkout 0.2.1
+cd portal
 # activate your virtual env
 ./manage.py migrate
 ```
@@ -53,6 +68,7 @@ git checkout 0.2.1
 ```
 git pull
 git checkout 0.2.0
+cd portal
 # activate your virtual env
 ./manage.py migrate
 ```
