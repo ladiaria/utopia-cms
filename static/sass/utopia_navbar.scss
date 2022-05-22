@@ -824,7 +824,7 @@ body {
     right: 0;
     bottom: 0;
     left: 0;
-    background: $primary-color;
+    background: $secondary-color;
     color: $off-black;
     visibility: hidden;
     opacity: 0;
@@ -1043,6 +1043,10 @@ body {
     .modal-content {
       padding: 0;
     }
+
+    .ld-main-menu__wrap {
+        background: $secondary-color;
+    }
 }
 
   // Mobile navbar
@@ -1147,7 +1151,7 @@ body {
     font-size: 8px;
     color: white;
     text-transform: uppercase;
-    background-color: $primary-color;
+    background-color: $secondary-color;
     position: absolute;
     border-radius: 2px;
     line-height: 1;
@@ -1246,7 +1250,7 @@ body.frontpage #main-header.nav-down #nav-principal span.nav-menu__pill {
     padding: 50px 0 50px 0;
     margin-bottom: $line-height / 2;
     color: $off-black;
-    background-color: $primary-color;
+    background-color: $secondary-color;
 
     &__title {
       font-family: "Roboto", sans-serif;
