@@ -5,13 +5,10 @@
   <div class="ld-card ld-card--reg">
 
     {% render_toolbar_for article %}
-    {% if article.photo %}
+    {% if not article_card_hide_photo and article.photo %}
       <a href="{{ article.get_absolute_url }}">
-        <img class="ld-card__img" src="{{ article.photo.get_700w_url }}"
-             width="700"
-             {% if article.photo_image_file_exists %}
-             height="{{ article.photo.get_700w_size.1 }}"
-             {% endif %}
+        <img class="ld-card__img" src="{{ article.photo.get_700w_url }}" width="700"
+             {% if article.photo_image_file_exists %}height="{{ article.photo.get_700w_size.1 }}"{% endif %}
              title="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
              alt="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}"
              {% if img_load_lazy %}loading="lazy"{% endif %}>
@@ -32,7 +29,7 @@
 
       <div class="ld-card__byline-wrap">
         <div class="ld-card__byline">
-          {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo.extended.photographer %}
+          {% if not article_card_hide_photo and CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo.extended.photographer %}
             <div class="ld-card__photoauthor">
               {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
             </div>
