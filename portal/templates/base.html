@@ -10,10 +10,10 @@
 <html class="no-js" lang="es-UY">
 {% endblock %}
   <head>
+    {% block head_first_content %}{% endblock %}
     <!-- Progressive Web App (PWA) -->
     <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
     <!-- End Progressive Web App (PWA) -->
-    {% block head_first_content %}{% endblock %}
     {% if not debug %}
       {# The preferred way to load GA is using GTM #}
       {% if GTM_CONTAINER_ID %}
@@ -75,9 +75,13 @@
 
     <!-- Icons -->
     {% if publication.slug in custom_icons_publications %}
-      <link rel="icon" href="{% static publication.icon %}">
-      <link rel="icon" type="image/png" href="{% static publication.icon_png %}">
-      <link rel="apple-touch-icon" sizes="180x180" href="{% static publication.apple_touch_icon_180 %}">
+      {% if publication.icon %}<link rel="icon" href="{% static publication.icon %}">{% endif %}
+      {% if publication.icon_png %}
+        <link rel="icon" type="image/png" href="{% static publication.icon_png %}">
+      {% endif %}
+      {% if publication.apple_touch_icon_180 %}
+        <link rel="apple-touch-icon" sizes="180x180" href="{% static publication.apple_touch_icon_180 %}">
+      {% endif %}
     {% else %}
       {% if default_pub.icon %}<link rel="icon" href="{% static default_pub.icon %}">{% endif %}
       {% if default_pub.apple_touch_icon_512 %}
