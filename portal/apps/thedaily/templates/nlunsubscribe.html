@@ -9,7 +9,7 @@
   <meta name="description" content="{% block description %}Desuscripción{% endblock %}.">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% compress css %}
-    <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+    <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
   {% endcompress %}
 </head>
 <body class="nlunsubscribe ld-notice">
@@ -32,9 +32,7 @@
       <p>
         {% block configure %}<a href="{% url 'edit-profile' %}#ld-newsletters">Configurar todos tus newsletters</a>{% endblock %}
       </p>
-      <p>
-        <a href="/">Ir a la portada</a>
-      </p>
+      <p><a href="/">Ir a la portada</a></p>
     </div>
   </div>
   <div class="ld-text-secondary nlunsubscribe__info">

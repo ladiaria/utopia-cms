@@ -1,6 +1,5 @@
 {% spaceless %}
-{% load static %}
-{% load compress %}
+  {% load static compress %}
 {% endspaceless %}<!doctype html>
 {% block html %}
 <html lang="es-UY">
@@ -8,14 +7,14 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <title>Suscribite a la diaria</title>
+  <title>Suscribite a {{ site.name }}</title>
   <meta name="description" content="Para poder participar de los comentarios es necesario que tengas una suscripción.">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% compress css %}
-    <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+    <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
   {% endcompress %}
 
-{% comment %} Banner pop-up from comment section {% endcomment %}
+{# Banner pop-up from comment section #}
 
 {% compress css %}
   {% block css %}{% endblock %}
@@ -23,15 +22,10 @@
 </head>
 <body class="popup-talk">
   <div class="ld-subscribe-box">
-    <span class="ld-subscribe-box__title">
-      Suscribite a <em>la diaria</em>
-    </span>
+    <span class="ld-subscribe-box__title">Suscribite a <em>{{ site.name }}</em></span>
     <div class="ld-subscribe-box__info ld-caption">
       Para poder participar de los comentarios es necesario que tengas una suscripción.
     </div>
-    <button class="ut-btn"
-            onclick="window.close()">
-      Cerrar
-    </button>
+    <button class="ut-btn" onclick="window.close()">Cerrar</button>
   </div>
 </body>
