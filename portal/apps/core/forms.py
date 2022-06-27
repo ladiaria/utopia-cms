@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-from libs.utils import do_gonzo
+from __future__ import unicode_literals
 
-from django.forms import (
-    Form, CharField, HiddenInput, ValidationError, EmailField, Textarea)
-
-from django.core.urlresolvers import reverse_lazy
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Field
 from crispy_forms.bootstrap import FormActions
+
+from django.core.urlresolvers import reverse_lazy
+from django.forms import Form, CharField, HiddenInput, ValidationError, EmailField, Textarea
+
+from libs.utils import do_gonzo
 
 
 def gen_gonzo(form, aslug='', aid=''):
@@ -84,6 +85,7 @@ class SendByEmailForm(Form):
 
     article_id = CharField(widget=HiddenInput)
 
+    # TODO: init method here
     helper = FormHelper()
     helper.form_id = 'send_by_email'
     helper.form_method = 'post'
@@ -93,12 +95,8 @@ class SendByEmailForm(Form):
     helper.render_unmentioned_fields = False
     helper.form_error_title = 'Errores del formulario'
     helper.layout = Layout(
-        Field(
-            'email',
-            Field('message', rows="3", css_class='input-xlarge'),
-            'article_id',
-        ),
-        FormActions(
-            Submit('save', u'Enviar'),
-        )
+        'email',
+        Field('message', rows="3", css_class='input-xlarge'),
+        'article_id',
+        FormActions(Submit('save', u'Enviar')),
     )

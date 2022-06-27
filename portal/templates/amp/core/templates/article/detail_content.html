@@ -4,7 +4,7 @@
   <p amp-access="edit" amp-access-hide>
     <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="edit-link">Editar</a>
   </p>
-  {{ article.body|amp_ldmarkup:article.id }}
+  {% block article_body_content %}{{ article.body|amp_ldmarkup:article.id }}{% endblock %}
 </div>
 
 {% if article.type == "PA" or article.gallery %}

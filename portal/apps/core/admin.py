@@ -352,6 +352,7 @@ class ArticleAdmin(ModelAdmin):
     prepopulated_fields = {'slug': ('headline', )}
     filter_horizontal = ('byline', )
     list_display = (
+        'id',
         'headline',
         'type',
         'get_publications',

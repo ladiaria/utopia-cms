@@ -64,7 +64,7 @@ def load_table(request, table_id):
         ):
             return HttpResponseForbidden()
 
-    if month and year and table_id not in ('activity', 'activity_only_digital', 'audio_statistics', 'subscribers'):
+    if month and year and table_id not in ('activity', 'activity_only_digital', 'subscribers'):
         date_start = date(int(year), int(month), 1)
         date_end = date_start + relativedelta(months=1)
         last_month = today - relativedelta(months=1)
@@ -77,11 +77,7 @@ def load_table(request, table_id):
         date_start = date_end - relativedelta(months=1)
         filename = '%s.csv' % table_id
     try:
-        if table_id == 'audio_statistics':
-            # From this table we need to grab the data from the database, not from a csv.
-            rows = audio_statistics_dashboard(month, year)
-        else:
-            rows = reader(open(join(settings.DASHBOARD_REPORTS_PATH, filename)))
+        rows = reader(open(join(settings.DASHBOARD_REPORTS_PATH, filename)))
         if table_id == 'subscribers':
             rows = [(row[:-1] + [row[-1].split(u', ')]) for row in rows if row[1].startswith('%s-%s' % (year, month))]
     except Exception:
@@ -170,37 +166,3 @@ def audio_statistics_api_amp(request):
             return HttpResponse()
         except ValidationError:
             raise HttpResponseBadRequest("Unique object already exists")
-
-
-def audio_statistics_dashboard(month=None, year=None):
-    """
-    Returns all audio objects with play statistics.
-    NOTE: month and year are not being used yet, the date filter option was removed from the UX because more precise
-          information about this filter requirement is needed.
-    """
-    filter_kwargs = {'audio__isnull': False}
-    if month and year:
-        filter_kwargs.update({'date_published__month': month, 'date_published__year': year})
-
-    article_list = []
-    for article in Article.published.filter(**filter_kwargs).select_related(
-        'main_section__section', 'audio'
-    ).prefetch_related('audio__audiostatistics').distinct().iterator():
-        # TODO: duration calculation is commented, it raises a UnicodeDecodeError and should be investigated
-        # audio_info = mutagen.File(article.audio.file).info
-        article_list.append(
-            {
-                'article': article.headline,
-                'article_url': article.get_absolute_url,
-                'area': article.section,
-                'date': article.date_published,
-                'clicks': article.audio.audiostatistics_set.filter(percentage__isnull=False).count(),
-                'amp': article.audio.audiostatistics_set.filter(amp_click=True).count(),
-                'percentage0': article.audio.audiostatistics_set.filter(percentage=0).count(),
-                'percentage25': article.audio.audiostatistics_set.filter(percentage=25).count(),
-                'percentage50': article.audio.audiostatistics_set.filter(percentage=50).count(),
-                'percentage75': article.audio.audiostatistics_set.filter(percentage=75).count(),
-                # 'duration': timedelta(seconds=int(audio_info.length))
-            }
-        )
-    return article_list

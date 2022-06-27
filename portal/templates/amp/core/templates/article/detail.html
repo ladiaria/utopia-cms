@@ -189,7 +189,7 @@
     {% endif %}
 
     <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-      {% include 'amp/core/templates/article/detail_content.html' %}
+      {% block detail_content %}{% include 'amp/core/templates/article/detail_content.html' %}{% endblock %}
     </div>
 
     <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>

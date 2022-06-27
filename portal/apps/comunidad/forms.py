@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 from django import forms
 
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Submit, Field
+from crispy_forms.bootstrap import FormActions
+
 from comunidad.models import SubscriberEvento, SubscriberArticle, Registro
 from thedaily.models import Subscriber
 
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Submit, Button, Field, Fieldset, HTML, MultiField
-from crispy_forms.bootstrap import FormActions
 
 class ArticleForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
+        # TODO: explain or remove commented lines
         self.helper = FormHelper()
         self.helper.form_id = 'articulo'
         # self.helper.form_class = 'form-horizontal'
@@ -20,25 +22,19 @@ class ArticleForm(forms.ModelForm):
         self.helper.help_text_inline = True
         self.helper.error_text_inline = True
         self.helper.render_unmentioned_fields = False
-        self.helper.layout = Layout(
-            Field('sections'),
-            Field('headline'),
-            Field('deck'),
-            Field('body'),
-            FormActions(
-                Submit('save', u'Publicar'),
-            )
-        )
+        self.helper.layout = Layout('sections', 'headline', 'deck', 'body', FormActions(Submit('save', u'Publicar')))
 
         super(ArticleForm, self).__init__(*args, **kwargs)
 
     class Meta:
         model = SubscriberArticle
-        fields = ['headline' , 'deck', 'body']
+        fields = ['headline', 'deck', 'body']
+
 
 class EventoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
+        # TODO: explain or remove commented lines
         self.helper = FormHelper()
         self.helper.form_id = 'evento'
         self.helper.form_class = 'form-horizontal'
@@ -49,36 +45,28 @@ class EventoForm(forms.ModelForm):
         self.helper.error_text_inline = True
         self.helper.render_unmentioned_fields = True
         self.helper.layout = Layout(
-            Field('categoria'),
-            Field('title'),
-            Field('description'),
+            'categoria',
+            'title',
+            'description',
             Field('start', css_class="datepicker", readonly=True),
             Field('end', css_class="datepicker", readonly=True),
-            Field('precio'),
-            Field('poster'),
-            FormActions(
-                Submit('save', u'Publicar'),
-            )
+            'precio',
+            'poster',
+            FormActions(Submit('save', u'Publicar')),
         )
 
         super(EventoForm, self).__init__(*args, **kwargs)
 
     class Meta:
         model = SubscriberEvento
-        fields = ['categoria' , 
-                    'title', 
-                    'description', 
-                    'start', 
-                    'end', 
-                    'precio', 
-                    'poster']
+        fields = ['categoria', 'title', 'description', 'start', 'end', 'precio', 'poster']
 
 
 class RegistroForm(forms.ModelForm):
     """ Registro de la utilizacion de un beneficio """
     document = forms.CharField(max_length=50, required=False,
         label='Documento', help_text=u'Número de cédula sin puntos ni guiones '
-        'u otro documento registrado en la diaria.')
+        'u otro documento registrado en la diaria.')  # TODO: de-customize
 
     def __init__(self, benefit_qs, *args, **kwargs):
         self.helper = FormHelper()

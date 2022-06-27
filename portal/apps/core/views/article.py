@@ -25,7 +25,7 @@ from actstream.models import following
 from favit.models import Favorite
 
 from tagging.models import Tag
-from apps import core_articleviewedby_mdb, core_articlevisits_mdb
+from apps import mongo_db
 from decorators import render_response, decorate_if_no_staff, decorate_if_staff
 from core.forms import ReportErrorArticleForm, SendByEmailForm
 from core.models import Publication, Category, Article, ArticleUrlHistory
@@ -128,17 +128,17 @@ def article_detail(request, year, month, slug, domain_slug=None):
     if settings.CORE_LOG_ARTICLE_VIEWS and not (
         signupwall_exclude_request_condition(request) or request.flavour == 'amp'
     ):
-        if request.user.is_authenticated() and core_articleviewedby_mdb:
+        if request.user.is_authenticated() and mongo_db:
             # register this view
             set_values = {'viewed_at': datetime.now()}
             if getattr(request, 'article_allowed', False):
                 set_values['allowed'] = True
-            core_articleviewedby_mdb.posts.update_one(
+            mongo_db.core_articleviewedby.update_one(
                 {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
             )
         # inc this article visits
-        if core_articlevisits_mdb:
-            core_articlevisits_mdb.posts.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
+        if mongo_db:
+            mongo_db.core_articlevisits.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
 
     try:
         talk_url = getattr(settings, 'TALK_URL', None)

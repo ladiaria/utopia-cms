@@ -11,8 +11,10 @@ class NewsSitemap(Sitemap):
 
     def get_url_info(self, item, current_site):
         url_info = super(NewsSitemap, self).get_url_info(item, current_site)
-        url_info.update({
-            'publication_date': self._get('publication_date', item, None),
-            'keywords': self._get('keywords', item, None),
-        })
+        url_info.update(
+            {
+                'publication_date': self._get('publication_date', item, None),
+                'keywords': self._get('keywords', item, None),
+            }
+        )
         return url_info

@@ -1,3 +1,13 @@
+# From version 0.2.6 to 0.2.7
+
+```
+git pull
+git checkout 0.2.7
+cd portal
+# activate your virtual env and execute the commands shown in the output of the following command:
+./manage.py shell -c "execfile('libs/scripts/one_time/20220519_mongo_one_db.py')"
+```
+
 # From version 0.2.5 to 0.2.6
 
 ```

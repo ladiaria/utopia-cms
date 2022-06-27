@@ -1,6 +1,6 @@
 # coding:utf8
 """
-utopia-cms, 2018-2021, Aníbal Pacheco
+utopia-cms, 2018-2022, Aníbal Pacheco
 
 Global variables definition, to avoid its definition multiple times inside the apps modules.
 """
@@ -11,19 +11,14 @@ from pymongo.errors import ServerSelectionTimeoutError
 from django.conf import settings
 
 
-# mongodb tables
+# mongodb database
 try:
     client = MongoClient(serverSelectionTimeoutMS=1000)
     client.server_info()
-    global core_articleviewedby_mdb, core_articlevisits_mdb, signupwall_visitor_mdb, adzone_mdb
-    core_articleviewedby_mdb, core_articlevisits_mdb, signupwall_visitor_mdb, adzone_mdb = (
-        client[settings.CORE_MONGODB_ARTICLEVIEWEDBY] if settings.CORE_MONGODB_ARTICLEVIEWEDBY else None,
-        client[settings.CORE_MONGODB_ARTICLEVISITS] if settings.CORE_MONGODB_ARTICLEVISITS else None,
-        client[settings.SIGNUPWALL_MONGODB_VISITOR] if settings.SIGNUPWALL_MONGODB_VISITOR else None,
-        client[settings.ADZONE_MONGODB] if settings.ADZONE_MONGODB else None,
-    )
+    global mongo_db
+    mongo_db = client[settings.MONGODB_DATABASE] if settings.MONGODB_DATABASE else None
 except ServerSelectionTimeoutError:
-    core_articleviewedby_mdb = core_articlevisits_mdb = signupwall_visitor_mdb = adzone_mdb = None
+    mongo_db = None
 
 # blacklisted emails
 global blacklisted

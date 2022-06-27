@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 
 from core.models import Article
@@ -12,7 +13,7 @@ class ArticleSitemap(Sitemap):
     limit = 1000
 
     def items(self):
-        return Article.published.all()
+        return Article.published.exclude(sections__slug__in=settings.CORE_SATIRICAL_SECTIONS)
 
 
 class ArticleNewsSitemap(NewsSitemap):
@@ -21,4 +22,4 @@ class ArticleNewsSitemap(NewsSitemap):
     protocol = 'https'
 
     def items(self):
-        return Article.published.all()
+        return Article.published.exclude(sections__slug__in=settings.CORE_SATIRICAL_SECTIONS)

@@ -8,7 +8,6 @@ import pymongo
 from datetime import datetime
 from urllib import pathname2url
 from urlparse import urljoin, urlparse
-from hashids import Hashids
 from smtplib import SMTPRecipientsRefused
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
@@ -45,10 +44,10 @@ from actstream import actions
 from actstream.models import following
 from favit.models import Favorite
 
-from libs.utils import set_amp_cors_headers
+from libs.utils import set_amp_cors_headers, decode_hashid
 from libs.tokens.email_confirmation import default_token_generator, get_signup_validation_url, send_validation_email
 
-from apps import core_articleviewedby_mdb, core_articlevisits_mdb, signupwall_visitor_mdb
+from apps import mongo_db
 from core.models import Publication, Category, Article, ArticleUrlHistory
 from thedaily.models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState
 from thedaily.forms import (
@@ -100,7 +99,7 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
             'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
             'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
         }
-        decoded = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)
+        decoded = decode_hashid(hashed_id)
         # TODO: if authenticated => assert same logged in user (also for other 1-click views in this module)
         if decoded:
             subscriber = get_object_or_404(Subscriber, id=decoded[0])
@@ -137,7 +136,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
             'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
             'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
         }
-        decoded = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)
+        decoded = decode_hashid(hashed_id)
         if decoded:
             subscriber = get_object_or_404(Subscriber, id=decoded[0])
             if not subscriber.user:
@@ -147,6 +146,10 @@ def nl_category_subscribe(request, slug, hashed_id=None):
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
                 ctx['error'] = e.displaymessage
+            else:
+                next_page = request.GET.get('next')
+                if next_page:
+                    return HttpResponseRedirect(next_page)
             return 'nlsubscribe.html', ctx
         else:
             raise Http404
@@ -326,13 +329,19 @@ def subscribe(request, planslug, category_slug=None):
 
             initial = {
                 'email': request.user.email,
-                'first_name': request.user.subscriber.name or ' '.join(
-                    [request.user.first_name, request.user.last_name]).strip()
+                'first_name':
+                    request.user.subscriber.name or ' '.join([request.user.first_name, request.user.last_name]).strip()
             }
             if request.user.subscriber.phone:
                 initial['telephone'] = request.user.subscriber.phone
 
-            subscriber_form = SubscriberForm(initial=initial)
+            if subscription_price.ga_category == 'D':
+                subscriber_form = SubscriberForm(initial=initial)
+            else:
+                initial.update({'address': request.user.subscriber.address, 'city': request.user.subscriber.city})
+                if request.user.subscriber.province:
+                    initial['province'] = request.user.subscriber.province
+                subscriber_form = SubscriberAddressForm(initial=initial)
 
             # do not show oauth button if this user is already associated
             if request.user.social_auth.filter(provider='google-oauth2').exists():
@@ -842,8 +851,8 @@ def lista_lectura_historial(request):
     """
     # start the result set with mongo because these are the most recent viewed.
     historial, mids = [], []
-    if core_articleviewedby_mdb:
-        for a in core_articleviewedby_mdb.posts.find({'user': request.user.id}).sort('viewed_at', pymongo.DESCENDING):
+    if mongo_db:
+        for a in mongo_db.core_articleviewedby.find({'user': request.user.id}).sort('viewed_at', pymongo.DESCENDING):
             try:
                 article_id = a['article']
                 historial.append(Article.objects.get(id=article_id))
@@ -1085,8 +1094,8 @@ def amp_access_authorization(request):
                 articles_visited = set() if article.is_public() else set([article.id])
                 articles_visited_count = len(articles_visited)
 
-                if core_articleviewedby_mdb:
-                    for x in core_articleviewedby_mdb.posts.find({'user': request.user.id, 'allowed': None}):
+                if mongo_db:
+                    for x in mongo_db.core_articleviewedby.find({'user': request.user.id, 'allowed': None}):
                         articles_visited.add(x['article'])
                         articles_visited_count = len(articles_visited)
                         if articles_visited_count >= MAX_CREDITS + 2:
@@ -1140,12 +1149,12 @@ def amp_access_pingback(request):
 
             if request.user.is_authenticated():
 
-                if core_articleviewedby_mdb and not blocked:
+                if mongo_db and not blocked:
 
                     set_values = {'viewed_at': datetime.now()}
                     if article_allowed:
                         set_values['allowed'] = True
-                    core_articleviewedby_mdb.posts.update_one(
+                    mongo_db.core_articleviewedby.update_one(
                         {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
                     )
 
@@ -1154,14 +1163,14 @@ def amp_access_pingback(request):
 
                 visitor = get_or_create_visitor(request)
 
-                if visitor and signupwall_visitor_mdb:
-                    signupwall_visitor_mdb.posts.update_one(
+                if visitor and mongo_db:
+                    mongo_db.signupwall_visitor.update_one(
                         {'_id': visitor.get('_id')}, {'$set': {'path_visited': path}}
                     )
 
             # inc this article visits if not blocked
-            if not blocked and core_articlevisits_mdb:
-                core_articlevisits_mdb.posts.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
+            if not blocked and mongo_db:
+                mongo_db.core_articlevisits.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
 
     response = HttpResponse()
     return set_amp_cors_headers(request, response)
@@ -1310,7 +1319,7 @@ def custom_api(request):
 @never_cache
 @to_response
 def referrals(request, hashed_id):
-    decoded, user = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id), None
+    decoded, user = decode_hashid(hashed_id), None
     if decoded:
         sub = get_object_or_404(Subscriber, contact_id=int(decoded[0]))
         user = sub.user
@@ -1349,7 +1358,7 @@ def referrals(request, hashed_id):
 def nlunsubscribe(request, publication_slug, hashed_id):
     publication = get_object_or_404(Publication, slug=publication_slug)
     try:
-        subscriber_id = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)[0]
+        subscriber_id = decode_hashid(hashed_id)[0]
         ctx = {
             'publication': publication,
             'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
@@ -1379,7 +1388,7 @@ def nlunsubscribe(request, publication_slug, hashed_id):
 def nl_category_unsubscribe(request, category_slug, hashed_id):
     category = get_object_or_404(Category, slug=category_slug)
     try:
-        subscriber_id = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)[0]
+        subscriber_id = decode_hashid(hashed_id)[0]
         ctx = {
             'publication': category,
             'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
@@ -1409,7 +1418,7 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
 def disable_profile_property(request, property_id, hashed_id):
     """ Disables the profile bool property_id related to the subscriber matching the hashed_id argument given """
     try:
-        subscriber = get_object_or_404(Subscriber, id=Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)[0])
+        subscriber = get_object_or_404(Subscriber, id=decode_hashid(hashed_id)[0])
         if not subscriber.user:
             raise Http404
         setattr(subscriber, property_id, False)

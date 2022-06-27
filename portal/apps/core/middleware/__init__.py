@@ -2,7 +2,6 @@ from django.conf import settings
 from django.core.urlresolvers import resolve, reverse
 from django.http import HttpResponseRedirect
 from django.contrib.sessions.models import Session
-from django.contrib.sessions.backends.base import UpdateError
 
 
 class SessionInvalidMiddleware(object):
@@ -20,4 +19,3 @@ class SessionInvalidMiddleware(object):
                     return HttpResponseRedirect(reverse(redirect_url_name))
             except (KeyError, Session.DoesNotExist):
                 pass
-

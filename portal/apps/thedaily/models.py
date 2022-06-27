@@ -3,6 +3,7 @@ import re
 import json
 import requests
 import pymongo
+from hashids import Hashids
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
@@ -28,7 +29,7 @@ from django.db.models import (
 from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.dispatch import receiver
 
-from apps import core_articleviewedby_mdb
+from apps import mongo_db
 from core.models import Edition, Publication, Category, ArticleViewedBy
 from exceptions import UpdateCrmEx
 
@@ -241,7 +242,7 @@ class Subscriber(Model):
         Returns info about the latest visit to an article from this subscriber.
         """
         # Search in mongodb first, if none found then search in db-table
-        mdb = core_articleviewedby_mdb.posts.find({'user': self.user.id}).sort('viewed_at', pymongo.DESCENDING)
+        mdb = mongo_db.core_articleviewedby.find({'user': self.user.id}).sort('viewed_at', pymongo.DESCENDING)
         if mdb.count():
             latest = mdb[0]
             return (latest.get('article'), latest.get('viewed_at'))
@@ -260,6 +261,9 @@ class Subscriber(Model):
     @permalink
     def get_absolute_url(self):
         return '/admin/thedaily/subscriber/%i/' % self.id
+
+    def hashed_id(self):
+        return Hashids(settings.HASHIDS_SALT, 32).encode(int(self.id))
 
     class Meta:
         verbose_name = u'suscriptor'

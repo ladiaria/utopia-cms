@@ -1,5 +1,5 @@
 {% spaceless %}
-{% load static homev3_tags compress %}
+{% load static homev3_tags thedaily_tags compress %}
 {% endspaceless %}<!doctype html>
 {% block html %}
 <!-- Legacy browsers support  -->
@@ -221,6 +221,10 @@
             notification.toggle();
           });
         });
+        var subscribe_notice = $('.subscribe-notice');
+        $('.btn-close-notice', subscribe_notice).click(function(){
+          subscribe_notice.hide();
+        });
         {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
       });
     </script>
@@ -250,6 +254,20 @@
         {% render_header %}
       </header>
     {% endblock %}
+
+    <!-- Mobile Subscribe notice for logged-in non-subscribers -->
+    {% if not is_subscriber_any %}
+      {% if is_portada and publication == default_pub or is_detail %}
+        <div class="subscribe-notice hide-on-med-and-up">
+          <a href="{% url 'subscribe' planslug='DDIGM' %}">Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i></a>
+          <span class="btn-close-notice" data-id="subscribe-notice">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15.472" height="15.471" viewBox="0 0 15.472 15.471">
+              <path d="M653.472,11679.547l-1.547-1.547-6.189,6.188-6.189-6.187-1.547,1.547,6.189,6.189-6.189,6.188,1.547,1.547,6.189-6.187,6.189,6.188,1.547-1.547-6.189-6.187,6.189-6.189" transform="translate(-638 -11678)" fill="#262626" fill-rule="evenodd"/>
+            </svg>
+          </span>
+        </div>
+      {% endif %}
+    {% endif %}
 
     <!-- Main -->
     {% block main_open %}<main class="main" id="main-content">{% endblock %}

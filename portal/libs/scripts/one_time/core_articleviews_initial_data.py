@@ -1,13 +1,13 @@
 from datetime import date
 
-from apps import core_articleviewedby_mdb
+from apps import mongo_db
 
 from core.models import Article, ArticleViews
 
 
 articles, upto = {}, date(2022, 3, 14)
 
-for avb in core_articleviewedby_mdb.posts.find():
+for avb in mongo_db.core_articleviewedby.find():
     va = avb['viewed_at'].date()
     if va < upto:
         article = avb['article']

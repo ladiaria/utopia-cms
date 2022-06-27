@@ -22,4 +22,3 @@ class FlavoursCookieSecure(object):
             response.cookies[flavours_cookie_key]['secure'] = settings.FLAVOURS_COOKIE_SECURE
 
         return response
-

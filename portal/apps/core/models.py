@@ -328,7 +328,7 @@ class Edition(PortableDocumentFormatBaseModel):
         ).filter(article__is_published=True, home_top=True).order_by('top_position')]))
 
     def get_articles_in_section(self, section):
-        return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.select_related(
+        return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.prefetch_related(
             'article__main_section__edition__publication',
             'article__main_section__section',
             'article__photo__extended__photographer',

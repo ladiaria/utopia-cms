@@ -369,12 +369,8 @@ CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 # enable related articles in article detail
 CORE_ENABLE_RELATED_ARTICLES = True
 
-# mongodb databases for user and anon article visits
-CORE_MONGODB_ARTICLEVIEWEDBY = 'ldsocial_core_articleviewedby'
-CORE_MONGODB_ARTICLEVISITS = 'ldsocial_core_articlevisits'
-SIGNUPWALL_MONGODB_VISITOR = 'ldsocial_signupwall_visitor'
-# mongodb database for ad impressions and clicks
-ADZONE_MONGODB = 'ldsocial_adzone'
+# mongodb database
+MONGODB_DATABASE = 'utopia_cms'
 
 # Change to false if the signupwall middleware is removed
 SIGNUPWALL_ENABLED = True
@@ -385,6 +381,7 @@ PROMO_EMAIL_SUBJECT = u'Nueva promoción'
 SUBSCRIPTION_EMAIL_TO = [NOTIFICATIONS_TO_ADDR]
 SUBSCRIPTION_BY_PHONE_EMAIL_TO = SUBSCRIPTION_EMAIL_TO
 MAX_USERS_API_SESSIONS = 3
+THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID = None
 THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
     ('DDIGM', u'Suscripción digital'),
     ('PAPYDIM', u'Suscripción papel'),

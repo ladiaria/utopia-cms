@@ -3,7 +3,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Field, HTML
 
 from django.conf import settings
-from django import forms
+from django.forms import ModelForm, ValidationError
 from django.core.mail import mail_managers
 from django.contrib.auth.models import User
 
@@ -11,7 +11,8 @@ from thedaily.models import Subscriber
 from thedaily.forms import RE_ALPHANUM, EmailInput
 
 
-class ProfileForm(forms.ModelForm):
+class ProfileForm(ModelForm):
+    # TODO: init method here
     helper = FormHelper()
     helper.form_tag = False
     helper.form_class = 'form-horizontal'
@@ -28,9 +29,7 @@ class ProfileForm(forms.ModelForm):
             '{%% include "%s" %%}' % getattr(settings, 'THEDAILY_SUBSRIPTIONS_TEMPLATE', 'profile/suscripciones.html')
         ),
         Field('newsletters', template='profile/newsletters.html'),
-        Field(
-            'category_newsletters',
-            template='profile/category_newsletters.html'),
+        Field('category_newsletters', template='profile/category_newsletters.html'),
         HTML(
             '''
             <section id="ld-comunicaciones" class="ld-block section scrollspy">
@@ -45,6 +44,7 @@ class ProfileForm(forms.ModelForm):
 
     class Meta:
         model = Subscriber
+        # TODO: use fields instead of exclude
         exclude = (
             'contact_id',
             'user',
@@ -61,7 +61,8 @@ class ProfileForm(forms.ModelForm):
         )
 
 
-class UserForm(forms.ModelForm):
+class UserForm(ModelForm):
+    # TODO: init method here
     helper = FormHelper()
     helper.form_tag = False
     helper.form_class = 'form-horizontal'
@@ -88,20 +89,20 @@ class UserForm(forms.ModelForm):
             msg = u'El email ingresado ya posee una cuenta de usuario.'
             msg += u' <a href="/usuarios/entrar">Ingresar</a>.'
             self._errors['email'] = self.error_class([msg])
-            raise forms.ValidationError(msg)
+            raise ValidationError(msg)
 
         if User.objects.filter(username__iexact=email).exclude(id=self.instance.id).exists():
             mail_managers("Multiple username in users", email)
             msg = u'El email ingresado no puede ser utilizado.'
             self._errors['email'] = self.error_class([msg])
-            raise forms.ValidationError(msg)
+            raise ValidationError(msg)
 
         return cleaned_data
 
     def clean_first_name(self):
         first_name = self.cleaned_data.get('first_name')
         if not RE_ALPHANUM.match(first_name):
-            raise forms.ValidationError(
+            raise ValidationError(
                 u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
             )
         return first_name
@@ -110,5 +111,5 @@ class UserForm(forms.ModelForm):
         # TODO: check if length should be validated here
         email = self.cleaned_data.get('email')
         if not email:
-            raise forms.ValidationError(u'La dirección de correo electrónico no puede ser vacia.')
+            raise ValidationError(u'La dirección de correo electrónico no puede ser vacia.')
         return email

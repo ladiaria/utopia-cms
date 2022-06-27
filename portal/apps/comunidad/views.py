@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-from hashids import Hashids
 from crispy_forms.layout import Layout, Submit, HTML
 from crispy_forms.bootstrap import FormActions
 
-from django.conf import settings
 from django.http import Http404
 from django.contrib import messages
 from django.core.urlresolvers import reverse
@@ -15,8 +13,10 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 from decorators import render_response
 
-from models import SubscriberEvento, SubscriberArticle, TopUser, Beneficio, Socio, Registro
-from forms import ArticleForm, EventoForm, RegistroForm
+from libs.utils import decode_hashid
+
+from .models import SubscriberEvento, SubscriberArticle, TopUser, Beneficio, Socio, Registro
+from .forms import ArticleForm, EventoForm, RegistroForm
 
 
 to_response = render_response('comunidad/templates/')
@@ -146,7 +146,7 @@ def beneficios(request):
 @never_cache
 @to_response
 def add_registro(request, beneficio_id, hashed_subscriber_id):
-    decoded, error = Hashids(settings.HASHIDS_SALT, 32).decode(hashed_subscriber_id), None
+    decoded, error = decode_hashid(hashed_subscriber_id), None
     try:
         registro, created = Registro.objects.get_or_create(subscriber_id=decoded[0], benefit_id=beneficio_id)
         if not created:

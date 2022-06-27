@@ -3,13 +3,3 @@
 {% block subscribe_box_question %}{{ category.subscribe_box_question }}{% endblock %}
 
 {% block subscribe_box_nl_subscribe_anon %}{{ category.subscribe_box_nl_subscribe_anon }}{% endblock %}
-
-{% block subscribe_box_signup_url %}
-  {% spaceless %}
-    {% if category_signup %}
-      {% url 'account-signup' category_slug=category.slug %}
-    {% else %}
-      {{ block.super }}
-    {% endif %}
-  {% endspaceless %}
-{% endblock %}

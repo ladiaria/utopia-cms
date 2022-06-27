@@ -5,7 +5,7 @@ from django.conf import settings
 from django.http import Http404
 from django.core.urlresolvers import resolve
 
-from apps import core_articleviewedby_mdb, signupwall_visitor_mdb
+from apps import mongo_db
 from signupwall.utils import get_ip
 from core.models import Article
 from thedaily.email_logic import limited_free_article_mail
@@ -58,12 +58,12 @@ def get_or_create_visitor(request):
     if debug:
         print('DEBUG: signupwall.middleware.get_or_create_visitor - ip_address: %s' % ip_address)
 
-    if signupwall_visitor_mdb:
-        result = signupwall_visitor_mdb.posts.insert_one(
+    if mongo_db:
+        result = mongo_db.signupwall_visitor.insert_one(
             {'session_key': session_key, 'ip_address': ip_address, 'timestamp': datetime.now()}
         )
         # generation time can be obtained in the returned value .get('_id').generation_time (TODO: re-check this)
-        return signupwall_visitor_mdb.posts.find_one({'_id': result.inserted_id})
+        return mongo_db.signupwall_visitor.find_one({'_id': result.inserted_id})
 
 
 class SignupwallMiddleware(object):
@@ -124,9 +124,9 @@ class SignupwallMiddleware(object):
         visitor, raise_signupwall = None, True
 
         # if log views is enabled, set the path_visited to this visitor.
-        if not restricted_article and settings.CORE_LOG_ARTICLE_VIEWS and signupwall_visitor_mdb:
+        if not restricted_article and settings.CORE_LOG_ARTICLE_VIEWS and mongo_db:
             visitor = get_or_create_visitor(request)
-            signupwall_visitor_mdb.posts.update_one(
+            mongo_db.signupwall_visitor.update_one(
                 {'_id': visitor.get('_id')}, {'$set': {'path_visited': request.path}}
             )
 
@@ -138,8 +138,8 @@ class SignupwallMiddleware(object):
             # Raise signupwall if the user has more than credits.
             credits, articles_visited = 10, set() if restricted_article else set([article.id])
             articles_visited_count = len(articles_visited)
-            if core_articleviewedby_mdb:
-                for x in core_articleviewedby_mdb.posts.find({'user': user.id, 'allowed': None}):
+            if mongo_db:
+                for x in mongo_db.core_articleviewedby.find({'user': user.id, 'allowed': None}):
                     articles_visited.add(x['article'])
                     articles_visited_count = len(articles_visited)
                     if articles_visited_count >= credits + 2:

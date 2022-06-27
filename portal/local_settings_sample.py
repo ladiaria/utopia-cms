@@ -86,6 +86,10 @@ SENDNEWSLETTER_LOGFILE = '/home/user/utopia-cms-data/sendnewsletter/%s-%s.log'
 LAST_OLD_DAY = datetime(2013, 6, 15)
 EMAIL_EDITION_NUMBER_OFFSET = 0
 
+# Social auth for a local dev server
+USE_X_FORWARDED_HOST = True
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
+
 # Google tag manager
 GTM_CONTAINER_ID = ''
 GTM_AMP_CONTAINER_ID = ''

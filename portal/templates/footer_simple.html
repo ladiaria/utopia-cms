@@ -1,0 +1,20 @@
+<footer class="ld-footer-simple">
+  <div class="row ld-text-secondary align-center">
+    <div class="col s12">
+      <div>
+        {% if not user.is_authenticated %}
+          {% if not disable_signup %}
+            <b>¿No tenés cuenta?</b><br>
+            <a href="{% url 'subscribe_landing' %}">Suscribite</a> o <a href="{% url 'account-signup' %}">registrate</a>.
+          {% else %}
+            <b>¿Ya tenés una cuenta?</b><br>
+            <a href="{% url 'account-login' %}">Ingresá</a>
+          {% endif %}
+          <br><br>
+        {% endif %}
+        <b>¿Tenés consultas?</b><br>
+        Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
+      </div>
+    </div>
+  </div>
+</footer>

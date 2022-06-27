@@ -51,15 +51,5 @@
 {% endblock %}
 
 {% block footer_block %}
-  <footer class="ld-footer-simple">
-    <div class="row ld-text-secondary align-center">
-      <div class="col s12">
-        <div>
-          ¿No tenés suscripción? <a href="{% url 'subscribe_landing' %}">Suscribite</a>.
-          <br>
-          ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
-        </div>
-      </div>
-    </div>
-  </footer>
+  {% include 'footer_simple.html' %}
 {% endblock footer_block %}

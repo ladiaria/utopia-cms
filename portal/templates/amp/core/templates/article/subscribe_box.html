@@ -6,11 +6,12 @@
     <div class="ld-subscribe-box__info ld-caption">
       {% block subscribe_box_nl_subscribe_anon %}{{ publication.subscribe_box_nl_subscribe_anon|safe }}{% endblock %}
     </div>
-    <a href="{% block subscribe_box_signup_url %}{% url 'account-signup' %}{% endblock %}" class="ld-btn-default ld-btn-default--sm ld-btn-default--icon-envelope ld-btn-default--inverted">
-      Suscribite gratis
+    <a href="{% if category_signup %}{% url 'subscribe' planslug='DDIGM' category_slug=category.slug %}{% else %}{% url 'subscribe' planslug='DDIGM' %}{% endif %}"
+       class="ld-btn-default ld-btn-default--sm ld-btn-default--icon-envelope ld-btn-default--inverted">
+      Suscribite
     </a>
     <div class="ld-subscribe-box__login ld-text-secondary">
-      <p>¿Ya tenés suscripción?</p>
+      <p>¿Ya tenés cuenta?</p>
       <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ld-btn-dark-bordered--sm">
         Ingresá
       </a>

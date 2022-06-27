@@ -3,7 +3,7 @@
 <div class="ld-print print-header">
   <img src="{% static HOMEV3_LOGO_PRINTABLE %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_PRINTABLE_WIDTH }}" height="30" style="height:30px">
 </div>
-<div id="main-header" class="navbar-fixed nav-down{% if user.is_authenticated %} logged-in{% endif %}{% block header_extra_class %}{% if publication.is_emergente %} emergente{% endif %}{% endblock %}">
+<div id="main-header" class="navbar-fixed nav-down{% if user.is_authenticated %} logged-in{% endif %}{% block header_extra_class %}{% if publication.is_emergente %} emergente{% endif %}{% if is_subscriber_any %} subscriber{% endif %}{% endblock %}">
   <div class="nav-wrapper">
     {% spaceless %}
       <a class="header-logo emergentes" href="{% url 'home' %}"><img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_WIDTH }}" height="42"></a>
@@ -16,17 +16,23 @@
         {% endblock %}
         <ul class="navbar-right-tools right">
           {% if user.is_authenticated %}
-            <li class="hide-on-med-and-down">
+            <li class="{% if is_subscriber_any %}hide-on-med-and-down{% else %}hide-on-small-only{% endif %}">
               <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="user-dropdown">
                 <span class="inner">
                   Tu cuenta<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z" class="nav-fill" fill="#a4a4a4"/></svg>
                 </span>
               </a>
             </li>
-            {% if is_portada and publication == default_pub %}
-              <li class="hide-on-med-and-up a2hs-section-top" style="display: none;">
-                <a class="btn ingresar instalar-app a2hs-btn-top" href="#">Instalar App</a>
+            {% if not is_subscriber_any %}
+              <li class="hide-on-small-only">
+                <a class="ut-btn ut-btn-s ut-btn-light suscribirse" href="{% url 'subscribe_landing' %}">Suscribite</a>
               </li>
+            {% else %}
+              {% if is_portada and publication == default_pub %}
+                <li class="hide-on-med-and-up a2hs-section-top" style="display: none;">
+                  <a class="ut-btn ut-btn-light ut-btn-outline ut-btn-s ingresar instalar-app a2hs-btn-top" href="#">Instalar App</a>
+                </li>
+              {% endif %}
             {% endif %}
           {% else %}
             <li>

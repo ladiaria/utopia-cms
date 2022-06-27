@@ -4,7 +4,7 @@ from django.core.management import BaseCommand
 from django.core.cache import cache
 from django.db import connection
 
-from apps import core_articlevisits_mdb
+from apps import mongo_db
 from core.models import Article, ArticleViews
 
 
@@ -13,19 +13,19 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         vlevel = options.get('verbosity')
-        aviews = core_articlevisits_mdb.posts.find({'views': {'$gt': 0}})
+        aviews = mongo_db.core_articlevisits.find({'views': {'$gt': 0}})
         updates = {}
         for av in aviews:
             try:
                 article_id = av.get('article')
                 if Article.objects.filter(id=article_id).exists():
                     updates[article_id] = av.get('views')
-                    core_articlevisits_mdb.posts.update_one({'article': article_id}, {'$set': {'views': 0}})
+                    mongo_db.core_articlevisits.update_one({'article': article_id}, {'$set': {'views': 0}})
                 else:
                     # deleted article, remove the entry from mongo
                     if vlevel > 1:
                         print('removing deleted article %d from mongo' % article_id)
-                    core_articlevisits_mdb.posts.delete_one({'article': article_id})
+                    mongo_db.core_articlevisits.delete_one({'article': article_id})
             except Exception as e:
                 print(e)
         if updates:

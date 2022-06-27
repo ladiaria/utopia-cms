@@ -4,7 +4,7 @@
 from django.core.management import BaseCommand
 from django.db.utils import IntegrityError
 
-from apps import core_articleviewedby_mdb
+from apps import mongo_db
 from core.models import ArticleViewedBy
 
 
@@ -12,7 +12,7 @@ class Command(BaseCommand):
     help = "Moves article viewed by data from mongodb to Django model"
 
     def handle(self, *args, **options):
-        mdb_view = core_articleviewedby_mdb.posts.find_one_and_delete({})
+        mdb_view = mongo_db.core_articleviewedby.find_one_and_delete({})
         while mdb_view:
             try:
                 avb = ArticleViewedBy.objects.get(article=mdb_view['article'], user=mdb_view['user'])
@@ -25,4 +25,4 @@ class Command(BaseCommand):
                     )
                 except IntegrityError:
                     pass
-            mdb_view = core_articleviewedby_mdb.posts.find_one_and_delete({})
+            mdb_view = mongo_db.core_articleviewedby.find_one_and_delete({})

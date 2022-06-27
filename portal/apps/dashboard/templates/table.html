@@ -398,24 +398,31 @@
     </div>
   </div>
 {% elif table_id == 'audio_statistics' %}
-  <script type="text/javascript">
-      $(document).ready(function(){
-          $('#audio').bootstrapTable();
-      });
-      $('#audio-date').click(function(){
-        var date = $('.date-picker').val();
-        var month = date.split('/')[0];
-        var year = date.split('/')[1];
-        $('#inner-content').load('/dashboard/table/audio_statistics/?month=' + month + "&year=" + year);
+  <script>
+    $('#table-audio-statistics').bootstrapTable();
+    $('#audio-statistics-date').click(function(){
+      var date = $('.date-picker').val();
+      var month = date.split('/')[0];
+      var year = date.split('/')[1];
+      $('#inner-content').load('/dashboard/table/audio_statistics/?month=' + month + "&year=" + year);
     });
   </script>
   <div class="tab-pane fade show active" id="score" role="tabpanel" aria-labelledby="score-tab">
     <div role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
-        <h1 class="h2">Estadísticas de audio</h1>
+        <h4>
+          Estadísticas de audio desde el 1° de {{ date_start|date:"m/Y" }} hasta el {{ date_end|date:"d/m/Y" }}
+        </h4>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group mr-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="location.href='export/audio_statistics/'">Exportar</button>
+          </div>
+          <input class="date-picker" data-date-format="mm/yyyy" data-provide="datepicker">
+          <button class="btn btn-sm btn-outline-secondary" id="audio-statistics-date">Ir</button>
+        </div>
       </div>
       <div class="table-responsive">
-        <table id="audio" class="table table-striped table-sm">
+        <table id="table-audio-statistics" class="table table-striped table-sm">
           <thead>
             <tr>
               <th>Artículo</th>
@@ -430,18 +437,18 @@
             </tr>
           </thead>
           <tbody>
-            {% for item in rows %}
-            <tr>
-              <td><a href="{{ item.article_url }}">{{ item.article }}</a></td>
-              <td>{{ item.area }}</td>
-              <td>{{ item.date|date:"Y-m-d" }}</td>
-              <td class="text-center">{{ item.amp }}</td>
-              <td class="text-center">{{ item.clicks }}</td>
-              <td class="text-center">{{ item.percentage0 }}</td>
-              <td class="text-center">{{ item.percentage25 }}</td>
-              <td class="text-center">{{ item.percentage50 }}</td>
-              <td class="text-center">{{ item.percentage75 }}</td>
-            </tr>
+            {% for row in rows %}
+              <tr>
+                <td><a href="{{row.1}}">{{row.0}}</a></td>
+                <td>{{row.2}}</td>
+                <td>{{row.3}}</td>
+                <td>{{row.4}}</td>
+                <td>{{row.5}}</td>
+                <td>{{row.6}}</td>
+                <td>{{row.7}}</td>
+                <td>{{row.8}}</td>
+                <td>{{row.9}}</td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>

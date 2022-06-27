@@ -3,7 +3,7 @@ from django.db.models import Max
 
 from core.models import ArticleViewedBy
 
-from apps import core_articleviewedby_mdb
+from apps import mongo_db
 
 
 def latest_activity(user):
@@ -11,9 +11,9 @@ def latest_activity(user):
     Latest activity is the most recent date between last article visited and last login.
     @returns datetime
     """
-    if core_articleviewedby_mdb:
+    if mongo_db:
         latest_activity = list(
-            core_articleviewedby_mdb.posts.aggregate(
+            mongo_db.core_articleviewedby.aggregate(
                 [
                     {'$match': {'user': user.id}},
                     {'$group': {'_id': '$user', 'latest_activity': {'$max': '$viewed_at'}}},

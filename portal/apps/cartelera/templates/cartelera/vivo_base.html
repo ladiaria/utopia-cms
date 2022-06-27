@@ -35,9 +35,9 @@
                             </li>
                         {% else %}
                             <li class="hide-on-med-and-down">
-                                <a href="{% url 'account-login' %}?next={% if is_portada %}{{ SITE_URL }}{% else %}{{ request.path }}{% endif %}" class="btn ingresar">ingresá</a>
+                                <a href="{% url 'account-login' %}?next={% if is_portada %}{{ SITE_URL }}{% else %}{{ request.path }}{% endif %}" class="ut-btn ut-btn-light ut-btn-outline ut-btn-s ingresar">ingresá</a>
                             </li>
-                            <li class="hide-on-med-and-down"><a class="btn suscribirse right" href="{% url 'subscribe_landing' %}">suscribite</a></li>
+                            <li class="hide-on-med-and-down"><a class="ut-btn ut-btn-s ut-btn-light suscribirse right" href="{% url 'subscribe_landing' %}">suscribite</a></li>
                         {% endif %}
                         <li class="hide-on-small-and-down">
                             <button class="nav-menu-button right js-ld-main-menu-toggle">

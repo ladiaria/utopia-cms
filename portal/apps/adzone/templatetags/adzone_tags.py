@@ -12,7 +12,7 @@ from django import template
 from django.conf import settings
 from django.contrib.sites.models import Site
 
-from apps import adzone_mdb
+from apps import mongo_db
 
 from adzone.models import AdBase, AdImpression
 
@@ -48,7 +48,7 @@ def random_zone_ad(context, ad_zone):
         from_ip = settings.ADZONE_LOG_AD_IMPRESSIONS and context.get('from_ip')
         if from_ip:
             try:
-                adzone_mdb.impressions.insert_one(
+                mongo_db.adzone_impressions.insert_one(
                     {'ad': ad.id, 'source_ip': from_ip, 'impression_date': datetime.now()}
                 )
             except Exception:

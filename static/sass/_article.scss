@@ -1222,3 +1222,32 @@ body.article {
       }
     }
 }
+.mid-article-notice {
+    text-align: center;
+    position: relative;
+    padding: 20px 0;
+    font-family: AntennaCond, sans-serif;
+    font-size: 16px;
+    line-height: 22px;
+
+    a {
+        font-weight: bold;
+    }
+
+    &::before,
+    &::after   {
+        content: '';
+        display: block;
+        width: 98px;
+        height: 1px;
+        background: $lightGrey;
+        position: absolute;
+        left: calc(50% - 49px);
+    }
+    &::before {
+        top: 0;
+    }
+    &::after {
+        bottom: 0;
+    }
+}

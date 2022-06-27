@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.template import Library, Node, NodeList, TemplateSyntaxError, Variable
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.flatpages.models import FlatPage
 
 from core.models import Article
 from thedaily.models import SubscriptionPrices
@@ -98,6 +100,18 @@ def subscriptionprice(subscription_type):
     try:
         return int(SubscriptionPrices.objects.get(subscription_type=subscription_type).price)
     except SubscriptionPrices.DoesNotExist:
+        return u''
+
+
+@register.simple_tag
+def terms_and_conditions():
+    fp_id = settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID
+    if fp_id:
+        try:
+            return FlatPage.objects.get(id=fp_id).content
+        except FlatPage.DoesNotExist:
+            return u''
+    else:
         return u''
 
 

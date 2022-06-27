@@ -12,7 +12,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.core.urlresolvers import resolve
 
-from apps import signupwall_visitor_mdb
+from apps import mongo_db
 from core.models import Article, Section, Publication, ArticleUrlHistory, Category
 from signupwall.middleware import get_article_by_url_kwargs
 
@@ -41,7 +41,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if not signupwall_visitor_mdb:
+        if not mongo_db:
             return
 
         articles, main_sections, live, out_prefix = {}, {}, options.get('live'), options.get('out-prefix')
@@ -58,7 +58,7 @@ class Command(BaseCommand):
         find_filters = {'user': {'$exists': True}, 'path_visited': {'$exists': True}}
         if not live:
             find_filters['timestamp'] = {'$gte': last_month_first, '$lt': dt_until}
-        visitors = signupwall_visitor_mdb.posts.find(find_filters, no_cursor_timeout=True)
+        visitors = mongo_db.signupwall_visitor.find(find_filters, no_cursor_timeout=True)
 
         verbosity = options.get('verbosity')
         if verbosity > 1:
@@ -134,12 +134,13 @@ class Command(BaseCommand):
         w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, '%sarticles.csv' % out_prefix), 'w'))
         i = 0
         for article_id, score in sorted_x:
-            a = Article.objects.get(id=article_id)
+            a, category_or_publication = Article.objects.get(id=article_id), ''
             i += 1
-            if a.main_section.section and a.main_section.section.category:
-                category_or_publication = a.main_section.section.category
-            else:
-                category_or_publication = a.main_section.edition.publication
+            if a.main_section:
+                if a.main_section.section and a.main_section.section.category:
+                    category_or_publication = a.main_section.section.category
+                else:
+                    category_or_publication = a.main_section.edition.publication
             pub_section = a.publication_section()
             w.writerow(
                 [

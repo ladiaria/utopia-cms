@@ -1,3 +1,24 @@
+# version 0.2.7 (2022-06-27)
+
+- Removed some obsoleted template tags modules and one-time scripts.
+- All MongoDB databases were migrated to a simpler approach to collections in only one MongoDB database.
+- Dashboard audio stats feature improved.
+- Created a simple footer template to remove repeated code in many templates.
+- Sample nginx conf improved.
+- CSS and UX improved in many templates.
+- Crispy forms simplifications when defining child form classes.
+- Free subscription notion changed to a more suitable "Free account" notion.
+- Terms and Conditions check field added to all registration and subscription forms.
+- Syntax code style improved in many modules and templates.
+- Some pending de-customizations were detected and tagged with TODO comments.
+- Subscriber hashed id migrated to a Subscriber class method for simpler usage and remove repeated code.
+- Fixed bug in section detail view.
+- Support to hide the article's photo in article cards when the templates are overrided.
+- Support to override the article body content in the article detail view.
+- noindex meta tag added in the short url test template.
+- Satirical articles were ignored from the sitemaps.
+- Support to use google sign-in in development time.
+
 # version 0.2.6 (2022-05-15)
 
 - Dashboard app updates and new features.

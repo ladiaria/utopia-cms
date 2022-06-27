@@ -3,6 +3,8 @@ from hashlib import md5
 import re
 import smtplib
 
+from hashids import Hashids
+
 from django.conf import settings
 from django.http import HttpResponseBadRequest
 
@@ -112,3 +114,7 @@ def smtp_connect(alternative=False):
         except smtplib.SMTPException:
             pass
     return s
+
+
+def decode_hashid(hashed_id):
+    return Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)
