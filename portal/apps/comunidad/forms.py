@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django import forms
+from django.db.utils import ProgrammingError
+from django.contrib.sites.models import Site
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Field
@@ -7,6 +11,12 @@ from crispy_forms.bootstrap import FormActions
 
 from comunidad.models import SubscriberEvento, SubscriberArticle, Registro
 from thedaily.models import Subscriber
+
+
+try:
+    current_site_name = Site.objects.get_current().name
+except ProgrammingError:
+    current_site_name = 'este sitio'
 
 
 class ArticleForm(forms.ModelForm):
@@ -22,7 +32,7 @@ class ArticleForm(forms.ModelForm):
         self.helper.help_text_inline = True
         self.helper.error_text_inline = True
         self.helper.render_unmentioned_fields = False
-        self.helper.layout = Layout('sections', 'headline', 'deck', 'body', FormActions(Submit('save', u'Publicar')))
+        self.helper.layout = Layout('sections', 'headline', 'deck', 'body', FormActions(Submit('save', 'Publicar')))
 
         super(ArticleForm, self).__init__(*args, **kwargs)
 
@@ -52,7 +62,7 @@ class EventoForm(forms.ModelForm):
             Field('end', css_class="datepicker", readonly=True),
             'precio',
             'poster',
-            FormActions(Submit('save', u'Publicar')),
+            FormActions(Submit('save', 'Publicar')),
         )
 
         super(EventoForm, self).__init__(*args, **kwargs)
@@ -63,16 +73,17 @@ class EventoForm(forms.ModelForm):
 
 
 class RegistroForm(forms.ModelForm):
-    """ Registro de la utilizacion de un beneficio """
-    document = forms.CharField(max_length=50, required=False,
-        label='Documento', help_text=u'Número de cédula sin puntos ni guiones '
-        'u otro documento registrado en la diaria.')  # TODO: de-customize
+    """ Registro de la utilización de un beneficio """
+    document = forms.CharField(
+        max_length=50,
+        required=False,
+        label='Documento',
+        help_text='Documento (ej.: cédula sin puntos ni guiones) registrado en %s.' % current_site_name,
+    )
 
     def __init__(self, benefit_qs, *args, **kwargs):
         self.helper = FormHelper()
-        self.helper.layout = Layout(
-            Field('document'), Field('benefit'),
-            FormActions(Submit('', u'Consultar')))
+        self.helper.layout = Layout(Field('document'), Field('benefit'), FormActions(Submit('', 'Consultar')))
         super(RegistroForm, self).__init__(*args, **kwargs)
         self.fields['benefit'].queryset = benefit_qs
         self.fields['benefit'].label = 'Beneficio'
@@ -103,8 +114,7 @@ class RegistroForm(forms.ModelForm):
             except Subscriber.MultipleObjectsReturned:
                 raise forms.ValidationError("Muchos suscriptores encontrados")
         elif benefit:
-            raise forms.ValidationError("Cupo restante: %s" % (cupo_restante \
-                if benefit.limit else 'ilimitado'))
+            raise forms.ValidationError("Cupo restante: %s" % (cupo_restante if benefit.limit else 'ilimitado'))
         return cleaned_data
 
     class Meta:

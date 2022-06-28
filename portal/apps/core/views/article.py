@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import requests
 import json
 from datetime import date, datetime, timedelta
@@ -69,13 +71,13 @@ def article_list(request, type_slug):
 
 
 def article_detail(request, year, month, slug, domain_slug=None):
-    domain, category = u'publication', None
+    domain, category = 'publication', None
     if domain_slug:
         try:
             Publication.objects.get(slug=domain_slug)
         except Publication.DoesNotExist:
             category = get_object_or_404(Category, slug=domain_slug)
-            domain = u'category'
+            domain = 'category'
 
     if settings.DEBUG:
         print('DEBUG: article_detail view called with (%d, %d, %s, %s)' % (year, month, slug, domain_slug))
@@ -102,7 +104,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
             )
     except MultipleObjectsReturned:
         # TODO: mandar email a periodistas web
-        raise Http404(u"Múltiples artículos con igual publicación en el mes.")
+        raise Http404("Múltiples artículos con igual publicación en el mes.")
     except Article.DoesNotExist:
         s = urlsplit(request.get_full_path())
         article = get_object_or_404(ArticleUrlHistory, absolute_url=request.path).article
@@ -238,18 +240,20 @@ def get_article_tags(article):
 
 
 def report_error(request, article):
-    from django.contrib.sites.models import Site
     from django.core.mail import mail_managers
 
-    body = u"""Reporte enviado por %(name)s sobre el artículo "%(article)s":
+    body = """Reporte enviado por %(name)s sobre el artículo "%(article)s":
     %(message)s
 
 Puede editar el artículo en:
     https://%(site)s/admin/core/article/%(id)i/
     """ % {
-        'name': request.user.get_full_name(), 'article': article.headline,
-        'message': request.POST.get('error'), 'id': article.id,
-        'site': Site.objects.get_current().domain}
+        'name': request.user.get_full_name(),
+        'article': article.headline,
+        'message': request.POST.get('error'),
+        'id': article.id,
+        'site': Site.objects.get_current().domain,
+    }
     mail_managers(subject='Error en artículo', message=body)
     return HttpResponseRedirect(reverse('article_report_sent'))
 
@@ -266,22 +270,16 @@ def send_by_email(request):
         else:
             user_name = u"Usuario anónimo"
 
-        body = u"""%(name)s compartió contigo el artículo "%(article)s":
+        body = """%(name)s compartió contigo el artículo "%(article)s":
         %(message)s
 Podés ver el artículo aquí: %(url)s
-        """ % {
-            'name': user_name, 'article': article.headline,
-            'message': message, 'id': article.id,
-            'site': Site.objects.get_current().domain,
-            'url': article.get_absolute_url()}
+        """ % {'name': user_name, 'article': article.headline, 'message': message, 'url': article.get_absolute_url()}
 
         try:
-            send_mail(
-                u'Te recomiendan un artículo', body,
-                settings.DEFAULT_FROM_EMAIL, [email])
+            send_mail('Te recomiendan un artículo', body, settings.DEFAULT_FROM_EMAIL, [email])
             data = {"status": "OK", "email": email}
         except BadHeaderError:
-            return HttpResponse(u'Cabezal incorrecto.')
+            return HttpResponse('Cabezal incorrecto.')
     else:
         data = {"status": "ERROR", "errors": str(form.errors["email"])}
     return HttpResponse(json.dumps(data), content_type="application/json")

@@ -216,10 +216,4 @@ class Command(BaseCommand):
             else:
                 continue
 
-            w.writerow([
-                i,
-                category_or_publication.name,
-                articles_count,
-                score,
-                score / (articles_count or 1),
-            ])
+            w.writerow([i, category_or_publication.name, articles_count, score, score / (articles_count or 1)])
