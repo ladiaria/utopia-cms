@@ -32,11 +32,14 @@ def gtm(request):
 
 def site(request):
     site = Site.objects.get_current()
-    meta_robots_content = 'noindex' if any(['/' in r.disallowed_urls() for r in site.rule_set.all()]) else 'all'
     return {
-        'site': site, 'meta_robots_content': meta_robots_content,
+        'site': site,
+        'meta_robots_content': 'noindex' if any(
+            ['/' in r.disallowed.values_list('pattern', flat=True) for r in site.rule_set.all()]
+        ) else 'all',
         'country_name': pycountry.countries.get(alpha2=settings.LOCAL_COUNTRY).name,
-        'site_description': getattr(settings, 'HOMEV3_SITE_DESCRIPTION', site.name)}
+        'site_description': getattr(settings, 'HOMEV3_SITE_DESCRIPTION', site.name),
+    }
 
 
 def publications(request):
