@@ -6,6 +6,11 @@ from core.models import Article
 from . import NewsSitemap
 
 
+published_non_satirical_articles = Article.published.exclude(
+    sections__slug__in=getattr(settings, 'CORE_SATIRICAL_SECTIONS', ())
+)
+
+
 class ArticleSitemap(Sitemap):
     changefreq = 'never'
     priority = 1.0
@@ -13,7 +18,7 @@ class ArticleSitemap(Sitemap):
     limit = 1000
 
     def items(self):
-        return Article.published.exclude(sections__slug__in=settings.CORE_SATIRICAL_SECTIONS)
+        return published_non_satirical_articles
 
 
 class ArticleNewsSitemap(NewsSitemap):
@@ -22,4 +27,4 @@ class ArticleNewsSitemap(NewsSitemap):
     protocol = 'https'
 
     def items(self):
-        return Article.published.exclude(sections__slug__in=settings.CORE_SATIRICAL_SECTIONS)
+        return published_non_satirical_articles

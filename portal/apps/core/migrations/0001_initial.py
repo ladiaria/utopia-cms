@@ -341,7 +341,7 @@ class Migration(migrations.Migration):
                 ('white_text', models.BooleanField(default=False, verbose_name='texto blanco')),
                 ('show_description', models.BooleanField(default=False, verbose_name='mostrar descripci\xf3n')),
                 ('show_image', models.BooleanField(default=False, verbose_name='mostrar imagen')),
-                ('category', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='core.Category', verbose_name=b'\xc3\xa1rea')),
+                ('category', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='core.Category', verbose_name='\xe1rea')),
                 ('publications', models.ManyToManyField(blank=True, null=True, to='core.Publication', verbose_name='publicaciones')),
             ],
             options={

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import os
 import time
 import locale
@@ -1359,18 +1360,39 @@ class Article(ArticleBase):
             s = self.sections.all()[:1]
             return s[0] if s else None
 
-    def last_published_by_category(self, category):
+    def last_published_by_publication(self, publication=None):
         """
-        Returns the last date published of the article inside a section that
-        has the category passed by param. If no editions found, return the
-        article's date_published.
+        Returns the last date published of the article in the publication given by param.
+        If no publication given, use the ... TODO: complete this sentence (awaiting feedback).
+        If no editions found, return the article's date_published.
         """
         if self.is_published:
             try:
-                result = Edition.objects.filter(id__in=[
-                    v[0] for v in ArticleRel.objects.filter(
-                        article=self, section__in=category.section_set.all()
-                    ).values_list('edition')]
+                publication_slugs = []  # TODO: compute value
+                result = Edition.objects.filter(
+                    id__in=[
+                        v[0] for v in ArticleRel.objects.filter(
+                            article=self, edition__publication__slug__in=publication_slugs
+                        ).values_list('edition')
+                    ]
+                ).order_by('-date_published')[0].date_published
+            except IndexError:
+                result = self.date_published.date()
+            return result
+
+    def last_published_by_category(self, category):
+        """
+        Returns the last date published of the article inside a section that has the category passed by param.
+        If no editions found, return the article's date_published.
+        """
+        if self.is_published:
+            try:
+                result = Edition.objects.filter(
+                    id__in=[
+                        v[0] for v in ArticleRel.objects.filter(
+                            article=self, section__in=category.section_set.all()
+                        ).values_list('edition')
+                    ]
                 ).order_by('-date_published')[0].date_published
             except IndexError:
                 result = self.date_published.date()
