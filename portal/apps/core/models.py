@@ -1360,21 +1360,18 @@ class Article(ArticleBase):
             s = self.sections.all()[:1]
             return s[0] if s else None
 
-    def last_published_by_publication(self, publication=None):
+    def last_published_by_publication_slug(self, publication_slug=None):
         """
-        Returns the last date published of the article in the publication given by param.
-        If no publication given, use the ... TODO: complete this sentence (awaiting feedback).
-        If no editions found, return the article's date_published.
+        Returns the last date published of the article in the publication slug given by param, if no given, use anyone.
+        If no editions, or no editions found for the publication given, return the article's date_published.
         """
         if self.is_published:
             try:
-                publication_slugs = []  # TODO: compute value
+                filter_kwargs = {'article': self}
+                if publication_slug:
+                    filter_kwargs['edition__publication__slug'] = publication_slug
                 result = Edition.objects.filter(
-                    id__in=[
-                        v[0] for v in ArticleRel.objects.filter(
-                            article=self, edition__publication__slug__in=publication_slugs
-                        ).values_list('edition')
-                    ]
+                    id__in=[v[0] for v in ArticleRel.objects.filter(**filter_kwargs).values_list('edition')]
                 ).order_by('-date_published')[0].date_published
             except IndexError:
                 result = self.date_published.date()

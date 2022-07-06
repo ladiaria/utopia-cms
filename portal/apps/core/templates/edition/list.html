@@ -5,57 +5,53 @@
 {% block body_class %}edition{% endblock %}
 
 {% block content %}
-    <h1>Archivo</h1>
-    <p>Aquí podrás encontrar todas las ediciones anteriores de la diaria.</p>
+  <h1>Archivo</h1>
+  <p>Aquí podrás encontrar todas las ediciones anteriores de {{ site.name }}.</p>
 
-    <div class="row">
+  <div class="row">
     {% for edition_obj in editions.object_list %}
-        <article class="col-xs-3 col-sm-3 col-md-3" style="text-align:center;">
-            <h2></h2>
-            {% if edition_obj.cover %}
-                {% thumbnail edition_obj.cover "500x999" as cover_lg %}
-                    <a href="{{ cover_lg.url }}" class="jbox" title="{{ edition_obj.date_published|date:"l j \d\e F \d\e Y"|capfirst }}">
-                    {% thumbnail edition_obj.cover "204x500" as cover_sm %}
-                        <img src="{{ cover_sm.url }}" alt="Tapa de la diaria del {{ edition_obj.date_published|date:"l j \d\e F \d\e Y" }}" loading="lazy"></a>
-                    {% endthumbnail %}
-                {% endthumbnail %}
-            {% endif %}
-
-            {% if edition_obj.title %}
-                <p style="text-align:center;">{{ edition_obj.title }}</p>
-            {% endif %}
-            <p style="text-align:center;">
-                <a href="//{{ site.domain }}/{{ edition_obj.publication.slug }}/edicion/{{ edition_obj.date_published|date:'Y/m/j' }}/">
-                    {{ edition_obj.date_published|date:"l j \d\e F \d\e Y"|capfirst }}{% ifnotequal edition_obj.publication default_pub %} ({{ edition_obj.publication.name }}){% endifnotequal %}
-                </a>
-            </p>
-            {% comment %}
-            <p>
-                <a href="{{ edition_obj.get_download_url }}">Descargar PDF</a>
-            </p>
-            {% get_home for edition_obj as home %}
-            {% if home %}
-                <p>
-                    <a href="{{ home.get_absolute_url }}">Ver edición web</a>
-                </p>
-            {% endif %}
-            {% endcomment %}
-        </article>
-      {% if forloop.counter|divisibleby:3 %}
-    </div>
-    <div class="row">
+      <article class="col-xs-3 col-sm-3 col-md-3" style="text-align:center;">
+        <h2></h2>
+        {% if edition_obj.cover %}
+          {% thumbnail edition_obj.cover "500x999" as cover_lg %}
+            <a href="{{ cover_lg.url }}" class="jbox" title="{{ edition_obj.date_published|date:"l j \d\e F \d\e Y"|capfirst }}">
+            {% thumbnail edition_obj.cover "204x500" as cover_sm %}
+              <img src="{{ cover_sm.url }}" alt="Tapa de la diaria del {{ edition_obj.date_published|date:"l j \d\e F \d\e Y" }}" loading="lazy"></a>
+            {% endthumbnail %}
+          {% endthumbnail %}
         {% endif %}
+
+        {% if edition_obj.title %}
+          <p style="text-align:center;">{{ edition_obj.title }}</p>
+        {% endif %}
+        <p style="text-align:center;">
+          <a href="//{{ site.domain }}/{{ edition_obj.publication.slug }}/edicion/{{ edition_obj.date_published|date:'Y/m/j' }}/">
+            {{ edition_obj.date_published|date:"l j \d\e F \d\e Y"|capfirst }}{% ifnotequal edition_obj.publication default_pub %} ({{ edition_obj.publication.name }}){% endifnotequal %}
+          </a>
+        </p>
+        {% comment %}
+        <p>
+          <a href="{{ edition_obj.get_download_url }}">Descargar PDF</a>
+        </p>
+        {% get_home for edition_obj as home %}
+        {% if home %}
+          <p>
+            <a href="{{ home.get_absolute_url }}">Ver edición web</a>
+          </p>
+        {% endif %}
+        {% endcomment %}
+      </article>
+      {% if forloop.counter|divisibleby:3 %}
+        </div>
+        <div class="row">
+      {% endif %}
     {% endfor %}
-    </div>
-    <div class="row">
-        {% ifnotequal editions.paginator.num_pages 1 %}
-            <div class="pagination">
-                {% if editions.has_other_pages %}
-                    {% with pager=editions %}
-                        {% include "pagination.html" %}
-                    {% endwith %}
-                {% endif %}
-            </div>
-        {% endifnotequal %}
-    </div>
+  </div>
+  <div class="row">
+    {% ifnotequal editions.paginator.num_pages 1 %}
+      <div class="pagination">
+        {% if editions.has_other_pages %}{% include "pagination.html" with pager=editions %}{% endif %}
+      </div>
+    {% endifnotequal %}
+  </div>
 {% endblock %}
