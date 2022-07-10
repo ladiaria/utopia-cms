@@ -24,7 +24,7 @@
           <div class="container">
             <p>{{ big_photo.date_taken }}</p>
             {% if big_photo.extended.photographer %}
-              <p>{{ big_photo.extended.type_verbose }}: {{ big_photo.extended.photographer }}</p>
+              <p>{{ big_photo.extended.get_type_display }}: {{ big_photo.extended.photographer }}</p>
             {% endif %}
           </div>
         </div>

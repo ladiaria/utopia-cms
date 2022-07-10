@@ -28,16 +28,13 @@ from favit.models import Favorite
 
 from tagging.models import Tag
 from apps import mongo_db
-from decorators import render_response, decorate_if_no_staff, decorate_if_staff
+from decorators import decorate_if_no_staff, decorate_if_staff
 from core.forms import ReportErrorArticleForm, SendByEmailForm
 from core.models import Publication, Category, Article, ArticleUrlHistory
 
 
 class ArticleDetailView(DetailView):
     model = Article
-
-
-to_response = render_response('core/templates/article/')
 
 
 def get_type(type_slug):
@@ -48,7 +45,6 @@ def get_type(type_slug):
 
 
 @never_cache
-@to_response
 def article_list(request, type_slug):
     atype = {}
     atype['slug'], atype['name'] = get_type(type_slug)
@@ -67,7 +63,7 @@ def article_list(request, type_slug):
         articles = paginator.page(page)
     except (EmptyPage, InvalidPage):
         articles = paginator.page(paginator.num_pages)
-    return '../section/detail.html', {'articles': articles, 'section': atype}
+    return render(request, 'section/detail.html', {'articles': articles, 'section': atype})
 
 
 def article_detail(request, year, month, slug, domain_slug=None):
@@ -103,16 +99,20 @@ def article_detail(request, year, month, slug, domain_slug=None):
                 urlunsplit((settings.URL_SCHEME, netloc, article_url, s.query, s.fragment))
             )
     except MultipleObjectsReturned:
-        # TODO: mandar email a periodistas web
-        raise Http404("Múltiples artículos con igual publicación en el mes.")
+        # TODO: this multiple article situation should be notified
+        raise Http404("Más de un artículo con el mismo slug en el mismo mes.")
     except Article.DoesNotExist:
         s = urlsplit(request.get_full_path())
-        article = get_object_or_404(ArticleUrlHistory, absolute_url=request.path).article
-        return HttpResponsePermanentRedirect(
-            urlunsplit((settings.URL_SCHEME, netloc, article.get_absolute_url(), s.query, s.fragment))
-        )
+        last_by_hist = ArticleUrlHistory.objects.filter(absolute_url=request.path).last()
+        # TODO: compute filter count and if > 1 the situation should be notified
+        if last_by_hist:
+            return HttpResponsePermanentRedirect(
+                urlunsplit((settings.URL_SCHEME, netloc, last_by_hist.article.get_absolute_url(), s.query, s.fragment))
+            )
+        else:
+            raise Http404
 
-    # 2. si no está publicado solo se accede siendo staff
+    # 2. access to staff only if the article is not published
     if not article.is_published and not request.user.is_staff:
         raise Http404
 

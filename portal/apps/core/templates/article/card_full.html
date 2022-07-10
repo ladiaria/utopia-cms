@@ -2,37 +2,31 @@
 {% load bleach_tags core_tags ldml %}
 
 {% block image %}
-
-<div class="fullwidth-container">
-<div class="main-photo">
-    <div>
-      <figure class="principal {{ card_size }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" >
-        <picture>
-          <!--[if IE 9]><video style="display: none;"><![endif]-->
-          <source srcset="{{ article.photo.get_1600w_url }}" media="(min-width: 1200px)">
-          <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-          <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
-          <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
-          <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
-          <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 0px)">
-          <!--[if IE 9]></video><![endif]-->
-          <img id="main-photo"
-          class="responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
-          data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-          alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-          width="700"
-          {% if article.photo_image_file_exists %}
-          height="{{ article.photo.get_700w_size.1 }}"
-          {% endif %}
-          loading="lazy">
-        </picture>
-        <figcaption class="caption">
-          {% if article.photo.caption %} {{ article.photo.caption }}{% endif %}
-        </figcaption>
-      </figure>
+  <div class="fullwidth-container">
+    <div class="main-photo">
+      <div>
+        <figure class="principal {{ card_size }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+          <picture>
+            <!--[if IE 9]><video style="display: none;"><![endif]-->
+            <source srcset="{{ article.photo.get_1600w_url }}" media="(min-width: 1200px)">
+            <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+            <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+            <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
+            <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+            <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 0px)">
+            <!--[if IE 9]></video><![endif]-->
+            <img id="main-photo" class="responsive-img {{ article.photo_layout }}"
+                 data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                 width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}
+                 loading="lazy">
+          </picture>
+          {% if article.photo.caption %}<figcaption class="caption">{{ article.photo.caption }}</figcaption>{% endif %}
+        </figure>
+      </div>
     </div>
-</div>
+  </div>
 {% endblock %}
+
 {% block header %}
   <div class="article-header">
     <h1 class="article-title">

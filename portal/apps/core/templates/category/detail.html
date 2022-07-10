@@ -55,9 +55,9 @@
                     <picture>
                       <source srcset="{{ cover_article.photo.get_1200w_url }}" media="(min-width: 700px)">
                       <source srcset="{{ cover_article.photo.get_700w_url }}" media="(min-width: 0)">
-                      <img class="ld-card__img" title="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}" alt="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}"
+                      <img class="ld-card__img"
                            width="700"{% if cover_article.photo_image_file_exists %} height="{{ cover_article.photo.get_700w_size.1 }}"{% endif %}
-                      >
+                           title="{{ cover_article.photo_caption }}" alt="{{ cover_article.photo_caption }}">
                     </picture>
                   </figure>
                 </a>
@@ -123,11 +123,9 @@
             {% render_toolbar_for a %}
             {% if a.photo %}
               <a href="{{ a.get_absolute_url }}" class="ld-card__img-link">
-                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}"
-                     title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                     alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                     width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}
-                     loading="lazy">
+                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" loading="lazy"
+                     title="{{ a.photo_caption }}" alt="{{ a.photo_caption }}"
+                     width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}>
               </a>
             {% endif %}
             <div class="ld-card__body">
@@ -171,13 +169,9 @@
             </div>
             {% if a.photo.extended.square_version %}
               <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
-                <img class="ld-card__img"
-                     src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}"
-                     title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                     alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
-                     width="700"
-                     height="700"
-                     loading="lazy">
+                <img class="ld-card__img" width="700" height="700" loading="lazy"
+                     title="{{ a.photo_caption }}" alt="{{ a.photo_caption }}"
+                     src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}">
               </a>
             {% endif %}
           </div>
@@ -275,7 +269,7 @@
               <div class="container">
                 <p>{{ big_photo.date_taken }}</p>
                 {% if big_photo.extended.photographer %}
-                  <p>{{ big_photo.extended.type_verbose }}: {{ big_photo.extended.photographer }}</p>
+                  <p>{{ big_photo.extended.get_type_display }}: {{ big_photo.extended.photographer }}</p>
                 {% endif %}
               </div>
             </div>

@@ -202,7 +202,7 @@ def login(request):
         response = render(
             request,
             getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html'),
-            {'login_form': login_form, 'next_page': next_page, 'next': pathname2url(next_page)},
+            {'login_form': login_form, 'next_page': next_page, 'next': pathname2url(next_page.encode('utf8'))},
         )
     response['Expires'], response['Pragma'] = 0, 'no-cache'
     return response

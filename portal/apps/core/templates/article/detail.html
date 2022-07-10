@@ -99,19 +99,15 @@
                       <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
                       <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
                       <!--[if IE 9]></video><![endif]-->
-                      <img class="ld-article__main-photo materialboxed responsive-img{% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
-                           data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                           alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                           loading="lazy">
+                      <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
+                           data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
                     </picture>
                     <figcaption class="caption">
                       {% if article.photo.caption %}
                         <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
                       {% endif %}
-                      {% if article.photo.extended.photographer %}
-                        <p>
-                          {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
-                        </p>
+                      {% if article.photo_author %}
+                        <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
                       {% endif %}
                     </figcaption>
                   </figure>
@@ -120,22 +116,20 @@
             </div>
           {# missing close div here is closed correctly in line 243 #}
         {% else %}
-          <div class="container-photo photo{% if card_size %} {{ card_size }}{% else %} BG{% endif %}
-                     {% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}">
+          <div class="container-photo photo {{ card_size|default:'BG' }} {{ article.photo_layout }}">
             <figure class="principal">
               <picture class="materialboxed">
                 <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
                 <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
                 <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
-                <img class="ld-article__main-photo responsive-img {% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}"
-                     data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                     alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
+                     data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
                      width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}>
               </picture>
               <figcaption class="article-caption container ld-caption">
                 <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
-                {% if article.photo.extended.photographer %}
-                  <p>{{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}</p>
+                {% if article.photo_author %}
+                  <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
                 {% endif %}
               </figcaption>
             </figure>
@@ -319,10 +313,8 @@
                         <img src="{{ photo.get_article_thumb_url }}" alt="{{ photo.caption }}" class="gallery_thumb">
                         <div class="caption hide">
                           {{ photo.caption }}
-                          {% if article.photo.extended.photographer %}
-                            <span class="small soft">
-                              {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
-                            </span>
+                          {% if article.photo_author %}
+                            <span class="small soft">{{ article.photo_type }}: {{ article.photo_author }}</span>
                           {% endif %}
                         </div>
                       </a>

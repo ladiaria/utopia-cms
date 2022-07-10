@@ -1,22 +1,16 @@
 {% load bleach_tags core_tags ldml %}
 
-<article class="ld-card {% if article.photo.extended.is_portrait %} portrait{% else %} landscape{% endif %}
+<article class="ld-card {{ article.photo_layout }}
             {% block class %}{% endblock %}{% if article.photo != None %} has_photo{% endif %}
             card-media-{{ media }} {{ publication }} {{ publication }}-section {{ card_type }} {{ card_display }} {{ card_size }}
-            {% if card_display == 'horizontal' %} responsive{% endif %}"
+            {% if card_display == 'horizontal' %}responsive{% endif %}"
          data-id="{{ article.id }}" data-template="article_card">
   {% block image %}
     {% if article.photo and card_type %}
       <a href="{{ article.get_absolute_url }}">
-        <img class="ld-card__img"
-             src="{{ article.photo.get_700w_url }}"
-             width="700"
-             {% if article.photo_image_file_exists %}
-             height="{{ article.photo.get_700w_size.1 }}"
-             {% endif %}
-             title="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-             alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-             loading="lazy">
+        <img class="ld-card__img" src="{{ article.photo.get_700w_url }}" loading="lazy"
+             width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}
+             title="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
       </a>
     {% endif %}
   {% endblock %}

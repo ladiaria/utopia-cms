@@ -51,7 +51,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 
 from apps import blacklisted
-from core.templatetags.ldml import ldmarkup, cleanhtml
+from core.templatetags.ldml import ldmarkup, cleanhtml, remove_markup
 from photologue_ladiaria.models import PhotoExtended
 from photologue.models import Gallery, Photo
 from audiologue.models import Audio
@@ -1141,6 +1141,41 @@ class ArticleBase(Model, CT):
             result = False
         return result
 
+    @property
+    def photo_width(self):
+        try:
+            result = self.photo.image.width
+        except RuntimeError:
+            result = self.photo.extended.width
+        return result
+
+    @property
+    def photo_height(self):
+        try:
+            result = self.photo.image.height
+        except RuntimeError:
+            result = self.photo.extended.height
+        return result
+
+    @property
+    def photo_layout(self):
+        return 'landscape' if self.photo.extended.is_landscape else 'portrait'
+
+    @property
+    def photo_type(self):
+        return self.photo.extended.get_type_display()
+
+    @property
+    def photo_author(self):
+        return self.photo and self.photo.extended.photographer
+
+    @property
+    def photo_caption(self):
+        result = self.photo.caption or "Foto principal del artículo '%s'" % remove_markup(self.headline)
+        if self.photo_author:
+            result += ' · %s: %s' % (self.photo_type, self.photo_author)
+        return result
+
     def gallery_photos(self):
         """
         Return only those photos whose image file exists
@@ -1470,11 +1505,8 @@ class Article(ArticleBase):
             result['body'] = self.body
             if self.photo:
                 result['photo'] = {'get_700w_url': self.photo.get_700w_url(), 'caption': self.photo.caption}
-                if self.photo.extended.photographer:
-                    result['photo']['extended'] = {
-                        'photographer': {'name': self.photo.extended.photographer.name},
-                        'type_verbose': self.photo.extended.type_verbose(),
-                    }
+                if self.photo_author:
+                    result.update({'photo_author': self.photo_author.name, 'photo_type': self.photo_type})
         return result
 
 

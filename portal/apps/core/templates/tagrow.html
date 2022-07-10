@@ -8,7 +8,10 @@
         <div class="ld-card" data-id="{{ article.id }}" data-template="article_card_new">
           {% if article.photo %}
             <a href="{{ article.get_absolute_url }}">
-              <img class="ld-card__img" src="{{ article.photo.get_350w_url }}" data-srcset="{{ article.photo.get_350w_url }} 320w, {{ article.photo.get_600w_url }} 450w" data-sizes="auto" title="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% if article.photo.extended.photographer %} · {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}{% endif %}{% endif %}" srcset="{{ article.photo.get_350w_url }} 320w, {{ article.photo.get_600w_url }} 450w"
+              <img class="ld-card__img" src="{{ article.photo.get_350w_url }}" data-sizes="auto"
+                   srcset="{{ article.photo.get_350w_url }} 320w, {{ article.photo.get_600w_url }} 450w"
+                   data-srcset="{{ article.photo.get_350w_url }} 320w, {{ article.photo.get_600w_url }} 450w"
+                   title="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
                    width="350"{% if article.photo_image_file_exists %} height="{{ article.photo.get_350w_size.1 }}"{% endif %}
                    loading="lazy">
             </a>
@@ -29,10 +32,8 @@
             {% endif %}
 
             <div class="ld-card__byline">
-              {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo.extended.photographer %}
-                <div class="ld-card__byline">
-                  {{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}
-                </div>
+              {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo_author %}
+                <div class="ld-card__byline">{{ article.photo_type }}: {{ article.photo_author }}</div>
               {% endif %}
               {% with authors=article.get_authors %}
                 {% if authors %}

@@ -22,7 +22,7 @@ from django.utils import translation
 
 from apps import blacklisted
 from core.models import Category, CategoryNewsletter, Section, Article, get_latest_edition
-from core.templatetags.core_tags import remove_markup
+from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter, subscribers_nl_iter_filter
 from dashboard.models import NewsletterDelivery
@@ -58,12 +58,14 @@ def build_and_send(
     partitions,
     mod,
     subscriber_ids,
+    hide_after_content_block,
 ):
 
     site = Site.objects.get(id=site_id) if site_id else Site.objects.get_current()
     category_slug, export_only = category if offline else category.slug, export_subscribers or export_context
-    context = {'category': category, 'newsletter_campaign': category_slug}
-    export_ctx = {'newsletter_campaign': category_slug}
+    export_ctx = {'newsletter_campaign': category_slug, 'hide_after_content_block': hide_after_content_block}
+    context = export_ctx.copy()
+    context['category'] = category
 
     try:
 
@@ -461,6 +463,13 @@ class Command(BaseCommand):
             dest='mod',
             help=u'When --partitions is set, only take receipts whose id MOD partitions == this value e.g.: --mod=0',
         )
+        parser.add_argument(
+            '--hide-after-content-block',
+            action='store_true',
+            default=False,
+            dest='hide_after_content_block',
+            help='Hide after_content block in the newsletter template',
+        )
 
     def handle(self, *args, **options):
         partitions, mod, offline = options.get('partitions'), options.get('mod'), options.get('offline')
@@ -495,6 +504,7 @@ class Command(BaseCommand):
             partitions,
             mod,
             options.get('subscriber_ids'),
+            options.get('hide_after_content_block'),
         )
         if not export_only:
             log.info(

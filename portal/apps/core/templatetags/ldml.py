@@ -115,6 +115,23 @@ def amp_ldmarkup(value, args=''):
     return ldmarkup(value, args, True)
 
 
+@register.filter
+def remove_markup(value):
+    if value:
+        value = re.sub(r"__recuadro__.", "", value)
+        value = value.replace("__recuadro__", "")
+        value = re.sub(r"__imagen__.", "", value)
+        value = value.replace("__imagen__", "")
+        # quitamos cualquier link que haya quedado
+        value = re.sub(r"\(http(.*)\)", "", value)
+        value = cleanhtml(ldmarkup(value))
+        value = value.replace("[", "")
+        value = value.replace("]", "")
+    else:
+        value = u''
+    return value
+
+
 def cleanhtml(html):
     cleanr = re.compile('<.*?>')
     return re.sub(cleanr, '', html)

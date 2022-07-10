@@ -21,15 +21,19 @@
         <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
       {% endif %}
       <!--[if IE 9]></video><![endif]-->
-      <img class="responsive-img{% if image.extended.is_portrait %} portrait{% else %} landscape{% endif %}"
+      <img class="responsive-img {% if image.extended.is_landscape %}landscape{% else %}portrait{% endif %}"
            data-caption="{% if image.caption %}{{ image.caption }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
            alt="{% if image.caption %}{{ image.caption }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
            width="700"{% if image.extended.image_file_exists %} height="{{ image.get_700w_size.1 }}"{% endif %}
            loading="lazy">
     </picture>
     {% if image.caption or image.extended.photographer %}
-      <figcaption class="ld-caption">{% if image.caption %}<p>{{ image.caption|ldmarkup|bleach }}</p>{% endif %}
-      {% if image.extended.photographer %}<p>{{ image.extended.type_verbose }}: {{ image.extended.photographer.name }}</p>{% endif %}</figcaption>
+      <figcaption class="ld-caption">
+        {% if image.caption %}<p>{{ image.caption|ldmarkup|bleach }}</p>{% endif %}
+        {% if image.extended.photographer %}
+          <p>{{ image.extended.get_type_display }}: {{ image.extended.photographer }}</p>
+        {% endif %}
+      </figcaption>
     {% endif %}
   </figure>
 </div>

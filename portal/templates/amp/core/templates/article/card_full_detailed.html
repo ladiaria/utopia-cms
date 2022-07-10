@@ -22,10 +22,8 @@
 
       <div class="ld-card__byline-wrap">
         <div class="ld-card__byline">
-          {% if article.photo.photographer %}
-            <div class="ld-card__photoauthor">
-              {{ article.photo.type_verbose }}: {{ article.photo.photographer.name }}
-            </div>
+          {% if article.photo_author %}
+            <div class="ld-card__photoauthor">{{ article.photo_type }}: {{ article.photo_author }}</div>
           {% endif %}
           {% with authors=article.get_authors %}
             {% if authors %}

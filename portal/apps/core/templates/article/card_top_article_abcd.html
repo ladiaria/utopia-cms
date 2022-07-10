@@ -4,9 +4,9 @@
   {% render_toolbar_for a %}
   {% if a.photo %}
     <a href="{{ a.get_absolute_url }}">
-      <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" alt="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}" title="{% if a.photo.caption %}{{ a.photo.caption }}{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% if a.photo.extended.photographer %} · {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}{% endif %}{% endif %}"
-           width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}
-           loading="lazy">
+      <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" loading="lazy"
+           title="{{ a.photo_caption }}" alt="{{ a.photo_caption }}"
+           width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}>
     </a>
   {% endif %}
   <div class="ld-card__body">
@@ -19,9 +19,9 @@
     </h2>
     {% if a.deck %}<div class="ld-card__intro">{{ a.deck|ldmarkup:a.id|bleach }}</div>{% endif %}
     <div class="ld-card__byline">
-      {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and a.photo.extended.photographer %}
+      {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and a.photo_author %}
         <div class="ld-card__photoauthor">
-          {{ a.photo.extended.type_verbose }}: {{ a.photo.extended.photographer.name }}
+          {{ a.photo_type }}: {{ a.photo_author }}
         </div>
       {% endif %}
       {% with authors=a.get_authors %}

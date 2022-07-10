@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import re
 import random
 from datetime import date, datetime, timedelta
 
@@ -13,7 +12,6 @@ from django.utils.text import Truncator
 from tagging.models import Tag, TaggedItem
 from core.models import Article, Supplement, Category
 from core.forms import SendByEmailForm
-from core.templatetags.ldml import ldmarkup, cleanhtml
 from core.utils import datetime_timezone
 
 
@@ -103,11 +101,7 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
     if not card_type:
         card_type = article.type
 
-    card_display = "vertical"
-    if article.photo and article.photo.extended.is_portrait:
-        card_display = "horizontal"
-    if article.photo and article.photo.extended.is_landscape:
-        card_display = "vertical"
+    card_display = "horizontal" if article.photo and article.photo.extended.is_portrait else "vertical"
 
     # WARN: template value assigned here may change in next if block. TODO: fix this anti-pattern.
     if card_size == "FW":
@@ -419,23 +413,6 @@ def initials(value, args=False):
 @register.filter(name='anios')
 def anios(last):
     return range(2009, last)
-
-
-@register.filter
-def remove_markup(value):
-    if value:
-        value = re.sub(r"__recuadro__.", "", value)
-        value = value.replace("__recuadro__", "")
-        value = re.sub(r"__imagen__.", "", value)
-        value = value.replace("__imagen__", "")
-        # quitamos cualquier link que haya quedado
-        value = re.sub(r"\(http(.*)\)", "", value)
-        value = cleanhtml(ldmarkup(value))
-        value = value.replace("[", "")
-        value = value.replace("]", "")
-    else:
-        value = u''
-    return value
 
 
 @register.filter

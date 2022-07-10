@@ -43,15 +43,13 @@
       {% if header_display == 'FW' %}
         <div class="{{ article.header_display }}">
           <div class="align-center">
-            <figure class="principal {{ card_size }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" >
-              <amp-img height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" layout="responsive" id="main-photo" src="{{ article.photo.get_med_url }}" alt="{{ article.photo.caption }}" title="{{ article.photo.caption }}"/>
+            <figure class="principal {{ card_size }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+              <amp-img height="{{ article.photo_height }}" width="{{ article.photo_width }}" layout="responsive" id="main-photo" src="{{ article.photo.get_med_url }}" alt="{{ article.photo.caption }}" title="{{ article.photo.caption }}"></amp-img>
             </figure>
             <figcaption class="article-caption ld-caption">
               <div class="container">
                 {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>{% endif %}
-                {% if article.photo.extended.photographer %}
-                  <p>{{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}</p>
-                {% endif %}
+                {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
               </div>
             </figcaption>
           </div>
@@ -59,16 +57,26 @@
       {% elif header_display == 'BG' %}
         <div class="photo align-center">
           <figure class="principal">
-            <amp-img id="main-photo" layout="responsive" media="(min-width: 320px) and (max-width: 700px)" height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" class="materialboxed responsive-img{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" src="{{ article.photo.get_700w_url }}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"></amp-img>
-            <amp-img id="main-photo" layout="responsive" media="(min-width: 701px) and (max-width: 900px)" height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" class="materialboxed responsive-img{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" src="{{ article.photo.get_900w_url }}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"></amp-img>
-            <amp-img id="main-photo" layout="responsive" media="(min-width: 901px)" height="{{ article.photo.image.height }}" width="{{ article.photo.image.width }}" class="materialboxed responsive-img{% if article.photo.is_portrait %} portrait{% else %} landscape{% endif %}" src="{{ article.photo.get_1200w_url }}" data-caption="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"></amp-img>
+            <amp-img id="main-photo" layout="responsive" media="(min-width: 320px) and (max-width: 700px)"
+                     height="{{ article.photo_height }}" width="{{ article.photo_width }}"
+                     class="materialboxed responsive-img {{ article.photo_layout }}"
+                     data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                     src="{{ article.photo.get_700w_url }}"></amp-img>
+            <amp-img id="main-photo" layout="responsive" media="(min-width: 701px) and (max-width: 900px)"
+                     height="{{ article.photo_height }}" width="{{ article.photo_width }}"
+                     class="materialboxed responsive-img {{ article.photo_layout }}"
+                     data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                     src="{{ article.photo.get_900w_url }}"></amp-img>
+            <amp-img id="main-photo" layout="responsive" media="(min-width: 901px)"
+                     height="{{ article.photo_height }}" width="{{ article.photo_width }}"
+                     class="materialboxed responsive-img {{ article.photo_layout }}"
+                     data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                     src="{{ article.photo.get_1200w_url }}"></amp-img>
           </figure>
           <figcaption class="article-caption ld-caption">
             <div class="container">
               <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
-              {% if article.photo.extended.photographer %}
-                <p>{{ article.photo.extended.type_verbose }}: {{ article.photo.extended.photographer.name }}</p>
-              {% endif %}
+              {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
             </div>
           </figcaption>
         </div>

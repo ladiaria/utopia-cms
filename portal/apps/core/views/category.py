@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, render
 from django.core.urlresolvers import reverse
 
 from core.models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
-from core.templatetags.core_tags import remove_markup
+from core.templatetags.ldml import remove_markup
 from faq.models import Question, Topic
 
 
