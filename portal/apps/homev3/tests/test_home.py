@@ -4,8 +4,6 @@ from django.test import TestCase
 from django.test.client import Client
 from django.contrib.auth.models import User
 
-from core.models import Publication
-
 
 class SubscribeTestCase(TestCase):
 
@@ -27,6 +25,9 @@ class SubscribeTestCase(TestCase):
         # {'url': '/spinoff/articulo/2020/11/test-article2/', 'amp': True, 'headers': http_host_header_param},
         {'url': '/test/articulo/2020/11/test-article3/', 'headers': http_host_header_param},
         {'url': '/test/articulo/2020/11/test-article3/', 'amp': True, 'headers': http_host_header_param},
+        # TODO: add a photo to this article in the fixture
+        {'url': '/test/articulo/2020/11/test-article4/', 'headers': http_host_header_param},
+        {'url': '/test/articulo/2020/11/test-article4/', 'amp': True, 'headers': http_host_header_param},
     )
 
     def test_home(self):

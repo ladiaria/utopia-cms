@@ -186,6 +186,30 @@
   }
 },
 {
+  "pk": 4,
+  "model": "core.article",
+  "fields": {
+    "type": "OP",
+    "newsletter_featured": false,
+    "allow_related": true,
+    "only_initials": false,
+    "byline": [],
+    "headline": "test article4",
+    "show_related_articles": true,
+    "public": false,
+    "body": "test.",
+    "views": 0,
+    "date_published": "2020-11-20T04:20:02",
+    "last_modified": "2020-11-20T04:25:57",
+    "url_path": "/test/articulo/2020/11/test-article4/",
+    "slug": "test-article4",
+    "main_section": 3,
+    "allow_comments": false,
+    "date_created": "2020-11-19T04:24:28",
+    "is_published": true
+  }
+},
+{
   "pk": 1,
   "model": "core.articlerel",
   "fields": {

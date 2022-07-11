@@ -1159,7 +1159,7 @@ class ArticleBase(Model, CT):
 
     @property
     def photo_layout(self):
-        return 'landscape' if self.photo.extended.is_landscape else 'portrait'
+        return 'landscape' if not self.photo or self.photo.extended.is_landscape else 'portrait'
 
     @property
     def photo_type(self):
