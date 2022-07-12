@@ -95,7 +95,10 @@ class Command(BaseCommand):
                         main_sections[u.id] = article.main_section
                         if article.main_section.section and article.main_section.section.category:
                             main_categories[u.id] = article.main_section.section.category
-                        elif article.main_section.edition.publication:
+                        elif(
+                            article.main_section.edition.publication and
+                            article.main_section.edition.publication.slug not in
+                                getattr(settings, 'DASHBOARD_EXCLUDE_PUBLICATION_SLUGS', [])):
                             main_categories[u.id] = article.main_section.edition.publication
 
             except User.DoesNotExist:

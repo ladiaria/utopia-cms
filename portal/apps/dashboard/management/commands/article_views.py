@@ -51,7 +51,10 @@ class Command(BaseCommand):
                 views += article.articleviews_set.count()
                 articles_count += 1
                 articles_views[article.main_section.section.category] = (views, articles_count)
-            elif article.main_section and article.main_section.edition.publication:
+            elif(
+                article.main_section and article.main_section.edition.publication and
+                    article.main_section.edition.publication.slug not in
+                    getattr(settings, 'DASHBOARD_EXCLUDE_PUBLICATION_SLUGS', [])):
                 views, articles_count = articles_views.get(article.main_section.edition.publication, (0, 0))
                 views += article.articleviews_set.count()
                 articles_count += 1
