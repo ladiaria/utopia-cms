@@ -10,6 +10,7 @@ from django.template.defaultfilters import stringfilter
 from django.utils.text import Truncator
 
 from tagging.models import Tag, TaggedItem
+
 from core.models import Article, Supplement, Category
 from core.forms import SendByEmailForm
 from core.utils import datetime_timezone
@@ -374,7 +375,7 @@ def date_published_verbose(article):
             if custom_data is not None and not custom_data:
                 return u''
         return u'%s<div class="ld-card__date">%s</div>' % (
-            u' - ' if article.has_byline() else u'', custom_data or article.date_published_verbose()
+            u' - ' if article.has_byline() else u'', custom_data or article.date_published_verbose().decode('utf8')
         )
     else:
         return u''

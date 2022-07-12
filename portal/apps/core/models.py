@@ -261,7 +261,7 @@ class PortableDocumentFormatBaseModel(Model):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
         return (
             "{d:%a}. {d.day} {d:%b}." if date.today().year == self.date_published.year else "{d.day} {d:%b, %Y}"
-        ).format(d=self.date_published).title()
+        ).encode('utf8').format(d=self.date_published).title()
 
 
 """ TODO: better enable this after new structure works well (**)
@@ -1252,7 +1252,7 @@ class ArticleBase(Model, CT):
             ):
                 format_st = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_SAMEYEAR_FMT', "{dt.day} de {dt:%B}")
 
-        return format_st.format(dt=self.date_published).lower().capitalize()
+        return format_st.encode('utf8').format(dt=self.date_published).lower().capitalize()
 
     def date_published_verbose(self):
         if settings.CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO:
