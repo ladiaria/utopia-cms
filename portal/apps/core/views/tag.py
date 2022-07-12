@@ -4,7 +4,7 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.http import Http404
 from django.template.defaultfilters import slugify
 from django.views.decorators.cache import never_cache
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from tagging.models import Tag, TaggedItem
 
@@ -13,10 +13,17 @@ from core.models import Article
 
 @never_cache
 def tag_detail(request, tag_slug):
-    tags = []
-    for tag in Tag.objects.iterator():
-        if slugify(tag.name) == tag_slug:
-            tags.append(tag)
+    """
+    Get tag detail from given tag slug.
+    If given tag slug it's not slugified then redirect to the slugified urls version.
+    Otherwise, try to get and return tags
+    params: tag_slug: string
+    """
+    tag_slugified = slugify(tag_slug)
+    if tag_slugified != tag_slug:
+        return redirect('tag_detail', tag_slug=tag_slugified)
+    tags = [tag for tag in Tag.objects.iterator() if slugify(tag.name) == tag_slug]
+
     if not tags:
         raise Http404
     paginator = Paginator(TaggedItem.objects.get_by_model(Article, tags).filter(is_published=True), 10)

@@ -206,7 +206,7 @@
           <tbody>
             {% for rank, date, article_url, views, digital_views, published in rows %}
               <tr>
-                <td>{{ rank }}</td>
+                <td>{{ forloop.counter }}</td>
                 <td class="text-nowrap">{{ date }}</td>
                 <td><a href="{{ article_url }}">{{ article_url }}</a></td>
                 <td>{{ views }}</td>
