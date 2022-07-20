@@ -206,7 +206,8 @@
     "main_section": 3,
     "allow_comments": false,
     "date_created": "2020-11-19T04:24:28",
-    "is_published": true
+    "is_published": true,
+    "photo": 1
   }
 },
 {
@@ -318,6 +319,19 @@
     "article": 1,
     "position": 1,
     "fixed": false
+  }
+},
+  {
+  "pk": 1,
+  "model": "photologue.photo",
+  "fields": {
+    "image": "fixtures/test_pou_img.jpg",
+    "view_count": 0,
+    "title": "test_pou_img",
+    "slug": "test_pou_img",
+    "date_added": "2020-11-19T04:24:28",
+    "is_public": true,
+    "caption": "Lacalle Pou Debate"
   }
 }
 ]

@@ -11,7 +11,8 @@ __pycache__
 /portal/bin/pdftoppm
 /portal/bin/pdftops
 /portal/bin/pdftotext
-/portal/media
+/portal/media/*
+!/portal/media/fixtures
 /portal/static
 /portal/.htaccess
 /portal/.project
