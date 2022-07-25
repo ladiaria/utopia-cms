@@ -96,6 +96,24 @@
   }
 },
 {
+  "pk": 3,
+  "model": "core.section",
+  "fields": {
+    "home_block_all_pubs": true,
+    "home_order": 0,
+    "show_description": false,
+    "white_text": false,
+    "home_block_show_featured": true,
+    "publications": [1],
+    "show_image": false,
+    "date_created": "2020-11-19T07:19:20",
+    "in_home": false,
+    "background_color": "#ffffff",
+    "slug": "humor",
+    "name": "humor"
+  }
+},
+{
   "pk": 1,
   "model": "core.journalist",
   "fields": {
@@ -211,6 +229,29 @@
   }
 },
 {
+  "pk": 5,
+  "model": "core.article",
+  "fields": {
+    "newsletter_featured": false,
+    "allow_related": true,
+    "only_initials": false,
+    "byline": [],
+    "headline": "test humor1",
+    "show_related_articles": true,
+    "public": false,
+    "body": "test.",
+    "views": 0,
+    "date_published": "2020-11-20T04:20:02",
+    "last_modified": "2020-11-20T04:25:57",
+    "url_path": "/test/articulo/2020/11/test-humor1/",
+    "slug": "test-humor1",
+    "main_section": 6,
+    "allow_comments": false,
+    "date_created": "2020-11-19T04:24:28",
+    "is_published": true
+  }
+},
+{
   "pk": 1,
   "model": "core.articlerel",
   "fields": {
@@ -267,6 +308,18 @@
     "section": 1,
     "edition": 3,
     "article": 3,
+    "top_position": 2
+  }
+},
+{
+  "pk": 6,
+  "model": "core.articlerel",
+  "fields": {
+    "position": 1,
+    "home_top": true,
+    "section": 3,
+    "edition": 3,
+    "article": 5,
     "top_position": 2
   }
 },

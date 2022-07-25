@@ -52,9 +52,12 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
 
         return render(request, template, {'section': section, 'articles': articles, 'publication': None})
 
-    # TODO: implement a way to mark one publication as the main publication for the section
-    publication = section.publications.exists() and section.publications.all()[0] or \
-        get_object_or_404(Publication, slug=settings.DEFAULT_PUB)
+    if section.publications.exists():
+        items = getattr(settings, 'CORE_SECTION_MAIN_PUBLICATION', {}).items()
+        p = next((k for k, v in items if section_slug in v), '')
+        publication = p and section.publications.filter(slug=p).first() or section.publications.all()[0]
+    else:
+        publication = get_object_or_404(Publication, slug=settings.DEFAULT_PUB)
 
     if year and month and day:
         date_published = date(int(year), int(month), int(day))
