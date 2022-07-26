@@ -36,13 +36,15 @@ class ArticleTestCase(TestCase):
                 # test photo path in the context
                 self.assertEqual(response.context['article'].photo.image, 'fixtures/test_pou_img.jpg')
 
-                content = response.content.decode('utf8').encode('utf8')
+                content = str(response.content.decode('utf8').encode('utf8'))
                 context_article = response.context['article']
 
                 # test the image caption render
-                self.assertIn('<p>{}</p>'.format(context_article.photo.caption), content)
+                self.assertIn('<p>{}</p>'.format(str(context_article.photo.caption)), content)
                 # test image src values for render, at least 3 sizes count in template
                 self.assertGreater(content.count('/media/fixtures/cache/test_pou_img_'), 3)
+                # test meta noindex for not humor articles
+                self.assertNotIn('<meta name="robots" content="noindex">', content)
 
     def test_humor_article_noindex(self):
         c = Client()
