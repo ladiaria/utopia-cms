@@ -4,9 +4,10 @@ from datetime import datetime
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponsePermanentRedirect
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import never_cache, cache_control
+from django.urls.exceptions import NoReverseMatch
 from django.contrib.contenttypes.models import ContentType
 
 from decorators import decorate_if_no_staff, decorate_if_staff
@@ -62,9 +63,16 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
                 # removed, changed or force-404 categories redirects by settings
                 redirect_slug = category_redirections[domain_slug]
                 if redirect_slug:
-                    return HttpResponsePermanentRedirect(
-                        reverse('home', args=(settings.CORE_CATEGORY_REDIRECT[domain_slug], ))
-                    )
+                    if redirect_slug.startswith('/'):
+                        # support for a "direct path" temporal redirect
+                        # TODO: the settings could include the temporal/permanent option
+                        return redirect(redirect_slug)
+                    try:
+                        return HttpResponsePermanentRedirect(
+                            reverse('home', args=(settings.CORE_CATEGORY_REDIRECT[domain_slug], ))
+                        )
+                    except NoReverseMatch:
+                        raise Http404
                 else:
                     raise Http404
             return category_detail(request, get_object_or_404(Category, slug=domain_slug).slug)
