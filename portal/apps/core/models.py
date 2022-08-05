@@ -75,37 +75,38 @@ def remove_media_root(path):
 
 
 class Publication(Model):
-    name = CharField(u'nombre', max_length=100)
+    name = CharField('nombre', max_length=100)
     twitter_username = CharField(
-        u'Nombre de usuario de Twitter',
+        'Nombre de usuario de Twitter',
         max_length=15,
         blank=True,
         null=True,
-        help_text=u'Nombre de usuario de Twitter que se menciona cuando artículos de esta publicación son compartidos '
-                  u'en Twitter (escribir sin @)',
+        help_text='Nombre de usuario de Twitter que se menciona cuando artículos de esta publicación son compartidos '
+                  'en Twitter (escribir sin @)',
     )
     description = TextField(
-        u'descripción', null=True, blank=True, help_text=u'Se muestra en el componente de portada.'
+        'descripción', null=True, blank=True, help_text='Se muestra en el componente de portada.'
     )
-    slug = SlugField(u'slug', unique=True)
-    headline = CharField(u'título', max_length=100)
-    weight = PositiveSmallIntegerField(u'orden', default=0)
-    public = BooleanField(u'público', default=True)
-    has_newsletter = BooleanField(u'tiene NL', default=False)
+    slug = SlugField('slug', unique=True)
+    headline = CharField('título', max_length=100)
+    weight = PositiveSmallIntegerField('orden', default=0)
+    public = BooleanField('público', default=True)
+    has_newsletter = BooleanField('tiene NL', default=False)
     newsletter_name = CharField(max_length=64, blank=True, null=True)
     newsletter_tagline = CharField(max_length=128, blank=True, null=True)
     newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
-    newsletter_header_color = CharField(u'color de cabezal para NL', max_length=7, default=u'#262626')
+    newsletter_header_color = CharField('color de cabezal para NL', max_length=7, default='#262626')
     newsletter_campaign = CharField(max_length=64, blank=True, null=True)
     newsletter_automatic_subject = BooleanField(default=True)
-    newsletter_subject = CharField(u'asunto', max_length=256, blank=True, null=True)
+    newsletter_subject = CharField('asunto', max_length=256, blank=True, null=True)
+    newsletter_logo = ImageField('logo para NL', upload_to='publications', blank=True, null=True)
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
     subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
-    image = ImageField(u'logo / Logo para NL', upload_to='publications', blank=True, null=True)
-    full_width_cover_image = ForeignKey(Photo, verbose_name=u'foto full de portada', blank=True, null=True)
-    is_emergente = BooleanField(u'es emergente', default=False)
-    new_pill = BooleanField(u'pill de "nuevo" en el componente de portada', default=False)
+    image = ImageField('logo', upload_to='publications', blank=True, null=True)
+    full_width_cover_image = ForeignKey(Photo, verbose_name='foto full de portada', blank=True, null=True)
+    is_emergente = BooleanField('es emergente', default=False)
+    new_pill = BooleanField('pill de "nuevo" en el componente de portada', default=False)
     icon = CharField(max_length=128, blank=True, null=True)
     icon_png = CharField(max_length=128, blank=True, null=True)
     icon_png_16 = CharField(max_length=128, blank=True, null=True)
@@ -121,7 +122,7 @@ class Publication(Model):
     publisher_logo_height = PositiveSmallIntegerField(blank=True, null=True)
 
     def __unicode__(self):
-        return self.name or u''
+        return self.name or ''
 
     def save(self, *args, **kwargs):
         super(Publication, self).save(*args, **kwargs)
@@ -165,7 +166,7 @@ class Publication(Model):
                 ).exclude(user__email='').values_list('user__email', flat=True)
             ) - blacklisted
         )
-    subscriber_count.short_description = u'Suscrip. NL'
+    subscriber_count.short_description = 'Suscrip. NL'
 
     def image_tag(self):
         url = None
@@ -186,39 +187,39 @@ class Publication(Model):
                 self.id, url, self.newsletter_header_color
             )
         ) if url else ''
-    image_tag.short_description = u'logo / Logo para NL'
+    image_tag.short_description = 'logo'
     image_tag.allow_tags = True
 
     def get_full_width_cover_image_tag(self):
         return (
-            u'<a href="/admin/core/publication/%d/">'
-            u'<img src="%s" alt="%s"></a>' % (
+            '<a href="/admin/core/publication/%d/">'
+            '<img src="%s" alt="%s"></a>' % (
                 self.id, self.full_width_cover_image.get_admin_thumbnail_url(),
                 self.full_width_cover_image) if self.full_width_cover_image
-            else u'')
-    get_full_width_cover_image_tag.short_description = u'foto full de portada'
+            else '')
+    get_full_width_cover_image_tag.short_description = 'foto full de portada'
     get_full_width_cover_image_tag.allow_tags = True
 
     class Meta:
         ordering = ['weight']
-        verbose_name = u'publicación'
-        verbose_name_plural = u'publicaciones'
+        verbose_name = 'publicación'
+        verbose_name_plural = 'publicaciones'
 
 
 class PortableDocumentFormatBaseModel(Model):
     pdf = FileField(
-        u'archivo PDF',
+        'archivo PDF',
         max_length=150,
         upload_to=get_pdf_pdf_upload_to,
         blank=True,
         null=True,
-        help_text=u'<strong>AVISO:</strong> Si es mayor a 8MB probablemente no se pueda enviar por mail.',
+        help_text='<strong>AVISO:</strong> Si es mayor a 8MB probablemente no se pueda enviar por mail.',
     )
-    pdf_md5 = CharField(u'checksum', max_length=32, editable=False)
-    downloads = PositiveIntegerField(u'descargas', default=0)
-    cover = ImageField(u'tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
-    date_published = DateField(u'fecha de publicación', default=timezone.now)
-    date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
+    pdf_md5 = CharField('checksum', max_length=32, editable=False)
+    downloads = PositiveIntegerField('descargas', default=0)
+    cover = ImageField('tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
+    date_published = DateField('fecha de publicación', default=timezone.now)
+    date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __unicode__(self):
         return self.pdf[self.pdf.rfind('/') + 1:]
@@ -242,8 +243,8 @@ class PortableDocumentFormatBaseModel(Model):
             {
                 'publication_slug': self.publication.slug,
                 'year': self.date_published.year,
-                'month': u'%02d' % self.date_published.month,
-                'day': u'%02d' % self.date_published.day,
+                'month': '%02d' % self.date_published.month,
+                'day': '%02d' % self.date_published.day,
                 'filename': os.path.basename(self.pdf.path),
             },
         )
@@ -257,37 +258,38 @@ class PortableDocumentFormatBaseModel(Model):
             response['Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(self.pdf.path)
             return response
 
-    def date_published_verbose(self):
+    def date_published_verbose(self, short=True):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
-        return (
-            "{d:%a}. {d.day} {d:%b}." if date.today().year == self.date_published.year else "{d.day} {d:%b, %Y}"
-        ).encode('utf8').format(d=self.date_published).title()
+        result = (
+            ("{d:%a}. {d.day} {d:%b}." if date.today().year == self.date_published.year else "{d.day} {d:%b, %Y}")
+            if short else "{d:%A} {d.day} de {d:%B de %Y}"
+        ).encode('utf8').format(d=self.date_published)
+        return result.title() if short else result.capitalize()
 
 
 """ TODO: better enable this after new structure works well (**)
 class EditionSection(models.Model):
     edition = ForeignKey(Edition)
     section = ForeignKey(Section)
-    home_order = PositiveSmallIntegerField(u'orden en Portada', default=0)
-    in_home = BooleanField(u'mostrar_en_portada', default=True)
-    style = CharField(
-        u'estilo', max_length=2, choices=STYLE_CHOICES, blank=True, null=True)
+    home_order = PositiveSmallIntegerField('orden en Portada', default=0)
+    in_home = BooleanField('mostrar_en_portada', default=True)
+    style = CharField('estilo', max_length=2, choices=STYLE_CHOICES, blank=True, null=True)
 """
 
 
 class Edition(PortableDocumentFormatBaseModel):
     """ A publication's edition. """
-    title = TextField(u'título', null=True)
-    publication = ForeignKey(Publication, verbose_name=u'publicación', related_name="%(app_label)s_%(class)s")
+    title = TextField('título', null=True)
+    publication = ForeignKey(Publication, verbose_name='publicación', related_name="%(app_label)s_%(class)s")
     # (**) sections = ManyToManyField(Section, through='EditionSection')
 
     class Meta(PortableDocumentFormatBaseModel.Meta):
-        verbose_name = u'edición'
-        verbose_name_plural = u'ediciones'
+        verbose_name = 'edición'
+        verbose_name_plural = 'ediciones'
 
     def __unicode__(self):
         try:
-            display_name = u'%s - %s' % (self.date_published.strftime('%d-%m-%Y'), self.publication.name)
+            display_name = '%s - %s' % (self.date_published.strftime('%d-%m-%Y'), self.publication.name)
         except Exception:
             display_name = self.date_published.strftime('%d-%m-%Y')
         return display_name
@@ -297,8 +299,8 @@ class Edition(PortableDocumentFormatBaseModel):
     edition_pub.short_description = 'Fecha publicada'
 
     def get_supplements(self):
-        return self.supplements.values_list('pdf', 'cover') or u''
-    get_supplements.short_description = u'suplementos'
+        return self.supplements.values_list('pdf', 'cover') or ''
+    get_supplements.short_description = 'suplementos'
 
     def get_absolute_url(self):
         reverse_kwargs = {
@@ -369,7 +371,7 @@ class Edition(PortableDocumentFormatBaseModel):
                 'get_absolute_url': self.publication.get_absolute_url(),
             },
             'pdf': {'path': self.pdf.path} if self.pdf else None,
-            'date_published': str(self.date_published),
+            'date_published': self.date_published_verbose(False),
             'supplements': [s.pdf.path for s in Supplement.objects.filter(date_published=self.date_published)],
         }
         if self.publication.slug in getattr(settings, 'CORE_PUBLICATIONS_EDITION_DOWNLOAD', ()):
@@ -378,34 +380,34 @@ class Edition(PortableDocumentFormatBaseModel):
 
 
 class EditionHeader(Model):
-    edition = OneToOneField(Edition, verbose_name=u'edición')
-    title = CharField(u'título', max_length=127)
-    subtitle = CharField(u'subtítulo', max_length=255, null=True, blank=True)
+    edition = OneToOneField(Edition, verbose_name='edición')
+    title = CharField('título', max_length=127)
+    subtitle = CharField('subtítulo', max_length=255, null=True, blank=True)
 
     class Meta:
-        verbose_name = u'encabezado de edición'
-        verbose_name_plural = u'encabezados de edición'
+        verbose_name = 'encabezado de edición'
+        verbose_name_plural = 'encabezados de edición'
 
     def __unicode__(self):
-        return u'%s - %s' % (self.edition, self.title)
+        return '%s - %s' % (self.edition, self.title)
 
 
 class Supplement(PortableDocumentFormatBaseModel):
-    edition = ForeignKey(Edition, verbose_name=u'edición', related_name='supplements')
-    name = CharField(u'nombre', max_length=2, choices=settings.CORE_SUPPLEMENT_NAME_CHOICES)
-    slug = SlugField(u'slug', unique=True)
-    headline = CharField(u'titular', max_length=100)
-    public = BooleanField(u'público', default=True)
+    edition = ForeignKey(Edition, verbose_name='edición', related_name='supplements')
+    name = CharField('nombre', max_length=2, choices=settings.CORE_SUPPLEMENT_NAME_CHOICES)
+    slug = SlugField('slug', unique=True)
+    headline = CharField('titular', max_length=100)
+    public = BooleanField('público', default=True)
 
     class Meta:
         get_latest_by = 'date_published'
         ordering = ('-date_published', 'name')
         unique_together = ('date_published', 'name')
-        verbose_name = u'suplemento'
-        verbose_name_plural = u'suplementos'
+        verbose_name = 'suplemento'
+        verbose_name_plural = 'suplementos'
 
     def __unicode__(self):
-        return u'%s - %s' % (self.date_published.strftime('%d-%m-%Y'), self.get_name_display())
+        return '%s - %s' % (self.date_published.strftime('%d-%m-%Y'), self.get_name_display())
 
     def save(self, *args, **kwargs):
         self.date_published = self.edition.date_published
@@ -442,38 +444,38 @@ class Supplement(PortableDocumentFormatBaseModel):
 
 
 class Category(Model):
-    name = CharField(u'nombre', max_length=16, unique=True)
-    slug = CharField(u'slug', max_length=16, blank=True, null=True)
-    description = TextField(u'descripción', blank=True, null=True)
-    order = PositiveSmallIntegerField(u'orden', blank=True, null=True)
-    has_newsletter = BooleanField(u'tiene NL', default=False)
+    name = CharField('nombre', max_length=16, unique=True)
+    slug = CharField('slug', max_length=16, blank=True, null=True)
+    description = TextField('descripción', blank=True, null=True)
+    order = PositiveSmallIntegerField('orden', blank=True, null=True)
+    has_newsletter = BooleanField('tiene NL', default=False)
     newsletter_tagline = CharField(max_length=128, blank=True, null=True)
     newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
     newsletter_automatic_subject = BooleanField(default=True)
-    newsletter_subject = CharField(u'asunto', max_length=256, blank=True, null=True)
+    newsletter_subject = CharField('asunto', max_length=256, blank=True, null=True)
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
     subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
-    title = CharField(u'título en el componente de portada', max_length=50, blank=True, null=True)
+    title = CharField('título en el componente de portada', max_length=50, blank=True, null=True)
     more_link_title = CharField(
-        u'texto en el link "más" del componente de portada', max_length=50, blank=True, null=True
+        'texto en el link "más" del componente de portada', max_length=50, blank=True, null=True
     )
-    new_pill = BooleanField(u'pill de "nuevo" en el componente de portada', default=False)
-    full_width_cover_image = ForeignKey(Photo, verbose_name=u'foto full de portada', blank=True, null=True)
+    new_pill = BooleanField('pill de "nuevo" en el componente de portada', default=False)
+    full_width_cover_image = ForeignKey(Photo, verbose_name='foto full de portada', blank=True, null=True)
     full_width_cover_image_title = CharField(
-        u'título para foto full',
+        'título para foto full',
         max_length=50,
         null=True,
         blank=True,
-        help_text=u'Se muestra sólo si la foto está seteada. (Máx 50 caract.)',
+        help_text='Se muestra sólo si la foto está seteada. (Máx 50 caract.)',
     )
     full_width_cover_image_lead = TextField(
-        u'bajada para foto full',
+        'bajada para foto full',
         null=True,
         blank=True,
-        help_text=u'Se muestra sólo si la foto y el título están seteados.',
+        help_text='Se muestra sólo si la foto y el título están seteados.',
     )
-    exclude_from_top_menu = BooleanField(u'Excluir ítem en menú superior de escritorio', default=False)
+    exclude_from_top_menu = BooleanField('Excluir ítem en menú superior de escritorio', default=False)
 
     def __unicode__(self):
         return self.name
@@ -567,24 +569,24 @@ class Category(Model):
                 ).exclude(user__email='').values_list('user__email', flat=True)
             ) - blacklisted
         )
-    subscriber_count.short_description = u'Suscrip. NL'
+    subscriber_count.short_description = 'Suscrip. NL'
 
     def get_full_width_cover_image_tag(self):
         return (
-            u'<a href="/admin/core/category/%d/">'
-            u'<img src="%s" alt="%s"></a>' % (
+            '<a href="/admin/core/category/%d/">'
+            '<img src="%s" alt="%s"></a>' % (
                 self.id, self.full_width_cover_image.get_admin_thumbnail_url(),
                 self.full_width_cover_image) if self.full_width_cover_image
-            else u'')
+            else '')
 
-    get_full_width_cover_image_tag.short_description = u'foto full de portada'
+    get_full_width_cover_image_tag.short_description = 'foto full de portada'
     get_full_width_cover_image_tag.allow_tags = True
 
     def get_absolute_url(self):
         return urlresolvers.reverse('home', kwargs={'domain_slug': self.slug})
 
     class Meta:
-        verbose_name = u'área'
+        verbose_name = 'área'
         ordering = ('order', 'name')
 
 
@@ -594,28 +596,28 @@ class Section(Model):
     SECTION_3 = '3'
 
     category = ForeignKey(Category, verbose_name='área', blank=True, null=True)
-    name = CharField(u'nombre', max_length=50, unique=True)
-    name_in_category_menu = CharField(u'nombre en el menú del área', max_length=50, blank=True, null=True)
-    slug = SlugField(u'slug', unique=True)
-    description = TextField(u'descripción', blank=True, null=True)
-    contact = EmailField(u'correo electrónico', blank=True, null=True)
-    date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
-    home_order = PositiveSmallIntegerField(u'orden en portada', default=0)
+    name = CharField('nombre', max_length=50, unique=True)
+    name_in_category_menu = CharField('nombre en el menú del área', max_length=50, blank=True, null=True)
+    slug = SlugField('slug', unique=True)
+    description = TextField('descripción', blank=True, null=True)
+    contact = EmailField('correo electrónico', blank=True, null=True)
+    date_created = DateTimeField('fecha de creación', auto_now_add=True)
+    home_order = PositiveSmallIntegerField('orden en portada', default=0)
     in_home = BooleanField(
-        u'en portada', default=False,
-        help_text=u'si el componente de portadas de esta categoría está insertado, esta opción lo muestra u oculta.')
-    imagen = ImageField(u'imagen o ilustración', upload_to='section_images', blank=True, null=True)
-    publications = ManyToManyField(Publication, verbose_name=u'publicaciones', blank=True)
+        'en portada', default=False,
+        help_text='si el componente de portadas de esta categoría está insertado, esta opción lo muestra u oculta.')
+    imagen = ImageField('imagen o ilustración', upload_to='section_images', blank=True, null=True)
+    publications = ManyToManyField(Publication, verbose_name='publicaciones', blank=True)
     home_block_all_pubs = BooleanField(
-        u'usar todas las publicaciones en módulos de portada', default=True,
-        help_text=u'Marque esta opción para mostrar artículos de todas las publicaciones en los módulos de portada.')
+        'usar todas las publicaciones en módulos de portada', default=True,
+        help_text='Marque esta opción para mostrar artículos de todas las publicaciones en los módulos de portada.')
     home_block_show_featured = BooleanField(
-        u'mostrar artículos destacados en módulos de portada', default=True,
-        help_text=u'Marque esta opción para mostrar artículos destacados en los módulos de portada.')
-    background_color = CharField(u'background color', max_length=7, default='#ffffff')
-    white_text = BooleanField(u'texto blanco', default=False)
-    show_description = BooleanField(u'mostrar descripción', default=False)
-    show_image = BooleanField(u'mostrar imagen', default=False)
+        'mostrar artículos destacados en módulos de portada', default=True,
+        help_text='Marque esta opción para mostrar artículos destacados en los módulos de portada.')
+    background_color = CharField('background color', max_length=7, default='#ffffff')
+    white_text = BooleanField('texto blanco', default=False)
+    show_description = BooleanField('mostrar descripción', default=False)
+    show_image = BooleanField('mostrar imagen', default=False)
 
     def __unicode__(self):
         return self.name
@@ -631,8 +633,8 @@ class Section(Model):
         return self.slug in getattr(settings, 'CORE_SATIRICAL_SECTIONS', ())
 
     def get_publications(self):
-        return u', '.join(self.publications.values_list('name', flat=True))
-    get_publications.short_description = u'publicaciones'
+        return ', '.join(self.publications.values_list('name', flat=True))
+    get_publications.short_description = 'publicaciones'
 
     def get_tags(self):
         return Tag.objects.get_for_object(self)
@@ -751,39 +753,39 @@ class Section(Model):
 
     def articles_count(self):
         return self.articles_core.count()
-    articles_count.short_description = u'# Artículos'
+    articles_count.short_description = '# Artículos'
 
     class Meta:
         get_latest_by = 'date_created'
         ordering = ('home_order', 'name', 'date_created')
-        verbose_name = u'sección'
-        verbose_name_plural = u'secciones'
+        verbose_name = 'sección'
+        verbose_name_plural = 'secciones'
 
 
 class Journalist(Model):
 
     JOB_CHOICES = (
-        ('PE', u'Periodista'),
-        ('CO', u'Columnista'),
+        ('PE', 'Periodista'),
+        ('CO', 'Columnista'),
     )
 
-    name = CharField(u'nombre', max_length=50, unique=True)
-    email = EmailField(u'correo electrónico', blank=True, null=True)
-    slug = SlugField(u'slug', unique=True)
-    image = ImageField(u'imagen', upload_to='journalist', blank=True, null=True)
+    name = CharField('nombre', max_length=50, unique=True)
+    email = EmailField('correo electrónico', blank=True, null=True)
+    slug = SlugField('slug', unique=True)
+    image = ImageField('imagen', upload_to='journalist', blank=True, null=True)
     job = CharField(
-        u'trabajo',
+        'trabajo',
         max_length=2,
         choices=JOB_CHOICES,
         default='PE',
-        help_text=u'Rol en que se desempeña principalmente.',
+        help_text='Rol en que se desempeña principalmente.',
     )
-    bio = TextField(u'bio', null=True, blank=True, help_text=u'Bio aprox 200 caracteres.')
-    sections = ManyToManyField(Section, verbose_name=u'secciones', blank=True)
-    fb = CharField(u'facebook', max_length=255, blank=True, null=True)
-    tt = CharField(u'twitter', max_length=255, blank=True, null=True)
-    gp = CharField(u'google plus', max_length=255, blank=True, null=True)
-    ig = CharField(u'instangram', max_length=255, blank=True, null=True)
+    bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
+    sections = ManyToManyField(Section, verbose_name='secciones', blank=True)
+    fb = CharField('facebook', max_length=255, blank=True, null=True)
+    tt = CharField('twitter', max_length=255, blank=True, null=True)
+    gp = CharField('google plus', max_length=255, blank=True, null=True)
+    ig = CharField('instangram', max_length=255, blank=True, null=True)
 
     def __unicode__(self):
         return self.name
@@ -796,7 +798,7 @@ class Journalist(Model):
         return urlresolvers.reverse(
             'journalist_detail',
             kwargs={
-                'journalist_job': u'columnista' if self.job == 'CO' else u'periodista', 'journalist_slug': self.slug
+                'journalist_job': 'columnista' if self.job == 'CO' else 'periodista', 'journalist_slug': self.slug
             },
         )
 
@@ -814,149 +816,149 @@ class Journalist(Model):
 
     class Meta:
         ordering = ('name', )
-        verbose_name = u'periodista'
-        verbose_name_plural = u'periodistas'
+        verbose_name = 'periodista'
+        verbose_name_plural = 'periodistas'
 
 
 class Location(Model):
-    city = CharField(u'ciudad', max_length=50)
-    country = CharField(u'país', max_length=50)
-    date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
+    city = CharField('ciudad', max_length=50)
+    country = CharField('país', max_length=50)
+    date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __unicode__(self):
-        return u'%s, %s' % (self.city, self.country)
+        return '%s, %s' % (self.city, self.country)
 
     class Meta:
         get_latest_by = 'date_created'
         ordering = ('country', 'city')
         unique_together = ('city', 'country')
-        verbose_name = u'ubicación'
-        verbose_name_plural = u'ubicaciones'
+        verbose_name = 'ubicación'
+        verbose_name_plural = 'ubicaciones'
 
 
 class ArticleBase(Model, CT):
     TYPE_CHOICES = settings.CORE_ARTICLE_TYPES
 
     DISPLAY_CHOICES = (
-        ('I', u'Imagen'),
-        ('A', u'Audio'),
-        ('V', u'Video'),
+        ('I', 'Imagen'),
+        ('A', 'Audio'),
+        ('V', 'Video'),
     )
 
     HEADER_DISPLAY_CHOICES = (
-        ('FW', u'Ancho completo'),
-        ('BG', u'Grande'),
+        ('FW', 'Ancho completo'),
+        ('BG', 'Grande'),
     )
 
     HOME_HEADER_DISPLAY_CHOICES = (
-        ('FW', u'Ancho completo'),
-        ('FF', u'Medio y medio'),
-        ('SM', u'Chico'),
+        ('FW', 'Ancho completo'),
+        ('FF', 'Medio y medio'),
+        ('SM', 'Chico'),
     )
 
     publication = ForeignKey(
         Publication,
-        verbose_name=u'publicación',
+        verbose_name='publicación',
         blank=True,
         null=True,
         related_name='articles_%(app_label)s',
     )
-    type = CharField(u'tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True, db_index=True)
-    headline = CharField(u'título', max_length=200, help_text=u'Se muestra en la portada y en la nota.')
+    type = CharField('tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True, db_index=True)
+    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en la nota.')
     keywords = CharField(
-        u'titulín', max_length=45, blank=True, null=True, help_text=u'Se muestra encima del título en portada.'
+        'titulín', max_length=45, blank=True, null=True, help_text='Se muestra encima del título en portada.'
     )
-    slug = SlugField(u'slug', max_length=200)
+    slug = SlugField('slug', max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
-        u'bajada', blank=True, null=True, help_text=u'Se muestra en la página de la nota debajo del título.'
+        'bajada', blank=True, null=True, help_text='Se muestra en la página de la nota debajo del título.'
     )
     lead = TextField(
-        u'copete', blank=True, null=True, help_text=u'Se muestra en la página de la nota debajo de la bajada.'
+        'copete', blank=True, null=True, help_text='Se muestra en la página de la nota debajo de la bajada.'
     )
-    body = TextField(u'cuerpo')
+    body = TextField('cuerpo')
     header_display = CharField(
-        u'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
+        'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
     )
     home_header_display = CharField(
-        u'tipo de cabezal cuando es portada',
+        'tipo de cabezal cuando es portada',
         max_length=2,
         choices=HOME_HEADER_DISPLAY_CHOICES,
         blank=True,
         null=True,
         default='SM',
     )
-    home_lead = TextField(u'bajada en portada', blank=True, null=True, help_text=u'Bajada de la nota en portada.')
-    home_display = CharField(u'mostrar en portada', max_length=2, choices=DISPLAY_CHOICES, blank=True, null=True)
+    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada de la nota en portada.')
+    home_display = CharField('mostrar en portada', max_length=2, choices=DISPLAY_CHOICES, blank=True, null=True)
     home_top_deck = TextField(
-        u'bajada en destacados',
+        'bajada en destacados',
         blank=True,
         null=True,
         help_text=(
-            u'Se muestra en los destacados de la portada, en el caso de estar vació se muestra la bajada de la nota.'
+            'Se muestra en los destacados de la portada, en el caso de estar vació se muestra la bajada de la nota.'
         ),
     )
     byline = ManyToManyField(
         Journalist,
-        verbose_name=u'autor/es',
+        verbose_name='autor/es',
         related_name='articles_%(app_label)s',
         blank=True,
     )
     only_initials = BooleanField(
-        u'sólo iniciales',
+        'sólo iniciales',
         default=False,
         help_text=(
-            u'Marque esta opción para que en la firma del artículo se muestren únicamente las iniciales del autor.'
+            'Marque esta opción para que en la firma del artículo se muestren únicamente las iniciales del autor.'
         ),
     )
-    latitude = DecimalField(u'latitud', max_digits=10, decimal_places=6, blank=True, null=True)
-    longitude = DecimalField(u'longitud', max_digits=10, decimal_places=6, blank=True, null=True)
+    latitude = DecimalField('latitud', max_digits=10, decimal_places=6, blank=True, null=True)
+    longitude = DecimalField('longitud', max_digits=10, decimal_places=6, blank=True, null=True)
     location = ForeignKey(
         Location,
-        verbose_name=u'ubicación',
+        verbose_name='ubicación',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    is_published = BooleanField(u'publicado', default=True)
-    date_published = DateTimeField(u'fecha de publicación', null=True, db_index=True)
-    date_created = DateTimeField(u'fecha de creación', auto_now_add=True, db_index=True)
-    last_modified = DateTimeField(u'última actualización', auto_now=True)
-    views = PositiveIntegerField(u'vistas', default=0, db_index=True)
-    allow_comments = BooleanField(u'Habilitar comentarios', default=True)
+    is_published = BooleanField('publicado', default=True)
+    date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
+    date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
+    last_modified = DateTimeField('última actualización', auto_now=True)
+    views = PositiveIntegerField('vistas', default=0, db_index=True)
+    allow_comments = BooleanField('Habilitar comentarios', default=True)
     created_by = ForeignKey(
         User,
-        verbose_name=u'creado por',
+        verbose_name='creado por',
         related_name='created_articles_%(app_label)s',
         editable=False,
         blank=False,
         null=True,
     )
-    photo = ForeignKey(Photo, blank=True, null=True, verbose_name=u'imagen')
-    gallery = ForeignKey(Gallery, verbose_name=u'galería', blank=True, null=True)
+    photo = ForeignKey(Photo, blank=True, null=True, verbose_name='imagen')
+    gallery = ForeignKey(Gallery, verbose_name='galería', blank=True, null=True)
     video = ForeignKey(
         Video,
-        verbose_name=u'video',
+        verbose_name='video',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    youtube_video = ForeignKey(YouTubeVideo, verbose_name=u'video de YouTube', blank=True, null=True)
+    youtube_video = ForeignKey(YouTubeVideo, verbose_name='video de YouTube', blank=True, null=True)
     audio = ForeignKey(
         Audio,
-        verbose_name=u'audio',
+        verbose_name='audio',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    tags = TagField(verbose_name=u'etiquetas', blank=True, null=True)
+    tags = TagField(verbose_name='etiquetas', blank=True, null=True)
     allow_related = BooleanField(
-        u'mostrar en artículos relacionados', default=True, blank=False, null=False, db_index=True
+        'mostrar en artículos relacionados', default=True, blank=False, null=False, db_index=True
     )
     show_related_articles = BooleanField(
-        u'mostrar artículos relacionados dentro de este artículo', default=True, blank=False, null=False
+        'mostrar artículos relacionados dentro de este artículo', default=True, blank=False, null=False
     )
-    public = BooleanField(u'Artículo libre', default=False)
+    public = BooleanField('Artículo libre', default=False)
 
     published = PublishedArticleManager()
 
@@ -1000,7 +1002,7 @@ class ArticleBase(Model, CT):
             targets = targets.exclude(id=self.id)
         if targets:
             # TODO: IntegrityError may be better exception to raise
-            raise Exception(u'Ya existe un artículo en ese mes con el mismo título.')
+            raise Exception('Ya existe un artículo en ese mes con el mismo título.')
 
         super(ArticleBase, self).save(*args, **kwargs)
 
@@ -1088,7 +1090,7 @@ class ArticleBase(Model, CT):
             change_url = urlresolvers.reverse('admin:core_article_change', args=(self.id, ))
             return "<a href='%s' target='_blank'>Editar</a>" % change_url
         else:
-            return u"No Existe"
+            return 'No Existe'
     edit_link.allow_tags = True
 
     def is_public(self):
@@ -1272,7 +1274,7 @@ class ArticleBase(Model, CT):
             elif total_seconds < 60 * 60 * 24 * 2:
                 verbose_date = "Ayer"
             elif total_seconds < 60 * 60 * 24 * 8:
-                verbose_date = u"Hace %d días" % (total_seconds / 60 / 60 / 24)
+                verbose_date = 'Hace %d días' % (total_seconds / 60 / 60 / 24)
             else:
                 verbose_date = self.datetime_published_verbose(False)
         else:
@@ -1283,8 +1285,8 @@ class ArticleBase(Model, CT):
         abstract = True
         get_latest_by = 'date_published'
         ordering = ('-date_published', )
-        verbose_name = u'artículo'
-        verbose_name_plural = u'artículos'
+        verbose_name = 'artículo'
+        verbose_name_plural = 'artículos'
         indexes = [Index(fields=['type', 'date_published', 'is_published'])]
 
 
@@ -1297,14 +1299,14 @@ class Article(ArticleBase):
     objects = ArticleManager()
     sections = ManyToManyField(
         Section,
-        verbose_name=u'sección',
+        verbose_name='sección',
         blank=False,
         through='ArticleRel',
         related_name='articles_%(app_label)s',
     )
     main_section = ForeignKey(
         'ArticleRel',
-        verbose_name=u'publicación principal',
+        verbose_name='publicación principal',
         blank=True,
         null=True,
         related_name='main',
@@ -1312,7 +1314,7 @@ class Article(ArticleBase):
     )
     viewed_by = ManyToManyField(
         User,
-        verbose_name=u'visto por',
+        verbose_name='visto por',
         blank=True,
         editable=False,
         through='ArticleViewedBy',
@@ -1320,14 +1322,14 @@ class Article(ArticleBase):
     )
     additional_access = ManyToManyField(
         Publication,
-        verbose_name=u'extender acceso a suscriptores por publicación',
+        verbose_name='extender acceso a suscriptores por publicación',
         help_text=(
-            u'Además de los permisos que automáticamente se establecen según dónde se publica el artículo, '
-            u'se dará el mismo nivel de acceso a los suscriptores de las publicaciones marcadas aquí.'
+            'Además de los permisos que automáticamente se establecen según dónde se publica el artículo, '
+            'se dará el mismo nivel de acceso a los suscriptores de las publicaciones marcadas aquí.'
         ),
         blank=True,
     )
-    newsletter_featured = BooleanField(u'destacado en newsletter', default=False)
+    newsletter_featured = BooleanField('destacado en newsletter', default=False)
 
     def save(self, *args, **kwargs):
 
@@ -1344,7 +1346,7 @@ class Article(ArticleBase):
         #    self.top_position = Article.objects.filter(
         #        edition=self.edition, home_top=self.home_top).count() + 1
         if self.type == settings.CORE_HTML_ARTICLE:
-            self.headline = u'HTML | %s | %s | %s' % (
+            self.headline = 'HTML | %s | %s | %s' % (
                 unicode(self.edition), unicode(self.section), str(self.section_position)
             )
 
@@ -1385,7 +1387,7 @@ class Article(ArticleBase):
 
     def get_publications(self):
         return ', '.join([p.name for p in self.publications()])
-    get_publications.short_description = u'publicaciones'
+    get_publications.short_description = 'publicaciones'
 
     @property
     def section(self):
@@ -1455,7 +1457,7 @@ class Article(ArticleBase):
 
     def get_sections(self):
         return ', '.join([s.name for s in self.sections.distinct()])
-    get_sections.short_description = u'secciones'
+    get_sections.short_description = 'secciones'
 
     def get_categories_slugs(self):
         return set(
@@ -1520,16 +1522,16 @@ class ArticleRel(Model):
     article = ForeignKey(Article)
     edition = ForeignKey(Edition)
     section = ForeignKey(Section)
-    position = PositiveSmallIntegerField(u'orden en la sección', default=None, null=True)
+    position = PositiveSmallIntegerField('orden en la sección', default=None, null=True)
     home_top = BooleanField(
-        u'destacado en portada',
+        'destacado en portada',
         default=False,
-        help_text=u'Marque esta opción para que esta nota aparezca en los destacados de la edición.',
+        help_text='Marque esta opción para que esta nota aparezca en los destacados de la edición.',
     )
-    top_position = PositiveSmallIntegerField(u'orden', blank=True, null=True)
+    top_position = PositiveSmallIntegerField('orden', blank=True, null=True)
 
     def __unicode__(self):
-        return u'%s - %s' % (self.edition, self.section)
+        return '%s - %s' % (self.edition, self.section)
 
     class Meta:
         ordering = ('position', '-article__date_published')
@@ -1558,7 +1560,7 @@ class ArticleViews(Model):
 class CategoryHomeArticle(Model):
     home = ForeignKey('CategoryHome')
     article = ForeignKey(
-        Article, verbose_name=u'artículo', related_name='home_articles', limit_choices_to={'is_published': True}
+        Article, verbose_name='artículo', related_name='home_articles', limit_choices_to={'is_published': True}
     )
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
@@ -1569,7 +1571,7 @@ class CategoryHomeArticle(Model):
             self.article.last_published_by_category(self.home.category),
             format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
             use_l10n=True,
-        ) + (u'-F' if self.article.photo else u'')
+        ) + ('-F' if self.article.photo else '')
 
     class Meta:
         ordering = ('position', )
@@ -1577,11 +1579,11 @@ class CategoryHomeArticle(Model):
 
 
 class CategoryHome(Model):
-    category = OneToOneField(Category, verbose_name=u'área', related_name='home')
+    category = OneToOneField(Category, verbose_name='área', related_name='home')
     articles = ManyToManyField(Article, through=CategoryHomeArticle)
 
     def __unicode__(self):
-        return u'%s - %s' % (self.category, self.cover())
+        return '%s - %s' % (self.category, self.cover())
 
     def articles_ordered(self):
         return self.articles.order_by(
@@ -1615,8 +1617,8 @@ class CategoryHome(Model):
                 home_article.save()
 
     class Meta:
-        verbose_name = u'portada de área'
-        verbose_name_plural = u'portadas de área'
+        verbose_name = 'portada de área'
+        verbose_name_plural = 'portadas de área'
         ordering = ('category', )
 
 
@@ -1752,10 +1754,10 @@ def update_category_home(dry_run=False):
 class CategoryNewsletterArticle(Model):
     newsletter = ForeignKey('CategoryNewsletter')
     article = ForeignKey(
-        Article, verbose_name=u'artículo', related_name='newsletter_articles', limit_choices_to={'is_published': True}
+        Article, verbose_name='artículo', related_name='newsletter_articles', limit_choices_to={'is_published': True}
     )
     order = PositiveSmallIntegerField('orden', null=True, blank=True)
-    featured = BooleanField(u'incluir sólo en bloque destacado', default=False)
+    featured = BooleanField('incluir sólo en bloque destacado', default=False)
 
     def __unicode__(self):
         # also a custom text version to be useful in the CategoryNewsletter admin change form
@@ -1763,19 +1765,19 @@ class CategoryNewsletterArticle(Model):
             self.article.last_published_by_category(self.newsletter.category),
             format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
             use_l10n=True,
-        ) + (u'-F' if self.article.photo else u'')
+        ) + ('-F' if self.article.photo else '')
 
     class Meta:
         ordering = ('order', )
 
 
 class CategoryNewsletter(Model):
-    valid_until = DateTimeField(u'válida hasta')
-    category = OneToOneField(Category, verbose_name=u'área', related_name='newsletter')
+    valid_until = DateTimeField('válida hasta')
+    category = OneToOneField(Category, verbose_name='área', related_name='newsletter')
     articles = ManyToManyField(Article, through=CategoryNewsletterArticle)
 
     def __unicode__(self):
-        return u'%s - %s' % (self.category, self.cover())
+        return '%s - %s' % (self.category, self.cover())
 
     def non_featured_articles(self):
         """ Returns the non-featured articles qs """
@@ -1806,25 +1808,25 @@ class CategoryNewsletter(Model):
         return featured.order_by('newsletter_articles')[1:] if featured.exists() else []
 
     class Meta:
-        verbose_name = u'newsletter de área'
-        verbose_name_plural = u'newsletters de área'
+        verbose_name = 'newsletter de área'
+        verbose_name_plural = 'newsletters de área'
         ordering = ('category', )
 
 
 class ArticleExtension(Model):
     SIZE_CHOICES = (
-        ('R', u'Regular'),
-        ('M', u'Mediano'),
-        ('F', u'Full'),
+        ('R', 'Regular'),
+        ('M', 'Mediano'),
+        ('F', 'Full'),
     )
-    article = ForeignKey(Article, verbose_name=u'artículo', related_name='extensions')
-    headline = CharField(u'título', max_length=100, null=True, blank=True)
-    body = TextField(u'cuerpo')
-    size = CharField(u'size', max_length=1, choices=SIZE_CHOICES, default='R')
-    background_color = CharField(u'background color', max_length=7, default='#eaeaea', null=True, blank=True)
+    article = ForeignKey(Article, verbose_name='artículo', related_name='extensions')
+    headline = CharField('título', max_length=100, null=True, blank=True)
+    body = TextField('cuerpo')
+    size = CharField('size', max_length=1, choices=SIZE_CHOICES, default='R')
+    background_color = CharField('background color', max_length=7, default='#eaeaea', null=True, blank=True)
 
     def __unicode__(self):
-        return self.headline or u''
+        return self.headline or ''
 
     def _is_published(self):
         return self.article.is_published
@@ -1832,43 +1834,43 @@ class ArticleExtension(Model):
 
     class Meta:
         ordering = ('article', 'headline')
-        verbose_name = u'recuadro'
-        verbose_name_plural = u'recuadros'
+        verbose_name = 'recuadro'
+        verbose_name_plural = 'recuadros'
 
 
 class ArticleBodyImage(Model):
     DISPLAY_CHOICES = (
-        ('BG', u'Ancho regular'),
-        ('MD', u'Ancho amplio'),
-        ('FW', u'Ancho completo'),
+        ('BG', 'Ancho regular'),
+        ('MD', 'Ancho amplio'),
+        ('FW', 'Ancho completo'),
     )
-    article = ForeignKey(Article, verbose_name=u'artículo', related_name='body_image')
-    image = ForeignKey(Photo, verbose_name=u'foto', related_name='photo')
-    display = CharField(u'display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
+    article = ForeignKey(Article, verbose_name='artículo', related_name='body_image')
+    image = ForeignKey(Photo, verbose_name='foto', related_name='photo')
+    display = CharField('display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
 
     def __unicode__(self):
-        return (self.image.title or u'') if self.image else u''
+        return (self.image.title or '') if self.image else ''
 
     class Meta:
-        verbose_name = u'imagen'
-        verbose_name_plural = u'imagenes'
+        verbose_name = 'imagen'
+        verbose_name_plural = 'imagenes'
 
 
 class PrintOnlyArticle(Model):
-    headline = CharField(u'título', max_length=100)
-    deck = CharField(u'bajada', max_length=255, blank=True, null=True)
-    edition = ForeignKey(Edition, verbose_name=u'edición', related_name='print_only_articles')
-    date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
+    headline = CharField('título', max_length=100)
+    deck = CharField('bajada', max_length=255, blank=True, null=True)
+    edition = ForeignKey(Edition, verbose_name='edición', related_name='print_only_articles')
+    date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __unicode__(self):
-        return self.headline or u''
+        return self.headline or ''
 
     class Meta:
         get_latest_by = 'date_created'
         ordering = ('id', )
         unique_together = ('headline', 'edition')
-        verbose_name = u'artículo impreso'
-        verbose_name_plural = u'artículos impresos'
+        verbose_name = 'artículo impreso'
+        verbose_name_plural = 'artículos impresos'
 
 
 class ArticleUrlHistory(Model):
@@ -1880,54 +1882,54 @@ class ArticleUrlHistory(Model):
 
 
 class BreakingNewsModule(Model):
-    is_published = BooleanField(u'publicado', default=False)
-    headline = CharField(u'título', max_length=100)
-    deck = CharField(u'bajada', max_length=255, blank=True, null=True)
-    enable_notification = BooleanField(u'mostrar notificación de alerta', default=False)
-    notification_url = URLField(u'URL destino de la notificación', blank=True, null=True)
-    notification_text = CharField(u'texto de la notificación', max_length=255, blank=True, null=True)
-    articles = ManyToManyField(Article, verbose_name=u'artículos relacionados', blank=True)
-    embeds_headline = CharField(u'título de los incrustados', max_length=100, blank=True, null=True)
-    embeds_description = CharField(u'descripción de los incrustados', max_length=255, blank=True, null=True)
-    embed1_title = CharField(u'título de incrustado 1', max_length=100, blank=True, null=True)
-    embed1_content = TextField(u'contenido de incrustado 1', blank=True, null=True)
-    embed2_title = CharField(u'título de incrustado 2', max_length=100, blank=True, null=True)
-    embed2_content = TextField(u'contenido de incrustado 2', blank=True, null=True)
-    embed3_title = CharField(u'título de incrustado 3', max_length=100, blank=True, null=True)
-    embed3_content = TextField(u'contenido de incrustado 3', blank=True, null=True)
-    embed4_title = CharField(u'título de incrustado 4', max_length=100, blank=True, null=True)
-    embed4_content = TextField(u'contenido de incrustado 4', blank=True, null=True)
-    embed5_title = CharField(u'título de incrustado 5', max_length=100, blank=True, null=True)
-    embed5_content = TextField(u'contenido de incrustado 5', blank=True, null=True)
-    embed6_title = CharField(u'título de incrustado 6', max_length=100, blank=True, null=True)
-    embed6_content = TextField(u'contenido de incrustado 6', blank=True, null=True)
-    embed7_title = CharField(u'título de incrustado 7', max_length=100, blank=True, null=True)
-    embed7_content = TextField(u'contenido de incrustado 7', blank=True, null=True)
-    embed8_title = CharField(u'título de incrustado 8', max_length=100, blank=True, null=True)
-    embed8_content = TextField(u'contenido de incrustado 8', blank=True, null=True)
-    embed9_title = CharField(u'título de incrustado 9', max_length=100, blank=True, null=True)
-    embed9_content = TextField(u'contenido de incrustado 9', blank=True, null=True)
-    embed10_title = CharField(u'título de incrustado 10', max_length=100, blank=True, null=True)
-    embed10_content = TextField(u'contenido de incrustado 10', blank=True, null=True)
-    embed11_title = CharField(u'título de incrustado 11', max_length=100, blank=True, null=True)
-    embed11_content = TextField(u'contenido de incrustado 11', blank=True, null=True)
-    embed12_title = CharField(u'título de incrustado 12', max_length=100, blank=True, null=True)
-    embed12_content = TextField(u'contenido de incrustado 12', blank=True, null=True)
-    embed13_title = CharField(u'título de incrustado 13', max_length=100, blank=True, null=True)
-    embed13_content = TextField(u'contenido de incrustado 13', blank=True, null=True)
-    embed14_title = CharField(u'título de incrustado 14', max_length=100, blank=True, null=True)
-    embed14_content = TextField(u'contenido de incrustado 14', blank=True, null=True)
-    publications = ManyToManyField(Publication, verbose_name=u'portada de publicaciones', blank=True)
-    categories = ManyToManyField(Category, verbose_name=u'portada de áreas', blank=True)
+    is_published = BooleanField('publicado', default=False)
+    headline = CharField('título', max_length=100)
+    deck = CharField('bajada', max_length=255, blank=True, null=True)
+    enable_notification = BooleanField('mostrar notificación de alerta', default=False)
+    notification_url = URLField('URL destino de la notificación', blank=True, null=True)
+    notification_text = CharField('texto de la notificación', max_length=255, blank=True, null=True)
+    articles = ManyToManyField(Article, verbose_name='artículos relacionados', blank=True)
+    embeds_headline = CharField('título de los incrustados', max_length=100, blank=True, null=True)
+    embeds_description = CharField('descripción de los incrustados', max_length=255, blank=True, null=True)
+    embed1_title = CharField('título de incrustado 1', max_length=100, blank=True, null=True)
+    embed1_content = TextField('contenido de incrustado 1', blank=True, null=True)
+    embed2_title = CharField('título de incrustado 2', max_length=100, blank=True, null=True)
+    embed2_content = TextField('contenido de incrustado 2', blank=True, null=True)
+    embed3_title = CharField('título de incrustado 3', max_length=100, blank=True, null=True)
+    embed3_content = TextField('contenido de incrustado 3', blank=True, null=True)
+    embed4_title = CharField('título de incrustado 4', max_length=100, blank=True, null=True)
+    embed4_content = TextField('contenido de incrustado 4', blank=True, null=True)
+    embed5_title = CharField('título de incrustado 5', max_length=100, blank=True, null=True)
+    embed5_content = TextField('contenido de incrustado 5', blank=True, null=True)
+    embed6_title = CharField('título de incrustado 6', max_length=100, blank=True, null=True)
+    embed6_content = TextField('contenido de incrustado 6', blank=True, null=True)
+    embed7_title = CharField('título de incrustado 7', max_length=100, blank=True, null=True)
+    embed7_content = TextField('contenido de incrustado 7', blank=True, null=True)
+    embed8_title = CharField('título de incrustado 8', max_length=100, blank=True, null=True)
+    embed8_content = TextField('contenido de incrustado 8', blank=True, null=True)
+    embed9_title = CharField('título de incrustado 9', max_length=100, blank=True, null=True)
+    embed9_content = TextField('contenido de incrustado 9', blank=True, null=True)
+    embed10_title = CharField('título de incrustado 10', max_length=100, blank=True, null=True)
+    embed10_content = TextField('contenido de incrustado 10', blank=True, null=True)
+    embed11_title = CharField('título de incrustado 11', max_length=100, blank=True, null=True)
+    embed11_content = TextField('contenido de incrustado 11', blank=True, null=True)
+    embed12_title = CharField('título de incrustado 12', max_length=100, blank=True, null=True)
+    embed12_content = TextField('contenido de incrustado 12', blank=True, null=True)
+    embed13_title = CharField('título de incrustado 13', max_length=100, blank=True, null=True)
+    embed13_content = TextField('contenido de incrustado 13', blank=True, null=True)
+    embed14_title = CharField('título de incrustado 14', max_length=100, blank=True, null=True)
+    embed14_content = TextField('contenido de incrustado 14', blank=True, null=True)
+    publications = ManyToManyField(Publication, verbose_name='portada de publicaciones', blank=True)
+    categories = ManyToManyField(Category, verbose_name='portada de áreas', blank=True)
 
     def __unicode__(self):
-        return self.headline or u''
+        return self.headline or ''
 
     def covers(self):
-        return u', '.join(
+        return ', '.join(
             [p.__unicode__() for p in self.publications.all()] + [c.__unicode__() for c in self.categories.all()]
         )
-    covers.short_description = u'portadas'
+    covers.short_description = 'portadas'
 
     def has_embed(self, i):
         return getattr(self, 'embed%d_title' % i) or getattr(self, 'embed%d_content' % i)
@@ -1978,8 +1980,8 @@ class BreakingNewsModule(Model):
         return self.has_embeds(13, 14)
 
     class Meta:
-        verbose_name = u'módulo de último momento'
-        verbose_name_plural = u'módulos de último momento'
+        verbose_name = 'módulo de último momento'
+        verbose_name_plural = 'módulos de último momento'
 
 
 def get_publishing_datetime():
@@ -2019,7 +2021,7 @@ def get_current_edition(publication=None):
         return Edition.objects.filter(**filters).latest()
     except Exception as e:
         if settings.DEBUG:
-            print(u"ERROR: %s" % e)
+            print('ERROR: %s' % e)
         return None
 
 

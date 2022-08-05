@@ -3,6 +3,7 @@
 import sys
 from os.path import basename, join
 import logging
+import locale
 import smtplib
 import time
 import json
@@ -63,7 +64,13 @@ def build_and_send(
 
     site = Site.objects.get(id=site_id) if site_id else Site.objects.get_current()
     category_slug, export_only = category if offline else category.slug, export_subscribers or export_context
-    export_ctx = {'newsletter_campaign': category_slug, 'hide_after_content_block': hide_after_content_block}
+    locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
+    export_ctx = {
+        'newsletter_campaign': category_slug,
+        'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=today).capitalize(),
+        'enable_photo_byline': settings.CORE_ARTICLE_ENABLE_PHOTO_BYLINE,
+        'hide_after_content_block': hide_after_content_block,
+    }
     context = export_ctx.copy()
     context['category'] = category
 
@@ -89,6 +96,13 @@ def build_and_send(
                 a['date_published'] = dp_article
                 dp_articles.append((a, a_section))
             context['articles'] = dp_articles
+            if 'featured_articles' in context:
+                dp_featured_articles = []
+                for a, a_section in context['featured_articles']:
+                    dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
+                    a['date_published'] = dp_article
+                    dp_featured_articles.append((a, a_section))
+                context['featured_articles'] = dp_featured_articles
         elif not export_subscribers or export_context:
             category_nl = CategoryNewsletter.objects.get(category=category, valid_until__gt=datetime.now())
             cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
@@ -105,7 +119,13 @@ def build_and_send(
                         ],
                         'featured_article_section':
                             featured_article_section.name if featured_article_section else None,
-                        # TODO: check if cover_article_section and featured_articles entries are needed
+                        'featured_articles': [
+                            (
+                                a.nl_serialize(), {'name': section.name, 'slug': section.slug}
+                            ) for a, section in [
+                                (a, a.publication_section()) for a in category_nl.non_cover_featured_articles()
+                            ]
+                        ],
                     }
                 )
             else:
@@ -283,6 +303,7 @@ def build_and_send(
                     {
                         'hashed_id': hashed_id,
                         'unsubscribe_url': unsubscribe_url,
+                        'browser_preview_url': '%s/area/%s/nl/%s/' % (site_url, category_slug, hashed_id),
                         'subscriber_id': s_id,
                         'is_subscriber': is_subscriber,
                         'is_subscriber_any': is_subscriber_any,

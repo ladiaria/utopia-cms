@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
+import locale
 
 from django.conf import settings
 from django.template import Library, Node, NodeList, TemplateSyntaxError, Variable
@@ -98,9 +99,12 @@ register.tag('iftimeuntil', if_time)
 @register.simple_tag
 def subscriptionprice(subscription_type):
     try:
-        return int(SubscriptionPrices.objects.get(subscription_type=subscription_type).price)
+        price = SubscriptionPrices.objects.get(subscription_type=subscription_type).price
     except SubscriptionPrices.DoesNotExist:
         return u''
+    else:
+        locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
+        return '{:n}'.format(int(price))
 
 
 @register.simple_tag

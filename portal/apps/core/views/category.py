@@ -1,19 +1,25 @@
 # -*- coding: utf-8 -*-
 import sys
+from os.path import join
+import locale
 import socket
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import traceback
+import json
 from hashids import Hashids
 
 from django.conf import settings
-from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect
+from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect, Http404
 from django.views.decorators.cache import never_cache
 from django.contrib.sites.models import Site
 from django.shortcuts import get_object_or_404, render
 from django.core.urlresolvers import reverse
 
+from libs.utils import decode_hashid
+
 from core.models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
 from core.templatetags.ldml import remove_markup
+from thedaily.models import Subscriber
 from faq.models import Question, Topic
 
 
@@ -175,6 +181,7 @@ def newsletter_preview(request, slug):
         unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
             '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
         headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
+        locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
 
         context.update(
             {
@@ -183,7 +190,9 @@ def newsletter_preview(request, slug):
                 'unsubscribe_url': unsubscribe_url,
                 'custom_subject': custom_subject,
                 'headers_preview': headers,
+                'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=date.today()).capitalize(),
                 'cover_article': cover_article,
+                'enable_photo_byline': settings.CORE_ARTICLE_ENABLE_PHOTO_BYLINE,
                 'featured_article': featured_article,
             }
         )
@@ -204,3 +213,54 @@ def newsletter_preview(request, slug):
             print(exc_value)
             print(traceback.extract_tb(exc_traceback))
         return HttpResponseServerError(u'ERROR: %s' % e)
+
+
+@never_cache
+def newsletter_browser_preview(request, slug, hashed_id):
+    decoded = decode_hashid(hashed_id)
+    # TODO: if authenticated => assert same logged in user
+    if decoded:
+        subscriber = get_object_or_404(Subscriber, id=decoded[0])
+        if not subscriber.user:
+            raise Http404
+    else:
+        raise Http404
+    try:
+        context = json.loads(open(join(settings.SENDNEWSLETTER_EXPORT_DIR, '%s_ctx.json' % slug)).read())
+    except IOError:
+        raise Http404
+    # de-serialize dates
+    dp_cover = datetime.strptime(context['cover_article']['date_published'], '%Y-%m-%d').date()
+    context['cover_article']['date_published'] = dp_cover
+    featured_article = context['featured_article']
+    if featured_article:
+        dp_featured = datetime.strptime(featured_article['date_published'], '%Y-%m-%d').date()
+        context['featured_article']['date_published'] = dp_featured
+    dp_articles = []
+    for a, a_section in context['articles']:
+        dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
+        a['date_published'] = dp_article
+        dp_articles.append((a, a_section))
+    context['articles'] = dp_articles
+    if 'featured_articles' in context:
+        dp_featured_articles = []
+        for a, a_section in context['featured_articles']:
+            dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
+            a['date_published'] = dp_article
+            dp_featured_articles.append((a, a_section))
+        context['featured_articles'] = dp_featured_articles
+    site_url = context['site_url']
+    unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
+        '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, slug, hashed_id, slug)
+    # TODO: obtain missing vars from hashed_id subscriber
+    context.update(
+        {
+            'hashed_id': hashed_id,
+            'unsubscribe_url': unsubscribe_url,
+            'subscriber_id': subscriber.id,
+            'is_subscriber': subscriber.is_subscriber(),
+            'is_subscriber_any': subscriber.is_subscriber_any(),
+            'is_subscriber_default': subscriber.is_subscriber(settings.DEFAULT_PUB),
+        }
+    )
+    return render(request, '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug), context)
