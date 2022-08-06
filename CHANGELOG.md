@@ -1,3 +1,31 @@
+# version 0.2.8 (2022-08-06)
+
+- Latest release supporting Python 2.7
+- New publication image field added for the newsletter logo only.
+- Support for short format in Edition.date_published_verbose method.
+- Category Newsletter browser preview.
+- Subscription price template tag localization.
+- support for a 'direct path' temporal redirect in category redirect settings.
+- sections main publication support through settings.
+- some tests added and improved.
+- dump_articles command fixed and updated.
+- custom hardcoded label replaced.
+- dashboard data exclude support.
+- dashboard local month-filtered rank instead of global.
+- tag url redirect to slugified version.
+- encoding issues fixed.
+- syntax code and indent improvements.
+- noindex if root_url in robots fixed condition.
+- reqs and nginx sample conf fix.
+- fix related when no article photo is set.
+- return last article found in urlhistory if more than one table row match.
+- fix when next page in login has non-ascii chars.
+- fixed url tag in template when no publication.
+- many simplifications in article templates when render the article photo.
+- fix obtaining article's photo size.
+- other minor fixes related to settings and migrations.
+
+
 # version 0.2.7 (2022-06-27)
 
 - Removed some obsoleted template tags modules and one-time scripts.
