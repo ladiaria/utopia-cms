@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 from exchange.models import Exchange, Currency
 
 from django.template import Library, loader
+
 
 register = Library()
 
@@ -13,9 +17,7 @@ def exchange_table():
     except Exception:
         return ''
     exchange_list = Exchange.objects.filter(date=date)
-    return loader.render_to_string(
-        'exchange/templates/detail.html',
-        {'exchange_list': exchange_list, 'date': date})
+    return loader.render_to_string('exchange/templates/detail.html', {'exchange_list': exchange_list, 'date': date})
 
 
 @register.filter
@@ -23,8 +25,7 @@ def to_usd(value):
     """ Filter to convert to USD """
     try:
         usd = Currency.objects.get(slug='dolar')
-        return '%.2f %s' % (round(value / Exchange.objects.filter(
-            currency=usd).latest().buy, 2), usd.symbol)
+        return '%.2f %s' % (round(old_div(value, Exchange.objects.filter(currency=usd).latest().buy), 2), usd.symbol)
     except Exception:
         return ''
 
@@ -37,7 +38,6 @@ def to_usd_val(value):
     """
     try:
         usd = Currency.objects.get(slug='dolar')
-        return '%.2f' % round(float(value) / Exchange.objects.filter(
-            currency=usd).latest().buy, 2)
+        return '%.2f' % round(float(value) / Exchange.objects.filter(currency=usd).latest().buy, 2)
     except Exception:
         return ''

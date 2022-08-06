@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 #===============================================================================
 # Copyright 2009 Matt Chaput
 # 
@@ -14,6 +15,7 @@
 # limitations under the License.
 #===============================================================================
 
+from builtins import range
 from threading import Lock
 
 from whoosh.util import protected
@@ -55,7 +57,7 @@ class FileDocReader(DocReader):
     @protected
     def __iter__(self):
         is_deleted = self.segment.is_deleted
-        for docnum in xrange(0, self.segment.max_doc):
+        for docnum in range(0, self.segment.max_doc):
             if not is_deleted(docnum):
                 yield self.docs_table.get(docnum)
     

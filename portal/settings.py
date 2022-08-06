@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 import sys
 from os.path import abspath, basename, dirname, join, realpath
 from datetime import datetime
@@ -484,6 +488,10 @@ CRM_UPDATE_USER_ENABLED = True
 # PWA
 PWA_SERVICE_WORKER_TEMPLATE = 'core/templates/sw/serviceworker.js'
 PWA_SERVICE_WORKER_VERSION = 1
+
+# Useful settings for testing (test management command, should be overriden in local_test_settings.py if necessary)
+TESTING_CHROME_HEADLESS = True
+TESTING_PORT = 8000
 
 try:
     UTILS_MODULE = __import__('utils', fromlist=[PROJECT_ABSOLUTE_DIR])

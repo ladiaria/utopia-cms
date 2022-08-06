@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import range
 from endless_pagination.settings import (DEFAULT_CALLABLE_EXTREMES, 
     DEFAULT_CALLABLE_AROUNDS, PAGE_LABEL)
 from endless_pagination import exceptions
@@ -47,7 +49,7 @@ def get_page_numbers(current_page, num_pages,
     Default callable for page listing.
     Produces a digg-style pagination.
     """
-    page_range = range(1, num_pages+1)
+    page_range = list(range(1, num_pages+1))
     pages = ["previous"]
     
     # get first and last pages (extremes)

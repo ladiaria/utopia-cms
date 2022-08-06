@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import str
 import base64
 
 from django.test import TestCase

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from functools import wraps
 
 from endless_pagination.settings import PAGE_LABEL, TEMPLATE_VARNAME
@@ -43,7 +44,7 @@ def page_templates(mapping):
     You can use this decorator instead of chaining multiple *page_template*
     calls.
     """
-    templates = dict((v or PAGE_LABEL, k) for k, v in mapping.items())
+    templates = dict((v or PAGE_LABEL, k) for k, v in list(mapping.items()))
     def decorator(view):
         # decorator with arguments wrap
         @wraps(view)      

@@ -1,3 +1,4 @@
+from future.utils import raise_
 import re
 
 from django import template
@@ -76,7 +77,7 @@ def paginate(parser, token, paginator_class=None):
         tag_name, tag_args = token.contents.split(None, 1)
     except ValueError:
         message = "%r tag requires arguments" % token.contents.split()[0]
-        raise template.TemplateSyntaxError, message
+        raise_(template.TemplateSyntaxError, message)
 
     # use regexp to catch args
     p = r'^(((?P<first_page>\w+)\,)?(?P<per_page>\w+)\s+)?(?P<objects>\w+)(\s+starting\s+from\s+page\s+(?P<number>\w+))?(\s+using\s+(?P<key>[\"\'\w]+))?(\s+with\s+(?P<override_path>\w+))?(\s+as\s+(?P<var_name>\w+))?$'
@@ -84,7 +85,7 @@ def paginate(parser, token, paginator_class=None):
     match = e.match(tag_args)
     if match is None:
         message = "Invalid arguments for %r tag" % token.contents.split()[0]
-        raise template.TemplateSyntaxError, message
+        raise_(template.TemplateSyntaxError, message)
 
     # get objects
     kwargs = match.groupdict()
@@ -198,7 +199,7 @@ class PaginateNode(template.Node):
         # eg: display pages 1 to 3 if a user requests ?page=3 with normal get
         # and lazy pagination is used
         if issubclass(self.paginator, LazyPaginator) and (
-                context.has_key("request") and not context[
+                "request" in context and not context[
             "request"].is_ajax()):
             paginator = self.paginator(objects, per_page,
                                        first_page=page_number * per_page,
@@ -355,7 +356,7 @@ def get_pages(parser, token):
             var_name = args[1]
         else:
             message = "%r tag invalid arguments" % tag_name
-            raise template.TemplateSyntaxError, message
+            raise_(template.TemplateSyntaxError, message)
 
     # call the node
     return GetPagesNode(var_name)
@@ -422,7 +423,7 @@ def show_pages(parser, token):
     # args validation
     if len(token.contents.split()) != 1:
         message = "%r tag takes no arguments" % token.contents.split()[0]
-        raise template.TemplateSyntaxError, message
+        raise_(template.TemplateSyntaxError, message)
     # call the node
     return ShowPagesNode()
 
@@ -495,7 +496,7 @@ def show_current_number(parser, token):
         match = e.match(args)
         if match is None:
             message = "Invalid arguments for %r tag" % tag_name
-            raise template.TemplateSyntaxError, message
+            raise_(template.TemplateSyntaxError, message)
         # get objects
         groupdict = match.groupdict()
         number = groupdict["number"]

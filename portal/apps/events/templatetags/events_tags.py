@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from events.models import Event
 
 from django.template import Node, Library, Variable, TemplateSyntaxError

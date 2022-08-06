@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from tempfile import NamedTemporaryFile
 from ..cache import get_cache_key, get_hexdigest, get_hashed_mtime
 from ..settings import LESS_EXECUTABLE, LESS_USE_CACHE,\
@@ -76,7 +77,7 @@ def less(path):
         STATIC_URL = settings.MEDIA_URL
 
     encoded_full_path = full_path = os.path.join(STATIC_ROOT, path)
-    if isinstance(full_path, unicode):
+    if isinstance(full_path, str):
         filesystem_encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
         encoded_full_path = full_path.encode(filesystem_encoding)
 

@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 from __future__ import unicode_literals
 
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import os
 import time
 import locale
@@ -59,8 +65,8 @@ from tagging.fields import TagField
 from tagging.models import Tag
 from videologue.models import Video, YouTubeVideo
 
-from managers import PublishedArticleManager
-from utils import (
+from .managers import PublishedArticleManager
+from .utils import (
     datetime_isoformat,
     get_pdf_pdf_upload_to,
     get_pdf_cover_upload_to,
@@ -121,8 +127,8 @@ class Publication(Model):
     publisher_logo_width = PositiveSmallIntegerField(blank=True, null=True)
     publisher_logo_height = PositiveSmallIntegerField(blank=True, null=True)
 
-    def __unicode__(self):
-        return self.name or ''
+    def __str__(self):
+        return self.name or u''
 
     def save(self, *args, **kwargs):
         super(Publication, self).save(*args, **kwargs)
@@ -221,7 +227,7 @@ class PortableDocumentFormatBaseModel(Model):
     date_published = DateField('fecha de publicación', default=timezone.now)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.pdf[self.pdf.rfind('/') + 1:]
 
     class Meta:
@@ -287,7 +293,7 @@ class Edition(PortableDocumentFormatBaseModel):
         verbose_name = 'edición'
         verbose_name_plural = 'ediciones'
 
-    def __unicode__(self):
+    def __str__(self):
         try:
             display_name = '%s - %s' % (self.date_published.strftime('%d-%m-%Y'), self.publication.name)
         except Exception:
@@ -388,7 +394,7 @@ class EditionHeader(Model):
         verbose_name = 'encabezado de edición'
         verbose_name_plural = 'encabezados de edición'
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (self.edition, self.title)
 
 
@@ -406,7 +412,7 @@ class Supplement(PortableDocumentFormatBaseModel):
         verbose_name = 'suplemento'
         verbose_name_plural = 'suplementos'
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (self.date_published.strftime('%d-%m-%Y'), self.get_name_display())
 
     def save(self, *args, **kwargs):
@@ -477,7 +483,7 @@ class Category(Model):
     )
     exclude_from_top_menu = BooleanField('Excluir ítem en menú superior de escritorio', default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def latest_articles(self, exclude=[]):
@@ -619,7 +625,7 @@ class Section(Model):
     show_description = BooleanField('mostrar descripción', default=False)
     show_image = BooleanField('mostrar imagen', default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
@@ -787,7 +793,7 @@ class Journalist(Model):
     gp = CharField('google plus', max_length=255, blank=True, null=True)
     ig = CharField('instangram', max_length=255, blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
@@ -825,7 +831,7 @@ class Location(Model):
     country = CharField('país', max_length=50)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s, %s' % (self.city, self.country)
 
     class Meta:
@@ -962,11 +968,11 @@ class ArticleBase(Model, CT):
 
     published = PublishedArticleManager()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.headline
 
     def save(self, *args, **kwargs):
-        from utils import add_punctuation
+        from .utils import add_punctuation
         for attr in ('headline', 'deck', 'lead', 'body'):
             if getattr(self, attr, None):
                 setattr(self, attr, getattr(self, attr).strip())
@@ -1228,7 +1234,7 @@ class ArticleBase(Model, CT):
         elif 60 <= total_sec and total_sec <= 119:
             return '1 minuto'
         else:
-            mins = str(total_sec / 60) + ' minutos'
+            mins = str(old_div(total_sec, 60)) + ' minutos'
             return mins
 
     def date_published_isoformat(self):
@@ -1254,7 +1260,7 @@ class ArticleBase(Model, CT):
             ):
                 format_st = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_SAMEYEAR_FMT', "{dt.day} de {dt:%B}")
 
-        return format_st.encode('utf8').format(dt=self.date_published).lower().capitalize()
+        return format_st.format(dt=self.date_published).lower().capitalize()
 
     def date_published_verbose(self):
         if settings.CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO:
@@ -1262,19 +1268,19 @@ class ArticleBase(Model, CT):
             if total_seconds < 60:
                 verbose_date = "Hace segundos"
             elif total_seconds < 60 * 60:
-                minutes = int(total_seconds / 60)
+                minutes = int(old_div(total_seconds, 60))
                 verbose_date = "Hace %d minuto" % minutes
                 if minutes > 1:
                     verbose_date += 's'
             elif total_seconds < 60 * 60 * 24:
-                hours = int(total_seconds / 60 / 60)
+                hours = int(old_div(old_div(total_seconds, 60), 60))
                 verbose_date = "Hace %d hora" % hours
                 if hours > 1:
                     verbose_date += 's'
             elif total_seconds < 60 * 60 * 24 * 2:
                 verbose_date = "Ayer"
             elif total_seconds < 60 * 60 * 24 * 8:
-                verbose_date = 'Hace %d días' % (total_seconds / 60 / 60 / 24)
+                verbose_date = "Hace %d días" % (old_div(old_div(old_div(total_seconds, 60), 60), 24))
             else:
                 verbose_date = self.datetime_published_verbose(False)
         else:
@@ -1347,7 +1353,7 @@ class Article(ArticleBase):
         #        edition=self.edition, home_top=self.home_top).count() + 1
         if self.type == settings.CORE_HTML_ARTICLE:
             self.headline = 'HTML | %s | %s | %s' % (
-                unicode(self.edition), unicode(self.section), str(self.section_position)
+                str(self.edition), str(self.section), str(self.section_position)
             )
 
         old_url_path = self.url_path
@@ -1530,7 +1536,7 @@ class ArticleRel(Model):
     )
     top_position = PositiveSmallIntegerField('orden', blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (self.edition, self.section)
 
     class Meta:
@@ -1565,7 +1571,7 @@ class CategoryHomeArticle(Model):
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         # also a custom text version to be useful in the CategoryHome admin change form
         return date_format(
             self.article.last_published_by_category(self.home.category),
@@ -1582,7 +1588,7 @@ class CategoryHome(Model):
     category = OneToOneField(Category, verbose_name='área', related_name='home')
     articles = ManyToManyField(Article, through=CategoryHomeArticle)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (self.category, self.cover())
 
     def articles_ordered(self):
@@ -1676,7 +1682,7 @@ def update_category_home(dry_run=False):
                 min_date_iter = max_date_iter - timedelta(days_step)
 
     # iterate over the buckets and compute free places to fill
-    for category_slug, articles in buckets.items():
+    for category_slug, articles in list(buckets.items()):
         category = categories.get(slug=category_slug)
 
         try:
@@ -1759,7 +1765,7 @@ class CategoryNewsletterArticle(Model):
     order = PositiveSmallIntegerField('orden', null=True, blank=True)
     featured = BooleanField('incluir sólo en bloque destacado', default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         # also a custom text version to be useful in the CategoryNewsletter admin change form
         return date_format(
             self.article.last_published_by_category(self.newsletter.category),
@@ -1776,7 +1782,7 @@ class CategoryNewsletter(Model):
     category = OneToOneField(Category, verbose_name='área', related_name='newsletter')
     articles = ManyToManyField(Article, through=CategoryNewsletterArticle)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (self.category, self.cover())
 
     def non_featured_articles(self):
@@ -1825,7 +1831,7 @@ class ArticleExtension(Model):
     size = CharField('size', max_length=1, choices=SIZE_CHOICES, default='R')
     background_color = CharField('background color', max_length=7, default='#eaeaea', null=True, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.headline or ''
 
     def _is_published(self):
@@ -1848,7 +1854,7 @@ class ArticleBodyImage(Model):
     image = ForeignKey(Photo, verbose_name='foto', related_name='photo')
     display = CharField('display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
 
-    def __unicode__(self):
+    def __str__(self):
         return (self.image.title or '') if self.image else ''
 
     class Meta:
@@ -1862,7 +1868,7 @@ class PrintOnlyArticle(Model):
     edition = ForeignKey(Edition, verbose_name='edición', related_name='print_only_articles')
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.headline or ''
 
     class Meta:
@@ -1922,7 +1928,7 @@ class BreakingNewsModule(Model):
     publications = ManyToManyField(Publication, verbose_name='portada de publicaciones', blank=True)
     categories = ManyToManyField(Category, verbose_name='portada de áreas', blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.headline or ''
 
     def covers(self):

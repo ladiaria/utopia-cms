@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import sys, re
 
 def css_minify(css):
@@ -29,8 +34,8 @@ def css_minify(css):
 
         # output rule if it contains any declarations
         if properties:
-            print ','.join( selectors ) + '{' + \
-                ''.join(['%s:%s;' % (key, properties[key]) for key in porder]) + '}'
+            print(','.join( selectors ) + '{' + \
+                ''.join(['%s:%s;' % (key, properties[key]) for key in porder]) + '}')
 
 # http://www.crockford.com/javascript/jsmin.html
 #!/usr/bin/python
@@ -65,7 +70,7 @@ def css_minify(css):
 # SOFTWARE.
 # */
 
-from StringIO import StringIO
+from io import StringIO
 
 def jsmin(js):
     ins = StringIO(js)

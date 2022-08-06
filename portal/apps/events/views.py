@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from .models import Event, Activity
 from .forms import AttendantForm, AttendantFormRender
 from thedaily.models import Subscriber

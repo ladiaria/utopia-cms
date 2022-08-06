@@ -13,15 +13,10 @@ from photologue.models import Photo, PhotoSize, get_storage_path
 
 class Agency(models.Model):
     name = models.CharField('nombre', max_length=50, unique=True)
-    info = models.EmailField(
-        'información',
-        blank=True,
-        null=True,
-        help_text='Ingrese aquí información extra, como mail de contacto o lo que considere pertinente.',
-    )
+    info = models.EmailField('email', blank=True, null=True)
     date_created = models.DateTimeField('fecha de creación', auto_now_add=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     class Meta:
@@ -36,7 +31,7 @@ class Photographer(models.Model):
     email = models.EmailField('correo electrónico', blank=True, null=True)
     date_created = models.DateTimeField('fecha de creación', auto_now_add=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     class Meta:
@@ -71,7 +66,7 @@ class PhotoExtended(models.Model):
         verbose_name = 'configuración extra'
         verbose_name_plural = 'configuraciones extra'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.image.title
 
     def image_file_exists(self):

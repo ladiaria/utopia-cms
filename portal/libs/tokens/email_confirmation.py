@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.core.mail import send_mail
 from django.contrib.sites.models import Site
 from django.utils.http import int_to_base36, base36_to_int
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -65,18 +70,12 @@ class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
         # timestamp is number of days since 2001-1-1.  Converted to
         # base 36, this gives us a 3 digit string until about 2121
         ts_b36 = int_to_base36(timestamp)
-        hash = (
-            unicode(settings.SECRET_KEY)
-            + unicode(user.id)
-            + unicode(user.email)
-            + unicode(bool(user.is_active))
-            + unicode(timestamp)
-        )
+        hash = (str(settings.SECRET_KEY) + str(user.id) + str(user.email) + str(bool(user.is_active)) + str(timestamp))
         if self.edition_download:
             hash += str(user.get_profile().get_downloads())
         else:
-            hash += unicode(user.password)
-        return "%s-%s" % (ts_b36, sha1(hash).hexdigest()[::2])
+            hash += str(user.password)
+        return "%s-%s" % (ts_b36, sha1(bytes(hash, 'utf8')).hexdigest()[::2])
 
 
 default_token_generator = EmailConfirmationTokenGenerator()
@@ -105,15 +104,21 @@ def send_confirmation_link(*args, **kwargs):
         mail_from=from_mail,
         subject=subject,
     )
-    smtp = smtp_connect()
-    try:
-        smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [user.email], message.as_string())
-        if settings.DEBUG:
-            print('DEBUG: an email was sent from send_confirmation_link function')
-        smtp.quit()
-    except Exception:
-        # fail silently
-        pass
+    if (
+        not getattr(settings, 'LOCAL_EMAIL_BACKEND_TEST', False)
+        and settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
+    ):
+        smtp = smtp_connect()
+        try:
+            smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [user.email], message.as_string())
+            if settings.DEBUG:
+                print('DEBUG: an email was sent from send_confirmation_link function')
+            smtp.quit()
+        except Exception:
+            # fail silently
+            pass
+    else:
+        send_mail(subject, message.as_string(), settings.NOTIFICATIONS_FROM_MX, [user.email])
 
 
 def send_validation_email(subject, user, msg_template, url_generator, extra_context={}):

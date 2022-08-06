@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from future import standard_library
+from builtins import str
 import os
 import json
 import requests
 import pymongo
 from datetime import datetime
-from urllib import pathname2url
-from urlparse import urljoin, urlparse
+from urllib.request import pathname2url
+from urllib.parse import urljoin, urlparse
 from smtplib import SMTPRecipientsRefused
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
@@ -75,10 +79,11 @@ from thedaily.email_logic import limited_free_article_mail
 from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor
 
 from decorators import render_response
-from exceptions import UpdateCrmEx
-from tasks import send_notification, notify_digital, notify_paper
+from .exceptions import UpdateCrmEx
+from .tasks import send_notification, notify_digital, notify_paper
 
 
+standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 
 
@@ -851,7 +856,7 @@ def lista_lectura_historial(request):
     """
     # start the result set with mongo because these are the most recent viewed.
     historial, mids = [], []
-    if mongo_db:
+    if mongo_db is not None:
         for a in mongo_db.core_articleviewedby.find({'user': request.user.id}).sort('viewed_at', pymongo.DESCENDING):
             try:
                 article_id = a['article']
@@ -1094,7 +1099,7 @@ def amp_access_authorization(request):
                 articles_visited = set() if article.is_public() else set([article.id])
                 articles_visited_count = len(articles_visited)
 
-                if mongo_db:
+                if mongo_db is not None:
                     for x in mongo_db.core_articleviewedby.find({'user': request.user.id, 'allowed': None}):
                         articles_visited.add(x['article'])
                         articles_visited_count = len(articles_visited)
@@ -1149,7 +1154,7 @@ def amp_access_pingback(request):
 
             if request.user.is_authenticated():
 
-                if mongo_db and not blocked:
+                if mongo_db is not None and not blocked:
 
                     set_values = {'viewed_at': datetime.now()}
                     if article_allowed:
@@ -1163,13 +1168,13 @@ def amp_access_pingback(request):
 
                 visitor = get_or_create_visitor(request)
 
-                if visitor and mongo_db:
+                if visitor and mongo_db is not None:
                     mongo_db.signupwall_visitor.update_one(
                         {'_id': visitor.get('_id')}, {'$set': {'path_visited': path}}
                     )
 
             # inc this article visits if not blocked
-            if not blocked and mongo_db:
+            if not blocked and mongo_db is not None:
                 mongo_db.core_articlevisits.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
 
     response = HttpResponse()

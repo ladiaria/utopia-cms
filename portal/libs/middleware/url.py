@@ -1,4 +1,6 @@
 # -*- mode: python; coding: utf-8; -*-
+from __future__ import unicode_literals
+from builtins import object
 from django.conf import settings
 from django.http import HttpResponsePermanentRedirect, HttpResponseRedirect
 from django.utils.http import urlquote
@@ -8,7 +10,7 @@ SSL = 'SSL'
 SSL_HOST = settings.SITE_URL
 
 
-class UrlMiddleware:
+class UrlMiddleware(object):
     """
     Middleware for removing the WWW from a URL if the users sets settings.REMOVE_WWW.
     Based on Django CommonMiddleware.
@@ -40,7 +42,7 @@ class UrlMiddleware:
         return None
 
 
-class HttpsRedirectMiddleware:
+class HttpsRedirectMiddleware(object):
     """
     Middleware for defining urls which should always be https.
     """
@@ -68,7 +70,7 @@ class HttpsRedirectMiddleware:
 
 
 # http://www.djangosnippets.org/snippets/85/
-class SSLRedirectMiddleware:
+class SSLRedirectMiddleware(object):
     """
     This middleware answers the problem of redirecting to (and from) a SSL
     secured path by stating what paths should be secured in urls.py file. To
@@ -145,7 +147,7 @@ class SSLRedirectMiddleware:
         protocol = secure and "https" or "http"
         newurl = "%s://%s%s" % (protocol, SSL_HOST, request.get_full_path())
         if settings.DEBUG and request.method == 'POST':
-            raise RuntimeError, "Django can't perform a SSL redirect while "
+            raise RuntimeError("Django can't perform a SSL redirect while ")
             "maintaining POST data. Please structure your views so that "
             "redirects only occur during GETs."
 

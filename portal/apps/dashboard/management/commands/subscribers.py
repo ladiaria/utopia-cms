@@ -1,5 +1,7 @@
+from __future__ import print_function
+from __future__ import unicode_literals
 from os.path import join
-from unicodecsv import writer
+from csv import writer
 import operator
 from progress.bar import Bar
 
@@ -19,21 +21,21 @@ class Command(BaseCommand):
         parser.add_argument(
             '--published-since',
             action='store',
-            type=unicode,
+            type=str,
             dest='published-since',
             help='Only count visits of articles published at or after this date, in format : YYYY-mm-dd',
         )
         parser.add_argument(
             '--views-since',
             action='store',
-            type=unicode,
+            type=str,
             dest='views-since',
             help='Only count visits at or after this date, in format : YYYY-mm-dd',
         )
         parser.add_argument(
             '--out-prefix',
             action='store',
-            type=unicode,
+            type=str,
             dest='out-prefix',
             default=u'',
             help=u"Don't make changes to existing files and save generated files with this prefix",
@@ -55,7 +57,7 @@ class Command(BaseCommand):
         if verbosity > '1':
             gen_msg = u'Generating reports for articles published '
             gen_msg += ((u'since %s' % published_since) if published_since else u'on any date') + u' and views '
-            print(gen_msg + ((u'since %s' % views_since) if views_since else u'on any date')) + u' ...'
+            print((gen_msg + ((u'since %s' % views_since) if views_since else u'on any date')) + u' ...')
 
         target_articles, articles, articles_sections = Article.objects.filter(**filter_articles_kwargs), [], {}
         bar = Bar('Processing articles', max=target_articles.count()) if options.get('progress') else None
@@ -116,7 +118,7 @@ class Command(BaseCommand):
                 ]
             )
 
-        as_list = [(p, s, v, dv) for (p, s), (v, dv) in articles_sections.iteritems()]
+        as_list = [(p, s, v, dv) for (p, s), (v, dv) in articles_sections.items()]
         as_list.sort(key=operator.itemgetter(2), reverse=True)
         w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, '%ssubscribers_sections.csv' % out_prefix), 'w'))
         i = 0

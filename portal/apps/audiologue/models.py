@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-from django.db.models import (Model, FileField, DateTimeField, CharField,
-    PositiveIntegerField, SlugField, BooleanField, TextField, OneToOneField)
-
+from __future__ import unicode_literals
 from datetime import datetime
+
+from django.db.models import (
+    Model, FileField, DateTimeField, CharField, PositiveIntegerField, SlugField, BooleanField, TextField
+)
 
 
 class Audio(Model):
@@ -12,8 +14,7 @@ class Audio(Model):
     caption = CharField(u'pie', max_length=255, null=True, blank=True)
     byline = CharField(u'autor/es', max_length=255, null=True, blank=True)
     description = TextField(u'descripción', null=True, blank=True)
-    date_uploaded = DateTimeField(u'fecha de subida', null=True, blank=True,
-        auto_now_add=True, editable=False)
+    date_uploaded = DateTimeField(u'fecha de subida', null=True, blank=True, auto_now_add=True, editable=False)
     times_viewed = PositiveIntegerField(u'visto', default=0, editable=False)
     is_public = BooleanField(u'público', default=True)
 
@@ -22,7 +23,7 @@ class Audio(Model):
             self.date_uploaded = datetime.now()
         super(Audio, self).save()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.title:
             return self.title
         else:

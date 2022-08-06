@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from forms import ContributionForm
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from .forms import ContributionForm
 
 from decorators import render_response
 

@@ -36,7 +36,7 @@ class ArticleTestCase(TestCase):
                 # test photo path in the context
                 self.assertEqual(response.context['article'].photo.image, 'fixtures/test_pou_img.jpg')
 
-                content = str(response.content.decode('utf8').encode('utf8'))
+                content = response.content.decode()
                 context_article = response.context['article']
 
                 # test the image caption render
@@ -52,6 +52,6 @@ class ArticleTestCase(TestCase):
             for item in self.urls_to_test[2:]:
                 response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))
 
-                content = str(response.content.decode('utf8').encode('utf8'))
+                content = response.content.decode()
                 # test meta noindex for humor articles
                 self.assertIn('<meta name="robots" content="noindex">', content)

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-from django.db.models import (BooleanField, CharField, DateTimeField,
-                              FileField, Model, PositiveIntegerField,
-                              SlugField, TextField, URLField,)
-
+from __future__ import unicode_literals
 from datetime import datetime
 import re
+
+from django.db.models import (
+    BooleanField, CharField, DateTimeField, FileField, Model, PositiveIntegerField, SlugField, TextField, URLField
+)
+
 
 YT_RE = re.compile(r'(?:v|embed)[=\/]([\w_-]{11})')
 
@@ -26,7 +28,7 @@ class Video(Model):
             self.date_uploaded = datetime.now()
         super(Video, self).save()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.title:
             return self.title
         else:
@@ -46,7 +48,7 @@ class YouTubeVideo(Model):
         self.yt_id = yid
         super(YouTubeVideo, self).save(*args, **kwargs)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title if self.title else 'Video #%i' % self.id
 
     class Meta:

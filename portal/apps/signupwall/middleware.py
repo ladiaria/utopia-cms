@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import unicode_literals
+
+from builtins import object
 from datetime import datetime
 
 from django.conf import settings
@@ -58,7 +62,7 @@ def get_or_create_visitor(request):
     if debug:
         print('DEBUG: signupwall.middleware.get_or_create_visitor - ip_address: %s' % ip_address)
 
-    if mongo_db:
+    if mongo_db is not None:
         result = mongo_db.signupwall_visitor.insert_one(
             {'session_key': session_key, 'ip_address': ip_address, 'timestamp': datetime.now()}
         )
@@ -124,7 +128,7 @@ class SignupwallMiddleware(object):
         visitor, raise_signupwall = None, True
 
         # if log views is enabled, set the path_visited to this visitor.
-        if not restricted_article and settings.CORE_LOG_ARTICLE_VIEWS and mongo_db:
+        if not restricted_article and settings.CORE_LOG_ARTICLE_VIEWS and mongo_db is not None:
             visitor = get_or_create_visitor(request)
             mongo_db.signupwall_visitor.update_one(
                 {'_id': visitor.get('_id')}, {'$set': {'path_visited': request.path}}
@@ -138,7 +142,7 @@ class SignupwallMiddleware(object):
             # Raise signupwall if the user has more than credits.
             credits, articles_visited = 10, set() if restricted_article else set([article.id])
             articles_visited_count = len(articles_visited)
-            if mongo_db:
+            if mongo_db is not None:
                 for x in mongo_db.core_articleviewedby.find({'user': user.id, 'allowed': None}):
                     articles_visited.add(x['article'])
                     articles_visited_count = len(articles_visited)

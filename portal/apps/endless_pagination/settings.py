@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.conf import settings
 
 # How many objects are normally displayed in a page 

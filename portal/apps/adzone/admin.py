@@ -5,13 +5,15 @@
 # Please see the text file LICENCE for more information
 # If this script is distributed, it must be accompanied by the Licence
 
+from __future__ import unicode_literals
 import csv
 
 from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse
-from adzone.models import *
-from adzone.form import UploadFileForm
+
+from .models import Advertiser, AdCategory, AdZone, TextAd, BannerAd, AdClick, AdImpression
+from .form import UploadFileForm
 
 
 class AdvertiserAdmin(admin.ModelAdmin):

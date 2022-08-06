@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from builtins import str
 from django.shortcuts import redirect
 from django.template import RequestContext
 import os, re
@@ -9,8 +13,8 @@ from bs4 import BeautifulSoup, Tag
 from django.views.generic import ListView, FormView, View, DetailView
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.contrib import messages
-from models import EpubFile
-from forms import UploadEpubForm, EpubChangeSectionForm
+from .models import EpubFile
+from .forms import UploadEpubForm, EpubChangeSectionForm
 import traceback
 from lxml import etree
 from lxml.etree import tostring
@@ -61,7 +65,7 @@ class ParseView(DetailView):
                 if (item.get_type() is 9):
                     content = item.get_body_content()
 
-                    print content
+                    print(content)
 
                     #reemplazo los estilos con classes css del xhtml del epub
                     content = replace_style(content,

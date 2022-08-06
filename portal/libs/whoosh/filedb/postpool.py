@@ -18,7 +18,13 @@
 """Support functions and classes implementing the KinoSearch-like external sort
 merging model. This module does not contain any user-level objects.
 """
+from __future__ import division
+from __future__ import unicode_literals
 
+from builtins import next
+from builtins import chr
+from past.utils import old_div
+from builtins import object
 import os, struct, tempfile
 from marshal import dumps, loads
 from heapq import heapify, heapreplace, heappop
@@ -69,7 +75,7 @@ def merge(run_readers, max_chunk_size):
     # sorted, so the first term in this list should
     # be the absolute "lowest" term.
     
-    current = [(r.next(), i) for i, r
+    current = [(next(r), i) for i, r
                in enumerate(run_readers)]
     heapify(current)
     
@@ -114,7 +120,7 @@ def merge(run_readers, max_chunk_size):
             # The current list must always stay sorted, so the first item
             # is always the lowest.
             
-            p = run_readers[i].next()
+            p = next(run_readers[i])
             if p:
                 heapreplace(current, (p, i))
             else:
@@ -191,7 +197,7 @@ class RunReader(object):
     def __iter__(self):
         return self
     
-    def next(self):
+    def __next__(self):
         assert self.pointer <= len(self.buffer)
         
         if self.pointer == len(self.buffer):
@@ -299,7 +305,7 @@ class PostingPool(object):
         
         # Divide up the posting pool's memory limit between the
         # number of runs plus an output buffer.
-        max_chunk_size = int(self.limit / (run_count + 1))
+        max_chunk_size = int(old_div(self.limit, (run_count + 1)))
         
         run_readers = [RunReader(run_file, count, max_chunk_size)
                        for run_file, count in self.runs]

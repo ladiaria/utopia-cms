@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from builtins import str
 from django.contrib.admin import ModelAdmin, site
 from django.contrib.admin.sites import AlreadyRegistered
 
@@ -96,7 +98,7 @@ class SubscriberAdmin(ModelAdmin):
                 SentMail.objects.create(subscriber=s, subject=u'Account info')
                 success_counter += 1
             except Exception:
-                errors.append(unicode(s))
+                errors.append(str(s))
         self.message_user(request, "%d emails enviados.%s" % (
             success_counter,
             (" Error al enviar a: %s" % ', '.join(errors)) if errors else ""))

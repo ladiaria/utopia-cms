@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import unicode_literals
 from django.core.management import BaseCommand
 
 from photologue.models import PhotoSize
@@ -25,7 +27,7 @@ class Command(BaseCommand):
             'fullscreen': 2000,
         }
 
-        for name, width in sizes_vary_width.iteritems():
+        for name, width in sizes_vary_width.items():
             if not PhotoSize.objects.filter(name=name).exists():
                 PhotoSize.objects.create(
                     name=name, width=width, height=0, crop=False, pre_cache=False, increment_count=False)

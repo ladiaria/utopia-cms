@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 
 from django.template import Context, loader
 from django.views.decorators.cache import never_cache

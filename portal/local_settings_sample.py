@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import unicode_literals
 from datetime import datetime
 
 
@@ -23,7 +25,7 @@ COMPRESS_OFFLINE = False
 COMPRESS_ENABLED = True
 
 if CLOSED_SITE or RESTRICT_ACCESS:
-    from settings import INSTALLED_APPS, MIDDLEWARE_CLASSES
+    from .settings import INSTALLED_APPS, MIDDLEWARE_CLASSES
     INSTALLED_APPS += ('closed_site', )
     MIDDLEWARE_CLASSES = (
         'closed_site.middleware.ClosedSiteMiddleware',

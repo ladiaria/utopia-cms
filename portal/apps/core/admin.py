@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
 from datetime import date, timedelta
 from requests.exceptions import ConnectionError
 
@@ -24,12 +27,12 @@ from django_markdown.widgets import MarkdownWidget
 
 from actstream.models import Action
 
-from tasks import update_category_home
+from .tasks import update_category_home
 from tagging.models import Tag, TaggedItem
 from tagging.forms import TagField
 from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
 from core.templatetags.ldml import ldmarkup, cleanhtml
-from models import (
+from .models import (
     Article,
     ArticleExtension,
     ArticleBodyImage,
@@ -50,7 +53,7 @@ from models import (
     ArticleUrlHistory,
     BreakingNewsModule,
 )
-from utils import update_article_url_in_coral_talk, smart_quotes
+from .utils import update_article_url_in_coral_talk, smart_quotes
 
 
 class PrintOnlyArticleInline(TabularInline):

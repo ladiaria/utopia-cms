@@ -1,7 +1,11 @@
+from __future__ import absolute_import
+from __future__ import unicode_literals
+import re
+
 from django import forms
 
-from models import YouTubeVideo
-import re
+from .models import YouTubeVideo
+
 
 YT_RE = re.compile(r'(?:v|embed)[=\/]([\w_-]{11})')
 

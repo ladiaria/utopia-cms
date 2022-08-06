@@ -1,10 +1,12 @@
+from __future__ import print_function
+from __future__ import unicode_literals
 from __future__ import division
 
 import os
 from os.path import join
 import operator
 from datetime import datetime, date, timedelta
-from unicodecsv import writer
+from csv import writer
 from progress.bar import Bar
 
 from django.conf import settings
@@ -34,14 +36,14 @@ class Command(BaseCommand):
         parser.add_argument(
             '--out-prefix',
             action='store',
-            type=unicode,
+            type=str,
             dest='out-prefix',
             default=u'',
             help=u"Don't make changes to existing files and save generated files with this prefix",
         )
 
     def handle(self, *args, **options):
-        if not mongo_db:
+        if mongo_db is None:
             return
 
         articles, main_sections, live, out_prefix = {}, {}, options.get('live'), options.get('out-prefix')
@@ -117,13 +119,13 @@ class Command(BaseCommand):
             bar.finish()
 
         counters = {}
-        for user_id, viewed in articles.iteritems():
+        for user_id, viewed in articles.items():
             for article_id in viewed:
                 counter = counters.get(article_id, 0)
                 counter += 1
                 counters[article_id] = counter
 
-        sorted_x = sorted(counters.items(), key=operator.itemgetter(1), reverse=True)
+        sorted_x = sorted(list(counters.items()), key=operator.itemgetter(1), reverse=True)
 
         if not out_prefix:
             os.rename(
@@ -158,13 +160,13 @@ class Command(BaseCommand):
             )
 
         counters = {}
-        for user_id, main_section in main_sections.iteritems():
+        for user_id, main_section in main_sections.items():
             ar_id = (main_section.edition.publication.slug, main_section.section_id)
             counter = counters.get(ar_id, 0)
             counter += 1
             counters[ar_id] = counter
 
-        sorted_y = sorted(counters.items(), key=operator.itemgetter(1), reverse=True)
+        sorted_y = sorted(list(counters.items()), key=operator.itemgetter(1), reverse=True)
         if not out_prefix:
             os.rename(
                 join(settings.DASHBOARD_REPORTS_PATH, 'sections.csv'),

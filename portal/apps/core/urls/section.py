@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from core.views.section import (
     section_detail, set_pdf_for_route, latest_article)
 

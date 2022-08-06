@@ -1,9 +1,11 @@
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import re
 
 from background_task import background
 from background_task.models import Task
 
-from models import update_category_home as uch
+from .models import update_category_home as uch
 
 
 @background(schedule=1)

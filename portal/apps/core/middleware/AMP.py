@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import object
 from django.conf import settings
 
 from django_mobile import get_flavour, set_flavour

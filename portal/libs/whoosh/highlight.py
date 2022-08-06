@@ -15,6 +15,9 @@
 #===============================================================================
 
 from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import object
 from heapq import nlargest
 
 """
@@ -405,8 +408,8 @@ if __name__ == '__main__':
     txt = re.sub("[\t\r\n ]+", " ", txt)
     t = time.time()
     fs = highlight(txt, ["templat", "geometri"], sa, SentenceFragmenter(), UppercaseFormatter())
-    print time.time() - t
-    print fs
+    print(time.time() - t)
+    print(fs)
 
 
 

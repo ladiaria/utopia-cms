@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 def relative(a, b):
     """
     Computes a relative distance between two strings. Its in the range
@@ -6,12 +10,12 @@ def relative(a, b):
     d = distance(a,b)
     longer = float(max((len(a), len(b))))
     shorter = float(min((len(a), len(b))))    
-    r = ((longer - d) / longer) * (shorter / longer)
+    r = (old_div((longer - d), longer)) * (old_div(shorter, longer))
     return r
 
 def distance(s, t):
     m, n = len(s), len(t)
-    d = [range(n+1)]
+    d = [list(range(n+1))]
     d += [[i] for i in range(1,m+1)]
     for i in range(0,m):
         for j in range(0,n):

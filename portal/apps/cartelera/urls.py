@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.conf.urls import url
 from cartelera.views import index, categoria, cine, pelicula, obrateatro, evento, notification_closed
 

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.conf.urls import url
 
 from adzone.views import ad_view, ad_content

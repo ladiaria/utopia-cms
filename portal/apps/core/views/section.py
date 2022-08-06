@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+from builtins import str
 import json
 from datetime import date
 
@@ -24,7 +26,7 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
             # support for a "direct path" redirect
             return HttpResponsePermanentRedirect(target_section_slug)
         reverse_kwargs = {'section_slug': target_section_slug}
-        for arg, val in {'tag': tag, 'year': year, 'month': month, 'day': day}.items():
+        for arg, val in list({'tag': tag, 'year': year, 'month': month, 'day': day}.items()):
             if val:
                 reverse_kwargs[arg] = val
         return HttpResponsePermanentRedirect(reverse('section_detail', kwargs=reverse_kwargs))
@@ -117,12 +119,12 @@ def set_pdf_for_route(request, ruta=''):
     list_rutas = u"Rutas seteadas actualmente<b> "
     u"(para enviar PDF de la próxima edición)</b>:<br>"
     for item in items:
-        list_rutas += unicode(item) + u"<br>"
+        list_rutas += str(item) + u"<br>"
 
     if not ruta == "listar":
         encontrada = (ruta in items)
         if not encontrada:
-            items.append(unicode(str(ruta)))
+            items.append(str(str(ruta)))
             fjson = open(settings.JSON_RUTASPDF_PATH, 'w')
             fjson.write(json.dumps(items))
             fjson.close()

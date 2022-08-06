@@ -22,6 +22,10 @@ strings.
 """
 
 from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
 from array import array
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
@@ -217,10 +221,10 @@ class SimpleQuery(Query):
         return "%s(%r, %r, boost=%r)" % (self.__class__.__name__,
                                          self.fieldname, self.text, self.boost)
 
-    def __unicode__(self):
+    def __str__(self):
         t = u"%s:%s" % (self.fieldname, self.text)
         if self.boost != 1:
-            t += u"^" + unicode(self.boost)
+            t += u"^" + str(self.boost)
         return t
     
     def all_terms(self, termset):
@@ -249,9 +253,9 @@ class CompoundQuery(Query):
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.subqueries)
 
-    def __unicode__(self):
+    def __str__(self):
         r = u"("
-        r += (self.JOINT).join([unicode(s) for s in self.subqueries])
+        r += (self.JOINT).join([str(s) for s in self.subqueries])
         r += u")"
         return r
 
@@ -377,7 +381,7 @@ class ExpandingTerm(MultiTerm):
         return "%s(%r, %r)" % (self.__class__.__name__,
                                self.fieldname, self.text)
     
-    def __unicode__(self):
+    def __str__(self):
         return "%s:%s*" % (self.fieldname, self.text)
 
     def all_terms(self, termset):
@@ -460,7 +464,7 @@ class And(CompoundQuery):
             type = "B"
         else:
             type = "i"
-        counters = array(type, (0 for _ in xrange(0, searcher.doc_count_all())))
+        counters = array(type, (0 for _ in range(0, searcher.doc_count_all())))
         for q in self._subqueries:
             for docnum in q.docs(searcher, exclude_docs = exclude_docs):
                 counters[docnum] += 1
@@ -512,7 +516,7 @@ class And(CompoundQuery):
                 return []
         
         target = len(subqs)
-        return ((docnum, score) for docnum, score in scores.iteritems()
+        return ((docnum, score) for docnum, score in scores.items()
                 if counters[docnum] == target)
 
 
@@ -565,7 +569,7 @@ class Or(CompoundQuery):
             for docnum, weight in query.doc_scores(searcher, weighting = weighting, exclude_docs = exclude_docs):
                 scores[docnum] += weight
         
-        return scores.iteritems()
+        return iter(scores.items())
         #return ((i, score) for i, score in enumerate(scores) if score)
 
 
@@ -596,8 +600,8 @@ class Not(Query):
         return "%s(%s)" % (self.__class__.__name__,
                                      repr(self.query))
     
-    def __unicode__(self):
-        return u"NOT " + unicode(self.query)
+    def __str__(self):
+        return u"NOT " + str(self.query)
     
     def normalize(self):
         if self.query is None:
@@ -715,7 +719,7 @@ class TermRange(MultiTerm):
         return '%s(%r, %r, %r)' % (self.__class__.__name__, self.fieldname,
                                    self.start, self.end)
     
-    def __unicode__(self):
+    def __str__(self):
         return u"%s:%s..%s" % (self.fieldname, self.start, self.end)
     
     def normalize(self):
@@ -756,7 +760,7 @@ class Variations(ExpandingTerm):
         self.boost = boost
         self.words = variations(self.text)
     
-    def __unicode__(self):
+    def __str__(self):
         return u"<%s>" % self.text
     
     def docs(self, searcher, exclude_docs = None):
@@ -784,7 +788,7 @@ class Phrase(MultiTerm):
         """
         
         for w in words:
-            if not isinstance(w, unicode):
+            if not isinstance(w, str):
                 raise ValueError("'%s' is not unicode" % w)
         
         self.fieldname = fieldname
@@ -792,7 +796,7 @@ class Phrase(MultiTerm):
         self.slop = slop
         self.boost = boost
     
-    def __unicode__(self):
+    def __str__(self):
         return u'%s:"%s"' % (self.fieldname, u" ".join(self.words))
     
     def normalize(self):
@@ -869,7 +873,7 @@ class Phrase(MultiTerm):
             first = False
         
         #print "scores=", scores
-        return scores.iteritems()
+        return iter(scores.items())
     
     def _vector_impl(self, searcher, fieldnum, weighting, exclude_docs):
         dr = searcher.doc_reader
@@ -1028,7 +1032,7 @@ class AndNot(Query):
         return "%s(%r, %r)" % (self.__class__.__name__,
                                self.positive, self.negative)
     
-    def __unicode__(self):
+    def __str__(self):
         return u"%s ANDNOT %s" % (self.postive, self.negative)
     
     def normalize(self):

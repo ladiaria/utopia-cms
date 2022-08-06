@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
 from calendar import HTMLCalendar, LocaleHTMLCalendar
 from datetime import date
 from itertools import groupby

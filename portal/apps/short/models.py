@@ -1,11 +1,13 @@
 # -*- coding: UTF-8 -*-
-from django.db.models import *
+from __future__ import unicode_literals
+
+from django.db.models import Model, URLField
 
 
 class Url(Model):
     url = URLField()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.url
 
     def surl(self):

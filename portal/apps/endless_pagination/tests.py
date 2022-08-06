@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import string
 
 from django.template import Template, Context

@@ -25,6 +25,7 @@ Example:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from builtins import range
 from . import Extension
 from ..preprocessors import Preprocessor
 from ..inlinepatterns import Pattern
@@ -140,7 +141,7 @@ class FootnoteExtension(Extension):
         etree.SubElement(div, "hr")
         ol = etree.SubElement(div, "ol")
 
-        for id in self.footnotes.keys():
+        for id in list(self.footnotes.keys()):
             li = etree.SubElement(ol, "li")
             li.set("id", self.makeFootnoteId(id))
             self.parser.parseChunk(li, self.footnotes[id])
@@ -264,7 +265,7 @@ class FootnotePattern(Pattern):
 
     def handleMatch(self, m):
         id = m.group(2)
-        if id in self.footnotes.footnotes.keys():
+        if id in list(self.footnotes.footnotes.keys()):
             sup = etree.Element("sup")
             a = etree.SubElement(sup, "a")
             sup.set('id', self.footnotes.makeFootnoteRefId(id))

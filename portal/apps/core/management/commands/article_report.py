@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
 import sys
-from unicodecsv import writer
+from csv import writer
 from optparse import make_option
 
 from django.conf import settings

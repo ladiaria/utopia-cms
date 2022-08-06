@@ -1,6 +1,8 @@
 #!/usr/bin/python2.5
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+from __future__ import unicode_literals
 import csv
 
 from os.path import abspath
@@ -34,15 +36,15 @@ def cargar_suscriptores_web():
 def buscar():
     for usuario in User.objects.all():
         if usuario.username not in slugs:
-            print usuario.username, ' es huerfano.'
+            print(usuario.username, ' es huerfano.')
 
 if __name__ == '__main__':
-    print '- Cargando suscriptores.'
+    print('- Cargando suscriptores.')
     cargar_suscriptores()
     cargar_suscriptores_web()
-    print 'ok \n-Buscando usuarios huerfanos'
+    print('ok \n-Buscando usuarios huerfanos')
     buscar()
-    print 'script finalizado!'
+    print('script finalizado!')
 
 
 

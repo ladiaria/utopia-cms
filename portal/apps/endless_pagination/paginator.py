@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from math import ceil
 
 from django.core.paginator import Paginator, Page, EmptyPage, PageNotAnInteger

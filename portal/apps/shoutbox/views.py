@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from shoutbox.models import Shout, get_last_shouts
 
 from decorators import render_response

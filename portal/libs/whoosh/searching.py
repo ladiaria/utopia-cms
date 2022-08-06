@@ -15,6 +15,10 @@
 #===============================================================================
 
 from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from past.builtins import basestring
+from builtins import object
 import time
 
 from whoosh import classify, query, scoring, util
@@ -149,7 +153,7 @@ class Searcher(util.ClosableMixin):
         >>> docnums = list(searcher.document_numbers(emailto=u"matt@whoosh.ca"))
         """
         
-        q = query.And([query.Term(k, v) for k, v in kw.iteritems()])
+        q = query.And([query.Term(k, v) for k, v in kw.items()])
         return q.docs(self)
     
     def key_terms(self, docnums, fieldname, numterms = 5,
@@ -242,7 +246,7 @@ class Searcher(util.ClosableMixin):
                 # topdocs.best() returns a list like
                 # [(docnum, score), (docnum, score), ... ]
                 # This unpacks that into two lists: docnums and scores
-                scored_list, scores = zip(*topdocs.best())
+                scored_list, scores = list(zip(*topdocs.best()))
             else:
                 scored_list = []
                 scores = []

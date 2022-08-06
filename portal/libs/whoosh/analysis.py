@@ -45,7 +45,11 @@ three general types of classes/functions involved in analysis:
   token generator. (So Tokenizers can be used as Analyzers if you
   don't need any filtering).
 """
+from __future__ import unicode_literals
 
+from builtins import range
+from past.builtins import basestring
+from builtins import object
 import copy, re
 
 from whoosh.lang.porter import stem
@@ -122,7 +126,7 @@ class Token(object):
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__,
                            ", ".join(["%s=%r" % (name, value)
-                                      for name, value in self.__dict__.iteritems()]))
+                                      for name, value in self.__dict__.items()]))
         
     def copy(self):
         return copy.copy(self)
@@ -325,8 +329,8 @@ class NgramTokenizer(object):
         t = Token(positions, chars, removestops = removestops)
         
         pos = start_pos
-        for start in xrange(0, inlen - self.min + 1):
-            for size in xrange(self.min, self.max + 1):
+        for start in range(0, inlen - self.min + 1):
+            for size in range(self.min, self.max + 1):
                 end = start + size
                 if end > inlen: continue
                 
@@ -383,8 +387,8 @@ class NgramFilter(object):
             # so we'll leave the token's original position
             # untouched.
             
-            for start in xrange(0, len(text) - self.min):
-                for size in xrange(self.min, self.max + 1):
+            for start in range(0, len(text) - self.min):
+                for size in range(self.min, self.max + 1):
                     end = start + size
                     if end > len(text): continue
                     

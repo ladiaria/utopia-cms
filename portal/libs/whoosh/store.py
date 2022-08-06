@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 #===============================================================================
 # Copyright 2007 Matt Chaput
 # 
@@ -15,6 +16,7 @@
 #===============================================================================
 
 
+from builtins import object
 class LockError(Exception):
     pass
 

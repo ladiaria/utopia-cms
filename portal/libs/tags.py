@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from libs.utils import remove_spaces
 
 from django.template import Library

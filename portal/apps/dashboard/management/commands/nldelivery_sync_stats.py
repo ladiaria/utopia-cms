@@ -1,4 +1,6 @@
 """ Adapted from: A simple example of how to access the Google Analytics API. """
+from __future__ import print_function
+from __future__ import unicode_literals
 import sys
 from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
@@ -84,21 +86,21 @@ class Command(BaseCommand):
         parser.add_argument(
             '--start-date',
             action='store',
-            type=unicode,
+            type=str,
             dest='start_date',
             help=u'Get Google Analytics stats from this date, default=yesterday',
         )
         parser.add_argument(
             '--end-date',
             action='store',
-            type=unicode,
+            type=str,
             dest='end_date',
             help=u'Get Google Analytics stats until this date, default=today',
         )
         parser.add_argument(
             '--campaign',
             action='store',
-            type=unicode,
+            type=str,
             dest='campaign',
             help=u'Get Google Analytics stats only for this campaign, default=all',
         )
@@ -145,4 +147,3 @@ class Command(BaseCommand):
 
         if bar:
             bar.finish()
-

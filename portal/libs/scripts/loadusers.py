@@ -1,5 +1,8 @@
 #!/usr/bin/python2.5
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
 from os.path import abspath, dirname
 import sys
 
@@ -40,9 +43,9 @@ def load_csv(csv_file):
             user.set_unusable_password()
             try:
                 user.save()
-            except Exception, e:
-                print 'User', str(e)
-                print bits
+            except Exception as e:
+                print('User', str(e))
+                print(bits)
             if user.id:
                 document = ''.join(DOCUMENT_RE.findall(bits[2])) if bits[2] not in ('', '\N') else ''
                 subscriber = Subscriber(user=user)
@@ -52,13 +55,13 @@ def load_csv(csv_file):
                 subscriber.phone = get_phone(bits[3])
                 try:
                     subscriber.save()
-                except Exception, e:
-                    print 'Subscriber', str(e)
-                    print bits
+                except Exception as e:
+                    print('Subscriber', str(e))
+                    print(bits)
                     user.delete()
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print 'Invalid arguments.'
+        print('Invalid arguments.')
         sys.exit(1)
     load_csv(sys.argv[1])

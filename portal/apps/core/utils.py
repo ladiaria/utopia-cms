@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from builtins import object
 import re
 from time import timezone
 from datetime import datetime, tzinfo, timedelta
@@ -32,7 +34,7 @@ def datetime_timezone():
     local_tz, dt = tz.gettz(settings.TIME_ZONE), datetime.now()
     dt = datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, 0, local_tz)
     timezone_countries = {
-        timezone: country for country, timezones in country_timezones.iteritems() for timezone in timezones
+        timezone: country for country, timezones in country_timezones.items() for timezone in timezones
     }
     tz_name = dt.strftime(u'%Z')
     result = [tz_name if tz_name[0].isalpha() else u'GMT' + tz_name]
@@ -128,6 +130,6 @@ class CT(object):
 def smart_quotes(value):
     value = re.sub(r"(?![^<>]*>)(\")\b", u"“", value)
     value = re.sub(r"\b(?![^<>]*>)(\")", u"”", value)
-    value = re.sub(ur"\"(?=[¿¡\‘\'\(\[ÑÁÉÍÓÚñáéíóú])", u"“", value)
-    value = re.sub(ur"(?<=[?!\’\'\)ÑÁÉÍÓÚñáéíóú\.\%\]])\"", u"”", value)
+    value = re.sub("\"(?=[¿¡\‘\'\(\[ÑÁÉÍÓÚñáéíóú])", u"“", value)
+    value = re.sub("(?<=[?!\’\'\)ÑÁÉÍÓÚñáéíóú\.\%\]])\"", u"”", value)
     return value

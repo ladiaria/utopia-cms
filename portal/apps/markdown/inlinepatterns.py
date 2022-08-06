@@ -43,17 +43,20 @@ So, we apply the expressions in the following order:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 from . import util
 from . import odict
 import re
 try:
     from urllib.parse import urlparse, urlunparse
 except ImportError:
-    from urlparse import urlparse, urlunparse
+    from urllib.parse import urlparse, urlunparse
 try:
     from html import entities
 except ImportError:
-    import htmlentitydefs as entities
+    import html.entities as entities
 
 
 def build_inlinepatterns(md_instance, **kwargs):

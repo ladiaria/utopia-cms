@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 import os
 import random
 from datetime import date, datetime, timedelta
@@ -375,7 +378,7 @@ def date_published_verbose(article):
             if custom_data is not None and not custom_data:
                 return u''
         return u'%s<div class="ld-card__date">%s</div>' % (
-            u' - ' if article.has_byline() else u'', custom_data or article.date_published_verbose().decode('utf8')
+            u' - ' if article.has_byline() else u'', custom_data or article.date_published_verbose()
         )
     else:
         return u''
@@ -413,7 +416,7 @@ def initials(value, args=False):
 
 @register.filter(name='anios')
 def anios(last):
-    return range(2009, last)
+    return list(range(2009, last))
 
 
 @register.filter

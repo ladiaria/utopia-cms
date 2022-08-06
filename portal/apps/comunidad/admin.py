@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from models import (
-    SubscriberArticle, Circuito, Socio, Beneficio, Registro, Url,
-    Recommendation)
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.contrib.admin import site, ModelAdmin, TabularInline
+
+from .models import SubscriberArticle, Circuito, Socio, Beneficio, Registro, Url, Recommendation
 
 
 class CircuitoAdmin(ModelAdmin):

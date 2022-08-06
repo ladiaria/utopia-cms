@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import unicode_literals
 import sys
 from os.path import abspath, basename, dirname, join, realpath
 from datetime import datetime

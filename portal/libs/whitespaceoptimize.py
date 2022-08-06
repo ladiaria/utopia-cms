@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
-from django import template
+from __future__ import unicode_literals
+from future.utils import raise_
 
 from slimmer import guessSyntax, css_slimmer, html_slimmer, js_slimmer
+
+from django import template
 
 
 class WhitespaceOptimizeNode(template.Node):
     def __init__(self, nodelist, format=None):
         self.nodelist = nodelist
         self.format = format
+
     def render(self, context):
         code = self.nodelist.render(context)
         if self.format == 'css':
@@ -24,7 +28,10 @@ class WhitespaceOptimizeNode(template.Node):
 
         return code
 
+
 register = template.Library()
+
+
 @register.tag(name='whitespaceoptimize')
 def do_whitespaceoptimize(parser, token):
     nodelist = parser.parse(('endwhitespaceoptimize',))
@@ -35,7 +42,6 @@ def do_whitespaceoptimize(parser, token):
     if len(_split) > 1:
         tag_name, format = _split
         if not (format[0] == format[-1] and format[0] in ('"', "'")):
-            raise template.TemplateSyntaxError, \
-                    "%r tag's argument should be in quotes" % tag_name
+            raise_(template.TemplateSyntaxError, "%r tag's argument should be in quotes" % tag_name)
 
     return WhitespaceOptimizeNode(nodelist, format[1:-1])

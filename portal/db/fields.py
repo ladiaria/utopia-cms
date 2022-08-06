@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.db.models import ForeignKey
 from core.middleware import threadlocals
 #TODO chequear si se puede borrar, se usaba para poner automaticamente el usuario que estaba modificando un Evento o un Articulo

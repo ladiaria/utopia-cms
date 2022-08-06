@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from core.views.journalist import journalist_detail
 
 from django.conf.urls import url

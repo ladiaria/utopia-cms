@@ -32,6 +32,7 @@ License: BSD (see LICENSE for details).
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from builtins import object
 from .__version__ import version, version_info
 import codecs
 import sys
@@ -117,7 +118,7 @@ class Markdown(object):
                 break
 
         # Loop through kwargs and assign defaults
-        for option, default in self.option_defaults.items():
+        for option, default in list(self.option_defaults.items()):
             setattr(self, option, kwargs.get(option, default))
 
         self.safeMode = kwargs.get('safe_mode', False)
@@ -208,7 +209,7 @@ class Markdown(object):
         # If the module is loaded successfully, we expect it to define a
         # function called makeExtension()
         try:
-            return module.makeExtension(configs.items())
+            return module.makeExtension(list(configs.items()))
         except AttributeError as e:
             message = e.args[0]
             message = "Failed to initiate extension " \
@@ -284,14 +285,14 @@ class Markdown(object):
 
         # Split into lines and run the line preprocessors.
         self.lines = source.split("\n")
-        for prep in self.preprocessors.values():
+        for prep in list(self.preprocessors.values()):
             self.lines = prep.run(self.lines)
 
         # Parse the high-level elements.
         root = self.parser.parseDocument(self.lines).getroot()
 
         # Run the tree-processors
-        for treeprocessor in self.treeprocessors.values():
+        for treeprocessor in list(self.treeprocessors.values()):
             newRoot = treeprocessor.run(root)
             if newRoot is not None:
                 root = newRoot
@@ -312,7 +313,7 @@ class Markdown(object):
                     raise ValueError('Markdown failed to strip top-level tags. Document=%r' % output.strip())
 
         # Run the text post-processors
-        for pp in self.postprocessors.values():
+        for pp in list(self.postprocessors.values()):
             output = pp.run(output)
 
         return output.strip()

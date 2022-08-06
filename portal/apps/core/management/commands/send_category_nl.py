@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # utopia-cms, 2018-2022, Aníbal Pacheco
+from __future__ import unicode_literals
+from builtins import next
 import sys
 from os.path import basename, join
 import logging
@@ -7,7 +9,7 @@ import locale
 import smtplib
 import time
 import json
-from unicodecsv import reader, writer
+from csv import reader, writer
 from MySQLdb import ProgrammingError
 from datetime import date, datetime, timedelta
 from socket import error
@@ -284,7 +286,7 @@ def build_and_send(
                     is_subscriber_any = eval(is_subscriber_any)
                     is_subscriber_default = eval(is_subscriber_default)
                 else:
-                    s, is_subscriber = subscribers_iter.next()
+                    s, is_subscriber = next(subscribers_iter)
                     s_id, s_name, s_user_email = s.id, s.name, s.user.email
                     hashed_id = hashids.encode(int(s_id))
                     is_subscriber_any = s.is_subscriber_any()
@@ -419,8 +421,8 @@ class Command(BaseCommand):
     help = 'Sends the last category newsletter by email to all subscribers of the category given or those given by id.'
 
     def add_arguments(self, parser):
-        parser.add_argument('category_slug', nargs=1, type=unicode)
-        parser.add_argument('subscriber_ids', nargs='*', type=long)
+        parser.add_argument('category_slug', nargs=1, type=str)
+        parser.add_argument('subscriber_ids', nargs='*', type=int)
         parser.add_argument(
             '--no-deliver',
             action='store_true',
@@ -459,14 +461,14 @@ class Command(BaseCommand):
         parser.add_argument(
             '--starting-from-s',
             action='store',
-            type=unicode,
+            type=str,
             dest='starting_from_s',
             help=u'Send to subscribers only if their email is alphabetically greater than',
         )
         parser.add_argument(
             '--starting-from-ns',
             action='store',
-            type=unicode,
+            type=str,
             dest='starting_from_ns',
             help=u'Send to non-subscribers only if their email is alphabetically greater than',
         )

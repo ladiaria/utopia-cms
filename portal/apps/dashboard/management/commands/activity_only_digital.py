@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from os.path import join
-from unicodecsv import writer
+from csv import writer
 from progress.bar import Bar
 
 from django.core.management.base import BaseCommand

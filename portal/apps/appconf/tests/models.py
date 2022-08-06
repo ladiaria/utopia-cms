@@ -1,8 +1,11 @@
+from __future__ import unicode_literals
+from builtins import object
 from appconf import AppConf
 
 
 class CustomHolder(object):
     pass
+
 
 custom_holder = CustomHolder()
 

@@ -18,18 +18,25 @@
 on-disk key-value database format. The current format is identical
 to D. J. Bernstein's CDB format (http://cr.yp.to/cdb.html).
 """
+from __future__ import print_function
+from __future__ import unicode_literals
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import range
+from builtins import object
 from array import array
 from bisect import bisect_right
 from collections import defaultdict
-from cPickle import dumps, loads
+from pickle import dumps, loads
 from struct import pack, unpack, calcsize
 
 
 def cdb_hash(key):
-    h = 5381L
+    h = 5381
     for c in key:
-        h = (h + (h << 5)) & 0xffffffffL ^ ord(c)
+        h = (h + (h << 5)) & 0xffffffff ^ ord(c)
     return h
 
 # Read/write convenience functions
@@ -100,7 +107,7 @@ def open_docs_table(storage, segment, schema):
     storedfieldnames = schema.stored_field_names()
     def dictifier(value):
         value = loads(value)
-        return dict(zip(storedfieldnames, value))
+        return dict(list(zip(storedfieldnames, value)))
     return storage.open_list(segment.docs_filename,
                              segment.doc_count_all(),
                              valuedecoder=dictifier)
@@ -170,7 +177,7 @@ class FileHashWriter(object):
         directory = self.directory = []
         
         pos = dbfile.tell()
-        for i in xrange(0, 256):
+        for i in range(0, 256):
             entries = hashes[i]
             numslots = 2 * len(entries)
             directory.append((pos, numslots))
@@ -237,7 +244,7 @@ class FileHashReader(object):
             yield (keypos, keylen, datapos, datalen)
 
     def __iter__(self):
-        return self.items()
+        return list(self.items())
 
     def items(self):
         read = self.read
@@ -285,7 +292,7 @@ class FileHashReader(object):
             return
         
         slotpos = hpos + (((keyhash >> 8) % hslots) << 3)
-        for _ in xrange(0, hslots):
+        for _ in range(0, hslots):
             u, pos = read2ints(slotpos)
             if not pos:
                 return
@@ -565,7 +572,7 @@ class FilePostingTableReader(FileTableReader):
         postingfile = self.postingfile
         _read_id = self._read_id
         id = 0
-        for _ in xrange(0, self._seek_postings(key)):
+        for _ in range(0, self._seek_postings(key)):
             id = _read_id(id)
             yield (id, readfn(postingfile))
 
@@ -657,18 +664,18 @@ def dump_hash(hashreader):
     eod = hashreader.end_of_data
     
     # Dump hashtables
-    for bucketnum in xrange(0, 255):
+    for bucketnum in range(0, 255):
         pos, numslots = read2ints(bucketnum * 8)
         if numslots:
-            print "Bucket %d: %d slots" % (bucketnum, numslots)
+            print("Bucket %d: %d slots" % (bucketnum, numslots))
             
             dbfile.seek(pos)
-            for j in xrange(0, numslots):
-                print "  %X : %d" % read2ints(pos)
+            for j in range(0, numslots):
+                print("  %X : %d" % read2ints(pos))
                 pos += 8
     
     # Dump keys and values
-    print "-----"
+    print("-----")
     dbfile.seek(2048)
     pos = 2048
     while pos < eod:
@@ -677,7 +684,7 @@ def dump_hash(hashreader):
         datapos = pos + 8 + keylen
         key = read(keypos, keylen)
         data = read(datapos, datalen)
-        print "%d +%d,%d:%r->%r" % (pos, keylen, datalen, key, data)
+        print("%d +%d,%d:%r->%r" % (pos, keylen, datalen, key, data))
         pos = datapos + datalen
         
 

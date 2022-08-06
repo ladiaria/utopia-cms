@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 from datetime import date
 from libxml2 import htmlParseDoc
-from urllib2 import urlopen
+from urllib.request import urlopen
 
-from models import Currency
-from models import Exchange
+from .models import Currency
+from .models import Exchange
 
 def update():
     EXCHANGE_URL = 'http://www.brou.com.uy/web/guest/institucional/cotizaciones'
@@ -29,5 +34,5 @@ def update():
                     td.get_content().replace(',', '.') for td in \
                         htmldoc.xpathEval2(EXCHANGE_XPATH % currency.name)]
                 exchange.save()
-        except Exception, e:
-            print "ERROR:", currency_slug, e
+        except Exception as e:
+            print("ERROR:", currency_slug, e)

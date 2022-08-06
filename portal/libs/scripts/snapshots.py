@@ -1,5 +1,7 @@
 #!/usr/bin/python
 # -*- coding utf-8 -*-
+from __future__ import print_function
+from __future__ import unicode_literals
 import os
 import subprocess
 
@@ -9,11 +11,11 @@ def make_snapshot(filename, page=0):
     if os.path.exists(output):
         return None
         # os.unlink(output)
-    print filename
+    print(filename)
     args = ['convert', '%s[%i]' % (filename, page), output]
     stderr = subprocess.Popen(args, stderr=subprocess.PIPE).stderr.read().strip()
     if stderr:
-        print stderr
+        print(stderr)
         LOGGER.write('\n%s\n%s\n%s\n' % (filename, ' '.join(args), stderr))
 
 def find_pdf(dirname):

@@ -1,3 +1,8 @@
+from __future__ import unicode_literals
+from builtins import str
+from builtins import next
+from builtins import range
+from builtins import object
 from django.template import Context, loader
 
 from endless_pagination import settings, utils
@@ -22,7 +27,7 @@ class EndlessPage(object):
     def __init__(self, request, number, current_number, total_number, 
         querystring_key, label=None, default_number=1, override_path=None):
         self.number = number
-        self.label = unicode(number) if label is None else label
+        self.label = str(number) if label is None else label
         self.querystring_key = querystring_key
         
         self.is_current = number == current_number
@@ -33,7 +38,7 @@ class EndlessPage(object):
             self.querystring_key, default_number=default_number)
         self.path = "%s%s" % (override_path or request.path, self.url)
 
-    def __unicode__(self):
+    def __str__(self):
         """
         Render the page as a link.
         """
@@ -93,7 +98,7 @@ class PageList(object):
         for i in range(len(self)):
             yield self[i+1]
         
-    def __unicode__(self):
+    def __str__(self):
         """
         Return digg-style pagination (by default).
         The callable *settings.PAGE_LIST_CALLABLE* can be used to customize
@@ -124,7 +129,7 @@ class PageList(object):
                 elif i == "previous":
                     pages.append(self.previous())
                 elif i == "next":
-                    pages.append(self.next())
+                    pages.append(next(self))
                 else:
                     pages.append(self[i])
             context = {'pages': pages}
@@ -158,7 +163,7 @@ class PageList(object):
                 label=settings.PREVIOUS_LABEL)
         return u""
         
-    def next(self):
+    def __next__(self):
         """
         Return next page or an empty string if current page is the last.
         """

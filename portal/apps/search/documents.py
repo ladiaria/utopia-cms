@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import object
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 
@@ -6,7 +8,7 @@ from core.models import Article
 
 @registry.register_document
 class ArticleDocument(Document):
-    class Index:
+    class Index(object):
         # Name of the Elasticsearch index
         name = 'articles'
         # See Elasticsearch Indices API reference for available settings
@@ -21,7 +23,7 @@ class ArticleDocument(Document):
     def prepare_section(self, instance):
         return instance.section.__unicode__() if instance.section else u''
 
-    class Django:
+    class Django(object):
         model = Article  # The model associated with this Document
 
         # The fields of the model you want to be indexed in Elasticsearch

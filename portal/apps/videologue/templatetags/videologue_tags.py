@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from videologue.models import YouTubeVideo
 
 from django.template import (Context, Library, loader, Node, TemplateSyntaxError)
 
-from string import lower
 
 register = Library()
 TPL_DIR = 'videologue/templates/'
@@ -59,5 +59,5 @@ def render_video(video):
     if not video:
         return ''
     tpl = loader.get_template(
-        TPL_DIR + '%s/module.html' % lower(video.__class__.__name__))
+        TPL_DIR + '%s/module.html' % video.__class__.__name__lower())
     return tpl.render({'video': video})

@@ -164,7 +164,7 @@ def send_now(users, label, extra_context=None, sender=None):
             # activate the user's language
             activate(language)
 
-        for backend in NOTIFICATION_BACKENDS.values():
+        for backend in list(NOTIFICATION_BACKENDS.values()):
             if backend.can_send(user, notice_type):
                 backend.deliver(user, sender, notice_type, extra_context)
                 sent = True

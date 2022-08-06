@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from unittest import main, TestCase
 from django.template.base import Template
 from django.template.context import RequestContext

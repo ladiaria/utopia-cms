@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from core.models import Journalist
 from decorators import render_response
 from django.core.paginator import Paginator, InvalidPage, EmptyPage

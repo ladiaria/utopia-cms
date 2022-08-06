@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import str
 from less.settings import LESS_MTIME_DELAY
 from django.core.cache import cache
 from django.utils.encoding import smart_str

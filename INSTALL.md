@@ -6,7 +6,7 @@ Documentation about installing Utopia's CMS.
 
 - System packages, names can vary by OS/distribution:
 
-  mariadb nginx libtiff libtiff-devel giflib giflib-devel python-pillow MySQL-python python-vobject python-oauth2 pytz pycrypto python-requests-oauthlib rubygem-sass npm gcc libmaxminddb-devel
+  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel python-pillow python-vobject pytz pycrypto python-requests-oauthlib rubygem-sass npm gcc libmaxminddb-devel
 
 - npm (Node.js packages):
 
@@ -27,9 +27,9 @@ Documentation about installing Utopia's CMS.
 
   `user@host:~/utopia-cms $ git clone -b main https://github.com/ladiaria/lightGallery static/lightGallery`
 
-- Create a virtualenv (venv) for Python2.7 using system-site-packages (the subdirectory `~/.virtualenvs` is not needed, we use it in this guide because is the default virtualenv directory in the tool [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/), also the virtual environment name can be any other, "utopiacms" is chosen in this guide):
+- Create a virtualenv (venv) for Python3 using system-site-packages (the subdirectory `~/.virtualenvs` is not needed, we use it in this guide because is the default virtualenv directory in the tool [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/), also the virtual environment name can be any other, "utopiacms" is chosen in this guide):
 
-  `user@host:~/utopia-cms $ mkdir -p ~/.virtualenvs && virtualenv2 --system-site-packages ~/.virtualenvs/utopiacms`
+  `user@host:~/utopia-cms $ mkdir -p ~/.virtualenvs && virtualenv --system-site-packages ~/.virtualenvs/utopiacms`
 
 - Activate the new virtual environment and install the required Python modules:
 

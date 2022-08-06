@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # utopia-cms Markup Language
+from __future__ import unicode_literals
 import markdown
 import re
 
 from django.template import Library
 from django.template.loader import render_to_string
 from django.template.defaultfilters import stringfilter
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 from django.utils.html import strip_tags
 
@@ -23,7 +24,7 @@ IMAGE_RE = r'%s\s*(\d*)' % IMAGE_KW
 
 def normalize(value):
     nre = re.compile(r'\r\n|\r|\n')
-    return nre.sub('\n', force_unicode(value))
+    return nre.sub('\n', force_text(value))
 
 
 def to_p(value):
@@ -92,7 +93,7 @@ def ldmarkup(value, args='', amp=False):
         reg = re.compile(IMAGE_RE, re.UNICODE + re.MULTILINE)
         value = reg.sub(lambda x: get_image(x, args, amp), value)
     value = markdown.markdown(value, ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra'])
-    return mark_safe(force_unicode(value))
+    return mark_safe(force_text(value))
 
 
 @register.filter
@@ -102,7 +103,7 @@ def ldmarkup_extension(value, args='', amp=False):
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
     value = reg.sub(r'\n\n\1\n----', value)
     value = markdown.markdown(value, ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra'])
-    return mark_safe(force_unicode(value))
+    return mark_safe(force_text(value))
 
 
 @register.filter

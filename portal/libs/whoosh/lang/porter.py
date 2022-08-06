@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import unicode_literals
 import re
 
 """
@@ -167,7 +169,7 @@ def stem(w):
     return w
 
 if __name__ == '__main__':
-    print stem("fundamentally")
+    print(stem("fundamentally"))
     
     
     

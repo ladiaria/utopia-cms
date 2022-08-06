@@ -48,7 +48,10 @@ Exceptions:
 """
 
 from __future__ import division
+from __future__ import unicode_literals
 
+from builtins import str
+from builtins import object
 import sys
 import socket
 import os
@@ -161,7 +164,7 @@ class NotMyLock(UnlockError):
     pass
 
 
-class LockBase:
+class LockBase(object):
     """Base class for platform-specific lock classes."""
     def __init__(self, path, threaded=True):
         """
@@ -383,8 +386,8 @@ class SQLiteFileLock(LockBase):
 
     def __init__(self, path, threaded=True):
         LockBase.__init__(self, path, threaded)
-        self.lock_file = unicode(self.lock_file)
-        self.unique_name = unicode(self.unique_name)
+        self.lock_file = str(self.lock_file)
+        self.unique_name = str(self.unique_name)
 
         import sqlite3
         self.connection = sqlite3.connect(SQLiteFileLock.testdb)

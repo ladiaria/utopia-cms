@@ -1,5 +1,7 @@
+from __future__ import unicode_literals
 # threadlocals middleware
 # TODO usado para obtener el current user, ver si es necesario
+from builtins import object
 try:
     from threading import local
 except ImportError:

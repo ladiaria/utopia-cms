@@ -1,12 +1,16 @@
 """
 Thunder Chen<nkchenz@gmail.com> 2007.9.1
 """
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from builtins import object
 try:
     import xml.etree.ElementTree as ET
 except:
     import cElementTree as ET # for 2.4
 
-from object_dict import object_dict
+from .object_dict import object_dict
 import re
 
 class XML2Dict(object):
@@ -19,7 +23,7 @@ class XML2Dict(object):
         # Save attrs and text, hope there will not be a child with same name
         if node.text:
             node_tree.value = node.text
-        for (k,v) in node.attrib.items():
+        for (k,v) in list(node.attrib.items()):
             k,v = self._namespace_split(k, object_dict({'value':v}))
             node_tree[k] = v
         #Save childrens
@@ -45,7 +49,7 @@ class XML2Dict(object):
         """
         result = re.compile("\{(.*)\}(.*)").search(tag)
         if result:
-            print tag
+            print(tag)
             value.namespace, tag = result.groups()
         return (tag, value)
 
@@ -75,9 +79,9 @@ if __name__ == '__main__':
     r = xml.fromstring(s)
     from pprint import pprint
     pprint(r)
-    print r.result.count.value
-    print r.result.count.n
+    print(r.result.count.value)
+    print(r.result.count.n)
 
     for data in r.result.data:
-        print data.id, data.name
+        print(data.id, data.name)
     pprint(xml.parse('a'))

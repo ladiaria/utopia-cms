@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 #===============================================================================
 # Copyright 2007 Matt Chaput
 # 
@@ -97,7 +98,7 @@ class IndexWriter(DeletionMixin):
                          in self.index.schema.fields()
                          if name in fields and field.unique]
         if not unique_fields:
-            raise IndexingError("None of the fields in %r are unique" % fields.keys())
+            raise IndexingError("None of the fields in %r are unique" % list(fields.keys()))
         
         # Delete documents in which the supplied unique fields match
         for name in unique_fields:

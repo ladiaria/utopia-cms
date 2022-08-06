@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+from builtins import map
+from past.builtins import basestring
 from django.template import loader, Context, RequestContext, TemplateSyntaxError
 from django.http import HttpResponse
 
@@ -65,14 +68,14 @@ def render_response(template_prefix=None, always_use_requestcontext=True):
 
             if template_prefix:
                 if isinstance(template_name, (list, tuple)):
-                    template_name = map(correct_path, template_name)
+                    template_name = list(map(correct_path, template_name))
                 else:
                     template_name = correct_path(template_name)
 
             http_response = HttpResponse(
                 loader.render_to_string(template_name, context=context.flatten(), request=context.request)
             )
-            for header, header_value in headers.items():
+            for header, header_value in list(headers.items()):
                 http_response[header] = header_value
             return http_response
 

@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 import django
 from django.conf import settings
 from django.utils import six
@@ -16,11 +19,11 @@ except ImportError:
     get_user_model = lambda: User
 
 try:
-    from urllib import quote
+    from urllib.parse import quote
 except ImportError:
     from urllib.parse import quote
 
 if six.PY3:
     from threading import get_ident
 else:
-    from thread import get_ident
+    from _thread import get_ident

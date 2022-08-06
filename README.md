@@ -64,7 +64,7 @@
 ### Built With
 
 * [Django](https://djangoproject.com/)
-* [Python 2.7](https://www.python.org/)
+* [Python 3.6.8 - 3.7.11](https://www.python.org/)
 
 <!-- GETTING STARTED -->
 ## Getting Started

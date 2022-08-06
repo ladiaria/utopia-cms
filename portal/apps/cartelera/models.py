@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import datetime
 
 from django.conf import settings
@@ -15,7 +17,7 @@ from star_ratings.models import Rating
 
 from core.models import CT
 
-from choices import LIVE_EMBED_EVENT_ACCESS_TYPES
+from .choices import LIVE_EMBED_EVENT_ACCESS_TYPES
 
 
 class CategoriaEvento(Model):
@@ -27,7 +29,7 @@ class CategoriaEvento(Model):
         today_min = datetime.datetime.combine(date.today(), datetime.time.min)
         return self.eventobase_set.select_related().order_by('start').filter(end__gte=today_min)[:20]
 
-    def __unicode__(self):
+    def __str__(self):
         return self.nombre
 
     def get_absolute_url(self):
@@ -57,7 +59,7 @@ class EventoBase(Model, CT):
     poster = ImageField(upload_to='cartelera/posters', blank=True, null=True)
     type = CharField(max_length=250)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def render(self):
@@ -87,7 +89,7 @@ class ArchivedEvent(Model):
         return '<a href="%s">%s</a>' % (href, href) if href else None
     link.allow_tags = True
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     class Meta:
@@ -130,7 +132,7 @@ class LiveEmbedEvent(Model):
         self.full_clean()  # calls self.clean() as well cleans other fields
         return super(LiveEmbedEvent, self).save(*args, **kwargs)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     class Meta:
@@ -148,7 +150,7 @@ class Lugar(Model):
     class Meta:
         abstract = True
 
-    def __unicode__(self):
+    def __str__(self):
         return self.nombre
 
 

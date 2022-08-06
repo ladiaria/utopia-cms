@@ -11,6 +11,7 @@ Dependencies:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from builtins import range
 from . import Extension
 from ..treeprocessors import Treeprocessor
 from ..util import etree, parseBoolValue, AMP_SUBSTITUTE
@@ -36,7 +37,7 @@ def order_toc_list(toc_list):
             return [], []
         
         current = remaining_list.pop(0)
-        if not 'children' in current.keys():
+        if not 'children' in list(current.keys()):
             current['children'] = []
         
         if not prev_elements:
@@ -195,7 +196,7 @@ class TocTreeprocessor(Treeprocessor):
         if not marker_found:
             # serialize and attach to markdown instance.
             toc = self.markdown.serializer(div)
-            for pp in self.markdown.postprocessors.values():
+            for pp in list(self.markdown.postprocessors.values()):
                 toc = pp.run(toc)
             self.markdown.toc = toc
 

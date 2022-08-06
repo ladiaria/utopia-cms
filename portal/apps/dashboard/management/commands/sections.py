@@ -3,9 +3,10 @@
 """
 Note: output from this command is not used in the dashboard view
 """
+from __future__ import unicode_literals
 
 from os.path import join
-from unicodecsv import writer
+from csv import writer
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
