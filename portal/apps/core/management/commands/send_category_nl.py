@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # utopia-cms, 2018-2022, Aníbal Pacheco
 from __future__ import unicode_literals
+
 from builtins import next
+
 import sys
 from os.path import basename, join
 import logging
@@ -280,7 +282,7 @@ def build_and_send(
             if not retry_last_delivery:
                 if offline:
                     s_id, s_name, s_user_email, hashed_id, is_subscriber, is_subscriber_any, is_subscriber_default = (
-                        subscribers_iter.next()
+                        next(subscribers_iter)
                     )
                     is_subscriber = eval(is_subscriber)
                     is_subscriber_any = eval(is_subscriber_any)

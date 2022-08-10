@@ -4,9 +4,23 @@ Documentation about installing Utopia's CMS.
 
 ## Install requirements
 
-- System packages, names can vary by OS/distribution:
+- Python:
 
-  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel python-pillow python-vobject pytz pycrypto python-requests-oauthlib rubygem-sass npm gcc libmaxminddb-devel
+  The Python version we recomend to use is version 3.7.11
+
+  A lower version starting from 3.6.8 may also work well, but some dependencies may be installed in a different version of the one
+  specified in the requirements.txt file.
+
+  If your system has a native Python installation in version 3.7 (<=3.7.11) you can use it, and no installing a new Python
+  version may be required.
+
+  If not, we recommend install the version 3.7.11 using pyenv: https://github.com/pyenv/pyenv
+
+- System packages:
+
+  NOTES: package names can vary by OS/distribution.
+
+  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel rubygem-sass npm gcc libmaxminddb-devel
 
 - npm (Node.js packages):
 
@@ -27,9 +41,11 @@ Documentation about installing Utopia's CMS.
 
   `user@host:~/utopia-cms $ git clone -b main https://github.com/ladiaria/lightGallery static/lightGallery`
 
-- Create a virtualenv (venv) for Python3 using system-site-packages (the subdirectory `~/.virtualenvs` is not needed, we use it in this guide because is the default virtualenv directory in the tool [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/), also the virtual environment name can be any other, "utopiacms" is chosen in this guide):
+- Create a virtualenv (venv) for Python3 (the subdirectory `~/.virtualenvs` is not needed, we use it in this guide because is the default virtualenv directory in the tool [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/), also the virtual environment name can be any other, "utopiacms" is chosen in this guide):
 
-  `user@host:~/utopia-cms $ mkdir -p ~/.virtualenvs && virtualenv --system-site-packages ~/.virtualenvs/utopiacms`
+  NOTE: if using pyenv, this venv creation is done a bit different, consult the pyenv documentation for that.
+
+  `user@host:~/utopia-cms $ mkdir -p ~/.virtualenvs && virtualenv ~/.virtualenvs/utopiacms`
 
 - Activate the new virtual environment and install the required Python modules:
 

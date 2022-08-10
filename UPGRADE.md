@@ -1,3 +1,16 @@
+# From version 0.2.8 to 0.3.0
+
+TODO: write upgrade guide based on this draft:
+
+- gco to version
+- create new venv (mention pyenv alternative)
+- upgrade pip
+- install reqs
+- local settings (update based on samples)
+- find . -name "*.pyc" -delete
+- collectstatic
+- (if using wsgi in deploy: update ini and py based on samples)
+
 # From version 0.2.7 to 0.2.8
 
 ```

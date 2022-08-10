@@ -2,6 +2,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
 from datetime import date, timedelta
 from requests.exceptions import ConnectionError
 
@@ -88,7 +89,7 @@ class HomeTopArticleInline(TabularInline):
     fields = ('article', 'section', 'top_position')
     readonly_fields = ('section', )
     raw_id_fields = ('article', )
-    verbose_name_plural = u'Nota de tapa y titulines'
+    verbose_name_plural = 'Nota de tapa y titulines'
     formset = TopArticleRelInlineFormSet
 
     def get_queryset(self, request):
@@ -120,7 +121,7 @@ def section_top_article_inline_class(section):
 
     class SectionTopArticleInline(HomeTopArticleInline):
         max_num = 20
-        verbose_name_plural = u'Artículos en %s [[%d]]' % (section.name, section.id)
+        verbose_name_plural = 'Artículos en %s [[%d]]' % (section.name, section.id)
         fields = ('article', 'position', 'home_top')
         raw_id_fields = ('article', )
         ordering = ('position', )
@@ -244,20 +245,20 @@ class ArticleBodyImageInline(TabularInline):
 
     def photo_admin_thumbnail(self, instance):
         return instance.image.admin_thumbnail()
-    photo_admin_thumbnail.short_description = u'thumbnail'
+    photo_admin_thumbnail.short_description = 'thumbnail'
     photo_admin_thumbnail.allow_tags = True
 
     def photo_date_taken(self, instance):
         return instance.image.date_taken
-    photo_date_taken.short_description = u'tomada el'
+    photo_date_taken.short_description = 'tomada el'
 
     def photo_date_added(self, instance):
         return instance.image.date_added
-    photo_date_added.short_description = u'fecha de creación'
+    photo_date_added.short_description = 'fecha de creación'
 
 
 class ArticleRelAdminModelForm(ModelForm):
-    main = ChoiceField(label=u'principal', widget=RadioSelect, choices=((1, u''), ), required=False)
+    main = ChoiceField(label='principal', widget=RadioSelect, choices=((1, ''), ), required=False)
 
     class Meta:
         model = ArticleRel
@@ -265,7 +266,7 @@ class ArticleRelAdminModelForm(ModelForm):
 
 
 class ArticleEditionInline(TabularInline):
-    verbose_name = verbose_name_plural = u'publicado en'
+    verbose_name = verbose_name_plural = 'publicado en'
     model = ArticleRel
     raw_id_fields = ('edition', )
     form = ArticleRelAdminModelForm
@@ -274,11 +275,11 @@ class ArticleEditionInline(TabularInline):
 
 class ArticleAdminModelForm(ModelForm):
     body = CharField(widget=MarkdownWidget())
-    headline = CharField(label=u'Título', widget=TextInput(attrs={'style': 'width:600px'}))
+    headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
     slug = CharField(
         label='Slug',
         widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
-        help_text=u'Se genera automáticamente en base al título.',
+        help_text='Se genera automáticamente en base al título.',
     )
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
 
@@ -309,7 +310,7 @@ class ArticleAdminModelForm(ModelForm):
         if self.instance.id:
             targets = targets.exclude(id=self.instance.id)
         if targets:
-            raise ValidationError(u'Ya existe un artículo en ese mes con el mismo título.')
+            raise ValidationError('Ya existe un artículo en ese mes con el mismo título.')
 
     class Meta:
         model = Article
@@ -320,7 +321,7 @@ def has_photo(obj):
     return bool(obj.photo is not None)
 
 
-has_photo.short_description = u'Foto'
+has_photo.short_description = 'Foto'
 has_photo.boolean = True
 
 
@@ -328,7 +329,7 @@ def has_gallery(obj):
     return bool(obj.gallery is not None)
 
 
-has_gallery.short_description = u'Galería'
+has_gallery.short_description = 'Galería'
 has_gallery.boolean = True
 
 article_optional_inlines = []
@@ -384,7 +385,7 @@ class ArticleAdmin(ModelAdmin):
         if obj.date_published:
             return obj.date_published.strftime("%d %b %Y %H:%M")
         else:
-            return u''
+            return ''
     publication_date.admin_order_field = 'date_published'
     publication_date.short_description = 'Publicado'
 
@@ -466,23 +467,23 @@ class ArticleAdmin(ModelAdmin):
         if not self.obj.sections.exists():
             if self.obj.main_section:
                 self.obj.main_section, save = None, True
-                self.message_user(request, u'AVISO: Ninguna publicación definida como principal')
+                self.message_user(request, 'AVISO: Ninguna publicación definida como principal')
         elif self.obj.sections.count() == 1:
             # If only one "published in" row => set it as main (if different)
             main_section = ArticleRel.objects.get(article=self.obj)
             if self.obj.main_section != main_section:
                 self.obj.main_section, save = main_section, True
-                self.message_user(request, u'Publicación principal: %s' % main_section)
+                self.message_user(request, 'Publicación principal: %s' % main_section)
         else:
             row_selected = request.POST.get('main_section_radio')
             if row_selected:
-                if request.POST.get('articlerel_set-%s-DELETE' % row_selected) != u'on':
+                if request.POST.get('articlerel_set-%s-DELETE' % row_selected) != 'on':
                     # a kept or new row was selected as "main" => set it as the main_section (if different)
                     articlerel_id = request.POST.get('articlerel_set-%s-id' % row_selected)
                     if articlerel_id:
                         if self.obj.main_section_id != articlerel_id:
                             self.obj.main_section_id, save = articlerel_id, True
-                            self.message_user(request, u'Publicación principal: %s' % self.obj.main_section)
+                            self.message_user(request, 'Publicación principal: %s' % self.obj.main_section)
                     else:
                         main_section = ArticleRel.objects.get(
                             article=self.obj,
@@ -492,13 +493,13 @@ class ArticleAdmin(ModelAdmin):
                         )
                         if self.obj.main_section != main_section:
                             self.obj.main_section, save = main_section, True
-                            self.message_user(request, u'Publicación principal: %s' % main_section)
+                            self.message_user(request, 'Publicación principal: %s' % main_section)
             else:
                 # no row was selected, set the oldest as the main_section (if different)
                 main_section = ArticleRel.objects.filter(article=self.obj).order_by('edition__date_published')[0]
                 if self.obj.main_section != main_section:
                     self.obj.main_section, save = main_section, True
-                    self.message_user(request, u'Publicación principal: %s' % main_section)
+                    self.message_user(request, 'Publicación principal: %s' % main_section)
 
         if save:
             self.obj.save()
@@ -508,7 +509,7 @@ class ArticleAdmin(ModelAdmin):
             self.obj = Article.objects.get(id=self.obj.id)
 
         new_url_path = self.obj.build_url_path()
-        url_changed = getattr(self, 'old_url_path', u'') != new_url_path
+        url_changed = getattr(self, 'old_url_path', '') != new_url_path
         if url_changed:
             self.obj.url_path = new_url_path
             self.obj.save()
@@ -521,7 +522,7 @@ class ArticleAdmin(ModelAdmin):
                 try:
                     update_article_url_in_coral_talk(form.instance.id, new_url_path)
                 except (ConnectionError, ValueError, KeyError, AssertionError, TypeError):
-                    self.message_user(request, u'AVISO: No se pudo actualizar la nueva URL en Coral-Talk')
+                    self.message_user(request, 'AVISO: No se pudo actualizar la nueva URL en Coral-Talk')
 
         # add to history the new url
         if not ArticleUrlHistory.objects.filter(article=form.instance, absolute_url=new_url_path).exists():
@@ -542,9 +543,10 @@ class ArticleAdmin(ModelAdmin):
     def delete_view(self, request, object_id, extra_context=None):
         # actstream does not return unicode when rendering an Action if the target object has non-ascii chars,
         # this breaks the django six names collector, and this temporal change can hack this when deleting an article.
-        Action.__unicode__ = lambda x: u'Article followed by user'
+        # TODO: check if this issue is still present in py3
+        Action.__str__ = lambda x: 'Article followed by user'
         response = super(ArticleAdmin, self).delete_view(request, object_id, extra_context)
-        del Action.__unicode__
+        del Action.__str__
         return response
 
     class Media:
@@ -598,7 +600,7 @@ class JournalistForm(ModelForm):
     def clean_name(self):
         name = self.cleaned_data['name'].strip()
         if name.isnumeric():
-            raise ValidationError(u'El nombre no puede ser un número.')
+            raise ValidationError('El nombre no puede ser un número.')
         else:
             return name
 
@@ -636,9 +638,9 @@ class PublicationAdminChangelistForm(ModelForm):
 
 class CustomSubjectAdminForm(ModelForm):
     newsletter_automatic_subject = TypedChoiceField(
-        label=u'',
+        label='',
         coerce=lambda x: x == 'True',
-        choices=((True, u'Asunto automático'), (False, u'Asunto manual')),
+        choices=((True, 'Asunto automático'), (False, 'Asunto manual')),
         widget=RadioSelect,
     )
 
@@ -810,7 +812,7 @@ class CategoryHomeArticleInline(TabularInline):
     form = CategoryHomeArticleForm
     formset = CategoryHomeArticleFormSet
     raw_id_fields = ('article', )
-    verbose_name_plural = u'Artículos en portada'
+    verbose_name_plural = 'Artículos en portada'
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Overrided from django/contrib/admin/options.py
@@ -866,7 +868,7 @@ class CategoryNewsletterArticleInline(TabularInline):
     max_num = 20
     form = CategoryNewsletterArticleForm
     raw_id_fields = ('article', )
-    verbose_name_plural = u'Artículos en newsletter'
+    verbose_name_plural = 'Artículos en newsletter'
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Overrided from django/contrib/admin/options.py
@@ -908,7 +910,7 @@ class ArticleInline(TabularInline):
     extra = 3
     max_num = 3
     raw_id_fields = ('article', )
-    verbose_name_plural = u'Artículos relacionados'
+    verbose_name_plural = 'Artículos relacionados'
 
 
 class BreakingNewsModuleAdmin(ModelAdmin):

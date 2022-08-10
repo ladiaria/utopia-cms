@@ -87,7 +87,7 @@ standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 
 
-def notify_new_subscription(subscription_url, extra_subject=u''):
+def notify_new_subscription(subscription_url, extra_subject=''):
     subject = settings.SUBSCRIPTION_EMAIL_SUBJECT + extra_subject
     rcv = settings.SUBSCRIPTION_EMAIL_TO
     from_mail = getattr(settings, 'DEFAULT_FROM_EMAIL')
@@ -192,7 +192,7 @@ def login(request):
                 else:
                     response = HttpResponseRedirect(reverse('account-confirm_email'))
             else:
-                login_error = u'Usuario y/o contraseña incorrectos.'
+                login_error = 'Usuario y/o contraseña incorrectos.'
         else:
             # alert admins if is a user with duplicated email.
             email = login_form.data.get('name_or_mail')
@@ -233,7 +233,7 @@ def signup(request):
             # TODO: handle smtp errors
             # TODO: notifications/signup.html is also used for this purpose (why having 2 templates to the same thing?)
             send_validation_email(
-                u'Verificá tu cuenta',
+                'Verificá tu cuenta',
                 user,
                 'notifications/account_signup.html',
                 get_signup_validation_url,
@@ -266,7 +266,7 @@ def google_phone(request):
     planslug = request.session.get('planslug')
     if planslug:
         request.session.pop('planslug')
-        if request.GET.get('is_new') == u'1':
+        if request.GET.get('is_new') == '1':
             # default category newsletters are not added here because some subscriptions may not add the default
             # category newsletters. TODO: Add a M2M relation from subscriptionprices(planslug) to Category
             pass
@@ -281,14 +281,14 @@ def google_phone(request):
         google_signin_form = GoogleSigninForm(request.POST, instance=profile)
         if google_signin_form.is_valid():
             google_signin_form.save()
-            send_notification(oas.user, 'notifications/signup.html', u'¡Te damos la bienvenida!')
+            send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!')
             oas.delete()
             request.session['welcome'] = True
             return HttpResponseRedirect('%s?next=%s' % (
                 reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('account-welcome')))
     else:
         # if is a new user add the default category newsletters (reached only from "free" subscriptions)
-        if request.GET.get('is_new') == u'1':
+        if request.GET.get('is_new') == '1':
             add_default_category_newsletters(profile)
     return 'google_signup.html', {'google_signin_form': google_signin_form}
 
@@ -479,9 +479,9 @@ def subscribe(request, planslug, category_slug=None):
                             subscription.delete()
                             errors = subscriber_form_v._errors.setdefault("email", ErrorList())
                             errors.append(
-                                u'No se pudo enviar el email de verificación al crear tu cuenta, ' + (
-                                    u'¿lo escribiste correctamente?' if type(smtp_exc) is SMTPRecipientsRefused else
-                                    u'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
+                                'No se pudo enviar el email de verificación al crear tu cuenta, ' + (
+                                    '¿lo escribiste correctamente?' if type(smtp_exc) is SMTPRecipientsRefused else
+                                    'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
                                     % reverse('account-confirm_email')
                                 )
                             )
@@ -544,7 +544,7 @@ def edit_subscription(request):
 
         if subscription_form.is_valid():  # All validation rules pass
             subscription_form.save()
-            messages.success(request, u'Suscripción Actualizada.')
+            messages.success(request, 'Suscripción Actualizada.')
         else:
             subscription_form = SubscriptionForm(instance=user)
 
@@ -554,7 +554,7 @@ def edit_subscription(request):
 def hash_validate(user_id, hash):
     user = get_object_or_404(User, id=user_id)
     if not default_token_generator.check_token(user, hash):
-        raise Http404(u'Invalid token.')
+        raise Http404('Invalid token.')
     return user
 
 
@@ -590,7 +590,7 @@ def complete_signup(request, user_id, hash):
     send_default_welcome = 'welcome' not in request.session
 
     if send_default_welcome:
-        mail_admins('New user', u'%i - %s' % (user.id, user.get_full_name()))
+        mail_admins('New user', '%i - %s' % (user.id, user.get_full_name()))
 
     # If a delayed email is required, this code can schedule a task for that:
     # task = notify_user(user.id) #(from tasks import notify_user)
@@ -604,10 +604,10 @@ def complete_signup(request, user_id, hash):
         st = user.suscripciones.all()[0].subscription_type_prices
         if st.count() == 1:
             subscription_type = st.all()[0].subscription_type
-            if subscription_type == u'DDIGM':
+            if subscription_type == 'DDIGM':
                 send_default_welcome = False
                 notify_digital(user)
-            elif subscription_type == u'PAPYDIM':
+            elif subscription_type == 'PAPYDIM':
                 send_default_welcome = False
                 notify_paper(user)
 
@@ -640,7 +640,7 @@ def password_reset(request, user_id=None, hash=None):
             if reset_form.user:
                 # TODO: handle smtp errors
                 send_validation_email(
-                    u'Recuperación de contraseña',
+                    'Recuperación de contraseña',
                     reset_form.user,
                     'notifications/password_reset_body.html',
                     get_password_validation_url,
@@ -659,7 +659,7 @@ def confirm_email(request):
             # TODO: handle smtp errors
             user = confirm_email_form.user
             send_validation_email(
-                u'Verificá tu cuenta',
+                'Verificá tu cuenta',
                 user,
                 'notifications/account_signup%s.html' % (
                     '_subscribed' if hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any() else ''
@@ -681,8 +681,7 @@ def session_refresh(request):
     if subscription and subscription_type:
         subscription.subscription_type_prices.remove(subscription_type)
     referer = request.META.get('HTTP_REFERER')
-    return HttpResponseRedirect(
-        referer if referer and referer != request.path else '/')
+    return HttpResponseRedirect(referer if referer and referer != request.path else '/')
 
 
 @never_cache
@@ -694,7 +693,7 @@ def password_change(request, user_id=None, hash=None):
         user = get_object_or_404(User, id=user_id)
     else:
         if not request.user.is_authenticated():
-            raise Http404(u'Unauthorized access.')
+            raise Http404('Unauthorized access.')
         user = request.user
     if request.method == 'POST':
         post = request.POST.copy()
@@ -731,14 +730,14 @@ def edit_profile(request, user=None):
                     user.save()
                     # TODO: handle smtp errors
                     send_validation_email(
-                        u'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url
+                        'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url
                     )
                     messages.success(
-                        request, u'Perfil actualizado, revisá tu email para verificar el cambio de email.')
+                        request, 'Perfil actualizado, revisá tu email para verificar el cambio de email.')
                     logout(request)
                     return HttpResponseRedirect(reverse('account-logout'))
                 else:
-                    messages.success(request, u'Perfil Actualizado.')
+                    messages.success(request, 'Perfil Actualizado.')
             except UpdateCrmEx as e:
                 messages.warning(request, e.displaymessage)
     else:
@@ -746,7 +745,7 @@ def edit_profile(request, user=None):
         profile_form = ProfileForm(instance=profile)
 
     try:
-        oauth2_assoc = UserSocialAuth.objects.get(user=user, provider=u'google-oauth2')
+        oauth2_assoc = UserSocialAuth.objects.get(user=user, provider='google-oauth2')
     except UserSocialAuth.DoesNotExist:
         oauth2_assoc = None
 
@@ -834,15 +833,9 @@ def fav_add_or_remove(request):
         fav.delete()
         status = 'deleted'
 
-    response = {
-        'status': status,
-        'fav_count': Favorite.objects.for_object(obj_id, app_model).count()
-    }
+    response = {'status': status, 'fav_count': Favorite.objects.for_object(obj_id, app_model).count()}
 
-    return HttpResponse(
-        json.dumps(response, ensure_ascii=False),
-        content_type='application/json'
-    )
+    return HttpResponse(json.dumps(response, ensure_ascii=False), content_type='application/json')
 
 
 @never_cache
@@ -867,7 +860,8 @@ def lista_lectura_historial(request):
                 pass
     # perform the union with the ones in the model
     historial += [
-        avb.article for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at')]
+        avb.article for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at')
+    ]
     historial_count = len(historial)
     if request.is_ajax():
         return HttpResponse(historial_count)
@@ -948,24 +942,24 @@ def update_user_from_crm(request):
 
     if request.method == 'POST':
         try:
-            contact_id = request.POST[u'contact_id']
-            email = request.POST.get(u'email')
-            newemail = request.POST.get(u'newemail')
-            field = request.POST.get(u'field')
-            value = request.POST.get(u'value')
-            if request.POST[u'ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
+            contact_id = request.POST['contact_id']
+            email = request.POST.get('email')
+            newemail = request.POST.get('newemail')
+            field = request.POST.get('field')
+            value = request.POST.get('value')
+            if request.POST['ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
                 return HttpResponseForbidden()
         except KeyError:
             return HttpResponseBadRequest()
         try:
             s = Subscriber.objects.get(contact_id=contact_id)
-            if field == u'email':
+            if field == 'email':
                 check_user = User.objects.filter(email=newemail)
                 if check_user.exists():
                     if check_user.count() == 1:
                         check_user = check_user[0]
                     else:
-                        msg = u'Multiple email in users'
+                        msg = 'Multiple email in users'
                         mail_managers(msg, email)
                         return HttpResponseServerError()
                 if check_user and check_user != s.user:
@@ -973,7 +967,7 @@ def update_user_from_crm(request):
                 changeuseremail(s.user, email, newemail)
                 s.user.updatefromcrm = True
                 s.user.save()
-            elif field == u'newsletters':
+            elif field == 'newsletters':
                 # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add
                 # all the ones in the value JSON list that are missing.
                 s.updatefromcrm, pub_names = True, json.loads(value)
@@ -987,7 +981,7 @@ def update_user_from_crm(request):
                         s.newsletters.add(Publication.objects.get(name=pub_name))
                     except Publication.DoesNotExist:
                         pass
-            elif field == u'area_newsletters':
+            elif field == 'area_newsletters':
                 # the same as above but for category newsletters
                 s.updatefromcrm, cat_names = True, json.loads(value)
                 for cat in s.category_newsletters.filter(has_newsletter=True):
@@ -1015,14 +1009,14 @@ def update_user_from_crm(request):
                     # This user should be created automatically tomorrow
                     pass
                 except MultipleObjectsReturned:
-                    msg = u'Multiple email in users'
+                    msg = 'Multiple email in users'
                     mail_managers(msg, email)
                     return HttpResponseServerError()
                 except IntegrityError as ie:
-                    mail_managers(u'IntegrityError saving user', str(ie))
+                    mail_managers('IntegrityError saving user', str(ie))
                     return HttpResponseServerError()
         except IntegrityError as ie:
-            mail_managers(u'IntegrityError saving user', str(ie))
+            mail_managers('IntegrityError saving user', str(ie))
             return HttpResponseServerError()
         except KeyError:
             pass
@@ -1184,7 +1178,7 @@ def amp_access_pingback(request):
 @never_cache
 @csrf_exempt
 def users_api(request):
-    max_device_msg = u'Ha superado la cantidad de dispositivos permitidos'
+    max_device_msg = 'Ha superado la cantidad de dispositivos permitidos'
     if request.method == 'POST':
         try:
             email = request.POST['email']
@@ -1215,11 +1209,11 @@ def users_api(request):
                 content_type='text/xml',
             )
         except KeyError:
-            msg = u'Parameter missing'
+            msg = 'Parameter missing'
         except User.DoesNotExist:
-            msg = u'User does not exist'
+            msg = 'User does not exist'
         except MultipleObjectsReturned:
-            msg = u'Multiple email in users'
+            msg = 'Multiple email in users'
             mail_managers(msg, email)
         return HttpResponseBadRequest(msg)
     raise Http404
@@ -1253,20 +1247,20 @@ def email_check_api(request):
         user_contact_id = getattr(user.subscriber, 'contact_id', None)
 
         if (user_contact_id and user_contact_id != contact_id) or (user_contact_id is None):
-            msg = u'Ya existe otro usuario en la web con ese email'
+            msg = 'Ya existe otro usuario en la web con ese email'
         else:
-            msg = u'OK'
+            msg = 'OK'
 
     except KeyError:
-        msg = u'Parameter missing'
+        msg = 'Parameter missing'
     except ValueError:
-        msg = u'Wrong values'
+        msg = 'Wrong values'
     except User.DoesNotExist:
-        msg = u'OK'
+        msg = 'OK'
     except MultipleObjectsReturned:
-        msg = u'Hay más de un usuario con ese email en la web'
+        msg = 'Hay más de un usuario con ese email en la web'
     except Subscriber.DoesNotExist:
-        msg = u'No hay suscriptor asociado al usuario web'
+        msg = 'No hay suscriptor asociado al usuario web'
 
     return HttpResponse(msg)
 
@@ -1275,7 +1269,7 @@ def email_check_api(request):
 @csrf_exempt
 @require_POST
 def user_comments_api(request):
-    result = {u'error': None}
+    result = {'error': None}
     try:
         email = request.POST['email']
         if not email or request.POST['ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
@@ -1289,17 +1283,17 @@ def user_comments_api(request):
                      '"variables":{"id":%d},"operationName":"user"}' % User.objects.get(email__iexact=email).id
             ).json()['data']['user']['comments'])
         else:
-            result[u'error'] = u'Sistema de comentarios temporalmente fuera de servicio'
+            result['error'] = 'Sistema de comentarios temporalmente fuera de servicio'
     except KeyError:
-        result[u'error'] = u'Parameter missing'
+        result['error'] = 'Parameter missing'
     except TypeError:
-        result[u'error'] = u'No hay comentarios en la web asociados al usuario con ese email'
+        result['error'] = 'No hay comentarios en la web asociados al usuario con ese email'
     except ValueError:
-        result[u'error'] = u'Wrong values'
+        result['error'] = 'Wrong values'
     except User.DoesNotExist:
-        result[u'error'] = u'No existe usuario en la web con ese email'
+        result['error'] = 'No existe usuario en la web con ese email'
     except MultipleObjectsReturned:
-        result[u'error'] = u'Hay más de un usuario en la web con ese email'
+        result['error'] = 'Hay más de un usuario en la web con ese email'
 
     return HttpResponse(json.dumps(result), content_type="application/json")
 
@@ -1308,7 +1302,7 @@ def user_comments_api(request):
 @csrf_exempt
 def custom_api(request):
     if request.method == 'POST':
-        msg = u''
+        msg = ''
         try:
             operation = request.POST['operation']
             if not operation or request.POST['ldsocial_users_api_key'] != settings.LDSOCIAL_USERS_API_KEY:
@@ -1316,7 +1310,7 @@ def custom_api(request):
             os.system(settings.LDSOCIAL_CUSTOM_API_CMD[operation])
             return HttpResponse()
         except KeyError:
-            msg = u'Parameter or setting missing'
+            msg = 'Parameter or setting missing'
         return HttpResponseBadRequest(msg)
     raise Http404
 
@@ -1381,7 +1375,7 @@ def nlunsubscribe(request, publication_slug, hashed_id):
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
                 ctx['error'] = e.displaymessage
         else:
-            email = u'anonymous_user@localhost'
+            email = 'anonymous_user@localhost'
         ctx['email'] = email
         return 'nlunsubscribe.html', ctx
     except IndexError:
@@ -1411,7 +1405,7 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
                 ctx['error'] = e.displaymessage
         else:
-            email = u'anonymous_user@localhost'
+            email = 'anonymous_user@localhost'
         ctx['email'] = email
         return 'nlunsubscribe.html', ctx
     except IndexError:
@@ -1429,7 +1423,7 @@ def disable_profile_property(request, property_id, hashed_id):
         setattr(subscriber, property_id, False)
         ctx = {
             'property_name': {
-                'allow_news': u'Novedades', 'allow_promotions': u'Promociones', 'allow_polls': u'Encuestas'
+                'allow_news': 'Novedades', 'allow_promotions': 'Promociones', 'allow_polls': 'Encuestas'
             }.get(property_id),
             'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
             'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
@@ -1457,7 +1451,7 @@ def notification_preview(request, template, days=False):
         ctx = {
             'logo_url': settings.HOMEV3_SECONDARY_LOGO,
             'days': days,
-            'seller_fullname': u'Seller Fullname' if seller_fullname is None else seller_fullname,
+            'seller_fullname': 'Seller Fullname' if seller_fullname is None else seller_fullname,
         }
         dir_prefix = getattr(settings, 'THEDAILY_NOTIFICATIONS_TEMPLATE_PREFIX', '')
         result = render(request, dir_prefix + ('notifications/%s.html' % template), ctx)
@@ -1477,10 +1471,10 @@ def notification_preview(request, template, days=False):
 def phone_subscription(request):
     if request.POST:
         form = request.POST
-        subject = u"Nueva solicitud de suscripción por teléfono"
+        subject = "Nueva solicitud de suscripción por teléfono"
         rcv = settings.SUBSCRIPTION_BY_PHONE_EMAIL_TO
         from_mail = getattr(settings, 'DEFAULT_FROM_EMAIL')
-        text = u"Nombre: %s\nTeléfono: %s\nContactar: %s" % (
+        text = "Nombre: %s\nTeléfono: %s\nContactar: %s" % (
             form.get('full_name'), form.get('phone'), form.get('time')
         )
         send_mail(subject, text, from_mail, rcv, fail_silently=True)
@@ -1518,13 +1512,13 @@ def telephone_subscription_msg(user, preferred_time):
     name = user.get_full_name() or user.subscriber.name
     pt_text = '-'
     if preferred_time == '1':
-        pt_text = u'Cualquier hora (9:00 a 20:00)'
+        pt_text = 'Cualquier hora (9:00 a 20:00)'
     elif preferred_time == '2':
-        pt_text = u'En la mañana (9:00 a 12:00)'
+        pt_text = 'En la mañana (9:00 a 12:00)'
     elif preferred_time == '3':
-        pt_text = u'En la tarde (12:00 a 18:00)'
+        pt_text = 'En la tarde (12:00 a 18:00)'
     elif preferred_time == '4':
-        pt_text = u'En la tarde-noche (18:00 a 20:00)'
+        pt_text = 'En la tarde-noche (18:00 a 20:00)'
     return (
         ('Nueva suscripción telefónica para %s' % name),
         (

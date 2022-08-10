@@ -12,7 +12,8 @@ django-cookies-samesite
 djangorestframework==3.7.0
 django-filter==1.1
 django-avatar==4.0.0
-django-favit>0.3
+django-classy-tags==1.0.0
+git+https://github.com/mcldev/django-favit.git
 django-markdown-plus
 django-markup==1.4.1
 django-crispy-forms==1.6.0

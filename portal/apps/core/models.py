@@ -269,7 +269,7 @@ class PortableDocumentFormatBaseModel(Model):
         result = (
             ("{d:%a}. {d.day} {d:%b}." if date.today().year == self.date_published.year else "{d.day} {d:%b, %Y}")
             if short else "{d:%A} {d.day} de {d:%B de %Y}"
-        ).encode('utf8').format(d=self.date_published)
+        ).format(d=self.date_published)
         return result.title() if short else result.capitalize()
 
 
@@ -1932,9 +1932,7 @@ class BreakingNewsModule(Model):
         return self.headline or ''
 
     def covers(self):
-        return ', '.join(
-            [p.__unicode__() for p in self.publications.all()] + [c.__unicode__() for c in self.categories.all()]
-        )
+        return ', '.join([str(p) for p in self.publications.all()] + [str(c) for c in self.categories.all()])
     covers.short_description = 'portadas'
 
     def has_embed(self, i):
