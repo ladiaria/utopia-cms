@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
 import re
 from generator.views import contribute
 from rest_framework import serializers, viewsets, routers
@@ -210,8 +211,7 @@ class SubscriberViewSet(viewsets.ModelViewSet):
 
 
 class DollarExchangeViewSet(viewsets.ModelViewSet):
-    queryset = Exchange.objects.filter(
-        currency__slug='dolar').order_by('-date')
+    queryset = Exchange.objects.filter(currency__slug='dolar').order_by('-date')
     serializer_class = ExchangeSerializer
     http_method_names = ['get', 'head']
 
