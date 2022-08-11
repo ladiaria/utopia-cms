@@ -8,7 +8,7 @@
                 Este audio es una característica exclusiva de la suscripción digital.
               </div>
               <div class="ld-audio__overlay-links">
-                <a href="{% url 'subscribe' planslug='DDIGM' %}">Suscribite</a>
+                <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=audio-banner">Suscribite</a>
                 <span class="d-inline-block" amp-access="NOT authenticated" amp-access-hide>
                   o
                   <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>

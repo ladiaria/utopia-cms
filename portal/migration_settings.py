@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from __future__ import unicode_literals
+
 import sys
 from os.path import abspath, basename, dirname, join, realpath
 from datetime import datetime
@@ -25,6 +26,9 @@ STATIC_ROOT = '%s/static/' % SITE_ROOT
 SITE_DOMAIN = 'example.com'
 URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
+
+# disable template settings warning until fixed migrating django-mobile to django-amp-tools
+SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
 
 # django-mobile
 FLAVOURS = ('full', 'mobile', 'amp')

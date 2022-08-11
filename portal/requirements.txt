@@ -23,7 +23,7 @@ django-shorturls==2.0.0
 sorl-thumbnail<12.4
 django-extensions==1.6.2
 django-nose==1.4.6
-django-recaptcha==1.0.6
+django-recaptcha<3
 django-subdomains
 django-background-tasks<1.1
 django-admin-shortcuts==1.2.7

@@ -28,6 +28,9 @@ SITE_DOMAIN = 'example.com'
 URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
 
+# disable template settings warning until fixed migrating django-mobile to django-amp-tools
+SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
+
 # django-mobile
 FLAVOURS = ('full', 'mobile', 'amp')
 FLAVOURS_GET_PARAMETER = u'display'

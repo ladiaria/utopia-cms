@@ -16,7 +16,7 @@
     <div amp-access="NOT subscriber_any" amp-access-hide>
       <div class="ld-snackbar__text ld-snackbar__block">Para acceder a todos los contenidos de manera ilimitada</div>
       <div class="ld-snackbar__block">
-        <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-default">
+        <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=paywall" class="ld-btn-default">
           Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
         </a>
       </div>
