@@ -1,4 +1,4 @@
-# From version 0.2.8 to 0.3.0
+# From version 0.2.9 to 0.3.0
 
 TODO: write upgrade guide based on this draft:
 
@@ -10,6 +10,13 @@ TODO: write upgrade guide based on this draft:
 - find . -name "*.pyc" -delete
 - collectstatic
 - (if using wsgi in deploy: update ini and py based on samples)
+
+# From version 0.2.8 to 0.2.9
+
+```
+git pull
+git checkout 0.2.9
+```
 
 # From version 0.2.7 to 0.2.8
 

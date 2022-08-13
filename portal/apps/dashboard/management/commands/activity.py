@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from os.path import join
 from csv import writer
 from progress.bar import Bar
 
-from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 
-from thedaily.management.commands.automatic_mail import latest_activity
+from dashboard.utils import latest_activity
 
 
 class Command(BaseCommand):
@@ -16,7 +17,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+            '--progress', action='store_true', default=False, dest='progress', help='Show a progress bar'
         )
 
     def handle(self, *args, **options):
@@ -31,8 +32,7 @@ class Command(BaseCommand):
                 bar.next()
 
             if u.subscriber.is_subscriber():
-                w.writerow([
-                    u.get_full_name() or u.username, u.email, u.date_joined, u.is_active, latest_activity(u)])
+                w.writerow([u.get_full_name() or u.username, u.email, u.date_joined, u.is_active, latest_activity(u)])
 
         if bar:
             bar.finish()
