@@ -1,6 +1,11 @@
-# version 0.2.8 (2022-08-06)
+# version 0.2.9 (2022-08-13)
 
 - Latest release supporting Python 2.7
+- utm parameters to track subscribe links.
+- import fixes and code style
+
+# version 0.2.8 (2022-08-06)
+
 - New publication image field added for the newsletter logo only.
 - Support for short format in Edition.date_published_verbose method.
 - Category Newsletter browser preview.
@@ -24,7 +29,6 @@
 - many simplifications in article templates when render the article photo.
 - fix obtaining article's photo size.
 - other minor fixes related to settings and migrations.
-
 
 # version 0.2.7 (2022-06-27)
 

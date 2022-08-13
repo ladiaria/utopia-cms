@@ -1,3 +1,10 @@
+# From version 0.2.8 to 0.2.9
+
+```
+git pull
+git checkout 0.2.9
+```
+
 # From version 0.2.7 to 0.2.8
 
 ```

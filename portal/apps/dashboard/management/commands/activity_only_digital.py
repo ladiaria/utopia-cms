@@ -3,11 +3,11 @@ from os.path import join
 from unicodecsv import writer
 from progress.bar import Bar
 
-from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 
-from thedaily.management.commands.automatic_mail import latest_activity
+from dashboard.utils import latest_activity
 
 
 class Command(BaseCommand):

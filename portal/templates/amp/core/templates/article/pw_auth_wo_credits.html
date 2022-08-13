@@ -6,7 +6,7 @@
   <div class="ld-snackbar__title">Llegaste al límite de artículos gratuitos</div>
   <div class="ld-snackbar__body">
     <div class="ld-snackbar__block">
-      <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ld-btn-default">
+      <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=paywall" class="ld-btn-default">
         Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
       </a>
     </div>

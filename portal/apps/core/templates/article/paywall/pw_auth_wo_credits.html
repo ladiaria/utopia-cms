@@ -5,7 +5,7 @@
   <div class="ld-snackbar__body">
     <div class="ld-snackbar__block">
       {# TODO: conditional subscribe url if category_signup #}
-      <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
+      <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=paywall" class="ut-btn ut-btn-l">
         Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
       </a>
     </div>
