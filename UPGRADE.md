@@ -1,3 +1,17 @@
+# From version 0.2.9 to 0.3.0
+
+```
+git pull
+git checkout 0.3.0
+# create a new Python virtualenv according to INSTALL.md
+# install Python requirements using pip with the new virtualenv activated
+# update your local settings based on local_settings_sample.py
+find . -name "*.pyc" -delete
+cd portal
+./manage.py collectstatic
+# if using wsgi for deployment: update uwsgi.ini (if using also uwsgi) and wsgi.py based on new sample files
+```
+
 # From version 0.2.8 to 0.2.9
 
 ```

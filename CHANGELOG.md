@@ -1,3 +1,8 @@
+# version 0.3.0 (2022-08-14)
+
+- Python 2.7 (or less) support dropped.
+- Code migrated to support Python 3.6 and 3.7.
+
 # version 0.2.9 (2022-08-13)
 
 - Latest release supporting Python 2.7

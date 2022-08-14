@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-from os.path import join
-from unicodecsv import writer
+from __future__ import unicode_literals
 
-from django.core.management.base import BaseCommand
+from os.path import join
+from csv import writer
+
 from django.conf import settings
+from django.core.management.base import BaseCommand
 
 from core.models import Article
 from thedaily.models import Subscriber
@@ -20,13 +22,13 @@ class Command(BaseCommand):
         ).filter(user__isnull=False, user__is_staff=False).iterator():
             try:
                 viewed_articles = s.user.viewed_articles_core
-                viewed_sections = u', '.join(
+                viewed_sections = ', '.join(
                     set.union(
                         *[set(a.sections.distinct().values_list('name', flat=True)) for a in viewed_articles.all()]
                     )
                 )
             except Article.DoesNotExist:
-                viewed_sections = u''
+                viewed_sections = ''
             w.writerow(
                 [
                     s.id,
@@ -37,6 +39,6 @@ class Command(BaseCommand):
                     s.user.is_active,
                     viewed_sections,
                     latest_activity(s.user),
-                    u', '.join(s.newsletters.values_list('name', flat=True)),
+                    ', '.join(s.newsletters.values_list('name', flat=True)),
                 ]
             )
