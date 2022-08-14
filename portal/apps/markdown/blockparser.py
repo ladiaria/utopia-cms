@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
+from builtins import object
 from . import util
 from . import odict
 
@@ -36,7 +37,7 @@ class State(list):
         else:
             return False
 
-class BlockParser:
+class BlockParser(object):
     """ Parse Markdown blocks into an ElementTree object. 
     
     A wrapper class that stitches the various BlockProcessors together,
@@ -90,7 +91,7 @@ class BlockParser:
 
         """
         while blocks:
-            for processor in self.blockprocessors.values():
+            for processor in list(self.blockprocessors.values()):
                 if processor.test(parent, blocks[0]):
                     if processor.run(parent, blocks) is not False:
                         # run returns True or None

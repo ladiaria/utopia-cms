@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+from __future__ import unicode_literals
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
 
-from models import Pelicula, ObraTeatro, Evento, Cine, CategoriaEvento, LiveEmbedEvent, ArchivedEvent
+from .models import Pelicula, ObraTeatro, Evento, Cine, CategoriaEvento, LiveEmbedEvent, ArchivedEvent
 
 
 @never_cache

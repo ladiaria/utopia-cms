@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from future.utils import raise_
+
 from datetime import datetime, timedelta
 import locale
 
@@ -71,7 +74,7 @@ def if_time(parser, token):
     elif tag_name.endswith('until'):
         future = True
     if len(bits) != 4:
-        raise TemplateSyntaxError("%r takes three arguments" % tag_name)
+        raise_(TemplateSyntaxError, "%r takes three arguments" % tag_name)
     end_tag = 'end' + tag_name
     nodelist_true = parser.parse(('else', end_tag))
     token = parser.next_token()
@@ -84,9 +87,9 @@ def if_time(parser, token):
     try:
         time_int, time_unit = int(bits[3][:-1]), bits[3][-1]
     except ValueError:
-        raise TemplateSyntaxError("Invalid argument '%s'" % bits[3])
+        raise_(TemplateSyntaxError, "Invalid argument '%s'" % bits[3])
     if time_unit not in 'smhd':
-        raise TemplateSyntaxError("Invalid argument '%s'" % bits[3])
+        raise_(TemplateSyntaxError, "Invalid argument '%s'" % bits[3])
     return TimeNode(
         nodelist_true, nodelist_false, future=future, time=bits[1], operator=bits[2], elapsed=time_int, unit=time_unit
     )
@@ -104,7 +107,7 @@ def subscriptionprice(subscription_type):
         return u''
     else:
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
-        return '{:n}'.format(int(price))
+        return f'{int(price):n}'
 
 
 @register.simple_tag

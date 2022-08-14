@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 from __future__ import unicode_literals
 
+from future import standard_library
+from builtins import str
 import requests
 import json
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from requests.exceptions import ConnectionError
-from urlparse import urlsplit, urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
@@ -31,6 +34,9 @@ from apps import mongo_db
 from decorators import decorate_if_no_staff, decorate_if_staff
 from core.forms import ReportErrorArticleForm, SendByEmailForm
 from core.models import Publication, Category, Article, ArticleUrlHistory
+
+
+standard_library.install_aliases()
 
 
 class ArticleDetailView(DetailView):
@@ -130,7 +136,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
     if settings.CORE_LOG_ARTICLE_VIEWS and not (
         signupwall_exclude_request_condition(request) or request.flavour == 'amp'
     ):
-        if request.user.is_authenticated() and mongo_db:
+        if request.user.is_authenticated() and mongo_db is not None:
             # register this view
             set_values = {'viewed_at': datetime.now()}
             if getattr(request, 'article_allowed', False):
@@ -139,7 +145,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
                 {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
             )
         # inc this article visits
-        if mongo_db:
+        if mongo_db is not None:
             mongo_db.core_articlevisits.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
 
     try:

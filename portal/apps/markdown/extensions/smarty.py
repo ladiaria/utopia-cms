@@ -66,6 +66,7 @@
 #   of this software, even if advised of the possibility of such damage.
 
 from __future__ import unicode_literals
+from builtins import range
 from . import Extension
 from ..inlinepatterns import HtmlPattern
 from ..util import parseBoolValue

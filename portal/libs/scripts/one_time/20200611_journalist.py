@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import unicode_literals
 from core.models import Journalist, Article, Section
 
 # changes all journalists job in Section posturas from PE to CO

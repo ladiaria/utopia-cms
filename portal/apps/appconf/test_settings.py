@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 SITE_ID = 1
 
 DATABASES = {

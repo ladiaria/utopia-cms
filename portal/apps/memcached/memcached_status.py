@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
+from builtins import object
 from django import http
 from django.conf import settings
 from django.shortcuts import render
@@ -27,7 +31,7 @@ def view(request):
     # TODO: de ser necesario.
     host.send_cmd("stats")
 
-    class Stats:
+    class Stats(object):
         pass
 
     stats = Stats()
@@ -51,7 +55,7 @@ def view(request):
     host.close_socket()
 
     try:
-        hit_rate = 100 * stats.get_hits / stats.cmd_get
+        hit_rate = old_div(100 * stats.get_hits, stats.cmd_get)
     except:
         hit_rate = 100
     return render(request, 'memcached/memcached_status.html', dict(

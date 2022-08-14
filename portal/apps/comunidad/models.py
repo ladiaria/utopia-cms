@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from builtins import str
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -24,7 +26,7 @@ class SubscriberArticle(ArticleBase):
         return SubscriberArticle.objects.get_queryset().filter(
             date_published__gt=desde)[:3]
 
-    def __unicode__(self):
+    def __str__(self):
         return self.headline + ' ( por ' + str(self.created_by) + ' )'
 
     def save(self, *args, **kwargs):
@@ -46,7 +48,7 @@ class SubscriberEvento(EventoBase):
 
     is_suscriber_evento = True
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title + ' ( por ' + str(self.created_by) + ' )'
 
     def save(self, *args, **kwargs):
@@ -71,7 +73,7 @@ class TopUser(models.Model):
 class Circuito(models.Model):
     name = models.CharField('nombre', max_length=64)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -80,7 +82,7 @@ class Socio(models.Model):
         User, verbose_name=u'usuario', related_name=u'socio')
     circuits = models.ManyToManyField(Circuito, verbose_name=u'circuitos')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.user.username
 
 
@@ -91,7 +93,7 @@ class Beneficio(models.Model):
     limit = models.PositiveIntegerField('cupo general', null=True, blank=True)
     quota = models.PositiveIntegerField('cupo por suscriptor', default=1)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     class Meta:
@@ -110,7 +112,7 @@ class Registro(models.Model):
 class Url(models.Model):
     url = models.URLField(unique=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.url
 
 

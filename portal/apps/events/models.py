@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from django.contrib.auth.models import User
 from django.db.models import (
     Model,
@@ -21,7 +22,7 @@ class Location(Model):
     name = CharField('nombre', max_length=50)
     address = CharField(u'dirección', max_length=100)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     class Meta:
@@ -32,7 +33,7 @@ class Location(Model):
 class Artist(Model):
     name = CharField('nombre', max_length=50)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     class Meta:
@@ -48,7 +49,7 @@ class BaseEvent(Model):
     description = TextField(u'descripción', blank=True, null=True)
     published = BooleanField('publicado', default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def short(self):

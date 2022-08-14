@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import input
+from builtins import str
 import os
 import json
 
@@ -25,7 +29,7 @@ def loaddata():
             ALTER TABLE tagging_tag MODIFY COLUMN added varchar(50);
             ALTER TABLE tagging_tag MODIFY COLUMN is_valid tinyint(1);"
             ''' % (database['USER'], database['NAME'])) == 0:
-        user_input = raw_input('''
+        user_input = input('''
             ejecute en un shell de mysql:
                 ALTER TABLE tagging_tag MODIFY COLUMN `usage` int(10) unsigned;
             si todo funciono bien presione c y ENTER para continuar o cualquier

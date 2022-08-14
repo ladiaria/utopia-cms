@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import sys
 
 from django.conf import settings
@@ -46,7 +47,7 @@ def load_backends():
 def load_media_defaults(backends):
     media = []
     defaults = {}
-    for key, backend in backends.items():
+    for key, backend in list(backends.items()):
         # key is a tuple (medium_id, backend_label)
         media.append(key)
         defaults[key[0]] = backend.spam_sensitivity

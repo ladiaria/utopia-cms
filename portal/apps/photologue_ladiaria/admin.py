@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 from django.conf import settings
 from django import forms
 from django.contrib import admin
@@ -7,7 +10,7 @@ from photologue.models import Photo, Gallery, PhotoEffect, PhotoSize, Watermark
 from photologue.admin import PhotoAdmin as PhotoAdminDefault
 from photologue.admin import GalleryAdmin as GalleryAdminDefault
 
-from models import PhotoExtended, Agency, Photographer
+from .models import PhotoExtended, Agency, Photographer
 
 
 class AgencyAdmin(admin.ModelAdmin):

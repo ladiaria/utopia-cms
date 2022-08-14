@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 #===============================================================================
 # Copyright 2007 Matt Chaput
 # 
@@ -14,6 +15,8 @@
 # limitations under the License.
 #===============================================================================
 
+from builtins import range
+from builtins import object
 from array import array
 from collections import defaultdict
 
@@ -244,10 +247,10 @@ class SegmentWriter(object):
                 inv = doc_reader.vector_table
                 outv = self.vector_table
             
-            for docnum in xrange(segment.max_doc):
+            for docnum in range(segment.max_doc):
                 if not segment.is_deleted(docnum):
                     # Copy the stored fields and field lengths from the other segment into this one
-                    storeditems = doc_reader[docnum].items()
+                    storeditems = list(doc_reader[docnum].items())
                     storedvalues = [v for k, v in sorted(storeditems, key=storedkeyhelper)]
                     self._add_doc_data(storedvalues, doc_reader.doc_field_lengths(docnum))
                     
@@ -263,7 +266,7 @@ class SegmentWriter(object):
                     self.max_doc += 1
             
             # Add field length totals
-            for fieldnum, total in segment.field_length_totals.iteritems():
+            for fieldnum, total in segment.field_length_totals.items():
                 self.field_length_totals[fieldnum] += total
         
         finally:
@@ -287,7 +290,7 @@ class SegmentWriter(object):
         scorable_to_pos = self._scorable_to_pos
         stored_to_pos = self._stored_to_pos
         
-        fieldnames = [name for name in fields.keys() if not name.startswith("_")]
+        fieldnames = [name for name in list(fields.keys()) if not name.startswith("_")]
         
         schema = self.schema
         for name in fieldnames:
@@ -308,7 +311,7 @@ class SegmentWriter(object):
                 
                 # If the field is indexed, add the words in the value to the index
                 if format.analyzer:
-                    if not isinstance(value, unicode):
+                    if not isinstance(value, str):
                         raise ValueError("%r in field %s is not unicode" % (value, name))
                     
                     # Count of all terms in the value

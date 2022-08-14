@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-from models import Search
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.forms import ModelForm
 
+from .models import Search
+
 
 class SearchForm(ModelForm):
-    """Search form."""
 
     class Meta:
         model = Search

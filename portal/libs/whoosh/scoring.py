@@ -18,6 +18,8 @@
 """
 
 from __future__ import division
+from __future__ import unicode_literals
+from builtins import object
 from array import array
 from math import log, pi
 import weakref

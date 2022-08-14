@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
 import re
 from elasticsearch_dsl import Q
 
@@ -96,7 +99,7 @@ def search(request, token=''):
                     total = r.hits.total.value
                     # ES hits cannot be paginated with the same django Paginator class, we need to take the results
                     # for the page and simulate the dajngo pagination using a simple range list.
-                    page_results, matches_query = _page_results(request, s, total), range(total)
+                    page_results, matches_query = _page_results(request, s, total), list(range(total))
             except Exception as exc:
                 if settings.DEBUG:
                     print(u"search error: %s" % exc)

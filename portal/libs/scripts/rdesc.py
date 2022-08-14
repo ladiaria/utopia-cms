@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from urllib2 import urlopen
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from urllib.request import urlopen
 import re
 
 def get_html():
@@ -9,7 +13,7 @@ def get_html():
     for jump in (0, 20, 40, 60, 80, 100, 120):
         handler.write('%s\n' % urlopen(YOUTUBE_URL % jump).read())
     handler.close()
-    print 'Fertig.'
+    print('Fertig.')
 
 def get_links(html):
     vre = re.compile(r'/watch\?v=.{11}')
@@ -20,7 +24,7 @@ def get_links(html):
             used.append(link)
             handler.write('http://www.youtube.com%s\n' % link)
     handler.close()
-    print 'Fertig.'
+    print('Fertig.')
 
 def get_video(url):
     import subprocess
@@ -34,7 +38,7 @@ def get_video(url):
     stdout = subprocess.Popen(args, stdout=subprocess.PIPE).stdout.read().strip()
     day, month, year = fre.findall(stdout)[0].split(' ')
     title, flv_url = stdout.split('\n')
-    print '%s (%s/%s/%s)' % (title, day, month, year)
+    print('%s (%s/%s/%s)' % (title, day, month, year))
     args = ['youtube-dl', '-b', url]
 
 if __name__ == '__main__':

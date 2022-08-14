@@ -33,7 +33,7 @@ class OrderedDict(dict):
 
     def __deepcopy__(self, memo):
         return self.__class__([(key, deepcopy(value, memo))
-                               for key, value in self.items()])
+                               for key, value in list(self.items())])
 
     def __copy__(self):
         # The Python's default copy implementation will alter the state

@@ -11,7 +11,7 @@ def latest_activity(user):
     Latest activity is the most recent date between last article visited and last login.
     @returns datetime
     """
-    if mongo_db:
+    if mongo_db is not None:
         latest_activity = list(
             mongo_db.core_articleviewedby.aggregate(
                 [

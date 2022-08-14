@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import object
 import re
 
 from whoosh.support.pyparsing import printables, alphanums

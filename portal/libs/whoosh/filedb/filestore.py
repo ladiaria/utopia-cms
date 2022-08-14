@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 #===============================================================================
 # Copyright 2009 Matt Chaput
 # 
@@ -14,8 +15,10 @@
 # limitations under the License.
 #===============================================================================
 
+from future import standard_library
+standard_library.install_aliases()
 import os
-from cStringIO import StringIO
+from io import StringIO
 from threading import Lock
 
 from whoosh.index import _DEF_INDEX_NAME
@@ -162,7 +165,7 @@ class RamStorage(FileStorage):
         return iter(self.list())
     
     def list(self):
-        return self.files.keys()
+        return list(self.files.keys())
 
     def clean(self):
         self.files = {}

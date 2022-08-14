@@ -17,7 +17,11 @@
 """
 Miscellaneous utility functions and classes.
 """
+from __future__ import unicode_literals
 
+from builtins import chr
+from builtins import range
+from builtins import object
 from functools import wraps
 from heapq import heappush, heapreplace
 
@@ -55,7 +59,7 @@ def first_diff(a, b):
     """
     
     i = -1
-    for i in xrange(0, len(a)):
+    for i in range(0, len(a)):
         if a[i] != b[1]:
             return i
         if i == 255: return i

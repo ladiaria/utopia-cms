@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 import re
 import json
 import requests
@@ -31,7 +35,7 @@ from django.dispatch import receiver
 
 from apps import mongo_db
 from core.models import Edition, Publication, Category, ArticleViewedBy
-from exceptions import UpdateCrmEx
+from .exceptions import UpdateCrmEx
 
 
 GA_CATEGORY_CHOICES = (('D', 'Digital'), ('P', 'Papel'))
@@ -50,7 +54,7 @@ class SubscriptionPrices(Model):
     ga_name = CharField(max_length=64, blank=True, null=True)
     ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s -- $ %s " % (self.get_subscription_type_display(), self.price)
 
     class Meta:
@@ -228,7 +232,7 @@ class Subscriber(Model):
             else:
                 return qs[0].downloads
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name or self.get_full_name()
 
     def get_full_name(self):
@@ -307,7 +311,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
         return True
     try:
         actual_sub = sender.objects.get(pk=instance.id)
-        for f in settings.CRM_UPDATE_SUBSCRIBER_FIELDS.values():
+        for f in list(settings.CRM_UPDATE_SUBSCRIBER_FIELDS.values()):
             if getattr(actual_sub, f) != getattr(instance, f):
                 try:
                     updatecrmuser(instance.contact_id, f, getattr(instance, f))
@@ -372,7 +376,7 @@ class SubscriberEditionDownloads(Model):
     edition = ForeignKey(Edition, related_name='subscribers_downloads', verbose_name=u'edición')
     downloads = PositiveIntegerField(u'descargas', default=0)
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%s - %s: %i' % (self.subscriber, self.edition, self.downloads)
 
     def save(self, *args, **kwargs):
@@ -462,7 +466,7 @@ class Subscription(Model):
     subscription_type_prices = ManyToManyField(SubscriptionPrices, verbose_name=u'tipo de subscripcion', blank=True)
     promo_code = CharField(max_length=8, blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.get_full_name()
 
     def get_full_name(self):

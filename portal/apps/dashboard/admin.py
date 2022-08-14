@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
 from django.contrib.admin import ModelAdmin, SimpleListFilter, site
 from dashboard.models import NewsletterDelivery, AudioStatistics
 

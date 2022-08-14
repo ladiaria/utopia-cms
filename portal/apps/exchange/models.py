@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-from django.db.models import (
-    Model, CharField, ForeignKey, DateField, FloatField, ImageField, SlugField)
+from __future__ import unicode_literals
+from builtins import str
+
+from django.db.models import Model, CharField, ForeignKey, DateField, FloatField, ImageField, SlugField
 from django.template.defaultfilters import slugify
 
 
@@ -15,7 +17,7 @@ class Currency(Model):
     flag = ImageField(
         'bandera', upload_to=flag_upload_to, blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     class Meta:
@@ -29,7 +31,7 @@ class Exchange(Model):
     buy = FloatField(u'compra')
     sale = FloatField(u'venta')
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s %s' % (self.currency.name, str(self.date))
 
     class Meta:

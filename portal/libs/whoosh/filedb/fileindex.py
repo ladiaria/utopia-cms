@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 #===============================================================================
 # Copyright 2009 Matt Chaput
 # 
@@ -15,7 +16,10 @@
 #===============================================================================
 
 
-import cPickle, re
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
+import pickle, re
 from bisect import bisect_right
 from time import time
 from struct import calcsize
@@ -153,7 +157,7 @@ class FileIndex(SegmentDeletionMixin, Index):
         for num in __version__[:3]:
             stream.write_varint(num)
         
-        stream.write_string(cPickle.dumps(self.schema, -1))
+        stream.write_string(pickle.dumps(self.schema, -1))
         stream.write_int(self.generation)
         stream.write_int(self.segment_counter)
         stream.write_pickle(self.segments)
@@ -189,7 +193,7 @@ class FileIndex(SegmentDeletionMixin, Index):
             self.schema = schema
             stream.skip_string()
         else:
-            self.schema = cPickle.loads(stream.read_string())
+            self.schema = pickle.loads(stream.read_string())
         
         generation = stream.read_int()
         assert generation == self.generation

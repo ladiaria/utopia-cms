@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 # utopia-cms 2020,2021. Aníbal Pacheco.
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
 from django.core.management import BaseCommand
 from django.core.cache import cache
 from django.db import connection

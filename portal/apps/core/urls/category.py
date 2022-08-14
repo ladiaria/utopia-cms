@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-from core.views.category import newsletter_preview, newsletter_browser_preview
+from __future__ import unicode_literals
 
 from django.conf.urls import url
+
+from core.views.category import newsletter_preview, newsletter_browser_preview
+
 
 urlpatterns = [
     url(r'^(?P<slug>\w+)/nl/$', newsletter_preview, name='category-nl-preview'),

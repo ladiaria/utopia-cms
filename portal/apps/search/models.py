@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-from django.db.models import Q, Model, CharField
-
+from __future__ import unicode_literals
 import re
+
+from django.db.models import Q, Model, CharField
 
 
 class Search(Model):
-    """Save search queries"""
+    """ Save search queries """
 
     q = CharField('Búsqueda', max_length=255)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.search
 
     class Meta:
@@ -30,15 +31,16 @@ def normalize_query(query_string,
     '''
     return [normspace(' ', (t[0] or t[1]).strip()) for t in findterms(query_string)]
 
+
 def get_query(query_string, search_fields):
     ''' Returns a query, that is a combination of Q objects. That combination
         aims to search keywords within a model by testing the given search fields.
 
     '''
-    query = None # Query to search for every search term
+    query = None  # Query to search for every search term
     terms = normalize_query(query_string)
     for term in terms:
-        or_query = None # Query to search for a given term in each field
+        or_query = None  # Query to search for a given term in each field
         for field_name in search_fields:
             q = Q(**{"%s__icontains" % field_name: term})
             if or_query is None:

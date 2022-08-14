@@ -1,6 +1,7 @@
 # coding=utf-8
+from __future__ import unicode_literals
 from os.path import join
-from unicodecsv import reader, writer
+from csv import reader, writer
 from datetime import date
 from dateutil.relativedelta import relativedelta
 

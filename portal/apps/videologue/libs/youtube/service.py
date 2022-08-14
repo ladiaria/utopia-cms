@@ -19,7 +19,11 @@
   YouTubeService: Provides methods to perform CRUD operations on YouTube feeds.
   Extends GDataService.
 """
+from __future__ import unicode_literals
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 __author__ = ('api.stephaniel@gmail.com (Stephanie Liu), '
               'api.jhartmann@gmail.com (Jochen Hartmann)')
 
@@ -621,15 +625,15 @@ class YouTubeService(gdata.service.GDataService):
           'reason':'Accepted content types: %s' %
               ['video/%s' % (t) for t in YOUTUBE_SUPPORTED_UPLOAD_TYPES]})
 
-    if (isinstance(filename_or_handle, (str, unicode))
+    if (isinstance(filename_or_handle, (str, str))
         and os.path.exists(filename_or_handle)):
       mediasource = gdata.MediaSource()
       mediasource.setFile(filename_or_handle, content_type)
     elif hasattr(filename_or_handle, 'read'):
-      import StringIO
+      import io
       if hasattr(filename_or_handle, 'seek'):
         filename_or_handle.seek(0)
-      file_handle = StringIO.StringIO(filename_or_handle.read())
+      file_handle = io.StringIO(filename_or_handle.read())
       name = 'video'
       if hasattr(filename_or_handle, 'name'):
         name = filename_or_handle.name
@@ -649,7 +653,7 @@ class YouTubeService(gdata.service.GDataService):
       try:
         return self.Post(video_entry, uri=upload_uri, media_source=mediasource,
                          converter=gdata.youtube.YouTubeVideoEntryFromString)
-      except gdata.service.RequestError, e:
+      except gdata.service.RequestError as e:
         raise YouTubeError(e.args[0])
     finally:
       del(self.additional_headers['Slug'])
@@ -709,7 +713,7 @@ class YouTubeService(gdata.service.GDataService):
     """
     try:
       response = self.Post(video_entry, uri)
-    except gdata.service.RequestError, e:
+    except gdata.service.RequestError as e:
       raise YouTubeError(e.args[0])
 
     tree = ElementTree.fromstring(response)

@@ -2,6 +2,7 @@
 This views should receive a group of RTFs and convert them to Articles
 What about an Article constructor from a RTF?
 """
+from __future__ import unicode_literals
 
 from subprocess import check_output
 

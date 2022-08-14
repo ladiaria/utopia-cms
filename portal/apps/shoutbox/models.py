@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.contrib.auth.models import User
 from django.db.models import Model, ForeignKey, CharField, DateTimeField
+
 
 class Shout(Model):
     user = ForeignKey(User, verbose_name=u'usuario', related_name='shouts')
     message = CharField(u'mensaje', max_length=140)
     post_date = DateTimeField(u'fecha', auto_now_add=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.message
 
     def save(self, *args, **kwargs):
@@ -21,6 +24,7 @@ class Shout(Model):
         ordering = ('-post_date',)
         verbose_name = u'mensaje'
         verbose_name_plural = u'mensajes'
+
 
 def get_last_shouts(how_many=5):
     shouts_query = list(Shout.objects.all().order_by('-post_date')[:how_many])

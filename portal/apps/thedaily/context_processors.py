@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import str
 import jwt
 from time import time
 from uuid import uuid4

@@ -11,6 +11,8 @@ Test cases:
 This command should be reviewed and updated/deleted, apacheco
 
 """
+from __future__ import print_function
+from __future__ import unicode_literals
 from collections import Iterable
 
 from django.core.management.base import BaseCommand
@@ -119,5 +121,5 @@ class Command(BaseCommand):
             except Subscriber.DoesNotExist:
                 print("Ningún suscriptor con id de cliente con documento %s" \
                     % dupedoc)
-            except MultipleObjectsReturned, e:
+            except MultipleObjectsReturned as e:
                 print(e.message)

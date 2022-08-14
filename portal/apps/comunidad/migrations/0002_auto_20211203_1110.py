@@ -19,6 +19,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='subscriberarticle',
-            index=models.Index(fields=[b'type', b'date_published', b'is_published'], name='comunidad_s_type_ca7570_idx'),
+            index=models.Index(fields=['type', 'date_published', 'is_published'], name='comunidad_s_type_ca7570_idx'),
         ),
     ]

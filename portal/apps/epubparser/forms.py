@@ -1,8 +1,9 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+from __future__ import unicode_literals
 from django import forms
-from models import EpubFile
+from .models import EpubFile
 
 
 class UploadEpubForm(forms.ModelForm):

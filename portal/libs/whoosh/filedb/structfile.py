@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 #===============================================================================
 # Copyright 2009 Matt Chaput
 # 
@@ -14,10 +15,15 @@
 # limitations under the License.
 #===============================================================================
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import chr
+from builtins import range
+from builtins import object
 import mmap, os
 from array import array
-from cPickle import dump as dump_pickle
-from cPickle import load as load_pickle
+from pickle import dump as dump_pickle
+from pickle import load as load_pickle
 from marshal import dump as dump_marshal
 from marshal import load as load_marshal
 from struct import calcsize, pack, unpack
@@ -126,7 +132,7 @@ def encode_varint(i):
 
 _varint_cache_size = 512
 _varint_cache = []
-for i in xrange(0, _varint_cache_size):
+for i in range(0, _varint_cache_size):
     _varint_cache.append(encode_varint(i))
 _varint_cache = tuple(_varint_cache)
 

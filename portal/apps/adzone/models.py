@@ -4,6 +4,8 @@
 # This script is licensed under the BSD Open Source Licence
 # Please see the text file LICENCE for more information
 # If this script is distributed, it must be accompanied by the Licence
+from __future__ import unicode_literals
+from builtins import str
 import os
 import datetime
 
@@ -38,7 +40,7 @@ class Advertiser(models.Model):
         verbose_name_plural = _(u'Advertisers')
         ordering = ('company_name',)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.company_name
 
     def get_website_url(self):
@@ -56,7 +58,7 @@ class AdCategory(models.Model):
         verbose_name_plural = 'Categories'
         ordering = ('title',)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
 
@@ -71,7 +73,7 @@ class AdZone(models.Model):
         verbose_name_plural = 'Zones'
         ordering = ('title',)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
 
@@ -117,7 +119,7 @@ class AdBase(models.Model):
         verbose_name = _('Ad Base')
         verbose_name_plural = _('Ad Bases')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     @models.permalink

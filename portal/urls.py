@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 import re
 from generator.views import contribute
 from rest_framework import serializers, viewsets, routers
@@ -8,6 +11,7 @@ from django.conf.urls import url, include
 from django.db import ProgrammingError
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import TemplateView, RedirectView
+from django.contrib import admin
 from django.contrib.sites.models import Site
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.static import serve
@@ -24,7 +28,7 @@ from comunidad.models import Url, Recommendation
 from homev3.views import index
 from cartelera.views import vivo
 
-from django.contrib import admin
+
 admin.autodiscover()
 
 
@@ -207,8 +211,7 @@ class SubscriberViewSet(viewsets.ModelViewSet):
 
 
 class DollarExchangeViewSet(viewsets.ModelViewSet):
-    queryset = Exchange.objects.filter(
-        currency__slug='dolar').order_by('-date')
+    queryset = Exchange.objects.filter(currency__slug='dolar').order_by('-date')
     serializer_class = ExchangeSerializer
     http_method_names = ['get', 'head']
 

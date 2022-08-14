@@ -1,5 +1,7 @@
 #!/usr/bin/python2.5
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import unicode_literals
 from string import lower
 
 def check_chars(line):
@@ -8,7 +10,7 @@ def check_chars(line):
     for bit in bits:
         for char in bit:
             if lower(char) not in chars:
-                print '%s, %s, %s' % (bits[0], bits[1], bits[2])
+                print('%s, %s, %s' % (bits[0], bits[1], bits[2]))
                 return None
 
 handler = open('clientes_activos-20090827.csv', 'r')

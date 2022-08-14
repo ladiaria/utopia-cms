@@ -14,6 +14,8 @@ as they need to alter how markdown blocks are parsed.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
+from builtins import range
+from builtins import object
 import logging
 import re
 from . import util
@@ -38,7 +40,7 @@ def build_block_parser(md_instance, **kwargs):
     return parser
 
 
-class BlockProcessor:
+class BlockProcessor(object):
     """ Base class for block processors. 
     
     Each subclass will provide the methods below to work with the source and

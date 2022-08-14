@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 from django.conf.urls import url
 
-from views import index, export_csv, load_table, audio_statistics_api, audio_statistics_api_amp
+from .views import index, export_csv, load_table, audio_statistics_api, audio_statistics_api_amp
 
 
 tables = (

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 #
 # markdown/__version__.py
 #
@@ -5,6 +6,8 @@
 # (major, minor, micro, alpha/beta/rc/final, #)
 # (1, 1, 2, 'alpha', 0) => "1.1.2.dev"
 # (1, 2, 0, 'beta', 2) => "1.2b2"
+from builtins import map
+from builtins import str
 version_info = (2, 4, 0, 'alpha', 0)
 
 def _get_version():

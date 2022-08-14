@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from os.path import join
-from unicodecsv import writer
+from csv import writer
 from progress.bar import Bar
 from optparse import make_option
 
@@ -27,7 +28,7 @@ def generate_report(year, progress):
         bar.finish()
     w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, 'content_%s.csv' % year), 'w'))
     w.writerow(['month', 'publication', 'section', 'total articles', 'total chars'])
-    w.writerows(list(k) + v for k, v in content.iteritems())
+    w.writerows(list(k) + v for k, v in content.items())
 
 
 class Command(BaseCommand):

@@ -100,7 +100,7 @@ class WikiLinkExtension(Extension):
         }
         configs = dict(configs) or {}
         # Override defaults with user settings
-        for key, value in configs.items():
+        for key, value in list(configs.items()):
             self.setConfig(key, value)
         
     def extendMarkdown(self, md, md_globals):

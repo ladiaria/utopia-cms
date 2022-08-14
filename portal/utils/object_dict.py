@@ -5,6 +5,7 @@ nkchenz@gmail.com 2007
 
 Provided as-is; use at your own risk; no warranty; no promises; enjoy!
 """
+from __future__ import unicode_literals
 
 class object_dict(dict):
     """object view of dict, you can 

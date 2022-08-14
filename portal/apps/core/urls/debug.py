@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.conf.urls import url
 
 from core.views.debug import request_meta, staff_only, auth_only

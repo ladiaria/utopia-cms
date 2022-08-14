@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from views import calendar, day_detail, event_detail
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from .views import calendar, day_detail, event_detail
 
 from django.conf.urls import url
 

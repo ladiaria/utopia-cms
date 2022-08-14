@@ -1,5 +1,6 @@
+from __future__ import unicode_literals
 from os.path import join
-from unicodecsv import writer
+from csv import writer
 import collections
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -20,7 +21,7 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        parser.add_argument('filename', nargs=1, type=unicode)
+        parser.add_argument('filename', nargs=1, type=str)
 
     def handle(self, *args, **options):
         file = join(getattr(settings, 'GENERAL_MANAGEMENT_COMMAND_EXPORT_PATH', '/tmp'), options.get('filename')[0])
@@ -48,7 +49,7 @@ class Command(BaseCommand):
             w.writerow(['subscriber_id', 'name', 'email', 'telephone', 'last_date'])
             rev = collections.OrderedDict(reversed(list(s_dic.items())))
             # reverse so in csv is descending order
-            for s in rev.items():
+            for s in list(rev.items()):
                 subscriber = Subscriber.objects.get(pk=s[0])
                 user = subscriber.user
                 w.writerow(

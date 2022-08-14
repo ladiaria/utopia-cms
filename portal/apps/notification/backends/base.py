@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import object
 from django.conf import settings
 from django.template import Context
 from django.template.loader import render_to_string

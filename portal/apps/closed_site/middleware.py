@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from builtins import object
 from django.conf import settings
 from django.conf.urls import defaults
 from django.contrib.auth.views import login
@@ -34,7 +36,7 @@ class ClosedSiteMiddleware(object):
             return callback(request, **param_dict)
 
 
-class RestrictedAccessMiddleware:
+class RestrictedAccessMiddleware(object):
     """This middleware requires a login for every view"""
     def process_request(self, request):
         login_url = getattr(settings, 'RESTRICT_ACCESS_LOGIN_URL',

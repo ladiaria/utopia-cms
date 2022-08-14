@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.conf.urls import *
 
 from faq.views import TopicListView, TopicDetailView, question_detail

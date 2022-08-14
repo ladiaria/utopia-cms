@@ -1,3 +1,7 @@
+from __future__ import unicode_literals
+
+from builtins import range
+
 from django.core import urlresolvers
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.http import Http404
@@ -17,7 +21,7 @@ def index(
     sitemaps = {'articles': ArticleSitemap, 'news_sitemap': ArticleNewsSitemap}
     req_site, req_protocol, sites = get_current_site(request), 'https' if request.is_secure() else 'http', []
 
-    for section, site in sitemaps.items():
+    for section, site in list(sitemaps.items()):
         if callable(site):
             site = site()
         protocol = req_protocol if site.protocol is None else site.protocol
@@ -40,7 +44,7 @@ def sitemap(request, section=None, template_name='sitemap.xml', mimetype='applic
             raise Http404("No sitemap available for section: %r" % section)
         maps = [sitemaps[section]]
     else:
-        maps = sitemaps.values()
+        maps = list(sitemaps.values())
     page = request.GET.get("p", 1)
 
     urls = []

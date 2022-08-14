@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from os.path import join
-from unicodecsv import writer
+from csv import writer
 from progress.bar import Bar
 
 from django.conf import settings
@@ -15,7 +17,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+            '--progress', action='store_true', default=False, dest='progress', help='Show a progress bar'
         )
 
     def handle(self, *args, **options):

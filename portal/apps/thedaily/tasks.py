@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
+from django.core.mail import send_mail
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 
@@ -31,10 +32,17 @@ def send_notification(user, email_template, email_subject, extra_context={}):
         mail_from=(settings.NOTIFICATIONS_FROM_NAME, settings.NOTIFICATIONS_FROM_ADDR1),
     )
 
-    # send using smtp to receive bounces in another mailbox
-    s = smtp_connect()
-    s.sendmail(settings.NOTIFICATIONS_FROM_MX, [user.email], msg.as_string())
-    s.quit()
+    if (
+        not getattr(settings, 'LOCAL_EMAIL_BACKEND_TEST', False)
+        and settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
+    ):
+        # send using smtp to receive bounces in another mailbox
+        s = smtp_connect()
+        s.sendmail(settings.NOTIFICATIONS_FROM_MX, [user.email], msg.as_string())
+        s.quit()
+    else:
+        # normal django send
+        send_mail(email_subject, msg.as_string(), settings.NOTIFICATIONS_FROM_MX, [user.email])
 
 
 def notify_digital(user, seller_fullname=None):

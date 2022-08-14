@@ -9,8 +9,9 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Field
 from crispy_forms.bootstrap import FormActions
 
-from comunidad.models import SubscriberEvento, SubscriberArticle, Registro
 from thedaily.models import Subscriber
+
+from .models import SubscriberEvento, SubscriberArticle, Registro
 
 
 try:
@@ -50,6 +51,7 @@ class EventoForm(forms.ModelForm):
         self.helper.form_class = 'form-horizontal'
         self.helper.form_style = 'inline'
         self.helper.form_method = 'post'
+        # TODO: explain or remove the next commented line
         # self.helper.form_action = reverse( 'community-event' )
         self.helper.help_text_inline = True
         self.helper.error_text_inline = True

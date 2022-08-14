@@ -19,6 +19,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='article',
-            index=models.Index(fields=[b'type', b'date_published', b'is_published'], name='core_articl_type_442605_idx'),
+            index=models.Index(fields=['type', 'date_published', 'is_published'], name='core_articl_type_442605_idx'),
         ),
     ]

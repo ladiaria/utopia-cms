@@ -3,6 +3,7 @@ COMMAND-LINE SPECIFIC STUFF
 =============================================================================
 
 """
+from __future__ import unicode_literals
 
 import markdown
 import sys

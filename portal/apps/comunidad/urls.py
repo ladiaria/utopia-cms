@@ -1,8 +1,10 @@
+from __future__ import absolute_import
+from __future__ import unicode_literals
 from django.conf.urls import url
 from django.views.generic import TemplateView
 
 from updown.views import AddRatingFromModel
-from views import (
+from .views import (
     add_article, edit_article, add_registro, article_detail, add_evento, edit_evento, beneficios, index, profile
 )
 

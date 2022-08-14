@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from shoutbox.models import get_last_shouts
 
 from django.template import Library, Node

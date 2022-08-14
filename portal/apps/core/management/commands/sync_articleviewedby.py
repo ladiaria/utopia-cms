@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # utopia-cms 2020. Aníbal Pacheco.
 
+from __future__ import unicode_literals
 from django.core.management import BaseCommand
 from django.db.utils import IntegrityError
 
