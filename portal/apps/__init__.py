@@ -7,6 +7,7 @@ Global variables definition, to avoid its definition multiple times inside the a
 TODO: if mongo server fails after this global vars are set, the global client instances in views will start to fail.
       Change this "global" approach asap to a more robust approach, for example, a function that returns a new mongo
       client instance (or checks for the connectivity on the global instance and returns it if ok).
+      Also some checks "if mongo_db is not None" are missing in some views (adzone.views for example).
 """
 from __future__ import unicode_literals
 import csv

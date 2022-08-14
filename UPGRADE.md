@@ -1,15 +1,16 @@
 # From version 0.2.9 to 0.3.0
 
-TODO: write upgrade guide based on this draft:
-
-- gco to version
-- create new venv (mention pyenv alternative)
-- upgrade pip
-- install reqs
-- local settings (update based on samples)
-- find . -name "*.pyc" -delete
-- collectstatic
-- (if using wsgi in deploy: update ini and py based on samples)
+```
+git pull
+git checkout 0.3.0
+# create a new Python virtualenv according to INSTALL.md
+# install Python requirements using pip with the new virtualenv activated
+# update your local settings based on local_settings_sample.py
+find . -name "*.pyc" -delete
+cd portal
+./manage.py collectstatic
+# if using wsgi for deployment: update uwsgi.ini (if using also uwsgi) and wsgi.py based on new sample files
+```
 
 # From version 0.2.8 to 0.2.9
 

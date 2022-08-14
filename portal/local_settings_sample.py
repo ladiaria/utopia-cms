@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
 from datetime import datetime
 
 
@@ -32,8 +30,10 @@ if CLOSED_SITE or RESTRICT_ACCESS:
         'closed_site.middleware.RestrictedAccessMiddleware',
     ) + MIDDLEWARE_CLASSES
 
+COMPRESS_CACHE_BACKEND = 'default'
+
 ADMINS = (
-    (u'Admin', 'admin@example.com'),
+    ('Admin', 'admin@example.com'),
 )
 
 MANAGERS = ADMINS
@@ -75,7 +75,7 @@ SIGNUP_URL = '/usuarios/registro/'
 LOGIN_REDIRECT_URL = '/'
 
 # EMAIL
-EMAIL_SUBJECT_PREFIX = u'[cms] '
+EMAIL_SUBJECT_PREFIX = '[cms] '
 DEFAULT_FROM_EMAIL = 'cms dev <cms@example.com>'
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 2500
@@ -87,6 +87,9 @@ SENDNEWSLETTER_LOGFILE = '/home/user/utopia-cms-data/sendnewsletter/%s-%s.log'
 
 LAST_OLD_DAY = datetime(2013, 6, 15)
 EMAIL_EDITION_NUMBER_OFFSET = 0
+
+# apps
+# MONGODB_CONNECT_AT_CLIENT_CREATION = False  # needed for Python 3.6.8
 
 # Social auth for a local dev server
 USE_X_FORWARDED_HOST = True
