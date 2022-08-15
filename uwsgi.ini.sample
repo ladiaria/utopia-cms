@@ -2,7 +2,7 @@
 single-interpreter=true
 chdir=/srv/utopia-cms
 module=wsgi:application
-master=true
+master=false
 socket=/var/local/utopia-cms.sock
 http11-socket=true
 pidfile=/var/local/utopia-cms.pid
