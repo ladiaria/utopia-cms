@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from __future__ import unicode_literals
+
 from builtins import input
 from builtins import str
 import os
@@ -9,10 +10,8 @@ import json
 from django.conf import settings
 from django.db import transaction
 
-from photologue_ladiaria.models import (
-    PhotoExtended, Photographer as pl_photographer, Agency as pl_agency)
-from photologue.models import (
-    Photographer as p_photographer, Agency as p_agency, Photo as p_photo)
+from photologue_ladiaria.models import PhotoExtended, Photographer as pl_photographer, Agency as pl_agency
+from photologue.models import Photographer as p_photographer, Agency as p_agency, Photo as p_photo
 
 
 __author__ = "Reidel Lazaro Rodriguez Torres, Anibal Pacheco"

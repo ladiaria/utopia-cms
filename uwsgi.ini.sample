@@ -1,8 +1,13 @@
+# example conf values for uwsgi 2.0.20 with Python 3.7.11
 [uwsgi]
+strict=true
 single-interpreter=true
+enable-threads=true
+die-on-term=true
+need-app=true
 chdir=/srv/utopia-cms
 module=wsgi:application
-master=false
+master=true
 socket=/var/local/utopia-cms.sock
 http11-socket=true
 pidfile=/var/local/utopia-cms.pid
@@ -13,4 +18,6 @@ queue=4096
 listen=4096
 home=/opt/venv/utopiacms
 daemonize=/var/log/uwsgi/utopia-cms.log
-max-worker-lifetime=360
+max-worker-lifetime=3600
+max-worker-lifetime-delta=10
+harakiri=360

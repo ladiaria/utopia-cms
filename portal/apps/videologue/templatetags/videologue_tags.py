@@ -59,5 +59,5 @@ def render_video(video):
     if not video:
         return ''
     tpl = loader.get_template(
-        TPL_DIR + '%s/module.html' % video.__class__.__name__lower())
+        TPL_DIR + '%s/module.html' % video.__class__.__name__.lower())
     return tpl.render({'video': video})
