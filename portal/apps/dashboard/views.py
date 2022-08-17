@@ -123,25 +123,25 @@ def audio_statistics_api(request):
     audio_id = request.POST.get('audio_id')
     percentage = int(request.POST.get('percentage'))
 
-    if not (
+    if settings.DEBUG:
+        print('DEBUG: audio_statistics_api %% received: %s' % percentage)
+
+    if (
         subscriber_id
         or AudioStatistics.objects.filter(
             subscriber_id=subscriber_id, audio_id=audio_id, percentage__lte=percentage
         ).exists()
     ):
-        return HttpResponse()
-    else:
         try:
             audio_statistics, created = AudioStatistics.objects.get_or_create(
                 subscriber_id=subscriber_id, audio_id=audio_id
             )
-            if audio_statistics.percentage < percentage:
+            if percentage and (audio_statistics.percentage or 0) < percentage:
                 audio_statistics.percentage = percentage
                 audio_statistics.save()
-                return HttpResponse()
-            return HttpResponse()
         except ValidationError:
-            raise HttpResponseBadRequest("Unique object already exists")
+            return HttpResponseBadRequest("Unique object already exists")
+    return HttpResponse()
 
 
 @never_cache
@@ -166,4 +166,4 @@ def audio_statistics_api_amp(request):
             audio_statistics.save()
             return HttpResponse()
         except ValidationError:
-            raise HttpResponseBadRequest("Unique object already exists")
+            return HttpResponseBadRequest("Unique object already exists")
