@@ -2,7 +2,7 @@
 from tqdm import tqdm
 from dateutil.relativedelta import relativedelta
 from os.path import join
-from unicodecsv import writer
+from csv import writer
 from datetime import date
 
 from django.conf import settings

@@ -1,7 +1,8 @@
 from __future__ import division
+
 import os
 from os.path import join
-from unicodecsv import writer
+from csv import writer
 from datetime import datetime, date, timedelta
 
 from django.core.management.base import BaseCommand
@@ -12,19 +13,19 @@ from progress.bar import Bar
 
 
 class Command(BaseCommand):
-    help = u'Generates the articles views report sorted by category or publication if there \'s not one'
+    help = 'Generates the articles views report sorted by category or publication if there \'s not one'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+            '--progress', action='store_true', default=False, dest='progress', help='Show a progress bar'
         )
         parser.add_argument(
             '--out-prefix',
             action='store',
-            type=unicode,  # noqa
+            type=str,
             dest='out-prefix',
-            default=u'',
-            help=u"Don't make changes to existing files and save generated files with this prefix",
+            default='',
+            help="Don't make changes to existing files and save generated files with this prefix",
         )
 
     def handle(self, *args, **options):
@@ -36,7 +37,7 @@ class Command(BaseCommand):
         dt_until = datetime.combine(this_month_first, datetime.min.time())
         verbosity = options.get('verbosity')
         if verbosity > 1:
-            print(u'Generating reports from %s to %s ...' % (last_month_first, dt_until))
+            print('Generating reports from %s to %s ...' % (last_month_first, dt_until))
 
         articles = Article.objects.filter(
             date_published__gte=last_month_first,

@@ -1,7 +1,9 @@
 """ Adapted from: A simple example of how to access the Google Analytics API. """
 from __future__ import print_function
 from __future__ import unicode_literals
+
 import sys
+
 from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 from progress.bar import Bar
@@ -22,7 +24,7 @@ def initialize_analyticsreporting():
     try:
         KEY_FILE_LOCATION = settings.DASHBOARD_GA_SECRETS
     except AttributeError:
-        sys.exit(u'ERROR: No secrets file configured in settings.')
+        sys.exit('ERROR: No secrets file configured in settings.')
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         KEY_FILE_LOCATION, ['https://www.googleapis.com/auth/analytics.readonly']
     )
@@ -45,7 +47,7 @@ def get_report(analytics, start_date, end_date, campaign):
     try:
         VIEW_ID = settings.DASHBOARD_GA_VIEW_ID
     except AttributeError:
-        sys.exit(u'ERROR: No view id configured in settings.')
+        sys.exit('ERROR: No view id configured in settings.')
 
     # startDate can be also in format XdaysAgo (example: 2daysAgo)
     # TODO: investigate sessions vs totalEvents vs uniqueEvents
@@ -80,7 +82,7 @@ def get_report(analytics, start_date, end_date, campaign):
 
 
 class Command(BaseCommand):
-    help = u'Updates Newsletter Delivery statistics with the events data collected from Google Analytics'
+    help = 'Updates Newsletter Delivery statistics with the events data collected from Google Analytics'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -88,27 +90,27 @@ class Command(BaseCommand):
             action='store',
             type=str,
             dest='start_date',
-            help=u'Get Google Analytics stats from this date, default=yesterday',
+            help='Get Google Analytics stats from this date, default=yesterday',
         )
         parser.add_argument(
             '--end-date',
             action='store',
             type=str,
             dest='end_date',
-            help=u'Get Google Analytics stats until this date, default=today',
+            help='Get Google Analytics stats until this date, default=today',
         )
         parser.add_argument(
             '--campaign',
             action='store',
             type=str,
             dest='campaign',
-            help=u'Get Google Analytics stats only for this campaign, default=all',
+            help='Get Google Analytics stats only for this campaign, default=all',
         )
         parser.add_argument(
-            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+            '--progress', action='store_true', default=False, dest='progress', help='Show a progress bar'
         )
         parser.add_argument(
-            '--no-sync', action='store_true', default=False, dest='no_sync', help=u'No sync, only print'
+            '--no-sync', action='store_true', default=False, dest='no_sync', help='No sync, only print'
         )
 
     def handle(self, *args, **options):
@@ -117,7 +119,7 @@ class Command(BaseCommand):
         try:
             rows = response['reports'][0]['data']['rows']
         except (KeyError, IndexError):
-            sys.exit(u'ERROR: No data could be found')
+            sys.exit('ERROR: No data could be found')
         else:
             bar = Bar('Processing', max=len(rows)) if options.get('progress') else None
 
@@ -131,8 +133,8 @@ class Command(BaseCommand):
             event_label, campaign, page_title = row['dimensions']
             count = row['metrics'][0]['values'][0]
             if options.get('no_sync'):
-                print(u'%s, %s, %s: %s' % (campaign, page_title, event_label, count))
-                # print(u'%s, %s, %s, %s %s:%s : %s' % (
+                print('%s, %s, %s: %s' % (campaign, page_title, event_label, count))
+                # print('%s, %s, %s, %s %s:%s : %s' % (
                 #    campaign, page_title, event_label, ga_date, ga_hour, ga_minute, count))
             else:
                 try:

@@ -1,5 +1,5 @@
 # coding=utf-8
-import unicodecsv
+import csv
 import glob
 import os
 from tqdm import tqdm
@@ -16,8 +16,8 @@ for filename in tqdm(filenames):
     with open(
         join(settings.DASHBOARD_REPORTS_PATH, filename)
     ) as csv_read, open(join(settings.DASHBOARD_REPORTS_PATH, filename + ".tmp"), "w") as csv_write:
-        csvreader = unicodecsv.reader(csv_read)
-        csvwriter = unicodecsv.writer(csv_write)
+        csvreader = csv.reader(csv_read)
+        csvwriter = csv.writer(csv_write)
         for row in csvreader:
             article_url = row[1]
             try:
