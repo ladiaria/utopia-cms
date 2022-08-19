@@ -41,21 +41,6 @@
         }
     }
 
-    &#home-section-humor,
-    &#home-section-humor-ladiaria {
-        background-color: $humor-primary-color;
-
-        .footer-section .btn {
-        color: $off-black;
-        border-color: $off-black;
-
-            &:hover {
-                background: $off-black !important;
-                color: white;
-            }
-        }
-    }
-
     // Frontpage section without title pill.
     &--no-header {
         padding: 50px 0 26px 0;

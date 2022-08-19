@@ -128,7 +128,7 @@ class Publication(Model):
     publisher_logo_height = PositiveSmallIntegerField(blank=True, null=True)
 
     def __str__(self):
-        return self.name or u''
+        return self.name or ''
 
     def save(self, *args, **kwargs):
         super(Publication, self).save(*args, **kwargs)

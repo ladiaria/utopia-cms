@@ -78,8 +78,13 @@ def article_detail(request, year, month, slug, domain_slug=None):
         try:
             Publication.objects.get(slug=domain_slug)
         except Publication.DoesNotExist:
-            category = get_object_or_404(Category, slug=domain_slug)
-            domain = 'category'
+            try:
+                category = Category.objects.get(slug=domain_slug)
+            except Category.DoesNotExist:
+                if domain_slug not in getattr(settings, 'CORE_HISTORIC_DOMAIN_SLUGS', ()):
+                    raise Http404
+            else:
+                domain = 'category'
 
     if settings.DEBUG:
         print('DEBUG: article_detail view called with (%d, %d, %s, %s)' % (year, month, slug, domain_slug))
@@ -106,7 +111,10 @@ def article_detail(request, year, month, slug, domain_slug=None):
             )
     except MultipleObjectsReturned:
         # TODO: this multiple article situation should be notified
-        raise Http404("Más de un artículo con el mismo slug en el mismo mes.")
+        msg = "Más de un artículo con el mismo slug en el mismo mes."
+        if settings.DEBUG:
+            print('DEBUG: core.views.article.article_detail: ' + msg)
+        raise Http404(msg)
     except Article.DoesNotExist:
         s = urlsplit(request.get_full_path())
         last_by_hist = ArticleUrlHistory.objects.filter(absolute_url=request.path).last()

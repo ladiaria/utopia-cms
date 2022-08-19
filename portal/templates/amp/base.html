@@ -105,9 +105,6 @@
       .header-pill svg { display:block; }
       .header-pill--coronavirus {}
       .mobile-header { width: 100%; background-color: #262626; color: #fff; text-align: center; display: flex; align-items: center; justify-content: center; height: 60px; z-index: 100; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2); }
-      #subheader-lento { background-color: #e5007d; }{# TODO: remove custom css using the css block #}
-      #subheader-garra { background-color: #a8e3e9; }
-      #subheader-rioabierto { background-color: #009DE0; }
       .section-subheader { text-align: center; box-shadow: 0px 3px 6px #00000029; padding:10px 0 7px; z-index:1; position:relative;}
       {% block css %}{% endblock %}
       .section-subheader .header-logo img { position:relative; overflow:visible;}
@@ -162,7 +159,7 @@
       .article__deck, .article-lead { font-family: "Meta Serif",serif; font-weight: 500; line-height: 1.5; max-width: 700px; max-width: 700px; margin: 20px auto; font-size: 20px; line-height: 1.5; margin-bottom: 50px; padding: 0 20px; }@media (min-width: 769px) { .article__deck, .article-lead { font-size: 20px; line-height: 1.7; } }h2, h3, h4, h5, h6 { font-family: 'Meta Serif', serif; }
       h3 { font-size: 24px; }
       #header-pub { margin-top: 20px; margin-bottom: 20px; }
-      .ld-fin { background-image: url(/static/img/fin-dark.svg); background-repeat: no-repeat; background-position: center; background-size: 134px; height: 14px; width: 100%; margin: 100px auto; }.article-section-humor .ld-fin { background-image: url(/static/img/fin-dark.svg); }@media (min-width: 600px) { .card p { font-size: 1.25rem; } }
+      .ld-fin { background-image: url(/static/img/fin-dark.svg); background-repeat: no-repeat; background-position: center; background-size: 134px; height: 14px; width: 100%; margin: 100px auto; }@media (min-width: 600px) { .card p { font-size: 1.25rem; } }
       .btn, .btn-large { font-weight: bold; -webkit-box-shadow: none; box-shadow: none; text-transform: none; background: #6EF9FF; color: #262626; text-decoration:none; }
       .card .card-content { font-family: "Meta Serif",serif; padding: 24px; }.card .card-content .card-title { display: block; line-height: 32px; margin-bottom: 8px; }.card .card-title { font-size: 24px; font-weight: 400; }
       #paywall { margin-bottom: 30px; border-radius: 10px; }
@@ -200,59 +197,6 @@
       .breaking-notice .btn-close { position: absolute; right: 20px; top: 10px; cursor: pointer; background-image: url(/static/img/icon-cross.svg); background-position: center; background-repeat: no-repeat; background-color: transparent; background-size: 12px; display: block; width: 12px; height: 12px; text-indent: -100px; overflow: hidden; }
       .mobile-header .header-pill { height: 29px; margin-left:4px; } .mobile-header:not(.logged-in) .header-pill--coronavirus { height: 27px; } .mobile-header .header-pill svg { height: 29px;  width: auto; } .mobile-header:not(.logged-in) .header-pill--coronavirus svg { height: 27px;  width: auto;}
       @media (max-width: 640px) { .mobile-header:not(.logged-in) { justify-content: left;}  .mobile-header .ladiaria-amp-logo-img { height: 25px; margin-left:15px }   .mobile-header:not(.logged-in) .btn.ingresar { position:absolute; right:15px; top:0; }}
-      {% if section.name|lower == 'humor' %}
-        .humor-pill { display: none;   }
-        .article-section-humor {
-        cursor: url("/static/img/cursor-hand.png") 10 1, auto;
-        background-color: #F1A9A0;
-        }
-        .article-section-humor a, .article-section-humor a.ladiaria {
-        color: white;
-        }
-        .article-section-humor a:hover, .article-section-humor .nav-menu-button:hover {
-        cursor: url("/static/img/cursor-pointer.png") 30 10, auto;
-        }
-        .article-section-humor .ld-caption, .article-section-humor .article-caption {
-        color: #6b6b6b;
-        }
-        .article-section-humor .ld-fin {
-        background-image: url(/static/img/fin-dark.svg);
-        }
-        .article-section-humor .ld-share-widget .ld-icons {
-        color: #262626;
-        }
-        .article-section-humor #mas-leidos .card-title, .article-section-humor #mas-leidos .card-tabs {
-        background-color: #262626;
-        }
-        .article-section-humor .humor-pill {
-        letter-spacing: 1px;
-        display: inline-block;
-        font-family: "Roboto", sans-serif;
-        font-size: 16px;
-        font-weight: bold;
-        border-radius: 10px;
-        padding: 7px 22px 5px 22px;
-        color: #F1A9A0;
-        background-color: white;
-        position: relative;
-        bottom: 16px;
-        text-transform: uppercase;
-        text-decoration:none;
-        box-shadow: 0px 9px 20px 0px rgba(0, 0, 0, 0.5);
-        }
-        @media (min-width: 769px) {
-            .article-section-humor .humor-pill {
-                font-size: 20px;
-                bottom: 34px;
-            }
-        }
-        .article-section-humor .article-body--faded:after {
-            background: linear-gradient(rgba(255,255,255,0.001) 50%, #f1a9a0);
-        }
-        .article-section-humor .ld-paywall-ending { color: white; }
-        .article-section-humor a.ld-text-secondary, .article-section-humor .ld-text-secondary a { color: white; }
-        .ampstart-footer-nav a { color: #262626;}
-      {% endif %}
 
       /* Base styles */
       .ld-heading { font-family: "Roboto", sans-serif; margin: 10px 0 35px 0; font-size: 50px; color: #262626; font-weight: 500; }
@@ -261,9 +205,8 @@
       a.ld-text-secondary, .ld-text-secondary a { color: #595959; text-decoration: underline; }
       .ld-paywall-ending { margin-bottom: 10vh; }
       .card { box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2); }
-      /*
-      * Grid / Materialize
-      */
+
+      /* Grid / Materialize */
       .container { margin: 0 auto; max-width: 1280px; width: 90%; }
       @media only screen and (min-width: 601px) { .container { width: 85%; } }
       .container .row { margin-left: -0.75rem; margin-right: -0.75rem; }

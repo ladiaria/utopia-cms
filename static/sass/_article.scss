@@ -473,9 +473,6 @@ article {
       bottom: 0;
       background: linear-gradient(rgba(255, 255, 255, 0.001) 70%, #ffffff);
       user-select: none;
-        .article-section-humor & {
-            background: linear-gradient(rgba(255,255,255,0.001) 70%, $humor-primary-color);
-        }
     }
 
     ul, ol {
@@ -1023,10 +1020,6 @@ body.article {
         padding:0;
         }
     }
-}
-
-.article-section-humor .ld-share-widget__list svg path  {
-    fill: black;
 }
 
 .ld-fin {

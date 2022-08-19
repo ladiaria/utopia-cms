@@ -43,15 +43,6 @@ $breakpoints: (
   large: 1200px,
 );
 
-// Publicaciones / Emergentes
-$rio-abierto-primary-color: #009DE0;
-$chile-primary-color: #E74C3C;
-$garra-primary-color: #a8e3e9;
-$ahora-primary-color: #ff5252;
-$lento-primary-color: #e5007d;
-$lento-secondary-color: #e91e63;
-$humor-primary-color: #F1A9A0;
-
 // Ajustes de alto y ancho de visual
 $view-full-height: calc(100vh - #{$line-height} * 2); // altura de visual menos ancho de una barra
 $view-full-width: 100vw;

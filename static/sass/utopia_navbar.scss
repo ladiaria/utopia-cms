@@ -1225,25 +1225,6 @@ body {
     box-shadow: 0 3px 6px rgba(0,0,0, .16);
     top: 11px;
     z-index:1;
-
-    &--podcast {
-        background-color: #B331B6;
-    }
-    &--apuntes {
-        background-color: #27AE60;
-    }
-    &--chile {
-        background-color: $chile-primary-color;
-    }
-    &--coronavirus {
-        background-color: #D2449E;
-    }
-    &--comunidad {
-        background-color: #4D2C9D;
-    }
-    &--eventos {
-        background-color: #e74c3c;
-    }
 }
 
 #nav-mobile .row .col.s5ths {
@@ -1356,7 +1337,7 @@ main > header {
     }
 }
 
-// new subheader for lento, garra & rio abierto
+// subheader
 .section-subheader {
     padding-bottom: 20px;
     box-shadow: 0px 3px 6px #00000029;
