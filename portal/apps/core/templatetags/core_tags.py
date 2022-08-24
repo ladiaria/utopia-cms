@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from builtins import str
-from builtins import range
+
+from builtins import str, range
 import os
 import random
 from datetime import date, datetime, timedelta
@@ -27,7 +27,7 @@ def render_related(context, article):
 
     article, section = context.get('article'), context.get('section')
     if not section:
-        return u''
+        return ''
 
     category, publication, upd_dict = section.category, context.get('publication'), None
 
@@ -246,7 +246,7 @@ def render_toolbar_for(context, toolbar_object):
         context.update(params)
         return loader.render_to_string(toolbar_template, context.flatten())
     else:
-        return u''
+        return ''
 
 
 @register.simple_tag
@@ -273,10 +273,10 @@ def render_hierarchy(article):
                 reverse('home', kwargs={'domain_slug': article.main_section.edition.publication.slug}),
                 article.main_section.edition.publication,
             )
-        child = u'<a href="%s">%s</a>' % (section.get_absolute_url(), section)
-        return u' › '.join([u'<a href="%s">%s</a>' % parent, child]) if parent else child
+        child = '<a href="%s">%s</a>' % (section.get_absolute_url(), section)
+        return ' › '.join(['<a href="%s">%s</a>' % parent, child]) if parent else child
     else:
-        return u''
+        return ''
 
 
 @register.simple_tag(takes_context=True)
@@ -284,13 +284,13 @@ def render_tagcover(context, tagname):
     try:
         tag = Tag.objects.get(name=tagname)
     except Tag.DoesNotExist:
-        return u''
+        return ''
     articles = TaggedItem.objects.get_by_model(Article, tag).filter(is_published=True).exclude(type='OP')[:6]
     if articles:
         context.update({'tag_cover_article': articles[0], 'tag_destacados': articles[1:]})
         return loader.render_to_string('core/templates/tagcover.html', context.flatten())
     else:
-        return u''
+        return ''
 
 
 @register.simple_tag(takes_context=True)
@@ -298,13 +298,13 @@ def render_tagrow(context, tagname, article_type):
     try:
         tag = Tag.objects.get(name=tagname)
     except Tag.DoesNotExist:
-        return u''
+        return ''
     articles = TaggedItem.objects.get_by_model(Article, tag).filter(is_published=True, type=article_type)[:4]
     if articles:
         context.update({'latest_articles': articles})
         return loader.render_to_string('core/templates/tagrow.html', context.flatten())
     else:
-        return u''
+        return ''
 
 
 @register.simple_tag
@@ -324,7 +324,7 @@ def publication_section(context, article, pub=None):
     section = article.publication_section(
         pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
     )
-    return (u'<a href="%s">%s</a>' % (section.get_absolute_url(), section)) if section else u''
+    return ('<a href="%s">%s</a>' % (section.get_absolute_url(), section)) if section else ''
 
 
 @register.simple_tag(takes_context=True)
@@ -340,7 +340,7 @@ def category_nl_subscribe_box(context):
         if category.slug not in subscriber_nls:
             return loader.render_to_string('core/templates/article/subscribe_box_category.html', context.flatten())
 
-    return u''
+    return ''
 
 
 @register.simple_tag
@@ -354,7 +354,7 @@ def date_published_verbose(article):
     Use settings to control when and how the date should be rendered in article cards.
     """
     if not getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_ENABLED', True):
-        return u''
+        return ''
     main_section_edition = article.main_section.edition if article.main_section else None
     if (
         not getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_ONLY_ROOT_PUBLICATIONS', False)
@@ -367,7 +367,7 @@ def date_published_verbose(article):
             hide_delta = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_DELTA', None)
             if hide_delta:
                 if main_section_edition.date_published == today and now < publishing + timedelta(hours=hide_delta):
-                    return u''
+                    return ''
         # in addition to the settings above, we also admit changes in a custom way using a custom module:
         custom_module, custom_data = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_CUSTOM_MODULE', None), None
         if custom_module:
@@ -376,12 +376,12 @@ def date_published_verbose(article):
             ).article_date_published_verbose(article, main_section_edition, today, now, publishing)
             # return empty string if the custom_data is not None but evaluates to False
             if custom_data is not None and not custom_data:
-                return u''
-        return u'%s<div class="ld-card__date">%s</div>' % (
-            u' - ' if article.has_byline() else u'', custom_data or article.date_published_verbose()
+                return ''
+        return '%s<div class="ld-card__date">%s</div>' % (
+            ' - ' if article.has_byline() else '', custom_data or article.date_published_verbose()
         )
     else:
-        return u''
+        return ''
 
 
 # Inclusion tags
