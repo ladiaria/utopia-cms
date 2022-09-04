@@ -50,9 +50,9 @@ Runing the above script will generate some files, the `yoogle.com` cert and key 
 
 `php vendor/bin/codecept run --env=dev`
 
-# Load tests using locust
+# Load tests using locust.io
 
-1. Install locust (do not use this project's virtualenv because locust needs Python3)
+1. Install locust
 
 2. Copy `tests/locust/local_settings.sample.py` to `tests/locust/local_settings.py` and edit the settings according the environment to test.
 

@@ -10,6 +10,7 @@ TODO: if mongo server fails after this global vars are set, the global client in
       Also some checks "if mongo_db is not None" are missing in some views (adzone.views for example).
 """
 from __future__ import unicode_literals
+
 import csv
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
@@ -20,10 +21,12 @@ from django.conf import settings
 # mongodb database
 try:
     connect, timeout = getattr(settings, 'MONGODB_CONNECT_AT_CLIENT_CREATION', True), 1000
-    client = MongoClient(serverSelectionTimeoutMS=timeout)
+    connection_string = getattr(settings, 'MONGODB_CONNECTION_STRING', None)
+    connection_args = (connection_string, ) if connection_string else ()
+    client = MongoClient(*connection_args, serverSelectionTimeoutMS=timeout)
     client.server_info()
     if not connect:
-        client = MongoClient(serverSelectionTimeoutMS=timeout, connect=False)
+        client = MongoClient(*connection_args, serverSelectionTimeoutMS=timeout, connect=False)
     global mongo_db
     mongo_db = client[settings.MONGODB_DATABASE] if settings.MONGODB_DATABASE else None
 except ServerSelectionTimeoutError:
