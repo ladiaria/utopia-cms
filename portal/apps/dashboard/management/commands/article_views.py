@@ -4,13 +4,12 @@ import os
 from os.path import join
 from csv import writer
 from datetime import datetime, date, timedelta
-
-from django.core.management.base import BaseCommand
-from django.conf import settings
-
-from core.models import Article
 from progress.bar import Bar
 
+from django.conf import settings
+from django.core.management.base import BaseCommand
+
+from core.models import Article
 
 class Command(BaseCommand):
     help = 'Generates the articles views report sorted by category or publication if there \'s not one'

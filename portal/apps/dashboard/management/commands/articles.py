@@ -24,22 +24,22 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+            '--progress', action='store_true', default=False, dest='progress', help='Show a progress bar'
         )
         parser.add_argument(
             '--live',
             action='store_true',
             default=False,
             dest='live',
-            help=u"Use all mongodb data instead of last month's only",
+            help="Use all mongodb data instead of last month's only",
         )
         parser.add_argument(
             '--out-prefix',
             action='store',
             type=str,
             dest='out-prefix',
-            default=u'',
-            help=u"Don't make changes to existing files and save generated files with this prefix",
+            default='',
+            help="Don't make changes to existing files and save generated files with this prefix",
         )
 
     def handle(self, *args, **options):
@@ -49,7 +49,7 @@ class Command(BaseCommand):
         articles, main_sections, live, out_prefix = {}, {}, options.get('live'), options.get('out-prefix')
         main_categories = {}
         if live and not out_prefix:
-            print(u'ERROR: --live option should also specify a value for --out-prefix option')
+            print('ERROR: --live option should also specify a value for --out-prefix option')
             return
         this_month_first = date.today().replace(day=1)
         last_month = this_month_first - timedelta(1)
@@ -65,11 +65,13 @@ class Command(BaseCommand):
         verbosity = options.get('verbosity')
         if verbosity > 1:
             if live:
-                print(u'Generating reports ...')
+                print('Generating reports ...')
             else:
-                print(u'Generating reports from %s to %s ...' % (last_month_first, dt_until))
+                print('Generating reports from %s to %s ...' % (last_month_first, dt_until))
 
-        bar = Bar('Processing', max=visitors.count()) if options.get('progress') else None
+        bar = Bar(
+            'Processing', max=mongo_db.signupwall_visitor.count_documents(find_filters)
+        ) if options.get('progress') else None
 
         for v in visitors:
             try:
@@ -184,7 +186,7 @@ class Command(BaseCommand):
 
         # Categories and publications
         counters = {}
-        for user_id, main_category in main_categories.iteritems():
+        for user_id, main_category in iter(main_categories.items()):
             ar_id = (main_category, main_category.id)
             counter = counters.get(ar_id, 0)
             counter += 1

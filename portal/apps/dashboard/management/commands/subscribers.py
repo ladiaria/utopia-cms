@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import unicode_literals
+
 from os.path import join
 from csv import writer
 import operator
@@ -12,11 +13,11 @@ from core.models import Article, ArticleViewedBy, Publication, Section
 
 
 class Command(BaseCommand):
-    help = u'Generates the articles report content for subscribers visits'
+    help = 'Generates the articles report content for subscribers visits'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--progress', action='store_true', default=False, dest='progress', help=u'Show a progress bar'
+            '--progress', action='store_true', default=False, dest='progress', help='Show a progress bar'
         )
         parser.add_argument(
             '--published-since',
@@ -37,8 +38,8 @@ class Command(BaseCommand):
             action='store',
             type=str,
             dest='out-prefix',
-            default=u'',
-            help=u"Don't make changes to existing files and save generated files with this prefix",
+            default='',
+            help="Don't make changes to existing files and save generated files with this prefix",
         )
 
     def handle(self, *args, **options):
@@ -54,10 +55,10 @@ class Command(BaseCommand):
             filter_views_kwargs.update({'viewed_at__gte': views_since})
 
         verbosity = options.get('verbosity')
-        if verbosity > '1':
-            gen_msg = u'Generating reports for articles published '
-            gen_msg += ((u'since %s' % published_since) if published_since else u'on any date') + u' and views '
-            print((gen_msg + ((u'since %s' % views_since) if views_since else u'on any date')) + u' ...')
+        if verbosity > 1:
+            gen_msg = 'Generating reports for articles published '
+            gen_msg += (('since %s' % published_since) if published_since else 'on any date') + ' and views '
+            print((gen_msg + (('since %s' % views_since) if views_since else 'on any date')) + ' ...')
 
         target_articles, articles, articles_sections = Article.objects.filter(**filter_articles_kwargs), [], {}
         bar = Bar('Processing articles', max=target_articles.count()) if options.get('progress') else None
