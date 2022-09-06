@@ -1,6 +1,6 @@
 {% load static %}
 
-<header class="mobile-header mobile-header--amp mobile-header--{{publication.slug}}{% block extra-class %}{% endblock %}">
+<header class="mobile-header mobile-header--amp mobile-header--{{ publication.slug }}{% block extra-class %}{% endblock %}">
   <a href="{% url 'home' %}" class="ladiaria-logo">{# TODO: change/remove ladiaria-logo class #}
     <amp-img width="56" height="22" layout="fixed" class='ladiaria-amp-logo-img' src="{% static HOMEV3_SECONDARY_LOGO %}" alt="Logo de {{ site.name }}"></amp-img>
   </a>

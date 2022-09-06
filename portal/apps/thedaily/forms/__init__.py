@@ -212,14 +212,8 @@ class SignupForm(ModelForm):
         return first_name
 
     def clean_email(self):
-        email, email_max_length = self.cleaned_data.get('email'), getattr(settings, 'THEDAILY_EMAIL_MAX_LENGTH', 30)
-        if len(email) <= email_max_length:
-            return email.lower()
-        else:
-            self._errors['email'] = self.error_class(
-                ['Email demasiado largo, se permiten hasta %d caracteres.' % email_max_length]
-            )
-            return email
+        email = self.cleaned_data.get('email')
+        return email.lower()
 
     def clean_password(self):
         data = self.cleaned_data
@@ -241,7 +235,7 @@ class SignupForm(ModelForm):
         DIGIT_RE = re.compile(r'\d')
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
-        user = User.objects.create_user(email.split('@')[0] if len(email) > 30 else email, email, password)
+        user = User.objects.create_user(email, email, password)
         if not user.subscriber.phone:
             user.subscriber.phone = ''.join(DIGIT_RE.findall(self.cleaned_data.get('phone', '')))
         user.subscriber.save()

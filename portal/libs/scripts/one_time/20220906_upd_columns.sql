@@ -1,0 +1,11 @@
+ALTER TABLE auth_permission MODIFY COLUMN name varchar(255);
+ALTER TABLE auth_user MODIFY COLUMN email varchar(254);
+ALTER TABLE auth_user MODIFY COLUMN username varchar(150);
+ALTER TABLE comunidad_beneficio MODIFY COLUMN name varchar(255);
+ALTER TABLE comunidad_subscriberarticle MODIFY COLUMN headline varchar(200);
+ALTER TABLE core_journalist MODIFY COLUMN email varchar(254);
+ALTER TABLE core_section MODIFY COLUMN contact varchar(254);
+ALTER TABLE photologue_ladiaria_agency MODIFY COLUMN info varchar(254);
+ALTER TABLE photologue_ladiaria_photographer MODIFY COLUMN email varchar(254);
+ALTER TABLE thedaily_subscription MODIFY COLUMN email varchar(254);
+ALTER TABLE updown_vote MODIFY COLUMN ip_address char(39);

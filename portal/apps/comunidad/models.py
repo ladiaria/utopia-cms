@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from builtins import str
 from datetime import datetime, timedelta
 
@@ -23,8 +24,7 @@ class SubscriberArticle(ArticleBase):
     @staticmethod
     def top_articles():
         desde = datetime.now() - timedelta(days=15)
-        return SubscriberArticle.objects.get_queryset().filter(
-            date_published__gt=desde)[:3]
+        return SubscriberArticle.objects.get_queryset().filter(date_published__gt=desde)[:3]
 
     def __str__(self):
         return self.headline + ' ( por ' + str(self.created_by) + ' )'
@@ -41,10 +41,10 @@ class SubscriberArticle(ArticleBase):
 
 
 class SubscriberEvento(EventoBase):
-    date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
+    date_created = DateTimeField('fecha de creación', auto_now_add=True)
     created_by = ForeignKey(
-        User, verbose_name=u'creado por', related_name='eventos_creados',
-        editable=False, blank=False, null=True)
+        User, verbose_name='creado por', related_name='eventos_creados', editable=False, blank=False, null=True
+    )
 
     is_suscriber_evento = True
 
@@ -64,10 +64,8 @@ class SubscriberEvento(EventoBase):
 class TopUser(models.Model):
     user = models.ForeignKey(User)
     points = models.IntegerField()
-    date_created = DateTimeField(u'fecha de calculo', auto_now_add=True)
-    type = models.CharField(
-        max_length=20, choices=[
-            ('WEEK', 'WEEK'), ('MONTH', 'MONTH'), ('YEAR', 'YEAR')])
+    date_created = DateTimeField('fecha de calculo', auto_now_add=True)
+    type = models.CharField(max_length=20, choices=[('WEEK', 'WEEK'), ('MONTH', 'MONTH'), ('YEAR', 'YEAR')])
 
 
 class Circuito(models.Model):
@@ -78,9 +76,8 @@ class Circuito(models.Model):
 
 
 class Socio(models.Model):
-    user = models.OneToOneField(
-        User, verbose_name=u'usuario', related_name=u'socio')
-    circuits = models.ManyToManyField(Circuito, verbose_name=u'circuitos')
+    user = models.OneToOneField(User, verbose_name='usuario', related_name='socio')
+    circuits = models.ManyToManyField(Circuito, verbose_name='circuitos')
 
     def __str__(self):
         return self.user.username
@@ -88,8 +85,7 @@ class Socio(models.Model):
 
 class Beneficio(models.Model):
     name = models.CharField('nombre', max_length=255)
-    circuit = models.ForeignKey(
-        Circuito, verbose_name=u'circuito', related_name=u'beneficios')
+    circuit = models.ForeignKey(Circuito, verbose_name='circuito', related_name='beneficios')
     limit = models.PositiveIntegerField('cupo general', null=True, blank=True)
     quota = models.PositiveIntegerField('cupo por suscriptor', default=1)
 
@@ -101,7 +97,7 @@ class Beneficio(models.Model):
 
 
 class Registro(models.Model):
-    subscriber = models.ForeignKey(Subscriber, verbose_name=u'suscriptor')
+    subscriber = models.ForeignKey(Subscriber, verbose_name='suscriptor')
     benefit = models.ForeignKey(Beneficio, verbose_name='beneficio')
     used = models.DateTimeField(auto_now_add=True, verbose_name='utilizado')
 
@@ -126,6 +122,6 @@ class Recommendation(models.Model):
     article = models.ForeignKey(Article, null=True, blank=True)
 
     def url_list(self):
-        return u'<br>'.join(self.urls.values_list('url', flat=True))
+        return '<br>'.join(self.urls.values_list('url', flat=True))
 
     url_list.allow_tags = True
