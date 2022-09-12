@@ -97,7 +97,7 @@ def newsletter_preview(request, slug):
     category_redirections = getattr(settings, 'CORE_CATEGORY_REDIRECT', {})
     if slug in category_redirections:
         redirect_slug = category_redirections[slug]
-        if not redirect_slug.startswith('/'):
+        if redirect_slug and not redirect_slug.startswith('/'):
             return HttpResponsePermanentRedirect(reverse('category-nl-preview', args=(redirect_slug, )))
 
     site = Site.objects.get_current()
