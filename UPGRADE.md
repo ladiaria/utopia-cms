@@ -1,3 +1,16 @@
+# From version 0.3.0 to 0.3.1
+
+```
+git pull
+git checkout 0.3.1
+cd portal
+# activate your virtual env
+cat libs/scripts/one_time/20220906_upd_columns.sql | ./manage.py dbshell
+pip install --upgrade -r requirements.txt
+./manage.py migrate favit --fake
+./manage.py migrate
+```
+
 # From version 0.2.9 to 0.3.0
 
 ```

@@ -20,6 +20,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='categoryhomearticle',
             name='fixed',
-            field=models.BooleanField(default=False, verbose_name=b'fijo'),
+            field=models.BooleanField(default=False, verbose_name='fijo'),
         ),
     ]

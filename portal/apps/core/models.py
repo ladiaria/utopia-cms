@@ -1635,10 +1635,12 @@ def update_category_home(dry_run=False):
     # fill each category bucket with latest articles.
     # @dry_run: Do not change anything. It forces a debug message when a change would be made.
     # TODO: calculate not fixed count before and better stop algorithm.
-    buckets, category_sections, needed, cat_needed, start_time = {}, {}, 10, {}, time.time()
+    buckets, category_sections, cat_needed_defaults, cat_needed, start_time = {}, {}, {}, {}, time.time()
     categories, categories_to_fill = Category.objects.filter(slug__in=settings.CORE_UPDATE_CATEGORY_HOMES), []
 
     for cat in categories:
+        needed = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_NEEDED', {}).get(cat.slug, 10)
+        cat_needed_defaults[cat.slug] = needed
         articles_count = cat.articles_count(needed)
         if articles_count:
             categories_to_fill.append(cat.slug)
@@ -1699,7 +1701,7 @@ def update_category_home(dry_run=False):
         category_fixed_content, free_places = ([cover_id], []) if cover_fixed else ([], [0])
 
         try:
-            for i in range(2, needed + 1):
+            for i in range(2, cat_needed_defaults[category_slug] + 1):
                 try:
                     position_i = CategoryHomeArticle.objects.get(home=home, position=i)
                     a = position_i.article

@@ -28,8 +28,8 @@ class Migration(migrations.Migration):
             name='CategoryHomeArticle',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('position', models.PositiveSmallIntegerField(verbose_name=b'publicado')),
-                ('fixed', models.BooleanField(verbose_name=b'fijo')),
+                ('position', models.PositiveSmallIntegerField(verbose_name='publicado')),
+                ('fixed', models.BooleanField(verbose_name='fijo')),
                 ('article', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='home_articles', to='core.Article')),
                 ('home', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.CategoryHome')),
             ],

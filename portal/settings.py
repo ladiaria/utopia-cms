@@ -33,7 +33,7 @@ SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
 
 # django-mobile
 FLAVOURS = ('full', 'mobile', 'amp')
-FLAVOURS_GET_PARAMETER = u'display'
+FLAVOURS_GET_PARAMETER = 'display'
 FLAVOURS_COOKIE_SECURE = True
 
 # Multi sub-domain secure cookie
@@ -129,7 +129,7 @@ MIGRATION_MODULES = {'photologue': 'photologue_ladiaria.photologue_migrations'}
 
 ADMIN_SHORTCUTS = [
     {
-        'title': u'Edición',
+        'title': 'Edición',
         'shortcuts': [
             {
                 'url_name': 'admin:core_edition_changelist',
@@ -137,11 +137,11 @@ ADMIN_SHORTCUTS = [
             },
             {
                 'url_name': 'admin:core_edition_add',
-                'title': u'Crear edición',
+                'title': 'Crear edición',
             },
             {
                 'url_name': 'admin:core_article_add',
-                'title': u'Crear Artículo',
+                'title': 'Crear Artículo',
             },
         ],
     },
@@ -150,7 +150,7 @@ ADMIN_SHORTCUTS = [
         'shortcuts': [
             {
                 'url': '/dashboard/',
-                'title': u'Estadísticas de usuarios',
+                'title': 'Estadísticas de usuarios',
             },
         ],
     },
@@ -354,8 +354,8 @@ CORE_HTML_ARTICLE = 'HT'
 CORE_COMUNIDAD_ARTICLE = 'CM'
 CORE_ARTICLE_TYPES = (
     ('NE', 'Noticia'),
-    ('OP', u'Opinión'),
-    (CORE_PHOTO_ARTICLE, u'Fotografía'),
+    ('OP', 'Opinión'),
+    (CORE_PHOTO_ARTICLE, 'Fotografía'),
     (CORE_HTML_ARTICLE, 'HTML'),
     (CORE_COMUNIDAD_ARTICLE, 'COMUNIDAD'),
 )
@@ -383,15 +383,15 @@ MONGODB_DATABASE = 'utopia_cms'
 SIGNUPWALL_ENABLED = True
 
 # thedaily
-SUBSCRIPTION_EMAIL_SUBJECT = u'Nueva suscripción'
-PROMO_EMAIL_SUBJECT = u'Nueva promoción'
+SUBSCRIPTION_EMAIL_SUBJECT = 'Nueva suscripción'
+PROMO_EMAIL_SUBJECT = 'Nueva promoción'
 SUBSCRIPTION_EMAIL_TO = [NOTIFICATIONS_TO_ADDR]
 SUBSCRIPTION_BY_PHONE_EMAIL_TO = SUBSCRIPTION_EMAIL_TO
 MAX_USERS_API_SESSIONS = 3
 THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID = None
 THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
-    ('DDIGM', u'Suscripción digital'),
-    ('PAPYDIM', u'Suscripción papel'),
+    ('DDIGM', 'Suscripción digital'),
+    ('PAPYDIM', 'Suscripción papel'),
 )
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_WELCOME_TEMPLATE = 'welcome.html'

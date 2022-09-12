@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from builtins import object
+
 import re
 from time import timezone
 from datetime import datetime, tzinfo, timedelta
@@ -36,16 +38,16 @@ def datetime_timezone():
     timezone_countries = {
         timezone: country for country, timezones in country_timezones.items() for timezone in timezones
     }
-    tz_name = dt.strftime(u'%Z')
-    result = [tz_name if tz_name[0].isalpha() else u'GMT' + tz_name]
-    tz_parts = settings.TIME_ZONE.split(u'/')
+    tz_name = dt.strftime('%Z')
+    result = [tz_name if tz_name[0].isalpha() else 'GMT' + tz_name]
+    tz_parts = settings.TIME_ZONE.split('/')
     if len(tz_parts) > 1:
         result.append(tz_parts[-1])
     try:
         result.append(country_names[timezone_countries[settings.TIME_ZONE]])
     except KeyError:
         pass
-    return u'(%s)' % u', '.join(result)
+    return '(%s)' % ', '.join(result)
 
 
 def get_pdf_pdf_upload_to(instance, filename):
@@ -94,10 +96,10 @@ def get_pdfpageimage_file_upload_to(instance, filename):
 
 
 def add_punctuation(text):
-    valid_chars = u'AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789"'
+    valid_chars = 'AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789"'
     if text != '':
         if text[-1] in valid_chars:
-            return u'%s.' % text
+            return '%s.' % text
     return text
 
 
@@ -128,8 +130,8 @@ class CT(object):
 
 
 def smart_quotes(value):
-    value = re.sub(r"(?![^<>]*>)(\")\b", u"“", value)
-    value = re.sub(r"\b(?![^<>]*>)(\")", u"”", value)
-    value = re.sub("\"(?=[¿¡\‘\'\(\[ÑÁÉÍÓÚñáéíóú])", u"“", value)
-    value = re.sub("(?<=[?!\’\'\)ÑÁÉÍÓÚñáéíóú\.\%\]])\"", u"”", value)
+    value = re.sub(r"(?![^<>]*>)(\")\b", "“", value)
+    value = re.sub(r"\b(?![^<>]*>)(\")", "”", value)
+    value = re.sub("\"(?=[¿¡\‘\'\(\[ÑÁÉÍÓÚñáéíóú])", "“", value)
+    value = re.sub("(?<=[?!\’\'\)ÑÁÉÍÓÚñáéíóú\.\%\]])\"", "”", value)
     return value

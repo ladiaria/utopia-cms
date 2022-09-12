@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from builtins import str
+
 from hashlib import md5
 import re
 import smtplib
-
 from hashids import Hashids
 
 from django.conf import settings
+from django.db import IntegrityError
 from django.http import HttpResponseBadRequest
+
+from tagging.models import Tag, TaggedItem
+
+from core.models import Article
 
 
 def remove_spaces(s):
@@ -120,3 +126,92 @@ def smtp_connect(alternative=False):
 
 def decode_hashid(hashed_id):
     return Hashids(settings.HASHIDS_SALT, 32).decode(hashed_id)
+
+
+def manage_tags(tag_to_update, tag_replacement, tags_to_replace):
+    """
+    Args example:
+        tag_to_update : 'Mundial 2022'
+        tag_replacement : 'Mundial Qatar 2022'
+        tags_to_replace : ['Qatar 2022', 'Mundial Catar 2022', 'Mundial de Catar 2022', 'Catar 2022']
+    """
+
+    do_replacement, articles_to_replace = True, []
+    # iterate over articles with the tag to update
+    # if any article has another tag present in tags to replace, remove it
+    for article in TaggedItem.objects.get_by_model(Article, Tag.objects.filter(name__iexact=tag_to_update)):
+        taglist, replace = [t.strip() for t in article.tags.split(',')], True
+        for t in taglist:
+            if any((t.lower() == tr.lower() or t.lower() == '"%s"' % tr.lower()) for tr in tags_to_replace):
+                replace = False
+                print('I will remove tag "%s" in article %d with tags: %s' % (t, article.id, article.tags))
+                tags = [tag for tag in taglist if tag.lower() != t.lower()]
+                new_article_tags = '"%s"' % tags[0] if len(tags) == 1 else ', '.join(tags)
+                article.tags = new_article_tags
+                article.save()
+                print('\tDone. article.tags now is: ' + new_article_tags)
+                break
+        if replace:
+            print('I will replace tag %s in article %d which has tags: %s' % (tag_to_update, article.id, article.tags))
+            articles_to_replace.append(article)
+        else:
+            do_replacement = False
+
+    if not do_replacement:
+        print('\nCall me again to fix any other multiple occurrences.')
+    else:
+        try:
+            tag = Tag.objects.get(name__iexact=tag_to_update)
+            print('\nI will now update the tag and do the replacement in those articles...')
+            # update the tag
+            tag.name = tag_replacement
+            try:
+                tag.save()
+            except IntegrityError:
+                # the tag_replacement already exist, add tag_to_update to tags_to_replace list
+                tags_to_replace.append(tag_to_update)
+            # do the replacement in the article's tag attribute
+            for a in articles_to_replace:
+                taglist = [t.strip() for t in a.tags.split(',')]
+                if len(taglist) == 1:
+                    a.tags = '"%s"' % tag_replacement
+                else:
+                    taglist[taglist.index(tag_to_update)] = tag_replacement
+                    a.tags = ', '.join(taglist)
+                a.save()
+            print('Done.')
+        except Tag.DoesNotExist:
+            pass
+        except Tag.MultipleObjectsReturned:
+            # TODO: what to do here?
+            print('More than one tag matching the tag name to update given, aborting.')
+            return
+
+        print('\nI will now replace the other tags in articles and remove each tag after that:\n')
+        tags_to_replace_lowered = [t.lower() for t in tags_to_replace]
+        for tagname in tags_to_replace:
+            for tag in Tag.objects.filter(name__iexact=tagname):
+                for article in TaggedItem.objects.get_by_model(Article, [tag]):
+                    taglist = [t.strip() for t in article.tags.split(',')]
+                    if len(taglist) == 1:
+                        article.tags = '"%s"' % tag_replacement
+                    else:
+                        replaced = False
+                        for idx, t in enumerate(taglist):
+                            if t.lower() in tags_to_replace_lowered:
+                                if replaced:
+                                    taglist.pop(idx)
+                                else:
+                                    taglist[idx] = tag_replacement
+                                    replaced = True
+                        article.tags = '"%s"' % taglist[0] if len(taglist) == 1 else ', '.join(taglist)
+                    article.save()
+                    print('\tSaved article %d with tags attr = %s' % (article.id, article.tags))
+
+                # remove the tag from bd
+                if not TaggedItem.objects.filter(tag=tag).exists():
+                    tag.delete()
+                    print('\tTag "%s" removed.' % tag)
+                else:
+                    print('\tWARNING: Tag "%s" not removed, some taggeditems left for this tag.' % tag)
+        print('Done.')

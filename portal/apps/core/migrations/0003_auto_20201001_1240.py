@@ -102,7 +102,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='module',
             name='article_1_fixed',
-            field=models.BooleanField(verbose_name=b'fijo'),
+            field=models.BooleanField(verbose_name='fijo'),
         ),
         migrations.AlterField(
             model_name='module',
@@ -112,7 +112,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='module',
             name='article_2_fixed',
-            field=models.BooleanField(verbose_name=b'fijo'),
+            field=models.BooleanField(verbose_name='fijo'),
         ),
         migrations.AlterField(
             model_name='module',
@@ -122,7 +122,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='module',
             name='article_3_fixed',
-            field=models.BooleanField(verbose_name=b'fijo'),
+            field=models.BooleanField(verbose_name='fijo'),
         ),
         migrations.AlterField(
             model_name='module',
@@ -132,7 +132,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='module',
             name='article_4_fixed',
-            field=models.BooleanField(verbose_name=b'fijo'),
+            field=models.BooleanField(verbose_name='fijo'),
         ),
         migrations.AlterField(
             model_name='module',
@@ -142,7 +142,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='module',
             name='article_5_fixed',
-            field=models.BooleanField(verbose_name=b'fijo'),
+            field=models.BooleanField(verbose_name='fijo'),
         ),
         migrations.AlterField(
             model_name='module',
@@ -152,7 +152,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='module',
             name='article_6_fixed',
-            field=models.BooleanField(verbose_name=b'fijo'),
+            field=models.BooleanField(verbose_name='fijo'),
         ),
         migrations.AlterField(
             model_name='module',
@@ -162,7 +162,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='module',
             name='article_7_fixed',
-            field=models.BooleanField(verbose_name=b'fijo'),
+            field=models.BooleanField(verbose_name='fijo'),
         ),
         migrations.AlterField(
             model_name='module',
@@ -172,7 +172,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='module',
             name='article_8_fixed',
-            field=models.BooleanField(verbose_name=b'fijo'),
+            field=models.BooleanField(verbose_name='fijo'),
         ),
         migrations.AlterField(
             model_name='module',
@@ -182,7 +182,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='module',
             name='article_9_fixed',
-            field=models.BooleanField(verbose_name=b'fijo'),
+            field=models.BooleanField(verbose_name='fijo'),
         ),
         migrations.AlterField(
             model_name='section',

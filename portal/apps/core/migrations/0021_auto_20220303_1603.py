@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
             name='CategoryNewsletterArticle',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('order', models.PositiveSmallIntegerField(blank=True, null=True, verbose_name=b'orden')),
+                ('order', models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='orden')),
                 ('featured', models.BooleanField(default=False, verbose_name='incluir s\xf3lo en bloque destacado')),
                 ('article', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='newsletter_articles', to='core.Article', verbose_name='art\xedculo')),
                 ('newsletter', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.CategoryNewsletter')),

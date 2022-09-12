@@ -1,3 +1,20 @@
+# version 0.3.1 (2022-09-12)
+
+- Settings support for a non-default quantity of articles needed, by category, to build the category home.
+- Support to skip use the category for the backlink in the overrided version of the section detail template.
+- Fix area newsletter preview when area home is redirected to an absolute url.
+- New manage_tags util function, useful to merge or update tags.
+- allow emails with any length supported by used django.
+- SQL script to fix some dabase column lengths if needed.
+- core migration fixes.
+- syntax code style, py3 and unicode fixes in many modules.
+- support for mongodb connection string, testing docs upd.
+- Removed more unneeded customizations such as static files and custom css.
+- Fixed article old url redirect when the url has a discontinued domain_slug.
+- py3 commands and scripts fixes, audio_stats command improved.
+- bind audio stats ajax event only if user is_subscriber.
+- uwsgi.ini sample updated, templatetag fix.
+
 # version 0.3.0 (2022-08-14)
 
 - Python 2.7 (or less) support dropped.
@@ -7,7 +24,7 @@
 
 - Latest release supporting Python 2.7
 - utm parameters to track subscribe links.
-- import fixes and code style
+- import fixes and code style.
 
 # version 0.2.8 (2022-08-06)
 
