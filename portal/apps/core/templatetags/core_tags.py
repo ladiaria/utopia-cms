@@ -324,7 +324,14 @@ def publication_section(context, article, pub=None):
     section = article.publication_section(
         pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
     )
-    return ('<a href="%s">%s</a>' % (section.get_absolute_url(), section)) if section else ''
+    if section:
+        use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
+        if use_section_link:
+            return '<a href="%s">%s</a>' % (section.get_absolute_url(), section)
+        else:
+            return '<span>%s</span>' % section
+    else:
+        return ''
 
 
 @register.simple_tag(takes_context=True)

@@ -88,7 +88,7 @@
         }
 
         .article-section {
-          a {
+          a, span {
             font-size: 12px;
             line-height: 14px;
             text-transform: uppercase;
@@ -159,12 +159,14 @@
             margin-right: 15px;
             padding-top: 2px;
           }
-          .article-section a {
-            font-size: 12px;
-            line-height: 14px;
-            text-transform: uppercase;
-            color: #595959;
-            text-decoration: none;
+          .article-section {
+            a, span {
+              font-size: 12px;
+              line-height: 14px;
+              text-transform: uppercase;
+              color: #595959;
+              text-decoration: none;
+            }
           }
           .title-recomendados {
             font-size: 18px;

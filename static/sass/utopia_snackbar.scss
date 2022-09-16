@@ -119,10 +119,14 @@ $minWidth: 1040px;
   &__title{
     background-color: $secondary-color;
     text-align: center;
-    padding: 15px 40px;
+    padding: 15px 60px;
     font-size: 18px;
     font-weight: 400;
     font-family: AntennaCond, sans-serif;
+
+    @media (min-width:600px){
+      padding: 15px 40px;
+    }
   }
 
   &__cross{

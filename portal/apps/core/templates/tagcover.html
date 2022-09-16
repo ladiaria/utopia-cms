@@ -23,7 +23,7 @@
       {% endblock %}
       <div class="ld-card__body">
         <div class="ld-card__section">
-          <a href="{{ tag_cover_article.section.get_absolute_url }}">{{ tag_cover_article.section }}</a>
+          {% autoescape off %}{% publication_section tag_cover_article %}{% endautoescape %}
           {% with article=tag_cover_article %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
         </div>
         {% if tag_cover_article %}
@@ -70,7 +70,7 @@
         {% endif %}
         <div class="ld-card__body">
           <div class="ld-card__section">
-            <a href="{{ a.section.get_absolute_url }}">{{ a.section }}</a>
+            {% autoescape off %}{% publication_section a %}{% endautoescape %}
             {% with article=a %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
           </div>
           <h3 class="ld-card__title ld-card__title--mb">

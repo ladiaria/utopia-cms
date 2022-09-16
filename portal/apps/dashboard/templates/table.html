@@ -335,7 +335,7 @@
         <table id="table-activity" class="table table-striped table-sm" style="font-size: .7rem;" data-sort-name="last-activity" data-sort-order="asc">
           <thead>
             <tr>
-              {# TODO 2nd release: remove custom "la diaria" columns #}
+              {# TODO: remove custom "la diaria" columns #}
               <th data-sortable="true">Usuario</th>
               <th data-sortable="true">Email</th>
               <th data-sortable="true">Creado</th>
@@ -344,7 +344,7 @@
               <th data-sortable="true">digital</th>
               <th data-sortable="true">Lento</th>
               <th data-sortable="true">FS</th>
-              <th data-sortable="true" data-field='last-activity'>Últ. actividad</th>
+              <th data-sortable="true" data-field="last-activity">Últ. actividad</th>
             </tr>
           </thead>
           <tbody>
@@ -381,7 +381,7 @@
               <th data-sortable="true">Usuario</th>
               <th data-sortable="true">Email</th>
               <th data-sortable="true">Creado</th>
-              <th data-sortable="true" data-field='last-activity'>Últ. actividad</th>
+              <th data-sortable="true" data-field="last-activity">Últ. actividad</th>
             </tr>
           </thead>
           <tbody>
@@ -439,15 +439,15 @@
           <tbody>
             {% for row in rows %}
               <tr>
-                <td><a href="{{row.1}}">{{row.0}}</a></td>
-                <td>{{row.2}}</td>
-                <td>{{row.3}}</td>
-                <td>{{row.4}}</td>
-                <td>{{row.5}}</td>
-                <td>{{row.6}}</td>
-                <td>{{row.7}}</td>
-                <td>{{row.8}}</td>
-                <td>{{row.9}}</td>
+                <td><a href="{{ row.1 }}">{{ row.0 }}</a></td>
+                <td>{{ row.2 }}</td>
+                <td>{{ row.3 }}</td>
+                <td>{{ row.4 }}</td>
+                <td>{{ row.5 }}</td>
+                <td>{{ row.6 }}</td>
+                <td>{{ row.7 }}</td>
+                <td>{{ row.8 }}</td>
+                <td>{{ row.9 }}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -456,4 +456,5 @@
     </div>
   </div>
 {% endif %}
+
 {% block extra_tables %}{% endblock %}
