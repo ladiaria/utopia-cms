@@ -1455,18 +1455,21 @@ a.ld-link-low {
 .section_background {
     &.styled {
         margin-bottom: 30px;
+        padding-bottom:1px;
 
-        .section-detai__head {
-        padding-bottom: 30px;
-        margin-bottom: 0;
-        }
+        .section-detail {
+          &__head {
+          padding-bottom: 25px;
+          margin-bottom: 0;
 
-        .section-detail__title {
-        margin-bottom: 15px;
-        hyphens: none;
-        }
-        .section-detail__description {
-        margin-top: 0;
+          }
+          &__title {
+            margin-bottom: 0;
+            hyphens: none;
+          }
+          &__description {
+            margin-top: 15px;
+          }
         }
     }
 }

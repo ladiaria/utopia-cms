@@ -36,11 +36,13 @@ def random_zone_ad(context, ad_zone):
     {% random_zone_ad 'zone_slug' %}
 
     """
-    publication_slug = context['request'].GET.get('publication', settings.DEFAULT_PUB)
+    publication_slug = context['request'].GET.get('publication', settings.DEFAULT_PUB) or settings.DEFAULT_PUB
     # This is a hack to obtain ads related to sites, the sites should use the publication slug as their domain.
     # (the special case is the default publication which must use the correct domain to have a working site)
-    # TODO: change this using Publications directly
+    # TODO: change this using Publications directly (relate ads to pubs instead to sites)
     publication_slug_or_domain = settings.SITE_DOMAIN if publication_slug == settings.DEFAULT_PUB else publication_slug
+    if settings.DEBUG:
+        print("DEBUG: adzone_tags.random_zone_ad - publication_slug_or_domain='%s'" % publication_slug_or_domain)
     ad = AdBase.objects.get_random_ad(ad_zone, site=Site.objects.get(domain=publication_slug_or_domain))
 
     if ad:

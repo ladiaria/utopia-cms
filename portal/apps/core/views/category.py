@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from __future__ import unicode_literals
+
 import sys
 from os.path import join
 import locale
@@ -164,14 +165,23 @@ def newsletter_preview(request, slug):
 
         custom_subject = category.newsletter_automatic_subject is False and category.newsletter_subject
         email_subject = custom_subject or (
-            getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category.slug, u'')
-            + remove_markup(cover_article.headline)
+            getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category.slug, '')
         )
+        if not custom_subject:
+            callable_csubject = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category.slug, None)
+            if callable_csubject:
+                callable_splitted = callable_csubject.split('.')
+                callable_function_str = callable_splitted[-1]
+                callable_function = getattr(
+                    __import__('.'.join(callable_splitted[:-1]), fromlist=[callable_function_str]),
+                    callable_function_str,
+                )
+            email_subject += callable_function() if callable_csubject else remove_markup(cover_article.headline)
 
-        email_from = u'%s <%s>' % (
+        email_from = '%s <%s>' % (
             site.name if category.slug in getattr(
                 settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ()
-            ) else (u'%s %s' % (site.name, category.name)),
+            ) else ('%s %s' % (site.name, category.name)),
             settings.NOTIFICATIONS_FROM_ADDR1,
         )
 
@@ -201,7 +211,7 @@ def newsletter_preview(request, slug):
         for suffix in ('any', 'default'):
             is_subscriber_var = 'is_subscriber_' + suffix
             is_subscriber_val = request.GET.get(is_subscriber_var)
-            if is_subscriber_val and is_subscriber_val.lower() in (u'false', u'0'):
+            if is_subscriber_val and is_subscriber_val.lower() in ('false', '0'):
                 context[is_subscriber_var] = False
 
         return render(request, '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug), context)
@@ -212,7 +222,7 @@ def newsletter_preview(request, slug):
             print(exc_type)
             print(exc_value)
             print(traceback.extract_tb(exc_traceback))
-        return HttpResponseServerError(u'ERROR: %s' % e)
+        return HttpResponseServerError('ERROR: %s' % e)
 
 
 @never_cache

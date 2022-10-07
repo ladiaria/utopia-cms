@@ -224,14 +224,23 @@ def build_and_send(
         ga_property_id = getattr(settings, 'GA_PROPERTY_ID', None)
         custom_subject = category.newsletter_automatic_subject is False and category.newsletter_subject
         email_subject = custom_subject or (
-            getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category_slug, u'')
-            + remove_markup(cover_article.headline)
+            getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category_slug, '')
         )
+        if not custom_subject:
+            callable_csubject = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category_slug, None)
+            if callable_csubject:
+                callable_splitted = callable_csubject.split('.')
+                callable_function_str = callable_splitted[-1]
+                callable_function = getattr(
+                    __import__('.'.join(callable_splitted[:-1]), fromlist=[callable_function_str]),
+                    callable_function_str,
+                )
+            email_subject += callable_function() if callable_csubject else remove_markup(cover_article.headline)
 
         email_from = (
             site.name if category_slug in getattr(
                 settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ()
-            ) else (u'%s %s' % (site.name, category.name)),
+            ) else ('%s %s' % (site.name, category.name)),
             settings.NOTIFICATIONS_FROM_ADDR1,
         )
 
@@ -406,10 +415,10 @@ def build_and_send(
                 nl_delivery.subscriber_refused = (nl_delivery.subscriber_refused or 0) + subscriber_refused
                 nl_delivery.save()
             except Exception as e:
-                log.error(u'Delivery stats not updated: %s' % e)
+                log.error('Delivery stats not updated: %s' % e)
 
         log.info(
-            u'%s stats: user_sent: %d, subscriber_sent: %s, user_refused: %d, subscriber_refused: %d' % (
+            '%s stats: user_sent: %d, subscriber_sent: %s, user_refused: %d, subscriber_refused: %d' % (
                 'Simulation' if no_deliver else 'Delivery',
                 user_sent,
                 subscriber_sent,
@@ -430,7 +439,7 @@ class Command(BaseCommand):
             action='store_true',
             default=False,
             dest='no_deliver',
-            help=u'Do not send the emails, only log',
+            help='Do not send the emails, only log',
         )
         parser.add_argument(
             '--offline',
@@ -465,28 +474,28 @@ class Command(BaseCommand):
             action='store',
             type=str,
             dest='starting_from_s',
-            help=u'Send to subscribers only if their email is alphabetically greater than',
+            help='Send to subscribers only if their email is alphabetically greater than',
         )
         parser.add_argument(
             '--starting-from-ns',
             action='store',
             type=str,
             dest='starting_from_ns',
-            help=u'Send to non-subscribers only if their email is alphabetically greater than',
+            help='Send to non-subscribers only if their email is alphabetically greater than',
         )
         parser.add_argument(
             '--partitions',
             action='store',
             type=int,
             dest='partitions',
-            help=u'Used with --mod, divide receipts in this quantity of partitions e.g.: --partitions=5',
+            help='Used with --mod, divide receipts in this quantity of partitions e.g.: --partitions=5',
         )
         parser.add_argument(
             '--mod',
             action='store',
             type=int,
             dest='mod',
-            help=u'When --partitions is set, only take receipts whose id MOD partitions == this value e.g.: --mod=0',
+            help='When --partitions is set, only take receipts whose id MOD partitions == this value e.g.: --mod=0',
         )
         parser.add_argument(
             '--hide-after-content-block',
@@ -503,13 +512,13 @@ class Command(BaseCommand):
         if offline and export_only:
             raise CommandError('--export-* options can not be used with --offline')
         if partitions is None and mod is not None or mod is None and partitions is not None:
-            raise CommandError(u'--partitions must be used with --mod')
+            raise CommandError('--partitions must be used with --mod')
         category_slug = options.get('category_slug')[0]
         try:
             no_deliver = options.get('no_deliver')
             category = category_slug if offline else Category.objects.get(slug=category_slug)
         except Category.DoesNotExist:
-            raise CommandError(u'No category matching the slug given found')
+            raise CommandError('No category matching the slug given found')
         if not export_only:
             h = logging.FileHandler(
                 filename=settings.SENDNEWSLETTER_LOGFILE % (category_slug, today.strftime('%Y%m%d'))

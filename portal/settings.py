@@ -378,6 +378,7 @@ CORE_ENABLE_RELATED_ARTICLES = True
 
 # mongodb database
 MONGODB_DATABASE = 'utopia_cms'
+MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
 # Change to false if the signupwall middleware is removed
 SIGNUPWALL_ENABLED = True

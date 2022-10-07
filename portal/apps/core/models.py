@@ -1622,13 +1622,16 @@ class CategoryHome(Model):
                 home_article.position = i
                 home_article.save()
 
+    def print(self):
+        for ha in self.categoryhomearticle_set.all():
+            print('%d:\t%s\t%s' % (ha.position, ha.article.date_published.date(), ha.article))
     class Meta:
         verbose_name = 'portada de área'
         verbose_name_plural = 'portadas de área'
         ordering = ('category', )
 
 
-def update_category_home(dry_run=False):
+def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run=False):
     """
     Updates categories homes based on articles publishing dates
     """
@@ -1636,7 +1639,7 @@ def update_category_home(dry_run=False):
     # @dry_run: Do not change anything. It forces a debug message when a change would be made.
     # TODO: calculate not fixed count before and better stop algorithm.
     buckets, category_sections, cat_needed_defaults, cat_needed, start_time = {}, {}, {}, {}, time.time()
-    categories, categories_to_fill = Category.objects.filter(slug__in=settings.CORE_UPDATE_CATEGORY_HOMES), []
+    categories, categories_to_fill = Category.objects.filter(slug__in=categories), []
 
     for cat in categories:
         needed = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_NEEDED', {}).get(cat.slug, 10)
