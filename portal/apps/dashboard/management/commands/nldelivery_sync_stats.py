@@ -112,10 +112,19 @@ class Command(BaseCommand):
         parser.add_argument(
             '--no-sync', action='store_true', default=False, dest='no_sync', help='No sync, only print'
         )
+        parser.add_argument(
+            '--sync-rangeonly',
+            action='store_true',
+            default=False,
+            dest='sync_rangeonly',
+            help='Only sync campaign objects if delivery date is in the custom date range that must be given',
+        )
 
     def handle(self, *args, **options):
         analytics = initialize_analyticsreporting()
-        response = get_report(analytics, options.get('start_date'), options.get('end_date'), options.get('campaign'))
+        start_date, end_date = options.get('start_date'), options.get('end_date')
+
+        response = get_report(analytics, start_date, end_date, options.get('campaign'))
         try:
             rows = response['reports'][0]['data']['rows']
         except (KeyError, IndexError):
@@ -123,6 +132,7 @@ class Command(BaseCommand):
         else:
             bar = Bar('Processing', max=len(rows)) if options.get('progress') else None
 
+        no_sync, sync_rangeonly = options.get('no_sync'), start_date and end_date and options.get('sync_rangeonly')
         for row in rows:
             if bar:
                 bar.next()
@@ -132,7 +142,10 @@ class Command(BaseCommand):
 
             event_label, campaign, page_title = row['dimensions']
             count = row['metrics'][0]['values'][0]
-            if options.get('no_sync'):
+
+            if sync_rangeonly and (page_title < start_date or page_title > end_date):
+                continue
+            if no_sync:
                 print('%s, %s, %s: %s' % (campaign, page_title, event_label, count))
                 # print('%s, %s, %s, %s %s:%s : %s' % (
                 #    campaign, page_title, event_label, ga_date, ga_hour, ga_minute, count))
