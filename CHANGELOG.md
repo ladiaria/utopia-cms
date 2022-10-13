@@ -6,7 +6,13 @@
 - dashboard articles and article_views management commands fixed and updated, with also a new dashboard for subscribers only views.
 - Support to hide the first featured publication homepage component in overrided template.
 - Support for mongodb server not allowing notimeout-cursors.
-- CSS font improvements.
+- CSS improvements.
+- Adzone template tag fix when no publication variable is present in context.
+- Support for a custom category NL subject using a callable object configured by settings.
+- core.models.update_category_home function support to update only categories given y param.
+- Support to disable the section link in article's cards.
+- Support to update only delivery objects inside the date range given in nldelivery_sync_stats dashboard app management command.
+- Unicode strings improvements in many python modules.
 
 # version 0.3.1 (2022-09-12)
 
