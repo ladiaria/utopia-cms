@@ -65,13 +65,16 @@ MariaDB [(none)]> CREATE USER 'utopiacms_user'@'localhost' IDENTIFIED BY 'passwo
 MariaDB [(none)]> GRANT ALL PRIVILEGES ON utopiacms.* TO 'utopiacms_user'@'localhost';
 ```
 
-- Create a local settings module based on the sample given and edit the file created with your database settings created above and also fill the `SECRET_KEY` variable using any string or a more secure one generated for example with [this web tool](https://djecrety.ir/).
+- Create a local settings module based on the sample given:
 
 ```
 (utopiacms) user@host:~/utopia-cms $ cd portal
 (utopiacms) user@host:~/utopia-cms/portal $ cp local_settings_sample.py local_settings.py
-(utopiacms) user@host:~/utopia-cms/portal $ vim portal/local_settings.py
 ```
+
+Edit the new file created (`local_settings.py`) to set your new database credentials and also fill the `SECRET_KEY` variable using any string or a more secure one generated for example with [this web tool](https://djecrety.ir/).
+
+Check also if your system locale settings match the default language (`es`) and country (`UY`), override this variables in the `local_settings.py` file if not. In most linux distributions the available locales are defined in the `/etc/locale.gen` file, you should have an uncommented line in this file matching your resultant `LOCALE_NAME` setting, (`es_UY.UTF8` by default, if not overrided as said).
 
 - Create needed tables using Django's `migrate` management command twice, without and with the `--run-syncdb` argument:
 
@@ -90,6 +93,10 @@ MariaDB [(none)]> GRANT ALL PRIVILEGES ON utopiacms.* TO 'utopiacms_user'@'local
 ```
 
 - Configure Nginx for reverse proxying the Django's development server and start it:
+
+Follow the steps under "Trust your SSL settings in chrome" in `docs/TESTING.md`.
+
+Then create your nginx conf file using the sample provided (edit it after copy, if needed):
 
 ```
 (utopiacms) user@host:~/utopia-cms/portal $ sudo cp ../docs/nginx_example_conf/utopia-cms-dev.conf /etc/nginx/conf.d

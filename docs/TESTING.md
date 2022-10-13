@@ -36,7 +36,7 @@ cd docs/ssl
 sudo ./ca.sh
 ```
 
-Runing the above script will generate some files, the `yoogle.com` cert and key should be set in your nginx conf files (don't forget to restart nginx) and the CA should be imported in chrome using "Settings -> Privacy and Security -> Manage certificates -> Authorities -> Import".
+Runing the above script will generate some files, the `yoogle.com` cert and key should be set in your nginx conf files (our nginx samples conf files use the "/etc/nginx/certs" directory to read them, don't forget to restart nginx after copy the files and configure nginx). Also the CA (the `.pem` file generated also with the above script) should be imported in chrome using "Settings -> Privacy and Security -> Manage certificates -> Authorities -> Import", for Firefox is quite the same.
 
 ## Run tests
 

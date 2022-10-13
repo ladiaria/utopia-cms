@@ -1,3 +1,13 @@
+# version 0.3.2 (2022-10-13)
+
+- Install guide updated giving more detail information, nginx conf samples files updated to reflect this new info.
+- Fixed the drag-and-drop feature in edition admin and category newsletter admin to reorder articles.
+- Fixed rest-framework default pagination setting, added also the token auth method there.
+- dashboard articles and article_views management commands fixed and updated, with also a new dashboard for subscribers only views.
+- Support to hide the first featured publication homepage component in overrided template.
+- Support for mongodb server not allowing notimeout-cursors.
+- CSS font improvements.
+
 # version 0.3.1 (2022-09-12)
 
 - Settings support for a non-default quantity of articles needed, by category, to build the category home.

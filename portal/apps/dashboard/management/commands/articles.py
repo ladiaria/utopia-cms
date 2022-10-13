@@ -100,23 +100,25 @@ class Command(BaseCommand):
                     viewed = articles.get(u.id, [])
                     viewed.append(article.id)
                     articles[u.id] = viewed
+                    index_object = None
                     if article.main_section:
                         section_viewed = main_sections.get(u.id, [])
                         section_viewed.append(article.main_section)
                         main_sections[u.id] = section_viewed
-                        if article.main_section.section and article.main_section.section.category:
-                            category_viewed = main_categories.get(u.id, [])
-                            category_viewed.append(article.main_section.section.category)
-                            main_categories[u.id] = category_viewed
+                        if article.main_section.section.slug in getattr(settings, 'DASHBOARD_MAIN_SECTION_SLUGS', []):
+                            index_object = article.main_section.section
+                        elif article.main_section.section and article.main_section.section.category:
+                            index_object = article.main_section.section.category
                         elif (
                             article.main_section.edition.publication
                             and article.main_section.edition.publication.slug
                             not in getattr(settings, "DASHBOARD_EXCLUDE_PUBLICATION_SLUGS", [])
                         ):
+                            index_object = article.main_section.edition.publication
+                        if index_object:
                             category_viewed = main_categories.get(u.id, [])
-                            category_viewed.append(article.main_section.edition.publication)
+                            category_viewed.append(index_object)
                             main_categories[u.id] = category_viewed
-
             except User.DoesNotExist:
                 continue
 
@@ -237,6 +239,13 @@ class Command(BaseCommand):
                         date_published__gte=last_month_first,
                         date_published__lte=dt_until,
                     ).count()
+            elif isinstance(ar_id[0], Section):
+                articles_count = 0
+                category_or_publication = ar_id[0]
+                articles_count = category_or_publication.articles_core.filter(
+                    date_published__gte=last_month_first,
+                    date_published__lte=dt_until,
+                ).count()
             else:
                 continue
 

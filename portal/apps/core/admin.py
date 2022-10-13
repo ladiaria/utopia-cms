@@ -91,6 +91,7 @@ class HomeTopArticleInline(TabularInline):
     raw_id_fields = ('article', )
     verbose_name_plural = 'Nota de tapa y titulines'
     formset = TopArticleRelInlineFormSet
+    classes = ('dynamic-order',)
 
     def get_queryset(self, request):
         qs = super(HomeTopArticleInline, self).get_queryset(request)
@@ -98,11 +99,11 @@ class HomeTopArticleInline(TabularInline):
 
     class Media:
         # jquery loaded again (admin uses custom js namespaces)
-        # TODO: check this Media class (is collectstatic seeing it?)
         js = (
             'admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'),
             'js/jquery-ui-1.12.1.custom.min.js',
-            'js/homev2/edition_admin.js',
+            'js/homev2/dynamic_edition_admin.js',
+            'js/RelatedObjectLookupsCustom.js',
         )
         css = {'all': ('css/home_admin.css', )}
 
@@ -867,8 +868,10 @@ class CategoryNewsletterArticleInline(TabularInline):
     extra = 20
     max_num = 20
     form = CategoryNewsletterArticleForm
+    fields = ('featured', 'article', 'order',)
     raw_id_fields = ('article', )
     verbose_name_plural = 'Artículos en newsletter'
+    classes = ('dynamic-order',)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Overrided from django/contrib/admin/options.py
@@ -893,6 +896,12 @@ class CategoryNewsletterArticleInline(TabularInline):
         return db_field.formfield(**kwargs)
 
     class Media:
+        js = (
+            'admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'),
+            'js/jquery-ui-1.12.1.custom.min.js',
+            'js/homev2/dynamic_edition_admin.js',
+            'js/RelatedObjectLookupsCustom.js',
+        )
         css = {'all': ('css/category_newsletter.css', )}
 
 

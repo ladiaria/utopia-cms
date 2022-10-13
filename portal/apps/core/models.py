@@ -1075,6 +1075,7 @@ class ArticleBase(Model, CT):
 
     def get_app_body(self):
         """ Returns the body formatted for the app """
+        # TODO: raising encoding error, fix asap.
         return render_to_string('article/app_body.html', {'article': self})
 
     def surl(self):

@@ -107,7 +107,7 @@ class UrlSerializer(serializers.ModelSerializer):
 class SubscriberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscriber
-        fields = ('user_email', 'newsletters')
+        fields = ('__str__', 'user_email', 'is_subscriber_any', 'newsletters')
 
 
 class ExchangeSerializer(serializers.ModelSerializer):

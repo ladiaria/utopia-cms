@@ -17,6 +17,7 @@ tables = (
     'audio_statistics',
     'categories',
     'article_views',
+    'article_views_subscribers_only',
     'audio_statistics',
 )
 

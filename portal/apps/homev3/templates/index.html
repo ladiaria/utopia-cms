@@ -56,7 +56,7 @@
     {% for publication_slug in home_publications %}{% render_publication_row publication_slug %}{% endfor %}
   {% endwith %}
 
-  {% if featured_publications.0 %}
+  {% if not hide_first_featured_publication and featured_publications.0 %}
     {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.0 %}{% endwith %}
   {% endif %}
 
