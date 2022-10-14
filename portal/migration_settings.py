@@ -242,6 +242,7 @@ FIRST_DAY_OF_WEEK_CAL = (FIRST_DAY_OF_WEEK - 1) % 7
 HOME_PUBLICATIONS = []
 
 HASHIDS_SALT = 'top_secret_salt_phrase'
+USER_HASHID_SALT = 'top_secret_salt_phrase_for_users_ids_only'
 
 # A dictionary of urlconf module paths, keyed by their subdomain
 SUBDOMAIN_URLCONFS = {

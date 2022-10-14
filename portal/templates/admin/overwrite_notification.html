@@ -1,0 +1,25 @@
+{% extends 'admin/change_list.html' %}
+{% load static %}
+    {% block object-tools %}
+    {{ block.super }}
+
+    <script>
+    {% if messages %}
+        let errors='';
+        let ids = null;
+            {% for message in messages %}
+               {% if 'wn' in message.tags %} errors += "{{ message.tags }}";
+               {% endif %}
+            {% endfor %}
+            if(errors != '')
+            {
+                ids = errors.split("wn")[1].split('error')[0].split(' ')[0].split(',');
+                django.jQuery(document).ready(function(){
+                [...ids].forEach(function(item){django.jQuery("input[value="+item+"]").parents("tr").css({"background-color": "red", "color": "white" })});
+                });
+            }
+    {% endif %}
+    </script>
+
+
+{% endblock %}

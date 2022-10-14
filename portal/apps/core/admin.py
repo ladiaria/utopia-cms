@@ -5,18 +5,30 @@ from __future__ import unicode_literals
 
 from datetime import date, timedelta
 from requests.exceptions import ConnectionError
+import json
+from urllib.parse import urljoin
+
+from django_markdown.widgets import MarkdownWidget
+from actstream.models import Action
+from tagging.models import Tag, TaggedItem
+from tagging.forms import TagField
+from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
 
 from django.conf import settings
 from django.conf.urls import url
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 from django.contrib import admin
+from django.contrib.auth.models import Group
+from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
 from django.contrib.admin.options import get_ul_class
 from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
+from django.utils import timezone
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
 from django.shortcuts import get_object_or_404
@@ -24,15 +36,8 @@ from django.template.defaultfilters import slugify
 from django.utils.text import Truncator
 from django.utils.translation import ugettext as _
 
-from django_markdown.widgets import MarkdownWidget
-
-from actstream.models import Action
-
-from .tasks import update_category_home
-from tagging.models import Tag, TaggedItem
-from tagging.forms import TagField
-from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
 from core.templatetags.ldml import ldmarkup, cleanhtml
+
 from .models import (
     Article,
     ArticleExtension,
@@ -53,7 +58,10 @@ from .models import (
     CategoryNewsletterArticle,
     ArticleUrlHistory,
     BreakingNewsModule,
+    DeviceSubscribed,
+    PushNotification,
 )
+from .tasks import update_category_home, send_push_notification
 from .utils import update_article_url_in_coral_talk, smart_quotes
 
 
@@ -980,6 +988,93 @@ class TaggedItemAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+class DeviceSubscribedAdmin(admin.ModelAdmin):
+    model = DeviceSubscribed
+    list_display = ('user', 'time_created', 'browser')
+    readonly_fields = ('user', 'time_created', 'subscription_info')
+    search_fields = ['subscription_info', 'user__username', 'user__email', 'user__first_name', 'user__last_name']
+
+    def browser(self, obj):
+        endpoint = json.loads(obj.subscription_info)['endpoint']
+        if 'updates.push.services.mozilla.com' in endpoint:
+            return 'Mozilla Firefox'
+        elif 'fcm.googleapis.com' in endpoint:
+            return 'Google Chrome'
+        else:
+            return 'Navegador desconocido'
+
+
+class PushNotificationAdmin(admin.ModelAdmin):
+    model = PushNotification
+    list_display = ('message', 'article', 'sent', 'tag')
+    raw_id_fields = ('article',)
+    actions = ['send_me_push_notification', 'send_push_notification_to_all']
+    change_list_template = 'admin/overwrite_notification.html'
+    readonly_fields = ('sent', 'tag')
+
+    def send_notifications(self, request, queryset, all_users=True):
+        def tag_as_id(notification, tag=None):
+            notification.tag = notification.id if not tag else tag
+
+        messages_sent = list(queryset.filter(sent__isnull=False).values_list('id', flat=True))
+        if len(messages_sent) > 0:
+            messages_sent = ','.join([str(item) for item in messages_sent])
+            self.message_user(
+                request,
+                'Las notificaciones marcadas ya fueron enviadas, no se permite el re-envío',
+                level=messages.ERROR,
+                extra_tags='wn' + str(messages_sent),
+            )
+            return HttpResponseRedirect("./")
+        for ms in queryset:
+            with transaction.atomic():
+                if ms.overwrite:
+                    ar_id = ms.article.id
+                    try:
+                        tag = PushNotification.objects.filter(article__id=ar_id, sent__isnull=False).latest('sent').tag
+                    except PushNotification.DoesNotExist:
+                        tag = None
+                    if tag:
+                        tag_as_id(ms, tag)
+                    else:
+                        tag_as_id(ms)
+                else:
+                    tag_as_id(ms)
+                send_push_notification(
+                    ms.message,
+                    ms.tag,
+                    urljoin(settings.SITE_URL, ms.article.get_absolute_url()),
+                    ms.article.photo.image.url if ms.article.photo else None,
+                    None if all_users else request.user,
+                )
+                ms.sent = timezone.now()
+                ms.save()
+                self.message_user(
+                    request,
+                    'Las notificaciones selecciondas fueron correctamente agendadas para envío',
+                    level=messages.SUCCESS,
+                )
+
+    def send_push_notification_to_all(self, request, queryset):
+        # allow only to group members defined by setting
+        restrict_group = getattr(settings, 'CORE_PUSH_NOTIFICATIONS_SENDALL_RESTRICT_GROUP', None)
+        if (
+            not request.user.is_superuser and restrict_group
+            and Group.objects.get(name=restrict_group) not in request.user.groups.all()
+        ):
+            self.message_user(request, 'Permisos insuficientes para ejecutar esta acción', level=messages.ERROR)
+        else:
+            self.send_notifications(request, queryset)
+
+    def send_me_push_notification(self, request, queryset):
+        self.send_notifications(request, queryset, False)
+
+    send_me_push_notification.short_description = \
+        "Enviar las notificaciones seleccionadas solamente al usuario en la sesión actual (sólo a mi)."
+
+    send_push_notification_to_all.short_description = "Enviar las notificaciones seleccionadas a todos los usuarios."
+
+
 site.register(Article, ArticleAdmin)
 site.register(Edition, EditionAdmin)
 site.register(Journalist, JournalistAdmin)
@@ -997,3 +1092,5 @@ site.unregister(Tag)
 site.unregister(TaggedItem)
 site.register(Tag, TagAdmin)
 site.register(TaggedItem, TaggedItemAdmin)
+site.register(DeviceSubscribed, DeviceSubscribedAdmin)
+site.register(PushNotification, PushNotificationAdmin)

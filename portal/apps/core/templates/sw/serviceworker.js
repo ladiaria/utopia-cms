@@ -47,3 +47,46 @@ self.addEventListener('activate', event => {
     })
   );
 });
+
+{% if push_notifications_keys_set %}
+  self.addEventListener('push', function(e) {
+    if (e.data) {
+      const splited_message = e.data.text().split('|');
+      body = splited_message[0];
+      tag = splited_message[1];
+      link = splited_message[2];
+    } else {
+      body = '{{ site.name }}.';
+    }
+
+    var options = {
+      body: body,
+      tag: tag,
+      icon: '/static/meta/utopia-192x192.png',
+      vibrate: [100, 50, 100],
+      data: {
+        link: link
+      },
+      actions: [
+        {action: 'explore', title: 'Ir al sitio web', icon: '/static/meta/utopia-192x192.png'},
+        {action: 'close', title: 'Close', icon: '/static/meta/utopia-192x192.png'}
+      ]
+    };
+    e.waitUntil(
+      self.registration.showNotification('{{ site.name }}', options)
+    );
+  });
+
+  self.addEventListener('notificationclick', event => {
+    const notification = event.notification;
+    const link = notification.data.link;
+    const action = event.action;
+
+    if (action === 'close') {
+      notification.close();
+    } else {
+      clients.openWindow(link);
+      notification.close();
+    }
+  });
+{% endif %}

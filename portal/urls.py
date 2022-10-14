@@ -20,6 +20,7 @@ from core.models import Article, Publication, Category, Section, Journalist, get
 from core.views.edition import edition_detail, edition_list, edition_list_ajax
 from core.views.supplement import supplement_list
 from core.views.sw import service_worker
+from core.views.subscribe import subscribe
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
 from thedaily.models import Subscriber
@@ -242,6 +243,7 @@ urlpatterns = [
 
     # Service Worker
     url(r'^sw\.js$', service_worker, name='serviceworker'),
+    url(r'^subscribe/$', subscribe, name='subscribe'),
 
     # Custom redirects
     url(r'^suscribite-por-telefono/$', RedirectView.as_view(url='/usuarios/suscribite-por-telefono/')),

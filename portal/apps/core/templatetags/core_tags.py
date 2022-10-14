@@ -6,6 +6,8 @@ import os
 import random
 from datetime import date, datetime, timedelta
 
+from hashids import Hashids
+
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.template import Library, Node, TemplateSyntaxError, Variable, loader
@@ -20,6 +22,7 @@ from core.utils import datetime_timezone
 
 
 register = Library()
+hashids = Hashids(settings.USER_HASHID_SALT, 32)
 
 
 @register.simple_tag(takes_context=True)
@@ -424,6 +427,11 @@ def initials(value, args=False):
 @register.filter(name='anios')
 def anios(last):
     return list(range(2009, last))
+
+
+@register.filter(name='user_hashid')
+def user_hashid(user_id):
+    return hashids.encode(user_id)
 
 
 @register.filter

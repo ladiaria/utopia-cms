@@ -1,3 +1,8 @@
+# version 0.3.3 (2022-10-14)
+
+- Push notifications support for registered users, staff users can send push notifications related to an Article.
+- Dashboard app updates.
+
 # version 0.3.2 (2022-10-13)
 
 - Install guide updated giving more detail information, nginx conf samples files updated to reflect this new info.

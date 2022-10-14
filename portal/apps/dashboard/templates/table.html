@@ -105,7 +105,7 @@
                   <td>{{ category }}</td>
                   <td>{{ articles_total }}</td>
                   <td>{{ score }}</td>
-                  <td>{{ score_views|floatformat:2 }}</td>
+                  <td>{{ score_views|floatformat:0 }}</td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -146,7 +146,7 @@
                   <th data-sortable="true">Área o publicación</th>
                   <th data-sortable="true">Cant. artículos</th>
                   <th data-sortable="true">Visitas</th>
-                  <th data-sortable="true">Visitas/Artículo</th>
+                  <th data-sortable="true" data-sorter="numericOnly">Visitas/Artículo</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,7 +156,7 @@
                     <td>{{ category }}</td>
                     <td>{{ articles_total }}</td>
                     <td>{{ views }}</td>
-                    <td>{{ articles_views|floatformat:2 }}</td>
+                    <td>{{ articles_views|floatformat:0 }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
@@ -209,7 +209,7 @@
                     <td>{{ articles_total }}</td>
                     <td>{{ unique_viewers }}</td>
                     <td>{{ views }}</td>
-                    <td>{{ articles_views|floatformat:2 }}</td>
+                    <td>{{ articles_views|floatformat:0 }}</td>
                   </tr>
                 {% endfor %}
               </tbody>

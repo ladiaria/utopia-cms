@@ -26,6 +26,19 @@
       </section>
     </form>
 
+    {% if push_notifications_keys_set %}
+      <section class="ld-block section scrollspy" id="notificaciones">
+        <h2 class="ld-title ld-title--underlined">Notificaciones</h2>
+        <input type="checkbox" id="allow_notification" name="allow_notification" class="filled-in">
+        <label for="allow_notification">Permitir notificaciones en este dispositivo.</label>
+        <br> <br> <br>
+        <div class="row">
+          <input class="ut-btn" type="submit" name="allow_notification-btn" id="allow_notification-btn" value="Guardar cambios"/>
+        </div>
+        {# TODO: additional info like "notifications will not be received if the device is set to block them" #}
+      </section>
+    {% endif %}
+
     <section class="ld-block section scrollspy" id="lista-lectura">
       <h2 class="ld-title ld-title--underlined">Lista de lectura</h2>
       <div class="row ld-profile-row">
@@ -109,6 +122,9 @@
       <li><a href="#suscripciones">Suscripciones</a></li>
       <li><a href="#newsletters">Newsletters</a></li>
       <li><a href="#ld-comunicaciones">Comunicaciones</a></li>
+      {% if push_notifications_keys_set %}
+        <li><a href="#notificaciones">Notificaciones</a></li>
+      {% endif %}
       <li><a href="#lista-lectura">Lista de lectura</a></li>
       {% block right_menu_extra %}{% endblock %}
       <li><a href="#google">Ingreso con Google</a></li>
@@ -123,19 +139,73 @@
 {% block javascript %}
   <script defer src="{% static 'materialize/js/scrollspy.js' %}"></script>
   <script defer src="{% static 'materialize/js/pushpin.js' %}"></script>
+  {% if not CORE_PUSH_NOTIFICATIONS_OFFER and push_notifications_keys_set %}
+    <script src="{% static 'js/push_notifications.js' %}"></script>
+  {% endif %}
   <script>
+    {% if push_notifications_keys_set %}
+      {% if not CORE_PUSH_NOTIFICATIONS_OFFER %}
+        var applicationServerPublicKey = "{{ CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY }}";
+        var subscription_to_delete = null;
+      {% else %}
+        if(getCookie('notifyme', 1) == "false") {
+          {# otherwise this vars have already been set in base template #}
+          var applicationServerPublicKey = "{{ CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY }}";
+          var subscription_to_delete = null;
+        }
+      {% endif %}
+    {% endif %}
     $(document).ready(function(){
       $('.scrollspy').scrollSpy();
       var footerHeight = $('.footer-portada').height();
       var mainHeight = $('#main-content').height();
       var tableHeight = $('.table-of-contents').height();
-      var bottomOffset = mainHeight - footerHeight -tableHeight;
+      var bottomOffset = mainHeight - footerHeight - tableHeight;
       $('.table-of-contents').pushpin({
         offset: 75,
         top: 320,
         bottom: bottomOffset,
         scrollOffset: 0
       });
+      {% if push_notifications_keys_set %}
+        $('#allow_notification-btn').click(function(){
+          setCookie('show_msg', "true", 1);
+          if($('#allow_notification').prop('checked') && getCookie('notifyme', 1) == "false"){
+            rp();
+          } else if(!$('#allow_notification').prop('checked') && getCookie('notifyme', 1) == "true"){
+            // TODO: DELETE can return 400 (and then a js error) if there is no DeviceSubscribed to remove.
+            unsubscribeUser();
+          }
+        });
+        // push notifications checkbox event
+        $('#allow_notification').change(function(){
+          navigator.permissions.query({name:'notifications'}).then(function(result){
+            if(result.state == 'denied'){
+              // TODO: change alert merging with UX tooltip/new-text design
+              alert('Debe habilitar las notificaciones en su navegador.');
+              $('#allow_notification').prop("checked", false);
+              return;
+            }
+          });
+        });
+        function setNotificationCheckStatus(){
+          navigator.serviceWorker.getRegistration()
+          .then(reg => reg.pushManager.getSubscription())
+          .then(subscription => {
+            if(getCookie('notifyme', 1) == null){
+              setCookie('notifyme', "false", 1);
+            }
+            if(subscription && getCookie('notifyme', 1) == "true"){
+              $('#allow_notification').prop("checked", true);
+            }else{
+              $('#allow_notification').prop("checked", false);
+            }
+          }).catch(err => {
+            console.log('Error unsubscribing', err);
+          });
+        }
+        setNotificationCheckStatus();
+      {% endif %}
     });
   </script>
 {% endblock %}

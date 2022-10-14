@@ -99,11 +99,16 @@ def publications(request):
 
 def main_menus(request):
     """
-    Fills context variables to be shown or needed in the main menus.
+    Fills context variables to be shown or needed in the main menus and other features.
     Also fill another context variables using to the visualization of many UX "modules".
     """
     result = {
         'MENU_CATEGORIES': Category.objects.filter(order__isnull=False),
+        'CORE_PUSH_NOTIFICATIONS_OFFER': settings.CORE_PUSH_NOTIFICATIONS_OFFER,
+        'CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY': settings.CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY,
+        'push_notifications_keys_set': bool(
+            settings.CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY and settings.CORE_PUSH_NOTIFICATIONS_VAPID_PRIVKEY
+        ),
         'MOBILE_NAV_EXTRA_TEMPLATE': getattr(settings, 'HOMEV3_MOBILE_NAV_EXTRA_TEMPLATE', None),
         'LOGIN_NO_REDIRECT_URLPATHS': ['/usuarios/sesion-cerrada/', '/usuarios/error/login/', '/admin/logout/'],
         'MENU_PUBLICATIONS':

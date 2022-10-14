@@ -1,5 +1,5 @@
 {% spaceless %}
-{% load static homev3_tags thedaily_tags compress %}
+{% load static core_tags homev3_tags thedaily_tags compress %}
 {% endspaceless %}<!doctype html>
 {% block html %}
 <!-- Legacy browsers support  -->
@@ -213,7 +213,99 @@
     <!-- JavaScript -->
     <script src="{% static 'js/index.js' %}"></script>
     <script src="{% static 'admin/js/jquery.min.js' %}"></script>
+    {% if user.is_authenticated and CORE_PUSH_NOTIFICATIONS_OFFER and push_notifications_keys_set %}
+      <script src="{% static 'js/push_notifications.js' %}"></script>
+      <script type="text/javascript">
+
+        function confirmFunction () {
+          rp();
+          $('.pwa-prompt').hide();
+        }
+
+        function cancelFunction () {
+          $('.pwa-prompt').hide();
+          setCookie('notifyme', "false", 1);
+          deleteCookie('home_arriving', 1);
+        }
+
+        $(function(){
+          navigator.permissions.query({name: 'notifications'}).then(function(result) {
+
+            if (result.state == 'granted' || result.state == 'prompt') {
+
+              if (getCookie('notifyme', 1) == null) {
+
+                let now = new Date();
+                const datesAreOnSameDay = (first, second) =>
+                  first.getFullYear() === second.getFullYear() &&
+                  first.getMonth() === second.getMonth() &&
+                  first.getDate() === second.getDate();
+
+                if (window.location.pathname == '/') {
+                  if (!getCookie('home_arriving', 1)) {
+                    // This is the first time in the home page, then set the moment variable to 1 and the time
+                    // variable to current time.
+                    setCookie('home_arriving', JSON.stringify({'moment': 1, 'time': now}), 1);
+                  } else {
+                    // 2nd time or more.
+                    let home_arriving_value = JSON.parse(getCookie('home_arriving', 1));
+                    if (
+                      home_arriving_value.moment == 1 && datesAreOnSameDay(new Date(home_arriving_value.time), now)
+                    ) {
+                      // 2nd time in the same day, offer to allow notifications.
+                      $('.pwa-prompt').show();
+                      setCookie('home_arriving', JSON.stringify({'moment': 2, 'time': now}), 1);
+                    } else {
+                      // Neither first nor 2nd in the same day, so, check if last arrived date is +24h ago;
+                      // to only offer allow notifications once per day.
+                      if (new Date(home_arriving_value.time).getDate() + (24 * 60 * 60 * 1000) < now.getTime()) {
+                        setCookie('home_arriving', JSON.stringify({'moment': 1, 'time': now}), 1);
+                      }
+                    }
+                  }
+                }
+
+                if (
+                  getCookie(userName) == 'null'
+                  || getCookie('home_arriving', 1) && JSON.parse(getCookie('home_arriving', 1)).moment == 1
+                ) {
+                  // TODO: check this condition with UX
+                  // If current location contains 'utm_source=newsletter' I got here from NL, so I will show the push
+                  // notification offer only if also the homepage was visited once.
+                  if (window.location.href.search('utm_source=newsletter') > 0) {
+                    let targetDiv = $('.pwa-prompt')
+                    if (targetDiv.length) {
+                      targetDiv.show();
+                      // set home arrived to moment 2 to wait at least 24hs to offer again
+                      setCookie('home_arriving', JSON.stringify({'moment': 2, 'time': now}), 1);
+                    }
+                  }
+                }
+
+              }
+
+            } else {
+              deleteCookie('notifyme', 1);
+              deleteCookie('home_arriving', 1);
+            }
+
+          });
+        });
+      </script>
+    {% endif %}
     <script type="text/javascript">
+
+      {% if user.is_authenticated and CORE_PUSH_NOTIFICATIONS_OFFER and push_notifications_keys_set %}
+        var userName = '{{ user.id|user_hashid }}';
+        let userNameFromCookie = getCookie(userName);
+        if(userNameFromCookie == null)
+          setCookie(userName, null);
+        if(getCookie('notifyme', 1) != "false") {
+          var applicationServerPublicKey = "{{ CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY }}";
+          var subscription_to_delete = null;
+        }
+      {% endif %}
+
       $(function(){
         $('.btn-close').click(function(){
           var notification = $(this).parent().parent();
@@ -227,6 +319,7 @@
         });
         {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
       });
+
     </script>
     {% block header_scripts %}{% endblock %}
     <!-- End JavaScript -->
@@ -253,6 +346,21 @@
       <header>
         {% render_header %}
       </header>
+      <div class="pwa-prompt" style="display:none;">
+        <span class="title">
+          <svg width="45" height="54" viewBox="0 0 45 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M38.75 37.291L44.209 42.75V45.416H0.791016V42.75L6.25 37.291V23.834C6.25 19.6022 7.30794 15.9206 9.42383 12.7891C11.6243 9.65755 14.6289 7.6263 18.4375 6.69531V4.79102C18.4375 3.69076 18.8184 2.75977 19.5801 1.99805C20.3418 1.15169 21.3151 0.728516 22.5 0.728516C23.6849 0.728516 24.6582 1.15169 25.4199 1.99805C26.1816 2.75977 26.5625 3.69076 26.5625 4.79102V6.69531C30.3711 7.6263 33.3333 9.65755 35.4492 12.7891C37.6497 15.9206 38.75 19.6022 38.75 23.834V37.291ZM22.5 53.541C20.9766 53.541 19.6647 53.0332 18.5645 52.0176C17.5488 51.002 17.041 49.7324 17.041 48.209H27.959C27.959 49.6478 27.4089 50.9173 26.3086 52.0176C25.2083 53.0332 23.9388 53.541 22.5 53.541Z" fill="#262626"/>
+          </svg>
+          Activá nuestras notificaciones y
+        </span>
+        <span class="subtitle">enterate antes</span>
+        <div class="actions">
+          <span class="ut-btn" onclick="return confirmFunction();">Activar</span>
+          <span class="dismiss" style="cursor:pointer;" onclick="return cancelFunction();">No, gracias</span>
+        </div>
+        {# TODO: validate this message with UX because this div can appear again "tomorrow". #}
+        {# <span class="notice">Ésta es la única vez que vas a ver este mensaje</span> #}
+      </div>
     {% endblock %}
 
     <!-- Mobile Subscribe notice for logged-in non-subscribers -->

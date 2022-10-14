@@ -2073,3 +2073,23 @@ def get_current_feeds():
         ],
         tables=['core_articlerel'],
     ).distinct()
+
+
+class DeviceSubscribed(Model):
+    subscription_info = CharField(max_length=500)
+    time_created = DateTimeField(auto_now_add=True)
+    user = ForeignKey(User)
+
+    def __unicode__(self):
+        return str(self.time_created)
+
+
+class PushNotification(Model):
+    message = CharField(u'Mensaje', max_length=500)
+    article = ForeignKey(Article, verbose_name=u'Articulo')
+    sent = DateTimeField(u'Fecha de envio', null=True)
+    tag = CharField(u'Tag', max_length=15, null=True, blank=True)
+    overwrite = BooleanField(u'Sobrescribir notificacion', default=False)
+
+    def __unicode__(self):
+        return self.message

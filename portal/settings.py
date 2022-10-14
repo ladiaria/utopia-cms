@@ -243,6 +243,7 @@ FIRST_DAY_OF_WEEK_CAL = (FIRST_DAY_OF_WEEK - 1) % 7
 HOME_PUBLICATIONS = []
 
 HASHIDS_SALT = 'top_secret_salt_phrase'
+USER_HASHID_SALT = 'top_secret_salt_phrase_for_users_ids_only'
 
 # A dictionary of urlconf module paths, keyed by their subdomain
 SUBDOMAIN_URLCONFS = {
@@ -386,6 +387,21 @@ CORE_ENABLE_RELATED_ARTICLES = True
 # mongodb database
 MONGODB_DATABASE = 'utopia_cms'
 MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
+
+# push notifications
+CORE_PUSH_NOTIFICATIONS_OFFER = True  # offer to allow push notifications on all pages
+CORE_PUSH_NOTIFICATIONS_VAPID_PRIVKEY = None
+CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY = None
+CORE_PUSH_NOTIFICATIONS_VAPID_CLAIMS = {"sub": "mailto:YourNameHere@example.com"}
+CORE_PUSH_NOTIFICATIONS_LOGFILE = '/var/log/utopiacms/push_notifications.log'
+CORE_PUSH_NOTIFICATIONS_OPTIONS = {
+    'icon': '/static/meta/utopia-192x192.png',
+    'vibrate': [100, 50, 100],
+    'actions': [
+        {'action': 'explore', 'title': 'Ir al sitio web'},
+        {'action': 'close', 'title': 'Cerrar'},
+    ],
+}
 
 # Change to false if the signupwall middleware is removed
 SIGNUPWALL_ENABLED = True

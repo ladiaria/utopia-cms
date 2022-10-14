@@ -34,9 +34,9 @@ def index(request):
     if not is_admin:
         user_groups = request.user.groups.all()
         is_seller = get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None)) in user_groups
-        is_financial = get_object_or_404(
-            Group, name=getattr(settings, 'DASHBOARD_FINANCIAL_GROUP', None)
-        ) in user_groups
+        is_financial = (
+            get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_FINANCIAL_GROUP', None)) in user_groups
+        )
     return (
         'index.html',
         {
@@ -60,9 +60,8 @@ def load_table(request, table_id):
         # Alow only admins or member of seller group
         if not (
             request.user.is_superuser
-            or get_object_or_404(
-                Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None)
-            ) in request.user.groups.all()
+            or get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None))
+            in request.user.groups.all()
         ):
             return HttpResponseForbidden()
 
