@@ -2076,12 +2076,12 @@ def get_current_feeds():
 
 
 class DeviceSubscribed(Model):
-    subscription_info = CharField(max_length=500)
+    subscription_info = CharField(max_length=1024)
     time_created = DateTimeField(auto_now_add=True)
     user = ForeignKey(User)
 
-    def __unicode__(self):
-        return str(self.time_created)
+    def __str__(self):
+        return "%s %d (user %s)" % (self.__class__.__name__, self.id, self.user)
 
 
 class PushNotification(Model):
@@ -2091,5 +2091,5 @@ class PushNotification(Model):
     tag = CharField(u'Tag', max_length=15, null=True, blank=True)
     overwrite = BooleanField(u'Sobrescribir notificacion', default=False)
 
-    def __unicode__(self):
-        return self.message
+    def __str__(self):
+        return "%s - %s" % (self.tag, self.message)

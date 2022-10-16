@@ -1,3 +1,13 @@
+# From version 0.3.3 to 0.3.4
+
+```
+git pull
+git checkout 0.3.4
+cd portal
+# activate your virtual env
+./manage.py migrate
+```
+
 # From version 0.3.2 to 0.3.3
 
 ```

@@ -1,3 +1,8 @@
+# version 0.3.4 (2022-10-15)
+
+- Fix subscription_info field length in DeviceSubscribed model.
+- "str" methods improvements also in DeviceSubscribed model.
+
 # version 0.3.3 (2022-10-14)
 
 - Push notifications support for registered users, staff users can send push notifications related to an Article.
