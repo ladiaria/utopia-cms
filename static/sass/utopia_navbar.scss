@@ -1578,10 +1578,10 @@ body.interior {
 }
 
 .pwa-prompt {
-    max-width: 327px;
+    max-width: 370px;
     width: 90%;
     background: #EDF6F5;
-    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    box-shadow: 2px 2px 9px rgba(0, 0, 0, 0.25);
     padding:20px;
     box-sizing: border-box;
     position: fixed;
@@ -1589,19 +1589,23 @@ body.interior {
     top:60px;
     text-align: center;
     z-index: 1;
+    border-radius: 0 0 8px 8px;
 
     .title {
-        display: flex;
         font-family: 'Meta Serif', serif;
-        font-size: 20px;
-        line-height: 26px;
-        font-weight: bold;
+        font-size: 24px;
+        line-height: 30px;
+        font-weight: normal;
         max-width: 220px;
         margin: 0 auto 5px;
+        text-align: center;
+        display: block;
 
-        svg {
-            vertical-align: top;
-        }
+
+    }
+    svg {
+        display: block;
+        margin:0 auto 10px;
     }
     .subtitle {
         display: inline-block;
@@ -1611,14 +1615,12 @@ body.interior {
         padding: 0 20px;
     }
     .actions {
-        margin: 20px 0;
+        margin: 16px 0 0;
+        padding-top:16px;
+        border-top:1px solid rgba(164, 164, 164, 0.4);
 
-        .dismiss {
-            display: inline-block;
+        .ut-btn + .ut-btn {
             margin-left: 20px;
-            font-size: 15px;
-            text-transform: uppercase;
-            font-weight: bold;
         }
     }
     .notice {

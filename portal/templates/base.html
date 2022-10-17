@@ -347,16 +347,18 @@
         {% render_header %}
       </header>
       <div class="pwa-prompt" style="display:none;">
-        <span class="title">
-          <svg width="45" height="54" viewBox="0 0 45 54" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M38.75 37.291L44.209 42.75V45.416H0.791016V42.75L6.25 37.291V23.834C6.25 19.6022 7.30794 15.9206 9.42383 12.7891C11.6243 9.65755 14.6289 7.6263 18.4375 6.69531V4.79102C18.4375 3.69076 18.8184 2.75977 19.5801 1.99805C20.3418 1.15169 21.3151 0.728516 22.5 0.728516C23.6849 0.728516 24.6582 1.15169 25.4199 1.99805C26.1816 2.75977 26.5625 3.69076 26.5625 4.79102V6.69531C30.3711 7.6263 33.3333 9.65755 35.4492 12.7891C37.6497 15.9206 38.75 19.6022 38.75 23.834V37.291ZM22.5 53.541C20.9766 53.541 19.6647 53.0332 18.5645 52.0176C17.5488 51.002 17.041 49.7324 17.041 48.209H27.959C27.959 49.6478 27.4089 50.9173 26.3086 52.0176C25.2083 53.0332 23.9388 53.541 22.5 53.541Z" fill="#262626"/>
-          </svg>
-          Activá nuestras notificaciones y
-        </span>
-        <span class="subtitle">enterate antes</span>
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g clip-path="url(#clip0_722_4218)">
+            <path d="M34.8333 31.1667V21.6333C33.9167 21.8167 33 22 32.0833 22H31.1667V33H12.8333V20.1667C12.8333 15.0333 16.8667 11 22 11C22.1833 8.61666 23.2833 6.59999 24.75 4.94999C24.2 4.21666 23.1 3.66666 22 3.66666C19.9833 3.66666 18.3333 5.31666 18.3333 7.33332V7.88332C12.8333 9.53332 9.16667 14.4833 9.16667 20.1667V31.1667L5.5 34.8333V36.6667H38.5V34.8333L34.8333 31.1667ZM18.3333 38.5C18.3333 40.5167 19.9833 42.1667 22 42.1667C24.0167 42.1667 25.6667 40.5167 25.6667 38.5H18.3333Z" fill="#262626"/>
+            <path d="M38.5 11.9167C38.5 15.4 35.5667 18.3333 32.0834 18.3333C28.6 18.3333 25.6667 15.4 25.6667 11.9167C25.6667 8.43333 28.6 5.5 32.0834 5.5C35.5667 5.5 38.5 8.43333 38.5 11.9167Z" fill="#FE5B4C"/>
+          </g>
+          <defs><clipPath id="clip0_722_4218"><rect width="44" height="44" fill="white"/></clipPath></defs>
+          <title>Ícono campana</title>
+        </svg>
+        <span class="title">Activá nuestras notificaciones y<br>enterate antes</span>
         <div class="actions">
           <span class="ut-btn" onclick="return confirmFunction();">Activar</span>
-          <span class="dismiss" style="cursor:pointer;" onclick="return cancelFunction();">No, gracias</span>
+          <span class="ut-btn ut-btn-outline" style="cursor:pointer;" onclick="return cancelFunction();">No, gracias</span>
         </div>
         {# TODO: validate this message with UX because this div can appear again "tomorrow". #}
         {# <span class="notice">Ésta es la única vez que vas a ver este mensaje</span> #}
