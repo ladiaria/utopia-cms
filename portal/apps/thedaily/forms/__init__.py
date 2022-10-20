@@ -274,7 +274,7 @@ class SubscriberForm(ModelForm):
                 'Datos personales',
                 Field('first_name', readonly=True),
                 Field('email', readonly=True),
-                Field('telephone', readonly=True),
+                Field('telephone'),
             ),
         )
         super(SubscriberForm, self).__init__(*args, **kwargs)
@@ -346,7 +346,7 @@ class SubscriberAddressForm(SubscriberForm):
         self.helper.layout = Layout(
             Field('first_name', readonly=True),
             Field('email', readonly=True),
-            Field('telephone', readonly=True),
+            Field('telephone'),
             HTML(
                 '<div class="validate col s12">'
                 '  <h3 class="medium" style="color:black;">Información de entrega</h3>'
