@@ -56,7 +56,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'deck',
             'lead',
             'get_app_body',
-            'get_app_photo',
+            'get_app_photo',  # TODO: fix UnicodeDecodeError
             'get_absolute_url',
         )
         depth = 1
