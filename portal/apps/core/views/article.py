@@ -120,9 +120,18 @@ def article_detail(request, year, month, slug, domain_slug=None):
         last_by_hist = ArticleUrlHistory.objects.filter(absolute_url=request.path).last()
         # TODO: compute filter count and if > 1 the situation should be notified
         if last_by_hist:
-            return HttpResponsePermanentRedirect(
-                urlunsplit((settings.URL_SCHEME, netloc, last_by_hist.article.get_absolute_url(), s.query, s.fragment))
-            )
+            last_by_hist_url = last_by_hist.article.get_absolute_url()
+            # do not redirect if destination is the same url of this request (avoid loop)
+            if last_by_hist_url != request.path:
+                return HttpResponsePermanentRedirect(
+                    urlunsplit((settings.URL_SCHEME, netloc, last_by_hist_url, s.query, s.fragment))
+                )
+            else:
+                # show "draft" only for staff users
+                if request.user.is_staff:
+                    article = last_by_hist.article
+                else:
+                    raise Http404
         else:
             raise Http404
 
