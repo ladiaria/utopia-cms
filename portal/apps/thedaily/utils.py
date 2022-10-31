@@ -39,18 +39,22 @@ def subscribers_nl_iter(receivers, starting_from_s, starting_from_ns):
     """
     receivers2 = []
     for s in receivers.distinct().order_by('user__email').iterator():
-        if s.user.email:
-            # validate email before doing anything
-            try:
-                validate_email(s.user.email)
-            except ValidationError:
-                continue
-            if s.is_subscriber():
-                if not starting_from_s or (starting_from_s and s.user.email > starting_from_s):
-                    yield s, True
-            else:
-                if not starting_from_ns or (starting_from_ns and s.user.email > starting_from_ns):
-                    receivers2.append(s.id)
+        try:
+            if s.user.email:
+                # validate email before doing anything
+                try:
+                    validate_email(s.user.email)
+                except ValidationError:
+                    continue
+                if s.is_subscriber():
+                    if not starting_from_s or (starting_from_s and s.user.email > starting_from_s):
+                        yield s, True
+                else:
+                    if not starting_from_ns or (starting_from_ns and s.user.email > starting_from_ns):
+                        receivers2.append(s.id)
+        except Exception:
+            # rare but possible (for example, a subscriber with no user)
+            continue
     for sus_id in receivers2:
         try:
             yield Subscriber.objects.get(id=sus_id), False
