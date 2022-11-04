@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from builtins import str
 from django.contrib.admin import ModelAdmin, site
 from django.contrib.admin.sites import AlreadyRegistered
@@ -92,18 +93,27 @@ class SubscriberAdmin(ModelAdmin):
         success_counter, errors = 0, []
         for s in queryset:
             try:
-                send_validation_email(
-                    u'Ingreso al sitio web', s.user, 'notifications/account_info.html', get_signup_validation_url,
-                    {'user_email': s.user.email})
-                SentMail.objects.create(subscriber=s, subject=u'Account info')
+                was_sent = send_validation_email(
+                    'Ingreso al sitio web',
+                    s.user,
+                    'notifications/account_info.html',
+                    get_signup_validation_url,
+                    {'user_email': s.user.email},
+                )
+                if not was_sent:
+                    raise Exception("El email de notificación para el usuario: %s no pudo ser enviado." % s.user)
+                SentMail.objects.create(subscriber=s, subject='Account info')
                 success_counter += 1
             except Exception:
                 errors.append(str(s))
-        self.message_user(request, "%d emails enviados.%s" % (
-            success_counter,
-            (" Error al enviar a: %s" % ', '.join(errors)) if errors else ""))
+        self.message_user(
+            request,
+            "%d emails enviados.%s" % (
+                success_counter, (" Error al enviar a: %s" % ', '.join(errors)) if errors else ""
+            ),
+        )
 
-    send_account_info.short_description = u"Enviar información de usuario"
+    send_account_info.short_description = "Enviar información de usuario"
 
 
 class SubscriptionPricesAdmin(ModelAdmin):

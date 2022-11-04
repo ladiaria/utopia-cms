@@ -14,6 +14,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.template import loader
 
 from libs.utils import smtp_connect
+from utils.error_log import error_log
 
 
 class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
@@ -83,6 +84,7 @@ download_token_generator = EmailConfirmationTokenGenerator(edition_download=True
 
 
 def send_confirmation_link(*args, **kwargs):
+    result = False
     request = args[0]
     subject = kwargs['subject']
     message_template = kwargs['message_template']
@@ -114,11 +116,17 @@ def send_confirmation_link(*args, **kwargs):
             if settings.DEBUG:
                 print('DEBUG: an email was sent from send_confirmation_link function')
             smtp.quit()
-        except Exception:
-            # fail silently
-            pass
+            result = True  # success confirmation
+        except Exception as e:
+            error_log('Error sending confirmation email'.format(str(e)))
+
     else:
-        send_mail(subject, message.as_string(), settings.NOTIFICATIONS_FROM_MX, [user.email])
+        try:
+            result = send_mail(subject, message.as_string(), settings.NOTIFICATIONS_FROM_MX, [user.email]) > 0
+        except Exception as e:
+            error_log('Error sending confirmation email'.format(str(e)))
+
+    return result
 
 
 def send_validation_email(subject, user, msg_template, url_generator, extra_context={}):
@@ -130,7 +138,7 @@ def send_validation_email(subject, user, msg_template, url_generator, extra_cont
             'logo_url': settings.HOMEV3_SECONDARY_LOGO,
         },
     )
-    send_confirmation_link(
+    return send_confirmation_link(
         extra_context.get('request'),
         subject=subject,
         message_template=msg_template,

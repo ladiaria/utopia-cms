@@ -50,7 +50,7 @@ from favit.models import Favorite
 
 from libs.utils import set_amp_cors_headers, decode_hashid
 from libs.tokens.email_confirmation import default_token_generator, get_signup_validation_url, send_validation_email
-
+from utils.error_log import error_log
 from apps import mongo_db
 from core.models import Publication, Category, Article, ArticleUrlHistory
 from thedaily.models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState
@@ -227,23 +227,32 @@ def signup(request):
         post = request.POST.copy()
         signup_form = SignupForm(post)
         if signup_form.is_valid():
-            user = signup_form.create_user()
-            add_default_category_newsletters(user.subscriber)
-            # TODO: check if request is needed
-            # TODO: handle smtp errors
-            # TODO: notifications/signup.html is also used for this purpose (why having 2 templates to the same thing?)
-            send_validation_email(
-                'Verificá tu cuenta',
-                user,
-                'notifications/account_signup.html',
-                get_signup_validation_url,
-                {'request': request},
-            )
-            next_page = signup_form.cleaned_data.get('next_page')
-            if next_page:
-                return HttpResponseRedirect(next_page)
-            else:
-                return 'welcome.html', {'signup_mail': user.email}
+            user = None
+            try:
+                user = signup_form.create_user()
+                add_default_category_newsletters(user.subscriber)
+                # TODO: check if request is needed
+                # TODO: notifications/signup.html is also used for this purpose (2 templates to the same thing?)
+                was_sent = send_validation_email(
+                    'Verificá tu cuenta',
+                    user,
+                    'notifications/account_signup.html',
+                    get_signup_validation_url,
+                    {'request': request},
+                )
+                if not was_sent:
+                    raise Exception("El email de verificación para el usuario %s no pudo ser enviado." % user)
+                next_page = signup_form.cleaned_data.get('next_page')
+                if next_page:
+                    return HttpResponseRedirect(next_page)
+                else:
+                    return 'welcome.html', {'signup_mail': user.email}
+            except Exception as exc:
+                msg = "Error al enviar email de verificación para el usuario: %s." % user
+                error_log(msg + " Detalle: {}".format(str(exc)))
+                if user:
+                    user.delete()
+                signup_form.add_error(None, msg)
     return 'signup.html', {'signup_form': signup_form, 'errors': signup_form.errors.get('__all__')}
 
 
@@ -469,18 +478,26 @@ def subscribe(request, planslug, category_slug=None):
                     else:
                         user = subscriber_form_v.signup_form.create_user()
                         try:
-                            send_validation_email(
+                            was_sent = send_validation_email(
                                 'Verificá tu cuenta de ' + Site.objects.get_current().name,
                                 user,
                                 'notifications/account_signup_subscribed.html',
                                 get_signup_validation_url,
                             )
-                        except Exception as smtp_exc:
+                            if not was_sent:
+                                raise Exception(
+                                    "No se pudo enviar el email de verificación de suscripción para el usuario: %s" % (
+                                        user
+                                    )
+                                )
+                        except Exception as exc:
+                            msg = "Error al enviar email de verificación de suscripción para el usuario: %s." % user
+                            error_log(msg + " Detalle: {}".format(str(exc)))
                             subscription.delete()
                             errors = subscriber_form_v._errors.setdefault("email", ErrorList())
                             errors.append(
                                 'No se pudo enviar el email de verificación al crear tu cuenta, ' + (
-                                    '¿lo escribiste correctamente?' if type(smtp_exc) is SMTPRecipientsRefused else
+                                    '¿lo escribiste correctamente?' if type(exc) is SMTPRecipientsRefused else
                                     'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
                                     % reverse('account-confirm_email')
                                 )
@@ -637,15 +654,25 @@ def password_reset(request, user_id=None, hash=None):
         post = request.POST.copy()
         reset_form = PasswordResetRequestForm(post)
         if reset_form.is_valid():
-            if reset_form.user:
-                # TODO: handle smtp errors
-                send_validation_email(
-                    'Recuperación de contraseña',
-                    reset_form.user,
-                    'notifications/password_reset_body.html',
-                    get_password_validation_url,
-                )
-            return HttpResponseRedirect(reverse('account-password_reset-mail_sent'))
+            try:
+                if reset_form.user:
+                    was_sent = send_validation_email(
+                        'Recuperación de contraseña',
+                        reset_form.user,
+                        'notifications/password_reset_body.html',
+                        get_password_validation_url,
+                    )
+                    if not was_sent:
+                        raise Exception(
+                            "No se pudo enviar el email de recuperación de contraseña para el usuario: %s" % (
+                                reset_form.user
+                            )
+                        )
+                return HttpResponseRedirect(reverse('account-password_reset-mail_sent'))
+            except Exception as exc:
+                msg = "Error al enviar email de recuperación de contraseña para el usuario: %s." % reset_form.user
+                error_log(msg + " Detalle: {}".format(str(exc)))
+                reset_form.add_error(None, msg)
     return 'password_reset.html', {'form': reset_form}
 
 
@@ -656,17 +683,24 @@ def confirm_email(request):
     if request.method == 'POST':
         confirm_email_form = ConfirmEmailRequestForm(request.POST)
         if confirm_email_form.is_valid():
-            # TODO: handle smtp errors
-            user = confirm_email_form.user
-            send_validation_email(
-                'Verificá tu cuenta',
-                user,
-                'notifications/account_signup%s.html' % (
-                    '_subscribed' if hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any() else ''
-                ),
-                get_signup_validation_url,
-            )
-            return 'confirm_email.html', {'sent': True, 'email': confirm_email_form.cleaned_data['email']}
+            user = None
+            try:
+                user = confirm_email_form.user
+                was_sent = send_validation_email(
+                    'Verificá tu cuenta',
+                    user,
+                    'notifications/account_signup%s.html' % (
+                        '_subscribed' if hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any() else ''
+                    ),
+                    get_signup_validation_url,
+                )
+                if not was_sent:
+                    raise Exception("No se pudo enviar el email de verifición de cuenta para el usuario: %s" % user)
+                return 'confirm_email.html', {'sent': True, 'email': confirm_email_form.cleaned_data['email']}
+            except Exception as exc:
+                msg = "Error al enviar email de verificacion para el usuario: %s." % user
+                error_log(msg + " Detalle: {}".format(str(exc)))
+                confirm_email_form.add_error(None, msg)
     return 'confirm_email.html', {'form': confirm_email_form}
 
 
@@ -726,20 +760,25 @@ def edit_profile(request, user=None):
                 user_form.save()
                 profile_form.save()
                 if old_email != user.email:
-                    user.is_active = False
-                    user.save()
-                    # TODO: handle smtp errors
-                    send_validation_email(
+                    was_sent = send_validation_email(
                         'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url
                     )
-                    messages.success(
-                        request, 'Perfil actualizado, revisá tu email para verificar el cambio de email.')
+                    if not was_sent:
+                        raise Exception("Error al enviar email de verificación para el usuario %s" % user)
+                    user.is_active = False
+                    user.save()
+                    messages.success(request, 'Perfil actualizado, revisá tu email para verificar el cambio de email.')
                     logout(request)
                     return HttpResponseRedirect(reverse('account-logout'))
                 else:
                     messages.success(request, 'Perfil Actualizado.')
             except UpdateCrmEx as e:
                 messages.warning(request, e.displaymessage)
+            except Exception as exc:
+                msg = "Error al enviar email de verificacion para el usuario: %s." % user
+                error_log(msg + " Detalle: {}".format(str(exc)))
+                user_form.add_error(None, msg)
+                profile_form.add_error(None, msg)
     else:
         user_form = UserForm(instance=user)
         profile_form = ProfileForm(instance=profile)
@@ -959,8 +998,7 @@ def update_user_from_crm(request):
                     if check_user.count() == 1:
                         check_user = check_user[0]
                     else:
-                        msg = 'Multiple email in users'
-                        mail_managers(msg, email)
+                        mail_managers('Multiple email in users', email)
                         return HttpResponseServerError()
                 if check_user and check_user != s.user:
                     return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
@@ -1009,8 +1047,7 @@ def update_user_from_crm(request):
                     # This user should be created automatically tomorrow
                     pass
                 except MultipleObjectsReturned:
-                    msg = 'Multiple email in users'
-                    mail_managers(msg, email)
+                    mail_managers('Multiple email in users', email)
                     return HttpResponseServerError()
                 except IntegrityError as ie:
                     mail_managers('IntegrityError saving user', str(ie))
