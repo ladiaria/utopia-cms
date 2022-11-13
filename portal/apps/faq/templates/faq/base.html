@@ -1,19 +1,14 @@
 {% extends "base.html" %}
-{% load core_tags %}
 
 {% block page_title %}Preguntas frecuentes{% endblock %}
 
-
 {% block content %}
-        <h1>
-            Preguntas frecuentes
-        </h1>
-    <p>
-        Bienvenido a las preguntas frecuentes. Este es un centro de información para encontrar 
-        instrucciones y sugerencias relacionadas con los servicios de la diaria.
-    </p>
-    <p>
-        {% block content2 %} 
-        {% endblock %}
-    </p>
+  <h1>Preguntas frecuentes</h1>
+  <p>
+    Bienvenido a las preguntas frecuentes. Este es un centro de información para encontrar
+    instrucciones y sugerencias relacionadas con los servicios de {{ site.name }}.
+  </p>
+  <p>
+    {% block content2 %}{% endblock %}
+  </p>
 {% endblock %}

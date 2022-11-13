@@ -12,7 +12,7 @@ from requests.exceptions import ConnectionError
 from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
-from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.mail import send_mail
@@ -61,12 +61,11 @@ def article_list(request, type_slug):
         pubdate -= timedelta(days=1)
     articles = get_list_or_404(Article, is_published=True, type=atype['slug'], date_published__lte=pubdate)
     paginator = Paginator(articles, 10)
-    try:
-        page = request.GET.get('pagina', 1)
-    except ValueError:
-        page = 1
+    page = request.GET.get('pagina')
     try:
         articles = paginator.page(page)
+    except PageNotAnInteger:
+        articles = paginator.page(1)
     except (EmptyPage, InvalidPage):
         articles = paginator.page(paginator.num_pages)
     return render(request, 'section/detail.html', {'articles': articles, 'section': atype})

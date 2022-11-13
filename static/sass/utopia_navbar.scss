@@ -1258,11 +1258,11 @@ body.frontpage #main-header.nav-down #nav-principal span.nav-menu__pill {
     border-radius: 2px;
     padding: 1px 3px;
     vertical-align: middle;
-    margin-left: 5px;
+    margin-left: -8px;
     display: inline-block;
     font-weight: bold;
     position: relative;
-    top:-2px;
+    top:-8px;
 
     &.nav-menu__podcast-pill {
         background-color: #B331B6;
@@ -1284,6 +1284,10 @@ body.frontpage #main-header.nav-down #nav-principal span.nav-menu__pill {
     }
     &.nav-menu__eventos-pill {
         background-color: #e74c3c;
+    }
+    &.nav-menu__new-pill {
+        background-color: #fff;
+        color: $off-black !important;
     }
 
     @media (min-width: 1400px) {

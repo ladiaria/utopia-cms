@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
 from __future__ import unicode_literals
+
 from builtins import str
 import json
 from datetime import date
@@ -33,7 +33,7 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
 
     section = get_object_or_404(Section, slug=section_slug)
 
-    edition, articles, page = None, None, request.GET.get('pagina', 1)
+    edition, articles, page = None, None, request.GET.get('pagina')
 
     # support custom templates
     template = 'core/templates/section/detail.html'
@@ -99,8 +99,9 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
 @never_cache
 def latest_article(request, section_slug):
     try:
-        return HttpResponseRedirect(get_object_or_404(
-            Section, slug=section_slug).latest_article()[0].get_absolute_url())
+        return HttpResponseRedirect(
+            get_object_or_404(Section, slug=section_slug).latest_article()[0].get_absolute_url()
+        )
     except IndexError:
         raise Http404
 
@@ -116,10 +117,9 @@ def set_pdf_for_route(request, ruta=''):
     except Exception:
         fjson.seek(0)
     fjson.close()
-    list_rutas = u"Rutas seteadas actualmente<b> "
-    u"(para enviar PDF de la próxima edición)</b>:<br>"
+    list_rutas = "Rutas seteadas actualmente <b>(para enviar PDF de la próxima edición)</b>:<br>"
     for item in items:
-        list_rutas += str(item) + u"<br>"
+        list_rutas += str(item) + "<br>"
 
     if not ruta == "listar":
         encontrada = (ruta in items)
@@ -129,9 +129,10 @@ def set_pdf_for_route(request, ruta=''):
             fjson.write(json.dumps(items))
             fjson.close()
             list_rutas += str(ruta) + "<br>"
-        return HttpResponse((
-            u"<strong><u>EXITO:</u></strong> Se enviará el PDF de la próxima "
-            u"edición <br>" if not encontrada else
-            u"<strong><u>ERROR:</u></strong> La ruta ya se encuentra en la "
-            u"lista <br>") + u"<br>" + list_rutas)
+        return HttpResponse(
+            (
+                "<strong><u>EXITO:</u></strong> Se enviará el PDF de la próxima edición <br>" if not encontrada else
+                "<strong><u>ERROR:</u></strong> La ruta ya se encuentra en la lista <br>"
+            ) + "<br>" + list_rutas
+        )
     return HttpResponse(list_rutas)

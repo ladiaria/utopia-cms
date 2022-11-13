@@ -1,4 +1,4 @@
-# coding:utf8
+# coding:utf-8
 """
 utopia-cms, 2018-2022, Aníbal Pacheco
 

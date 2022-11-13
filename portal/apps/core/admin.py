@@ -198,6 +198,8 @@ class PortableDocumentFormatPageAdmin(ModelAdmin):
 
 class SectionAdminModelForm(ModelForm):
     # It uses the same tags than articles. (TODO: explain better this comment)
+    # TODO: Section object has no "tags" attribute (do we need it?)
+    #       resolve that and use this form to validate for ex. when a Section cannot be saved (dupe slug or anything)
     tags = TagField(widget=TagAutocompleteTagIt({'app': 'core', 'model': 'article'}), required=False)
 
     class Meta:

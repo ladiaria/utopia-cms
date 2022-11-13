@@ -29,7 +29,7 @@
     top: 1px;
 
 
-    path {
+    path:not([fill="none"]) {
       transition: fill 0.35s ease;
     }
 
@@ -90,7 +90,7 @@
       border:none;
       padding:10px 20px;
 
-      svg path {
+      svg path:not([fill="none"]) {
         fill: white;
       }
     }
@@ -100,7 +100,7 @@
       border:none;
       padding:10px 20px;
 
-      svg path {
+      svg path:not([fill="none"]) {
         fill: white;
       }
     }
@@ -114,7 +114,7 @@
         background:white;
         color: $off-black;
 
-        svg path {
+        svg path:not([fill="none"]) {
           fill: $off-black;
         }
       }
@@ -122,9 +122,23 @@
         background:white;
         color: $off-black;
 
-        svg path {
+        svg path:not([fill="none"]) {
           fill: $off-black;
         }
+      }
+    }
+    &.disabled {
+      cursor: default;
+      color:#A4A4A4;
+      border-color: #A4A4A4;
+
+      &:hover,
+      &:active {
+        background: transparent;
+        color: #A4A4A4;
+        border:2px solid #A4A4A4;
+        box-shadow: none;
+        padding:8px 18px ;
       }
     }
   }

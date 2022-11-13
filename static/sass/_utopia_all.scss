@@ -781,6 +781,12 @@ a.ladiaria {
         fill: #595959;
         }
 
+        .dropdown-button {
+          svg {
+            height: auto;
+          }
+        }
+
         &:not(.js) {
             .section-detail__sub-cats-list {
             overflow-x: auto;
@@ -794,6 +800,8 @@ a.ladiaria {
 
             li {
                 white-space: nowrap;
+
+
 
                 &.hidden {
                 display: none;
@@ -818,6 +826,19 @@ a.ladiaria {
                 li {
                 flex-grow: 1;
                 }
+            }
+            .dropdown-content {
+              border-radius: 0 0 10px 10px;
+
+              li {
+                line-height: 1.2;
+                a {
+                  font-size: 14px;
+                  padding:10px 16px;
+                  font-weight: bold;
+                  text-transform: none;
+                }
+              }
             }
         }
         .secondary {
@@ -873,9 +894,12 @@ a.ladiaria {
                 color: #C5691A;
             }
         }
+        &.shaded {
+          background:#D8D8D8;
+          color: $off-black;
+        }
     }
     span.section-detail__header-sub-cat {
-        cursor: auto;
         &:hover {
             background: none;
         }
@@ -1503,7 +1527,33 @@ select.browser-default {
     }
 
   }
+  &.light {
+    li a:not(.disabled){
+      color: #fff;
+      font-weight: bold;
+    }
+    li.active {
+      background: #fff;
 
+      a {
+        color: $off-black;
+        font-weight: bold;
+      }
+    }
+    li > a[aria-label="Siguiente"],
+    li > a[aria-label="Anterior"] {
+      svg path + path {
+        fill: #fff;
+      }
+    }
+    li.disabled > a[aria-label="Siguiente"],
+    li.disabled > a[aria-label="Anterior"] {
+      svg path + path {
+        fill: #A4A4A4;
+      }
+    }
+
+  }
 }
 /* rebranding forms */
 input:not([type]):focus:not([readonly]),

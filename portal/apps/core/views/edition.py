@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from datetime import date, timedelta
 
 from django.conf import settings
-from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseForbidden, HttpResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -25,13 +25,11 @@ to_response = render_response('core/templates/edition/')
 @to_response
 def edition_list(request):
     editions = Edition.objects.all().order_by('-date_published')
-    paginator = Paginator(editions, 21)
-    try:
-        page = int(request.GET.get('pagina', '1'))
-    except ValueError:
-        page = 1
+    paginator, page = Paginator(editions, 21), request.GET.get('pagina')
     try:
         editions = paginator.page(page)
+    except PageNotAnInteger:
+        editions = paginator.page(1)
     except (EmptyPage, InvalidPage):
         editions = paginator.page(paginator.num_pages)
     return 'list.html', {'editions': editions}

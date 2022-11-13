@@ -7,7 +7,11 @@
   {% for category in MENU_CATEGORIES %}
     {% if not category.exclude_from_top_menu %}
       <li class="nav-menu__{{ category.slug }}">
-        <a href="{% url 'home' domain_slug=category.slug %}"><span class="inner">{{ category|capfirst }}</span></a>
+        <a href="{% url 'home' domain_slug=category.slug %}"><span class="inner">{{ category|capfirst }}</span>
+          {% if category.new_pill %}
+            <span class="nav-menu__pill nav-menu__new-pill">Nuevo</span>
+          {% endif %}
+        </a>
       </li>
     {% endif %}
   {% endfor %}

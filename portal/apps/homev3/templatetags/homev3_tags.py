@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from django.conf import settings
 from django.template import Library, TemplateDoesNotExist, loader
 from django.template.base import Node
@@ -24,7 +25,7 @@ class RenderSectionNode(Node):
         self.top_index = top_index
 
     def render(self, context):
-        result, edition = u'', context.get('edition')
+        result, edition = '', context.get('edition')
 
         if edition:
             try:
@@ -96,7 +97,7 @@ def render_publication_row(context, publication_slug):
     try:
         publication = Publication.objects.get(slug=publication_slug)
     except Publication.DoesNotExist:
-        return u''
+        return ''
     else:
         user = context.get('user')
         # if not public => render only if saff user
@@ -118,9 +119,9 @@ def render_publication_row(context, publication_slug):
                     getattr(settings, 'HOMEV3_PUBLICATION_ROW_TEMPLATE', 'publication_row.html'), flatten_ctx
                 )
             else:
-                return u''
+                return ''
         else:
-            return u''
+            return ''
 
 
 class RenderCategoryRowNode(Node):
@@ -131,7 +132,7 @@ class RenderCategoryRowNode(Node):
         try:
             category = Category.objects.get(slug=self.category_slug)
         except Category.DoesNotExist:
-            return u''
+            return ''
         else:
             latest_articles = category.latest_articles()[:4]
             if latest_articles:
@@ -151,7 +152,7 @@ class RenderCategoryRowNode(Node):
                     template = '%s/row/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug)
                 return loader.render_to_string(template, flatten_ctx)
             else:
-                return u''
+                return ''
 
 
 @register.simple_tag(takes_context=True)
@@ -197,7 +198,7 @@ def render_header(context, template_suffix=''):
 
 
 @register.simple_tag(takes_context=True)
-def login_next_url(context, default=u'/'):
+def login_next_url(context, default='/'):
     if context.get('is_portada'):
         publication = context.get('publication')
         if publication:

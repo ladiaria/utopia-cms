@@ -466,7 +466,7 @@ class Category(Model):
     more_link_title = CharField(
         'texto en el link "más" del componente de portada', max_length=50, blank=True, null=True
     )
-    new_pill = BooleanField('pill de "nuevo" en el componente de portada', default=False)
+    new_pill = BooleanField('pill de "nuevo" en el componente de portada y menú', default=False)
     full_width_cover_image = ForeignKey(Photo, verbose_name='foto full de portada', blank=True, null=True)
     full_width_cover_image_title = CharField(
         'título para foto full',

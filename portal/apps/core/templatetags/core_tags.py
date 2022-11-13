@@ -443,6 +443,15 @@ def truncatehtml(string, length):
 truncatehtml.is_safe = True
 
 
+@register.filter
+def truncatehtml_chars(string, length):
+    truncator = Truncator(string)
+    return truncator.chars(length, html=True)
+
+
+truncatehtml_chars.is_safe = True
+
+
 # randomgen is taken from https://github.com/bkeating/django-templatetag-randomgen and fixed (*) here
 @register.tag(name="randomgen")
 def randomgen(parser, token):

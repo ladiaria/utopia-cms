@@ -843,3 +843,34 @@ img{
     }
   }
 }
+
+// new cover distribution
+.ld-grid-7030 {
+  display: grid;
+  grid-gap: 22px;
+  grid-template-columns: 1fr;
+
+  .ld-grid-thirds {
+    grid-gap: 22px;
+
+    .ld-card--sm {
+      height: auto;
+      margin-bottom: 22px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  @media (min-width: 640px) {
+
+    grid-template-columns: repeat(1, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+
+  @media (min-width: $gridMinWidth){
+    grid-template-columns: 70% 30%;
+    grid-template-rows: 1fr;
+  }
+}

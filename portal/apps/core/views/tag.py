@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.conf import settings
-from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
 from django.http import Http404
 from django.template.defaultfilters import slugify
 from django.views.decorators.cache import never_cache
@@ -28,12 +28,11 @@ def tag_detail(request, tag_slug):
     if not tags:
         raise Http404
     paginator = Paginator(TaggedItem.objects.get_by_model(Article, tags).filter(is_published=True), 10)
-    try:
-        page = int(request.GET.get('pagina', '1'))
-    except ValueError:
-        page = 1
+    page = request.GET.get('pagina')
     try:
         articles = paginator.page(page)
+    except PageNotAnInteger:
+        articles = paginator.page(1)
     except (EmptyPage, InvalidPage):
         articles = paginator.page(paginator.num_pages)
     # support to render a custom template if only one tag and the tag is a TagGroup member (first group found taken)
