@@ -34,7 +34,7 @@ from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.dispatch import receiver
 
 from apps import mongo_db
-from core.models import Edition, Publication, Category, ArticleViewedBy
+from core.models import Edition, Publication, Category, ArticleViewedBy, Article
 from .exceptions import UpdateCrmEx
 
 
@@ -113,6 +113,7 @@ class Subscriber(Model):
     # TODO: explain the utility of this field or remove it.
     subscription_mode = CharField(max_length=1, null=True, blank=True, default=None)
     last_paid_subscription = DateTimeField(u'Ultima subscripcion comienzo', null=True, blank=True)
+    articles_bought = ManyToManyField(Article, blank=True)
 
     def save(self, *args, **kwargs):
         if self.document:

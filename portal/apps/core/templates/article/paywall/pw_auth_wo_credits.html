@@ -1,4 +1,9 @@
 {% load thedaily_tags %}
+{% load static %}
+
+{% block css %}
+<link href="{% static 'css/toastify.min.css' %}" rel="stylesheet">
+{% endblock %}
 
 <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static ld-snackbar--narrow">
   <div class="ld-snackbar__title">Llegaste al límite de artículos gratuitos</div>
@@ -9,6 +14,157 @@
         Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
       </a>
     </div>
+    <div class="ld-snackbar__block">
+      <div class="ut-btn ut-btn-l solana-btn">
+        Comprá este artículo por 1 USDC con <img class="solana-logo" src="{% static 'img/solana_logo.svg' %}">
+      </div>
+    </div>
     <div class="ld-snackbar__text ld-snackbar__block">Nuestro periodismo depende de vos</div>
   </div>
 </div>
+
+
+{% block javascript %}
+<script src="https://unpkg.com/@solana/web3.js@1.30.2/lib/index.iife.js"></script>
+<script src="{% static 'js/buffer-polyfill/index.js' %}"></script>
+<script defer src="{% static 'js/splToken/index.js' %}"></script>
+<script src="{% static 'js/toastify.js' %}"></script>
+<script src="{% static 'js/toastify.custom.js' %}"></script>
+<script src='https://cdn.jsdelivr.net/npm/bignumber.js@9.1.0/bignumber.min.js'></script>
+
+<script>
+  $(function () {
+    // we polyfill Buffer so the spl-token library can use it
+    window.Buffer = Buffer.Buffer;
+
+    const getProvider = async () => {
+      if ("solana" in window) {
+        await window.solana.connect();
+
+        const provider = window.solana;
+        if (provider.isPhantom) {
+          return provider;
+        }
+      } else {
+        Toastify.error('Debes instalar Phantom Wallet para poder pagar con crypto.');
+        return false;
+      }
+    };
+
+    $('.solana-btn').click(async function () {
+      const provider = await getProvider();
+      if (!provider) return;
+
+
+      await provider.connect();
+      let connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('{{ solana_network }}'));
+
+      const price = new BigNumber(1);
+      const shopPublicKey = new solanaWeb3.PublicKey('{{ solana_address }}');
+      const usdcPubKey = new solanaWeb3.PublicKey('{{ usdc_address }}');
+
+      let tempToast;
+
+      try {
+        // we fetch the Token Account of the buyer and the shop
+        let sourceAddress = await splToken.getAssociatedTokenAddress(usdcPubKey, provider.publicKey);
+        const sourceAccount = await splToken.getAccount(connection, sourceAddress);
+        let destinationAddress = await splToken.getAssociatedTokenAddress(usdcPubKey, shopPublicKey);
+        const destinationAccount = await splToken.getAccount(connection, destinationAddress);
+
+        // we get the amount of decimals for the token (i.e.: 6 for USDC)
+        const info = await connection.getParsedAccountInfo(usdcPubKey);
+        const numberDecimals = info.value.data.parsed.info.decimals;
+
+        // we get the recent blockhash in order to create the transaction
+        const { blockhash } = await connection.getRecentBlockhash();
+        const tx = new solanaWeb3.Transaction({
+          feePayer: provider.publicKey,
+          recentBlockhash: blockhash,
+        });
+
+        // we create the transfer instruction that will be added to the transaction
+        // this is where we will 
+        const transferInstruction = splToken.createTransferCheckedInstruction(
+          sourceAccount.address,
+          usdcPubKey,
+          destinationAccount.address,
+          provider.publicKey,
+          price.multipliedBy(10 ** numberDecimals).toNumber(),
+          numberDecimals
+        );
+
+        transferInstruction.keys.push({
+          pubkey: provider.publicKey,
+          isSigner: false,
+          isWritable: false,
+        });
+
+        // we add the instruction to the transaction
+        tx.add(transferInstruction);
+
+        // we serialize the transaction so we can send it to the provider (i.e.: Phantom)
+        const serializedTransaction = tx.serialize({
+          requireAllSignatures: false,
+        });
+
+        tempToast = Toastify.info("Por favor confirma la transacción desde tu wallet", { duration: -1 });
+        const { signature } = await provider.signAndSendTransaction(tx);
+        tempToast.hideToast();
+
+
+        const interval = setInterval(async () => {
+          // Failed to confirm transaction in time
+          if (count === 60000) {
+            clearInterval(interval);
+            Toastify.error('No se pudo confirmar la transacción a tiempo.');
+            return;
+          }
+
+          const { value } = await connection.getSignatureStatus(signature);
+          const confirmationStatus = value?.confirmationStatus;
+
+          if (confirmationStatus) {
+            const hasReachedSufficientCommitment = confirmationStatus === 'confirmed' || confirmationStatus === 'finalized';
+
+            Toastify.success('La transacción fue confirmada! Gracias por tu compra.', { duration: -1 });
+
+            if (hasReachedSufficientCommitment) {
+              $.ajax({
+                beforeSend: function (xhr, settings) {
+                  xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                },
+                method: "POST",
+                url: "/usuarios/comprar-articulo/",
+                data: {
+                  article_id: '{{ article.id }}',
+                  user_id: '{{ user.id }}',
+                }
+              });
+
+              clearInterval(interval);
+              location.reload();
+              return;
+            }
+          } else {
+            Toastify.info('La transacción todavía no fue confirmada. Por favor espere...');
+          }
+          count++;
+        }, 1000);
+
+        let count = 0;
+      } catch (err) {
+        tempToast.hideToast();
+        // if the user doesn't have SOL or the required amount of the SPL Token
+        if (err.name === "TokenAccountNotFoundError") return Toastify.error('No tenés fondos suficientes en tu wallet.');
+
+        // if the user closes the wallet before signing the transaction
+        if (err.code === 4001) return Toastify.error('Se canceló la transacción.');
+
+        // any other unknown error
+        return Toastify.error('Ocurrió un error al procesar la transacción.');
+      }
+    });
+  })
+</script>
+{% endblock %}
