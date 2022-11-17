@@ -1,3 +1,21 @@
+# version 0.3.5 (2022-11-17)
+
+- New management command to update a section's category and automatically update all the articles involved to update properly their url_path field.
+- Better utf8 shebang, unicode and syntax code style in many Python modules.
+- A TODO comment added.
+- article_report management command updated.
+- Better "with" usage in some templates.
+- New template tag to truncate html using char-length.
+- Pagination improvements.
+- Custom text removed from faq/base.html template.
+- Category new_pill field used also in main menu.
+- Many CSS improvements.
+- Handle many SMTP errors marked with "TODO" in the past.
+- Handle a rare exception in subscribers_nl_iter.
+- Do not redirect if destination is the same url of this request (avoid loop), show draft only for staff users.
+- TODO in main urls conf. Added utm_source query param to url in push notif.
+- Read-only removed on telephone to allow fill it when for any reason is empty.
+
 # version 0.3.4 (2022-10-15)
 
 - Fix subscription_info field length in DeviceSubscribed model.
