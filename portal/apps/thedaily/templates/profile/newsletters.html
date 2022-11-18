@@ -13,7 +13,7 @@
           <label for="id_{{ field.html_name}}_{{ forloop.counter }}"{% if flat_attrs %} {{ flat_attrs|safe }}{% endif %}>
             {% for publication in publication_newsletters %}
               {% ifequal choice.1 publication.name %}
-                <h3 class="ld-title-second">{{ publication.newsletter_name|default:publication.name }}</h3>
+                <h3 class="ld-title-second">{{ publication.profile_newsletter_name }}</h3>
                 {% if publication.newsletter_tagline %}<div>{{ publication.newsletter_tagline|safe }}.</div>{% endif %}
                 {% if publication.newsletter_periodicity %}
                   <h4 class="ld-caption">Periodicidad: {{ publication.newsletter_periodicity }}.</h4>

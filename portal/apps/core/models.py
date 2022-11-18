@@ -139,6 +139,13 @@ class Publication(Model):
             kwargs={} if self.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL else {'domain_slug': self.slug}
         )
 
+    def profile_newsletter_name(self):
+        """ Returns the newsletter name to show in the edit profile view """
+        if self.slug in getattr(settings, "THEDAILY_EDIT_PROFILE_PUBLICATIONS_NL_USE_NAMEONLY", []):
+            return self.name
+        else:
+            return self.newsletter_name or self.name
+
     def latest_edition(self):
         return self.core_edition.latest()
 
