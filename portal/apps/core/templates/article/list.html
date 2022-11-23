@@ -1,7 +1,14 @@
 {% extends "base.html" %}
 {% load static core_tags %}
 
-{% block page_title %}Noticias de {% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %} | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block page_title %}{% spaceless %}
+  Artículos sobre {% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %}
+   | {{ site.name }} {% if append_country %}| {{ country_name }}{% endif %}
+{% endspaceless %}{% endblock %}
+
+{% block page_description %}{% spaceless %}
+  Todos los artículos, noticias y entrevistas en relación al tema {% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %} publicados por {{ site.name }}.
+{% endspaceless %}{% endblock %}
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->

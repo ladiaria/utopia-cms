@@ -88,6 +88,19 @@ class RenderSectionNode(Node):
 
 
 @register.simple_tag(takes_context=True)
+def publication_title(context):
+    publication = context.get('publication')
+    site_name, country_name = context.get('site').name, context.get('country_name')
+    return (
+        publication.html_title
+        or (
+            "%s | Noticias de %s y el mundo" % (site_name, country_name) if publication == context.get('default_pub')
+            else "%s | %s | %s" % (publication.headline, site_name, country_name)
+        )
+    )
+
+
+@register.simple_tag(takes_context=True)
 def render_section(context, section_slug, article_type=None, top_index=None):
     return RenderSectionNode(context, section_slug, article_type, top_index).render(context)
 

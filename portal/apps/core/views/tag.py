@@ -42,4 +42,12 @@ def tag_detail(request, tag_slug):
         if tg and tg.slug in getattr(settings, 'GROUPEDTAGS_CUSTOM_TEMPLATES', ()):
             # use the custom template
             template = '%s/%s.html' % (gt_dir, tg.slug)
-    return render(request, template, {'tags': tags, 'articles': articles})
+    return render(
+        request,
+        template,
+        {
+            'tags': tags,
+            'articles': articles,
+            "title_append_country": getattr(settings, "CORE_TAG_DETAIL_TITLE_APPEND_COUNTRY", True),
+        },
+    )

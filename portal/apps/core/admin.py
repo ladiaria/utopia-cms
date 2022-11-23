@@ -26,7 +26,7 @@ from django.contrib.auth.models import Group
 from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
 from django.contrib.admin.options import get_ul_class
-from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField
+from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
 from django.forms.fields import CharField, IntegerField
@@ -197,17 +197,15 @@ class PortableDocumentFormatPageAdmin(ModelAdmin):
 
 
 class SectionAdminModelForm(ModelForm):
-    # It uses the same tags than articles. (TODO: explain better this comment)
-    # TODO: Section object has no "tags" attribute (do we need it?)
-    #       resolve that and use this form to validate for ex. when a Section cannot be saved (dupe slug or anything)
-    tags = TagField(widget=TagAutocompleteTagIt({'app': 'core', 'model': 'article'}), required=False)
+    # TODO: use this form to validate for ex. when a Section cannot be saved (dupe slug or anything)
 
     class Meta:
-        model = Section
         fields = "__all__"
+        widgets = {'html_title': TextInput(attrs={'size': 128}), 'meta_description': Textarea()}
 
 
 class SectionAdmin(ModelAdmin):
+    form = SectionAdminModelForm
     list_editable = ('name', 'home_order', 'in_home')
     list_filter = ('category', 'in_home', 'home_block_all_pubs', 'home_block_show_featured')
     list_display = (
@@ -236,6 +234,7 @@ class SectionAdmin(ModelAdmin):
                 ),
             },
         ),
+        ('Metadatos', {'fields': (('html_title', ), ('meta_description', ))}),
     )
 
     def save_related(self, request, form, formsets, change):
@@ -667,7 +666,10 @@ class PublicationAdminForm(CustomSubjectAdminForm):
         model = Publication
         fields = "__all__"
         widgets = {
-            'newsletter_tagline': TextInput(attrs={'size': 160}), 'newsletter_subject': TextInput(attrs={'size': 160}),
+            'newsletter_tagline': TextInput(attrs={'size': 160}),
+            'newsletter_subject': TextInput(attrs={'size': 160}),
+            'html_title': TextInput(attrs={'size': 128}),
+            'meta_description': Textarea(),
         }
 
 
@@ -712,6 +714,8 @@ class PublicationAdmin(ModelAdmin):
             'Metadatos',
             {
                 'fields': (
+                    ('html_title', ),
+                    ('meta_description', ),
                     ('icon', 'icon_png'),
                     ('icon_png_16', 'icon_png_32'),
                     ('apple_touch_icon_180', ),
@@ -736,7 +740,11 @@ class CategoryAdminForm(CustomSubjectAdminForm):
     class Meta:
         model = Category
         fields = "__all__"
-        widgets = {'newsletter_subject': TextInput(attrs={'size': 160})}
+        widgets = {
+            'newsletter_subject': TextInput(attrs={'size': 160}),
+            'html_title': TextInput(attrs={'size': 128}),
+            'meta_description': Textarea(),
+        }
 
 
 class CategoryAdmin(ModelAdmin):
@@ -764,6 +772,7 @@ class CategoryAdmin(ModelAdmin):
             },
         ),
         ('Asunto de newsletter', {'fields': (('newsletter_automatic_subject', ), ('newsletter_subject', ))}),
+        ('Metadatos', {'fields': (('html_title', ), ('meta_description', ))}),
     )
     raw_id_fields = ('full_width_cover_image', )
 

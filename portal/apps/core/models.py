@@ -113,6 +113,18 @@ class Publication(Model):
     full_width_cover_image = ForeignKey(Photo, verbose_name='foto full de portada', blank=True, null=True)
     is_emergente = BooleanField('es emergente', default=False)
     new_pill = BooleanField('pill de "nuevo" en el componente de portada', default=False)
+    html_title = CharField(
+        "contenido del tag <title> y del metadato 'og:title' del código HTML",
+        max_length=128,
+        blank=True,
+        null=True,
+    )
+    meta_description = CharField(
+        "contenido del metadato 'description' y 'og:description' del código HTML",
+        max_length=256,
+        blank=True,
+        null=True,
+    )
     icon = CharField(max_length=128, blank=True, null=True)
     icon_png = CharField(max_length=128, blank=True, null=True)
     icon_png_16 = CharField(max_length=128, blank=True, null=True)
@@ -489,6 +501,18 @@ class Category(Model):
         help_text='Se muestra sólo si la foto y el título están seteados.',
     )
     exclude_from_top_menu = BooleanField('Excluir ítem en menú superior de escritorio', default=False)
+    html_title = CharField(
+        "contenido del tag <title> y del metadato 'og:title' del código HTML",
+        max_length=128,
+        blank=True,
+        null=True,
+    )
+    meta_description = CharField(
+        "contenido del metadato 'description' y 'og:description' del código HTML",
+        max_length=256,
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return self.name
@@ -631,6 +655,18 @@ class Section(Model):
     white_text = BooleanField('texto blanco', default=False)
     show_description = BooleanField('mostrar descripción', default=False)
     show_image = BooleanField('mostrar imagen', default=False)
+    html_title = CharField(
+        "contenido del tag <title> y del metadato 'og:title' del código HTML",
+        max_length=128,
+        blank=True,
+        null=True,
+    )
+    meta_description = CharField(
+        "contenido del metadato 'description' y 'og:description' del código HTML",
+        max_length=256,
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return self.name

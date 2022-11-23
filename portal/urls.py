@@ -187,7 +187,10 @@ class HomeArticleViewSet(viewsets.ModelViewSet):
         edition = get_current_edition() or get_latest_edition()
     except Exception:
         edition = None
-    pk_list = [a.id for a in edition.top_articles] if edition else []
+    try:
+        pk_list = [a.id for a in edition.top_articles] if edition else []
+    except Exception:
+        pk_list = []
     clauses = ' '.join(['WHEN id=%s THEN %s' % (pk, i) for i, pk in enumerate(pk_list)])
     ordering = 'CASE %s END' % clauses
     queryset = Article.objects.filter(id__in=pk_list).extra(select={'ordering': ordering}, order_by=('ordering', ))

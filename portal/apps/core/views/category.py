@@ -62,26 +62,30 @@ def category_detail(request, slug):
         except Topic.DoesNotExist:
             pass
 
+    context = {
+        'category': category,
+        'cover_article': category_home.cover(),
+        'destacados': category_home.non_cover_articles(),
+        'is_portada': True,
+        'featured_section1': featured_section1,
+        'featured_section2': featured_section2,
+        'featured_section3': featured_section3,
+        'inner_sections': inner_sections,
+        'edition': get_latest_edition(),
+        'question_list': question_list,
+        'questions_topic': questions_topic,
+        'big_photo': category.full_width_cover_image,
+    }
+    if category.meta_description:
+        context['site_description'] = category.meta_description
+
     return render(
         request,
         '%s/%s.html' % (
             getattr(settings, 'CORE_CATEGORIES_TEMPLATE_DIR', 'core/templates/category'),
             category.slug if category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_TEMPLATES', ()) else 'detail'
         ),
-        {
-            'category': category,
-            'cover_article': category_home.cover(),
-            'destacados': category_home.non_cover_articles(),
-            'is_portada': True,
-            'featured_section1': featured_section1,
-            'featured_section2': featured_section2,
-            'featured_section3': featured_section3,
-            'inner_sections': inner_sections,
-            'edition': get_latest_edition(),
-            'question_list': question_list,
-            'questions_topic': questions_topic,
-            'big_photo': category.full_width_cover_image,
-        },
+        context,
     )
 
 

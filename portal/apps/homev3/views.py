@@ -227,6 +227,8 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             'big_photo': publication.full_width_cover_image,
         }
     )
+    if publication.meta_description:
+        context['site_description'] = publication.meta_description
 
     if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_CUSTOM_TEMPLATES', ()):
         template_dir = getattr(settings, 'CORE_PUBLICATIONS_TEMPLATE_DIR', None)

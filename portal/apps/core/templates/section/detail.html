@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load core_tags %}
 
-{% block page_title %}Noticias de {{ section.name }} | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block page_title %}{% section_title %}{% endblock %}
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:title" content="Noticias de {{ section.name }} | {{ site.name }} | {{ country_name }}">
+  <meta property="og:title" content="{% section_title %}">
 {% endblock %}
 
 {% block body_class %}section-detail{% endblock %}

@@ -1,3 +1,8 @@
+# version 0.3.6 (2022-11-23)
+
+- Allow custom html title and meta description in the detail pages of Publications, Categories and Sections.
+- Support to show pub name instead of nl name in edit profile view.
+
 # version 0.3.5 (2022-11-17)
 
 - New management command to update a section's category and automatically update all the articles involved to update properly their url_path field.

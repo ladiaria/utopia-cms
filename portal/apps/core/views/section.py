@@ -10,6 +10,7 @@ from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpRespons
 from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import get_object_or_404, render
+from django.contrib.sites.models import Site
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.urlresolvers import reverse
 
@@ -33,7 +34,17 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
 
     section = get_object_or_404(Section, slug=section_slug)
 
-    edition, articles, page = None, None, request.GET.get('pagina')
+    context, edition, articles, page = {'section': section}, None, None, request.GET.get('pagina')
+
+    if section.meta_description:
+        context['site_description'] = section.meta_description
+    else:
+        context['site_description'] = "Un listado de artículos, noticias y entrevistas sobre %s" % section
+        if section.category:
+            context['site_description'] += " dentro del área %s de %s" % (
+                section.category, Site.objects.get_current().name
+            )
+        context['site_description'] += "."
 
     # support custom templates
     template = 'core/templates/section/detail.html'
@@ -52,7 +63,9 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
         except EmptyPage:
             articles = paginator.page(paginator.num_pages)
 
-        return render(request, template, {'section': section, 'articles': articles, 'publication': None})
+        context.update({'articles': articles, 'publication': None})
+
+        return render(request, template, context)
 
     if section.publications.exists():
         items = getattr(settings, 'CORE_SECTION_MAIN_PUBLICATION', {}).items()
@@ -83,17 +96,16 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
     except EmptyPage:
         articles = paginator.page(paginator.num_pages)
 
-    return render(
-        request,
-        template,
+    context.update(
         {
-            'section': section,
             'articles': articles,
             'publication': publication,
             'publication_use_headline':
                 publication.slug in getattr(settings, 'CORE_PUBLICATIONS_SECTION_DETAIL_USE_HEADLINE', ()),
-        },
+        }
     )
+
+    return render(request, template, context)
 
 
 @never_cache

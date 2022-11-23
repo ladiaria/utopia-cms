@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static core_tags homev3_tags %}
 
-{% block page_title %}{{ publication.headline }} | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block page_title %}{% publication_title %}{% endblock %}
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:title" content="{{ publication.headline }} | {{ site.name }} | {{ country_name }}">
+  <meta property="og:title" content="{% publication_title %}">
 {% endblock %}
 
 {% block css %}

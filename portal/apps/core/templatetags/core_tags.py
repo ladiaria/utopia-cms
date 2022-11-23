@@ -338,6 +338,37 @@ def publication_section(context, article, pub=None):
 
 
 @register.simple_tag(takes_context=True)
+def category_title(context):
+    category = context.get('category')
+    return (
+        category.html_title
+        or "%s: noticias y artículos periodísticos | %s | %s" % (
+            category, context.get('site').name, context.get('country_name')
+        )
+    )
+
+
+@register.simple_tag(takes_context=True)
+def section_title(context):
+    """
+    We use a "getattr or get" because core.views.article.article_list loads a dict in the section ctx var.
+    """
+    section = context.get('section')
+    custom_title = getattr(section, 'html_title', None)
+    if custom_title:
+        return custom_title
+    default_title_parts = [
+        "Artículos en "
+        + getattr(section, 'name', section.get('name', "sección") if type(section) is dict else "sección")
+    ]
+    if getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_SITENAME", True):
+        default_title_parts.append(context.get('site').name)
+    if getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_COUNTRY", True):
+        default_title_parts.append(context.get('country_name'))
+    return " | ".join(default_title_parts)
+
+
+@register.simple_tag(takes_context=True)
 def category_nl_subscribe_box(context):
     """ renders the subscribe box for the article category, if proper conditions are met """
     # TODO: can be improved and even removed making some modifications in caller templates
