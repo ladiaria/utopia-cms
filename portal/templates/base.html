@@ -306,16 +306,25 @@
         }
       {% endif %}
 
+      function notification_close(btn_close){
+        var notification = $(btn_close).parents('.breaking-notice');
+        $.get('/' + $(btn_close).attr('data-object') + '/' + $(btn_close).attr('data-id') + '/closed/', function(data){
+          notification.toggle();
+        });
+      }
+
       $(function(){
         $('.btn-close').click(function(){
-          var notification = $(this).parent().parent();
-          $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
-            notification.toggle();
-          });
+          notification_close(this);
         });
-        var subscribe_notice = $('.subscribe-notice');
-        $('.btn-close-notice', subscribe_notice).click(function(){
-          subscribe_notice.hide();
+        $(window).on("subscribe_notice_show", function(){
+          var subscribe_notice = $('.subscribe-notice');
+          if(subscribe_notice.length){
+            subscribe_notice.removeClass("hide");
+            $('.btn-close-notice', subscribe_notice).click(function(){
+              subscribe_notice.hide();
+            });
+          }
         });
         {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
       });
@@ -368,7 +377,7 @@
     <!-- Mobile Subscribe notice for logged-in non-subscribers -->
     {% if not is_subscriber_any %}
       {% if is_portada and publication == default_pub or is_detail %}
-        <div class="subscribe-notice hide-on-med-and-up">
+        <div class="subscribe-notice hide-on-med-and-up hide">
           <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=mobile-banner">Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i></a>
           <span class="btn-close-notice" data-id="subscribe-notice">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -460,8 +469,6 @@
     </script>
     <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
 
-    {# TODO: probably there is no reason to have 2 scripts blocks like this, investigate and eliminate one #}
-    {#       update: footer_scripts is less used, try to eliminate it #}
     {% block javascript %}{% endblock %}
     {% block footer_scripts %}{% endblock %}
     {% block main_close %}</main>{% endblock %}

@@ -2,6 +2,6 @@
   <div class="container">
     <span class="msg-title">Transmitiendo en vivo:</span>
       <a class="msg-link" href="{% if event.notification_url %}{{ event.notification_url }}{% else %}{% url 'cartelera-vivo' %}{% endif %}">{{ event.notification_text|default:event.title }}</a>
-    <span class="btn-close" data-object="cartelera/live_embed_event" data-id="{{ event.id }}">&times;</span>
+    <span class="btn-close" data-object="cartelera/live_embed_event" data-id="{{ event.id }}"><svg xmlns="http://www.w3.org/2000/svg" width="15.472" height="15.471" viewBox="0 0 15.472 15.471"><path d="M653.472,11679.547l-1.547-1.547-6.189,6.188-6.189-6.187-1.547,1.547,6.189,6.189-6.189,6.188,1.547,1.547,6.189-6.187,6.189,6.188,1.547-1.547-6.189-6.187,6.189-6.189" transform="translate(-638 -11678)" fill="#262626" fill-rule="evenodd"/></svg></span>
   </div>
 </div>

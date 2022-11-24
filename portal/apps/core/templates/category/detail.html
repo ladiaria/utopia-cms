@@ -298,7 +298,7 @@
       $('#bn-module').load("{% url 'bn-content' %}?category={{ category.slug }}", function(response){
         if(response){
           $('.breaking-notice').find('.btn-close').click(function(){
-            var notification = $(this).parent().parent();
+            var notification = $(this).parents('.breaking-notice');
             $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
               notification.toggle();
             });

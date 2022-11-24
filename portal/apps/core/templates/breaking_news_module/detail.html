@@ -1,13 +1,14 @@
 {% if notify_only %}
   <div class="breaking-notice">
     <div class="container">
+      {# TODO: modify render conditions when notification_txt is None #}
       <span class="msg-title">{{ bn_mod.headline|capfirst }}:</span>
       {% if bn_mod.notification_url %}
         <a class="msg-link" href="{{ bn_mod.notification_url }}">{{ bn_mod.notification_text }}</a>
       {% else %}
         {{ bn_mod.notification_text }}
       {% endif %}
-      <span class="btn-close" data-object="bn" data-id="{{ bn_mod.id }}">&times;</span>
+      <span class="btn-close" data-object="bn" data-id="{{ bn_mod.id }}"><svg xmlns="http://www.w3.org/2000/svg" width="15.472" height="15.471" viewBox="0 0 15.472 15.471"><path d="M653.472,11679.547l-1.547-1.547-6.189,6.188-6.189-6.187-1.547,1.547,6.189,6.189-6.189,6.188,1.547,1.547,6.189-6.187,6.189,6.188,1.547-1.547-6.189-6.187,6.189-6.189" transform="translate(-638 -11678)" fill="#262626" fill-rule="evenodd"/></svg></span>
     </div>
   </div>
 {% else %}

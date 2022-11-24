@@ -43,16 +43,6 @@
       $('#mas-leidos-content').load("{% url 'mas_leidos_content' %}", function(){
         $('ul.tablist').tabs();
       });
-      $('#bn-module').load("{% url 'bn-content' %}", function(response){
-        if(response){
-          $('.breaking-notice').find('.btn-close').click(function(){
-            var notification = $(this).parent().parent();
-            $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
-              notification.toggle();
-            });
-          });
-        }
-      });
       $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
     });
   </script>
@@ -75,7 +65,10 @@
 
 {% block main_open %}{% endblock %}
 
-{% block page_header %}<div id="bn-module"></div>{% render_live_embed_event_notification %}{% endblock %}
+{% block page_header %}
+  <div id="bn-module"></div>
+  {% render_live_embed_event_notification %}{# TODO: change this to an "ajax" approach (avoid render over bn-notif.) #}
+{% endblock %}
 
 {% block content %}
   <main>
@@ -906,6 +899,22 @@
         tooltip.text('');
       }, 1200);
     }
+  </script>
+{% endblock %}
+
+{% block footer_scripts %}
+  <script type="text/javascript">
+    $(function(){
+      $('#bn-module').load("{% url 'bn-content' %}", function(response){
+        if(response){
+          $('.btn-close', this).click(function(){
+            notification_close(this);
+          });
+        }else{
+          $(window).trigger("subscribe_notice_show");
+        }
+      });
+    });
   </script>
 {% endblock %}
 

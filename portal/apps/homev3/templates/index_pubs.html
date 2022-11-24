@@ -42,19 +42,23 @@
 
 {% endblock %}
 
-{% block footer_scripts %}
-  <script>
-    $(document).ready(function(){
+{% block javascript %}
+  <script type="text/javascript">
+    $(function(){
       resizeSubnav($('.section-detail__sub-cats'), $('.section-detail__sub-cats-list'), 2);
       resizeSubnav($('.section-subheader .submenu'), $('.submenu--list'), 1);
       $('#header-pub').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
+    });
+  </script>
+{% endblock %}
+
+{% block footer_scripts %}
+  <script type="text/javascript">
+    $(function(){
       $('#bn-module').load("{% url 'bn-content' %}?publication={{ publication.slug }}", function(response){
         if(response){
-          $('.breaking-notice').find('.btn-close').click(function(){
-            var notification = $(this).parent().parent();
-            $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
-              notification.toggle();
-            });
+          $('.btn-close', this).click(function(){
+            notification_close(this);
           });
         }
       });

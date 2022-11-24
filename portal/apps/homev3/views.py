@@ -171,7 +171,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
                 'allow_ads': getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_ALLOW_ADS', True),
             }
         )
-        template = 'index_pubs.html'
+        template = getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_TEMPLATE', 'index_pubs.html')
     else:
         if year and month and day:
             date_published = datetime(

@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+
 from django import template
 from django.template.loader import render_to_string
 
@@ -20,6 +21,6 @@ def render_live_embed_event_notification(context):
         event = LiveEmbedEvent.objects.get(active=True, notification=True)
         if event.id not in context['request'].session.get('live_embed_events_notifications_closed', set()):
             return render_to_string('cartelera/live_embed_event_notification.html', {'event': event})
-    except LiveEmbedEvent.DoesNotExist:
+    except (LiveEmbedEvent.DoesNotExist, LiveEmbedEvent.MultipleObjectsReturned):
         pass
-    return u''
+    return ''
