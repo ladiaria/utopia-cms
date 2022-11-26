@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from builtins import object
 
+from django.conf import settings
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 
@@ -11,8 +12,8 @@ from core.models import Article
 @registry.register_document
 class ArticleDocument(Document):
     class Index(object):
-        # Name of the Elasticsearch index
-        name = 'articles'
+        # Name of the Elasticsearch index (TODO: use a better default name, for example "utopiacms_core_article")
+        name = getattr(settings, "SEARCH_ELASTIC_ARTICLES_INDEX_NAME", 'articles')
         # See Elasticsearch Indices API reference for available settings
         settings = {'number_of_shards': 1, 'number_of_replicas': 0}
 
