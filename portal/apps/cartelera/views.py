@@ -70,6 +70,17 @@ def vivo(request, archived_event_id=None):
 
 
 @never_cache
+def notification(request):
+    try:
+        event = LiveEmbedEvent.objects.get(active=True, notification=True)
+        if event.id not in request.session.get('live_embed_events_notifications_closed', set()):
+            return render(request, 'cartelera/live_embed_event_notification.html', {'event': event})
+    except (LiveEmbedEvent.DoesNotExist, LiveEmbedEvent.MultipleObjectsReturned):
+        pass
+    return HttpResponse()
+
+
+@never_cache
 def notification_closed(request, live_embed_event_id):
     closed = request.session.get('live_embed_events_notifications_closed', set())
     closed.add(int(live_embed_event_id))

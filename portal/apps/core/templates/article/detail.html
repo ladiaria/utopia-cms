@@ -67,7 +67,7 @@
 
 {% block page_header %}
   <div id="bn-module"></div>
-  {% render_live_embed_event_notification %}{# TODO: change this to an "ajax" approach (avoid render over bn-notif.) #}
+  <div id="live_embed_event_notification"></div>
 {% endblock %}
 
 {% block content %}
@@ -904,6 +904,22 @@
 
 {% block footer_scripts %}
   <script type="text/javascript">
+    $(window).on("live_embed_event_notification_show", function(){
+      $('#live_embed_event_notification').load("{% url 'live-embed-event-notification' %}", function(response){
+        if(response){
+          $('.btn-close', this).click(function(){
+            notification_close(this);
+          });
+        }else{
+          $(window).trigger("subscribe_notice_show");
+        }
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block footer_scripts_extra %}
+  <script type="text/javascript">
     $(function(){
       $('#bn-module').load("{% url 'bn-content' %}", function(response){
         if(response){
@@ -911,7 +927,7 @@
             notification_close(this);
           });
         }else{
-          $(window).trigger("subscribe_notice_show");
+          $(window).trigger("live_embed_event_notification_show");
         }
       });
     });
