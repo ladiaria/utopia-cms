@@ -139,12 +139,13 @@
     <span class="ld-main-menu__title">Más</span>
     <ul class="navmenu-list">
       <li class="ld-main-menu__item"><a href="{% url 'search' %}">Buscar</a></li>
+      <li class="ld-main-menu__item"><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
+      {% block extra_items_more %}{% endblock %}
       {% for s_slug, desktop_short, mobile_short, text_long in MENU_LATEST_ARTICLE_LINKS %}
-        <li class="ld-main-menu__item">
+        <li class="ld-main-menu__item{% if forloop.last %} ld-main-menu__divider{% endif %}">
           <a href="{% url 'section-latest-article' section_slug=s_slug %}">{{ text_long }}</a>
         </li>
       {% endfor %}
-      <li class="ld-main-menu__item ld-main-menu__divider"><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
       {% block more_extra %}
         {% for pub in MENU_PUBLICATIONS_MORE_EXTRA %}
           <li class="ld-main-menu__item{% if divider_at_end and forloop.last %} ld-main-menu__divider{% endif %}">
