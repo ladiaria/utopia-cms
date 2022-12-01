@@ -3,10 +3,6 @@
 
 {% block page_title %}{% category_title %}{% endblock %}
 
-{% block page_description %}{% spaceless %}
-  Portada de {{ category }} de {{ site.name }} con las últimas noticias, artículos y entrevistas relacionados con la temática.
-{% endspaceless %}{% endblock %}
-
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
   <meta property="og:title" content="{% category_title %}">

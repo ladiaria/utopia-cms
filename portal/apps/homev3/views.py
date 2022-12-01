@@ -194,7 +194,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             pass
 
         if settings.DEBUG:
-            print(u'DEBUG: Default home page view called.')
+            print('DEBUG: Default home page view called.')
         context.update(
             {
                 'edition': ld_edition,
