@@ -90,13 +90,16 @@ class Command(BaseCommand):
         sorted_dict = sorted(articles_views.items(), key=lambda item: item[1], reverse=True)
         suffix = "_subscribers_only" if subscribers_only else ""
         if not out_prefix:
-            os.rename(
-                join(settings.DASHBOARD_REPORTS_PATH, f"article_views{suffix}.csv"),
-                join(
-                    settings.DASHBOARD_REPORTS_PATH,
-                    f"{month_before_last.year}{month_before_last.month:02d}_article_views{suffix}.csv",
-                ),
-            )
+            try:
+                os.rename(
+                    join(settings.DASHBOARD_REPORTS_PATH, f"article_views{suffix}.csv"),
+                    join(
+                        settings.DASHBOARD_REPORTS_PATH,
+                        f"{month_before_last.year}{month_before_last.month:02d}_article_views{suffix}.csv",
+                    ),
+                )
+            except FileNotFoundError:
+                pass
         w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, f"{out_prefix}article_views{suffix}.csv"), "w"))
         i = 0
         for category_or_publication, item in sorted_dict:
