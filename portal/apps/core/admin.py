@@ -7,6 +7,7 @@ from datetime import date, timedelta
 from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
+from pydoc import locate
 
 from django_markdown.widgets import MarkdownWidget
 from actstream.models import Action
@@ -729,10 +730,38 @@ class PublicationAdmin(ModelAdmin):
             },
         ),
     )
+    actions = ['send_newsletter']
 
     def get_changelist_form(self, request, **kwargs):
         kwargs.setdefault('form', PublicationAdminChangelistForm)
         return super(PublicationAdmin, self).get_changelist_form(request, **kwargs)
+
+    def send_newsletter(self, request, queryset):
+        if queryset.count() > 1:
+            self.message_user(
+                request,
+                "No se permite enviar más de un newsletter a la vez, seleccione solamente una publicación",
+                level=messages.ERROR,
+            )
+        else:
+            function_fullpath = getattr(settings, "CORE_PUBLICATIONS_NL_TASK", None)
+            if function_fullpath:
+                result_err = locate(function_fullpath)(queryset.first().slug)
+                if result_err:
+                    self.message_user(request, result_err, level=messages.ERROR)
+                else:
+                    self.message_user(
+                        request,
+                        "Comenzando el proceso de envío de la newsletter para la publicación seleccionada",
+                        level=messages.SUCCESS,
+                    )
+            else:
+                self.message_user(
+                    request,
+                    "No es posible realizar el envío, la tarea para el envío de newsletters no está configurada",
+                    level=messages.ERROR,
+                )
+    send_newsletter.short_description = "Enviar el newsletter de la publicación seleccionada"
 
 
 class CategoryAdminForm(CustomSubjectAdminForm):
@@ -943,7 +972,7 @@ class ArticleInline(TabularInline):
 
 class BreakingNewsModuleAdmin(ModelAdmin):
     list_display = ('id', 'headline', 'deck', 'covers', 'is_published')
-    list_editable = ('headline', 'deck', 'is_published')
+    list_editable = ('headline', 'is_published')
     list_filter = ('is_published', 'publications', 'categories')
     exclude = ('articles', )
     inlines = [ArticleInline]
