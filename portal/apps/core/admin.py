@@ -27,7 +27,7 @@ from django.contrib.auth.models import Group
 from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
 from django.contrib.admin.options import get_ul_class
-from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea
+from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Field, Textarea, Widget
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
 from django.forms.fields import CharField, IntegerField
@@ -36,6 +36,9 @@ from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import slugify
 from django.utils.text import Truncator
 from django.utils.translation import ugettext as _
+
+from django.template import loader
+from django.utils.safestring import mark_safe
 
 from core.templatetags.ldml import ldmarkup, cleanhtml
 
@@ -284,8 +287,37 @@ class ArticleEditionInline(TabularInline):
     extra = 1
 
 
+class SolanaSignatureWidget(Widget):
+    template_name = 'admin/core/article/solana_signature.html'
+    
+    def __init__(self, *args, **kwargs):
+        kwargs['attrs'] = {'readonly': True}
+        super(SolanaSignatureWidget, self).__init__(*args, **kwargs)
+    
+    def get_context(self, name, value, attrs=None):
+        return {'widget': {
+            'name': name,
+            'value': value,
+        }}
+
+    def render(self, name, value, attrs=None):
+        context = self.get_context(name, value, attrs)
+        template = loader.get_template(self.template_name).render(context)
+        return mark_safe(template)
+
+class SolanaSignatureField(Field):
+    def __init__(self, field, *args, **kwargs):
+        self.field = field
+        kwargs["widget"] = SolanaSignatureWidget
+
+        super(SolanaSignatureField, self).__init__(*args, **kwargs)
+
+    def clean(self, value):
+        return value
+
 class ArticleAdminModelForm(ModelForm):
     body = CharField(widget=MarkdownWidget())
+    solana_signature_address = SolanaSignatureField(u"Firma con Solana", label='Firma con Solana', required=False, help_text='Podés firmar esta nota con Solana desde tu wallet. <a href="https://solana.com/" target="_blank">¿Qué es Solana?</a>')
     headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
     slug = CharField(
         label='Slug',
@@ -384,7 +416,7 @@ class ArticleAdmin(ModelAdmin):
     date_hierarchy = 'date_published'
     ordering = ('-date_created', )
     raw_id_fields = ('photo', 'gallery', 'main_section')
-    readonly_fields = ('date_published', )
+    readonly_fields = ('date_published', 'solana_signature')
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
 
     def creation_date(self, obj):
@@ -410,7 +442,7 @@ class ArticleAdmin(ModelAdmin):
             }
         ),
         ('Metadatos', {'fields': ('date_published', 'tags', 'main_section')}),
-        ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse', )}),
+        ('Autor', {'fields': ('byline', 'only_initials', 'location', 'solana_signature_address'), 'classes': ('collapse', )}),
         ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse', )}),
         (
             'Avanzado',
@@ -423,6 +455,7 @@ class ArticleAdmin(ModelAdmin):
                         'allow_related',
                         'show_related_articles',
                         'newsletter_featured',
+                        'ipfs_upload',
                     ),
                     'additional_access',
                     ('latitude', 'longitude'),
