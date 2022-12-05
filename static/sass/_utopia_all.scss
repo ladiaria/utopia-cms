@@ -2056,3 +2056,20 @@ blockquote.tiktok-embed {
   }
 
 }
+
+// Futuria Crypto features
+.solana-btn {
+  display: inline-flex;
+  align-items: center;
+
+  img.solana-logo {
+    height: 16px;
+    margin-left: 8px;
+  }
+}
+
+.show-solana-info {
+  text-decoration: underline;
+  margin-left: 8px;
+  cursor: pointer;
+}

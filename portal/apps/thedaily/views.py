@@ -1575,3 +1575,18 @@ def telephone_subscription_msg(user, preferred_time):
             user.subscriber.province,
         ),
     )
+
+
+@never_cache
+@to_response
+def buy_single_article(request):
+    article_id = request.POST.get('article_id')
+    user_id = request.POST.get('user_id')
+    if request.method == 'POST' and article_id and user_id:
+        user = get_object_or_404(User, id=user_id)
+        article = get_object_or_404(Article, id=article_id)
+        user.subscriber.articles_bought.add(article)
+        user.subscriber.save()
+        return HttpResponse('OK')
+    else:
+        raise Http404

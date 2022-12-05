@@ -105,3 +105,13 @@ RECAPTCHA_PUBLIC_KEY = ''
 RECAPTCHA_PRIVATE_KEY = ''
 THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY = ''  # 2-char (in caps) country iso code
 THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED = [THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY]
+
+# The web3.storage API Key used to upload files to the web3.storage service
+# To generate an API Token with your account, refer to the following URL:
+# https://web3.storage/docs/how-tos/generate-api-token/
+IPFS_TOKEN = ''
+# Solana's Adress where the payments are sent (your address)
+SOLANA_ADDRESS = 'FSCrrPzWKdQ2DukpPr9Up89Yd4EXXJgRLXXLs2Ynqhfj'
+# Solana devnet settings, change for mainnet
+SOLANA_NETWORK = 'devnet'
+SOLANA_USDC_ADDRESS = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr'

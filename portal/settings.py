@@ -527,6 +527,10 @@ except ImportError as e:
 
 FREEZE_TIME = None
 
+# Solana mainnet settings
+SOLANA_NETWORK = 'mainnet-beta'
+SOLANA_USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *
 

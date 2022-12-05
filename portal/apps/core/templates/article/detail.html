@@ -76,7 +76,7 @@
 
       {% if article.photo %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 243 #}
+          <div>{# closed in line 255 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -107,7 +107,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 243 #}
+          {# missing close div here is closed correctly in line 255 #}
         {% else %}
           <div class="container-photo photo {{ card_size|default:'BG' }} {{ article.photo_layout }}">
             <figure class="principal">
@@ -225,9 +225,34 @@
               </div>
             </div>
           {% endif %}
+          {% if article.ipfs_upload and article.ipfs_cid %}
+            <div class="read-later top">
+              <a class="read-later__btn open-ipfs">
+                <svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="195" height="195" viewBox="0 0 195 195" version="1.1" id="svg23" sodipodi:docname="rust-ipfs-logo.svg" inkscape:version="0.92.3 (2405546, 2018-03-11)">
+                  <g xmlns="http://www.w3.org/2000/svg" id="IPFS-logo-(new)" style="fill-rule:nonzero">
+                    <polygon id="Path" points="84.3,194.5 168.3,146 168.3,49 84.3,0.5 0.3,49 0.3,146 " style="fill:#262626"/>
+                    <path d="m 75.7,12.1 -61,35.2 c 0.09999,1.097728 0.09999,2.202272 0,3.3 l 60.9,35.2 c 5.140467,-3.80057 12.159533,-3.80057 17.3,0 l 60.9,-35.2 c -0.1,-1.097728 -0.1,-2.202272 0,-3.3 L 93,12.1 c -5.140467,3.80057 -12.159533,3.80057 -17.3,0 z m 84,48.2 -61,35.6 c 0.678108,6.33353 -2.791626,12.38539 -8.6,15 l 0.1,70 c 0.986199,0.43498 1.924564,0.97119 2.8,1.6 l 60.9,-35.2 c -0.67811,-6.33353 2.79163,-12.38539 8.6,-15 V 61.9 c -0.97488,-0.457093 -1.91126,-0.992166 -2.8,-1.6 z M 8.9,60.7 c -0.8754357,0.628814 -1.813801,1.165022 -2.8,1.6 v 70.4 c 5.888216,2.52578 9.395106,8.64245 8.6,15 l 60.9,35.2 c 0.875436,-0.62881 1.813801,-1.16502 2.8,-1.6 v -70.4 c -5.888215,-2.52578 -9.395106,-8.64245 -8.6,-15 z" id="Shape" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" inkscape:connector-curvature="0" style="fill:#fff"/>
+                    <path d="m 84.3,11 75.1,43.4 v 86.7 L 84.3,184.5 9.2,141.1 V 54.3 L 84.3,11 m 0,-10.3 -84,48.5 v 97 l 84,48.5 84,-48.5 v -97 z" id="path8" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" inkscape:connector-curvature="0" style="fill:#262626"/>
+                    <polygon id="polygon12" points="84.3,98.1 0.3,49.6 0.3,146.7 84.3,195.2 " style="fill:#083b54;fill-opacity:0.15"/>
+                    <polygon id="polygon14" points="168.4,48.8 84.4,97.3 84.4,194.4 168.4,145.8 " style="fill:#083b54;fill-opacity:0.05"/>
+                  </g>
+                </svg> Ver en IPFS
+              </a>
+            </div>
+          {% endif %}
+          {% if article.solana_signature %}
+            <div class="solana-signature read-later top">
+              <p>
+                Este artículo fue firmado en Solana por el autor
+                <span class="show-solana-info">Mostrar info</span>
+              </p>
+              <p class="solana-info hide">
+                Firma: {{ article.solana_signature }}<br>Dirección: {{ article.solana_signature_address }}</p>
+            </div>
+          {% endif %}
         {% endif %}
       </div>
-      {% if article.photo and header_display == 'FW' %}</div>{# opened in line 86 #}{% endif %}
+      {% if article.photo and header_display == 'FW' %}</div>{# opened in line 79 #}{% endif %}
 
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
@@ -269,15 +294,19 @@
             {% if not request.signupwall %}
               {# Soft wall: Suscripción #}
               {% if not article.public %}
-                {% include 'article/paywall/pw_auth_with_credits.html' %}
+                {% if not user|has_bought_article:article %}
+                  {% include 'article/paywall/pw_auth_with_credits.html' %}
+                {% endif %}
               {% endif %}
             {% else %}{# signupwall raised #}
               {# Hard wall -> Suscripción #}
-              <!-- Hard wall / suscripción-->
-              <div class="article-body article-body--faded">
-                {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
-              </div>
-              {% include 'article/paywall/pw_auth_wo_credits.html' %}
+              {% if not user|has_bought_article:article %}
+                <!-- Hard wall / suscripción-->
+                <div class="article-body article-body--faded">
+                  {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
+                </div>
+                {% include 'article/paywall/pw_auth_wo_credits.html' %}
+              {% endif %}
             {% endif %}
           {% endif %}
 
@@ -285,7 +314,7 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall %}{# closed in line 550 #}
+        {% if not request.signupwall or user|has_bought_article:article %}{# closed in line 566 #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
@@ -533,7 +562,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 301 #}
+        {% endif %}{# opened in line 318 #}
 
       {% else %}{# restricted content message #}
 
@@ -550,7 +579,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 694 #}
+    {% if not request.signupwall %}{# closed in line 710 #}
 
       {% if article.public %}
 
@@ -566,7 +595,7 @@
 
       {% endif %}
 
-      {% if not article.is_restricted or user|has_restricted_access:article %}{# begin restricted content2 #}
+      {% if not article.is_restricted or user|has_restricted_access:article or user|has_bought_article:article %}{# begin restricted content2 #}
 
         {% if TALK_URL and article.allow_comments %}
           <div id="comentarios">
@@ -677,11 +706,11 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 567 #}
+    {% endif %}{# opened in line 583 #}
 
     {% block article_extra %}{% endblock %}
 
-    {% if not request.signupwall or article.is_restricted and not user|has_restricted_access:article %}
+    {% if not request.signupwall or article.is_restricted and not user|has_restricted_access:article or user|has_bought_article:article %}
       <div class="align-center u-mb-50 footer-section">
         <a href="{% url 'home' %}" class="ut-btn ut-btn-outline">Ir a la portada</a>
       </div>
@@ -779,6 +808,14 @@
         {% else %}
           $('.modal').modal('open');
         {% endif %}
+      });
+
+      $('a.open-ipfs').click(function(){
+        window.open('https://ipfs.io/ipfs/{{ article.ipfs_cid }}', 'Ver en IPFS');
+      });
+
+      $('span.show-solana-info').click(function(){
+        $('.solana-info').toggleClass('hide');
       });
 
       $('a.read-later__saved').click(function(){

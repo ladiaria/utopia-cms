@@ -64,6 +64,7 @@ from audiologue.models import Audio
 from tagging.fields import TagField
 from tagging.models import Tag
 from videologue.models import Video, YouTubeVideo
+import w3storage
 
 from .managers import PublishedArticleManager
 from .utils import (
@@ -975,6 +976,24 @@ class ArticleBase(Model, CT):
     last_modified = DateTimeField('última actualización', auto_now=True)
     views = PositiveIntegerField('vistas', default=0, db_index=True)
     allow_comments = BooleanField('Habilitar comentarios', default=True)
+    ipfs_upload = BooleanField('Publicar en IPFS', default=True)
+    ipfs_cid = TextField('id de IPFS',
+        blank=True,
+        null=True,
+        help_text='CID de la nota en IPFS',
+    )
+    solana_signature = TextField(
+        'Firma de Solana',
+        blank=True,
+        null=True,
+        help_text='Firma del autor en Solana',
+    )
+    solana_signature_address = TextField(
+        'Wallet de Solana',
+        blank=True,
+        null=True,
+        help_text='Wallet autora de la firma en Solana',
+    )
     created_by = ForeignKey(
         User,
         verbose_name='creado por',
@@ -1027,6 +1046,26 @@ class ArticleBase(Model, CT):
         self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
 
         now = datetime.now()
+
+        if self.solana_signature_address:
+            # since we have only one field for the signature, we split it and the first part is the signature and the second part is the address
+            splitted = self.solana_signature_address.split(";")
+            self.solana_signature = splitted[0]
+            self.solana_signature_address = splitted[1]
+        else:
+            self.solana_signature = None
+
+        if self.ipfs_upload:
+            content = self.headline + '\n \n' + self.body
+            if (self.ipfs_cid):
+                content = "Nota editada. Versión anterior de la nota en: https://ipfs.io/ipfs/" + self.ipfs_cid + "\n \n \n" + self.body
+            if (self.solana_signature):
+                content += "\n \n" + "Dirección del autor: " + self.solana_signature_address + "\n" + "Firma del autor: " + self.solana_signature
+            w3 = w3storage.API(token=settings.IPFS_TOKEN)
+            cid = w3.post_upload((self.slug, content))
+            self.ipfs_cid = cid
+        else:
+            self.ipfs_cid = None
 
         if self.is_published:
             if not self.date_published:

@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+
 from builtins import str
 import jwt
 from time import time
@@ -72,7 +73,10 @@ def permissions(request):
             'is_subscriber': is_subscriber,
             'is_subscriber_default': is_subscriber_default,
             'is_subscriber_any': is_subscriber_any,
-            'poll_url': (u'https://forms.gle/' + pu_path) if pu_path else u'',
+            'poll_url': ('https://forms.gle/' + pu_path) if pu_path else '',
+            'solana_address': getattr(settings, "SOLANA_ADDRESS", None),
+            'usdc_address': getattr(settings, "SOLANA_USDC_ADDRESS", None),
+            'solana_network': getattr(settings, "SOLANA_NETWORK", None),
         }
     )
 

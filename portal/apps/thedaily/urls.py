@@ -40,6 +40,7 @@ from thedaily.views import (
     lista_lectura_favoritos,
     lista_lectura_historial,
     lista_lectura_toggle,
+    buy_single_article,
 )
 
 
@@ -160,4 +161,6 @@ urlpatterns = [
         r'^lista-lectura-toggle/(?P<event>add|remove|favToggle)/(?P<article_id>\d+)/$',
         lista_lectura_toggle,
         name="lista-lectura-toggle"),
+
+    url(r'^comprar-articulo/$', buy_single_article, name="buy-single-article"),
 ]
