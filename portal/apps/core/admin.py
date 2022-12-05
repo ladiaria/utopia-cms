@@ -27,7 +27,9 @@ from django.contrib.auth.models import Group
 from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
 from django.contrib.admin.options import get_ul_class
-from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Field, Textarea, Widget
+from django.forms import (
+    ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Field, Textarea, Widget
+)
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
 from django.forms.fields import CharField, IntegerField
@@ -289,11 +291,11 @@ class ArticleEditionInline(TabularInline):
 
 class SolanaSignatureWidget(Widget):
     template_name = 'admin/core/article/solana_signature.html'
-    
+
     def __init__(self, *args, **kwargs):
         kwargs['attrs'] = {'readonly': True}
         super(SolanaSignatureWidget, self).__init__(*args, **kwargs)
-    
+
     def get_context(self, name, value, attrs=None):
         return {'widget': {
             'name': name,
@@ -317,7 +319,15 @@ class SolanaSignatureField(Field):
 
 class ArticleAdminModelForm(ModelForm):
     body = CharField(widget=MarkdownWidget())
-    solana_signature_address = SolanaSignatureField(u"Firma con Solana", label='Firma con Solana', required=False, help_text='Podés firmar esta nota con Solana desde tu wallet. <a href="https://solana.com/" target="_blank">¿Qué es Solana?</a>')
+    solana_signature_address = SolanaSignatureField(
+        "Firma con Solana",
+        label='Firma con Solana',
+        required=False,
+        help_text=(
+            'Podés firmar esta nota con Solana desde tu wallet. '
+            '<a href="https://solana.com/" target="_blank">¿Qué es Solana?</a>'
+        ),
+    )
     headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
     slug = CharField(
         label='Slug',

@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+
 from builtins import str
 import jwt
 from time import time
@@ -12,7 +13,7 @@ from signupwall.middleware import get_article_by_url_kwargs
 
 
 def permissions(request):
-    result, is_subscriber, is_subscriber_default, solana_address, usdc_address, solana_network  = {}, False, False, '', '', ''
+    result, is_subscriber, is_subscriber_default = {}, False, False
 
     if request.user.is_authenticated() and hasattr(request.user, 'subscriber'):
 
@@ -72,10 +73,10 @@ def permissions(request):
             'is_subscriber': is_subscriber,
             'is_subscriber_default': is_subscriber_default,
             'is_subscriber_any': is_subscriber_any,
-            'poll_url': (u'https://forms.gle/' + pu_path) if pu_path else u'',
-            'solana_address': settings.SOLANA_ADDRESS,
-            'usdc_address': settings.SOLANA_USDC_ADDRESS,
-            'solana_network': settings.SOLANA_NETWORK,
+            'poll_url': ('https://forms.gle/' + pu_path) if pu_path else '',
+            'solana_address': getattr(settings, "SOLANA_ADDRESS", None),
+            'usdc_address': getattr(settings, "SOLANA_USDC_ADDRESS", None),
+            'solana_network': getattr(settings, "SOLANA_NETWORK", None),
         }
     )
 

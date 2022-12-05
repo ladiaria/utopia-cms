@@ -24,7 +24,7 @@ if APPS_DIR not in sys.path:
 SITE_ROOT = dirname(realpath(__file__))
 STATIC_URL = '/static/'
 STATIC_ROOT = '%s/static/' % SITE_ROOT
-SITE_DOMAIN = 'yoogle.com'
+SITE_DOMAIN = 'example.com'
 URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
 

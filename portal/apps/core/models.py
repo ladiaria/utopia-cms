@@ -976,7 +976,7 @@ class ArticleBase(Model, CT):
     views = PositiveIntegerField('vistas', default=0, db_index=True)
     allow_comments = BooleanField('Habilitar comentarios', default=True)
     ipfs_upload = BooleanField('Publicar en IPFS', default=True)
-    ipfs_cid = TextField('id de IPFS', 
+    ipfs_cid = TextField('id de IPFS',
         blank=True,
         null=True,
         help_text='CID de la nota en IPFS',
@@ -1044,7 +1044,7 @@ class ArticleBase(Model, CT):
                 setattr(self, attr, add_punctuation(getattr(self, attr, '')))
 
         self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
-        
+
         now = datetime.now()
 
         if self.solana_signature_address:
