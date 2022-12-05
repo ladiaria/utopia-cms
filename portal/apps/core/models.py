@@ -64,6 +64,7 @@ from audiologue.models import Audio
 from tagging.fields import TagField
 from tagging.models import Tag
 from videologue.models import Video, YouTubeVideo
+import w3storage
 
 from .managers import PublishedArticleManager
 from .utils import (
@@ -1034,7 +1035,6 @@ class ArticleBase(Model, CT):
 
     def save(self, *args, **kwargs):
         from .utils import add_punctuation
-        import w3storage
         for attr in ('headline', 'deck', 'lead', 'body'):
             if getattr(self, attr, None):
                 setattr(self, attr, getattr(self, attr).strip())

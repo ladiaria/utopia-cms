@@ -527,9 +527,6 @@ except ImportError as e:
 
 FREEZE_TIME = None
 
-IPFS_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDQ5NUYzNTVFMGQ5QzI0MTZmYjczMzNBOWUzOTY1ODM2NEMxQ0IzQkUiLCJpc3MiOiJ3ZWIzLXN0b3JhZ2UiLCJpYXQiOjE2NTMyNDU5NDY2MzcsIm5hbWUiOiJGdXR1cmlhICYgU2l0aW9zIGRlIGxhIE1lbW9yaWEifQ.fa24L-jCA-0MLn5q5CtiVN1fa-LSOLoiXEBdpVgAaRs'
-# Solana's Adress where the payments are sent
-SOLANA_ADDRESS = 'FSCrrPzWKdQ2DukpPr9Up89Yd4EXXJgRLXXLs2Ynqhfj'
 # Solana mainnet settings
 SOLANA_NETWORK = 'mainnet-beta'
 SOLANA_USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
