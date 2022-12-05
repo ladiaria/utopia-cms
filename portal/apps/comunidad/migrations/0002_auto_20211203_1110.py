@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='subscriberarticle',
             name='type',
-            field=models.CharField(blank=True, choices=[(b'NE', b'Noticia'), (b'OP', 'Opini\xf3n'), (b'PA', 'Fotograf\xeda'), (b'HT', b'HTML'), (b'CM', b'COMUNIDAD')], db_index=True, max_length=2, null=True, verbose_name='tipo'),
+            field=models.CharField(blank=True, choices=[('NE', 'Noticia'), ('OP', 'Opinión'), ('PA', 'Fotografía'), ('HT', 'HTML'), ('CM', 'COMUNIDAD')], db_index=True, max_length=2, null=True, verbose_name='tipo'),
         ),
         migrations.AddIndex(
             model_name='subscriberarticle',

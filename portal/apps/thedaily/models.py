@@ -43,29 +43,29 @@ GA_CATEGORY_CHOICES = (('D', 'Digital'), ('P', 'Papel'))
 
 class SubscriptionPrices(Model):
     subscription_type = CharField(
-        u'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, default='PAPYDIM'
+        'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, default='PAPYDIM'
     )
-    price = DecimalField(u'Precio', max_digits=7, decimal_places=2)
-    order = PositiveSmallIntegerField(u'Orden', null=True)
+    price = DecimalField('Precio', max_digits=7, decimal_places=2)
+    order = PositiveSmallIntegerField('Orden', null=True)
     paypal_button_id = CharField(max_length=13, null=True, blank=True)
-    auth_group = ForeignKey(Group, verbose_name=u'Grupo asociado al permiso', blank=True, null=True)
+    auth_group = ForeignKey(Group, verbose_name='Grupo asociado al permiso', blank=True, null=True)
     publication = ForeignKey(Publication, blank=True, null=True)
     ga_sku = CharField(max_length=10, blank=True, null=True)
     ga_name = CharField(max_length=64, blank=True, null=True)
     ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
 
     def __str__(self):
-        return u"%s -- $ %s " % (self.get_subscription_type_display(), self.price)
+        return "%s -- $ %s " % (self.get_subscription_type_display(), self.price)
 
     class Meta:
-        verbose_name = u'Precio'
-        verbose_name_plural = u'Precios'
+        verbose_name = 'Precio'
+        verbose_name_plural = 'Precios'
         ordering = ['order']
 
 
 alphanumeric = RegexValidator(
-    u'^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$',
-    u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
+    '^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$',
+    'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
 )
 
 
@@ -78,41 +78,41 @@ class Subscriber(Model):
        changed its has_newsletter attr from True to False) now this M2M rows are removed when the subscriber is saved,
        for example in the admin or by the user itself using the edit profile page.
     """
-    contact_id = PositiveIntegerField(u'CRM id', unique=True, editable=True, blank=True, null=True)
-    user = OneToOneField(User, verbose_name=u'usuario', related_name='subscriber', blank=True, null=True)
+    contact_id = PositiveIntegerField('CRM id', unique=True, editable=True, blank=True, null=True)
+    user = OneToOneField(User, verbose_name='usuario', related_name='subscriber', blank=True, null=True)
 
     # TODO: ver la posibilidad de eliminarlo ya que es el "first_name" del modelo django.contrib.auth.models.User
-    name = CharField(u'nombre', max_length=255, validators=[alphanumeric])
+    name = CharField('nombre', max_length=255, validators=[alphanumeric])
 
     # agregamos estos campos para unificar la info de User y Subscriber
-    address = CharField(u'dirección', max_length=255, blank=True, null=True)
-    country = CharField(u'país', max_length=50, blank=True, null=True)
-    city = CharField(u'ciudad', max_length=64, blank=True, null=True)
+    address = CharField('dirección', max_length=255, blank=True, null=True)
+    country = CharField('país', max_length=50, blank=True, null=True)
+    city = CharField('ciudad', max_length=64, blank=True, null=True)
     province = CharField(
-        u'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
+        'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
     )
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
-    document = CharField(u'documento', max_length=50, blank=True, null=True)
-    phone = CharField(u'teléfono', max_length=20)
+    document = CharField('documento', max_length=50, blank=True, null=True)
+    phone = CharField('teléfono', max_length=20)
 
-    date_created = DateTimeField(u'fecha de registro', auto_now_add=True, editable=False)
-    downloads = PositiveIntegerField(u'descargas', default=0, blank=True, null=True)
+    date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
+    downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
 
     pdf = BooleanField(default=False)
-    lento_pdf = BooleanField(u'pdf L.', default=False)
+    lento_pdf = BooleanField('pdf L.', default=False)
     ruta = PositiveSmallIntegerField(blank=True, null=True)
     plan_id = TextField(blank=True, null=True)
     ruta_lento = PositiveSmallIntegerField(blank=True, null=True)
     ruta_fs = PositiveSmallIntegerField(blank=True, null=True)
     newsletters = ManyToManyField(Publication, blank=True, limit_choices_to={'has_newsletter': True})
     category_newsletters = ManyToManyField(Category, blank=True, limit_choices_to={'has_newsletter': True})
-    allow_news = BooleanField(u'acepta novedades', default=True)
-    allow_promotions = BooleanField(u'acepta promociones', default=True)
-    allow_polls = BooleanField(u'acepta encuestas', default=True)
+    allow_news = BooleanField('acepta novedades', default=True)
+    allow_promotions = BooleanField('acepta promociones', default=True)
+    allow_polls = BooleanField('acepta encuestas', default=True)
     # TODO: explain the utility of this field or remove it.
     subscription_mode = CharField(max_length=1, null=True, blank=True, default=None)
-    last_paid_subscription = DateTimeField(u'Ultima subscripcion comienzo', null=True, blank=True)
+    last_paid_subscription = DateTimeField('Ultima subscripcion comienzo', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if self.document:
@@ -174,7 +174,7 @@ class Subscriber(Model):
 
     def user_is_active(self):
         return self.user and self.user.is_active
-    user_is_active.short_description = u'user act.'
+    user_is_active.short_description = 'user act.'
     user_is_active.boolean = True
 
     def is_subscriber_any(self):
@@ -202,13 +202,13 @@ class Subscriber(Model):
 
     def get_newsletters(self):
         return ', '.join(self.get_newsletters_slugs())
-    get_newsletters.short_description = u'newsletters'
+    get_newsletters.short_description = 'newsletters'
 
     def updatecrmuser_publication_newsletters(self, exclude_slugs=[]):
         if self.contact_id:
             try:
                 updatecrmuser(
-                    self.contact_id, u'newsletters', json.dumps(self.get_publication_newsletters_ids(exclude_slugs))
+                    self.contact_id, 'newsletters', json.dumps(self.get_publication_newsletters_ids(exclude_slugs))
                 )
             except requests.exceptions.RequestException:
                 pass
@@ -217,7 +217,7 @@ class Subscriber(Model):
         if self.contact_id:
             try:
                 updatecrmuser(
-                    self.contact_id, u'area_newsletters', json.dumps(self.get_category_newsletters_ids(exclude_slugs))
+                    self.contact_id, 'area_newsletters', json.dumps(self.get_category_newsletters_ids(exclude_slugs))
                 )
             except requests.exceptions.RequestException:
                 pass
@@ -237,7 +237,7 @@ class Subscriber(Model):
 
     def get_full_name(self):
         if not self.user.first_name and not self.user.last_name:
-            return u"Usuario sin nombre"
+            return "Usuario sin nombre"
         else:
             return self.user.get_full_name()
 
@@ -270,7 +270,7 @@ class Subscriber(Model):
         return Hashids(settings.HASHIDS_SALT, 32).encode(int(self.id))
 
     class Meta:
-        verbose_name = u'suscriptor'
+        verbose_name = 'suscriptor'
         permissions = (("es_suscriptor_%s" % settings.DEFAULT_PUB, "Es suscriptor actualmente"), )
 
 
@@ -296,11 +296,11 @@ def user_pre_save(sender, instance, **kwargs):
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
             requests.post(
-                settings.CRM_UPDATE_USER_URI, data={
-                    'contact_id': contact_id, 'email': actualusr.email,
-                    'newemail': instance.email}).raise_for_status()
+                settings.CRM_UPDATE_USER_URI,
+                data={'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email},
+            ).raise_for_status()
         except requests.exceptions.RequestException:
-            raise UpdateCrmEx(u"No se ha podido actualizar tu email, contactate con nosotros")
+            raise UpdateCrmEx("No se ha podido actualizar tu email, contactate con nosotros")
 
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
@@ -316,7 +316,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
                 try:
                     updatecrmuser(instance.contact_id, f, getattr(instance, f))
                 except requests.exceptions.RequestException:
-                    raise UpdateCrmEx(u"No se ha podido actualizar tu perfil, contactate con nosotros")
+                    raise UpdateCrmEx("No se ha podido actualizar tu perfil, contactate con nosotros")
     except Subscriber.DoesNotExist:
         # this happens only on creation
         pass
@@ -339,8 +339,8 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
             try:
                 updatecrmuser(
                     instance.contact_id,
-                    (u'area_' if model is Category else u'') + u'newsletters'
-                    + (u'_remove' if action == 'post_remove' else u''),
+                    ('area_' if model is Category else '') + 'newsletters'
+                    + ('_remove' if action == 'post_remove' else ''),
                     json.dumps(list(pk_set)) if pk_set else None,
                 )
             except requests.exceptions.RequestException:
@@ -368,16 +368,16 @@ class OAuthState(Model):
 
 
 class WebSubscriber(Subscriber):
-    referrer = ForeignKey(Subscriber, related_name='referred', verbose_name=u'referido', blank=True, null=True)
+    referrer = ForeignKey(Subscriber, related_name='referred', verbose_name='referido', blank=True, null=True)
 
 
 class SubscriberEditionDownloads(Model):
-    subscriber = ForeignKey(Subscriber, related_name='edition_downloads', verbose_name=u'suscriptor')
-    edition = ForeignKey(Edition, related_name='subscribers_downloads', verbose_name=u'edición')
-    downloads = PositiveIntegerField(u'descargas', default=0)
+    subscriber = ForeignKey(Subscriber, related_name='edition_downloads', verbose_name='suscriptor')
+    edition = ForeignKey(Edition, related_name='subscribers_downloads', verbose_name='edición')
+    downloads = PositiveIntegerField('descargas', default=0)
 
     def __str__(self):
-        return u'%s - %s: %i' % (self.subscriber, self.edition, self.downloads)
+        return '%s - %s: %i' % (self.subscriber, self.edition, self.downloads)
 
     def save(self, *args, **kwargs):
         super(SubscriberEditionDownloads, self).save(*args, **kwargs)
@@ -387,25 +387,25 @@ class SubscriberEditionDownloads(Model):
     class Meta:
         ordering = ('-edition', '-downloads', 'subscriber')
         unique_together = ('subscriber', 'edition')
-        verbose_name = u'descargas de edición'
-        verbose_name_plural = u'descargas de ediciones'
+        verbose_name = 'descargas de edición'
+        verbose_name_plural = 'descargas de ediciones'
 
 
 class SentMail(Model):
     subscriber = ForeignKey(Subscriber)
-    subject = CharField(u'asunto', max_length=150)
-    date_sent = DateTimeField(u'fecha de envio', auto_now_add=True, editable=False)
+    subject = CharField('asunto', max_length=150)
+    date_sent = DateTimeField('fecha de envio', auto_now_add=True, editable=False)
 
 
 class SubscriberEvent(Model):
     subscriber = ForeignKey(Subscriber)
-    description = CharField(u'descripcion', max_length=150)
+    description = CharField('descripcion', max_length=150)
     date_occurred = DateTimeField(auto_now_add=True, editable=False)
 
 
 class EditionDownload(Model):
     subscriber = ForeignKey(
-        SubscriberEditionDownloads, related_name='subscriber_downloads', verbose_name=u'suscriptor'
+        SubscriberEditionDownloads, related_name='subscriber_downloads', verbose_name='suscriptor'
     )
     incomplete = BooleanField(default=True)
     download_date = DateTimeField(auto_now_add=True)
@@ -413,57 +413,57 @@ class EditionDownload(Model):
     class Meta:
         get_latest_by = 'download_date'
         unique_together = ('subscriber', 'download_date')
-        verbose_name = u'descarga de edición'
-        verbose_name_plural = u'descargas de edición'
+        verbose_name = 'descarga de edición'
+        verbose_name_plural = 'descargas de edición'
 
 
 class Subscription(Model):
     SUBSCRIPTION_CHOICES = (
-        ('PAP', u'Edición papel + Digital'),
-        ('DIG', u'Digital (Edición web)'),
+        ('PAP', 'Edición papel + Digital'),
+        ('DIG', 'Digital (Edición web)'),
     )
-    MONTHLY = u'MO'
-    QUARTERLY = u'QU'
-    BIANNUAL = u'BA'
-    ANNUAL = u'AN'
+    MONTHLY = 'MO'
+    QUARTERLY = 'Q'
+    BIANNUAL = 'BA'
+    ANNUAL = 'AN'
     SUBSCRIPTION_PLAN_CHOICES = (
-        (MONTHLY, u'Mensual'),
-        (QUARTERLY, u'Trimestral'),
-        (BIANNUAL, u'Semestral'),
-        (ANNUAL, u'Anual'),
+        (MONTHLY, 'Mensual'),
+        (QUARTERLY, 'Trimestral'),
+        (BIANNUAL, 'Semestral'),
+        (ANNUAL, 'Anual'),
     )
 
-    subscriber = ForeignKey(User, related_name='suscripciones', verbose_name=u'usuario', null=True, blank=True)
-    first_name = CharField(u'nombres', max_length=150)
-    last_name = CharField(u'apellidos', max_length=150)
-    document = CharField(u'documento', max_length=11, blank=False, null=True)
-    telephone = CharField(u'teléfono', max_length=20, blank=False, null=False)
-    email = EmailField(u'email')
-    address = CharField(u'dirección', max_length=255, blank=True, null=True)
-    country = CharField(u'país', max_length=50)
-    city = CharField(u'ciudad', max_length=64, blank=True, null=True)
+    subscriber = ForeignKey(User, related_name='suscripciones', verbose_name='usuario', null=True, blank=True)
+    first_name = CharField('nombres', max_length=150)
+    last_name = CharField('apellidos', max_length=150)
+    document = CharField('documento', max_length=11, blank=False, null=True)
+    telephone = CharField('teléfono', max_length=20, blank=False, null=False)
+    email = EmailField('email')
+    address = CharField('dirección', max_length=255, blank=True, null=True)
+    country = CharField('país', max_length=50)
+    city = CharField('ciudad', max_length=64, blank=True, null=True)
     province = CharField(
-        u'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
+        'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
     )
 
-    observations = TextField(u'observaciones para la entrega', blank=True, null=True)
-    subscription_type = CharField(u'suscripción', max_length=3, choices=SUBSCRIPTION_CHOICES, default='DIG')
-    subscription_plan = CharField(u'plan', max_length=2, choices=SUBSCRIPTION_PLAN_CHOICES)
-    subscription_end = DateTimeField(u'última fecha de suscripción', auto_now_add=True, editable=False)
-    friend1_name = CharField(u'nombre', max_length=150, blank=True, null=True)
-    friend1_email = CharField(u'email', max_length=150, blank=True, null=True)
-    friend1_telephone = CharField(u'teléfono', max_length=20, blank=True, null=True)
-    friend2_name = CharField(u'nombre', max_length=150, blank=True, null=True)
-    friend2_email = CharField(u'email', max_length=150, blank=True, null=True)
-    friend2_telephone = CharField(u'teléfono', max_length=20, blank=True, null=True)
-    friend3_name = CharField(u'nombre', max_length=150, blank=True, null=True)
-    friend3_email = CharField(u'email', max_length=150, blank=True, null=True)
-    friend3_telephone = CharField(u'teléfono', max_length=20, blank=True, null=True)
-    date_created = DateTimeField(u'fecha de creación', auto_now_add=True, editable=False)
+    observations = TextField('observaciones para la entrega', blank=True, null=True)
+    subscription_type = CharField('suscripción', max_length=3, choices=SUBSCRIPTION_CHOICES, default='DIG')
+    subscription_plan = CharField('plan', max_length=2, choices=SUBSCRIPTION_PLAN_CHOICES)
+    subscription_end = DateTimeField('última fecha de suscripción', auto_now_add=True, editable=False)
+    friend1_name = CharField('nombre', max_length=150, blank=True, null=True)
+    friend1_email = CharField('email', max_length=150, blank=True, null=True)
+    friend1_telephone = CharField('teléfono', max_length=20, blank=True, null=True)
+    friend2_name = CharField('nombre', max_length=150, blank=True, null=True)
+    friend2_email = CharField('email', max_length=150, blank=True, null=True)
+    friend2_telephone = CharField('teléfono', max_length=20, blank=True, null=True)
+    friend3_name = CharField('nombre', max_length=150, blank=True, null=True)
+    friend3_email = CharField('email', max_length=150, blank=True, null=True)
+    friend3_telephone = CharField('teléfono', max_length=20, blank=True, null=True)
+    date_created = DateTimeField('fecha de creación', auto_now_add=True, editable=False)
 
-    public_profile = BooleanField(u'perfíl comunidad', default=True)
+    public_profile = BooleanField('perfíl comunidad', default=True)
 
-    subscription_type_prices = ManyToManyField(SubscriptionPrices, verbose_name=u'tipo de subscripcion', blank=True)
+    subscription_type_prices = ManyToManyField(SubscriptionPrices, verbose_name='tipo de subscripcion', blank=True)
     promo_code = CharField(max_length=8, blank=True, null=True)
 
     def __str__(self):
@@ -473,10 +473,10 @@ class Subscription(Model):
         if not self.first_name and not self.last_name:
             return "Usuario sin nombre"
         else:
-            return u'%s %s' % (self.first_name, self.last_name)
+            return '%s %s' % (self.first_name, self.last_name)
 
     def get_subscription_type_prices(self):
-        return u', '.join(u'%s' % stp for stp in self.subscription_type_prices.all())
+        return ', '.join('%s' % stp for stp in self.subscription_type_prices.all())
 
     def get_absolute_url(self):
         return '/admin/thedaily/subscription/%i/' % self.id
@@ -484,8 +484,8 @@ class Subscription(Model):
     class Meta:
         get_latest_by = 'date_created'
         ordering = ('-date_created', 'first_name', 'last_name')
-        verbose_name = u'suscripción'
-        verbose_name_plural = u'suscripciones'
+        verbose_name = 'suscripción'
+        verbose_name_plural = 'suscripciones'
 
 
 # This model can be used if unique promo codes required:
@@ -510,8 +510,8 @@ class ExteriorSubscription(Subscription):
 
 class PollAnswer(Model):
     """ General purpose document-answer for polls """
-    document = CharField(u'documento', max_length=50, unique=True)
-    answer = CharField(u'respuesta', max_length=16)
+    document = CharField('documento', max_length=50, unique=True)
+    answer = CharField('respuesta', max_length=16)
 
 
 class UsersApiSession(Model):
@@ -521,5 +521,5 @@ class UsersApiSession(Model):
     value to allow only a certain number of requests per-user with a different
     user device id (udid), for ex. 3. No clean-session policy is defined yet.
     """
-    user = ForeignKey(User, related_name='api_sessions', verbose_name=u'usuario')
+    user = ForeignKey(User, related_name='api_sessions', verbose_name='usuario')
     udid = CharField(max_length=16)
