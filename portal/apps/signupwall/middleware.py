@@ -12,6 +12,7 @@ from django.core.urlresolvers import resolve
 from apps import mongo_db
 from signupwall.utils import get_ip
 from core.models import Article
+from thedaily.templatetags.thedaily_tags import has_bought_article
 from thedaily.email_logic import limited_free_article_mail
 
 
@@ -99,6 +100,7 @@ class SignupwallMiddleware(object):
 
         # ignore also signupwall if the user is subscribed to the default pub or to any pub that the article is
         # published in, or to any pub in article's additional_access field.
+        # ignore also if the user has bought the article.
         restricted_article = article.is_restricted()
         if (
             article.is_public()
@@ -106,15 +108,18 @@ class SignupwallMiddleware(object):
             or user_is_authenticated
             and hasattr(user, 'subscriber')
             and (
-                user.subscriber.is_subscriber()
+                (
+                    user.subscriber.is_subscriber()
 
-                or not restricted_article
-                and any(user.subscriber.is_subscriber(p.slug) for p in article.publications())
+                    or not restricted_article
+                    and any(user.subscriber.is_subscriber(p.slug) for p in article.publications())
 
-                or restricted_article
-                and user.subscriber.is_subscriber(article.main_section.edition.publication.slug)
+                    or restricted_article
+                    and user.subscriber.is_subscriber(article.main_section.edition.publication.slug)
 
-                or any(user.subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+                    or any(user.subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+                )
+                or has_bought_article(user, article)
             )
         ):
             if debug:
