@@ -30,7 +30,7 @@ def normalize(value):
 def to_p(value):
     value = value.strip()
     if not value.startswith('<') and not value == '':
-        return u'<p>%s</p>' % value
+        return '<p>%s</p>' % value
     return value
 
 
@@ -45,7 +45,7 @@ def get_extension(match, aid):
     if extensions.count() > count and count >= 0:
         extension = extensions[count]
     else:
-        return u''
+        return ''
     return render_to_string('core/templates/article/extension.html', {'extension': extension})
 
 
@@ -66,16 +66,16 @@ def get_image(match, aid, amp=False):
             try:
                 bool(article_body_image.image.image.file)
             except IOError:
-                return u''
+                return ''
             else:
                 return render_to_string(
                     ('amp/' if amp else '') + 'core/templates/article/image.html',
                     {'article': article, 'image': article_body_image.image, 'display': article_body_image.display},
                 )
         else:
-            return u''
+            return ''
     except Article.DoesNotExist:
-        return u''
+        return ''
 
 
 @register.filter
@@ -129,7 +129,7 @@ def remove_markup(value):
         value = value.replace("[", "")
         value = value.replace("]", "")
     else:
-        value = u''
+        value = ''
     return value
 
 

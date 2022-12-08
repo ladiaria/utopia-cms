@@ -3,7 +3,7 @@
     <select name="{{ select_name }}" id="id_{{ select_name }}" class="article">
         <option value="">-- Ninguno --</option>
         {% for article in articles %}
-            <option value="{{ article.id }}">{{ article.headline|ldmarkup:article.id|bleach }}</option>
+            <option value="{{ article.id }}">{{ article.headline|ldmarkup|bleach }}</option>
         {% endfor %}
     </select>
 {% else %}

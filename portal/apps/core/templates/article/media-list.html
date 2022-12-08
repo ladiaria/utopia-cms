@@ -7,7 +7,7 @@
       <div class="col">
         <div class="article-section">{% autoescape off %}{% publication_section article %}{% endautoescape %}</div>
         <a href="{{ article.get_absolute_url }}" class="title-recomendados">
-          {{ article.headline|ldmarkup:article.id|bleach }}
+          {{ article.headline|ldmarkup|bleach }}
         </a>
       </div>
     </article>
