@@ -31,12 +31,12 @@
                     {% include 'article/article_card_lock_tooltip.html' %}
                   </div>
                   <h3 class="ld-card__title ld-card__title{% if not article.home_lead %} ld-card__title--mb{% endif %}">
-                    <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|bleach }}</a>
+                    <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
                   </h3>
 
                   {% if article.home_lead %}
                     <div class="ld-card__intro ld-card__intro--home_lead">
-                      {{ article.home_lead|ldmarkup:article.id|bleach }}
+                      {{ article.home_lead|ldmarkup|bleach }}
                     </div>
                   {% endif %}
 

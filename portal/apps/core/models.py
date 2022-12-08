@@ -544,7 +544,7 @@ class Category(Model):
             ]
         )
 
-    def articles_count(self, max=None):
+    def articles_count(self, max=None, exclude_sections=[], debug=False):
         """
         Returns the number of articles published in this category.
         If max is given, the result will be allways less or equal this max value.
@@ -559,13 +559,17 @@ class Category(Model):
                 JOIN core_edition ON
                     core_articlerel.edition_id = core_edition.id
                 WHERE core_section.category_id = %d AND is_published AND core_edition.date_published <= CURRENT_DATE
-                """ % self.id
+            """ % self.id
+            if exclude_sections:
+                subquery_part += "AND core_section.slug NOT IN (%s)" % ",".join("'%s'" % s for s in exclude_sections)
             if max:
                 query = "SELECT COUNT(*) FROM (SELECT DISTINCT core_article.id %s LIMIT %d) final" % (
                     subquery_part, max
                 )
             else:
                 query = "SELECT COUNT(DISTINCT core_article.id) " + subquery_part
+            if debug:
+                print(query)
             cursor.execute(query)
             return cursor.fetchone()[0]
 
@@ -1070,11 +1074,7 @@ class ArticleBase(Model, CT):
         return bool(self.lead)
 
     def get_lead(self):
-        if self.lead:
-            return self.lead
-        elif self.type == 'SA' or self.type == 'RE':
-            return self.body
-        return self.body[:self.body.find('\n')]
+        return self.lead or self.body[:self.body.find('\n')]
 
     def get_keywords(self):
         if self.keywords:
@@ -1583,6 +1583,32 @@ class ArticleRel(Model):
     def __str__(self):
         return '%s - %s' % (self.edition, self.section)
 
+    @staticmethod
+    def articles_count(max=None, section_slugs_only=[], debug=False):
+        with connection.cursor() as cursor:
+            subquery_part = """
+                FROM core_article
+                JOIN core_articlerel ON
+                    core_article.id = core_articlerel.article_id
+                JOIN core_section ON
+                    core_articlerel.section_id = core_section.id
+                JOIN core_edition ON
+                    core_articlerel.edition_id = core_edition.id
+                WHERE is_published AND core_edition.date_published <= CURRENT_DATE
+            """
+            if section_slugs_only:
+                subquery_part += "AND core_section.slug IN (%s)" % ",".join("'%s'" % s for s in section_slugs_only)
+            if max:
+                query = "SELECT COUNT(*) FROM (SELECT DISTINCT core_article.id %s LIMIT %d) final" % (
+                    subquery_part, max
+                )
+            else:
+                query = "SELECT COUNT(DISTINCT core_article.id) " + subquery_part
+            if debug:
+                print(query)
+            cursor.execute(query)
+            return cursor.fetchone()[0]
+
     class Meta:
         ordering = ('position', '-article__date_published')
         unique_together = ('article', 'edition', 'section', 'position')
@@ -1675,7 +1701,7 @@ class CategoryHome(Model):
         ordering = ('category', )
 
 
-def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run=False):
+def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run=False, sql_debug=False):
     """
     Updates categories homes based on articles publishing dates
     """
@@ -1688,12 +1714,29 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
     for cat in categories:
         needed = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_NEEDED', {}).get(cat.slug, 10)
         cat_needed_defaults[cat.slug] = needed
-        articles_count = cat.articles_count(needed)
+        exclude_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_SECTIONS', {}).get(cat.slug, [])
+        articles_count = cat.articles_count(needed, exclude_sections, sql_debug)
+        include_extra_sections = getattr(
+            settings, 'CORE_UPDATE_CATEGORY_HOMES_INCLUDE_EXTRA_SECTIONS', {}
+        ).get(cat.slug, [])
+
+        # NOTICE: tag exclude filtering (if defined by settings) is ignored to evaluate this needed limits
+        if articles_count < needed and include_extra_sections:
+            articles_count += ArticleRel.articles_count(needed - articles_count, include_extra_sections, sql_debug)
+
         if articles_count:
             categories_to_fill.append(cat.slug)
-            buckets[cat.slug] = []
-            category_sections[cat.slug] = cat.section_set.values_list('id', flat=True)
-            cat_needed[cat.slug] = articles_count
+            buckets[cat.slug], cat_needed[cat.slug] = [], articles_count
+            category_sections[cat.slug] = set(
+                list(cat.section_set.values_list('id', flat=True))
+                + (
+                    list(Section.objects.filter(slug__in=include_extra_sections).values_list('id', flat=True))
+                    if include_extra_sections else []
+                )
+            ) - set(
+                Section.objects.filter(slug__in=exclude_sections).values_list('id', flat=True)
+                if exclude_sections else []
+            )
 
     if categories_to_fill:
         if settings.DEBUG:
@@ -1701,6 +1744,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
 
         lowest_date, max_date = Edition.objects.last().date_published, date.today()
         days_step = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DAYS_STEP', 30)
+        exclude_tags = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_TAGS', {})
         min_date_iter, max_date_iter, stop = max_date - timedelta(days_step), max_date, False
 
         while max_date_iter > lowest_date:
@@ -1716,6 +1760,10 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                         if (
                             article not in [x[0] for x in buckets[cat_slug]]
                             and ar.section_id in category_sections[cat_slug]
+                            and not (
+                                cat_slug in exclude_tags
+                                and any(slugify(t.name) in exclude_tags[cat_slug] for t in article.get_tags())
+                            )
                         ):
                             buckets[cat_slug].append((article, (ar.edition.date_published, article.date_published)))
                             if len(buckets[cat_slug]) == cat_needed[cat_slug]:

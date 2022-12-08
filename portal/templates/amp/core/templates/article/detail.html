@@ -48,7 +48,7 @@
             </figure>
             <figcaption class="article-caption ld-caption">
               <div class="container">
-                {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>{% endif %}
+                {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
                 {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
               </div>
             </figcaption>
@@ -75,7 +75,7 @@
           </figure>
           <figcaption class="article-caption ld-caption">
             <div class="container">
-              <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
+              <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
               {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
             </div>
           </figcaption>
@@ -90,7 +90,7 @@
           <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
         </div>
       {% endifequal %}
-      <h1 class="article-title after_foto">{{ article.headline|ldmarkup:article.id|bleach }}</h1>
+      <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
 
       <div class="article-date-author">
         {% with authors=article.get_authors %}
@@ -163,10 +163,10 @@
 
     {% if article.has_deck or article.has_lead %}
       {% if article.has_deck %}
-        <h2 class="article-deck article__deck">{{ article.deck|ldmarkup:article.id|bleach }}</h2>
+        <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
       {% endif %}
       {% if article.has_lead %}
-        <p class="article-lead">{{ article.get_lead|urlize|ldmarkup:article.id|bleach }}</p>
+        <p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>
       {% endif %}
     {% endif %}
 

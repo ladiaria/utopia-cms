@@ -97,7 +97,7 @@
                     </picture>
                     <figcaption class="caption">
                       {% if article.photo.caption %}
-                        <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
+                        <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
                       {% endif %}
                       {% if article.photo_author %}
                         <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
@@ -120,7 +120,7 @@
                      width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}>
               </picture>
               <figcaption class="article-caption container ld-caption">
-                <p>{{ article.photo.caption|ldmarkup:article.id|bleach }}</p>
+                <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
                 {% if article.photo_author %}
                   <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
                 {% endif %}
@@ -136,7 +136,7 @@
             <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
           </div>
         {% endif %}
-        <h1 class="article-title after_foto">{{ article.headline|ldmarkup:article.id|bleach }}</h1>
+        <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
         {% if article.date_published %}
           <div class="article-date-author">
             Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
@@ -231,10 +231,10 @@
 
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
-          <h2 class="article-deck article__deck">{{ article.deck|ldmarkup:article.id|bleach }}</h2>
+          <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
         {% endif %}
         {% if article.has_lead %}
-          <p class="article-lead">{{ article.get_lead|urlize|ldmarkup:article.id|bleach }}</p>
+          <p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>
         {% endif %}
       {% endif %}
 

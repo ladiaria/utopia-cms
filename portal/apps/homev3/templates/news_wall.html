@@ -19,7 +19,7 @@
                 {% if publication in article.publications %}
                   <li class="news-wall__item">
                     <a href="{{ article.get_absolute_url }}" class="news-wall__link">
-                      {{ article.headline|ldmarkup:article.id|bleach }}
+                      {{ article.headline|ldmarkup|bleach }}
                     </a>
                   </li>
                 {% endif %}
@@ -47,7 +47,7 @@
               {% for article in section.latest3 %}
                 <li class="news-wall__item">
                   <a href="{{ article.get_absolute_url }}" class="news-wall__link">
-                    {{ article.headline|ldmarkup:article.id|bleach }}
+                    {{ article.headline|ldmarkup|bleach }}
                   </a>
                 </li>
               {% endfor %}
@@ -73,7 +73,7 @@
                 <li class="news-wall__item">
                   {% with latest_article=section.latest_article.0 %}
                     <a href="{{ latest_article.get_absolute_url }}" class="news-wall__link">
-                      {{ latest_article.headline|ldmarkup:article.id|bleach }}
+                      {{ latest_article.headline|ldmarkup|bleach }}
                     </a>
                   {% endwith %}
                 </li>
@@ -96,7 +96,7 @@
                 <li class="news-wall__item">
                   {% with latest_article=section.latest_article.0 %}
                     <a href="{{ latest_article.get_absolute_url }}" class="news-wall__link">
-                      {{ latest_article.headline|ldmarkup:article.id|bleach }}
+                      {{ latest_article.headline|ldmarkup|bleach }}
                     </a>
                   {% endwith %}
                 </li>

@@ -28,11 +28,11 @@
         </div>
         {% if tag_cover_article %}
           <h3 class="ld-card__title">
-            <a href="{{ tag_cover_article.get_absolute_url }}">{{ tag_cover_article.headline|ldmarkup:tag_cover_article.id|bleach }}</a>
+            <a href="{{ tag_cover_article.get_absolute_url }}">{{ tag_cover_article.headline|ldmarkup|bleach }}</a>
           </h3>
         {% endif %}
         {% if tag_cover_article.home_lead %}
-          <div class="ld-card__intro">{{ tag_cover_article.home_lead|ldmarkup:tag_cover_article.id|bleach }}</div>
+          <div class="ld-card__intro">{{ tag_cover_article.home_lead|ldmarkup|bleach }}</div>
         {% endif %}
         <div class="ld-card__byline">
           {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and tag_cover_article.photo_author %}
@@ -74,10 +74,10 @@
             {% with article=a %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
           </div>
           <h3 class="ld-card__title ld-card__title--mb">
-            <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a>
+            <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
           </h3>
           {% if a.home_lead or a.deck %}
-            <div class="ld-card__intro hide-on-med-and-up">{{ a.home_lead|default:a.deck|ldmarkup:a.id|bleach }}</div>
+            <div class="ld-card__intro hide-on-med-and-up">{{ a.home_lead|default:a.deck|ldmarkup|bleach }}</div>
           {% endif %}
           <div class="ld-card__byline">
             {% with authors=a.get_authors %}

@@ -37,12 +37,12 @@
               </div>
               <h3 class="ld-card__title">
                 <a href="{{ category_cover_article.get_absolute_url }}">
-                  {{ category_cover_article.headline|ldmarkup:category_cover_article.id|bleach }}
+                  {{ category_cover_article.headline|ldmarkup|bleach }}
                 </a>
               </h3>
               {% if category_cover_article.home_lead %}
                 <div class="ld-card__intro">
-                  {{ category_cover_article.home_lead|ldmarkup:category_cover_article.id|bleach }}
+                  {{ category_cover_article.home_lead|ldmarkup|bleach }}
                 </div>
               {% endif %}
               <div class="ld-card__byline">
@@ -89,11 +89,11 @@
                 {% with article=a %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
               </div>
               <h3 class="ld-card__title ld-card__title--mb">
-                <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a>
+                <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
               </h3>
               {% if a.home_lead or a.deck %}
                 <div class="ld-card__intro hide-on-med-and-up">
-                  {{ a.home_lead|default:a.deck|ldmarkup:a.id|bleach }}
+                  {{ a.home_lead|default:a.deck|ldmarkup|bleach }}
                 </div>
               {% endif %}
               <div class="ld-card__byline">

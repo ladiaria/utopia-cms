@@ -25,10 +25,10 @@
             {% include 'article/article_card_lock_tooltip.html' %}
           </div>
           <h{% if publication.is_emergente %}2{% else %}1{% endif %} class="ld-card__title home-title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
-            <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup:article.id|bleach }}</a>
+            <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
           </h{% if publication.is_emergente %}2{% else %}1{% endif %}>
           {% if article.home_lead %}
-            <div class="ld-card__intro">{{ article.home_lead|ldmarkup:article.id|bleach }}</div>
+            <div class="ld-card__intro">{{ article.home_lead|ldmarkup|bleach }}</div>
           {% endif %}
           <div class="ld-card__byline">
             {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo_author %}
@@ -69,10 +69,10 @@
               {% with article=a %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
             </div>
             <h{% if publication.is_emergente %}3{% else %}2{% endif %} class="ld-card__title ld-card__title--mb">
-              <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|bleach }}</a>
+              <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
             </h{% if publication.is_emergente %}3{% else %}2{% endif %}>
             {% if a.deck %}
-              <div class="ld-card__intro hide-on-med-and-up">{{ a.deck|ldmarkup:a.id|bleach }}</div>
+              <div class="ld-card__intro hide-on-med-and-up">{{ a.deck|ldmarkup|bleach }}</div>
             {% endif %}
             <div class="ld-card__byline">
               {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and a.photo_author %}
@@ -117,11 +117,11 @@
               {% with article=a %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
             </div>
             <h{% if publication.is_emergente %}3{% else %}2{% endif %} class="ld-card__title ld-card__title--mb">
-              <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:article.id|bleach }}</a>
+              <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
             </h{% if publication.is_emergente %}3{% else %}2{% endif %}>
             {% if a.home_lead or a.deck %}
               <div class="ld-card__intro hide-on-med-and-up">
-                {{ a.home_lead|default:a.deck|ldmarkup:a.id|bleach }}
+                {{ a.home_lead|default:a.deck|ldmarkup|bleach }}
               </div>
             {% endif %}
             <div class="ld-card__byline">

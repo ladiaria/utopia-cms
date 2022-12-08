@@ -84,13 +84,13 @@
 
               <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
                 <a href="{{ cover_article.get_absolute_url }}">
-                  {{ cover_article.headline|ldmarkup:cover_article.id|bleach }}
+                  {{ cover_article.headline|ldmarkup|bleach }}
                 </a>
               </h2>
 
               {% if cover_article.home_lead or cover_article.lead %}
                 <div class="ld-card__intro">
-                  {{ cover_article.home_lead|default:cover_article.lead|ldmarkup:cover_article.id|bleach }}
+                  {{ cover_article.home_lead|default:cover_article.lead|ldmarkup|bleach }}
                 </div>
               {% endif %}
 
@@ -144,10 +144,10 @@
                   <div class="ld-card__section">{% include 'article/article_card_lock_tooltip.html' %}</div>
                 {% endif %}
               {% endwith %}
-              <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a></h3>
+              <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a></h3>
               {% if a.home_lead or a.deck %}
                 <div class="ld-card__intro hide-on-med-and-up">
-                  {{ a.home_lead|default:a.deck|ldmarkup:a.id|bleach }}
+                  {{ a.home_lead|default:a.deck|ldmarkup|bleach }}
                 </div>
               {% endif %}
               <div class="ld-card__byline">
@@ -209,10 +209,10 @@
                 {% endif %}
               {% endwith %}
               <h3 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
-                <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup:a.id|bleach }}</a>
+                <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
               </h3>
               {% if a.deck %}
-                <div class="ld-card__intro">{{ a.deck|ldmarkup:a.id|bleach }}</div>
+                <div class="ld-card__intro">{{ a.deck|ldmarkup|bleach }}</div>
               {% endif %}
               <div class="ld-card__byline">
                 {% with authors=a.get_authors %}
