@@ -341,6 +341,9 @@ MAX_ATTEMPTS = 1
 
 # Elasticsearch is disabled by default, to enable it you need to adjust this settings according to your Elasticsearch
 # installation, see https://django-elasticsearch-dsl.readthedocs.io/en/latest/quickstart.html#install-and-configure
+# NOTE: The elasticsearch recommended version to use is 7.*
+#       If your linux distribution doesn't have it, you can use docker to run an specific version (for example 7.17.7).
+#       Follow this guide to do that: https://hub.docker.com/_/elasticsearch
 ELASTICSEARCH_DSL = {}
 ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False

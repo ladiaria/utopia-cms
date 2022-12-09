@@ -81,7 +81,12 @@ def search(request, token=''):
                 extra_kwargs['fuzziness'] = 'auto'
 
             s = ArticleDocument.search().query(
-                Q('multi_match', query=token, fields=['headline^3', 'body', 'deck', 'lead'], **extra_kwargs)
+                Q(
+                    'multi_match',
+                    query=token,
+                    fields=['unformatted_headline^3', 'unformatted_body', 'unformatted_deck', 'unformatted_lead'],
+                    **extra_kwargs,
+                )
                 & Q("match", is_published=True)
                 & Q("range", date_published={'lte': 'now/d'})
             )
@@ -91,7 +96,7 @@ def search(request, token=''):
                 s = s.sort(sort_arg)
 
             try:
-                if request.GET.get('full') == u'1':
+                if request.GET.get('full') == '1':
                     s = s.params(preserve_order=True)
                     matches_query = list(s.scan())
                 else:
@@ -102,8 +107,8 @@ def search(request, token=''):
                     page_results, matches_query = _page_results(request, s, total), list(range(total))
             except Exception as exc:
                 if settings.DEBUG:
-                    print(u"search error: %s" % exc)
-                search_form.add_error('q', u'No es posible realizar la búsqueda en este momento.')
+                    print("search error: %s" % exc)
+                search_form.add_error('q', 'No es posible realizar la búsqueda en este momento.')
                 return 'search_results.html', {'form': search_form}
             cont, elastic_search = len(matches_query), True
 
