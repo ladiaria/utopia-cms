@@ -1291,6 +1291,9 @@ class ArticleBase(Model, CT):
     def unformatted_lead(self):
         return cleanhtml(ldmarkup(self.lead))
 
+    def unformatted_body(self):
+        return cleanhtml(ldmarkup(self.body, self.id))
+
     def reading_time(self):
         """
            Based on article body text, returns the reading time of the article.
@@ -1380,12 +1383,13 @@ class ArticleBase(Model, CT):
 
 
 class ArticleManager(Manager):
+    # TODO: this is the default, why overrided to do nothing?
     def get_queryset(self):
         return super(ArticleManager, self).get_queryset()
 
 
 class Article(ArticleBase):
-    objects = ArticleManager()
+    objects = ArticleManager()  # TODO: @ArticleManager TODO comment
     sections = ManyToManyField(
         Section,
         verbose_name='sección',
