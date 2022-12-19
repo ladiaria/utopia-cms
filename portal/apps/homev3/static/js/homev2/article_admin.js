@@ -1,7 +1,8 @@
 var prepareFields = function(){
     var art_type = $('#id_type').val();
-    if(art_type == 'HT' || art_type == 'RE'){
-        $('#id_body').attr('rows', '20');
+    $('#id_body').attr('rows', '20');
+    $('.form-row.field-body').show();
+    if(art_type == 'HT'){
         $('.form-row.field-headline').hide();
         $('.form-row.field-deck').hide();
         $('.form-row.field-lead').hide();
@@ -14,23 +15,11 @@ var prepareFields = function(){
         $('.form-row.field-location').parent('fieldset').hide();
         $('.form-row.field-gallery').parent('fieldset').hide();
         $('.inline-group').hide();
-        $('.form-row.field-body').show();
-        if(art_type == "HT"){
-            $('#article_form').submit(function(){
-                $('#id_headline').val('html');
-                $('#id_slug').val('html');
-            });
-        } else if(art_type == "RE"){
-            $('.form-row.field-headline').show();
-            $('.form-row.field-lead').show();
-            $('#article_form').submit(function(){
-                $('#id_slug').val('RECUADRO-' + $('#id_section').val());
-                // $('#id_body').val('RECUADRO');
-            });
-        }
-    }
-    else {
-        $('#id_body').attr('rows', '20');
+        $('#article_form').submit(function(){
+            $('#id_headline').val('html');
+            $('#id_slug').val('html');
+        });
+    } else {
         $('.form-row.field-headline').show();
         $('.form-row.field-deck').show();
         $('.form-row.field-lead').show();
@@ -43,7 +32,6 @@ var prepareFields = function(){
         $('.form-row.field-location').parent('fieldset').show();
         $('.form-row.field-gallery').parent('fieldset').show();
         $('.inline-group').show();
-        $('.form-row.field-body').show();
     }
 
     $('#homearticle_set-group').hide();
