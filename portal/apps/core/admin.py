@@ -31,18 +31,15 @@ from django.forms import (
     ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Field, Textarea, Widget
 )
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
-from django.utils import timezone
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
 from django.shortcuts import get_object_or_404
+from django.template import loader
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 from django.utils.text import Truncator
 from django.utils.translation import ugettext as _
-
-from django.template import loader
 from django.utils.safestring import mark_safe
-
-from core.templatetags.ldml import ldmarkup, cleanhtml
 
 from .models import (
     Article,
@@ -67,6 +64,8 @@ from .models import (
     DeviceSubscribed,
     PushNotification,
 )
+from .choices import section_choices
+from .templatetags.ldml import ldmarkup, cleanhtml
 from .tasks import update_category_home, send_push_notification
 from .utils import update_article_url_in_coral_talk, smart_quotes
 
@@ -275,6 +274,10 @@ class ArticleBodyImageInline(TabularInline):
 
 class ArticleRelAdminModelForm(ModelForm):
     main = ChoiceField(label='principal', widget=RadioSelect, choices=((1, ''), ), required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(ArticleRelAdminModelForm, self).__init__(*args, **kwargs)
+        self.fields['section'].choices = section_choices()
 
     class Meta:
         model = ArticleRel
