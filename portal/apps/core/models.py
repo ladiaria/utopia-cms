@@ -1445,11 +1445,14 @@ class Article(ArticleBase):
 
     @property
     def section(self):
-        if self.main_section:
-            return self.main_section.section
-        else:
-            s = self.sections.all()[:1]
-            return s[0] if s else None
+        try:
+            if self.main_section:
+                return self.main_section.section
+            else:
+                s = self.sections.all()[:1]
+                return s[0] if s else None
+        except ArticleRel.DoesNotExist:
+            return None
 
     def last_published_by_publication_slug(self, publication_slug=None):
         """

@@ -16,7 +16,7 @@ class ArticleDocument(Document):
           objects the signal to reindex is not executed.
           Try to fix this (ModelAdmin.save_related can be the right place to trigger the signal or whatever needed)
     """
-    # target fields (Article methods) to search
+    # target fields (Article methods) to search, TODO: if only used here, can be better to use "prepare_*"
     unformatted_headline = fields.TextField(attr="unformatted_headline")
     unformatted_lead = fields.TextField(attr="unformatted_lead")
     unformatted_deck = fields.TextField(attr="unformatted_deck")
