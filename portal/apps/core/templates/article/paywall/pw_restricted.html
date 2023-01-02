@@ -1,7 +1,13 @@
 {% load thedaily_tags %}
 
 <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
-  <div class="ld-snackbar__title">Contenido exclusivo para suscripción digital</div>
+  <div class="ld-snackbar__title">
+    {% if is_subscriber_any %}
+      Contenido no disponible con tu suscripción actual
+    {% else %}
+      Exclusivo para suscripción digital de pago
+    {% endif %}
+  </div>
   <div class="ld-snackbar__body">
     {% if user.is_authenticated %}
       {% if is_subscriber_any %}
