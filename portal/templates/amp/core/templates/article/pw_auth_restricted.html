@@ -2,7 +2,12 @@
 
 <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
 
-  <div class="ld-snackbar__title">Contenido exclusivo para suscripción digital</div>
+  <div class="ld-snackbar__title" amp-access="subscriber_any" amp-access-hide>
+    Contenido no disponible con tu suscripción actual
+  </div>
+  <div class="ld-snackbar__title" amp-access="NOT subscriber_any" amp-access-hide>
+    Exclusivo para suscripción digital de pago
+  </div>
 
   <div class="ld-snackbar__body">
     <div amp-access="subscriber_any" amp-access-hide>

@@ -277,7 +277,7 @@ def render_hierarchy(article):
                 article.main_section.edition.publication,
             )
         child = '<a href="%s">%s</a>' % (section.get_absolute_url(), section)
-        return ' › '.join(['<a href="%s">%s</a>' % parent, child]) if parent else child
+        return '&nbsp;›&nbsp;'.join(['<a href="%s">%s</a>' % parent, child]) if parent else child
     else:
         return ''
 
