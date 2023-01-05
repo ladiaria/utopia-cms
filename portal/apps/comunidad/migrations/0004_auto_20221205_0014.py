@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='subscriberarticle',
             name='ipfs_upload',
-            field=models.BooleanField(default=True, verbose_name='Publicar en IPFS'),
+            field=models.BooleanField(default=False, verbose_name='Publicar en IPFS'),
         ),
         migrations.AddField(
             model_name='subscriberarticle',
