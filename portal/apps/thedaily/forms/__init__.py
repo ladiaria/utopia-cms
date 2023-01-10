@@ -272,7 +272,7 @@ class SubscriberForm(ModelForm):
         self.helper.layout = Layout(
             Fieldset(
                 'Datos personales',
-                Field('first_name', readonly=True),
+                Field('first_name'),
                 Field('email', readonly=True),
                 Field('telephone'),
             ),
@@ -344,7 +344,7 @@ class SubscriberAddressForm(SubscriberForm):
         self.helper.label_class = 'col-sm-2'
         self.helper.field_class = 'col-sm-8'
         self.helper.layout = Layout(
-            Field('first_name', readonly=True),
+            Field('first_name'),
             Field('email', readonly=True),
             Field('telephone'),
             HTML(
