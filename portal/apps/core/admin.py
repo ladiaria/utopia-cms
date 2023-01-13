@@ -318,6 +318,7 @@ class SolanaSignatureField(Field):
     def clean(self, value):
         return value
 
+
 class ArticleAdminModelForm(ModelForm):
     body = CharField(widget=MarkdownWidget())
     solana_signature_address = SolanaSignatureField(
