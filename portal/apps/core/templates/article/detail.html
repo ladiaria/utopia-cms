@@ -300,13 +300,11 @@
               {% endif %}
             {% else %}{# signupwall raised #}
               {# Hard wall -> Suscripción #}
-              {% if not user|has_bought_article:article %}
-                <!-- Hard wall / suscripción-->
-                <div class="article-body article-body--faded">
-                  {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
-                </div>
-                {% include 'article/paywall/pw_auth_wo_credits.html' %}
-              {% endif %}
+              <!-- Hard wall / suscripción-->
+              <div class="article-body article-body--faded">
+                {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
+              </div>
+              {% include 'article/paywall/pw_auth_wo_credits.html' %}
             {% endif %}
           {% endif %}
 
@@ -314,7 +312,7 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall or user|has_bought_article:article %}{# closed in line 566 #}
+        {% if not request.signupwall %}{# closed in line 566 #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
@@ -710,7 +708,7 @@
 
     {% block article_extra %}{% endblock %}
 
-    {% if not request.signupwall or article.is_restricted and not user|has_restricted_access:article or user|has_bought_article:article %}
+    {% if not request.signupwall or article.is_restricted and not user|has_restricted_access:article %}
       <div class="align-center u-mb-50 footer-section">
         <a href="{% url 'home' %}" class="ut-btn ut-btn-outline">Ir a la portada</a>
       </div>

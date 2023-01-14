@@ -259,6 +259,9 @@ class Subscriber(Model):
             else:
                 return (latest.article_id, latest.viewed_at)
 
+    def articles_bought_count(self):
+        return self.articles_bought.count()
+
     @property
     def user_email(self):
         return self.user.email if self.user else None

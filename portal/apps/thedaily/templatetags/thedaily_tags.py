@@ -125,7 +125,7 @@ def terms_and_conditions():
 @register.filter(name='has_bought_article')
 def has_bought_article(user, article):
     """ @pre: The user bought the article """
-    return user.subscriber.articles_bought.all().filter(id=article.id).exists()
+    return user.subscriber.articles_bought.filter(id=article.id).exists()
 
 
 # filters

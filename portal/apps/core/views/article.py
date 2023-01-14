@@ -187,7 +187,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'domain': domain,
         'category': category,
         'category_signup':
-            domain == u'category' and category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_SIGNUP', ()),
+            domain == 'category' and category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_SIGNUP', ()),
         'section': article.publication_section(),
         'header_display': article.header_display,
         'tag_list': reorder_tag_list(article, get_article_tags(article)),
@@ -290,7 +290,7 @@ def send_by_email(request):
         if request.user.is_authenticated():
             user_name = request.user.get_full_name()
         else:
-            user_name = u"Usuario anónimo"
+            user_name = "Usuario anónimo"
 
         body = """%(name)s compartió contigo el artículo "%(article)s":
         %(message)s
