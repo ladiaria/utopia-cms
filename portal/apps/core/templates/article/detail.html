@@ -312,7 +312,7 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall %}{# closed in line 566 #}
+        {% if not request.signupwall %}{# closed in line 563 #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
@@ -560,7 +560,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 318 #}
+        {% endif %}{# opened in line 315 #}
 
       {% else %}{# restricted content message #}
 
@@ -577,7 +577,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 710 #}
+    {% if not request.signupwall %}{# closed in line 707 #}
 
       {% if article.public %}
 
@@ -704,7 +704,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 583 #}
+    {% endif %}{# opened in line 580 #}
 
     {% block article_extra %}{% endblock %}
 
