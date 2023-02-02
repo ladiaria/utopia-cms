@@ -194,8 +194,12 @@ def newsletter_preview(request, slug):
         headers = {'From': email_from, 'Subject': email_subject}
 
         site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
-        unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-            '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
+        as_news = request.GET.get("as_news", "0").lower() in ("true", "1")
+        if as_news:
+            unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
+        else:
+            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
+                '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
         headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
 
@@ -203,6 +207,7 @@ def newsletter_preview(request, slug):
             {
                 'site_url': site_url,
                 'hashed_id': hashed_id,
+                "as_news": as_news,
                 'unsubscribe_url': unsubscribe_url,
                 'custom_subject': custom_subject,
                 'headers_preview': headers,
@@ -266,11 +271,16 @@ def newsletter_browser_preview(request, slug, hashed_id):
             dp_featured_articles.append((a, a_section))
         context['featured_articles'] = dp_featured_articles
     site_url = context['site_url']
-    unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-        '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, slug, hashed_id, slug)
+    as_news = request.GET.get("as_news", "0").lower() in ("true", "1")
+    if as_news:
+        unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
+    else:
+        unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
+            '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, slug, hashed_id, slug)
     # TODO: obtain missing vars from hashed_id subscriber
     context.update(
         {
+            "as_news": as_news,
             'hashed_id': hashed_id,
             'unsubscribe_url': unsubscribe_url,
             'subscriber_id': subscriber.id,

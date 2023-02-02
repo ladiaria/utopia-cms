@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from django.template import Library, loader
 
 from ..models import TagGroup
@@ -13,6 +14,6 @@ def render_tag_group(context, group_slug):
     try:
         context['tg'] = TagGroup.objects.get(slug=group_slug)
     except TagGroup.DoesNotExist:
-        return u''
+        return ''
     else:
         return loader.render_to_string('groupedtags/templates/tag_cards.html', context.flatten())

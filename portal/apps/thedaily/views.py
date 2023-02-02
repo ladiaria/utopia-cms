@@ -40,7 +40,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.decorators.cache import never_cache, cache_control
 from django.template import TemplateDoesNotExist
 
@@ -170,6 +170,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 
 @never_cache
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
+@csrf_protect
 def login(request):
     next_page = request.session.get('next', request.GET.get('next', '/'))
 
