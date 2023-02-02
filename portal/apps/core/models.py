@@ -374,9 +374,7 @@ class Edition(PortableDocumentFormatBaseModel):
     @property
     def previous_edition(self):
         try:
-            return Edition.objects.filter(
-                date_published__lt=self.date_published
-            ).order_by('-date_published')[0]
+            return Edition.objects.filter(date_published__lt=self.date_published).order_by('-date_published')[0]
         except Exception:
             return None
 
@@ -385,7 +383,8 @@ class Edition(PortableDocumentFormatBaseModel):
         try:
             return Edition.objects.filter(
                 date_published__gt=self.date_published,
-                date_published__lte=date.today()).order_by('date_published')[0]
+                date_published__lte=date.today(),
+            ).order_by('date_published')[0]
         except Exception:
             return None
 

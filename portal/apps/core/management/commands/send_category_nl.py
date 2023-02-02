@@ -55,6 +55,7 @@ def build_and_send(
     category,
     no_deliver,
     offline,
+    as_news,
     export_subscribers,
     export_context,
     site_id,
@@ -197,7 +198,11 @@ def build_and_send(
         if subscriber_ids:
             receivers = receivers.filter(id__in=subscriber_ids)
         else:
-            receivers = receivers.filter(category_newsletters__slug=category_slug).exclude(user__email__in=blacklisted)
+            if as_news:
+                receivers = receivers.filter(allow_news=True).exclude(category_newsletters__slug=category_slug)
+            else:
+                receivers = receivers.filter(category_newsletters__slug=category_slug)
+            receivers = receivers.exclude(user__email__in=blacklisted)
             # if both "starting_from" we can filter now with the minimum
             if starting_from_s and starting_from_ns:
                 receivers = receivers.filter(user__email__gt=min(starting_from_s, starting_from_ns))
@@ -220,7 +225,10 @@ def build_and_send(
             subscribers_iter = r
     elif not export_subscribers or export_context:
         site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
-        list_id = '%s <%s.%s>' % (category_slug, __name__, settings.SITE_DOMAIN)
+        if as_news:
+            list_id = 'novedades <%s>' % settings.SITE_DOMAIN
+        else:
+            list_id = '%s <%s.%s>' % (category_slug, __name__, settings.SITE_DOMAIN)
         ga_property_id = getattr(settings, 'GA_PROPERTY_ID', None)
         custom_subject = category.newsletter_automatic_subject is False and category.newsletter_subject
         email_subject = custom_subject or (
@@ -309,11 +317,17 @@ def build_and_send(
                 )
             elif not export_context:
                 headers = {'List-ID': list_id}
-                unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                    '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category_slug, hashed_id, category_slug)
+                if as_news:
+                    unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
+                else:
+                    unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
+                        '&utm_campaign=%s&utm_content=unsubscribe' % (
+                            site_url, category_slug, hashed_id, category_slug
+                        )
                 headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
                 context.update(
                     {
+                        "as_news": as_news,
                         'hashed_id': hashed_id,
                         'unsubscribe_url': unsubscribe_url,
                         'browser_preview_url': '%s/area/%s/nl/%s/' % (site_url, category_slug, hashed_id),
@@ -449,6 +463,13 @@ class Command(BaseCommand):
             help='Do not use the database to fetch email data, get it from datasets previously generated',
         )
         parser.add_argument(
+            '--as-news',
+            action='store_true',
+            default=False,
+            dest='as_news',
+            help='Send only to those who have "allow news" prop. activated and are not subscribed to this newsletter',
+        )
+        parser.add_argument(
             '--export-subscribers',
             action='store_true',
             default=False,
@@ -519,9 +540,12 @@ class Command(BaseCommand):
             category = category_slug if offline else Category.objects.get(slug=category_slug)
         except Category.DoesNotExist:
             raise CommandError('No category matching the slug given found')
+        as_news = options.get("as_news")
         if not export_only:
             h = logging.FileHandler(
-                filename=settings.SENDNEWSLETTER_LOGFILE % (category_slug, today.strftime('%Y%m%d'))
+                filename=settings.SENDNEWSLETTER_LOGFILE % (
+                    category_slug + ("_as_news" if as_news else ""), today.strftime('%Y%m%d')
+                )
             )
             h.setFormatter(log_formatter)
             log.addHandler(h)
@@ -530,6 +554,7 @@ class Command(BaseCommand):
             category,
             no_deliver,
             offline,
+            as_news,
             export_subscribers,
             export_context,
             options.get('site_id'),
