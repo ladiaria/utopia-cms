@@ -364,10 +364,11 @@ class Edition(PortableDocumentFormatBaseModel):
         ).filter(article__is_published=True, section=section).order_by('position')]))
 
     def previous_section(self, section):
-        editions = [ar.edition for ar in ArticleRel.objects.filter(
-            section=section,
-            edition__date_published__lt=self.date_published).order_by(
-            '-edition__date_published')]
+        editions = [
+            ar.edition for ar in ArticleRel.objects.filter(
+                section=section, edition__date_published__lt=self.date_published
+            ).order_by('-edition__date_published')
+        ]
         return editions[0] if editions else None
 
     @property
@@ -381,8 +382,7 @@ class Edition(PortableDocumentFormatBaseModel):
     def next_edition(self):
         try:
             return Edition.objects.filter(
-                date_published__gt=self.date_published,
-                date_published__lte=date.today(),
+                date_published__gt=self.date_published, date_published__lte=date.today()
             ).order_by('date_published')[0]
         except Exception:
             return None
@@ -790,9 +790,7 @@ class Section(Model):
 
     def mas_vistos(self):
         desde = datetime.now() - timedelta(days=60)
-        return Article.objects.filter(
-            sections__id=self.id, date_published__gt=desde
-        ).order_by('views')[:10]
+        return Article.objects.filter(sections__id=self.id, date_published__gt=desde).order_by('views')[:10]
 
     def latest_articles(self):
         """
