@@ -644,16 +644,22 @@ class Section(Model):
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
     home_order = PositiveSmallIntegerField('orden en portada', default=0)
     in_home = BooleanField(
-        'en portada', default=False,
-        help_text='si el componente de portadas de esta categoría está insertado, esta opción lo muestra u oculta.')
+        'en portada',
+        default=False,
+        help_text='si el componente de portadas de esta categoría está insertado, esta opción lo muestra u oculta.',
+    )
     imagen = ImageField('imagen o ilustración', upload_to='section_images', blank=True, null=True)
     publications = ManyToManyField(Publication, verbose_name='publicaciones', blank=True)
     home_block_all_pubs = BooleanField(
-        'usar todas las publicaciones en módulos de portada', default=True,
-        help_text='Marque esta opción para mostrar artículos de todas las publicaciones en los módulos de portada.')
+        'usar todas las publicaciones en módulos de portada',
+        default=True,
+        help_text='Marque esta opción para mostrar artículos de todas las publicaciones en los módulos de portada.',
+    )
     home_block_show_featured = BooleanField(
-        'mostrar artículos destacados en módulos de portada', default=True,
-        help_text='Marque esta opción para mostrar artículos destacados en los módulos de portada.')
+        'mostrar artículos destacados en módulos de portada',
+        default=True,
+        help_text='Marque esta opción para mostrar artículos destacados en los módulos de portada.',
+    )
     background_color = CharField('background color', max_length=7, default='#ffffff')
     white_text = BooleanField('texto blanco', default=False)
     show_description = BooleanField('mostrar descripción', default=False)
@@ -791,6 +797,12 @@ class Section(Model):
     def mas_vistos(self):
         desde = datetime.now() - timedelta(days=60)
         return Article.objects.filter(sections__id=self.id, date_published__gt=desde).order_by('views')[:10]
+
+    def published_articles(self):
+        """
+        Returns all this section's published articles
+        """
+        return self.articles_core.filter(is_published=True).distinct()
 
     def latest_articles(self):
         """
