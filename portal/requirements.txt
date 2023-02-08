@@ -61,3 +61,4 @@ django>1.11,<2
 future
 factory-boy
 w3storage
+solana

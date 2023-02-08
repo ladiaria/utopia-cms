@@ -132,17 +132,24 @@
                 Toastify.success('La transacción fue confirmada! Gracias por tu compra.', { duration: -1 });
 
                 if (hasReachedSufficientCommitment) {
-                  $.ajax({
-                    beforeSend: function (xhr, settings) {
-                      xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
-                    },
-                    method: "POST",
-                    url: "/usuarios/comprar-articulo/",
-                    data: {
-                      article_id: '{{ article.id }}',
-                      user_id: '{{ user.id }}',
-                    }
-                  });
+                  try {
+                    $.ajax({
+                      beforeSend: function (xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                      },
+                      method: "POST",
+                      url: "/usuarios/comprar-articulo/",
+                      data: {
+                        article_id: '{{ article.id }}',
+                        user_id: '{{ user.id }}',
+                        public_key: provider.publicKey.toString(),
+                        signature,
+                        transaction: serializedTransaction.toString('base64'),
+                      }
+                    });
+                  } catch {
+                    Toastify.error('Ocurrió un error al procesar la transacción.');
+                  }
 
                   clearInterval(interval);
                   location.reload();
