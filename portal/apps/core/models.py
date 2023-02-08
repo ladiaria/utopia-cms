@@ -1301,8 +1301,11 @@ class ArticleBase(Model, CT):
     def unformatted_lead(self):
         return cleanhtml(ldmarkup(self.lead))
 
+    def formatted_body(self):
+        return ldmarkup(self.body, self.id)
+
     def unformatted_body(self):
-        return cleanhtml(ldmarkup(self.body, self.id))
+        return cleanhtml(self.formatted_body())
 
     def reading_time(self):
         """

@@ -39,10 +39,10 @@
 
 {% block header_scripts %}
   <script type="text/javascript">
+    $(window).on("load", function(){
+      $('#mas-leidos-content').load("{% url 'mas_leidos_content' %}");
+    });
     $(function(){
-      $('#mas-leidos-content').load("{% url 'mas_leidos_content' %}", function(){
-        $('ul.tablist').tabs();
-      });
       $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
     });
   </script>
@@ -461,15 +461,17 @@
             </div>
           {% endif %}
 
-          {% if publication in publication_newsletters %}
-            {% if publication.slug in user.subscriber.get_newsletters_slugs %}
-              {# Already subscribed to publication newsletter #}
+          {% block subscribe_box %}
+            {% if publication in publication_newsletters %}
+              {% if publication.slug in user.subscriber.get_newsletters_slugs %}
+                {# Already subscribed to publication newsletter #}
+              {% else %}
+                {% include 'article/subscribe_box.html' %}
+              {% endif %}
             {% else %}
-              {% include 'article/subscribe_box.html' %}
+              {% category_nl_subscribe_box %}
             {% endif %}
-          {% else %}
-            {% category_nl_subscribe_box %}
-          {% endif %}
+          {% endblock %}
 
           {% if not user.is_authenticated %}
             <!-- Modal Structure -->

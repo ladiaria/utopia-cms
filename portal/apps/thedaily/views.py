@@ -30,6 +30,7 @@ from django.http import (
     HttpResponseForbidden,
     HttpResponseServerError,
     HttpResponseNotAllowed,
+    JsonResponse,
 )
 from django.forms.utils import ErrorList
 from django.contrib import messages
@@ -96,9 +97,27 @@ def notify_new_subscription(subscription_url, extra_subject=''):
 
 
 @never_cache
+@csrf_exempt
+@login_required
+def nl_auth_subscribe(request, nltype, nlslug):
+    """ Useful view to allow 1-click nl subscription for authenticated users (by ajax or POST) """
+    from_amp = request.GET.get("__amp_source_origin")
+    if request.method == 'POST' or request.is_ajax() or from_amp:
+        nlobj = get_object_or_404(Publication if nltype == "p" else Category, slug=nlslug, has_newsletter=True)
+        try:
+            getattr(request.user.subscriber, ("" if nltype == "p" else "category_") + "newsletters").add(nlobj)
+        except Exception:
+            # for some reason UpdateCrmEx does not work in test (Python ver?)
+            return HttpResponseBadRequest()
+        return set_amp_cors_headers(request, JsonResponse({})) if from_amp else HttpResponse()
+    else:
+        return HttpResponseForbidden()
+
+
+@never_cache
 def nl_subscribe(request, publication_slug=None, hashed_id=None):
     if publication_slug and hashed_id:
-        # 1click subscription
+        # "1-click" subscription
         publication = get_object_or_404(Publication, slug=publication_slug, has_newsletter=True)
         ctx = {
             'publication': publication,
@@ -106,7 +125,6 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
             'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
         }
         decoded = decode_hashid(hashed_id)
-        # TODO: if authenticated => assert same logged in user (also for other 1-click views in this module)
         if decoded:
             subscriber = get_object_or_404(Subscriber, id=decoded[0])
             if not subscriber.user:
@@ -132,10 +150,10 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
 @to_response
 def nl_category_subscribe(request, slug, hashed_id=None):
     """
-    if hashed id is given, this view will do the things than nl_subscribe with a category instead of a publication
+    if hashed id is given, this view will do similar things than nl_subscribe with a category instead of a publication
     """
     if hashed_id:
-        # 1click subscription
+        # "1-click" subscription
         category = get_object_or_404(Category, slug=slug, has_newsletter=True)
         ctx = {
             'category': category,
@@ -160,7 +178,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
         else:
             raise Http404
     else:
-        # next page is the first category NL anchor in edit profile page
+        # next page redirection
         next_page = reverse('edit-profile') + '#category-newsletter-' + slug
         if request.user.is_authenticated():
             return HttpResponseRedirect(next_page)
