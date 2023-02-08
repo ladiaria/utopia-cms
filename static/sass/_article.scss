@@ -1223,7 +1223,7 @@ body.article {
     font-size: 16px;
     line-height: 22px;
 
-    a {
+    a, b {
         font-weight: bold;
     }
 
@@ -1242,5 +1242,52 @@ body.article {
     }
     &::after {
         bottom: 0;
+    }
+    $spinnerSize: 16;
+
+    svg.spinner {
+        width: $spinnerSize + px;
+        height: $spinnerSize + px;
+        x: 0px;
+        y: 0px;
+        viewBox: 0 0 $spinnerSize $spinnerSize;
+        display: inline;
+        vertical-align: top;
+        position: relative;
+        top: 2px;
+
+        circle {
+            fill: transparent;
+            stroke: #212121;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: (3.14 * $spinnerSize);
+            -webkit-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
+            -moz-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
+            -ms-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
+            -o-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
+            transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
+            -webkit-animation: spinner 2s linear infinite;
+            -moz-animation: spinner 2s linear infinite;
+            -ms-animation: spinner 2s linear infinite;
+            -o-animation: spinner 2s linear infinite;
+            animation: spinner 2s linear infinite;
+        }
+    }
+    .ut-btn:hover  svg.spinner circle {
+        stroke: white;
+    }
+
+    @keyframes spinner {
+        0% {
+            transform: rotate(0deg);
+            stroke-dashoffset: (0.66 * $spinnerSize);
+        } 50% {
+            transform: rotate(720deg);
+            stroke-dashoffset: (3.14 * $spinnerSize);
+        } 100% {
+            transform: rotate(1080deg);
+            stroke-dashoffset: (0.66 * $spinnerSize);
+        }
     }
 }

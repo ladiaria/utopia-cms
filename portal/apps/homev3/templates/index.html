@@ -22,10 +22,10 @@
 
 {% block header_scripts %}
   <script type="text/javascript">
+    $(window).on("load", function(){
+      $('#mas-leidos-content').load("{% url 'mas_leidos_content' %}");
+    });
     $(function(){
-      $('#mas-leidos-content').load("{% url 'mas_leidos_content' %}", function(){
-        $('ul.tablist').tabs();
-      });
       $('#header-pub').load("{% url 'adzone_ad_content' %}");
     });
   </script>

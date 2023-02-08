@@ -204,21 +204,25 @@
       <div class="ld-fin ld-block"></div>
     </div>
 
-    <div amp-access="access AND NOT authenticated AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-      {% if publication in publication_newsletters %}
-        {% include 'amp/core/templates/article/subscribe_box.html' %}
-      {% else %}
-        {% category_nl_subscribe_box %}
-      {% endif %}
-    </div>
+    {% block subscribe_box %}
 
-    <div amp-access="access AND authenticated AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-      {% if publication in publication_newsletters %}
-        {% include 'amp/core/templates/article/subscribe_box_authenticated.html' %}
-      {% elif category.has_newsletter %}
-        {% include 'amp/core/templates/article/subscribe_box_authenticated_category.html' %}
-      {% endif %}
-    </div>
+      <div amp-access="access AND NOT authenticated AND (article_allowed OR NOT article_restricted)" amp-access-hide>
+        {% if publication in publication_newsletters %}
+          {% include 'amp/core/templates/article/subscribe_box.html' %}
+        {% else %}
+          {% category_nl_subscribe_box %}
+        {% endif %}
+      </div>
+
+      <div amp-access="access AND authenticated AND (article_allowed OR NOT article_restricted)" amp-access-hide>
+        {% if publication in publication_newsletters %}
+          {% include 'amp/core/templates/article/subscribe_box_authenticated.html' %}
+        {% elif category.has_newsletter %}
+          {% include 'amp/core/templates/article/subscribe_box_authenticated_category.html' %}
+        {% endif %}
+      </div>
+
+    {% endblock %}
 
     <div amp-access="access AND authenticated AND followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       <div class="read-later u-mb-60">
@@ -350,6 +354,7 @@
             "audioPlay": "{{ SITE_URL }}dashboard/audio_statistics_api_amp/?audio_id={{ article.audio.id }}",
           {% endif %}
           "readLaterToggle": "{{ SITE_URL }}usuarios/lista-lectura-toggle/${eventLabel}/{{ article.id }}/"
+          {% block extra_requests %}{% endblock %}
         },
         "triggers": {
           {% if article.audio %}
@@ -364,6 +369,7 @@
             "selector": ["#rl-toggle0", "#rl-toggle1", "#rl-wall-0", "#rl-wall-2", "#rlt2", "#rlt3", "#rlt5", "#rltf1", "#rltf2", "#rltf5", "#rltf7"],
             "request": "readLaterToggle"
           }
+          {% block extra_triggers %}{% endblock %}
         },
         "transport": {
           "xhrpost": true

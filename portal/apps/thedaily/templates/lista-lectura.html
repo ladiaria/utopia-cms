@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% load favit_tags thedaily_tags %}
-{% block page_title %}
-    {% if leer_despues != None %}
-        Leer después | Lista de lectura | la diaria
-    {% elif favoritos != None %}
-        Favoritos | Lista de lectura | la diaria
-    {% elif historial != None %}
-        Historial | Lista de lectura | la diaria
-    {% endif %}
-{% endblock %}
 
+{% block page_title %}
+  {% if leer_despues != None %}
+    Leer después | Lista de lectura | {{ site.name }}
+  {% elif favoritos != None %}
+    Favoritos | Lista de lectura | {{ site.name }}
+  {% elif historial != None %}
+    Historial | Lista de lectura | {{ site.name }}
+  {% endif %}
+{% endblock %}
 
 {% block header_scripts %}
   <script type="text/javascript">
@@ -22,6 +22,7 @@
 {% endblock %}
 
 {% block body_class %}static{% endblock %}
+
 {% block container_class %}container--narrow{% endblock %}
 
 {% block content %}
@@ -42,15 +43,14 @@
     <div class="lista-lectura-tab">
       <div class="feed-info">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M11,7h2V9H11Zm0,4h2v6H11Zm1-9A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8.011,8.011,0,0,1,12,20Z" fill="#262626"/></svg>
-            {% if leer_despues != None %}
-                Lista con todos los artículos que guardaste para leer después.
-            {% elif favoritos != None %}
-                Lista con todos los artículos que guardaste como favoritos.
-            {% elif historial != None %}
-                Historial con todos los artículos que visitaste.
-            {% endif %}
-        </div>
-
+        {% if leer_despues != None %}
+          Lista con todos los artículos que guardaste para leer después.
+        {% elif favoritos != None %}
+          Lista con todos los artículos que guardaste como favoritos.
+        {% elif historial != None %}
+          Historial con todos los artículos que visitaste.
+        {% endif %}
+      </div>
 
       {% if leer_despues and leer_despues.object_list|length == 0 %}
         <div class="empty-feed">
@@ -102,7 +102,6 @@
           {% endwith %}
         {% endif %}
       {% endif %}
-
     </div>
   </div>
 {% endblock %}

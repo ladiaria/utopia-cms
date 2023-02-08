@@ -34,6 +34,7 @@ from thedaily.views import (
     phone_subscription,
     custom_api,
     nl_subscribe,
+    nl_auth_subscribe,
     email_check_api,
     user_comments_api,
     lista_lectura_leer_despues,
@@ -131,7 +132,8 @@ urlpatterns = [
 
     url(r'^referidos/(?P<hashed_id>\w+)/$', referrals, name="referrals"),
     url(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
-    url(r'^nlsubscribe/$', nl_subscribe, name="nl-subscribe"),
+    url(r'^nlsubscribe/$', nl_subscribe, name="nl-subscribe"),  # can be useful if a "next" session variable was set
+    url(r'^nlsubscribe/(?P<nltype>[pc])\.(?P<nlslug>\w+)/$', nl_auth_subscribe, name="nl-auth-subscribe"),
     url(r'^nlsubscribe/c/(?P<slug>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
     url(r'^nlsubscribe/c/(?P<slug>\w+)/(?P<hashed_id>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
     url(r'^nlsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nl_subscribe, name="nl-subscribe"),
