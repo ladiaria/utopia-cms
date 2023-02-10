@@ -21,10 +21,8 @@
 {% endblock %}
 
 {% block header_scripts %}
+  <link rel="preload" href="{% static 'js/most_read.js' %}" as="script" />
   <script type="text/javascript">
-    $(window).on("load", function(){
-      $('#mas-leidos-content').load("{% url 'mas_leidos_content' %}");
-    });
     $(function(){
       $('#header-pub').load("{% url 'adzone_ad_content' %}");
     });
@@ -77,6 +75,7 @@
 {% block javascript %}
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
   <script defer src="{% static 'materialize/js/tabs.js' %}"></script>
+  <script src="{% static 'js/most_read.js' %}"></script>
 {% endblock %}
 
 {% block footer_scripts %}

@@ -38,10 +38,8 @@
 {% endblock %}
 
 {% block header_scripts %}
+  <link rel="preload" href="{% static 'js/most_read.js' %}" as="script" />
   <script type="text/javascript">
-    $(window).on("load", function(){
-      $('#mas-leidos-content').load("{% url 'mas_leidos_content' %}");
-    });
     $(function(){
       $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
     });
@@ -672,7 +670,7 @@
         <section id="mas-leidos" class="col s12 ld-block">
           <div class="container">
             <div class="row">
-              <div id="mas-leidos-content" class="col s12"></div>
+              <div id="mas-leidos-content" class="col s12" data-url="{% url 'mas_leidos_content' %}"></div>
             </div>
           </div>
         </section>
@@ -749,6 +747,7 @@
   {# js for lo-mas-leido #}
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
   <script defer src="{% static 'materialize/js/tabs.js' %}"></script>
+  <script src="{% static 'js/most_read.js' %}"></script>
   {# js for materialbox (main photo) #}
   <script defer src="{% static 'materialize/js/materialbox.js' %}"></script>
   {# js for image gallery #}
