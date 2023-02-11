@@ -1,148 +1,90 @@
-{% extends "admin/base_site.html" %}
-{% load i18n static %}
-{% load admin_shortcuts_tags %}
-
-{# django-admin-shortcuts changes these blocks #}
-
-{% block extrastyle %}
-  <style type="text/css">{% admin_shortcuts_css %}</style>
-  {{ block.super }}
-  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/dashboard.css' %}">
-{% endblock %}
-
-{% block extrahead %}{{ block.super }}{% admin_shortcuts_js %}{% endblock %}
-
-{% block breadcrumbs %}
-  <div class="admin_shortcuts">
-    {% admin_shortcuts %}
-  </div>
-{% endblock %}
-
-{# end changes #}
-
-{% block coltype %}colMS{% endblock %}
-
-{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+{% extends "templates/admin/index.html" %}
+{% load i18n %}
 
 {% block content %}
-<div id="content-main">
-
-{% if app_list %}
-    {% for app in app_list %}
+  <div id="content-main">
+    {% if app_list %}
+      {% for app in app_list %}
         <div class="app-{{ app.app_label }} module"
-         {% if app.name == 'Photologue' %} style="margin-bottom: 0px; border-bottom-width: 0px;"{% endif %}
-         {% if app.name == 'Photologue_Ladiaria' %} style="border-top-width: 0px;" {% endif %}>
-        <table summary="{% blocktrans with name=app.name %}Models available in the {{ name }} application.{% endblocktrans %}">
-        {% if app.name != 'Photologue_Ladiaria' or app_list|length_is:"1" and app.name == 'Photologue_Ladiaria' %}
-        <caption>
-            <a href="{{ app.app_url }}" class="section">{{ app.name }}</a>
-        </caption>
-        {% endif %}
-        {% for model in app.models %}
-            {% if model.name != 'Configuraciones extra' %}
-            <tr class="model-{{ model.object_name|lower }}">
-            {% if model.admin_url %}
-                <th scope="row"><a href="{{ model.admin_url }}">
-                  {% if model.name == 'Efectos de foto' %}
-                    Efectos
-                  {% elif model.name == 'Subida de galerías' %}
-                    Galerías comprimidas
-                  {% elif model.name == 'Configuraciones extra' %}
+          {% if app.name == 'Photologue' %} style="margin-bottom: 0px; border-bottom-width: 0px;"{% endif %}
+          {% if app.name == 'Photologue_Ladiaria' %} style="border-top-width: 0px;" {% endif %}>
+          <table summary="{% blocktrans with name=app.name %}Models available in the {{ name }} application.{% endblocktrans %}">
+            {% if app.name != 'Photologue_Ladiaria' or app_list|length_is:"1" and app.name == 'Photologue_Ladiaria' %}
+              <caption><a href="{{ app.app_url }}" class="section">{{ app.name }}</a></caption>
+            {% endif %}
+            {% for model in app.models %}
+              {% if model.name != 'Configuraciones extra' %}
+                <tr class="model-{{ model.object_name|lower }}">
+                  {% if model.admin_url %}
+                    <th scope="row">
+                      <a href="{{ model.admin_url }}">
+                        {% if model.name == 'Efectos de foto' %}
+                          Efectos
+                        {% elif model.name == 'Subida de galerías' %}
+                          Galerías comprimidas
+                        {% elif model.name == 'Configuraciones extra' %}
+                        {% else %}
+                          {{ model.name }}
+                        {% endif %}
+                      </a>
+                    </th>
                   {% else %}
-                    {{ model.name }}
+                    <th scope="row">
+                      {% if model.name == 'Efectos de foto' %}
+                        Efectos
+                      {% elif model.name == 'Subida de galerías' %}
+                        Galerías comprimidas
+                      {% else %}
+                        {{ model.name }}
+                      {% endif %}
+                    </th>
                   {% endif %}
-                </a></th>
-            {% else %}
-                <th scope="row">
-                  {% if model.name == 'Efectos de foto' %}
-                    Efectos
-                  {% elif model.name == 'Subida de galerías' %}
-                    Galerías comprimidas
+                  {% if model.add_url %}
+                    <td><a href="{{ model.add_url }}" class="addlink">{% trans 'Add' %}</a></td>
                   {% else %}
-                    {{ model.name }}
+                    <td>&nbsp;</td>
                   {% endif %}
-                </th>
-            {% endif %}
-
-            {% if model.add_url %}
-                <td><a href="{{ model.add_url }}" class="addlink">{% trans 'Add' %}</a></td>
-            {% else %}
-                <td>&nbsp;</td>
-            {% endif %}
-
-            {% if model.admin_url %}
-                <td><a href="{{ model.admin_url }}" class="changelink">{% trans 'Change' %}</a></td>
-            {% else %}
-                <td>&nbsp;</td>
-            {% endif %}
-            </tr>
-            {% endif %}
-        {% endfor %}
-        {% if request.path == "/admin/photologue/" %}
-          <tr>
-            <th scope="row"><a href="/admin/photologue_ladiaria/photographer/">Fotógrafos</a></th>
-            {% if perms.photologue_ladiaria.add_photographer %}
-              <td><a href="/admin/photologue_ladiaria/photographer/add/" class="addlink">{% trans 'Add' %}</a></td>
-            {% else %}
-              <td>&nbsp;</td>
-            {% endif %}
-            {% if perms.photologue_ladiaria.change_photographer %}
-              <td><a href="/admin/photologue_ladiaria/photographer/" class="changelink">{% trans 'Change' %}</a></td>
-            {% else %}
-              <td>&nbsp;</td>
-            {% endif %}
-          </tr>
-          <tr>
-            <th scope="row"><a href="/admin/photologue_ladiaria/agency/">Agencias</a></th>
-            {% if perms.photologue_ladiaria.add_agency %}
-              <td><a href="/admin/photologue_ladiaria/agency/add/" class="addlink">{% trans 'Add' %}</a></td>
-            {% else %}
-              <td>&nbsp;</td>
-            {% endif %}
-            {% if perms.photologue_ladiaria.change_agency %}
-              <td><a href="/admin/photologue_ladiaria/agency/" class="changelink">{% trans 'Change' %}</a></td>
-            {% else %}
-              <td>&nbsp;</td>
-            {% endif %}
-          </tr>
-        {% endif %}
-        </table>
-        </div>
-    {% endfor %}
-{% else %}
-    <p>{% trans "You don't have permission to edit anything." %}</p>
-{% endif %}
-</div>
-{% endblock %}
-
-{% block sidebar %}
-<div id="content-related">
-    <div class="module" id="recent-actions-module">
-        <h2>{% trans 'Recent actions' %}</h2>
-        <h3>{% trans 'My actions' %}</h3>
-            {% load log %}
-            {% get_admin_log 10 as admin_log for_user user %}
-            {% if not admin_log %}
-            <p>{% trans 'None available' %}</p>
-            {% else %}
-            <ul class="actionlist">
-            {% for entry in admin_log %}
-            <li class="{% if entry.is_addition %}addlink{% endif %}{% if entry.is_change %}changelink{% endif %}{% if entry.is_deletion %}deletelink{% endif %}">
-                {% if entry.is_deletion or not entry.get_admin_url %}
-                    {{ entry.object_repr }}
-                {% else %}
-                    <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
-                {% endif %}
-                <br/>
-                {% if entry.content_type %}
-                    <span class="mini quiet">{% filter capfirst %}{{ entry.content_type }}{% endfilter %}</span>
-                {% else %}
-                    <span class="mini quiet">{% trans 'Unknown content' %}</span>
-                {% endif %}
-            </li>
+                  {% if model.admin_url %}
+                    <td><a href="{{ model.admin_url }}" class="changelink">{% trans 'Change' %}</a></td>
+                  {% else %}
+                    <td>&nbsp;</td>
+                  {% endif %}
+                </tr>
+              {% endif %}
             {% endfor %}
-            </ul>
+            {% if request.path == "/admin/photologue/" %}
+              <tr>
+                <th scope="row"><a href="/admin/photologue_ladiaria/photographer/">Fotógrafos</a></th>
+                {% if perms.photologue_ladiaria.add_photographer %}
+                  <td><a href="/admin/photologue_ladiaria/photographer/add/" class="addlink">{% trans 'Add' %}</a></td>
+                {% else %}
+                  <td>&nbsp;</td>
+                {% endif %}
+                {% if perms.photologue_ladiaria.change_photographer %}
+                  <td><a href="/admin/photologue_ladiaria/photographer/" class="changelink">{% trans 'Change' %}</a></td>
+                {% else %}
+                  <td>&nbsp;</td>
+                {% endif %}
+              </tr>
+              <tr>
+                <th scope="row"><a href="/admin/photologue_ladiaria/agency/">Agencias</a></th>
+                {% if perms.photologue_ladiaria.add_agency %}
+                  <td><a href="/admin/photologue_ladiaria/agency/add/" class="addlink">{% trans 'Add' %}</a></td>
+                {% else %}
+                  <td>&nbsp;</td>
+                {% endif %}
+                {% if perms.photologue_ladiaria.change_agency %}
+                  <td><a href="/admin/photologue_ladiaria/agency/" class="changelink">{% trans 'Change' %}</a></td>
+                {% else %}
+                  <td>&nbsp;</td>
+                {% endif %}
+              </tr>
             {% endif %}
-    </div>
-</div>
+          </table>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>{% trans "You don't have permission to edit anything." %}</p>
+    {% endif %}
+  </div>
 {% endblock %}
