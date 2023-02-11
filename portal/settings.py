@@ -133,29 +133,12 @@ ADMIN_SHORTCUTS = [
     {
         'title': 'Edición',
         'shortcuts': [
-            {
-                'url_name': 'admin:core_edition_changelist',
-                'title': 'Ediciones',
-            },
-            {
-                'url_name': 'admin:core_edition_add',
-                'title': 'Crear edición',
-            },
-            {
-                'url_name': 'admin:core_article_add',
-                'title': 'Crear Artículo',
-            },
+            {'url_name': 'admin:core_edition_changelist', 'title': 'Ediciones'},
+            {'url_name': 'admin:core_edition_add', 'title': 'Crear edición'},
+            {'url_name': 'admin:core_article_add', 'title': 'Crear Artículo'},
         ],
     },
-    {
-        'title': 'Reportes',
-        'shortcuts': [
-            {
-                'url': '/dashboard/',
-                'title': 'Estadísticas de usuarios',
-            },
-        ],
-    },
+    {'title': 'Reportes', 'shortcuts': [{'url': '/dashboard/', 'title': 'Estadísticas de usuarios'}]},
 ]
 
 REST_FRAMEWORK = {
