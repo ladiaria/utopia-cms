@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import sys
+from distutils.sysconfig import get_python_lib
 from os.path import abspath, basename, dirname, join, realpath
 from datetime import datetime
 import mimetypes
@@ -282,6 +283,10 @@ TEMPLATE_LOADERS = (
             'django_mobile.loader.Loader',
             'django.template.loaders.filesystem.Loader',
             'django.template.loaders.app_directories.Loader',
+            (
+                # needed to allow us to override admin_shortcuts' admin/index.html template
+                'django.template.loaders.filesystem.Loader', [join(get_python_lib(), "admin_shortcuts")],
+            ),
         ),
     ),
 )
