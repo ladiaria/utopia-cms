@@ -573,35 +573,6 @@ class Category(Model):
             cursor.execute(query)
             return cursor.fetchone()[0]
 
-    # TODO: check if these mas_leidos* methods are still beeing used, because the "home" component and /masleidos url
-    #       were migrated to views.
-    def mas_leidos(self, days=1):
-        """
-        Returns the top 9 most viewed articles counting days days ago from now
-        """
-        since = datetime.now() - timedelta(days)
-        return Article.objects.raw("""
-            SELECT core_article.id
-            FROM core_article
-            JOIN core_articlerel ON
-                core_article.id = core_articlerel.article_id
-            JOIN core_section ON
-                core_articlerel.section_id = core_section.id
-            WHERE core_section.category_id = %d AND is_published AND
-                  date_published > '%s'
-            GROUP BY core_article.id ORDER BY views DESC LIMIT 9
-        """ % (self.id, since))
-
-    def mas_leidos_daily(self):
-        days_ago = 1 if date.today().isoweekday() < 7 else 2
-        return self.mas_leidos(days_ago)
-
-    def mas_leidos_weekly(self):
-        return self.mas_leidos(7)
-
-    def mas_leidos_monthly(self):
-        return self.mas_leidos(30)
-
     def subscriber_count(self):
         return len(
             set(
@@ -1198,36 +1169,6 @@ class ArticleBase(Model, CT):
     def get_photos_wo_cover(self):
         return self.gallery.photos.exclude(
             id__exact=self.photo.id if self.photo else 0)
-
-    def mas_leidos(self, days=1, cover=False):
-        """
-        Returns the top 10 most viewed articles counting days days ago from now
-        If cover is True the "humor" section is excluded. (Issue4910)
-        """
-        desde = datetime.now() - timedelta(days)
-        articles = Article.objects.filter(date_published__gt=desde)
-        if cover:
-            articles = articles.exclude(sections__slug__contains="humor")
-        return articles.order_by('-views')[:9]
-
-    def mas_leidos_daily(self, cover=False):
-        days_ago = 1 if date.today().isoweekday() < 7 else 2
-        return self.mas_leidos(days_ago, cover)
-
-    def mas_leidos_weekly(self, cover=False):
-        return self.mas_leidos(7, cover)
-
-    def mas_leidos_monthly(self, cover=False):
-        return self.mas_leidos(30, cover)
-
-    def masleidos_cover_daily(self):
-        return self.mas_leidos_daily(True)
-
-    def masleidos_cover_weekly(self):
-        return self.mas_leidos_weekly(True)
-
-    def masleidos_cover_monthly(self):
-        return self.mas_leidos_monthly(True)
 
     def has_photo(self):
         try:
