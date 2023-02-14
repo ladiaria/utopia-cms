@@ -6,7 +6,7 @@
 </div>
 <div id="mas_vistos_seccion">
   <ul class="mas-leidos-list">
-    {% for masv in masleidos_cover_daily|slice:":5" %}
+    {% for masv in masleidos_cover_daily %}
       {% render_article_media with article=masv media=masv.home_display %}
     {% endfor %}
   </ul>

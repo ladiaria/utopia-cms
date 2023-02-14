@@ -14,9 +14,9 @@ from core.models import Article, ArticleViews
 to_response = render_response('core/templates/')
 
 
-def mas_leidos(days=1, cover=False):
+def mas_leidos(days=1, cover=False, limit=10):
     """
-    Returns the top 10 most viewed articles counting days days ago from now.
+    Returns the top (upto limit) most viewed articles counting days days ago from now.
     If cover is True, articles in satirical sections are excluded. (Issue4910).
     Rare but possible: exclude articles with an empty slug because they will raise exception when computing their urls.
     """
@@ -30,33 +30,13 @@ def mas_leidos(days=1, cover=False):
             article__slug=''
         ).exclude(
             **more_exclude_kwargs
-        ).values('article').annotate(total_views=Sum('views')).order_by('-total_views')[:10]
+        ).values('article').annotate(total_views=Sum('views')).order_by('-total_views')[:limit]
     ]
 
 
-def mas_leidos_daily(cover=False):
+def mas_leidos_daily(cover=False, limit=None):
     days_ago = 1 if date.today().isoweekday() < 7 else 2
-    return mas_leidos(days_ago, cover)
-
-
-def mas_leidos_weekly(cover=False):
-    return mas_leidos(7, cover)
-
-
-def mas_leidos_monthly(cover=False):
-    return mas_leidos(30, cover)
-
-
-def masleidos_cover_daily():
-    return mas_leidos_daily(True)
-
-
-def masleidos_cover_weekly():
-    return mas_leidos_weekly(True)
-
-
-def masleidos_cover_monthly():
-    return mas_leidos_monthly(True)
+    return mas_leidos(days_ago, cover, limit) if limit else mas_leidos(days_ago, cover)
 
 
 @never_cache
@@ -66,19 +46,12 @@ def index(request):
         'masleidos_view.html',
         {
             'mas_leidos_daily': mas_leidos_daily(),
-            'mas_leidos_weekly': mas_leidos_weekly(),
-            'mas_leidos_monthly': mas_leidos_monthly(),
+            'mas_leidos_weekly': mas_leidos(7),
+            'mas_leidos_monthly': mas_leidos(30),
         },
     )
 
 
 @to_response
 def content(request):
-    return (
-        'masleidos.html',
-        {
-            'masleidos_cover_daily': masleidos_cover_daily(),
-            'masleidos_cover_weekly': masleidos_cover_weekly(),
-            'masleidos_cover_monthly': masleidos_cover_monthly(),
-        },
-    )
+    return 'masleidos.html', {'masleidos_cover_daily': mas_leidos_daily(True, 5)}
