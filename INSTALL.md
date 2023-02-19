@@ -94,7 +94,7 @@ Check also if your system locale settings match the default language (`es`) and 
 
 - Configure Nginx for reverse proxying the Django's development server and start it:
 
-Follow the steps under "Trust your SSL settings in chrome" in `docs/TESTING.md`.
+Follow the steps under "Create and trust your SSL certificates" in `docs/TESTING.md`.
 
 Then create your nginx conf file using the sample provided (edit it after copy, if needed):
 

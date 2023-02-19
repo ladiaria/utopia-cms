@@ -29,7 +29,9 @@ Edit `codeception.yml` and change default settings (if needed) for your local en
 
 Install "chromedriver" (this can vary depending your Linux distro).
 
-## Trust your SSL settings in chrome
+## Create and trust your SSL certificates
+
+The execution of the following script will ask you many questions, the most important are the first password, which should be set (do not left it blank) and remembered because it will be asked again, and the FQDN that should be set to "yoogle.com". The challenge password asked almost at the end can be left blank.
 
 ```
 cd docs/ssl
