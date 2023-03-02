@@ -25,6 +25,7 @@ if APPS_DIR not in sys.path:
 SITE_ROOT = dirname(realpath(__file__))
 STATIC_URL = '/static/'
 STATIC_ROOT = '%s/static/' % SITE_ROOT
+STATICFILES_DIRS = (join(SITE_ROOT, "../static/"), )
 SITE_DOMAIN = 'example.com'
 URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
@@ -52,7 +53,7 @@ RAW_SQL_DEBUG = False
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    "compressor.finders.CompressorFinder",
 )
 
 INSTALLED_APPS = (
