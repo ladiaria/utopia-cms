@@ -59,16 +59,6 @@ TIME_FORMAT = 'H:i:s'
 DATETIME_FORMAT = '%s %s' % (DATE_FORMAT, TIME_FORMAT)
 SHORT_DATE_FORMAT = 'd/m/Y'
 
-STATICFILES_DIRS = (
-    '/home/user/utopia-cms/static',
-)
-
-STATICFILES_FINDERS = (
-    "django.contrib.staticfiles.finders.FileSystemFinder",
-    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-    "compressor.finders.CompressorFinder",
-)
-
 LOGIN_URL = '/usuarios/entrar/'
 LOGOUT_URL = '/usuarios/salir/'
 SIGNUP_URL = '/usuarios/registro/'
