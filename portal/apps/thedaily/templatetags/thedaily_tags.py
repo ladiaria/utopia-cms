@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from future.utils import raise_
 
 from datetime import datetime, timedelta
@@ -104,7 +105,7 @@ def subscriptionprice(subscription_type):
     try:
         price = SubscriptionPrices.objects.get(subscription_type=subscription_type).price
     except SubscriptionPrices.DoesNotExist:
-        return u''
+        return ''
     else:
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
         return f'{int(price):n}'
@@ -117,9 +118,9 @@ def terms_and_conditions():
         try:
             return FlatPage.objects.get(id=fp_id).content
         except FlatPage.DoesNotExist:
-            return u''
+            return ''
     else:
-        return u''
+        return ''
 
 
 # filters
