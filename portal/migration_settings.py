@@ -9,6 +9,7 @@ from datetime import datetime
 import mimetypes
 from freezegun import freeze_time
 
+from django.conf.global_settings import DEFAULT_CHARSET
 from django.contrib.messages import constants as messages
 
 
@@ -198,7 +199,6 @@ USE_L10N = True
 
 LANGUAGE_CODE = 'es'
 LOCAL_LANG = 'es'
-DEFAULT_CHARSET = 'utf-8'
 LOCAL_COUNTRY = 'UY'
 
 DATE_INPUT_FORMATS = (
@@ -501,7 +501,7 @@ from local_migration_settings import *
 
 SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
 ROBOTS_SITEMAP_URLS = [SITE_URL + 'sitemap.xml']
-LOCALE_NAME = LOCAL_LANG + '_' + LOCAL_COUNTRY + '.UTF8'
+LOCALE_NAME = "%s_%s.%s" % (LOCAL_LANG, LOCAL_COUNTRY, DEFAULT_CHARSET)
 
 if FREEZE_TIME:
     freezer = freeze_time(FREEZE_TIME)

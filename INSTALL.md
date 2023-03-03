@@ -74,7 +74,7 @@ MariaDB [(none)]> GRANT ALL PRIVILEGES ON utopiacms.* TO 'utopiacms_user'@'local
 
 Edit the new file created (`local_settings.py`) to set your new database credentials and also fill the `SECRET_KEY` variable using any string or a more secure one generated for example with [this web tool](https://djecrety.ir/).
 
-Check also if your system locale settings match the default language (`es`) and country (`UY`), override this variables in the `local_settings.py` file if not. In most linux distributions the available locales are defined in the `/etc/locale.gen` file, you should have an uncommented line in this file matching your resultant `LOCALE_NAME` setting, (`es_UY.UTF8` by default, if not overrided as said).
+Check also if your system locale settings match the default language (`es`) and country (`UY`), override this variables in the `local_settings.py` file if not. In most linux distributions the available locales are defined in the `/etc/locale.gen` file, you should have an uncommented line in this file matching your resultant `LOCALE_NAME` setting, (`es_UY.utf-8` by default, if not overrided as said).
 
 - Create needed tables using Django's `migrate` management command twice, without and with the `--run-syncdb` argument:
 
