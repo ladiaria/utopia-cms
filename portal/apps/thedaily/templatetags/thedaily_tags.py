@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from future.utils import raise_
 
 from datetime import datetime, timedelta
@@ -128,7 +129,6 @@ def has_bought_article(user, article):
     return user.subscriber.articles_bought.filter(id=article.id).exists()
 
 
-# filters
 @register.filter(name='hasreplies')
 def comment_has_replies(value):
     return value.last_child is not None
