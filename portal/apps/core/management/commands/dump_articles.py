@@ -27,11 +27,11 @@ class Command(BaseCommand):
     help = 'Dumps the Articles given by id to a JSON set of files.'
 
     def add_arguments(self, parser):
-        parser.add_argument('article_ids', nargs='+', type=long)
+        parser.add_argument('article_ids', nargs='+', type=int)
         parser.add_argument(
             '--dump-dir',
             action='store',
-            type=unicode,
+            type=str,
             dest='dump_dir',
             help='Save generated files in this directory (must exist).',
             default=getattr(settings, 'GENERAL_MANAGEMENT_COMMAND_EXPORT_PATH', '/tmp'),
