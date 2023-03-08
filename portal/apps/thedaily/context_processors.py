@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
+
 from builtins import str
+
 import jwt
 from time import time
 from uuid import uuid4
@@ -72,7 +74,7 @@ def permissions(request):
             'is_subscriber': is_subscriber,
             'is_subscriber_default': is_subscriber_default,
             'is_subscriber_any': is_subscriber_any,
-            'poll_url': (u'https://forms.gle/' + pu_path) if pu_path else u'',
+            'poll_url': ('https://forms.gle/' + pu_path) if pu_path else '',
         }
     )
 
