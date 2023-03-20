@@ -8,7 +8,9 @@
           <h2 class="section-detail__title">{{ section.name_in_category_menu|default:section.name }}{% block extra_title %}{% endblock %}</h2>
         {% endblock %}
         {% block section-detail-head-description %}
-          {% if section.show_description %}<p class="section-detail__subtitle">{{ section.description }}</p>{% endif %}
+          {% if section.show_description %}
+            <p class="section-detail__subtitle">{{ section.description|ldmarkup|bleach }}</p>
+          {% endif %}
         {% endblock %}
       </div>
 
