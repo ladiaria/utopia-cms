@@ -76,7 +76,6 @@ from thedaily.forms import (
 )
 from thedaily.forms.subscriber import ProfileForm, UserForm
 from thedaily.utils import recent_following, add_default_category_newsletters
-from thedaily.templatetags.thedaily_tags import has_bought_article
 from thedaily.email_logic import limited_free_article_mail
 from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor
 
@@ -1139,7 +1138,7 @@ def amp_access_authorization(request):
                 }
             )
 
-            if is_subscriber or has_subscriber and has_bought_article(request.user, article):
+            if is_subscriber:
 
                 result.update({'access': True, 'edit': request.user.has_perm('core.change_article')})
 
@@ -1596,19 +1595,3 @@ def telephone_subscription_msg(user, preferred_time):
             user.subscriber.province,
         ),
     )
-
-
-@never_cache
-@to_response
-def buy_single_article(request):
-    # TODO: validate the transaction
-    article_id = request.POST.get('article_id')
-    user_id = request.POST.get('user_id')
-    if request.method == 'POST' and article_id and user_id:
-        user = get_object_or_404(User, id=user_id)
-        article = get_object_or_404(Article, id=article_id)
-        user.subscriber.articles_bought.add(article)
-        user.subscriber.save()
-        return HttpResponse('OK')
-    else:
-        raise Http404

@@ -238,16 +238,6 @@
               </a>
             </div>
           {% endif %}
-          {% if article.solana_signature %}
-            <div class="solana-signature read-later top">
-              <p>
-                Este artículo fue firmado en Solana por el autor
-                <span class="show-solana-info">Mostrar info</span>
-              </p>
-              <p class="solana-info hide">
-                Firma: {{ article.solana_signature }}<br>Dirección: {{ article.solana_signature_address }}</p>
-            </div>
-          {% endif %}
         {% endif %}
       </div>
       {% if article.photo and header_display == 'FW' %}</div>{# opened in line 79 #}{% endif %}
@@ -292,9 +282,7 @@
             {% if not request.signupwall %}
               {# Soft wall: Suscripción #}
               {% if not article.public %}
-                {% if not user|has_bought_article:article %}
-                  {% include 'article/paywall/pw_auth_with_credits.html' %}
-                {% endif %}
+                {% include 'article/paywall/pw_auth_with_credits.html' %}
               {% endif %}
             {% else %}{# signupwall raised #}
               {# Hard wall -> Suscripción #}
@@ -593,7 +581,7 @@
 
       {% endif %}
 
-      {% if not article.is_restricted or user|has_restricted_access:article or user|has_bought_article:article %}{# begin restricted content2 #}
+      {% if not article.is_restricted or user|has_restricted_access:article %}{# begin restricted content2 #}
 
         {% if TALK_URL and article.allow_comments %}
           <div id="comentarios">
@@ -811,10 +799,6 @@
 
       $('a.open-ipfs').click(function(){
         window.open('https://ipfs.io/ipfs/{{ article.ipfs_cid }}', 'Ver en IPFS');
-      });
-
-      $('span.show-solana-info').click(function(){
-        $('.solana-info').toggleClass('hide');
       });
 
       $('a.read-later__saved').click(function(){

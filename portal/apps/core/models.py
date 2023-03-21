@@ -962,10 +962,6 @@ class ArticleBase(Model, CT):
     allow_comments = BooleanField('Habilitar comentarios', default=True)
     ipfs_upload = BooleanField('Publicar en IPFS', default=False)
     ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
-    solana_signature = TextField('Firma de Solana', blank=True, null=True, help_text='Firma del autor en Solana')
-    solana_signature_address = TextField(
-        'Wallet de Solana', blank=True, null=True, help_text='Wallet autora de la firma en Solana'
-    )
     created_by = ForeignKey(
         User,
         verbose_name='creado por',
@@ -1019,15 +1015,6 @@ class ArticleBase(Model, CT):
 
         now = datetime.now()
 
-        if self.solana_signature_address:
-            # since we have only one field for the signature, we split it and the first part is the signature and the
-            # second part is the address
-            splitted = self.solana_signature_address.split(";")
-            self.solana_signature = splitted[0]
-            self.solana_signature_address = splitted[1]
-        else:
-            self.solana_signature = None
-
         if self.ipfs_upload:
             ipfs_token = getattr(settings, "IPFS_TOKEN", None)
             if not ipfs_token:
@@ -1037,19 +1024,11 @@ class ArticleBase(Model, CT):
                 + self.ipfs_cid
                 + "\n \n \n" + self.body
             ) if self.ipfs_cid else (self.headline + '\n \n' + self.body)
-            if self.solana_signature:
-                content += (
-                    "\n \n"
-                    + "Dirección del autor: "
-                    + self.solana_signature_address
-                    + "\n"
-                    + "Firma del autor: "
-                    + self.solana_signature
-                )
             w3 = w3storage.API(token=ipfs_token)
             cid = w3.post_upload((self.slug, content))
             self.ipfs_cid = cid
         else:
+            # TODO: (awaiting feedback) may be this "clean" can be better done through a "validation" mechanism
             self.ipfs_cid = None
 
         if self.is_published:

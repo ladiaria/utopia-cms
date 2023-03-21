@@ -123,12 +123,6 @@ def terms_and_conditions():
         return ''
 
 
-@register.filter(name='has_bought_article')
-def has_bought_article(user, article):
-    """ @pre: The user bought the article """
-    return user.subscriber.articles_bought.filter(id=article.id).exists()
-
-
 @register.filter(name='hasreplies')
 def comment_has_replies(value):
     return value.last_child is not None

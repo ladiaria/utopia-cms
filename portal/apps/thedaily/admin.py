@@ -71,7 +71,6 @@ class SubscriberAdmin(ModelAdmin):
         'ruta_lento',
         'ruta_fs',
         'get_latest_article_visited',
-        'articles_bought_count',
     )
     list_filter = ['newsletters', 'category_newsletters', 'pdf', 'allow_news', 'allow_promotions', 'allow_polls']
     actions = ['send_account_info']
@@ -86,7 +85,6 @@ class SubscriberAdmin(ModelAdmin):
                 ('pdf', 'ruta'),
                 ('plan_id', ),
                 ('get_latest_article_visited', ),
-                ('articles_bought_count', ),
             ),
         }),
     )

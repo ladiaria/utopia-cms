@@ -22,14 +22,4 @@ class Migration(migrations.Migration):
             name='ipfs_upload',
             field=models.BooleanField(default=False, verbose_name='Publicar en IPFS'),
         ),
-        migrations.AddField(
-            model_name='subscriberarticle',
-            name='solana_signature',
-            field=models.TextField(blank=True, help_text='Firma del autor en Solana', null=True, verbose_name='Firma de Solana'),
-        ),
-        migrations.AddField(
-            model_name='subscriberarticle',
-            name='solana_signature_address',
-            field=models.TextField(blank=True, help_text='Wallet autora de la firma en Solana', null=True, verbose_name='Wallet de Solana'),
-        ),
     ]

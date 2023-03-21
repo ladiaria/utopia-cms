@@ -37,14 +37,6 @@ def permissions(request):
                 is_subscriber = is_subscriber_default or any(
                     subscriber.is_subscriber(p.slug) for p in article.publications()
                 ) or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
-                # solana settings
-                result.update(
-                    {
-                        'solana_address': getattr(settings, "SOLANA_ADDRESS", None),
-                        'usdc_address': getattr(settings, "SOLANA_USDC_ADDRESS", None),
-                        'solana_network': getattr(settings, "SOLANA_NETWORK", None),
-                    }
-                )
             except Article.DoesNotExist:
                 # use url history and search again
                 try:
