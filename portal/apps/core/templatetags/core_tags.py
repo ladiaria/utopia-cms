@@ -12,6 +12,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.template import Library, Node, TemplateSyntaxError, Variable, loader
 from django.template.defaultfilters import stringfilter
+from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 
 from tagging.models import Tag, TaggedItem
@@ -297,15 +298,23 @@ def render_tagcover(context, tagname):
 
 
 @register.simple_tag(takes_context=True)
-def render_tagrow(context, tagname, article_type):
+def render_tagrow(context, tagname, article_type, articles_max=4):
+    """
+    Renders "rows" using "tagrow" template to show upto articles_max articles tagged with the tag tagname.
+    """
     try:
         tag = Tag.objects.get(name=tagname)
     except Tag.DoesNotExist:
         return ''
-    articles = TaggedItem.objects.get_by_model(Article, tag).filter(is_published=True, type=article_type)[:4]
+    articles = TaggedItem.objects.get_by_model(Article, tag).filter(
+        is_published=True, type=article_type
+    )[:articles_max]
     if articles:
-        context.update({'latest_articles': articles})
-        return loader.render_to_string('core/templates/tagrow.html', context.flatten())
+        flatten_ctx, result = context.flatten(), ""
+        for i in range(0, len(articles), 4):
+            flatten_ctx.update({'latest_articles': articles[i: i + 4]})
+            result += loader.render_to_string('core/templates/tagrow.html', flatten_ctx)
+        return mark_safe(result)
     else:
         return ''
 
