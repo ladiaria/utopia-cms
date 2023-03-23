@@ -1016,19 +1016,21 @@ class ArticleBase(Model, CT):
         now = datetime.now()
 
         if self.ipfs_upload:
+            # TODO: siempre se guardaria de nuevo segun esto, por mas que no haya cambiado, tratar de mejorar
+            #       ademas: que es lo que se quiere guardar? solo headline y body? y los recuadros y otras cosas?
             ipfs_token = getattr(settings, "IPFS_TOKEN", None)
             if not ipfs_token:
                 raise Exception("La configuración necesaria para publicar en IPFS no está definida.")
             content = (
                 "Nota editada. Versión anterior de la nota en: https://ipfs.io/ipfs/"
                 + self.ipfs_cid
-                + "\n \n \n" + self.body
+                + "\n \n \n" + self.body  # TODO: y aca no le pone headline?
             ) if self.ipfs_cid else (self.headline + '\n \n' + self.body)
             w3 = w3storage.API(token=ipfs_token)
             cid = w3.post_upload((self.slug, content))
             self.ipfs_cid = cid
         else:
-            # TODO: (awaiting feedback) may be this "clean" can be better done through a "validation" mechanism
+            # TODO: con esto perdemos link al historico si alguna vez fue guardada, eso está ok?
             self.ipfs_cid = None
 
         if self.is_published:

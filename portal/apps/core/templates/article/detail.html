@@ -74,7 +74,7 @@
 
       {% if article.photo %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 255 #}
+          <div>{# closed in line 243 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -105,7 +105,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 255 #}
+          {# missing close div here is closed correctly in line 243 #}
         {% else %}
           <div class="container-photo photo {{ card_size|default:'BG' }} {{ article.photo_layout }}">
             <figure class="principal">
@@ -240,7 +240,7 @@
           {% endif %}
         {% endif %}
       </div>
-      {% if article.photo and header_display == 'FW' %}</div>{# opened in line 79 #}{% endif %}
+      {% if article.photo and header_display == 'FW' %}</div>{# opened in line 77 #}{% endif %}
 
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
@@ -298,7 +298,7 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall %}{# closed in line 563 #}
+        {% if not request.signupwall %}{# closed in line 551 #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
@@ -548,7 +548,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 315 #}
+        {% endif %}{# opened in line 301 #}
 
       {% else %}{# restricted content message #}
 
@@ -565,7 +565,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 707 #}
+    {% if not request.signupwall %}{# closed in line 695 #}
 
       {% if article.public %}
 
@@ -692,7 +692,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 580 #}
+    {% endif %}{# opened in line 568 #}
 
     {% block article_extra %}{% endblock %}
 

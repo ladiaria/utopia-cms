@@ -97,8 +97,7 @@ THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY = ''  # 2-char (in caps) country i
 THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED = [THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY]
 
 # IPFS
-# TODO: (awaiting feedback) it's a Key or it's a Token?
-# The web3.storage API Key used to upload files to the web3.storage service
+# The web3.storage API Token used to upload files to the web3.storage service.
 # To generate an API Token with your account, refer to the following URL:
 # https://web3.storage/docs/how-tos/generate-api-token/
 # IPFS_TOKEN = ''
