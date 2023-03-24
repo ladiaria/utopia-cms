@@ -224,6 +224,7 @@
             </div>
           {% endif %}
           {% if article.ipfs_upload and article.ipfs_cid and not request.signupwall %}
+            {# TODO: allow only if user is able to read despite of "credits" or "already read" #}
             <div class="read-later top">
               <a class="read-later__btn open-ipfs">
                 <svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="195" height="195" viewBox="0 0 195 195" version="1.1" id="svg23" sodipodi:docname="rust-ipfs-logo.svg" inkscape:version="0.92.3 (2405546, 2018-03-11)">

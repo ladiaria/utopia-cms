@@ -17,7 +17,9 @@ from django.core.urlresolvers import reverse
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.mail import send_mail
 from django.db.models import Q
-from django.http import Http404, HttpResponseRedirect, HttpResponse, BadHeaderError, HttpResponsePermanentRedirect
+from django.http import (
+    Http404, HttpResponseRedirect, HttpResponse, BadHeaderError, HttpResponsePermanentRedirect, HttpResponseBadRequest
+)
 from django.views.generic import DetailView
 from django.contrib.sites.models import Site
 from django.shortcuts import get_list_or_404, get_object_or_404, render
@@ -225,16 +227,16 @@ def article_detail_ipfs(request, article_id):
     article = get_object_or_404(Article, id=article_id)
     if article.ipfs_cid:
         try:
-            response = requests.get('https://ipfs.io/ipfs/%s/' % article.ipfs_cid)
-            response.raise_for_status()
+            r = requests.get('https://ipfs.io/ipfs/%s/' % article.ipfs_cid)
+            r.raise_for_status()
         except Exception:
             # TODO: handle better
-            raise HttpResponseBadRequest
+            return HttpResponseBadRequest()
         else:
-            return render(request, "core/article/detail_ipfs.html", {response.content})
+            return render(request, "core/article/detail_ipfs.html", {r.text})
     else:
         # TODO: handle better
-        raise HttpResponseBadRequest
+        return HttpResponseBadRequest()
 
 
 @decorate_if_staff(decorator=never_cache)
