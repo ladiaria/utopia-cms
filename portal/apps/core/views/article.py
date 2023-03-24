@@ -219,6 +219,24 @@ def article_detail_walled(request, year, month, slug, domain_slug=None):
     return article_detail(request, int(year), int(month), slug, domain_slug)
 
 
+@never_cache
+def article_detail_ipfs(request, article_id):
+    # TODO: subscriber-only allow
+    article = get_object_or_404(Article, id=article_id)
+    if article.ipfs_cid:
+        try:
+            response = requests.get('https://ipfs.io/ipfs/%s/' % article.ipfs_cid)
+            response.raise_for_status()
+        except Exception:
+            # TODO: handle better
+            raise HttpResponseBadRequest
+        else:
+            return render(request, "core/article/detail_ipfs.html", {response.content})
+    else:
+        # TODO: handle better
+        raise HttpResponseBadRequest
+
+
 @decorate_if_staff(decorator=never_cache)
 @decorate_if_no_staff(decorator=vary_on_cookie)
 @decorate_if_no_staff(decorator=cache_page(120))
