@@ -1021,16 +1021,14 @@ class ArticleBase(Model, CT):
             ipfs_token = getattr(settings, "IPFS_TOKEN", None)
             if not ipfs_token:
                 raise Exception("La configuración necesaria para publicar en IPFS no está definida.")
-            content = (
-                "Nota editada. Versión anterior de la nota en: https://ipfs.io/ipfs/"
-                + self.ipfs_cid
-                + "\n \n \n" + self.body  # TODO: y aca no le pone headline?
-            ) if self.ipfs_cid else (self.headline + '\n \n' + self.body)
+            content = "parent cid: %s\n%s\n%s" % (self.ipfs_cid, self.headline, self.body)
             w3 = w3storage.API(token=ipfs_token)
             cid = w3.post_upload((self.slug, content))
             self.ipfs_cid = cid
         else:
-            # TODO: con esto perdemos link al historico si alguna vez fue guardada, eso está ok?
+            # This will drop any reference to this article in IPFS, and seems to be the right thing to do when the
+            # field "ipfs_upload" was saved unchecked, note that there is no need to "delete" any data in IPFS since
+            # the only way to retrieve data from IPFS is knowning the "cid".
             self.ipfs_cid = None
 
         if self.is_published:

@@ -1116,6 +1116,7 @@ def amp_access_authorization(request):
 
         # TODO: update logic using the "restricted" information (@see signupwall.middleware)
         #       (restrictive and published in other pubs case, ensure is subscribed to main_pub)
+        #       thedaily.context_processors may need also this "update" for the is_subscribed variable.
         if authenticated:
 
             if has_subscriber:

@@ -22,6 +22,7 @@ from django.http import (
 )
 from django.views.generic import DetailView
 from django.contrib.sites.models import Site
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache, cache_page
@@ -222,18 +223,24 @@ def article_detail_walled(request, year, month, slug, domain_slug=None):
 
 
 @never_cache
+@login_required
 def article_detail_ipfs(request, article_id):
-    # TODO: subscriber-only allow
     article = get_object_or_404(Article, id=article_id)
     if article.ipfs_cid:
         try:
+            # TODO: is_subscriber should be performed using the "aricle_detail" procedure
+            is_subscriber = request.user.subscriber.is_subscriber()
             r = requests.get('https://ipfs.io/ipfs/%s/' % article.ipfs_cid)
             r.raise_for_status()
         except Exception:
             # TODO: handle better
             return HttpResponseBadRequest()
         else:
-            return render(request, "core/article/detail_ipfs.html", {r.text})
+            return render(
+                request,
+                "core/templates/article/detail_ipfs.html",
+                {"ipfs_content": '\n'.join(r.text.splitlines()[1:])},
+            )
     else:
         # TODO: handle better
         return HttpResponseBadRequest()
