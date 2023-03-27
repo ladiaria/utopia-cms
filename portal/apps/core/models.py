@@ -1016,8 +1016,9 @@ class ArticleBase(Model, CT):
         now = datetime.now()
 
         if self.ipfs_upload:
-            # TODO: siempre se guardaria de nuevo segun esto, por mas que no haya cambiado, tratar de mejorar
-            #       ademas: que es lo que se quiere guardar? solo headline y body? y los recuadros y otras cosas?
+            # TODO: - siempre se guardaria de nuevo segun esto, por mas que no haya cambiado, tratar de mejorar
+            #       - ademas: que es lo que se quiere guardar? solo headline y body? y los recuadros y otras cosas?
+            #       - preguntar si la idea era guardar texto o podemos guardar markdown.
             ipfs_token = getattr(settings, "IPFS_TOKEN", None)
             if not ipfs_token:
                 raise Exception("La configuración necesaria para publicar en IPFS no está definida.")
