@@ -104,7 +104,7 @@
     {% if MENU_CATEGORIES %}
       <span class="ld-main-menu__title">Áreas</span>
       <ul class="navmenu-list">
-        {% for category in MENU_CATEGORIES %}
+        {% for category in MENU_CATEGORIES.keys %}
           <li class="ld-main-menu__item">
             <a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a>
           </li>
