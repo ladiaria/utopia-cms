@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0028_auto_20221017_1335'),
+        ('core', '0029_category_dropdown_menu'),
     ]
 
     operations = [
