@@ -54,6 +54,11 @@ Documentation about installing Utopia's CMS.
   (utopiacms) user@host:~/utopia-cms $ pip install --upgrade pip && pip install -r portal/requirements.txt
   ```
 
+  NOTE: If you get an error that saying `OSError: mysql_config not found` you need to check that mysql is in your PATH,
+  for example, you can run `PATH=$PATH:/usr/local/mysql/bin` to add the directory `/usr/local/mysql/bin` to the current
+  PATH and then retry the `pip` command. We also have seen errors regarding to "not found" MySQL libraries on MacOS
+  installations that were solved doing symlinks.
+
 #### Database setup
 
 - Create a new database and grant user privileges to a new or existing database user:
