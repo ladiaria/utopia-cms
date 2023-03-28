@@ -500,6 +500,10 @@ class Category(Model):
         help_text='Se muestra sólo si la foto y el título están seteados.',
     )
     exclude_from_top_menu = BooleanField('Excluir ítem en menú superior de escritorio', default=False)
+    dropdown_menu = BooleanField(
+        'Usar menú desplegable en menú superior de escritorio con las secciones del área',
+        default=False,
+    )
     html_title = CharField(
         "contenido del tag <title> y del metadato 'og:title' del código HTML",
         max_length=128,

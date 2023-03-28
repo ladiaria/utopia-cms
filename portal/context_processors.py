@@ -103,7 +103,9 @@ def main_menus(request):
     Also fill another context variables using to the visualization of many UX "modules".
     """
     result = {
-        'MENU_CATEGORIES': Category.objects.filter(order__isnull=False),
+        'MENU_CATEGORIES': dict(
+            (c, c.section_set.all() if c.dropdown_menu else None) for c in Category.objects.filter(order__isnull=False)
+        ),
         'CORE_PUSH_NOTIFICATIONS_OFFER': settings.CORE_PUSH_NOTIFICATIONS_OFFER,
         'CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY': settings.CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY,
         'push_notifications_keys_set': bool(

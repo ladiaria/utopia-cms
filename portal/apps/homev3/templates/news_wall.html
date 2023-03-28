@@ -63,7 +63,7 @@
 
       {% else %}
 
-        {% for category in MENU_CATEGORIES %}
+        {% for category in MENU_CATEGORIES.keys %}
           <div class="col s12 m6 l3 news-wall__block">
             <span class="news-wall__title">
               <a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a>

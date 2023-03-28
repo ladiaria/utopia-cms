@@ -1,3 +1,24 @@
+# version 0.3.7 (2023-03-28)
+
+- Support to use a dropdown menu for the category menu items in the header menu.
+- Render tagrow multiline support.
+- Templates update supporting markdown on already markdown-allowed field.
+- Elasticsearch usage, Pagination, management commands, admin, syntax code, unicode, settings and doc improvements.
+- "most read" feature simplifications and improvements.
+- Admin index template extended from admin_shortcuts and its indentation improved.
+- 1-click newsletter subscription view.
+- Subscribe middle notice in article detail's body, extensibility support.
+- AMP extensibility support for amp-analytics requests and triggers.
+- Better csfr check in login view.
+- Allow to edit subscriber's name in subscription time.
+- Removed deprecated article.type ("RE") in article_admin.js.
+- New options supported by settings in update_category_home function.
+- Migration fixes.
+- Support to send publication newsletters using a task defined in settings. BreakingNews admin list view improved.
+- Notifications alerts improvements.
+- Rendering of live embed events notifications improvements.
+- Fixes for custom meta description usage in area's home.
+
 # version 0.3.6 (2022-11-23)
 
 - Allow custom html title and meta description in the detail pages of Publications, Categories and Sections.
