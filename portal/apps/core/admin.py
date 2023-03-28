@@ -832,7 +832,7 @@ class CategoryAdmin(ModelAdmin):
             {
                 'fields': (
                     ('name', 'slug', 'order'),
-                    ('exclude_from_top_menu', ),
+                    ('exclude_from_top_menu', 'dropdown_menu'),
                     ('title', 'more_link_title', 'new_pill'),
                     ('description', ),
                     ('full_width_cover_image', 'full_width_cover_image_title'),

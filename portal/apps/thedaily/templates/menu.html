@@ -4,15 +4,28 @@
   <li class="nav-menu__portada">
     <a href="{% url 'home' %}"><span class="inner">Portada</span></a>
   </li>
-  {% for category in MENU_CATEGORIES %}
+  {% for category, sections in MENU_CATEGORIES.items %}
     {% if not category.exclude_from_top_menu %}
-      <li class="nav-menu__{{ category.slug }}">
-        <a href="{% url 'home' domain_slug=category.slug %}"><span class="inner">{{ category|capfirst }}</span>
-          {% if category.new_pill %}
-            <span class="nav-menu__pill nav-menu__new-pill">Nuevo</span>
-          {% endif %}
-        </a>
-      </li>
+      {% if sections %}
+        <li>
+          <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="category-{{ category.slug }}-dropdown">
+            <span class="inner">{{ category|capfirst }}
+              {% if category.new_pill %}
+                <span class="nav-menu__pill nav-menu__new-pill" style="margin-left: 2px; margin-right: -5px;">Nuevo</span>
+              {% endif %}
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z" class="nav-fill" fill="#a4a4a4"/></svg>
+            </span>
+          </a>
+        </li>
+      {% else %}
+        <li class="nav-menu__{{ category.slug }}">
+          <a href="{% url 'home' domain_slug=category.slug %}"><span class="inner">{{ category|capfirst }}</span>
+            {% if category.new_pill %}
+              <span class="nav-menu__pill nav-menu__new-pill">Nuevo</span>
+            {% endif %}
+          </a>
+        </li>
+      {% endif %}
     {% endif %}
   {% endfor %}
   {% if MENU_PUBLICATIONS %}
@@ -47,6 +60,20 @@
     </button>
   </li>
 </ul>
+
+{% for category, sections in MENU_CATEGORIES.items %}
+  {% if not category.exclude_from_top_menu and sections %}
+    <ul id="category-{{ category.slug }}-dropdown" class="dropdown-content hide-on-small-and-down">
+      {% for section in sections %}
+        <li>
+          <a href="{% url 'section_detail' section_slug=section.slug %}" class="{{ section.slug }}">
+            {{ section.name_in_category_menu|default:section.name }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endfor %}
 
 {% with emergentes='ciencia economia educacion feminismos justicia salud trabajo' %}
   {% if publication != default_pub and publication not in emergentes.split %}

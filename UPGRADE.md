@@ -1,3 +1,14 @@
+# From version 0.3.6 to 0.3.7
+
+```
+git pull
+git checkout 0.3.7
+cd portal
+# update your local settings based on local_settings_sample.py (2 uneeded variables removed)
+# activate your virtual env
+./manage.py migrate
+```
+
 # From version 0.3.5 to 0.3.6
 
 ```
