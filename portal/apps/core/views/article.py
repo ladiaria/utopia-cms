@@ -37,6 +37,7 @@ from apps import mongo_db
 from decorators import decorate_if_no_staff, decorate_if_staff
 from core.forms import ReportErrorArticleForm, SendByEmailForm
 from core.models import Publication, Category, Article, ArticleUrlHistory
+from signupwall.middleware import subscriber_access
 
 
 standard_library.install_aliases()
@@ -228,8 +229,7 @@ def article_detail_ipfs(request, article_id):
     article = get_object_or_404(Article, id=article_id)
     if article.ipfs_cid:
         try:
-            # TODO: is_subscriber should be performed using the "aricle_detail" procedure
-            is_subscriber = request.user.subscriber.is_subscriber()
+            is_subscriber = subscriber_access(request.user.subscriber, article)
             r = requests.get('https://ipfs.io/ipfs/%s/' % article.ipfs_cid)
             r.raise_for_status()
         except Exception:
