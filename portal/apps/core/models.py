@@ -1019,23 +1019,6 @@ class ArticleBase(Model, CT):
 
         now = datetime.now()
 
-        if self.ipfs_upload:
-            # TODO: - siempre se guardaria de nuevo segun esto, por mas que no haya cambiado, tratar de mejorar
-            #       - ademas: que es lo que se quiere guardar? solo headline y body? y los recuadros y otras cosas?
-            #       - preguntar si la idea era guardar texto o podemos guardar markdown.
-            ipfs_token = getattr(settings, "IPFS_TOKEN", None)
-            if not ipfs_token:
-                raise Exception("La configuración necesaria para publicar en IPFS no está definida.")
-            content = "parent cid: %s\n%s\n%s" % (self.ipfs_cid, self.headline, self.body)
-            w3 = w3storage.API(token=ipfs_token)
-            cid = w3.post_upload((self.slug, content))
-            self.ipfs_cid = cid
-        else:
-            # This will drop any reference to this article in IPFS, and seems to be the right thing to do when the
-            # field "ipfs_upload" was saved unchecked, note that there is no need to "delete" any data in IPFS since
-            # the only way to retrieve data from IPFS is knowning the "cid".
-            self.ipfs_cid = None
-
         if self.is_published:
             if not self.date_published:
                 self.date_published = now
@@ -1123,6 +1106,8 @@ class ArticleBase(Model, CT):
     def get_app_body(self):
         """ Returns the body formatted for the app """
         # TODO: raising encoding error, fix asap.
+        # TODO: what does "for the app" means?
+        # TODO: check if the first TODO is still happening
         return render_to_string('article/app_body.html', {'article': self})
 
     def surl(self):
@@ -1382,6 +1367,32 @@ class Article(ArticleBase):
             )
 
         old_url_path = self.url_path
+
+        if self.ipfs_upload:
+            # TODO: siempre se guardaria de nuevo segun esto, por mas que no haya cambiado, tratar de mejorar usando
+            #       https://stackoverflow.com/questions/1355150/when-saving-how-can-you-check-if-a-field-has-changed
+            #       check if this approach can be used below for the "old_url_path" stuff and avoid the dupe save call.
+            ipfs_token = getattr(settings, "IPFS_TOKEN", None)
+            if not ipfs_token:
+                # TODO: ImproperlyConf may be better exception to raise (or print a warning is even better?)
+                #       admin should also check this before (clean method)
+                raise Exception("La configuración necesaria para publicar en IPFS no está definida.")
+            else:
+                content = "parent cid: %s\n%s\n%s" % (self.ipfs_cid, self.headline, self.body)
+                try:
+                    w3 = w3storage.API(token=ipfs_token)
+                    # TODO: maybe domain and keyword should also be part of the "id" in the next line
+                    cid = w3.post_upload((str(self.id), content))
+                except Exception:
+                    # TODO: what can we raise or do here?
+                    pass
+                else:
+                    self.ipfs_cid = cid
+        else:
+            # This will drop any reference to this article in IPFS, and seems to be the right thing to do when the
+            # field "ipfs_upload" was saved unchecked, note that there is no need to "delete" any data in IPFS since
+            # the only way to retrieve data from IPFS is knowning the "cid".
+            self.ipfs_cid = None
 
         super(Article, self).save(*args, **kwargs)
 
