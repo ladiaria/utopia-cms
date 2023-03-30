@@ -1539,6 +1539,12 @@ body.interior {
     100%  { bottom: 64px; }
 }
 
+@keyframes notice-animation-desktop {
+    0%    { bottom: -110px; }
+    66%   { bottom: -110px; }
+    100%  { bottom: 0px; }
+}
+
 .subscribe-notice {
     background:$secondary-color;
     color:$off-black;
@@ -1549,7 +1555,7 @@ body.interior {
     position: fixed;
     width: 100%;
     z-index: 100;
-    top:auto;
+    top: auto;
     bottom: 64px;
     padding: 12px 19px;
     box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.25);
@@ -1578,6 +1584,50 @@ body.interior {
             display: block;
         }
 
+        &:hover {
+            background-color: #2626261A;
+            border-radius: 8px;
+        }
+    }
+    &__desktop {
+        font-family: 'Meta Serif', serif;
+        font-weight: 500;
+        font-size: 22px;
+        text-align: center;
+        bottom: 0;
+        text-transform: none;
+        animation: notice-animation-desktop 3s;
+
+        .btn-close-notice {
+            margin-top: 9px;
+        }
+
+        p {
+            @media screen and (min-width: 601px) and (max-width: 720px) {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                a {
+                    margin-top: 10px;
+                }
+            }
+        }
+
+        @media #{$medium-and-down} {
+            p {
+                margin: 5px 0;
+                font-size: 20px;
+            }
+        }
+
+        a {
+            display: inline-block;
+            margin-left: 15px;
+
+            span {
+                font-weight: 400;
+            }
+        }
     }
 }
 
