@@ -56,19 +56,19 @@
   }
   &-light {
     // regular light button
-    background: $primary-color;
+    background: $secondary-color;
     color: $off-black;
 
     &:focus {
-      background-color: $primary-color;
+      background-color: $secondary-color;
     }
 
     &:hover {
       color: $off-black;
-      background: $secondary-color;
+      background: $color-light-blue;
     }
     &:active {
-      background: $secondary-color;
+      background: $color-light-blue;
       color: $off-black;
     }
 

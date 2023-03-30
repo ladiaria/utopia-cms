@@ -374,11 +374,19 @@
       </div>
     {% endblock %}
 
-    <!-- Mobile Subscribe notice for logged-in non-subscribers -->
+    <!-- Subscribe notice for logged-in non-subscribers -->
     {% if not is_subscriber_any %}
       {% if is_portada and publication == default_pub or is_detail %}
         <div class="subscribe-notice hide-on-med-and-up hide">
           <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=mobile-banner">Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i></a>
+          <span class="btn-close-notice" data-id="subscribe-notice">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#262626"/>
+            </svg>
+          </span>
+        </div>
+        <div class="subscribe-notice subscribe-notice__desktop hide-on-small-and-down hide">
+          <p>{% if default_pub.description %}{{ default_pub.description }} {% endif %}<a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=desktop-banner" class="ut-btn">Suscribite <span>por ${% subscriptionprice 'DDIGM' %}/mes</span></a></p>
           <span class="btn-close-notice" data-id="subscribe-notice">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#262626"/>
