@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.urlresolvers import resolve, Resolver404
 
 from core.models import Article, ArticleUrlHistory, Publication
-from signupwall.middleware import get_article_by_url_kwargs
+from signupwall.middleware import get_article_by_url_kwargs, subscriber_access
 
 
 def permissions(request):
@@ -34,9 +34,7 @@ def permissions(request):
         if url_name == 'article_detail':
             try:
                 article = get_article_by_url_kwargs(path_resolved.kwargs)
-                is_subscriber = is_subscriber_default or any(
-                    subscriber.is_subscriber(p.slug) for p in article.publications()
-                ) or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+                is_subscriber = subscriber_access(subscriber, article)
                 # solana settings
                 result.update(
                     {
@@ -49,9 +47,7 @@ def permissions(request):
                 # use url history and search again
                 try:
                     article = ArticleUrlHistory.objects.get(absolute_url=request.path).article
-                    is_subscriber = is_subscriber_default or any(
-                        subscriber.is_subscriber(p.slug) for p in article.publications()
-                    ) or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+                    is_subscriber = subscriber_access(subscriber, article)
                 except ArticleUrlHistory.DoesNotExist:
                     # no article found, treat as if it was any other page
                     is_subscriber = is_subscriber_default

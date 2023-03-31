@@ -78,7 +78,7 @@ from thedaily.forms.subscriber import ProfileForm, UserForm
 from thedaily.utils import recent_following, add_default_category_newsletters
 from thedaily.templatetags.thedaily_tags import has_bought_article
 from thedaily.email_logic import limited_free_article_mail
-from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor
+from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access
 
 from decorators import render_response
 from .exceptions import UpdateCrmEx
@@ -1115,16 +1115,10 @@ def amp_access_authorization(request):
 
         result.update({'signupwall_enabled': True, 'article_restricted': article.is_restricted()})
 
-        # TODO: update logic using the "restricted" information (@see signupwall.middleware)
-        #       (restrictive and published in other pubs case, ensure is subscribed to main_pub)
         if authenticated:
 
             if has_subscriber:
-                is_subscriber = (
-                    request.user.subscriber.is_subscriber()
-                    or any(request.user.subscriber.is_subscriber(p.slug) for p in article.publications())
-                    or any(request.user.subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
-                )
+                is_subscriber = subscriber_access(request.user.subscriber, article)
                 # newsletters
                 result.update([('nl_' + slug, True) for slug in request.user.subscriber.get_newsletters_slugs()])
             else:

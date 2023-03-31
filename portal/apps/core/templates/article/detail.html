@@ -73,58 +73,60 @@
     <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
 
       {% if article.photo %}
-        {% if header_display == 'FW' %}
-          <div>{# closed in line 255 #}
-            <div class="fullwidth-container">
-              <div class="main-photo">
-                <div>
-                  <figure class="js-figure principal {{ card_size }}"
-                          alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                          data-src="{{ article.photo.get_1200w_url }}">
-                    <picture>
-                      <!--[if IE 9]><video style="display: none;"><![endif]-->
-                      <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                      <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
-                      <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
-                      <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
-                      <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
-                      <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
-                      <!--[if IE 9]></video><![endif]-->
-                      <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
-                           data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
-                    </picture>
-                    <figcaption class="caption">
-                      {% if article.photo.caption %}
-                        <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
-                      {% endif %}
-                      {% if article.photo_author %}
-                        <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
-                      {% endif %}
-                    </figcaption>
-                  </figure>
+        {% if article.photo.is_public %}{# TODO: do this check also in all places rendering article's photos #}
+          {% if header_display == 'FW' %}
+            <div>{# closed in line 247 #}
+              <div class="fullwidth-container">
+                <div class="main-photo">
+                  <div>
+                    <figure class="js-figure principal {{ card_size }}"
+                            alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                            data-src="{{ article.photo.get_1200w_url }}">
+                      <picture>
+                        <!--[if IE 9]><video style="display: none;"><![endif]-->
+                        <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                        <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+                        <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
+                        <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+                        <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+                        <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+                        <!--[if IE 9]></video><![endif]-->
+                        <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
+                            data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
+                      </picture>
+                      <figcaption class="caption">
+                        {% if article.photo.caption %}
+                          <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
+                        {% endif %}
+                        {% if article.photo_author %}
+                          <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
+                        {% endif %}
+                      </figcaption>
+                    </figure>
+                  </div>
                 </div>
               </div>
+            {# missing close div here is closed correctly in line 247 #}
+          {% else %}
+            <div class="container-photo photo {{ card_size|default:'BG' }} {{ article.photo_layout }}">
+              <figure class="principal">
+                <picture class="materialboxed">
+                  <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                  <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
+                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
+                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
+                      data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                      width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}>
+                </picture>
+                <figcaption class="article-caption container ld-caption">
+                  <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
+                  {% if article.photo_author %}
+                    <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
+                  {% endif %}
+                </figcaption>
+              </figure>
             </div>
-          {# missing close div here is closed correctly in line 255 #}
-        {% else %}
-          <div class="container-photo photo {{ card_size|default:'BG' }} {{ article.photo_layout }}">
-            <figure class="principal">
-              <picture class="materialboxed">
-                <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
-                <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
-                <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
-                     data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
-                     width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}>
-              </picture>
-              <figcaption class="article-caption container ld-caption">
-                <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
-                {% if article.photo_author %}
-                  <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
-                {% endif %}
-              </figcaption>
-            </figure>
-          </div>
+          {% endif %}
         {% endif %}
       {% endif %}
 
@@ -223,7 +225,8 @@
               </div>
             </div>
           {% endif %}
-          {% if article.ipfs_upload and article.ipfs_cid %}
+          {% if article.ipfs_upload and article.ipfs_cid and is_subscriber %}
+            {# TODO: a similar content should be also rendered in the AMP version #}
             <div class="read-later top">
               <a class="read-later__btn open-ipfs">
                 <svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="195" height="195" viewBox="0 0 195 195" version="1.1" id="svg23" sodipodi:docname="rust-ipfs-logo.svg" inkscape:version="0.92.3 (2405546, 2018-03-11)">
@@ -250,7 +253,9 @@
           {% endif %}
         {% endif %}
       </div>
-      {% if article.photo and header_display == 'FW' %}</div>{# opened in line 79 #}{% endif %}
+      {% if article.photo and article.photo.is_public and header_display == 'FW' %}
+        </div>{# opened in line 78 #}
+      {% endif %}
 
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
@@ -364,23 +369,25 @@
           {% endif %}
 
           {% if article.video %}
-            <div class="container">
-              <div class="row">
-                <div id="video" class="center col s12">
-                  <video controls width="560" height="315">
-                    <source type="video/mp4" src="{{ article.video.file.url }}">
-                  </video>
-                  <div class="caption">
-                    {% if article.video.caption %}
-                      <div class="caption small soft">{{ article.video.caption }}</div>
-                    {% endif %}
-                    {% if article.video.byline %}
-                      <div class="byline small">Video: {{ article.video.byline }}</div>
-                    {% endif %}
+            {% if article.video.is_public %}{# TODO: do this check also in AMP #}
+              <div class="container">
+                <div class="row">
+                  <div id="video" class="center col s12">
+                    <video controls width="560" height="315">
+                      <source type="video/mp4" src="{{ article.video.file.url }}">
+                    </video>
+                    <div class="caption">
+                      {% if article.video.caption %}
+                        <div class="caption small soft">{{ article.video.caption }}</div>
+                      {% endif %}
+                      {% if article.video.byline %}
+                        <div class="byline small">Video: {{ article.video.byline }}</div>
+                      {% endif %}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            {% endif %}
           {% endif %}
 
           {% if article.youtube_video %}
@@ -810,7 +817,7 @@
       });
 
       $('a.open-ipfs').click(function(){
-        window.open('https://ipfs.io/ipfs/{{ article.ipfs_cid }}', 'Ver en IPFS');
+        window.open("{% url 'ipfs-article-detail' article_id=article.id %}", 'Ver en IPFS');
       });
 
       $('span.show-solana-info').click(function(){
