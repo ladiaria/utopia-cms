@@ -226,24 +226,18 @@ def article_detail_walled(request, year, month, slug, domain_slug=None):
 @never_cache
 @login_required
 def article_detail_ipfs(request, article_id):
-    article = get_object_or_404(Article, id=article_id)
-    if article.ipfs_cid:
-        try:
-            is_subscriber = subscriber_access(request.user.subscriber, article)
-            r = requests.get('https://ipfs.io/ipfs/%s/' % article.ipfs_cid)
-            r.raise_for_status()
-        except Exception:
-            # TODO: handle better
-            return HttpResponseBadRequest()
-        else:
-            return render(
-                request,
-                "core/templates/article/detail_ipfs.html",
-                {"ipfs_content": '\n'.join(r.text.splitlines()[1:])},
-            )
-    else:
+    article = get_object_or_404(Article, id=article_id, ipfs_upload=True, ipfs_cid__isnull=False)
+    try:
+        is_subscriber = subscriber_access(request.user.subscriber, article)
+        r = requests.get('https://ipfs.io/ipfs/%s/' % article.ipfs_cid)
+        r.raise_for_status()
+    except Exception:
         # TODO: handle better
         return HttpResponseBadRequest()
+    else:
+        return render(
+            request, "core/templates/article/detail_ipfs.html", {"ipfs_content": '\n'.join(r.text.splitlines()[1:])}
+        )
 
 
 @decorate_if_staff(decorator=never_cache)

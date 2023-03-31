@@ -964,8 +964,6 @@ class ArticleBase(Model, CT):
     last_modified = DateTimeField('última actualización', auto_now=True)
     views = PositiveIntegerField('vistas', default=0, db_index=True)
     allow_comments = BooleanField('Habilitar comentarios', default=True)
-    ipfs_upload = BooleanField('Publicar en IPFS', default=False)
-    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
     created_by = ForeignKey(
         User,
         verbose_name='creado por',
@@ -1346,6 +1344,8 @@ class Article(ArticleBase):
         blank=True,
     )
     newsletter_featured = BooleanField('destacado en newsletter', default=False)
+    ipfs_upload = BooleanField('Publicar en IPFS', default=False)
+    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
 
     def save(self, *args, **kwargs):
 
@@ -1367,11 +1367,48 @@ class Article(ArticleBase):
             )
 
         old_url_path = self.url_path
+        super(Article, self).save(*args, **kwargs)
+        # the instance has already been saved, force_insert should be turned into False if a save is called again
+        kwargs['force_insert'] = False
 
+        # execute this steps only if not called from admin, admin already does this work in a similar way and order.
+        from_admin = getattr(self, 'admin', False)
+        if not from_admin:
+            self.refresh_from_db()
+            new_url_path = self.build_url_path()
+            url_changed = old_url_path != new_url_path
+
+            if url_changed:
+                self.url_path = new_url_path
+                self.do_ipfs_upload()
+                super(Article, self).save(*args, **kwargs)
+                talk_url = getattr(settings, 'TALK_URL', None)
+                # if this is an insert, old_url_path is '', then skip talk update
+                if old_url_path and talk_url and not settings.DEBUG:
+                    # the article has a new url, we need to update it in Coral-Talk using the API
+                    # but don't do this in DEBUG mode to avoid updates with local urls in Coral
+                    try:
+                        update_article_url_in_coral_talk(self.id, new_url_path)
+                    except (ConnectionError, ValueError, KeyError, AssertionError, TypeError):
+                        # fail silently because we should not break any script or shell that is saving the article
+                        pass
+            elif self.do_ipfs_upload():
+                super(Article, self).save(*args, **kwargs)
+
+            # add to history the new url
+            if not ArticleUrlHistory.objects.filter(article=self, absolute_url=new_url_path).exists():
+                ArticleUrlHistory.objects.create(article=self, absolute_url=new_url_path)
+
+        elif self.do_ipfs_upload():
+            super(Article, self).save(*args, **kwargs)
+
+    def do_ipfs_upload(self):
+        """
+        Do the upload to IPFS (if set and configured) and returns True if the upload was succesful or cid was cleaned
+        """
         if self.ipfs_upload:
-            # TODO: siempre se guardaria de nuevo segun esto, por mas que no haya cambiado, tratar de mejorar usando
+            # TODO: An improvement can be made to upload if only relevant fields were modified, using approaches from
             #       https://stackoverflow.com/questions/1355150/when-saving-how-can-you-check-if-a-field-has-changed
-            #       check if this approach can be used below for the "old_url_path" stuff and avoid the dupe save call.
             ipfs_token = getattr(settings, "IPFS_TOKEN", None)
             if not ipfs_token:
                 # TODO: ImproperlyConf may be better exception to raise (or print a warning is even better?)
@@ -1388,41 +1425,13 @@ class Article(ArticleBase):
                     pass
                 else:
                     self.ipfs_cid = cid
-        else:
+                    return True
+        elif self.ipfs_cid:
             # This will drop any reference to this article in IPFS, and seems to be the right thing to do when the
             # field "ipfs_upload" was saved unchecked, note that there is no need to "delete" any data in IPFS since
             # the only way to retrieve data from IPFS is knowning the "cid".
             self.ipfs_cid = None
-
-        super(Article, self).save(*args, **kwargs)
-
-        # execute this steps only if not called from admin, admin already does this work in a similar way and order.
-        from_admin = getattr(self, 'admin', False)
-        if not from_admin:
-            self.refresh_from_db()
-            new_url_path = self.build_url_path()
-            url_changed = old_url_path != new_url_path
-
-            if url_changed:
-                self.url_path = new_url_path
-                # the instance has already been saved, force_insert should be turned into False
-                kwargs['force_insert'] = False
-                super(Article, self).save(*args, **kwargs)
-
-                talk_url = getattr(settings, 'TALK_URL', None)
-                # if this is an insert, old_url_path is '', then skip talk update
-                if old_url_path and talk_url and not settings.DEBUG:
-                    # the article has a new url, we need to update it in Coral-Talk using the API
-                    # but don't do this in DEBUG mode to avoid updates with local urls in Coral
-                    try:
-                        update_article_url_in_coral_talk(self.id, new_url_path)
-                    except (ConnectionError, ValueError, KeyError, AssertionError, TypeError):
-                        # fail silently because we should not break any script or shell that is saving the article
-                        pass
-
-            # add to history the new url
-            if not ArticleUrlHistory.objects.filter(article=self, absolute_url=new_url_path).exists():
-                ArticleUrlHistory.objects.create(article=self, absolute_url=new_url_path)
+            return True
 
     def publications(self):
         return set([ar.edition.publication for ar in self.articlerel_set.select_related('edition__publication')])
