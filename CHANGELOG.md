@@ -1,3 +1,12 @@
+# version 0.3.8 (2023-03-31)
+
+- Support to upload article contents to IPFS (ipfs.io).
+- Improvements in the "is_subscriber" condition.
+- Subscribe CTA popup also for non-mobile not subscriber users.
+- Unicode and syntax improvements.
+- Some new TODO's detected and comments properly added.
+- Authors doc updated.
+
 # version 0.3.7 (2023-03-28)
 
 - Support to use a dropdown menu for the category menu items in the header menu.

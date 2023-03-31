@@ -22,6 +22,7 @@ import readtime
 
 from django.conf import settings
 from django.core import urlresolvers
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User
 from django.contrib.sitemaps import ping_google
@@ -64,6 +65,7 @@ from audiologue.models import Audio
 from tagging.fields import TagField
 from tagging.models import Tag
 from videologue.models import Video, YouTubeVideo
+import w3storage
 
 from .managers import PublishedArticleManager
 from .utils import (
@@ -1103,6 +1105,8 @@ class ArticleBase(Model, CT):
     def get_app_body(self):
         """ Returns the body formatted for the app """
         # TODO: raising encoding error, fix asap.
+        # TODO: what does "for the app" mean?
+        # TODO: check if the first TODO is still happening
         return render_to_string('article/app_body.html', {'article': self})
 
     def surl(self):
@@ -1341,6 +1345,8 @@ class Article(ArticleBase):
         blank=True,
     )
     newsletter_featured = BooleanField('destacado en newsletter', default=False)
+    ipfs_upload = BooleanField('Publicar en IPFS', default=False)
+    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
 
     def save(self, *args, **kwargs):
 
@@ -1362,8 +1368,9 @@ class Article(ArticleBase):
             )
 
         old_url_path = self.url_path
-
         super(Article, self).save(*args, **kwargs)
+        # the instance has already been saved, force_insert should be turned into False if a save is called again
+        kwargs['force_insert'] = False
 
         # execute this steps only if not called from admin, admin already does this work in a similar way and order.
         from_admin = getattr(self, 'admin', False)
@@ -1374,10 +1381,8 @@ class Article(ArticleBase):
 
             if url_changed:
                 self.url_path = new_url_path
-                # the instance has already been saved, force_insert should be turned into False
-                kwargs['force_insert'] = False
+                self.do_ipfs_upload()
                 super(Article, self).save(*args, **kwargs)
-
                 talk_url = getattr(settings, 'TALK_URL', None)
                 # if this is an insert, old_url_path is '', then skip talk update
                 if old_url_path and talk_url and not settings.DEBUG:
@@ -1388,10 +1393,64 @@ class Article(ArticleBase):
                     except (ConnectionError, ValueError, KeyError, AssertionError, TypeError):
                         # fail silently because we should not break any script or shell that is saving the article
                         pass
+            elif self.do_ipfs_upload():
+                super(Article, self).save(*args, **kwargs)
 
             # add to history the new url
             if not ArticleUrlHistory.objects.filter(article=self, absolute_url=new_url_path).exists():
                 ArticleUrlHistory.objects.create(article=self, absolute_url=new_url_path)
+
+        elif self.do_ipfs_upload():
+            super(Article, self).save(*args, **kwargs)
+
+    def do_ipfs_upload(self):
+        """
+        Do the upload to IPFS (if set and configured) and returns True if the upload was succesful or cid was cleaned
+        """
+        if self.ipfs_upload:
+            # TODO: An improvement can be made to upload if only relevant fields were modified, using approaches from
+            #       https://stackoverflow.com/questions/1355150/when-saving-how-can-you-check-if-a-field-has-changed
+            ipfs_token = getattr(settings, "IPFS_TOKEN", None)
+            if not ipfs_token:
+                raise ImproperlyConfigured("La configuración necesaria para publicar en IPFS no está definida.")
+            else:
+                try:
+                    w3 = w3storage.API(token=ipfs_token)
+                    cid = w3.post_upload(
+                        (
+                            "%s-core.Article-%s" % (settings.SITE_DOMAIN, str(self.id)),
+                            render_to_string(
+                                "article/detail_ipfs_upload.html",
+                                {
+                                    "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+                                    "ipfs_cid": self.ipfs_cid,
+                                    "headline": self.headline,
+                                    "date_published": self.date_published,
+                                    "authors": ", ".join([author.name for author in self.get_authors()]),
+                                    "section": self.publication_section(),
+                                    "tags": self.tags,
+                                    "photo": self.photo if self.photo and self.photo.is_public else None,
+                                    "photo_author": self.photo_author.name if self.photo_author else None,
+                                    "lead": self.lead,
+                                    "deck": self.deck,
+                                    "body": self.body,
+                                },
+                            ),
+                        )
+                    )
+                except Exception as e:
+                    # TODO: think what can we raise or do here
+                    if settings.DEBUG:
+                        print(e)
+                else:
+                    self.ipfs_cid = cid
+                    return True
+        elif self.ipfs_cid:
+            # This will drop any reference to this article in IPFS, and seems to be the right thing to do when the
+            # field "ipfs_upload" was saved unchecked, note that there is no need to "delete" any data in IPFS since
+            # the only way to retrieve data from IPFS is knowning the "cid".
+            self.ipfs_cid = None
+            return True
 
     def publications(self):
         return set([ar.edition.publication for ar in self.articlerel_set.select_related('edition__publication')])

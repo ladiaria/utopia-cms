@@ -73,58 +73,60 @@
     <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
 
       {% if article.photo %}
-        {% if header_display == 'FW' %}
-          <div>{# closed in line 243 #}
-            <div class="fullwidth-container">
-              <div class="main-photo">
-                <div>
-                  <figure class="js-figure principal {{ card_size }}"
-                          alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                          data-src="{{ article.photo.get_1200w_url }}">
-                    <picture>
-                      <!--[if IE 9]><video style="display: none;"><![endif]-->
-                      <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                      <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
-                      <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
-                      <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
-                      <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
-                      <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
-                      <!--[if IE 9]></video><![endif]-->
-                      <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
-                           data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
-                    </picture>
-                    <figcaption class="caption">
-                      {% if article.photo.caption %}
-                        <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
-                      {% endif %}
-                      {% if article.photo_author %}
-                        <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
-                      {% endif %}
-                    </figcaption>
-                  </figure>
+        {% if article.photo.is_public %}{# TODO: do this check also in all places rendering article's photos #}
+          {% if header_display == 'FW' %}
+            <div>{# closed in line 247 #}
+              <div class="fullwidth-container">
+                <div class="main-photo">
+                  <div>
+                    <figure class="js-figure principal {{ card_size }}"
+                            alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                            data-src="{{ article.photo.get_1200w_url }}">
+                      <picture>
+                        <!--[if IE 9]><video style="display: none;"><![endif]-->
+                        <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                        <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+                        <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
+                        <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+                        <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+                        <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+                        <!--[if IE 9]></video><![endif]-->
+                        <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
+                            data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
+                      </picture>
+                      <figcaption class="caption">
+                        {% if article.photo.caption %}
+                          <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
+                        {% endif %}
+                        {% if article.photo_author %}
+                          <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
+                        {% endif %}
+                      </figcaption>
+                    </figure>
+                  </div>
                 </div>
               </div>
+            {# missing close div here is closed correctly in line 247 #}
+          {% else %}
+            <div class="container-photo photo {{ card_size|default:'BG' }} {{ article.photo_layout }}">
+              <figure class="principal">
+                <picture class="materialboxed">
+                  <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                  <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
+                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
+                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
+                      data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                      width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}>
+                </picture>
+                <figcaption class="article-caption container ld-caption">
+                  <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
+                  {% if article.photo_author %}
+                    <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
+                  {% endif %}
+                </figcaption>
+              </figure>
             </div>
-          {# missing close div here is closed correctly in line 243 #}
-        {% else %}
-          <div class="container-photo photo {{ card_size|default:'BG' }} {{ article.photo_layout }}">
-            <figure class="principal">
-              <picture class="materialboxed">
-                <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
-                <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
-                <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
-                     data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
-                     width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}>
-              </picture>
-              <figcaption class="article-caption container ld-caption">
-                <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
-                {% if article.photo_author %}
-                  <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
-                {% endif %}
-              </figcaption>
-            </figure>
-          </div>
+          {% endif %}
         {% endif %}
       {% endif %}
 
@@ -223,9 +225,27 @@
               </div>
             </div>
           {% endif %}
+          {% if article.ipfs_upload and article.ipfs_cid and is_subscriber %}
+            {# TODO: a similar content should be also rendered in the AMP version #}
+            <div class="read-later top">
+              <a class="read-later__btn open-ipfs">
+                <svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="195" height="195" viewBox="0 0 195 195" version="1.1" id="svg23" sodipodi:docname="rust-ipfs-logo.svg" inkscape:version="0.92.3 (2405546, 2018-03-11)">
+                  <g xmlns="http://www.w3.org/2000/svg" id="IPFS-logo-(new)" style="fill-rule:nonzero">
+                    <polygon id="Path" points="84.3,194.5 168.3,146 168.3,49 84.3,0.5 0.3,49 0.3,146 " style="fill:#262626"/>
+                    <path d="m 75.7,12.1 -61,35.2 c 0.09999,1.097728 0.09999,2.202272 0,3.3 l 60.9,35.2 c 5.140467,-3.80057 12.159533,-3.80057 17.3,0 l 60.9,-35.2 c -0.1,-1.097728 -0.1,-2.202272 0,-3.3 L 93,12.1 c -5.140467,3.80057 -12.159533,3.80057 -17.3,0 z m 84,48.2 -61,35.6 c 0.678108,6.33353 -2.791626,12.38539 -8.6,15 l 0.1,70 c 0.986199,0.43498 1.924564,0.97119 2.8,1.6 l 60.9,-35.2 c -0.67811,-6.33353 2.79163,-12.38539 8.6,-15 V 61.9 c -0.97488,-0.457093 -1.91126,-0.992166 -2.8,-1.6 z M 8.9,60.7 c -0.8754357,0.628814 -1.813801,1.165022 -2.8,1.6 v 70.4 c 5.888216,2.52578 9.395106,8.64245 8.6,15 l 60.9,35.2 c 0.875436,-0.62881 1.813801,-1.16502 2.8,-1.6 v -70.4 c -5.888215,-2.52578 -9.395106,-8.64245 -8.6,-15 z" id="Shape" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" inkscape:connector-curvature="0" style="fill:#fff"/>
+                    <path d="m 84.3,11 75.1,43.4 v 86.7 L 84.3,184.5 9.2,141.1 V 54.3 L 84.3,11 m 0,-10.3 -84,48.5 v 97 l 84,48.5 84,-48.5 v -97 z" id="path8" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" inkscape:connector-curvature="0" style="fill:#262626"/>
+                    <polygon id="polygon12" points="84.3,98.1 0.3,49.6 0.3,146.7 84.3,195.2 " style="fill:#083b54;fill-opacity:0.15"/>
+                    <polygon id="polygon14" points="168.4,48.8 84.4,97.3 84.4,194.4 168.4,145.8 " style="fill:#083b54;fill-opacity:0.05"/>
+                  </g>
+                </svg> Ver en IPFS
+              </a>
+            </div>
+          {% endif %}
         {% endif %}
       </div>
-      {% if article.photo and header_display == 'FW' %}</div>{# opened in line 86 #}{% endif %}
+      {% if article.photo and article.photo.is_public and header_display == 'FW' %}
+        </div>{# opened in line 78 #}
+      {% endif %}
 
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
@@ -283,7 +303,7 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall %}{# closed in line 550 #}
+        {% if not request.signupwall %}{# closed in line 558 #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
@@ -337,23 +357,25 @@
           {% endif %}
 
           {% if article.video %}
-            <div class="container">
-              <div class="row">
-                <div id="video" class="center col s12">
-                  <video controls width="560" height="315">
-                    <source type="video/mp4" src="{{ article.video.file.url }}">
-                  </video>
-                  <div class="caption">
-                    {% if article.video.caption %}
-                      <div class="caption small soft">{{ article.video.caption }}</div>
-                    {% endif %}
-                    {% if article.video.byline %}
-                      <div class="byline small">Video: {{ article.video.byline }}</div>
-                    {% endif %}
+            {% if article.video.is_public %}{# TODO: do this check also in AMP #}
+              <div class="container">
+                <div class="row">
+                  <div id="video" class="center col s12">
+                    <video controls width="560" height="315">
+                      <source type="video/mp4" src="{{ article.video.file.url }}">
+                    </video>
+                    <div class="caption">
+                      {% if article.video.caption %}
+                        <div class="caption small soft">{{ article.video.caption }}</div>
+                      {% endif %}
+                      {% if article.video.byline %}
+                        <div class="byline small">Video: {{ article.video.byline }}</div>
+                      {% endif %}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            {% endif %}
           {% endif %}
 
           {% if article.youtube_video %}
@@ -533,7 +555,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 301 #}
+        {% endif %}{# opened in line 306 #}
 
       {% else %}{# restricted content message #}
 
@@ -550,7 +572,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 694 #}
+    {% if not request.signupwall %}{# closed in line 702 #}
 
       {% if article.public %}
 
@@ -677,7 +699,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 567 #}
+    {% endif %}{# opened in line 575 #}
 
     {% block article_extra %}{% endblock %}
 
@@ -780,6 +802,10 @@
         {% else %}
           $('.modal').modal('open');
         {% endif %}
+      });
+
+      $('a.open-ipfs').click(function(){
+        window.open("{% url 'ipfs-article-detail' article_id=article.id %}", 'Ver en IPFS');
       });
 
       $('a.read-later__saved').click(function(){

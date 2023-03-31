@@ -70,6 +70,27 @@ def get_or_create_visitor(request):
         return mongo_db.signupwall_visitor.find_one({'_id': result.inserted_id})
 
 
+def subscriber_access(subscriber, article):
+    """
+    Returns True if the subscriber has subscriber access to the article, otherwise returns False
+    The logic applied is to give access if the subscriber is subscribed to the default pub or to any pub that the
+    article is published in (if it's not a restricted article, otherwise the subscriber must be subscribed to the main
+    pub of the article), or to any pub in article's additional_access field.
+    """
+    restricted_article = article.is_restricted()
+    return (
+        subscriber.is_subscriber()
+
+        or not restricted_article
+        and any(subscriber.is_subscriber(p.slug) for p in article.publications())
+
+        or restricted_article
+        and subscriber.is_subscriber(article.main_section.edition.publication.slug)
+
+        or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+    )
+
+
 class SignupwallMiddleware(object):
 
     def process_request(self, request):
@@ -97,25 +118,13 @@ class SignupwallMiddleware(object):
 
         user_is_authenticated = user.is_authenticated()
 
-        # ignore also signupwall if the user is subscribed to the default pub or to any pub that the article is
-        # published in, or to any pub in article's additional_access field.
+        # ignore also signupwall if the user has subscriber_access to the article
         restricted_article = article.is_restricted()
         if (
             article.is_public()
-
             or user_is_authenticated
             and hasattr(user, 'subscriber')
-            and (
-                user.subscriber.is_subscriber()
-
-                or not restricted_article
-                and any(user.subscriber.is_subscriber(p.slug) for p in article.publications())
-
-                or restricted_article
-                and user.subscriber.is_subscriber(article.main_section.edition.publication.slug)
-
-                or any(user.subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
-            )
+            and subscriber_access(user.subscriber, article)
         ):
             if debug:
                 print('DEBUG: signupwall.middleware.process_request - subscribed user or public article')

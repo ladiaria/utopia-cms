@@ -123,7 +123,6 @@ def terms_and_conditions():
         return ''
 
 
-# filters
 @register.filter(name='hasreplies')
 def comment_has_replies(value):
     return value.last_child is not None

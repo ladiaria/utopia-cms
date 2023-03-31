@@ -24,7 +24,9 @@ class EditionCalendar(LocaleHTMLCalendar,):
             if day in self.editions:
                 cssclass += ' filled'
                 edition = self.editions[day]
-                return self.day_cell(cssclass, render_to_string('core/templates/edition/calendar_edition.html',{'edition':edition}))
+                return self.day_cell(
+                    cssclass, render_to_string('core/templates/edition/calendar_edition.html', {'edition':edition})
+                )
             return self.day_cell(cssclass, day)
         return self.day_cell('noday', '&nbsp;')
 

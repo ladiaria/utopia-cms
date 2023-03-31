@@ -29,11 +29,11 @@ from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
 from django.contrib.admin.options import get_ul_class
 from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
-from django.utils import timezone
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
 from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 from django.utils.text import Truncator
 from django.utils.translation import ugettext as _
 
@@ -313,6 +313,8 @@ class ArticleAdminModelForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(ArticleAdminModelForm, self).clean()
+        if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
+            raise ValidationError("La configuración necesaria para publicar en IPFS no está definida.")
         date_value = (
             self.cleaned_data.get('date_published') if self.cleaned_data.get('is_published') else
             self.cleaned_data.get('date_created')
@@ -429,7 +431,7 @@ class ArticleAdmin(ModelAdmin):
                         'newsletter_featured',
                     ),
                     'additional_access',
-                    ('latitude', 'longitude'),
+                    ('latitude', 'longitude', 'ipfs_upload'),
                 ),
                 'classes': ('collapse', ),
             },

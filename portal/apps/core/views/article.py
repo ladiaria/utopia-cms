@@ -17,9 +17,18 @@ from django.core.urlresolvers import reverse
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.mail import send_mail
 from django.db.models import Q
-from django.http import Http404, HttpResponseRedirect, HttpResponse, BadHeaderError, HttpResponsePermanentRedirect
+from django.http import (
+    Http404,
+    HttpResponseRedirect,
+    HttpResponse,
+    BadHeaderError,
+    HttpResponsePermanentRedirect,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+)
 from django.views.generic import DetailView
 from django.contrib.sites.models import Site
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache, cache_page
@@ -34,6 +43,7 @@ from apps import mongo_db
 from decorators import decorate_if_no_staff, decorate_if_staff
 from core.forms import ReportErrorArticleForm, SendByEmailForm
 from core.models import Publication, Category, Article, ArticleUrlHistory
+from signupwall.middleware import subscriber_access
 
 
 standard_library.install_aliases()
@@ -187,7 +197,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'domain': domain,
         'category': category,
         'category_signup':
-            domain == u'category' and category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_SIGNUP', ()),
+            domain == 'category' and category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_SIGNUP', ()),
         'section': article.publication_section(),
         'header_display': article.header_display,
         'tag_list': reorder_tag_list(article, get_article_tags(article)),
@@ -217,6 +227,24 @@ def article_detail(request, year, month, slug, domain_slug=None):
 @never_cache
 def article_detail_walled(request, year, month, slug, domain_slug=None):
     return article_detail(request, int(year), int(month), slug, domain_slug)
+
+
+@never_cache
+@login_required
+def article_detail_ipfs(request, article_id):
+    article = get_object_or_404(Article, id=article_id, ipfs_upload=True, ipfs_cid__isnull=False)
+    try:
+        assert subscriber_access(request.user.subscriber, article)
+        r = requests.get('https://ipfs.io/ipfs/%s/' % article.ipfs_cid)
+        r.raise_for_status()
+    except AssertionError:
+        return HttpResponseForbidden()
+    else:
+        return render(
+            request,
+            "core/templates/article/detail_ipfs.html",
+            {"is_detail": True, "ipfs_content": '\n'.join(r.text.splitlines()[1:])},
+        )
 
 
 @decorate_if_staff(decorator=never_cache)
@@ -290,7 +318,7 @@ def send_by_email(request):
         if request.user.is_authenticated():
             user_name = request.user.get_full_name()
         else:
-            user_name = u"Usuario anónimo"
+            user_name = "Usuario anónimo"
 
         body = """%(name)s compartió contigo el artículo "%(article)s":
         %(message)s
