@@ -8,6 +8,7 @@
 * [Leonardo Mitchell](https://github.com/orgs/ladiaria/people/Fargo880115)
 * [Francisco](https://github.com/orgs/ladiaria/people/franciscocobas)
 * [Gonza](https://github.com/GonzaDDV)
+* [Lisandro](https://github.com/LichuAcu)
 * [Gaba](https://github.com/orgs/ladiaria/people/gabelula)
 * [Damián Osta](https://github.com/orgs/ladiaria/people/DamianOsta-a)
 * [Reidel](https://github.com/reidelon)

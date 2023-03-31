@@ -5,6 +5,7 @@ git pull
 git checkout 0.3.8
 cd portal
 # activate your virtual env
+pip install w3storage
 ./manage.py migrate
 ```
 
