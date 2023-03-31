@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 
+{% block container_class %}container-wide{% endblock %}
+
 {% block content %}
-  <main>
-    <article id="main-article" class="ld-article">
-      <pre>{{ ipfs_content }}</pre>
-    </article>
-  </main>
+  <div class="container-wide">
+    <main>
+      <article id="main-article" class="ld-article">
+        <pre>{{ ipfs_content }}</pre>
+      </article>
+    </main>
+  </div>
 {% endblock %}

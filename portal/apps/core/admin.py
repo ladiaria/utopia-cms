@@ -313,6 +313,8 @@ class ArticleAdminModelForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(ArticleAdminModelForm, self).clean()
+        if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
+            raise ValidationError("La configuración necesaria para publicar en IPFS no está definida.")
         date_value = (
             self.cleaned_data.get('date_published') if self.cleaned_data.get('is_published') else
             self.cleaned_data.get('date_created')

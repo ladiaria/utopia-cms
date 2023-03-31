@@ -1,0 +1,16 @@
+parent cid: {{ ipfs_cid }}
+{{ headline }}
+
+date published: {{ date_published }}
+{% if authors %}authors: {{ authors }}{% endif %}
+{% if section %}section: {{ section }}{% endif %}
+{% if tags %}tags: {{ tags }}{% endif %}
+{% if photo %}photo url: {{ site_url }}{{ photo.image.url }}
+{% if photo.caption %}photo caption: {{ photo.caption }}{% endif %}
+{% if photo_author %}photo author: {{ photo_author }}{% endif %}{% endif %}
+{% if lead %}
+{{ lead }}{% endif %}
+{% if deck %}
+{{ deck }}
+{% endif %}
+{{ body }}

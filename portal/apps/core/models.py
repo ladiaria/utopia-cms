@@ -22,6 +22,7 @@ import readtime
 
 from django.conf import settings
 from django.core import urlresolvers
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User
 from django.contrib.sitemaps import ping_google
@@ -1104,7 +1105,7 @@ class ArticleBase(Model, CT):
     def get_app_body(self):
         """ Returns the body formatted for the app """
         # TODO: raising encoding error, fix asap.
-        # TODO: what does "for the app" means?
+        # TODO: what does "for the app" mean?
         # TODO: check if the first TODO is still happening
         return render_to_string('article/app_body.html', {'article': self})
 
@@ -1411,19 +1412,36 @@ class Article(ArticleBase):
             #       https://stackoverflow.com/questions/1355150/when-saving-how-can-you-check-if-a-field-has-changed
             ipfs_token = getattr(settings, "IPFS_TOKEN", None)
             if not ipfs_token:
-                # TODO: ImproperlyConf may be better exception to raise (or print a warning is even better?)
-                #       admin should also check this before (clean method)
-                raise Exception("La configuración necesaria para publicar en IPFS no está definida.")
+                raise ImproperlyConfigured("La configuración necesaria para publicar en IPFS no está definida.")
             else:
-                # TODO: add date_published, authors, section, lead, deck, photo, audio & video (use a template?)
-                content = "parent cid: %s\n%s\n%s" % (self.ipfs_cid, self.headline, self.body)
                 try:
                     w3 = w3storage.API(token=ipfs_token)
-                    # TODO: maybe domain and keyword should also be part of the "id" in the next line
-                    cid = w3.post_upload((str(self.id), content))
-                except Exception:
-                    # TODO: what can we raise or do here?
-                    pass
+                    cid = w3.post_upload(
+                        (
+                            "%s-core.Article-%s" % (settings.SITE_DOMAIN, str(self.id)),
+                            render_to_string(
+                                "article/detail_ipfs_upload.html",
+                                {
+                                    "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+                                    "ipfs_cid": self.ipfs_cid,
+                                    "headline": self.headline,
+                                    "date_published": self.date_published,
+                                    "authors": ", ".join([author.name for author in self.get_authors()]),
+                                    "section": self.publication_section(),
+                                    "tags": self.tags,
+                                    "photo": self.photo if self.photo and self.photo.is_public else None,
+                                    "photo_author": self.photo_author.name if self.photo_author else None,
+                                    "lead": self.lead,
+                                    "deck": self.deck,
+                                    "body": self.body,
+                                },
+                            ),
+                        )
+                    )
+                except Exception as e:
+                    # TODO: think what can we raise or do here
+                    if settings.DEBUG:
+                        print(e)
                 else:
                     self.ipfs_cid = cid
                     return True

@@ -1,3 +1,13 @@
+# From version 0.3.7 to 0.3.8
+
+```
+git pull
+git checkout 0.3.8
+cd portal
+# activate your virtual env
+./manage.py migrate
+```
+
 # From version 0.3.6 to 0.3.7
 
 ```

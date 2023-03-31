@@ -18,7 +18,13 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import (
-    Http404, HttpResponseRedirect, HttpResponse, BadHeaderError, HttpResponsePermanentRedirect, HttpResponseBadRequest
+    Http404,
+    HttpResponseRedirect,
+    HttpResponse,
+    BadHeaderError,
+    HttpResponsePermanentRedirect,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
 )
 from django.views.generic import DetailView
 from django.contrib.sites.models import Site
@@ -228,15 +234,16 @@ def article_detail_walled(request, year, month, slug, domain_slug=None):
 def article_detail_ipfs(request, article_id):
     article = get_object_or_404(Article, id=article_id, ipfs_upload=True, ipfs_cid__isnull=False)
     try:
-        is_subscriber = subscriber_access(request.user.subscriber, article)
+        assert subscriber_access(request.user.subscriber, article)
         r = requests.get('https://ipfs.io/ipfs/%s/' % article.ipfs_cid)
         r.raise_for_status()
-    except Exception:
-        # TODO: handle better
-        return HttpResponseBadRequest()
+    except AssertionError:
+        return HttpResponseForbidden()
     else:
         return render(
-            request, "core/templates/article/detail_ipfs.html", {"ipfs_content": '\n'.join(r.text.splitlines()[1:])}
+            request,
+            "core/templates/article/detail_ipfs.html",
+            {"is_detail": True, "ipfs_content": '\n'.join(r.text.splitlines()[1:])},
         )
 
 
