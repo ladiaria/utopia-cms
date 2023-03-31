@@ -1415,6 +1415,7 @@ class Article(ArticleBase):
                 #       admin should also check this before (clean method)
                 raise Exception("La configuración necesaria para publicar en IPFS no está definida.")
             else:
+                # TODO: add date_published, authors, section, lead, deck, photo (use a template?)
                 content = "parent cid: %s\n%s\n%s" % (self.ipfs_cid, self.headline, self.body)
                 try:
                     w3 = w3storage.API(token=ipfs_token)
