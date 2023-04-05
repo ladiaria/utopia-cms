@@ -1019,6 +1019,11 @@ class ArticleBase(Model, CT):
         now = datetime.now()
 
         # TODO: esto probablemente no vaya aca y deba ir en Article al igual que como esta IPFS
+        #       (ya agregué una linea de comentario marcando el lugar donde creo que debe ir)
+        #       Pero además: esto está bastante feo, sobreescribe el campo ingresado con la segunda porción de lo
+        #       splitteado, lo que conlleva a IndexError si se guarda de nuevo sin tocar nada.
+        #       Ya le avisé eso a Gonza por slack, esperando respuesta, para mi lo mejor es que se puedan editar ambos
+        #       campos en el admin y listo, le preguntè que le parece eso tb.
         if self.solana_signature_address:
             # since we have only one field for the signature, we split it and the first part is the signature and the
             # second part is the address
@@ -1409,6 +1414,11 @@ class Article(ArticleBase):
             )
 
         old_url_path = self.url_path
+
+        # TODO: aca iria lo de solana, si es que va, porque estamos viendo la solucion de un posible bug que puede dar
+        #       como resultado que no haya que hacer nada, porque si se divide en dos campos desde admin, no hay por
+        #       que luego tocar ninguno de ellos acá.
+
         super(Article, self).save(*args, **kwargs)
         # the instance has already been saved, force_insert should be turned into False if a save is called again
         kwargs['force_insert'] = False
