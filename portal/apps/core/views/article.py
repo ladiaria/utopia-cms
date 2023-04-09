@@ -159,8 +159,12 @@ def article_detail(request, year, month, slug, domain_slug=None):
                 return report_error(request, article)
 
     signupwall_exclude_request_condition = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
+    # If the call to the condition with the request as argument returns True, the visit is not logged to mongodb.
+
     if settings.CORE_LOG_ARTICLE_VIEWS and not (
-        signupwall_exclude_request_condition(request) or request.flavour == 'amp'
+        signupwall_exclude_request_condition(request)
+        or getattr(request, 'restricted_article', False)
+        or request.flavour == 'amp'
     ):
         if request.user.is_authenticated() and mongo_db is not None:
             # register this view
