@@ -1095,8 +1095,7 @@ def amp_access_authorization(request):
     except KeyError:
         return HttpResponseBadRequest()
 
-    path = urlparse(url).path
-    authenticated = request.user.is_authenticated()
+    path, authenticated = urlparse(url).path, request.user.is_authenticated()
     result, has_subscriber = {'authenticated': authenticated}, hasattr(request.user, 'subscriber')
     subscriber_any = authenticated and has_subscriber and request.user.subscriber.is_subscriber_any()
     result['subscriber_any'] = subscriber_any
@@ -1113,7 +1112,8 @@ def amp_access_authorization(request):
             # search in url history
             article = get_object_or_404(ArticleUrlHistory, absolute_url=path).article
 
-        result.update({'signupwall_enabled': True, 'article_restricted': article.is_restricted()})
+        restricted_article = article.is_restricted()
+        result.update({'signupwall_enabled': True, 'article_restricted': restricted_article})
 
         if authenticated:
 
@@ -1142,7 +1142,7 @@ def amp_access_authorization(request):
                 MAX_CREDITS = 10
 
                 # Find up to MAX_CREDITS + 2 articles (more than that makes no difference in this logic)
-                articles_visited = set() if article.is_public() else set([article.id])
+                articles_visited = set() if (article.is_public() or restricted_article) else set([article.id])
                 articles_visited_count = len(articles_visited)
 
                 if mongo_db is not None:

@@ -26,7 +26,7 @@ def get_article_by_url_kwargs(kwargs):
         )
     except Article.MultipleObjectsReturned:
         # TODO: Send a notification to "editors"
-        raise Http404(u"Múltiples artículos con igual identificación en el mes.")
+        raise Http404("Múltiples artículos con igual identificación en el mes.")
 
 
 def get_article_by_url_path(url_path):
@@ -34,15 +34,15 @@ def get_article_by_url_path(url_path):
         return Article.objects.get(url_path=url_path)
     except Article.MultipleObjectsReturned:
         # TODO: Send a notification to "editors"
-        raise Http404(u"Múltiples artículos con igual identificación en el mes.")
+        raise Http404("Múltiples artículos con igual identificación en el mes.")
 
 
 def get_session_key(request):
     if settings.SESSION_COOKIE_NAME in request.COOKIES:
-        # usa la cookie de sessionid como key
+        # use the sessionid cookie as key
         session_key = request.COOKIES[settings.SESSION_COOKIE_NAME]
     else:
-        # sino tiene le genera una
+        # if not present, generate it
         request.session.save()
         session_key = request.session.session_key
     return session_key
@@ -136,9 +136,12 @@ class SignupwallMiddleware(object):
             print('DEBUG: signupwall.middleware.process_request - non subscribed user')
             print('DEBUG: signupwall.middleware.process_request - requested URL: %s' % request.get_full_path())
 
-        visitor, raise_signupwall = None, True
+        # useful flag for a restricted_article, no credits should be spent because the user will not be allowed to read
+        # this article.
+        request.restricted_article = restricted_article
 
-        # if log views is enabled, set the path_visited to this visitor.
+        visitor, raise_signupwall = None, True
+        # if not restricted article and log views is enabled, set the path_visited to this visitor.
         if not restricted_article and settings.CORE_LOG_ARTICLE_VIEWS and mongo_db is not None:
             visitor = get_or_create_visitor(request)
             mongo_db.signupwall_visitor.update_one(
@@ -166,6 +169,7 @@ class SignupwallMiddleware(object):
                         articles_visited_count
                     )
                 )
+
         else:
 
             # anon users, they will face the signupwall.
