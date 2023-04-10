@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0029_auto_20221204_2346'),
+        ('core', '0030_auto_20221204_2346'),
         ('thedaily', '0005_remove_subscription_credit_card'),
     ]
 

@@ -321,7 +321,7 @@ class SolanaSignatureField(Field):
 
 class ArticleAdminModelForm(ModelForm):
     body = CharField(widget=MarkdownWidget())
-    solana_signature_address = SolanaSignatureField(
+    solana_signature_content = SolanaSignatureField(
         "Firma con Solana",
         label='Firma con Solana',
         required=False,
@@ -368,6 +368,11 @@ class ArticleAdminModelForm(ModelForm):
             targets = targets.exclude(id=self.instance.id)
         if targets:
             raise ValidationError('Ya existe un artículo en ese mes con el mismo título.')
+        solana_signature_content = cleaned_data.get("solana_signature_content")
+        if ";" in solana_signature_content:
+            cleaned_data["solana_signature"], cleaned_data["solana_signature_address"] = \
+                solana_signature_content.split(";")
+        return cleaned_data
 
     class Meta:
         model = Article
@@ -430,7 +435,7 @@ class ArticleAdmin(ModelAdmin):
     date_hierarchy = 'date_published'
     ordering = ('-date_created', )
     raw_id_fields = ('photo', 'gallery', 'main_section')
-    readonly_fields = ('date_published', 'solana_signature')
+    readonly_fields = ('date_published', )
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
 
     def creation_date(self, obj):
@@ -456,7 +461,10 @@ class ArticleAdmin(ModelAdmin):
             }
         ),
         ('Metadatos', {'fields': ('date_published', 'tags', 'main_section')}),
-        ('Autor', {'fields': ('byline', 'only_initials', 'location', 'solana_signature_address'), 'classes': ('collapse', )}),
+        (
+            'Autor',
+            {'fields': ('byline', 'only_initials', 'location', 'solana_signature_content'), 'classes': ('collapse', )},
+        ),
         ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse', )}),
         (
             'Avanzado',

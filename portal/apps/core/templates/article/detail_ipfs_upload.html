@@ -14,3 +14,7 @@ date published: {{ date_published }}
 {{ deck }}
 {% endif %}
 {{ body }}
+{% if solana_signature and solana_signature_address %}
+Dirección del autor: {{ solana_signature_address }}
+Firma del autor: {{ solana_signature }}
+{% endif %}
