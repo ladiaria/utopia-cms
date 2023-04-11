@@ -75,7 +75,7 @@
       {% if article.photo %}
         {% if article.photo.is_public %}{# TODO: do this check also in all places rendering article's photos #}
           {% if header_display == 'FW' %}
-            <div>{# closed in line 247 #}
+            <div>{# closed in line 257 #}
               <div class="fullwidth-container">
                 <div class="main-photo">
                   <div>
@@ -106,7 +106,7 @@
                   </div>
                 </div>
               </div>
-            {# missing close div here is closed correctly in line 247 #}
+            {# missing close div here is closed correctly in line 257 #}
           {% else %}
             <div class="container-photo photo {{ card_size|default:'BG' }} {{ article.photo_layout }}">
               <figure class="principal">
@@ -315,7 +315,7 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall %}{# closed in line 563 #}
+        {% if not request.signupwall %}{# closed in line 570 #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
@@ -567,7 +567,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 315 #}
+        {% endif %}{# opened in line 318 #}
 
       {% else %}{# restricted content message #}
 
@@ -584,7 +584,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 707 #}
+    {% if not request.signupwall %}{# closed in line 714 #}
 
       {% if article.public %}
 
@@ -711,7 +711,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 580 #}
+    {% endif %}{# opened in line 587 #}
 
     {% block article_extra %}{% endblock %}
 
