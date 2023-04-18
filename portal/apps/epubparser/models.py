@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from django.db import models
+from django.db.models import CASCADE
 from django.db.models import ForeignKey
 from core.models import Section
 
@@ -15,7 +16,7 @@ from core.models import Section
 class EpubFile(models.Model):
     """ This holds a single user uploaded file """
     f = models.FileField(upload_to='epubparser/%Y/%m/%d')  # Date-based directories
-    section = ForeignKey(Section)
+    section = ForeignKey(Section, on_delete=CASCADE)
 
     def __str__(self):
         return self.f.url

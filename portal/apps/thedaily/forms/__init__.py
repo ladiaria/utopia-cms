@@ -22,7 +22,7 @@ from django.forms import (
     ChoiceField,
     ValidationError,
 )
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.exceptions import MultipleObjectsReturned
 
 from captcha.fields import ReCaptchaField
@@ -48,7 +48,8 @@ def check_password_strength(password):
 
 
 class Submit(BaseInput):
-    """ Use a custom submit because crispy's adds btn and btn-primary in the class attribute """
+    """Use a custom submit because crispy's adds btn and btn-primary in the class attribute"""
+
     input_type = 'submit'
 
     def __init__(self, *args, **kwargs):
@@ -65,7 +66,8 @@ class EmailInput(TextInput):
 
 
 class LoginForm(Form):
-    """ Login form """
+    """Login form"""
+
     name_or_mail = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
     password = CharField(
         label='Contraseña',
@@ -119,12 +121,15 @@ class LoginForm(Form):
 
 terms_and_conditions_field = BooleanField(label='Leí y acepto los <a>términos y condiciones</a>', required=False)
 terms_and_conditions_layout_tuple = (
-    Field('terms_and_conditions', css_class='filled-in'),
-) if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID else ()
+    (Field('terms_and_conditions', css_class='filled-in'),)
+    if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID
+    else ()
+)
 
 
 class SignupForm(ModelForm):
-    """ Formulario con campos para crear una instancia del modelo User """
+    """Formulario con campos para crear una instancia del modelo User"""
+
     first_name = CharField(
         label='Nombre',
         widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
@@ -247,7 +252,8 @@ class SignupForm(ModelForm):
 
 
 class SubscriberForm(ModelForm):
-    """ Formulario con la información para crear un suscriptor """
+    """Formulario con la información para crear un suscriptor"""
+
     first_name = CharField(
         label='Nombre',
         widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
@@ -363,7 +369,8 @@ class SubscriberAddressForm(SubscriberForm):
 
 
 class SubscriberSubmitForm(SubscriberForm):
-    """ Adds a submit button to the SubscriberForm """
+    """Adds a submit button to the SubscriberForm"""
+
     def __init__(self, *args, **kwargs):
         super(SubscriberSubmitForm, self).__init__(*args, **kwargs)
         self.helper.form_class = 'form-horizontal'
@@ -376,7 +383,8 @@ class SubscriberSubmitForm(SubscriberForm):
 
 
 class SubscriberSignupForm(SubscriberForm):
-    """ Adds a password to the SubscriberForm to also signup """
+    """Adds a password to the SubscriberForm to also signup"""
+
     password = CharField(
         label='Contraseña',
         widget=PasswordInput(
@@ -421,8 +429,9 @@ class SubscriberSignupForm(SubscriberForm):
             )
             signup_form_valid = signup_form.is_valid()
             result = signup_form_valid and (
-                super(SubscriberSignupForm, self).is_valid(subscription_type, payment_type) if payment_type else
-                super(SubscriberSignupForm, self).is_valid(subscription_type)
+                super(SubscriberSignupForm, self).is_valid(subscription_type, payment_type)
+                if payment_type
+                else super(SubscriberSignupForm, self).is_valid(subscription_type)
             )
             if result:
                 self.signup_form = signup_form
@@ -436,7 +445,8 @@ class SubscriberSignupForm(SubscriberForm):
 
 
 class SubscriberSignupAddressForm(SubscriberAddressForm):
-    """ Adds password (like SubscriberSignupForm) and address """
+    """Adds password (like SubscriberSignupForm) and address"""
+
     password = CharField(
         label='Contraseña',
         widget=PasswordInput(
@@ -486,8 +496,9 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
             )
             signup_form_valid = signup_form.is_valid()
             result = signup_form_valid and (
-                super(SubscriberSignupAddressForm, self).is_valid(subscription_type, payment_type) if payment_type else
-                super(SubscriberSignupAddressForm, self).is_valid(subscription_type)
+                super(SubscriberSignupAddressForm, self).is_valid(subscription_type, payment_type)
+                if payment_type
+                else super(SubscriberSignupAddressForm, self).is_valid(subscription_type)
             )
             if result:
                 self.signup_form = signup_form
@@ -503,7 +514,7 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
 class SubscriptionForm(ModelForm):
     subscription_type_prices = ChoiceField(choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, widget=HiddenInput())
     payment_type = ChoiceField(
-        label='Elegí la forma de suscribirte', choices=(('tel', 'Telefónica (te llamamos)'), ), initial='tel'
+        label='Elegí la forma de suscribirte', choices=(('tel', 'Telefónica (te llamamos)'),), initial='tel'
     )
     preferred_time = ChoiceField(
         label='Hora de contacto preferida',
@@ -524,13 +535,15 @@ class SubscriptionForm(ModelForm):
     helper.form_tag = False
     helper.help_text_inline = True
     helper.error_text_inline = True
+    # TODO: check wether subscription_type_prices should also be included here
     helper.layout = Layout(
         *(
             HTML('<div class="col s12" style="margin-top: 30px; margin-bottom: 50px;">'),
             Field('payment_type', template='payment_type.html'),
             Field('preferred_time', template='preferred_time.html'),
             HTML('</div>'),
-        ) + terms_and_conditions_layout_tuple
+        )
+        + terms_and_conditions_layout_tuple
         + (
             HTML('<div class="ld-block--sm align-center">'),
             FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
@@ -550,7 +563,7 @@ class SubscriptionForm(ModelForm):
         fields = ['subscription_type_prices']
 
     class Media:
-        js = ('js/preferred_time.js', )
+        js = ('js/preferred_time.js',)
 
 
 class SubscriptionPromoCodeForm(SubscriptionForm):
@@ -591,7 +604,8 @@ class SubscriptionCaptchaForm(SubscriptionForm):
                 HTML('<div class="col s12" style="margin-top: 30px; margin-bottom: 25px;">'),
                 Field('payment_type', template='payment_type.html'),
                 Field('preferred_time', template='preferred_time.html'),
-            ) + terms_and_conditions_layout_tuple
+            )
+            + terms_and_conditions_layout_tuple
             + (
                 HTML(
                     '</div><div class="col s12" style="margin-top: 25px; margin-bottom: 25px;">'
@@ -630,6 +644,7 @@ class GoogleSigninForm(ModelForm):
     """
     Ask for phone number when sign-in is made by Google social login
     """
+
     if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
         terms_and_conditions = terms_and_conditions_field
 
@@ -642,14 +657,15 @@ class GoogleSigninForm(ModelForm):
         self.helper.help_text_inline = True
         self.helper.error_text_inline = True
         self.helper.layout = Layout(
-            *('phone', ) + terms_and_conditions_layout_tuple
-            + (FormActions(Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l')), )
+            *('phone',)
+            + terms_and_conditions_layout_tuple
+            + (FormActions(Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l')),)
         )
         super(GoogleSigninForm, self).__init__(*args, **kwargs)
 
     class Meta:
         model = Subscriber
-        fields = ('phone', )
+        fields = ('phone',)
         widgets = {'phone': PhoneInput(attrs={'autocomplete': 'tel', 'spellcheck': 'false'})}
 
     def clean_phone(self):
@@ -670,7 +686,8 @@ class GoogleSigninForm(ModelForm):
 
 
 class GoogleSignupForm(GoogleSigninForm):
-    """ Child class to use the same form but without the submit button """
+    """Child class to use the same form but without the submit button"""
+
     def __init__(self, *args, **kwargs):
         super(GoogleSignupForm, self).__init__(*args, **kwargs)
         self.helper.form_tag = False
@@ -684,7 +701,8 @@ class GoogleSignupForm(GoogleSigninForm):
 
 
 class GoogleSignupAddressForm(GoogleSignupForm):
-    """ Child class to not exclude address info (address, city and province) """
+    """Child class to not exclude address info (address, city and province)"""
+
     address = CharField(
         label='Dirección',
         widget=TextInput(
@@ -733,7 +751,7 @@ class PasswordResetRequestForm(Form):
                 'name_or_mail',
                 id="name_or_email",
                 title="Nombre de usuario o email.",
-                template='materialize_css_forms/layout/email-login.html'
+                template='materialize_css_forms/layout/email-login.html',
             ),
             HTML('<div class="align-center form-group">'),
             Submit('save', 'Restablecer contraseña', css_class='ut-btn ut-btn-l'),
@@ -890,7 +908,7 @@ class PasswordChangeForm(PasswordChangeBaseForm):
 
         self.user = kwargs.get('user')
         if 'user' in kwargs:
-            del(kwargs['user'])
+            del kwargs['user']
 
         super(PasswordChangeForm, self).__init__(*args, **kwargs)
 
@@ -921,8 +939,8 @@ class PasswordResetForm(PasswordChangeBaseForm):
         initial['hash'] = self.hash
         initial['gonzo'] = self.gen_gonzo()
         kwargs['initial'] = initial
-        del(kwargs['hash'])
-        del(kwargs['user'])
+        del kwargs['hash']
+        del kwargs['user']
 
         self.helper = FormHelper()
         self.helper.form_id = 'reset_password'
@@ -941,6 +959,7 @@ class PasswordResetForm(PasswordChangeBaseForm):
 
     def gen_gonzo(self):
         from libs.utils import do_gonzo
+
         return do_gonzo(self.hash)
 
     def clean(self, *args, **kwargs):

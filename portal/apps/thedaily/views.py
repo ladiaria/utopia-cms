@@ -20,7 +20,7 @@ from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import IntegrityError
 from django.core.mail import send_mail, mail_admins, mail_managers
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.exceptions import MultipleObjectsReturned
 from django.http import (
     HttpResponseRedirect,
@@ -138,7 +138,7 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
             raise Http404
     # default behavour: go to profile or login
     next_page = reverse('edit-profile') + '#id_newsletters_wrapper'
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return HttpResponseRedirect(next_page)
     else:
         request.session['next'] = next_page
@@ -179,7 +179,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
     else:
         # next page redirection
         next_page = reverse('edit-profile') + '#category-newsletter-' + slug
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             return HttpResponseRedirect(next_page)
         else:
             request.session['next'] = next_page
@@ -192,7 +192,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 def login(request):
     next_page = request.session.get('next', request.GET.get('next', '/'))
 
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return HttpResponseRedirect(next_page)
 
     initial, name_or_mail = {}, request.GET.get('name_or_mail')
@@ -312,8 +312,10 @@ def google_phone(request):
             send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!')
             oas.delete()
             request.session['welcome'] = True
-            return HttpResponseRedirect('%s?next=%s' % (
-                reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('account-welcome')))
+            return HttpResponseRedirect(
+                '%s?next=%s'
+                % (reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('account-welcome'))
+            )
     else:
         # if is a new user add the default category newsletters (reached only from "free" subscriptions)
         if request.GET.get('is_new') == '1':
@@ -338,9 +340,13 @@ def subscribe(request, planslug, category_slug=None):
         auth = request.GET.get('auth')
         if auth:
             request.session['planslug'] = planslug
-            return HttpResponseRedirect('%s?next=%s' % (
-                reverse("social:begin", kwargs={'backend': auth}),
-                reverse('subscribe', kwargs={'planslug': planslug})))
+            return HttpResponseRedirect(
+                '%s?next=%s'
+                % (
+                    reverse("social:begin", kwargs={'backend': auth}),
+                    reverse('subscribe', kwargs={'planslug': planslug}),
+                )
+            )
 
         oauth2_state = request.session.get('google-oauth2_state')
         if oauth2_state:
@@ -356,14 +362,14 @@ def subscribe(request, planslug, category_slug=None):
         oauth2_button = True
         subscription_in_process = False
 
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
 
             is_subscriber = request.user.subscriber.is_subscriber()
 
             initial = {
                 'email': request.user.email,
-                'first_name':
-                    request.user.subscriber.name or ' '.join([request.user.first_name, request.user.last_name]).strip()
+                'first_name': request.user.subscriber.name
+                or ' '.join([request.user.first_name, request.user.last_name]).strip(),
             }
             if request.user.subscriber.phone:
                 initial['telephone'] = request.user.subscriber.phone
@@ -406,25 +412,24 @@ def subscribe(request, planslug, category_slug=None):
         PROMOCODE_ENABLED = getattr(settings, 'THEDAILY_PROMOCODE_ENABLED', False)
         # captcha when enabled and not ignored => nocaptcha = not(enabled and not ignored) = not enabled or ignored
         # TODO: do not asume CF for getting the country (do it like signupwall gets the ip_address)
-        nocaptcha = (
-            not getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_ENABLED', True)
-            or request.META.get(
-                'HTTP_CF_IPCOUNTRY', settings.THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY
-            ) in getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED', [])
-        )
+        nocaptcha = not getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_ENABLED', True) or request.headers.get(
+            'cf-ipcountry', settings.THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY
+        ) in getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED', [])
         subscription_formclass = (
-            SubscriptionPromoCodeForm if PROMOCODE_ENABLED else SubscriptionForm
-        ) if nocaptcha else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
+            (SubscriptionPromoCodeForm if PROMOCODE_ENABLED else SubscriptionForm)
+            if nocaptcha
+            else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
+        )
 
         initial = {'subscription_type_prices': planslug}
-        subscription_form = (
-            subscription_formclass if subscription_price.ga_category == 'D' else SubscriptionForm
-        )(initial=initial)
+        subscription_form = (subscription_formclass if subscription_price.ga_category == 'D' else SubscriptionForm)(
+            initial=initial
+        )
 
         if not is_subscriber and request.method == 'POST':
             post = request.POST.copy()
 
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 subscription = request.session.get('subscription')
                 subscription_type = request.session.get('subscription_type')
                 if subscription and subscription_type:
@@ -445,7 +450,9 @@ def subscribe(request, planslug, category_slug=None):
 
             subscription_form_v = (
                 subscription_formclass if subscription_price.ga_category == 'D' else SubscriptionForm
-            )(post)  # TODO: is initial=initial also needed here?
+            )(
+                post
+            )  # TODO: is initial=initial also needed here?
 
             if subscriber_form_v.is_valid(planslug) and subscription_form_v.is_valid():
                 # TODO: use form.cleaned_data instead of post.get
@@ -489,7 +496,7 @@ def subscribe(request, planslug, category_slug=None):
                     if post_value:
                         setattr(subscription, post_key, post_value)
 
-                if request.user.is_authenticated():
+                if request.user.is_authenticated:
                     subscription.subscriber = request.user
                 else:
                     if oauth2_state:
@@ -505,9 +512,8 @@ def subscribe(request, planslug, category_slug=None):
                             )
                             if not was_sent:
                                 raise Exception(
-                                    "No se pudo enviar el email de verificación de suscripción para el usuario: %s" % (
-                                        user
-                                    )
+                                    "No se pudo enviar el email de verificación de suscripción para el usuario: %s"
+                                    % (user)
                                 )
                         except Exception as exc:
                             msg = "Error al enviar email de verificación de suscripción para el usuario: %s." % user
@@ -515,9 +521,11 @@ def subscribe(request, planslug, category_slug=None):
                             subscription.delete()
                             errors = subscriber_form_v._errors.setdefault("email", ErrorList())
                             errors.append(
-                                'No se pudo enviar el email de verificación al crear tu cuenta, ' + (
-                                    '¿lo escribiste correctamente?' if type(exc) is SMTPRecipientsRefused else
-                                    'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
+                                'No se pudo enviar el email de verificación al crear tu cuenta, '
+                                + (
+                                    '¿lo escribiste correctamente?'
+                                    if type(exc) is SMTPRecipientsRefused
+                                    else 'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
                                     % reverse('account-confirm_email')
                                 )
                             )
@@ -535,8 +543,10 @@ def subscribe(request, planslug, category_slug=None):
                 if oauth2_state:
                     request.session['notify_phone_subscription'] = True
                     request.session['preferred_time'] = post.get('preferred_time')
-                    return HttpResponseRedirect('%s?next=%s' % (
-                        reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('phone-subscription')))
+                    return HttpResponseRedirect(
+                        '%s?next=%s'
+                        % (reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('phone-subscription'))
+                    )
                 else:
                     request.session['notify_phone_subscription'] = True
                     request.session['preferred_time'] = post.get('preferred_time')
@@ -605,13 +615,14 @@ def get_or_create_user_profile(user):
 def get_password_validation_url(user):
     return reverse(
         'account-password_change-hash',
-        kwargs={'user_id': str(user.id), 'hash': default_token_generator.make_token(user)})
+        kwargs={'user_id': str(user.id), 'hash': default_token_generator.make_token(user)},
+    )
 
 
 @never_cache
 @to_response
 def complete_signup(request, user_id, hash):
-    """ This view is executed when the user clicks account activation button in his/her email. """
+    """This view is executed when the user clicks account activation button in his/her email."""
     user = hash_validate(user_id, hash)
     user.is_active = True
     if user.username != user.email:
@@ -683,9 +694,8 @@ def password_reset(request, user_id=None, hash=None):
                     )
                     if not was_sent:
                         raise Exception(
-                            "No se pudo enviar el email de recuperación de contraseña para el usuario: %s" % (
-                                reset_form.user
-                            )
+                            "No se pudo enviar el email de recuperación de contraseña para el usuario: %s"
+                            % (reset_form.user)
                         )
                 return HttpResponseRedirect(reverse('account-password_reset-mail_sent'))
             except Exception as exc:
@@ -708,9 +718,8 @@ def confirm_email(request):
                 was_sent = send_validation_email(
                     'Verificá tu cuenta',
                     user,
-                    'notifications/account_signup%s.html' % (
-                        '_subscribed' if hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any() else ''
-                    ),
+                    'notifications/account_signup%s.html'
+                    % ('_subscribed' if hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any() else ''),
                     get_signup_validation_url,
                 )
                 if not was_sent:
@@ -733,7 +742,7 @@ def session_refresh(request):
     subscription_type = request.session.pop('subscription_type', None)
     if subscription and subscription_type:
         subscription.subscription_type_prices.remove(subscription_type)
-    referer = request.META.get('HTTP_REFERER')
+    referer = request.headers.get('referer')
     return HttpResponseRedirect(referer if referer and referer != request.path else '/')
 
 
@@ -745,7 +754,7 @@ def password_change(request, user_id=None, hash=None):
         password_change_form = PasswordResetForm(user=user_id, hash=hash)
         user = get_object_or_404(User, id=user_id)
     else:
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             raise Http404('Unauthorized access.')
         user = request.user
     if request.method == 'POST':
@@ -988,6 +997,7 @@ def update_user_from_crm(request):
     Subscriber is updated when the field is other (a field mapping between CRM
     fields and Subscriber's field should be provided somewhere)
     """
+
     def changeuseremail(user, email, newemail):
         if user.email == user.username:
             user.username = newemail
@@ -1094,7 +1104,7 @@ def amp_access_authorization(request):
     except KeyError:
         return HttpResponseBadRequest()
 
-    path, authenticated = urlparse(url).path, request.user.is_authenticated()
+    path, authenticated = urlparse(url).path, request.user.is_authenticated
     result, has_subscriber = {'authenticated': authenticated}, hasattr(request.user, 'subscriber')
     subscriber_any = authenticated and has_subscriber and request.user.subscriber.is_subscriber_any()
     result['subscriber_any'] = subscriber_any
@@ -1197,7 +1207,7 @@ def amp_access_pingback(request):
             article_allowed = request.GET.get('article_allowed') == 'true'
             blocked = not article_allowed and request.GET.get('article_restricted') == 'true'
 
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
 
                 if mongo_db is not None and not blocked:
 
@@ -1327,12 +1337,14 @@ def user_comments_api(request):
             return HttpResponseForbidden()
         talk_url = getattr(settings, 'TALK_URL', None)
         if talk_url:
-            result.update(requests.post(
-                talk_url + 'api/graphql',
-                headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
-                data='{"query":"query user($id:ID!){user(id:$id){comments{nodes{story{url,metadata{title}},body}}}}",'
-                     '"variables":{"id":%d},"operationName":"user"}' % User.objects.get(email__iexact=email).id
-            ).json()['data']['user']['comments'])
+            result.update(
+                requests.post(
+                    talk_url + 'api/graphql',
+                    headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
+                    data='{"query":"query user($id:ID!){user(id:$id){comments{nodes{story{url,metadata{title}},body}}}}",'
+                    '"variables":{"id":%d},"operationName":"user"}' % User.objects.get(email__iexact=email).id,
+                ).json()['data']['user']['comments']
+            )
         else:
             result['error'] = 'Sistema de comentarios temporalmente fuera de servicio'
     except KeyError:
@@ -1395,9 +1407,8 @@ def referrals(request, hashed_id):
         rcv = settings.SUBSCRIPTION_EMAIL_TO
         from_mail = getattr(settings, 'DEFAULT_FROM_EMAIL')
         send_mail(
-            subject,
-            urljoin(settings.SITE_URL, subscription.get_absolute_url()),
-            from_mail, rcv, fail_silently=True)
+            subject, urljoin(settings.SITE_URL, subscription.get_absolute_url()), from_mail, rcv, fail_silently=True
+        )
         return 'referrals_thankyou.html'
     else:
         return 'form_referral.html'
@@ -1466,7 +1477,7 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
 @never_cache
 @to_response
 def disable_profile_property(request, property_id, hashed_id):
-    """ Disables the profile bool property_id related to the subscriber matching the hashed_id argument given """
+    """Disables the profile bool property_id related to the subscriber matching the hashed_id argument given"""
     try:
         subscriber = get_object_or_404(Subscriber, id=decode_hashid(hashed_id)[0])
         if not subscriber.user:
@@ -1474,7 +1485,9 @@ def disable_profile_property(request, property_id, hashed_id):
         setattr(subscriber, property_id, False)
         ctx = {
             'property_name': {
-                'allow_news': 'Novedades', 'allow_promotions': 'Promociones', 'allow_polls': 'Encuestas'
+                'allow_news': 'Novedades',
+                'allow_promotions': 'Promociones',
+                'allow_polls': 'Encuestas',
             }.get(property_id),
             'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
             'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
@@ -1525,13 +1538,11 @@ def phone_subscription(request):
         subject = "Nueva solicitud de suscripción por teléfono"
         rcv = settings.SUBSCRIPTION_BY_PHONE_EMAIL_TO
         from_mail = getattr(settings, 'DEFAULT_FROM_EMAIL')
-        text = "Nombre: %s\nTeléfono: %s\nContactar: %s" % (
-            form.get('full_name'), form.get('phone'), form.get('time')
-        )
+        text = "Nombre: %s\nTeléfono: %s\nContactar: %s" % (form.get('full_name'), form.get('phone'), form.get('time'))
         send_mail(subject, text, from_mail, rcv, fail_silently=True)
         return 'phone_subscription_thankyou.html'
     elif request.session.get('notify_phone_subscription'):
-        is_authenticated = request.user.is_authenticated()
+        is_authenticated = request.user.is_authenticated
         subscription = request.session.get('subscription')
         if is_authenticated:
             user = request.user
@@ -1544,8 +1555,11 @@ def phone_subscription(request):
         preferred_time = request.session.get('preferred_time')
         subject, body = telephone_subscription_msg(user, preferred_time)
         message = Message(
-            text=body, mail_to=settings.SUBSCRIPTION_BY_PHONE_EMAIL_TO,
-            mail_from=getattr(settings, 'DEFAULT_FROM_EMAIL'), subject=subject)
+            text=body,
+            mail_to=settings.SUBSCRIPTION_BY_PHONE_EMAIL_TO,
+            mail_from=getattr(settings, 'DEFAULT_FROM_EMAIL'),
+            subject=subject,
+        )
         message.send()
         # TODO: handle send possible errors
         request.session.pop('notify_phone_subscription')
@@ -1559,7 +1573,7 @@ def phone_subscription(request):
 
 # TODO unhardcode preferred_time
 def telephone_subscription_msg(user, preferred_time):
-    """ Returns a tuple with (subject, body) """
+    """Returns a tuple with (subject, body)"""
     name = user.get_full_name() or user.subscriber.name
     pt_text = '-'
     if preferred_time == '1':
@@ -1576,11 +1590,12 @@ def telephone_subscription_msg(user, preferred_time):
             'Nombre: %s\nTipo suscripción: %s\nEmail: %s\n'
             'Teléfono: %s\nHorario preferido: %s\nDirección: %s\n'
             'Ciudad: %s\nDepartamento: %s\n'
-        ) % (
+        )
+        % (
             name,
-            dict(
-                settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES
-            ).get(user.suscripciones.all()[0].subscription_type_prices.all()[0].subscription_type, '-'),
+            dict(settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES).get(
+                user.suscripciones.all()[0].subscription_type_prices.all()[0].subscription_type, '-'
+            ),
             user.email,
             user.subscriber.phone,
             pt_text,

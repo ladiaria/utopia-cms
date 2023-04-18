@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='photoextended',
             name='type',
-            field=models.CharField(choices=[(b'f', b'Foto'), (b'i', b'Ilustraci\xc3\xb3n')], default=b'f', max_length=1, verbose_name='tipo'),
+            field=models.CharField(choices=[('f', 'Foto'), ('i', 'Ilustración')], default='f', max_length=1, verbose_name='tipo'),
         ),
     ]

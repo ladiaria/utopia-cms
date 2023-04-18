@@ -8,7 +8,7 @@
     <div class="card-image">
       <div>
         <a href="{{ article.get_absolute_url }}">
-          {% if flavour == "mobile" %}
+          {% if request.user_agent.is_mobile %}
             <picture>
               <!--[if IE 9]><video style="display: none;"><![endif]-->
               <source srcset="{{ article.photo.get_450w_url }}" media="(min-width: 380px)">

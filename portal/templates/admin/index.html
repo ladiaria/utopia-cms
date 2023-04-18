@@ -1,4 +1,4 @@
-{% extends "templates/admin/index.html" %}
+{% extends "admin/index.html" %}
 {% load i18n %}
 
 {% block content %}
@@ -6,11 +6,13 @@
     {% if app_list %}
       {% for app in app_list %}
         <div class="app-{{ app.app_label }} module"
-          {% if app.name == 'Photologue' %} style="margin-bottom: 0px; border-bottom-width: 0px;"{% endif %}
-          {% if app.name == 'Photologue_Ladiaria' %} style="border-top-width: 0px;" {% endif %}>
-          <table summary="{% blocktrans with name=app.name %}Models available in the {{ name }} application.{% endblocktrans %}">
+          {% if app.name == 'Photologue' %}style="margin-bottom: 0px; border-bottom-width: 0px;"{% endif %}
+          {% if app.name == 'Photologue_Ladiaria' %}style="border-top-width: 0px;"{% endif %}>
+          <table>
             {% if app.name != 'Photologue_Ladiaria' or app_list|length_is:"1" and app.name == 'Photologue_Ladiaria' %}
-              <caption><a href="{{ app.app_url }}" class="section">{{ app.name }}</a></caption>
+              <caption>
+                <a href="{{ app.app_url }}" class="section" title="{% blocktrans with name=app.name %}Models in the {{ name }} application{% endblocktrans %}">{{ app.name }}</a>
+              </caption>
             {% endif %}
             {% for model in app.models %}
               {% if model.name != 'Configuraciones extra' %}
@@ -39,13 +41,19 @@
                       {% endif %}
                     </th>
                   {% endif %}
+
                   {% if model.add_url %}
                     <td><a href="{{ model.add_url }}" class="addlink">{% trans 'Add' %}</a></td>
                   {% else %}
                     <td>&nbsp;</td>
                   {% endif %}
+
                   {% if model.admin_url %}
-                    <td><a href="{{ model.admin_url }}" class="changelink">{% trans 'Change' %}</a></td>
+                    {% if model.view_only %}
+                      <td><a href="{{ model.admin_url }}" class="viewlink">{% trans 'View' %}</a></td>
+                    {% else %}
+                      <td><a href="{{ model.admin_url }}" class="changelink">{% trans 'Change' %}</a></td>
+                    {% endif %}
                   {% else %}
                     <td>&nbsp;</td>
                   {% endif %}
@@ -84,7 +92,7 @@
         </div>
       {% endfor %}
     {% else %}
-      <p>{% trans "You don't have permission to edit anything." %}</p>
+      <p>{% trans "You don't have permission to view or edit anything." %}</p>
     {% endif %}
   </div>
 {% endblock %}

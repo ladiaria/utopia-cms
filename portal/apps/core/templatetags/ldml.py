@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 # utopia-cms Markup Language
 from __future__ import unicode_literals
-import markdown
+
 import re
+
+from markdown2 import markdown
 
 from django.template import Library
 from django.template.loader import render_to_string
@@ -69,7 +71,7 @@ def get_image(match, aid, amp=False):
                 return ''
             else:
                 return render_to_string(
-                    ('amp/' if amp else '') + 'core/templates/article/image.html',
+                    'core/templates/%sarticle/image.html' % ('amp/' if amp else ''),
                     {'article': article, 'image': article_body_image.image, 'display': article_body_image.display},
                 )
         else:
@@ -92,8 +94,9 @@ def ldmarkup(value, args='', amp=False):
         value = reg.sub(lambda x: get_extension(x, args), value)
         reg = re.compile(IMAGE_RE, re.UNICODE + re.MULTILINE)
         value = reg.sub(lambda x: get_image(x, args, amp), value)
-    value = markdown.markdown(value, ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra'])
-    return mark_safe(force_text(value))
+    return mark_safe(
+        force_text(markdown(value, extras=['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra']).strip())
+    )
 
 
 @register.filter
@@ -102,7 +105,7 @@ def ldmarkup_extension(value, args='', amp=False):
     """ Usage: {% article.body|ldmarkup_extension %} """
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
     value = reg.sub(r'\n\n\1\n----', value)
-    value = markdown.markdown(value, ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra'])
+    value = markdown(value, extras=['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra']).strip()
     return mark_safe(force_text(value))
 
 

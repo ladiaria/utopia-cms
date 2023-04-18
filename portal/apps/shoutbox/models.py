@@ -2,11 +2,12 @@
 from __future__ import unicode_literals
 
 from django.contrib.auth.models import User
+from django.db.models import CASCADE
 from django.db.models import Model, ForeignKey, CharField, DateTimeField
 
 
 class Shout(Model):
-    user = ForeignKey(User, verbose_name=u'usuario', related_name='shouts')
+    user = ForeignKey(User, on_delete=CASCADE, verbose_name=u'usuario', related_name='shouts')
     message = CharField(u'mensaje', max_length=140)
     post_date = DateTimeField(u'fecha', auto_now_add=True)
 

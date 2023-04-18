@@ -1,16 +1,20 @@
 # -*- mode: python; coding: utf-8; -*-
 from __future__ import unicode_literals
+
 from builtins import object
+
 from django.conf import settings
 from django.http import HttpResponsePermanentRedirect, HttpResponseRedirect
+from django.urls import reverse, resolve, Resolver404
 from django.utils.http import urlquote
-from django.core.urlresolvers import reverse, resolve, Resolver404
+from django.utils.deprecation import MiddlewareMixin
+
 
 SSL = 'SSL'
 SSL_HOST = settings.SITE_URL
 
 
-class UrlMiddleware(object):
+class UrlMiddleware(MiddlewareMixin):
     """
     Middleware for removing the WWW from a URL if the users sets settings.REMOVE_WWW.
     Based on Django CommonMiddleware.
@@ -21,7 +25,7 @@ class UrlMiddleware(object):
         old_url = [host, request.path]
         new_url = old_url[:]
 
-        if (settings.REMOVE_WWW and old_url[0] and old_url[0].startswith('www.')):
+        if settings.REMOVE_WWW and old_url[0] and old_url[0].startswith('www.'):
             new_url[0] = old_url[0][4:]
 
         if new_url != old_url:
@@ -33,7 +37,9 @@ class UrlMiddleware(object):
                 if new_url[0]:
                     newurl = "%s://%s%s" % (
                         request.is_secure() and 'https' or 'http',
-                        new_url[0], urlquote(new_url[1]))
+                        new_url[0],
+                        urlquote(new_url[1]),
+                    )
                 else:
                     newurl = urlquote(new_url[1])
                 if request.GET:
@@ -60,12 +66,12 @@ class HttpsRedirectMiddleware(object):
                     pass
             if not request.is_secure() and secure_url:
                 return HttpResponsePermanentRedirect(
-                    'https://%s%s' % (request.META.get('HTTP_HOST'),
-                                      request.META.get('PATH_INFO')))
+                    'https://%s%s' % (request.headers.get('host'), request.META.get('PATH_INFO'))
+                )
             elif request.is_secure() and not secure_url:
                 return HttpResponsePermanentRedirect(
-                    'http://%s%s' % (request.META.get('HTTP_HOST'),
-                                     request.META.get('PATH_INFO')))
+                    'http://%s%s' % (request.headers.get('host'), request.META.get('PATH_INFO'))
+                )
         return None
 
 
@@ -135,11 +141,11 @@ class SSLRedirectMiddleware(object):
             return True
 
         # Trying to solve the https redirect loop in nginx
-        if 'HTTP_X_FORWARDED_PROTOCOL' in request.META:
+        if 'x-forwarded-protocol' in request.headers:
             return True
-        #Handle the Webfaction case until this gets resolved in the request.is_secure()
-        if 'HTTP_X_FORWARDED_SSL' in request.META:
-            return request.META['HTTP_X_FORWARDED_SSL'] == 'on'
+        # Handle the Webfaction case until this gets resolved in the request.is_secure()
+        if 'x-forwarded-ssl' in request.headers:
+            return request.headers['x-forwarded-ssl'] == 'on'
 
         return False
 

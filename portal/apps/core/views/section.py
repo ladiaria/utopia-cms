@@ -12,7 +12,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import get_object_or_404, render
 from django.contrib.sites.models import Site
 from django.contrib.admin.views.decorators import staff_member_required
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from core.models import Edition, Publication, Article, Section
 
@@ -42,7 +42,8 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
         context['site_description'] = "Un listado de artículos, noticias y entrevistas sobre %s" % section
         if section.category:
             context['site_description'] += " dentro del área %s de %s" % (
-                section.category, Site.objects.get_current().name
+                section.category,
+                Site.objects.get_current().name,
             )
         context['site_description'] += "."
 
@@ -79,13 +80,18 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
         edition = get_object_or_404(Edition, date_published=date_published, publication=publication)
         articles = edition.get_articles_in_section(section)
     else:
-        articles = list(Article.objects.raw("""
+        articles = list(
+            Article.objects.raw(
+                """
             SELECT a.id
             FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
                 JOIN core_edition e ON ar.edition_id=e.id
             WHERE ar.section_id=%d AND a.is_published
             GROUP BY a.id
-            ORDER BY a.date_published DESC""" % section.id))
+            ORDER BY a.date_published DESC"""
+                % section.id
+            )
+        )
 
     paginator = Paginator(articles, 10)
 
@@ -100,8 +106,8 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
         {
             'articles': articles,
             'publication': publication,
-            'publication_use_headline':
-                publication.slug in getattr(settings, 'CORE_PUBLICATIONS_SECTION_DETAIL_USE_HEADLINE', ()),
+            'publication_use_headline': publication.slug
+            in getattr(settings, 'CORE_PUBLICATIONS_SECTION_DETAIL_USE_HEADLINE', ()),
         }
     )
 
@@ -134,7 +140,7 @@ def set_pdf_for_route(request, ruta=''):
         list_rutas += str(item) + "<br>"
 
     if not ruta == "listar":
-        encontrada = (ruta in items)
+        encontrada = ruta in items
         if not encontrada:
             items.append(str(str(ruta)))
             fjson = open(settings.JSON_RUTASPDF_PATH, 'w')
@@ -143,8 +149,11 @@ def set_pdf_for_route(request, ruta=''):
             list_rutas += str(ruta) + "<br>"
         return HttpResponse(
             (
-                "<strong><u>EXITO:</u></strong> Se enviará el PDF de la próxima edición <br>" if not encontrada else
-                "<strong><u>ERROR:</u></strong> La ruta ya se encuentra en la lista <br>"
-            ) + "<br>" + list_rutas
+                "<strong><u>EXITO:</u></strong> Se enviará el PDF de la próxima edición <br>"
+                if not encontrada
+                else "<strong><u>ERROR:</u></strong> La ruta ya se encuentra en la lista <br>"
+            )
+            + "<br>"
+            + list_rutas
         )
     return HttpResponse(list_rutas)

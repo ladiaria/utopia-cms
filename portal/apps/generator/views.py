@@ -6,10 +6,11 @@ from .forms import ContributionForm
 from decorators import render_response
 
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponseRedirect
 
 to_response = render_response('generator/templates/')
+
 
 @login_required
 @to_response

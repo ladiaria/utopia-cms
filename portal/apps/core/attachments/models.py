@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.db.models import CASCADE
 from django.db.models import Model, ForeignKey, FileField, CharField, TextField, BooleanField, DateTimeField
 
 from core.models import Article
 
 
 class Attachment(Model):
-    article = ForeignKey(Article, verbose_name=u'artículo', related_name='attachments')
+    article = ForeignKey(Article, on_delete=CASCADE, verbose_name=u'artículo', related_name='attachments')
     file = FileField(u'archivo', upload_to='attachments')
     name = CharField(u'nombre', max_length=50)
     description = TextField(u'descripción', blank=True, null=True)

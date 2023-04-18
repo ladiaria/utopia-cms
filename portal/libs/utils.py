@@ -89,7 +89,7 @@ def set_amp_cors_headers(request, response):
         amp_source_origin = request.GET['__amp_source_origin']
     except KeyError:
         return HttpResponseBadRequest()
-    if request.META.get('HTTP_AMP_SAME_ORIGIN') == 'true':
+    if request.headers.get('amp-same-origin') == 'true':
         access_control_allow_origin = amp_source_origin
     else:
         try:

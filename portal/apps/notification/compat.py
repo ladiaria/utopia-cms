@@ -7,10 +7,7 @@ from django.utils import six
 
 
 # Django 1.5 add support for custom auth user model
-if django.VERSION >= (1, 5):
-    AUTH_USER_MODEL = settings.AUTH_USER_MODEL
-else:
-    AUTH_USER_MODEL = "auth.User"
+AUTH_USER_MODEL = settings.AUTH_USER_MODEL
 
 try:
     from django.contrib.auth import get_user_model

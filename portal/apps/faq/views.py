@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, DetailView
 
@@ -18,6 +18,7 @@ class TopicListView(ListView):
             relate to the current :model:`sites.Site`.
 
     """
+
     model = Topic
     context_object_name = 'topic'
 
@@ -41,14 +42,14 @@ class TopicDetailView(DetailView):
             to the given :model:`faq.Topic`.
 
     """
+
     model = Topic
     context_object_name = 'topic'
     queryset = Topic.published.all()
 
     def get_context_data(self, **kwargs):
         context = super(TopicDetailView, self).get_context_data(**kwargs)
-        context['question_list'] = Question.published.filter(
-            topic__slug=self.get_object().slug)
+        context['question_list'] = Question.published.filter(topic__slug=self.get_object().slug)
         return context
 
     # return object_detail(request, queryset=Topic.published.all(),
@@ -72,8 +73,7 @@ def question_detail(request, topic_slug, slug):
     :view:`faq.views.topic_detail` view.
 
     """
-    get_object_or_404(Question.published.filter(
-        slug=slug, topic__slug=topic_slug))
+    get_object_or_404(Question.published.filter(slug=slug, topic__slug=topic_slug))
     topic_url = reverse('faq-topic-detail', kwargs={'slug': topic_slug})
     question_fragment = '#%s' % slug
 

@@ -2,9 +2,9 @@
 from __future__ import unicode_literals
 from shoutbox.views import do_shout, shouts
 
-from django.conf.urls import url, include
+from django.urls import path
 
 urlpatterns = [
-    url(r'^$', do_shout, name='shout'),
-    url(r'^list/$', shouts, name='shouts'),
+    path('', do_shout, name='shout'),
+    path('list/', shouts, name='shouts'),
 ]

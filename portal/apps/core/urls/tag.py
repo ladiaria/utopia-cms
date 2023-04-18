@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.conf.urls import url
+from django.urls import re_path
 
 from core.views.tag import tag_detail
 
 
 urlpatterns = [
-    url(r'^(?P<tag_slug>[\w-]+)/$', tag_detail, name='tag_detail'),
+    re_path(r'^(?P<tag_slug>[\w-]+)/$', tag_detail, name='tag_detail'),
 ]

@@ -5,12 +5,14 @@ from __future__ import unicode_literals
 import datetime
 
 from django.conf import settings
-from django.db.models import Model, CharField, TextField, ForeignKey, permalink
+from django.db.models import CASCADE
+from django.db.models import Model, CharField, TextField, ForeignKey
 from django.db.models.fields import DateTimeField, SlugField, PositiveSmallIntegerField, BooleanField, URLField
 from django.db.models.fields.files import ImageField
-from django.utils.datetime_safe import date
+from django.urls import reverse
 from django.template.loader import render_to_string
-from django.core.urlresolvers import reverse
+from django.utils.datetime_safe import date
+from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 
@@ -38,7 +40,6 @@ class CategoriaEvento(Model):
 
 
 class EventoBaseCategoryAuto(Model):
-
     def save(self, *args, **kwargs):
         self.type = self._meta.module_name
         self.categoria, created = CategoriaEvento.objects.get_or_create(slug=self.type, nombre=self.type)
@@ -49,7 +50,7 @@ class EventoBaseCategoryAuto(Model):
 
 
 class EventoBase(Model, CT):
-    categoria = ForeignKey(CategoriaEvento)
+    categoria = ForeignKey(CategoriaEvento, on_delete=CASCADE)
     title = CharField('titulo', max_length=250)
     description = TextField('descripción', blank=True, null=True)
     slug = SlugField(db_index=True)
@@ -81,14 +82,12 @@ class ArchivedEvent(Model):
     def is_free(self):
         return self.access_type == u'f'
 
-    @permalink
     def get_absolute_url(self):
-        return 'cartelera-archive', (), {'archived_event_id': self.id}
+        return reverse('cartelera-archive', kwargs={'archived_event_id': self.id})
 
     def link(self):
         href = '%s://%s%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN, self.get_absolute_url()) if self.id else None
-        return '<a href="%s">%s</a>' % (href, href) if href else None
-    link.allow_tags = True
+        return mark_safe('<a href="%s">%s</a>' % (href, href)) if href else None
 
     def __str__(self):
         return self.title
@@ -106,6 +105,7 @@ class LiveEmbedEvent(Model):
     This events will be used for the metadata needed to display a live event
     embeded in a page of our site.
     """
+
     active = BooleanField(u'activo', default=False)
     access_type = CharField(u'acceso al evento', max_length=1, choices=LIVE_EMBED_EVENT_ACCESS_TYPES, default='s')
     in_home = BooleanField(u'agregar a portada', default=False)
@@ -121,9 +121,10 @@ class LiveEmbedEvent(Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
+
         active_now = LiveEmbedEvent.objects.filter(active=True)
         if self.active:
-            if (active_now.exclude(id=self.id) if self.id else active_now):
+            if active_now.exclude(id=self.id) if self.id else active_now:
                 # Don't allow more than one active instance
                 raise ValidationError(u'Only one event can be active at the same time.')
             if not self.embed_content:
@@ -144,7 +145,7 @@ class LiveEmbedEvent(Model):
 class Lugar(Model):
     nombre = CharField('nombre', max_length=100, blank=True, null=True)
     slug = SlugField(db_index=True)
-    prepopulated_fields = {"slug": ("nombre", )}
+    prepopulated_fields = {"slug": ("nombre",)}
     address = TextField('dirección', blank=True, null=True)
     phones = CharField('telefonos', max_length=250)
 
@@ -207,10 +208,10 @@ class Horarios(Model):
 
 
 class PeliculaEnCine(Horarios):
-    pelicula = ForeignKey(Pelicula, related_name='horarios')
-    cine = ForeignKey(Cine, related_name='horarios')
+    pelicula = ForeignKey(Pelicula, on_delete=CASCADE, related_name='horarios')
+    cine = ForeignKey(Cine, on_delete=CASCADE, related_name='horarios')
 
 
 class ObraEnTeatro(Horarios):
-    obra = ForeignKey(ObraTeatro, related_name='horarios')
-    teatro = ForeignKey(Teatro, related_name='horarios')
+    obra = ForeignKey(ObraTeatro, on_delete=CASCADE, related_name='horarios')
+    teatro = ForeignKey(Teatro, on_delete=CASCADE, related_name='horarios')

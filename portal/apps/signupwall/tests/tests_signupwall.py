@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import requests
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import LiveServerTestCase
 from django.test.utils import override_settings
 from django.contrib.auth.models import User
@@ -12,7 +12,6 @@ from core.models import Article
 
 
 class SignupwallTestCase(LiveServerTestCase):
-
     def login(self, name_or_mail, password):
         data = {'name_or_mail': name_or_mail, 'password': password}
         s = requests.Session()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.conf import settings
-from django.conf.urls import url
+from django.urls import path, re_path
 from django.views.generic import TemplateView, RedirectView
 from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import never_cache
@@ -63,102 +63,102 @@ urls_custom_module = getattr(settings, 'THEDAILY_URLS_CUSTOM_MODULE', None)
 if urls_custom_module:
     custom_patterns = __import__(urls_custom_module, fromlist=['urlpatterns']).urlpatterns
 else:
-    custom_patterns = [url(
-        r'^planes/$', RedirectView.as_view(url='/usuarios/suscribite/DDIGM/'), name="subscribe_landing")]
+    custom_patterns = [path(
+        'planes/', RedirectView.as_view(url='/usuarios/suscribite/DDIGM/'), name="subscribe_landing")]
 
 urlpatterns = [
-    url(r'^$', RedirectView.as_view(url='perfil/editar/')),
-    url(r'^comentarios/$', never_cache(TemplateView.as_view(template_name='thedaily/templates/comments.html')))
+    path('', RedirectView.as_view(url='perfil/editar/')),
+    path('comentarios/', never_cache(TemplateView.as_view(template_name='thedaily/templates/comments.html')))
 ] + custom_patterns + [
-    url(r'^suscribite/(?P<planslug>\w+)/$', subscribe, name="subscribe"),
-    url(r'^suscribite/(?P<planslug>\w+)/(?P<category_slug>\w+)/$', subscribe, name="subscribe"),
-    url(r'^api/$', users_api),
-    url(r'^api/custom/$', custom_api),
-    url(r'^api/email_check/$', email_check_api),
-    url(r'^api/comments/$', user_comments_api),
-    url(r'^fromcrm$', update_user_from_crm),
-    url(r'^suscripcion/editar$', edit_subscription, name="edit-subscription"),
+    re_path(r'^suscribite/(?P<planslug>\w+)/$', subscribe, name="subscribe"),
+    re_path(r'^suscribite/(?P<planslug>\w+)/(?P<category_slug>\w+)/$', subscribe, name="subscribe"),
+    path('api/', users_api),
+    path('api/custom/', custom_api),
+    path('api/email_check/', email_check_api),
+    path('api/comments/', user_comments_api),
+    path('fromcrm', update_user_from_crm),
+    path('suscripcion/editar', edit_subscription, name="edit-subscription"),
     # Profile
-    url(r'^perfil/editar/$', edit_profile, name="edit-profile"),
-    url(
+    path('perfil/editar/', edit_profile, name="edit-profile"),
+    re_path(
         r'^perfil/disable/(?P<property_id>[\w_]+)/(?P<hashed_id>\w+)/$',
         disable_profile_property,
         name="disable-profile-property",
     ),
-    url(r'^perfil/(?P<user_id>\d+)/$', user_profile, name="user-profile"),
+    path('perfil/<int:user_id>/', user_profile, name="user-profile"),
 
-    url(r'^registrate/$', signup, name="account-signup"),
-    url(
-        r'^cambiar-password/hecho/$',
+    path('registrate/', signup, name="account-signup"),
+    path(
+        'cambiar-password/hecho/',
         vary_on_cookie(TemplateView.as_view(template_name='thedaily/templates/password_change_done.html')),
         name="account-password_change-done"
     ),
-    url(r'^registrate/google/$', google_phone, name="account-google"),
-    url(r'^salir/$', auth_views.LogoutView.as_view(next_page='/usuarios/sesion-cerrada/'), name="account-logout"),
-    url(r'^sesion-cerrada/$', never_cache(TemplateView.as_view(template_name='registration/logged_out.html'))),
-    url(
-        r'^salir-invalid/$',
+    path('registrate/google/', google_phone, name="account-google"),
+    path('salir/', auth_views.LogoutView.as_view(next_page='/usuarios/sesion-cerrada/'), name="account-logout"),
+    path('sesion-cerrada/', never_cache(TemplateView.as_view(template_name='registration/logged_out.html'))),
+    path(
+        'salir-invalid/',
         auth_views.LogoutView.as_view(next_page='/usuarios/sesion-finalizada/'),
         name="account-invalid",
     ),
-    url(r'^sesion-finalizada/$', never_cache(TemplateView.as_view(template_name='registration/session_invalid.html'))),
-    url(r'^bienvenida/$', welcome, {'signup': True}, name="account-welcome"),
-    url(r'^bienvenido/$', welcome, {'subscribed': True}, name="account-welcome-s"),
+    path('sesion-finalizada/', never_cache(TemplateView.as_view(template_name='registration/session_invalid.html'))),
+    path('bienvenida/', welcome, {'signup': True}, name="account-welcome"),
+    path('bienvenido/', welcome, {'subscribed': True}, name="account-welcome-s"),
 
-    url(r'^cambiar-password/$', password_change, name="account-password_change"),
-    url(r'^cambiar-password/hecho/$', never_cache(TemplateView.as_view(
+    path('cambiar-password/', password_change, name="account-password_change"),
+    path('cambiar-password/hecho/', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/password_change_done.html')),
         name="account-password_change-done"),
-    url(r'^cambiar-password/(?P<user_id>\d{1,})-(?P<hash>.*)/$', password_reset, name='account-password_change-hash'),
-    url(r'^completar-registro/(?P<user_id>\d{1,})-(?P<hash>.*)/$', complete_signup, name="account-signup-hash"),
-    url(r'^entrar/$', login, name="account-login"),
-    url(r'^error/login/$', never_cache(TemplateView.as_view(
+    re_path(r'^cambiar-password/(?P<user_id>\d{1,})-(?P<hash>.*)/$', password_reset, name='account-password_change-hash'),
+    re_path(r'^completar-registro/(?P<user_id>\d{1,})-(?P<hash>.*)/$', complete_signup, name="account-signup-hash"),
+    path('entrar/', login, name="account-login"),
+    path('error/login/', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/login_error.html')),
         name="login-error"),
-    url(r'^error/toomuch/$', never_cache(TemplateView.as_view(
+    path('error/toomuch/', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/toomuch.html')),
         name="account-error-toomuch"),
-    url(r'^restablecer/$', password_reset, name="account-password_reset"),
-    url(r'^restablecer/correo-enviado/$', never_cache(TemplateView.as_view(
+    path('restablecer/', password_reset, name="account-password_reset"),
+    path('restablecer/correo-enviado/', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/password_reset_mail_sent.html')),
         name="account-password_reset-mail_sent"),
-    url(r'^confirm_email/$', confirm_email, name='account-confirm_email'),
-    url(r'^session_refresh/$', session_refresh, name='session-refresh'),
+    path('confirm_email/', confirm_email, name='account-confirm_email'),
+    path('session_refresh/', session_refresh, name='session-refresh'),
 
     # TODO: enter "bienvenido/" directly should not be allowed
-    url(r'^bienvenido/tel/$', never_cache(TemplateView.as_view(
+    path('bienvenido/tel/', never_cache(TemplateView.as_view(
         template_name='thedaily/templates/phone_subscription_thankyou.html')),
         name="telsubscribe_success"),
 
-    url(r'^referidos/(?P<hashed_id>\w+)/$', referrals, name="referrals"),
-    url(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
-    url(r'^nlsubscribe/$', nl_subscribe, name="nl-subscribe"),  # can be useful if a "next" session variable was set
-    url(r'^nlsubscribe/(?P<nltype>[pc])\.(?P<nlslug>\w+)/$', nl_auth_subscribe, name="nl-auth-subscribe"),
-    url(r'^nlsubscribe/c/(?P<slug>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
-    url(r'^nlsubscribe/c/(?P<slug>\w+)/(?P<hashed_id>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
-    url(r'^nlsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nl_subscribe, name="nl-subscribe"),
-    url(
+    re_path(r'^referidos/(?P<hashed_id>\w+)/$', referrals, name="referrals"),
+    re_path(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
+    path('nlsubscribe/', nl_subscribe, name="nl-subscribe"),  # can be useful if a "next" session variable was set
+    re_path(r'^nlsubscribe/(?P<nltype>[pc])\.(?P<nlslug>\w+)/$', nl_auth_subscribe, name="nl-auth-subscribe"),
+    re_path(r'^nlsubscribe/c/(?P<slug>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
+    re_path(r'^nlsubscribe/c/(?P<slug>\w+)/(?P<hashed_id>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
+    re_path(r'^nlsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nl_subscribe, name="nl-subscribe"),
+    re_path(
         r'^nlunsubscribe/c/(?P<category_slug>\w+)/(?P<hashed_id>\w+)/$',
         nl_category_unsubscribe,
         name="nl-category-unsubscribe",
     ),
 
-    url(r'^amp-access/authorization$', amp_access_authorization),
-    url(r'^amp-access/pingback$', amp_access_pingback),
+    path('amp-access/authorization', amp_access_authorization),
+    path('amp-access/pingback', amp_access_pingback),
 
-    url(r'^suscribite-por-telefono/$', phone_subscription, name="phone-subscription"),
+    path('suscribite-por-telefono/', phone_subscription, name="phone-subscription"),
 
-    url(r'^notification_preview/(?P<template>[\w]+)/$', notification_preview, name="notification_preview"),
-    url(
+    re_path(r'^notification_preview/(?P<template>[\w]+)/$', notification_preview, name="notification_preview"),
+    re_path(
         r'^notification_preview/(?P<template>[\w]+)/days/$',
         notification_preview,
         {'days': True},
         name="notification_preview",
     ),
-    url(r'^lista-lectura-leer-despues/$', lista_lectura_leer_despues, name="lista-lectura-leer-despues"),
-    url(r'^lista-lectura-favoritos/$', lista_lectura_favoritos, name="lista-lectura-favoritos"),
-    url(r'^lista-lectura-historial/$', lista_lectura_historial, name="lista-lectura-historial"),
-    url(
+    path('lista-lectura-leer-despues/', lista_lectura_leer_despues, name="lista-lectura-leer-despues"),
+    path('lista-lectura-favoritos/', lista_lectura_favoritos, name="lista-lectura-favoritos"),
+    path('lista-lectura-historial/', lista_lectura_historial, name="lista-lectura-historial"),
+    re_path(
         r'^lista-lectura-toggle/(?P<event>add|remove|favToggle)/(?P<article_id>\d+)/$',
         lista_lectura_toggle,
         name="lista-lectura-toggle"),

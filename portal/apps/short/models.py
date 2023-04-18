@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db.models import Model, URLField
+from django.utils.safestring import mark_safe
 
 
 class Url(Model):
@@ -11,9 +12,7 @@ class Url(Model):
         return self.url
 
     def surl(self):
-        return '<a href="/short/U/%i/">sURL</a>' % self.id
-
-    surl.allow_tags = True
+        return mark_safe('<a href="/short/U/%i/">sURL</a>' % self.id)
 
     def get_absolute_url(self):
         return "/short/url/%i/" % self.id

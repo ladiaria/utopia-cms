@@ -1,20 +1,14 @@
 # Utopia Content Management System Installation
 
-Documentation about installing Utopia's CMS.
-
 ## Install requirements
 
 - Python:
 
-  The Python version we recomend to use is version 3.7.11
+  The Python version we recomend to use is any version from 3.10.6 to 3.11.2
 
-  A lower version starting from 3.6.8 may also work well, but some dependencies may be installed in a different version of the one
-  specified in the requirements.txt file.
+  If your system has a native Python installation in version 3.10.6 - 3.11.2 you can use it, and no installing another Python version may be required.
 
-  If your system has a native Python installation in version 3.7 (<=3.7.11) you can use it, and no installing a new Python
-  version may be required.
-
-  If not, we recommend install the version 3.7.11 using pyenv: https://github.com/pyenv/pyenv
+  If not, we recommend install the version 3.11.2 using pyenv: https://github.com/pyenv/pyenv
 
 - System packages:
 
@@ -33,7 +27,7 @@ Documentation about installing Utopia's CMS.
 - Clone the project repository to any local destination directory and init its git submodules (this can take some minutes):
 
   ```
-  user@host:~ $ git clone -b main https://github.com/ladiaria/utopia-cms
+  user@host:~ $ git clone -b django2 https://github.com/ladiaria/utopia-cms
   cd utopia-cms && git submodule update --init
   ```
 

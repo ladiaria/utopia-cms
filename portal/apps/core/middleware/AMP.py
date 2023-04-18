@@ -1,26 +1,12 @@
-from __future__ import unicode_literals
-from builtins import object
-from django.conf import settings
-
-from django_mobile import get_flavour, set_flavour
-from django_mobile.conf import defaults
+from django.http import HttpResponseForbidden
+from django.urls import resolve
+from django.utils.deprecation import MiddlewareMixin
 
 
-class OnlyArticleDetail(object):
-    """ Middleware to customize AMP and overwrite django-mobile. """
+class OnlyArticleDetail(MiddlewareMixin):
+    """ Middleware to avoid using AMP in non article detail pages. """
 
     def process_request(self, request):
-        if get_flavour(request) == 'amp':
-            from django.core.urlresolvers import resolve
-            current_url = resolve(request.path_info).url_name
-            if current_url != 'article_detail':
-                set_flavour('mobile', request, permanent=True)
-
-
-class FlavoursCookieSecure(object):
-    def process_response(self, request, response):
-        flavours_cookie_key = getattr(settings, 'FLAVOURS_COOKIE_KEY', defaults.FLAVOURS_COOKIE_KEY)
-        if flavours_cookie_key in response.cookies:
-            response.cookies[flavours_cookie_key]['secure'] = settings.FLAVOURS_COOKIE_SECURE
-
-        return response
+        # TODO: check when amp is ready to allow also the "authorization" and "pingback" requests
+        if request.is_amp_detect and resolve(request.path_info).url_name != 'article_detail':
+            return HttpResponseForbidden()

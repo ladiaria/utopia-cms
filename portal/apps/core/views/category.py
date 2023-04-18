@@ -16,7 +16,7 @@ from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResp
 from django.views.decorators.cache import never_cache
 from django.contrib.sites.models import Site
 from django.shortcuts import get_object_or_404, render
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from libs.utils import decode_hashid
 
@@ -64,9 +64,10 @@ def category_detail(request, slug):
 
     return render(
         request,
-        '%s/%s.html' % (
+        '%s/%s.html'
+        % (
             getattr(settings, 'CORE_CATEGORIES_TEMPLATE_DIR', 'core/templates/category'),
-            category.slug if category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_TEMPLATES', ()) else 'detail'
+            category.slug if category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_TEMPLATES', ()) else 'detail',
         ),
         {
             'category': category,
@@ -82,7 +83,8 @@ def category_detail(request, slug):
             'questions_topic': questions_topic,
             'big_photo': category.full_width_cover_image,
             'site_description': (
-                category.meta_description or (
+                category.meta_description
+                or (
                     "Portada de %s de %s con las últimas noticias, artículos y entrevistas relacionados con la "
                     "temática." % (category, Site.objects.get_current().name)
                 )
@@ -95,8 +97,10 @@ def category_detail(request, slug):
 def newsletter_preview(request, slug):
 
     # allow only staff members or requests from localhost
-    if not (request.user.is_staff or request.META.get('REMOTE_ADDR') in (
-        socket.gethostbyname('localhost'), socket.gethostbyname(socket.gethostname()))
+    if not (
+        request.user.is_staff
+        or request.META.get('REMOTE_ADDR')
+        in (socket.gethostbyname('localhost'), socket.gethostbyname(socket.gethostname()))
     ):
         return HttpResponseForbidden()
 
@@ -105,7 +109,7 @@ def newsletter_preview(request, slug):
     if slug in category_redirections:
         redirect_slug = category_redirections[slug]
         if redirect_slug and not redirect_slug.startswith('/'):
-            return HttpResponsePermanentRedirect(reverse('category-nl-preview', args=(redirect_slug, )))
+            return HttpResponsePermanentRedirect(reverse('category-nl-preview', args=(redirect_slug,)))
 
     site = Site.objects.get_current()
     category = get_object_or_404(Category, slug=slug)
@@ -122,8 +126,9 @@ def newsletter_preview(request, slug):
                     'cover_article_section': cover_article.publication_section() if cover_article else None,
                     'articles': [(a, a.publication_section()) for a in category_nl.non_cover_articles()],
                     'featured_article_section': featured_article.publication_section() if featured_article else None,
-                    'featured_articles':
-                        [(a, a.publication_section()) for a in category_nl.non_cover_featured_articles()],
+                    'featured_articles': [
+                        (a, a.publication_section()) for a in category_nl.non_cover_featured_articles()
+                    ],
                 }
             )
 
@@ -143,16 +148,18 @@ def newsletter_preview(request, slug):
                     cover_article_section = cover_article.publication_section() if cover_article else None
 
             featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
-            nl_featured = Article.objects.filter(
-                id=featured_article_id
-            ) if featured_article_id else get_latest_edition().newsletter_featured_articles()
+            nl_featured = (
+                Article.objects.filter(id=featured_article_id)
+                if featured_article_id
+                else get_latest_edition().newsletter_featured_articles()
+            )
             opinion_article = nl_featured[0] if nl_featured else None
 
             # featured_article (a featured section in the category)
             try:
                 featured_section, days_ago = settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[category.slug]
                 featured_article = category.section_set.get(slug=featured_section).latest_article()[0]
-                assert (featured_article.date_published >= datetime.now() - timedelta(days_ago))
+                assert featured_article.date_published >= datetime.now() - timedelta(days_ago)
             except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
                 featured_article = None
 
@@ -185,9 +192,9 @@ def newsletter_preview(request, slug):
             email_subject += callable_function() if callable_csubject else remove_markup(cover_article.headline)
 
         email_from = '%s <%s>' % (
-            site.name if category.slug in getattr(
-                settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ()
-            ) else ('%s %s' % (site.name, category.name)),
+            site.name
+            if category.slug in getattr(settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ())
+            else ('%s %s' % (site.name, category.name)),
             settings.NOTIFICATIONS_FROM_ADDR1,
         )
 

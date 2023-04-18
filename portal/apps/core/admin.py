@@ -9,14 +9,13 @@ import json
 from urllib.parse import urljoin
 from pydoc import locate
 
-from django_markdown.widgets import MarkdownWidget
 from actstream.models import Action
 from tagging.models import Tag, TaggedItem
 from tagging.forms import TagField
 from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
 
 from django.conf import settings
-from django.conf.urls import url
+from django.urls import path
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
@@ -145,6 +144,7 @@ def section_top_article_inline_class(section):
     return SectionTopArticleInline
 
 
+@admin.register(Edition, site=site)
 class EditionAdmin(ModelAdmin):
     fields = ('date_published', 'pdf', 'cover', 'publication')
     list_display = ('edition_pub', 'title', 'pdf', 'cover', 'get_supplements')
@@ -174,8 +174,8 @@ class EditionAdmin(ModelAdmin):
     def get_urls(self):
         urls = super(EditionAdmin, self).get_urls()
         my_urls = [
-            url(
-                r'^add_article/(?P<ed_id>\d+)/(?P<sec_id>\d+)/(?P<art_id>\d+)/$',
+            path(
+                'add_article/<int:ed_id>/<int:sec_id>/<int:art_id>/',
                 self.admin_site.admin_view(self.add_article),
             ),
         ]
@@ -205,6 +205,7 @@ class SectionAdminModelForm(ModelForm):
         widgets = {'html_title': TextInput(attrs={'size': 128}), 'meta_description': Textarea()}
 
 
+@admin.register(Section, site=site)
 class SectionAdmin(ModelAdmin):
     form = SectionAdminModelForm
     list_editable = ('name', 'home_order', 'in_home')
@@ -257,7 +258,6 @@ class ArticleBodyImageInline(TabularInline):
     def photo_admin_thumbnail(self, instance):
         return instance.image.admin_thumbnail()
     photo_admin_thumbnail.short_description = 'thumbnail'
-    photo_admin_thumbnail.allow_tags = True
 
     def photo_date_taken(self, instance):
         return instance.image.date_taken
@@ -289,7 +289,6 @@ class ArticleEditionInline(TabularInline):
 
 
 class ArticleAdminModelForm(ModelForm):
-    body = CharField(widget=MarkdownWidget())
     headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
     slug = CharField(
         label='Slug',
@@ -312,6 +311,8 @@ class ArticleAdminModelForm(ModelForm):
         return tags
 
     def clean(self):
+        if self.errors:
+            raise ValidationError("")
         cleaned_data = super(ArticleAdminModelForm, self).clean()
         if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
             raise ValidationError("La configuración necesaria para publicar en IPFS no está definida.")
@@ -366,6 +367,7 @@ def get_editions():
     return Edition.objects.filter(date_published__gte=since)
 
 
+@admin.register(Article, site=site)
 class ArticleAdmin(ModelAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     form = ArticleAdminModelForm
@@ -572,11 +574,12 @@ class ArticleAdmin(ModelAdmin):
         js = (
             'admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'),
             'js/jquery.charcounter-orig.js',
-            'js/markdown-help.js',
+            'js/utopiacms_martor_semantic.js',
             'js/homev2/article_admin.js',
         )
 
 
+@admin.register(EditionHeader, site=site)
 class EditionHeaderAdmin(ModelAdmin):
     list_display = ('edition', 'title', 'subtitle')
     fieldsets = ((None, {'fields': list_display}), )
@@ -584,6 +587,7 @@ class EditionHeaderAdmin(ModelAdmin):
     raw_id_fields = ['edition']
 
 
+@admin.register(Supplement, site=site)
 class SupplementAdmin(ModelAdmin):
     fieldsets = ((None, {'fields': ('edition', 'name', 'headline', 'pdf', 'public')}), )
     date_hierarchy = 'date_published'
@@ -593,6 +597,7 @@ class SupplementAdmin(ModelAdmin):
     raw_id_fields = ['edition']
 
 
+@admin.register(PrintOnlyArticle, site=site)
 class PrintOnlyArticleAdmin(ModelAdmin):
     list_display = ('headline', 'deck', 'edition')
     list_filter = ('date_created',)
@@ -626,6 +631,7 @@ class JournalistForm(ModelForm):
         fields = '__all__'
 
 
+@admin.register(Journalist, site=site)
 class JournalistAdmin(ModelAdmin):
     form = JournalistForm
     list_display = ('name', 'job', published_articles)
@@ -640,6 +646,7 @@ class JournalistAdmin(ModelAdmin):
     )
 
 
+@admin.register(Location, site=site)
 class LocationAdmin(ModelAdmin):
     pass
 
@@ -680,6 +687,7 @@ class PublicationAdminForm(CustomSubjectAdminForm):
         }
 
 
+@admin.register(Publication, site=site)
 class PublicationAdmin(ModelAdmin):
     form = PublicationAdminForm
     list_display = (
@@ -782,6 +790,7 @@ class CategoryAdminForm(CustomSubjectAdminForm):
         }
 
 
+@admin.register(Category, site=site)
 class CategoryAdmin(ModelAdmin):
     form = CategoryAdminForm
     list_display = (
@@ -895,6 +904,7 @@ class CategoryHomeArticleInline(TabularInline):
         css = {'all': ('css/category_home.css', )}
 
 
+@admin.register(CategoryHome, site=site)
 class CategoryHomeAdmin(admin.ModelAdmin):
     list_display = ('category', 'cover')
     exclude = ('articles', )
@@ -959,6 +969,7 @@ class CategoryNewsletterArticleInline(TabularInline):
         css = {'all': ('css/category_newsletter.css', )}
 
 
+@admin.register(CategoryNewsletter, site=site)
 class CategoryNewsletterAdmin(admin.ModelAdmin):
     list_display = ('category', 'valid_until', 'cover')
     exclude = ('articles', )
@@ -976,6 +987,7 @@ class ArticleInline(TabularInline):
     verbose_name_plural = 'Artículos relacionados'
 
 
+@admin.register(BreakingNewsModule, site=site)
 class BreakingNewsModuleAdmin(ModelAdmin):
     list_display = ('id', 'headline', 'deck', 'covers', 'is_published')
     list_editable = ('headline', 'is_published')
@@ -1034,6 +1046,7 @@ class TaggedItemAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+@admin.register(DeviceSubscribed, site=site)
 class DeviceSubscribedAdmin(admin.ModelAdmin):
     model = DeviceSubscribed
     list_display = ('user', 'time_created', 'browser')
@@ -1050,12 +1063,13 @@ class DeviceSubscribedAdmin(admin.ModelAdmin):
             return 'Navegador desconocido'
 
 
+@admin.register(PushNotification, site=site)
 class PushNotificationAdmin(admin.ModelAdmin):
+    # TODO: adjust change_list columns width
     model = PushNotification
     list_display = ('message', 'article', 'sent', 'tag')
     raw_id_fields = ('article',)
     actions = ['send_me_push_notification', 'send_push_notification_to_all']
-    change_list_template = 'admin/overwrite_notification.html'
     readonly_fields = ('sent', 'tag')
 
     def send_notifications(self, request, queryset, all_users=True):
@@ -1121,22 +1135,7 @@ class PushNotificationAdmin(admin.ModelAdmin):
     send_push_notification_to_all.short_description = "Enviar las notificaciones seleccionadas a todos los usuarios."
 
 
-site.register(Article, ArticleAdmin)
-site.register(Edition, EditionAdmin)
-site.register(Journalist, JournalistAdmin)
-site.register(Location, LocationAdmin)
-site.register(PrintOnlyArticle, PrintOnlyArticleAdmin)
-site.register(Section, SectionAdmin)
-site.register(EditionHeader, EditionHeaderAdmin)
-site.register(Supplement, SupplementAdmin)
-site.register(Publication, PublicationAdmin)
-site.register(Category, CategoryAdmin)
-site.register(CategoryHome, CategoryHomeAdmin)
-site.register(CategoryNewsletter, CategoryNewsletterAdmin)
-site.register(BreakingNewsModule, BreakingNewsModuleAdmin)
 site.unregister(Tag)
 site.unregister(TaggedItem)
 site.register(Tag, TagAdmin)
 site.register(TaggedItem, TaggedItemAdmin)
-site.register(DeviceSubscribed, DeviceSubscribedAdmin)
-site.register(PushNotification, PushNotificationAdmin)

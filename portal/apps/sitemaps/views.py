@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from builtins import range
 
-from django.core import urlresolvers
+from django.urls import reverse
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.http import Http404
 from django.contrib.sites.shortcuts import get_current_site
@@ -25,7 +25,7 @@ def index(
         if callable(site):
             site = site()
         protocol = req_protocol if site.protocol is None else site.protocol
-        sitemap_url = urlresolvers.reverse(sitemap_url_name, kwargs={'section': section})
+        sitemap_url = reverse(sitemap_url_name, kwargs={'section': section})
         absolute_url = '%s://%s%s' % (protocol, req_site.domain, sitemap_url)
         sites.append(absolute_url)
         for page in range(2, site.paginator.num_pages + 1):

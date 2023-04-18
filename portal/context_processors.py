@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import pycountry
 
-from django_mobile import get_flavour
+import pycountry
 
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -61,7 +60,7 @@ def publications(request):
         slug_var = p.slug.replace('-', '_')
         result.update({slug_var.upper() + '_SUB': p.slug, slug_var + '_pub': p})
 
-    if get_flavour(request) == 'amp':
+    if request.is_amp_detect:
         result['extra_header_template'] = getattr(settings, 'HOMEV3_EXTRA_HEADER_TEMPLATE_AMP', None)
     else:
         result['extra_header_template'] = getattr(settings, 'HOMEV3_EXTRA_HEADER_TEMPLATE', None)

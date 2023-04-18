@@ -21,6 +21,7 @@ class FAQAdminBase(admin.ModelAdmin):
     list_per_page = 50
 
 
+@admin.register(Topic)
 class TopicAdmin(FAQAdminBase):
     fieldsets = (
         (None, {
@@ -56,6 +57,7 @@ class TopicAdmin(FAQAdminBase):
     question_count_total.short_description = _(u'Total')
 
 
+@admin.register(Question)
 class QuestionAdmin(FAQAdminBase):
     fieldsets = (
         (None, {
@@ -69,5 +71,3 @@ class QuestionAdmin(FAQAdminBase):
     search_fields = ('question', 'answer')
 
 
-admin.site.register(Topic, TopicAdmin)
-admin.site.register(Question, QuestionAdmin)

@@ -85,8 +85,8 @@ class NoticeSetting(models.Model):
     of a given type to a given medium.
     """
 
-    user = models.ForeignKey(AUTH_USER_MODEL, verbose_name=_("user"))
-    notice_type = models.ForeignKey(NoticeType, verbose_name=_("notice type"))
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name=_("user"))
+    notice_type = models.ForeignKey(NoticeType, on_delete=models.CASCADE, verbose_name=_("notice type"))
     medium = models.CharField(_("medium"), max_length=1, choices=NOTICE_MEDIA)
     send = models.BooleanField(_("send"), default=False)
 

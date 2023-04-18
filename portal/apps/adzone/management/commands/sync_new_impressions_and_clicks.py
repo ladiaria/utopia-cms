@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import unicode_literals
+
 from django.core.management.base import BaseCommand
 
 from apps import mongo_db
@@ -8,7 +9,7 @@ from adzone.models import AdImpression, AdClick
 
 
 class Command(BaseCommand):
-    help = "Sync new impressions and clicks registered in mongodb."
+    help = "Deletes new impressions and clicks registered in mongodb and prints the SQL to insert them in the RDB"
 
     def handle(self, *args, **options):
         first = True

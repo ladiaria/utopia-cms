@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 from core.views.breaking_news_module import notification_closed, content
 
-from django.conf.urls import url
+from django.urls import path
 
 urlpatterns = [
-    url(r'^(?P<bn_id>\d+)/closed/$', notification_closed, name='bn-notification-closed'),
-    url(r'^content/$', content, name='bn-content'),
+    path('<int:bn_id>/closed/', notification_closed, name='bn-notification-closed'),
+    path('content/', content, name='bn-content'),
 ]

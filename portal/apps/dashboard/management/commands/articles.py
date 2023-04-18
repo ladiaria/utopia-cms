@@ -12,7 +12,7 @@ from progress.bar import Bar
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from django.core.urlresolvers import resolve
+from django.urls import resolve
 
 from apps import mongo_db
 from core.models import Article, Section, Publication, ArticleUrlHistory, Category

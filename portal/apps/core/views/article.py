@@ -13,7 +13,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.mail import send_mail
 from django.db.models import Q
@@ -97,19 +97,18 @@ def article_detail(request, year, month, slug, domain_slug=None):
 
     if settings.DEBUG:
         print('DEBUG: article_detail view called with (%d, %d, %s, %s)' % (year, month, slug, domain_slug))
-    if settings.AMP_DEBUG and request.flavour == 'amp':
+    if settings.AMP_DEBUG and request.is_amp_detect:
         print('AMP DEBUG: request.META=%s' % request.META)
 
     # 1. obtener articulo
     try:
         # netloc splitted by port (to support local environment running in port)
-        netloc, first_of_month = request.META['HTTP_HOST'].split(':')[0], date(year, month, 1)
+        netloc, first_of_month = request.headers['host'].split(':')[0], date(year, month, 1)
         first_of_month_plus1 = first_of_month + relativedelta(months=1)
         # when the article is not published, it has no date_published, then date_created should be used
         article = Article.objects.select_related('main_section__edition__publication').get(
-            Q(is_published=True) & Q(date_published__gte=first_of_month)
-            & Q(date_published__lt=first_of_month_plus1) | Q(is_published=False)
-            & Q(date_created__gte=first_of_month) & Q(date_created__lt=first_of_month_plus1),
+            Q(is_published=True) & Q(date_published__gte=first_of_month) & Q(date_published__lt=first_of_month_plus1)
+            | Q(is_published=False) & Q(date_created__gte=first_of_month) & Q(date_created__lt=first_of_month_plus1),
             slug=slug,
         )
         article_url = article.get_absolute_url()
@@ -149,7 +148,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         raise Http404
 
     report_form = ReportErrorArticleForm(article=article)
-    user_is_authenticated = request.user.is_authenticated()
+    user_is_authenticated = request.user.is_authenticated
 
     if request.method == 'POST':
         post = request.POST.copy()
@@ -164,9 +163,9 @@ def article_detail(request, year, month, slug, domain_slug=None):
     if settings.CORE_LOG_ARTICLE_VIEWS and not (
         signupwall_exclude_request_condition(request)
         or getattr(request, 'restricted_article', False)
-        or request.flavour == 'amp'
+        or request.is_amp_detect
     ):
-        if request.user.is_authenticated() and mongo_db is not None:
+        if request.user.is_authenticated and mongo_db is not None:
             # register this view
             set_values = {'viewed_at': datetime.now()}
             if getattr(request, 'article_allowed', False):
@@ -185,7 +184,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
                 talk_url + 'api/graphql',
                 headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
                 data='{"query":"query GetComments($id:ID!){story(id: $id){comments{nodes{status}}}}","variables":'
-                '{"id":%d},"operationName":"GetComments"}' % article.id
+                '{"id":%d},"operationName":"GetComments"}' % article.id,
             ).json()['data']['story']
             comments_count = len(talk_story['comments']['nodes']) if talk_story else 0
         else:
@@ -208,10 +207,11 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'comments_count': comments_count,
         'publication': publication,
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
-        'publication_newsletters':
-            Publication.objects.filter(has_newsletter=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL),
-        'date_published_use_main_publication': publication and publication.slug in getattr(
-            settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ()),
+        'publication_newsletters': Publication.objects.filter(has_newsletter=True).exclude(
+            slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL
+        ),
+        'date_published_use_main_publication': publication
+        and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ()),
     }
 
     if user_is_authenticated:
@@ -223,7 +223,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         )
 
     template = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE', 'article/detail.html')
-    if request.flavour == 'amp':
+    if request.is_amp_detect:
         template = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_AMP', template)
     return render(request, template, context)
 
@@ -266,8 +266,7 @@ def reorder_tag_list(article, tags):
     reordered_tags = []
     if not article.tags:
         return tags
-    strip_tags = [
-        tag.strip() for tag in article.tags.split(',') if tag.strip()]
+    strip_tags = [tag.strip() for tag in article.tags.split(',') if tag.strip()]
     strip_tags = [tag.strip('\"') for tag in strip_tags]
     for s_tag in strip_tags:
         slug = slugify(s_tag)
@@ -319,7 +318,7 @@ def send_by_email(request):
         email = form.data["email"]
         message = form.data["message"]
         article = Article.objects.get(pk=form.data["article_id"])
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             user_name = request.user.get_full_name()
         else:
             user_name = "Usuario anónimo"
@@ -327,7 +326,12 @@ def send_by_email(request):
         body = """%(name)s compartió contigo el artículo "%(article)s":
         %(message)s
 Podés ver el artículo aquí: %(url)s
-        """ % {'name': user_name, 'article': article.headline, 'message': message, 'url': article.get_absolute_url()}
+        """ % {
+            'name': user_name,
+            'article': article.headline,
+            'message': message,
+            'url': article.get_absolute_url(),
+        }
 
         try:
             send_mail('Te recomiendan un artículo', body, settings.DEFAULT_FROM_EMAIL, [email])

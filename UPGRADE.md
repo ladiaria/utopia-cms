@@ -1,3 +1,16 @@
+# From version 0.3.8 to 0.3.9
+
+```
+git pull
+git checkout 0.3.9
+# create a new Python virtualenv according to INSTALL.md
+# install Python requirements using pip with the new virtualenv activated
+# update your local settings based on local_settings_sample.py
+cd portal
+./manage.py migrate
+./manage.py collectstatic
+```
+
 # From version 0.3.7 to 0.3.8
 
 ```

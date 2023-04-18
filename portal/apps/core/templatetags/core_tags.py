@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta
 from hashids import Hashids
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template import Library, Node, TemplateSyntaxError, Variable, loader
 from django.template.defaultfilters import stringfilter
 from django.utils.safestring import mark_safe
@@ -27,7 +27,7 @@ hashids = Hashids(settings.USER_HASHID_SALT, 32)
 
 
 @register.simple_tag(takes_context=True)
-def render_related(context, article):
+def render_related(context, article, amp=False):
 
     article, section = context.get('article'), context.get('section')
     if not section:
@@ -61,15 +61,18 @@ def render_related(context, article):
                 if category_slug in article_categories and section.slug not in section_slugs:
                     category = Category.objects.get(slug=category_slug)
                     upd_dict = {
-                        'articles': section.latest4relatedbycategory(category.id, article.id), 'section': category.name
+                        'articles': section.latest4relatedbycategory(category.id, article.id),
+                        'section': category.name,
                     }
                     break
 
     if not upd_dict:
         upd_dict = {'articles': section.latest4related(article.id), 'section': section.name}
-    upd_dict['is_detail'] = False
-    context.update(upd_dict)
-    return loader.render_to_string('core/templates/article/related.html', context.flatten())
+
+    upd_dict.update({'is_detail': False, 'amp': amp})
+    flatten_ctx = context.flatten()
+    flatten_ctx.update(upd_dict)
+    return loader.render_to_string('core/templates/article/related.html', flatten_ctx)
 
 
 # Media select
@@ -84,8 +87,8 @@ class MediaSelectNode(Node):
             {'id': 'V', 'name': 'Video'},
         )
         select_html = loader.render_to_string(
-            'core/templates/media_select.html',
-            {'medias': medias, 'select_name': self.name})
+            'core/templates/media_select.html', {'medias': medias, 'select_name': self.name}
+        )
         return select_html
 
 
@@ -141,7 +144,8 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
     if card_size == "FN":
         template = "article_card_new.html"
 
-    context.update(
+    flatten_ctx = context.flatten()
+    flatten_ctx.update(
         {
             'article': article,
             'media': media,
@@ -151,7 +155,9 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
             'img_load_lazy': img_load_lazy,
         }
     )
-    return loader.render_to_string('core/templates/article/' + template, context.flatten())
+    return loader.render_to_string(
+        'core/templates/%sarticle/%s' % ('amp/' if flatten_ctx.get("amp") else '', template), flatten_ctx
+    )
 
 
 # Render article media list con foto a la izquierda para mostrar en sidebar
@@ -195,13 +201,14 @@ class ArticlesByTypeNode(Node):
 
     def render(self, context):
         from string import upper
+
         if isinstance(self.type, Variable):
             type = getattr(Article, upper(self.type.resolve(context)))
         else:
             type = getattr(Article, upper(self.type))
         articles = Article.published.filter(type=type)
         if self.limit:
-            articles = articles[:self.limit]
+            articles = articles[: self.limit]
         context.update({self.keyword: articles})
         return ''
 
@@ -230,7 +237,7 @@ def get_articles_by_type(parser, token):
 
 @register.simple_tag(takes_context=True)
 def render_toolbar_for(context, toolbar_object):
-    """ Usage example: {% render_toolbar_for article %} """
+    """Usage example: {% render_toolbar_for article %}"""
     user = context.get('user')
     if user and user.is_staff and isinstance(toolbar_object, Article):
         toolbar_template = 'core/templates/article/toolbar.html'
@@ -241,9 +248,10 @@ def render_toolbar_for(context, toolbar_object):
                 params.update(
                     {
                         'featured_order': ', '.join(
-                            str(tp) for tp in toolbar_object.articlerel_set.filter(
-                                edition=edition, home_top=True
-                            ).values_list('top_position', flat=True)
+                            str(tp)
+                            for tp in toolbar_object.articlerel_set.filter(edition=edition, home_top=True).values_list(
+                                'top_position', flat=True
+                            )
                         ),
                     }
                 )
@@ -270,12 +278,17 @@ def render_hierarchy(article):
         if section.category:
             parent = (reverse('home', kwargs={'domain_slug': section.category.slug}), section.category)
         else:
-            parent = None if (
-                not article.main_section or article.main_section.edition.publication.slug in
-                getattr(settings, 'CORE_HIERARCHY_USE_PUBLICATION', ())
-            ) else (
-                reverse('home', kwargs={'domain_slug': article.main_section.edition.publication.slug}),
-                article.main_section.edition.publication,
+            parent = (
+                None
+                if (
+                    not article.main_section
+                    or article.main_section.edition.publication.slug
+                    in getattr(settings, 'CORE_HIERARCHY_USE_PUBLICATION', ())
+                )
+                else (
+                    reverse('home', kwargs={'domain_slug': article.main_section.edition.publication.slug}),
+                    article.main_section.edition.publication,
+                )
             )
         child = '<a href="%s">%s</a>' % (section.get_absolute_url(), section)
         return '&nbsp;›&nbsp;'.join(['<a href="%s">%s</a>' % parent, child]) if parent else child
@@ -321,9 +334,9 @@ def render_tagrow(context, tagname, article_type, articles_max=4):
 
 @register.simple_tag
 def section_name_in_publication_menu(publication, section):
-    return getattr(
-        settings, 'CORE_SECTIONS_NAME_IN_PUBLICATION_MENU', {}
-    ).get((publication.slug, section.slug), section.name)
+    return getattr(settings, 'CORE_SECTIONS_NAME_IN_PUBLICATION_MENU', {}).get(
+        (publication.slug, section.slug), section.name
+    )
 
 
 @register.simple_tag(takes_context=True)
@@ -349,11 +362,10 @@ def publication_section(context, article, pub=None):
 @register.simple_tag(takes_context=True)
 def category_title(context):
     category = context.get('category')
-    return (
-        category.html_title
-        or "%s: noticias y artículos periodísticos | %s | %s" % (
-            category, context.get('site').name, context.get('country_name')
-        )
+    return category.html_title or "%s: noticias y artículos periodísticos | %s | %s" % (
+        category,
+        context.get('site').name,
+        context.get('country_name'),
     )
 
 
@@ -379,7 +391,7 @@ def section_title(context):
 
 @register.simple_tag(takes_context=True)
 def category_nl_subscribe_box(context):
-    """ renders the subscribe box for the article category, if proper conditions are met """
+    """renders the subscribe box for the article category, if proper conditions are met"""
     # TODO: can be improved and even removed making some modifications in caller templates
     subscriber = getattr(context.get('user'), 'subscriber', None)
     subscriber_nls = subscriber.get_newsletters_slugs() if subscriber else []
@@ -408,7 +420,8 @@ def date_published_verbose(article):
     main_section_edition = article.main_section.edition if article.main_section else None
     if (
         not getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_ONLY_ROOT_PUBLICATIONS', False)
-        or main_section_edition and main_section_edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL
+        or main_section_edition
+        and main_section_edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL
     ):
         today, now = date.today(), datetime.now()
         publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
@@ -428,7 +441,8 @@ def date_published_verbose(article):
             if custom_data is not None and not custom_data:
                 return ''
         return '%s<div class="ld-card__date">%s</div>' % (
-            ' - ' if article.has_byline() else '', custom_data or article.date_published_verbose()
+            ' - ' if article.has_byline() else '',
+            custom_data or article.date_published_verbose(),
         )
     else:
         return ''
@@ -450,6 +464,7 @@ def name_wrap(name):
 def initials(value, args=False):
     # TODO: not used, should be refactored without using "name_wrap"
     from django.template.defaultfilters import safe
+
     ret = ''
     names = value.split(', ')
     if not args:

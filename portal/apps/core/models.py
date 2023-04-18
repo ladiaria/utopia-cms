@@ -20,13 +20,16 @@ from sorl.thumbnail import get_thumbnail
 from PIL import Image
 import readtime
 
+from martor.models import MartorField
+
 from django.conf import settings
-from django.core import urlresolvers
 from django.core.exceptions import ImproperlyConfigured
+from django.urls import reverse
 from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User
 from django.contrib.sitemaps import ping_google
 from django.db import connection
+from django.db.models import CASCADE
 from django.db.models import (
     Q,
     Manager,
@@ -48,7 +51,6 @@ from django.db.models import (
     PositiveSmallIntegerField,
     URLField,
     Index,
-    permalink,
     SET_NULL,
 )
 from django.template.defaultfilters import slugify
@@ -56,6 +58,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.formats import date_format
+from django.utils.safestring import mark_safe
 
 from apps import blacklisted
 from core.templatetags.ldml import ldmarkup, cleanhtml, remove_markup
@@ -90,11 +93,9 @@ class Publication(Model):
         blank=True,
         null=True,
         help_text='Nombre de usuario de Twitter que se menciona cuando artículos de esta publicación son compartidos '
-                  'en Twitter (escribir sin @)',
+        'en Twitter (escribir sin @)',
     )
-    description = TextField(
-        'descripción', null=True, blank=True, help_text='Se muestra en el componente de portada.'
-    )
+    description = TextField('descripción', null=True, blank=True, help_text='Se muestra en el componente de portada.')
     slug = SlugField('slug', unique=True)
     headline = CharField('título', max_length=100)
     weight = PositiveSmallIntegerField('orden', default=0)
@@ -112,7 +113,9 @@ class Publication(Model):
     subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
     image = ImageField('logo', upload_to='publications', blank=True, null=True)
-    full_width_cover_image = ForeignKey(Photo, verbose_name='foto full de portada', blank=True, null=True)
+    full_width_cover_image = ForeignKey(
+        Photo, on_delete=CASCADE, verbose_name='foto full de portada', blank=True, null=True
+    )
     is_emergente = BooleanField('es emergente', default=False)
     new_pill = BooleanField('pill de "nuevo" en el componente de portada', default=False)
     html_title = CharField(
@@ -148,13 +151,12 @@ class Publication(Model):
         super(Publication, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return urlresolvers.reverse(
-            'home',
-            kwargs={} if self.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL else {'domain_slug': self.slug}
+        return reverse(
+            'home', kwargs={} if self.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL else {'domain_slug': self.slug}
         )
 
     def profile_newsletter_name(self):
-        """ Returns the newsletter name to show in the edit profile view """
+        """Returns the newsletter name to show in the edit profile view"""
         if self.slug in getattr(settings, "THEDAILY_EDIT_PROFILE_PUBLICATIONS_NL_USE_NAMEONLY", []):
             return self.name
         else:
@@ -188,11 +190,13 @@ class Publication(Model):
     def subscriber_count(self):
         return len(
             set(
-                self.subscriber_set.filter(
-                    user__is_active=True
-                ).exclude(user__email='').values_list('user__email', flat=True)
-            ) - blacklisted
+                self.subscriber_set.filter(user__is_active=True)
+                .exclude(user__email='')
+                .values_list('user__email', flat=True)
+            )
+            - blacklisted
         )
+
     subscriber_count.short_description = 'Suscrip. NL'
 
     def image_tag(self):
@@ -209,23 +213,22 @@ class Publication(Model):
                 url = get_thumbnail(f, '120', crop='center', quality=99).url
             else:
                 url = '%s%s' % (settings.MEDIA_URL, self.image)
-        return (
+        return mark_safe(
             '<a href="/admin/core/publication/%d/"><img src="%s" style="background:%s;"/></a>' % (
                 self.id, url, self.newsletter_header_color
             )
         ) if url else ''
+
     image_tag.short_description = 'logo'
-    image_tag.allow_tags = True
 
     def get_full_width_cover_image_tag(self):
-        return (
-            '<a href="/admin/core/publication/%d/">'
-            '<img src="%s" alt="%s"></a>' % (
-                self.id, self.full_width_cover_image.get_admin_thumbnail_url(),
-                self.full_width_cover_image) if self.full_width_cover_image
-            else '')
+        return mark_safe(
+            '<a href="/admin/core/publication/%d/"><img src="%s" alt="%s"></a>' % (
+                self.id, self.full_width_cover_image.get_admin_thumbnail_url(), self.full_width_cover_image
+            )
+        ) if self.full_width_cover_image else ''
+
     get_full_width_cover_image_tag.short_description = 'foto full de portada'
-    get_full_width_cover_image_tag.allow_tags = True
 
     class Meta:
         ordering = ['weight']
@@ -249,12 +252,12 @@ class PortableDocumentFormatBaseModel(Model):
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
-        return self.pdf[self.pdf.rfind('/') + 1:]
+        return self.pdf[self.pdf.rfind('/') + 1 :]
 
     class Meta:
         abstract = True
         get_latest_by = 'date_published'
-        ordering = ('-date_published', )
+        ordering = ('-date_published',)
 
     def get_pdf_filename(self):
         return None
@@ -262,12 +265,10 @@ class PortableDocumentFormatBaseModel(Model):
     def get_cover_filename(self):
         return '%s.jpg' % self.get_pdf_filename()[:-4]
 
-    @permalink
     def get_download_url(self):
-        return (
+        return reverse(
             'edition_download',
-            (),
-            {
+            kwargs={
                 'publication_slug': self.publication.slug,
                 'year': self.date_published.year,
                 'month': '%02d' % self.date_published.month,
@@ -289,7 +290,8 @@ class PortableDocumentFormatBaseModel(Model):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
         result = (
             ("{d:%a}. {d.day} {d:%b}." if date.today().year == self.date_published.year else "{d.day} {d:%b, %Y}")
-            if short else "{d:%A} {d.day} de {d:%B de %Y}"
+            if short
+            else "{d:%A} {d.day} de {d:%B de %Y}"
         ).format(d=self.date_published)
         return result.title() if short else result.capitalize()
 
@@ -305,9 +307,12 @@ class EditionSection(models.Model):
 
 
 class Edition(PortableDocumentFormatBaseModel):
-    """ A publication's edition. """
+    """A publication's edition."""
+
     title = TextField('título', null=True)
-    publication = ForeignKey(Publication, verbose_name='publicación', related_name="%(app_label)s_%(class)s")
+    publication = ForeignKey(
+        Publication, on_delete=CASCADE, verbose_name='publicación', related_name="%(app_label)s_%(class)s"
+    )
     # (**) sections = ManyToManyField(Section, through='EditionSection')
 
     class Meta(PortableDocumentFormatBaseModel.Meta):
@@ -323,24 +328,33 @@ class Edition(PortableDocumentFormatBaseModel):
 
     def edition_pub(self):
         return str(self)
+
     edition_pub.short_description = 'Fecha publicada'
 
     def get_supplements(self):
         return self.supplements.values_list('pdf', 'cover') or ''
+
     get_supplements.short_description = 'suplementos'
 
     def get_absolute_url(self):
         reverse_kwargs = {
-            'year': self.date_published.year, 'month': self.date_published.month, 'day': self.date_published.day}
+            'year': self.date_published.year,
+            'month': self.date_published.month,
+            'day': self.date_published.day,
+        }
         if self.publication and self.publication.slug not in settings.CORE_PUBLICATIONS_USE_ROOT_URL:
             reverse_kwargs['publication_slug'] = self.publication.slug
-        return urlresolvers.reverse('edition_detail', kwargs=reverse_kwargs)
+        return reverse('edition_detail', kwargs=reverse_kwargs)
 
     def published_articles(self):
-        return Article.published.extra(
-            where=['core_article.id=core_articlerel.article_id', 'core_articlerel.edition_id=%d' % self.id],
-            tables=['core_articlerel'],
-        ).order_by('articlerel__top_position').distinct()
+        return (
+            Article.published.extra(
+                where=['core_article.id=core_articlerel.article_id', 'core_articlerel.edition_id=%d' % self.id],
+                tables=['core_articlerel'],
+            )
+            .order_by('articlerel__top_position')
+            .distinct()
+        )
 
     def newsletter_featured_articles(self):
         return self.published_articles().filter(newsletter_featured=True)
@@ -350,20 +364,38 @@ class Edition(PortableDocumentFormatBaseModel):
 
     @property
     def top_articles(self):
-        return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.prefetch_related(
-            'article__main_section__edition__publication',
-            'article__main_section__section',
-            'article__photo__extended__photographer',
-            'article__byline',
-        ).filter(article__is_published=True, home_top=True).order_by('top_position')]))
+        return list(
+            OrderedDict.fromkeys(
+                [
+                    ar.article
+                    for ar in self.articlerel_set.prefetch_related(
+                        'article__main_section__edition__publication',
+                        'article__main_section__section',
+                        'article__photo__extended__photographer',
+                        'article__byline',
+                    )
+                    .filter(article__is_published=True, home_top=True)
+                    .order_by('top_position')
+                ]
+            )
+        )
 
     def get_articles_in_section(self, section):
-        return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.prefetch_related(
-            'article__main_section__edition__publication',
-            'article__main_section__section',
-            'article__photo__extended__photographer',
-            'article__byline',
-        ).filter(article__is_published=True, section=section).order_by('position')]))
+        return list(
+            OrderedDict.fromkeys(
+                [
+                    ar.article
+                    for ar in self.articlerel_set.prefetch_related(
+                        'article__main_section__edition__publication',
+                        'article__main_section__section',
+                        'article__photo__extended__photographer',
+                        'article__byline',
+                    )
+                    .filter(article__is_published=True, section=section)
+                    .order_by('position')
+                ]
+            )
+        )
 
     def previous_section(self, section):
         editions = [
@@ -406,7 +438,7 @@ class Edition(PortableDocumentFormatBaseModel):
 
 
 class EditionHeader(Model):
-    edition = OneToOneField(Edition, verbose_name='edición')
+    edition = OneToOneField(Edition, on_delete=CASCADE, verbose_name='edición')
     title = CharField('título', max_length=127)
     subtitle = CharField('subtítulo', max_length=255, null=True, blank=True)
 
@@ -419,7 +451,7 @@ class EditionHeader(Model):
 
 
 class Supplement(PortableDocumentFormatBaseModel):
-    edition = ForeignKey(Edition, verbose_name='edición', related_name='supplements')
+    edition = ForeignKey(Edition, on_delete=CASCADE, verbose_name='edición', related_name='supplements')
     name = CharField('nombre', max_length=2, choices=settings.CORE_SUPPLEMENT_NAME_CHOICES)
     slug = SlugField('slug', unique=True)
     headline = CharField('titular', max_length=100)
@@ -450,17 +482,23 @@ class Supplement(PortableDocumentFormatBaseModel):
             x += 1
         return '%s-%i' % (name_slug, x)
 
-    @permalink
     def get_absolute_url(self):
-        return 'supplement_detail', (), {
-            'supplement_slug': self.slug, 'year': self.date_published.year,
-            'month': self.date_published.month, 'day': self.date_published.day}
+        return reverse(
+            'supplement_detail',
+            kwargs={
+                'supplement_slug': self.slug,
+                'year': self.date_published.year,
+                'month': self.date_published.month,
+                'day': self.date_published.day,
+            },
+        )
 
     def get_pdf_filename(self):
         return '%s-%s-%s.pdf' % (
             self.edition.get_name_display().replace(' ', '_'),
             self.date_published.strftime('%Y%m%d'),
-            self.slug.replace('-', '_'))
+            self.slug.replace('-', '_'),
+        )
 
     def get_pdf_url(self):
         try:
@@ -487,7 +525,9 @@ class Category(Model):
         'texto en el link "más" del componente de portada', max_length=50, blank=True, null=True
     )
     new_pill = BooleanField('pill de "nuevo" en el componente de portada y menú', default=False)
-    full_width_cover_image = ForeignKey(Photo, verbose_name='foto full de portada', blank=True, null=True)
+    full_width_cover_image = ForeignKey(
+        Photo, on_delete=CASCADE, verbose_name='foto full de portada', blank=True, null=True
+    )
     full_width_cover_image_title = CharField(
         'título para foto full',
         max_length=50,
@@ -531,7 +571,8 @@ class Category(Model):
         """
         return Article.objects.filter(
             id__in=[
-                a.id for a in Article.objects.raw(
+                a.id
+                for a in Article.objects.raw(
                     """
                     SELECT DISTINCT core_article.id
                     FROM core_article
@@ -544,7 +585,8 @@ class Category(Model):
                     WHERE core_section.category_id = %d
                         AND is_published AND core_edition.date_published <= CURRENT_DATE
                     ORDER BY core_article.date_published DESC
-                    """ % self.id
+                    """
+                    % self.id
                 )
             ]
         )
@@ -555,7 +597,8 @@ class Category(Model):
         If max is given, the result will be allways less or equal this max value.
         """
         with connection.cursor() as cursor:
-            subquery_part = """
+            subquery_part = (
+                """
                 FROM core_article
                 JOIN core_articlerel ON
                     core_article.id = core_articlerel.article_id
@@ -564,12 +607,15 @@ class Category(Model):
                 JOIN core_edition ON
                     core_articlerel.edition_id = core_edition.id
                 WHERE core_section.category_id = %d AND is_published AND core_edition.date_published <= CURRENT_DATE
-            """ % self.id
+            """
+                % self.id
+            )
             if exclude_sections:
                 subquery_part += "AND core_section.slug NOT IN (%s)" % ",".join("'%s'" % s for s in exclude_sections)
             if max:
                 query = "SELECT COUNT(*) FROM (SELECT DISTINCT core_article.id %s LIMIT %d) final" % (
-                    subquery_part, max
+                    subquery_part,
+                    max,
                 )
             else:
                 query = "SELECT COUNT(DISTINCT core_article.id) " + subquery_part
@@ -581,26 +627,26 @@ class Category(Model):
     def subscriber_count(self):
         return len(
             set(
-                self.subscriber_set.filter(
-                    user__is_active=True
-                ).exclude(user__email='').values_list('user__email', flat=True)
-            ) - blacklisted
+                self.subscriber_set.filter(user__is_active=True)
+                .exclude(user__email='')
+                .values_list('user__email', flat=True)
+            )
+            - blacklisted
         )
+
     subscriber_count.short_description = 'Suscrip. NL'
 
     def get_full_width_cover_image_tag(self):
-        return (
-            '<a href="/admin/core/category/%d/">'
-            '<img src="%s" alt="%s"></a>' % (
-                self.id, self.full_width_cover_image.get_admin_thumbnail_url(),
-                self.full_width_cover_image) if self.full_width_cover_image
-            else '')
+        return mark_safe(
+            '<a href="/admin/core/category/%d/"><img src="%s" alt="%s"></a>' % (
+                self.id, self.full_width_cover_image.get_admin_thumbnail_url(), self.full_width_cover_image
+            )
+        ) if self.full_width_cover_image else ''
 
     get_full_width_cover_image_tag.short_description = 'foto full de portada'
-    get_full_width_cover_image_tag.allow_tags = True
 
     def get_absolute_url(self):
-        return urlresolvers.reverse('home', kwargs={'domain_slug': self.slug})
+        return reverse('home', kwargs={'domain_slug': self.slug})
 
     class Meta:
         verbose_name = 'área'
@@ -612,7 +658,7 @@ class Section(Model):
     SECTION_2 = '2'
     SECTION_3 = '3'
 
-    category = ForeignKey(Category, verbose_name='área', blank=True, null=True)
+    category = ForeignKey(Category, on_delete=CASCADE, verbose_name='área', blank=True, null=True)
     name = CharField('nombre', max_length=50, unique=True)
     name_in_category_menu = CharField('nombre en el menú del área', max_length=50, blank=True, null=True)
     slug = SlugField('slug', unique=True)
@@ -662,13 +708,14 @@ class Section(Model):
         super(Section, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return urlresolvers.reverse('section_detail', kwargs={'section_slug': self.slug})
+        return reverse('section_detail', kwargs={'section_slug': self.slug})
 
     def is_satirical(self):
         return self.slug in getattr(settings, 'CORE_SATIRICAL_SECTIONS', ())
 
     def get_publications(self):
         return ', '.join(self.publications.values_list('name', flat=True))
+
     get_publications.short_description = 'publicaciones'
 
     def get_tags(self):
@@ -707,7 +754,11 @@ class Section(Model):
             GROUP BY id
             ORDER BY core_article.date_published DESC
             LIMIT %s
-        """ % (extra_join, extra_where, limit)
+        """ % (
+            extra_join,
+            extra_where,
+            limit,
+        )
 
         if settings.RAW_SQL_DEBUG:
             print(query)
@@ -725,21 +776,25 @@ class Section(Model):
         devuelve los últimos 4 articulos de la sección que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        return Article.objects.raw("""
+        return Article.objects.raw(
+            """
             SELECT core_article.*
             FROM core_article JOIN core_articlerel
                 ON core_article.id = core_articlerel.article_id
             WHERE core_articlerel.section_id=%s AND is_published
                 AND allow_related AND core_article.id!=%s
             GROUP BY id ORDER BY date_published DESC
-            LIMIT 4""" % (self.id, exclude_id))
+            LIMIT 4"""
+            % (self.id, exclude_id)
+        )
 
     def latest4relatedbycategory(self, category, exclude_id):
         """
         devuelve los últimos 4 articulos de la categoría que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        return Article.objects.raw("""
+        return Article.objects.raw(
+            """
             SELECT core_article.*
             FROM core_article JOIN core_articlerel
                 ON core_article.id = core_articlerel.article_id
@@ -748,19 +803,27 @@ class Section(Model):
             WHERE is_published AND allow_related
                 AND core_section.category_id=%s AND core_article.id!=%s
             GROUP BY id ORDER BY date_published DESC
-            LIMIT 4""" % (category, exclude_id))
+            LIMIT 4"""
+            % (category, exclude_id)
+        )
 
     def latest4relatedbypublication(self, publication, exclude_id):
         """
         devuelve los últimos 4 articulos de la publicacion que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        return Article.objects.raw("""
+        return (
+            Article.objects.raw(
+                """
             SELECT a.* FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
                 JOIN core_edition e ON ar.edition_id=e.id
             WHERE a.is_published AND a.allow_related AND e.publication_id=%s AND a.id!=%s
-            GROUP BY a.id ORDER BY a.date_published DESC LIMIT 4""" % (publication, exclude_id)) \
-            if settings.CORE_ENABLE_RELATED_ARTICLES else []
+            GROUP BY a.id ORDER BY a.date_published DESC LIMIT 4"""
+                % (publication, exclude_id)
+            )
+            if settings.CORE_ENABLE_RELATED_ARTICLES
+            else []
+        )
 
     def latest_article(self):
         """
@@ -792,6 +855,7 @@ class Section(Model):
 
     def articles_count(self):
         return self.articles_core.count()
+
     articles_count.short_description = '# Artículos'
 
     class Meta:
@@ -834,10 +898,11 @@ class Journalist(Model):
         super(Journalist, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return urlresolvers.reverse(
+        return reverse(
             'journalist_detail',
             kwargs={
-                'journalist_job': 'columnista' if self.job == 'CO' else 'periodista', 'journalist_slug': self.slug
+                'journalist_job': 'columnista' if self.job == 'CO' else 'periodista',
+                'journalist_slug': self.slug,
             },
         )
 
@@ -854,7 +919,7 @@ class Journalist(Model):
         return self.sections.all()
 
     class Meta:
-        ordering = ('name', )
+        ordering = ('name',)
         verbose_name = 'periodista'
         verbose_name_plural = 'periodistas'
 
@@ -897,6 +962,7 @@ class ArticleBase(Model, CT):
 
     publication = ForeignKey(
         Publication,
+        on_delete=CASCADE,
         verbose_name='publicación',
         blank=True,
         null=True,
@@ -915,7 +981,7 @@ class ArticleBase(Model, CT):
     lead = TextField(
         'copete', blank=True, null=True, help_text='Se muestra en la página de la nota debajo de la bajada.'
     )
-    body = TextField('cuerpo')
+    body = MartorField("cuerpo")
     header_display = CharField(
         'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
     )
@@ -954,6 +1020,7 @@ class ArticleBase(Model, CT):
     longitude = DecimalField('longitud', max_digits=10, decimal_places=6, blank=True, null=True)
     location = ForeignKey(
         Location,
+        on_delete=CASCADE,
         verbose_name='ubicación',
         related_name='articles_%(app_label)s',
         blank=True,
@@ -967,24 +1034,27 @@ class ArticleBase(Model, CT):
     allow_comments = BooleanField('Habilitar comentarios', default=True)
     created_by = ForeignKey(
         User,
+        on_delete=CASCADE,
         verbose_name='creado por',
         related_name='created_articles_%(app_label)s',
         editable=False,
         blank=False,
         null=True,
     )
-    photo = ForeignKey(Photo, blank=True, null=True, verbose_name='imagen')
-    gallery = ForeignKey(Gallery, verbose_name='galería', blank=True, null=True)
+    photo = ForeignKey(Photo, on_delete=CASCADE, blank=True, null=True, verbose_name='imagen')
+    gallery = ForeignKey(Gallery, on_delete=CASCADE, verbose_name='galería', blank=True, null=True)
     video = ForeignKey(
         Video,
+        on_delete=CASCADE,
         verbose_name='video',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    youtube_video = ForeignKey(YouTubeVideo, verbose_name='video de YouTube', blank=True, null=True)
+    youtube_video = ForeignKey(YouTubeVideo, on_delete=CASCADE, verbose_name='video de YouTube', blank=True, null=True)
     audio = ForeignKey(
         Audio,
+        on_delete=CASCADE,
         verbose_name='audio',
         related_name='articles_%(app_label)s',
         blank=True,
@@ -1006,6 +1076,7 @@ class ArticleBase(Model, CT):
 
     def save(self, *args, **kwargs):
         from .utils import add_punctuation
+
         for attr in ('headline', 'deck', 'lead', 'body'):
             if getattr(self, attr, None):
                 setattr(self, attr, getattr(self, attr).strip())
@@ -1060,7 +1131,7 @@ class ArticleBase(Model, CT):
         return bool(self.lead)
 
     def get_lead(self):
-        return self.lead or self.body[:self.body.find('\n')]
+        return self.lead or self.body[: self.body.find('\n')]
 
     def get_keywords(self):
         if self.keywords:
@@ -1089,7 +1160,7 @@ class ArticleBase(Model, CT):
                     reverse_kwargs['domain_slug'] = main_section.section.category.slug
             else:
                 reverse_kwargs['domain_slug'] = main_section.edition.publication.slug
-        return urlresolvers.reverse('article_detail', kwargs=reverse_kwargs)
+        return reverse('article_detail', kwargs=reverse_kwargs)
 
     def get_discussion_url(self):
         return '%sdiscusion/' % self.get_absolute_url()
@@ -1098,20 +1169,21 @@ class ArticleBase(Model, CT):
         return self.get_discussion_url()
 
     def get_feed_url(self):
-        return '/feeds/discusion/%(year)i/%(month)i/%(slug)s/' % \
-            {'year': self.date_published.year,
-             'month': self.date_published.month, 'slug': self.slug}
+        return '/feeds/discusion/%(year)i/%(month)i/%(slug)s/' % {
+            'year': self.date_published.year,
+            'month': self.date_published.month,
+            'slug': self.slug,
+        }
 
     def get_app_body(self):
-        """ Returns the body formatted for the app """
+        """Returns the body formatted for the app"""
         # TODO: raising encoding error, fix asap.
         # TODO: what does "for the app" mean?
         # TODO: check if the first TODO is still happening
         return render_to_string('article/app_body.html', {'article': self})
 
     def surl(self):
-        return '<a href="/short/A/%i/">sURL</a>' % self.id
-    surl.allow_tags = True
+        return mark_safe('<a href="/short/A/%i/">sURL</a>' % self.id)
 
     @property
     def display(self):
@@ -1125,18 +1197,16 @@ class ArticleBase(Model, CT):
 
     def edit_link(self):
         if self.id:
-            change_url = urlresolvers.reverse('admin:core_article_change', args=(self.id, ))
-            return "<a href='%s' target='_blank'>Editar</a>" % change_url
+            change_url = reverse('admin:core_article_change', args=(self.id,))
+            return mark_safe("<a href='%s' target='_blank'>Editar</a>" % change_url)
         else:
             return 'No Existe'
-    edit_link.allow_tags = True
 
     def is_public(self):
         return self.public
 
     def get_photos_wo_cover(self):
-        return self.gallery.photos.exclude(
-            id__exact=self.photo.id if self.photo else 0)
+        return self.gallery.photos.exclude(id__exact=self.photo.id if self.photo else 0)
 
     def has_photo(self):
         try:
@@ -1218,14 +1288,14 @@ class ArticleBase(Model, CT):
 
     def reading_time(self):
         """
-           Based on article body text, returns the reading time of the article.
-           Rounds down, so 65 seconds are rounded to 1 min.
-           Assumes that body is in Markdown format. (simple text, and html
-           are also available)
+        Based on article body text, returns the reading time of the article.
+        Rounds down, so 65 seconds are rounded to 1 min.
+        Assumes that body is in Markdown format. (simple text, and html
+        are also available)
 
-           Examples: * menos de un minuto
-                     * 1 min
-                     * 3 min
+        Examples: * menos de un minuto
+                  * 1 min
+                  * 3 min
         """
         wpm = 250
         result = readtime.of_markdown(self.body, wpm=wpm)
@@ -1298,7 +1368,7 @@ class ArticleBase(Model, CT):
     class Meta:
         abstract = True
         get_latest_by = 'date_published'
-        ordering = ('-date_published', )
+        ordering = ('-date_published',)
         verbose_name = 'artículo'
         verbose_name_plural = 'artículos'
         indexes = [Index(fields=['type', 'date_published', 'is_published'])]
@@ -1363,9 +1433,7 @@ class Article(ArticleBase):
         #    self.top_position = Article.objects.filter(
         #        edition=self.edition, home_top=self.home_top).count() + 1
         if self.type == settings.CORE_HTML_ARTICLE:
-            self.headline = 'HTML | %s | %s | %s' % (
-                str(self.edition), str(self.section), str(self.section_position)
-            )
+            self.headline = 'HTML | %s | %s | %s' % (str(self.edition), str(self.section), str(self.section_position))
 
         old_url_path = self.url_path
         super(Article, self).save(*args, **kwargs)
@@ -1457,6 +1525,7 @@ class Article(ArticleBase):
 
     def get_publications(self):
         return ', '.join([p.name for p in self.publications()])
+
     get_publications.short_description = 'publicaciones'
 
     @property
@@ -1480,9 +1549,13 @@ class Article(ArticleBase):
                 filter_kwargs = {'article': self}
                 if publication_slug:
                     filter_kwargs['edition__publication__slug'] = publication_slug
-                result = Edition.objects.filter(
-                    id__in=[v[0] for v in ArticleRel.objects.filter(**filter_kwargs).values_list('edition')]
-                ).order_by('-date_published')[0].date_published
+                result = (
+                    Edition.objects.filter(
+                        id__in=[v[0] for v in ArticleRel.objects.filter(**filter_kwargs).values_list('edition')]
+                    )
+                    .order_by('-date_published')[0]
+                    .date_published
+                )
             except IndexError:
                 result = self.date_published.date()
             return result
@@ -1494,13 +1567,18 @@ class Article(ArticleBase):
         """
         if self.is_published:
             try:
-                result = Edition.objects.filter(
-                    id__in=[
-                        v[0] for v in ArticleRel.objects.filter(
-                            article=self, section__in=category.section_set.all()
-                        ).values_list('edition')
-                    ]
-                ).order_by('-date_published')[0].date_published
+                result = (
+                    Edition.objects.filter(
+                        id__in=[
+                            v[0]
+                            for v in ArticleRel.objects.filter(
+                                article=self, section__in=category.section_set.all()
+                            ).values_list('edition')
+                        ]
+                    )
+                    .order_by('-date_published')[0]
+                    .date_published
+                )
             except IndexError:
                 result = self.date_published.date()
             return result
@@ -1530,14 +1608,14 @@ class Article(ArticleBase):
 
     def get_sections(self):
         return ', '.join([s.name for s in self.sections.distinct()])
+
     get_sections.short_description = 'secciones'
 
     def get_categories_slugs(self):
         return set(
             [
-                s.category.slug for s in self.sections.filter(
-                    category__isnull=False
-                ).distinct().select_related('category')
+                s.category.slug
+                for s in self.sections.filter(category__isnull=False).distinct().select_related('category')
             ]
         )
 
@@ -1549,8 +1627,7 @@ class Article(ArticleBase):
         if self.photo:
             return self.photo
         else:
-            section_imgs = self.sections.filter(
-                imagen__isnull=False).values_list('imagen', flat=True)
+            section_imgs = self.sections.filter(imagen__isnull=False).values_list('imagen', flat=True)
             if section_imgs:
                 return PhotoExtended(image=section_imgs[0])
 
@@ -1559,7 +1636,8 @@ class Article(ArticleBase):
         When the article's main pub is a restricted publication (by settings), also if no public and has no extra-perms
         """
         return (
-            not self.is_public() and self.main_section
+            not self.is_public()
+            and self.main_section
             and self.main_section.edition.publication.slug in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
             and not self.additional_access.exists()
         )
@@ -1592,9 +1670,10 @@ class ArticleRel(Model):
           duplicated with another row (unique_together allows null values) will cause a 500 error when trying to set
           the row as main (another row can exist).
     """
-    article = ForeignKey(Article)
-    edition = ForeignKey(Edition)
-    section = ForeignKey(Section)
+
+    article = ForeignKey(Article, on_delete=CASCADE)
+    edition = ForeignKey(Edition, on_delete=CASCADE)
+    section = ForeignKey(Section, on_delete=CASCADE)
     position = PositiveSmallIntegerField('orden en la sección', default=None, null=True)
     home_top = BooleanField(
         'destacado en portada',
@@ -1623,7 +1702,8 @@ class ArticleRel(Model):
                 subquery_part += "AND core_section.slug IN (%s)" % ",".join("'%s'" % s for s in section_slugs_only)
             if max:
                 query = "SELECT COUNT(*) FROM (SELECT DISTINCT core_article.id %s LIMIT %d) final" % (
-                    subquery_part, max
+                    subquery_part,
+                    max,
                 )
             else:
                 query = "SELECT COUNT(DISTINCT core_article.id) " + subquery_part
@@ -1638,8 +1718,8 @@ class ArticleRel(Model):
 
 
 class ArticleViewedBy(Model):
-    article = ForeignKey(Article)
-    user = ForeignKey(User)
+    article = ForeignKey(Article, on_delete=CASCADE)
+    user = ForeignKey(User, on_delete=CASCADE)
     viewed_at = DateTimeField(db_index=True)
 
     class Meta:
@@ -1647,7 +1727,7 @@ class ArticleViewedBy(Model):
 
 
 class ArticleViews(Model):
-    article = ForeignKey(Article)
+    article = ForeignKey(Article, on_delete=CASCADE)
     day = DateField(db_index=True)
     views = PositiveIntegerField(default=0)
 
@@ -1657,9 +1737,13 @@ class ArticleViews(Model):
 
 
 class CategoryHomeArticle(Model):
-    home = ForeignKey('CategoryHome')
+    home = ForeignKey('CategoryHome', on_delete=CASCADE)
     article = ForeignKey(
-        Article, verbose_name='artículo', related_name='home_articles', limit_choices_to={'is_published': True}
+        Article,
+        on_delete=CASCADE,
+        verbose_name='artículo',
+        related_name='home_articles',
+        limit_choices_to={'is_published': True},
     )
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
@@ -1673,30 +1757,28 @@ class CategoryHomeArticle(Model):
         ) + ('-F' if self.article.photo else '')
 
     class Meta:
-        ordering = ('position', )
+        ordering = ('position',)
         unique_together = ('home', 'position')
 
 
 class CategoryHome(Model):
-    category = OneToOneField(Category, verbose_name='área', related_name='home')
+    category = OneToOneField(Category, on_delete=CASCADE, verbose_name='área', related_name='home')
     articles = ManyToManyField(Article, through=CategoryHomeArticle)
 
     def __str__(self):
         return '%s - %s' % (self.category, self.cover())
 
     def articles_ordered(self):
-        return self.articles.order_by(
-            'home_articles'
-        ).prefetch_related(
+        return self.articles.order_by('home_articles').prefetch_related(
             'main_section__edition__publication', 'main_section__section', 'photo__extended__photographer', 'byline'
         )
 
     def cover(self):
-        """ Returns the article in the 1st position """
+        """Returns the article in the 1st position"""
         return self.articles_ordered().first()
 
     def non_cover_articles(self):
-        """ Returns the articles from 2nd position """
+        """Returns the articles from 2nd position"""
         return self.articles_ordered()[1:]
 
     def set_article(self, article, position):
@@ -1718,10 +1800,11 @@ class CategoryHome(Model):
     def print(self):
         for ha in self.categoryhomearticle_set.all():
             print('%d:\t%s\t%s' % (ha.position, ha.article.date_published.date(), ha.article))
+
     class Meta:
         verbose_name = 'portada de área'
         verbose_name_plural = 'portadas de área'
-        ordering = ('category', )
+        ordering = ('category',)
 
 
 def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run=False, sql_debug=False):
@@ -1739,9 +1822,9 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
         cat_needed_defaults[cat.slug] = needed
         exclude_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_SECTIONS', {}).get(cat.slug, [])
         articles_count = cat.articles_count(needed, exclude_sections, sql_debug)
-        include_extra_sections = getattr(
-            settings, 'CORE_UPDATE_CATEGORY_HOMES_INCLUDE_EXTRA_SECTIONS', {}
-        ).get(cat.slug, [])
+        include_extra_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_INCLUDE_EXTRA_SECTIONS', {}).get(
+            cat.slug, []
+        )
 
         # NOTICE: tag exclude filtering (if defined by settings) is ignored to evaluate this needed limits
         if articles_count < needed and include_extra_sections:
@@ -1754,11 +1837,13 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                 list(cat.section_set.values_list('id', flat=True))
                 + (
                     list(Section.objects.filter(slug__in=include_extra_sections).values_list('id', flat=True))
-                    if include_extra_sections else []
+                    if include_extra_sections
+                    else []
                 )
             ) - set(
                 Section.objects.filter(slug__in=exclude_sections).values_list('id', flat=True)
-                if exclude_sections else []
+                if exclude_sections
+                else []
             )
 
     if categories_to_fill:
@@ -1772,9 +1857,12 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
 
         while max_date_iter > lowest_date:
 
-            for ar in ArticleRel.objects.select_related('article', 'edition').filter(
-                edition__date_published__range=(min_date_iter, max_date_iter), article__is_published=True
-            ).order_by('-edition__date_published', '-article__date_published').iterator():
+            for ar in (
+                ArticleRel.objects.select_related('article', 'edition')
+                .filter(edition__date_published__range=(min_date_iter, max_date_iter), article__is_published=True)
+                .order_by('-edition__date_published', '-article__date_published')
+                .iterator()
+            ):
 
                 if categories_to_fill:
                     # insert the article (if matches criteria) limiting upto needed quantity with no dupe articles
@@ -1878,9 +1966,13 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
 
 
 class CategoryNewsletterArticle(Model):
-    newsletter = ForeignKey('CategoryNewsletter')
+    newsletter = ForeignKey('CategoryNewsletter', on_delete=CASCADE)
     article = ForeignKey(
-        Article, verbose_name='artículo', related_name='newsletter_articles', limit_choices_to={'is_published': True}
+        Article,
+        on_delete=CASCADE,
+        verbose_name='artículo',
+        related_name='newsletter_articles',
+        limit_choices_to={'is_published': True},
     )
     order = PositiveSmallIntegerField('orden', null=True, blank=True)
     featured = BooleanField('incluir sólo en bloque destacado', default=False)
@@ -1894,49 +1986,49 @@ class CategoryNewsletterArticle(Model):
         ) + ('-F' if self.article.photo else '')
 
     class Meta:
-        ordering = ('order', )
+        ordering = ('order',)
 
 
 class CategoryNewsletter(Model):
     valid_until = DateTimeField('válida hasta')
-    category = OneToOneField(Category, verbose_name='área', related_name='newsletter')
+    category = OneToOneField(Category, on_delete=CASCADE, verbose_name='área', related_name='newsletter')
     articles = ManyToManyField(Article, through=CategoryNewsletterArticle)
 
     def __str__(self):
         return '%s - %s' % (self.category, self.cover())
 
     def non_featured_articles(self):
-        """ Returns the non-featured articles qs """
+        """Returns the non-featured articles qs"""
         return self.articles.filter(newsletter_articles__featured=False)
 
     def cover(self):
-        """ Returns the non-featured article in the 1st position """
+        """Returns the non-featured article in the 1st position"""
         non_featured = self.non_featured_articles()
         return non_featured.exists() and non_featured.order_by('newsletter_articles')[0]
 
     def non_cover_articles(self):
-        """ Returns the non-featured articles from 2nd position """
+        """Returns the non-featured articles from 2nd position"""
         non_featured = self.non_featured_articles()
         return non_featured.order_by('newsletter_articles')[1:] if non_featured.exists() else []
 
     def featured_articles(self):
-        """ Returns the featured articles qs """
+        """Returns the featured articles qs"""
         return self.articles.filter(newsletter_articles__featured=True)
 
     def featured_article(self):
-        """ Returns the featured article in the 1st position """
+        """Returns the featured article in the 1st position"""
         featured = self.featured_articles()
         return featured.exists() and featured.order_by('newsletter_articles')[0]
 
     def non_cover_featured_articles(self):
-        """ Returns the featured articles from 2nd position """
+        """Returns the featured articles from 2nd position"""
         featured = self.featured_articles()
         return featured.order_by('newsletter_articles')[1:] if featured.exists() else []
 
     class Meta:
         verbose_name = 'newsletter de área'
         verbose_name_plural = 'newsletters de área'
-        ordering = ('category', )
+        ordering = ('category',)
 
 
 class ArticleExtension(Model):
@@ -1945,7 +2037,7 @@ class ArticleExtension(Model):
         ('M', 'Mediano'),
         ('F', 'Full'),
     )
-    article = ForeignKey(Article, verbose_name='artículo', related_name='extensions')
+    article = ForeignKey(Article, on_delete=CASCADE, verbose_name='artículo', related_name='extensions')
     headline = CharField('título', max_length=100, null=True, blank=True)
     body = TextField('cuerpo')
     size = CharField('size', max_length=1, choices=SIZE_CHOICES, default='R')
@@ -1956,6 +2048,7 @@ class ArticleExtension(Model):
 
     def _is_published(self):
         return self.article.is_published
+
     is_published = property(_is_published)
 
     class Meta:
@@ -1970,8 +2063,8 @@ class ArticleBodyImage(Model):
         ('MD', 'Ancho amplio'),
         ('FW', 'Ancho completo'),
     )
-    article = ForeignKey(Article, verbose_name='artículo', related_name='body_image')
-    image = ForeignKey(Photo, verbose_name='foto', related_name='photo')
+    article = ForeignKey(Article, on_delete=CASCADE, verbose_name='artículo', related_name='body_image')
+    image = ForeignKey(Photo, on_delete=CASCADE, verbose_name='foto', related_name='photo')
     display = CharField('display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
 
     def __str__(self):
@@ -1985,7 +2078,7 @@ class ArticleBodyImage(Model):
 class PrintOnlyArticle(Model):
     headline = CharField('título', max_length=100)
     deck = CharField('bajada', max_length=255, blank=True, null=True)
-    edition = ForeignKey(Edition, verbose_name='edición', related_name='print_only_articles')
+    edition = ForeignKey(Edition, on_delete=CASCADE, verbose_name='edición', related_name='print_only_articles')
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
@@ -1993,14 +2086,14 @@ class PrintOnlyArticle(Model):
 
     class Meta:
         get_latest_by = 'date_created'
-        ordering = ('id', )
+        ordering = ('id',)
         unique_together = ('headline', 'edition')
         verbose_name = 'artículo impreso'
         verbose_name_plural = 'artículos impresos'
 
 
 class ArticleUrlHistory(Model):
-    article = ForeignKey(Article)
+    article = ForeignKey(Article, on_delete=CASCADE)
     absolute_url = URLField(max_length=500, db_index=True)
 
     class Meta:
@@ -2053,6 +2146,7 @@ class BreakingNewsModule(Model):
 
     def covers(self):
         return ', '.join([str(p) for p in self.publications.all()] + [str(c) for c in self.categories.all()])
+
     covers.short_description = 'portadas'
 
     def has_embed(self, i):
@@ -2111,8 +2205,7 @@ class BreakingNewsModule(Model):
 def get_publishing_datetime():
     today = date.today()
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
-    return datetime(
-        today.year, today.month, today.day, publishing_hour, publishing_minute)
+    return datetime(today.year, today.month, today.day, publishing_hour, publishing_minute)
 
 
 def get_published_date():
@@ -2192,7 +2285,7 @@ def get_current_feeds():
 class DeviceSubscribed(Model):
     subscription_info = CharField(max_length=1024)
     time_created = DateTimeField(auto_now_add=True)
-    user = ForeignKey(User)
+    user = ForeignKey(User, on_delete=CASCADE)
 
     def __str__(self):
         return "%s %d (user %s)" % (self.__class__.__name__, self.id, self.user)
@@ -2200,7 +2293,7 @@ class DeviceSubscribed(Model):
 
 class PushNotification(Model):
     message = CharField(u'Mensaje', max_length=500)
-    article = ForeignKey(Article, verbose_name=u'Articulo')
+    article = ForeignKey(Article, on_delete=CASCADE, verbose_name=u'Articulo')
     sent = DateTimeField(u'Fecha de envio', null=True)
     tag = CharField(u'Tag', max_length=15, null=True, blank=True)
     overwrite = BooleanField(u'Sobrescribir notificacion', default=False)

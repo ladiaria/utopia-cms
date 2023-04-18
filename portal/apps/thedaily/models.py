@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.core.validators import RegexValidator
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
+from django.db.models import CASCADE
 from django.db.models import (
     BooleanField,
     CharField,
@@ -23,7 +24,6 @@ from django.db.models import (
     OneToOneField,
     PositiveIntegerField,
     TextField,
-    permalink,
     ImageField,
     PositiveSmallIntegerField,
     DecimalField,
@@ -32,6 +32,7 @@ from django.db.models import (
 )
 from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.dispatch import receiver
+from django.urls import reverse
 
 from apps import mongo_db
 from core.models import Edition, Publication, Category, ArticleViewedBy
@@ -48,8 +49,8 @@ class SubscriptionPrices(Model):
     price = DecimalField('Precio', max_digits=7, decimal_places=2)
     order = PositiveSmallIntegerField('Orden', null=True)
     paypal_button_id = CharField(max_length=13, null=True, blank=True)
-    auth_group = ForeignKey(Group, verbose_name='Grupo asociado al permiso', blank=True, null=True)
-    publication = ForeignKey(Publication, blank=True, null=True)
+    auth_group = ForeignKey(Group, on_delete=CASCADE, verbose_name='Grupo asociado al permiso', blank=True, null=True)
+    publication = ForeignKey(Publication, on_delete=CASCADE, blank=True, null=True)
     ga_sku = CharField(max_length=10, blank=True, null=True)
     ga_name = CharField(max_length=64, blank=True, null=True)
     ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
@@ -65,7 +66,7 @@ class SubscriptionPrices(Model):
 
 alphanumeric = RegexValidator(
     '^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$',
-    'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
+    'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.',
 )
 
 
@@ -78,8 +79,11 @@ class Subscriber(Model):
        changed its has_newsletter attr from True to False) now this M2M rows are removed when the subscriber is saved,
        for example in the admin or by the user itself using the edit profile page.
     """
+
     contact_id = PositiveIntegerField('CRM id', unique=True, editable=True, blank=True, null=True)
-    user = OneToOneField(User, verbose_name='usuario', related_name='subscriber', blank=True, null=True)
+    user = OneToOneField(
+        User, on_delete=CASCADE, verbose_name='usuario', related_name='subscriber', blank=True, null=True
+    )
 
     # TODO: ver la posibilidad de eliminarlo ya que es el "first_name" del modelo django.contrib.auth.models.User
     name = CharField('nombre', max_length=255, validators=[alphanumeric])
@@ -157,7 +161,7 @@ class Subscriber(Model):
         return False
 
     def is_digital_only(self):
-        """ Returns True only if this subcriber is subscribed only to the "digital" edition """
+        """Returns True only if this subcriber is subscribed only to the "digital" edition"""
         # TODO 2nd release: implement
         return self.is_subscriber()
 
@@ -174,34 +178,38 @@ class Subscriber(Model):
 
     def user_is_active(self):
         return self.user and self.user.is_active
+
     user_is_active.short_description = 'user act.'
     user_is_active.boolean = True
 
     def is_subscriber_any(self):
         return any(
-            self.is_subscriber(pub_slug) for pub_slug in getattr(
-                settings, 'THEDAILY_IS_SUBSCRIBER_ANY', Publication.objects.values_list('slug', flat=True)))
+            self.is_subscriber(pub_slug)
+            for pub_slug in getattr(
+                settings, 'THEDAILY_IS_SUBSCRIBER_ANY', Publication.objects.values_list('slug', flat=True)
+            )
+        )
 
     def get_publication_newsletters_ids(self, exclude_slugs=[]):
         return list(
-            self.newsletters.filter(
-                has_newsletter=True
-            ).exclude(slug__in=exclude_slugs).values_list('id', flat=True)
+            self.newsletters.filter(has_newsletter=True).exclude(slug__in=exclude_slugs).values_list('id', flat=True)
         )
 
     def get_category_newsletters_ids(self, exclude_slugs=[]):
         return list(
-            self.category_newsletters.filter(
-                has_newsletter=True
-            ).exclude(slug__in=exclude_slugs).values_list('id', flat=True)
+            self.category_newsletters.filter(has_newsletter=True)
+            .exclude(slug__in=exclude_slugs)
+            .values_list('id', flat=True)
         )
 
     def get_newsletters_slugs(self):
-        return list(self.newsletters.values_list('slug', flat=True)) + \
-            list(self.category_newsletters.values_list('slug', flat=True))
+        return list(self.newsletters.values_list('slug', flat=True)) + list(
+            self.category_newsletters.values_list('slug', flat=True)
+        )
 
     def get_newsletters(self):
         return ', '.join(self.get_newsletters_slugs())
+
     get_newsletters.short_description = 'newsletters'
 
     def updatecrmuser_publication_newsletters(self, exclude_slugs=[]):
@@ -262,16 +270,15 @@ class Subscriber(Model):
     def user_email(self):
         return self.user.email if self.user else None
 
-    @permalink
     def get_absolute_url(self):
-        return '/admin/thedaily/subscriber/%i/' % self.id
+        return reverse('admin:thedaily_subscriber_change', args=[self.id])
 
     def hashed_id(self):
         return Hashids(settings.HASHIDS_SALT, 32).encode(int(self.id))
 
     class Meta:
         verbose_name = 'suscriptor'
-        permissions = (("es_suscriptor_%s" % settings.DEFAULT_PUB, "Es suscriptor actualmente"), )
+        permissions = (("es_suscriptor_%s" % settings.DEFAULT_PUB, "Es suscriptor actualmente"),)
 
 
 def updatecrmuser(contact_id, field, value):
@@ -331,7 +338,7 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
         print(
             'DEBUG: thedaily.models.subscriber_newsletters_changed called with action=%s, pk_set=%s' % (action, pk_set)
         )
-    if (getattr(instance, "updatefromcrm", False)):
+    if getattr(instance, "updatefromcrm", False):
         return True
     if instance.contact_id and action.startswith('post_'):
         # post_add with empty pk_set means "unchanged", do not sync in such scenario
@@ -339,7 +346,8 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
             try:
                 updatecrmuser(
                     instance.contact_id,
-                    ('area_' if model is Category else '') + 'newsletters'
+                    ('area_' if model is Category else '')
+                    + 'newsletters'
                     + ('_remove' if action == 'post_remove' else ''),
                     json.dumps(list(pk_set)) if pk_set else None,
                 )
@@ -362,18 +370,21 @@ class OAuthState(Model):
     to ask then for extra fields, such as the telephone number.
     @see libs.social_auth_pipeline
     """
-    user = OneToOneField(User)
+
+    user = OneToOneField(User, on_delete=CASCADE)
     state = CharField(max_length=32, unique=True)
     fullname = CharField(max_length=255, blank=True, null=True)
 
 
 class WebSubscriber(Subscriber):
-    referrer = ForeignKey(Subscriber, related_name='referred', verbose_name='referido', blank=True, null=True)
+    referrer = ForeignKey(
+        Subscriber, on_delete=CASCADE, related_name='referred', verbose_name='referido', blank=True, null=True
+    )
 
 
 class SubscriberEditionDownloads(Model):
-    subscriber = ForeignKey(Subscriber, related_name='edition_downloads', verbose_name='suscriptor')
-    edition = ForeignKey(Edition, related_name='subscribers_downloads', verbose_name='edición')
+    subscriber = ForeignKey(Subscriber, on_delete=CASCADE, related_name='edition_downloads', verbose_name='suscriptor')
+    edition = ForeignKey(Edition, on_delete=CASCADE, related_name='subscribers_downloads', verbose_name='edición')
     downloads = PositiveIntegerField('descargas', default=0)
 
     def __str__(self):
@@ -392,20 +403,20 @@ class SubscriberEditionDownloads(Model):
 
 
 class SentMail(Model):
-    subscriber = ForeignKey(Subscriber)
+    subscriber = ForeignKey(Subscriber, on_delete=CASCADE)
     subject = CharField('asunto', max_length=150)
     date_sent = DateTimeField('fecha de envio', auto_now_add=True, editable=False)
 
 
 class SubscriberEvent(Model):
-    subscriber = ForeignKey(Subscriber)
+    subscriber = ForeignKey(Subscriber, on_delete=CASCADE)
     description = CharField('descripcion', max_length=150)
     date_occurred = DateTimeField(auto_now_add=True, editable=False)
 
 
 class EditionDownload(Model):
     subscriber = ForeignKey(
-        SubscriberEditionDownloads, related_name='subscriber_downloads', verbose_name='suscriptor'
+        SubscriberEditionDownloads, on_delete=CASCADE, related_name='subscriber_downloads', verbose_name='suscriptor'
     )
     incomplete = BooleanField(default=True)
     download_date = DateTimeField(auto_now_add=True)
@@ -433,7 +444,9 @@ class Subscription(Model):
         (ANNUAL, 'Anual'),
     )
 
-    subscriber = ForeignKey(User, related_name='suscripciones', verbose_name='usuario', null=True, blank=True)
+    subscriber = ForeignKey(
+        User, on_delete=CASCADE, related_name='suscripciones', verbose_name='usuario', null=True, blank=True
+    )
     first_name = CharField('nombres', max_length=150)
     last_name = CharField('apellidos', max_length=150)
     document = CharField('documento', max_length=11, blank=False, null=True)
@@ -496,9 +509,11 @@ class Subscription(Model):
 
 class ExteriorSubscriptionManager(Manager):
     def get_queryset(self):
-        return super(
-            ExteriorSubscriptionManager, self).get_queryset().filter(
-                subscriber__in=Group.objects.get(name='exterior_subscribers').user_set.all())
+        return (
+            super(ExteriorSubscriptionManager, self)
+            .get_queryset()
+            .filter(subscriber__in=Group.objects.get(name='exterior_subscribers').user_set.all())
+        )
 
 
 class ExteriorSubscription(Subscription):
@@ -509,7 +524,8 @@ class ExteriorSubscription(Subscription):
 
 
 class PollAnswer(Model):
-    """ General purpose document-answer for polls """
+    """General purpose document-answer for polls"""
+
     document = CharField('documento', max_length=50, unique=True)
     answer = CharField('respuesta', max_length=16)
 
@@ -521,5 +537,6 @@ class UsersApiSession(Model):
     value to allow only a certain number of requests per-user with a different
     user device id (udid), for ex. 3. No clean-session policy is defined yet.
     """
-    user = ForeignKey(User, related_name='api_sessions', verbose_name='usuario')
+
+    user = ForeignKey(User, on_delete=CASCADE, related_name='api_sessions', verbose_name='usuario')
     udid = CharField(max_length=16)

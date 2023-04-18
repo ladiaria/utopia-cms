@@ -1,3 +1,7 @@
+# version 0.3.9 (2023-04-18)
+
+- Django upgraded from 1.11 to 2.2.
+
 # version 0.3.8 (2023-03-31)
 
 - Support to upload article contents to IPFS (ipfs.io).

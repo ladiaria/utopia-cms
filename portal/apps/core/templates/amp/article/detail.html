@@ -172,16 +172,16 @@
 
     {% if not article.public %}
       <div amp-access="authenticated AND NOT article_allowed AND article_restricted" amp-access-hide>
-        {% include 'amp/core/templates/article/pw_auth_restricted.html' %}
+        {% include 'article/pw_auth_restricted.html' %}
       </div>
       <div amp-access="NOT authenticated AND NOT article_allowed AND article_restricted" amp-access-hide>
-        {% include 'amp/core/templates/article/pw_anon_restricted.html' %}
+        {% include 'article/pw_anon_restricted.html' %}
       </div>
       <div amp-access="authenticated AND NOT subscriber AND access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-        {% include 'amp/core/templates/article/pw_auth_with_credits.html' %}
+        {% include 'article/pw_auth_with_credits.html' %}
       </div>
       <div amp-access="NOT authenticated AND access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-        {% include 'amp/core/templates/article/pw_anon_with_credits.html' %}
+        {% include 'article/pw_anon_with_credits.html' %}
       </div>
     {% endif %}
 
@@ -189,15 +189,15 @@
 
     {% if not article.public %}
       <div amp-access="authenticated AND NOT subscriber AND NOT access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-        {% include 'amp/core/templates/article/pw_auth_wo_credits.html' %}
+        {% include 'article/pw_auth_wo_credits.html' %}
       </div>
       <div amp-access="NOT authenticated AND NOT access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-        {% include 'amp/core/templates/article/pw_anon_wo_credits.html' %}
+        {% include 'article/pw_anon_wo_credits.html' %}
       </div>
     {% endif %}
 
     <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-      {% block detail_content %}{% include 'amp/core/templates/article/detail_content.html' %}{% endblock %}
+      {% block detail_content %}{% include 'article/detail_content.html' %}{% endblock %}
     </div>
 
     <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
@@ -208,7 +208,7 @@
 
       <div amp-access="access AND NOT authenticated AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         {% if publication in publication_newsletters %}
-          {% include 'amp/core/templates/article/subscribe_box.html' %}
+          {% include 'article/subscribe_box.html' %}
         {% else %}
           {% category_nl_subscribe_box %}
         {% endif %}
@@ -216,9 +216,9 @@
 
       <div amp-access="access AND authenticated AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         {% if publication in publication_newsletters %}
-          {% include 'amp/core/templates/article/subscribe_box_authenticated.html' %}
+          {% include 'article/subscribe_box_authenticated.html' %}
         {% elif category.has_newsletter %}
-          {% include 'amp/core/templates/article/subscribe_box_authenticated_category.html' %}
+          {% include 'article/subscribe_box_authenticated_category.html' %}
         {% endif %}
       </div>
 
@@ -341,7 +341,7 @@
 
   {% if article.show_related_articles %}
     <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-      {% render_related article %}
+      {% render_related article True %}
     </div>
   {% endif %}
 

@@ -72,7 +72,7 @@ def published_activities(request):
         form = AttendantForm(request.POST)
         if form.is_valid():
             attendant = form.save()
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 try:
                     attendant.subscriber = request.user.subscriber
                     attendant.save()

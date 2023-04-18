@@ -5,7 +5,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Field
 from crispy_forms.bootstrap import FormActions
 
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.forms import Form, CharField, HiddenInput, ValidationError, EmailField, Textarea
 
 from libs.utils import do_gonzo
@@ -28,7 +28,7 @@ class EditionForm(Form):
         if 'article' in kwargs:
             self.article = kwargs.get('article')
             initial['article'] = self.article.slug
-            del(kwargs['article'])
+            del kwargs['article']
         else:
             raise ValidationError('Missing article')
         initial['gonzo'] = gen_gonzo(self)
@@ -55,7 +55,7 @@ class ArticleForm(Form):
         if 'article' in kwargs:
             self.article = kwargs.get('article')
             initial['article'] = self.article.slug
-            del(kwargs['article'])
+            del kwargs['article']
         else:
             raise ValidationError('Missing article')
         initial['gonzo'] = gen_gonzo(self)
@@ -79,9 +79,7 @@ class ReportErrorArticleForm(ArticleForm):
 
 class SendByEmailForm(Form):
     email = EmailField(label='Dirección email')
-    message = CharField(
-        label='Texto de mensaje (opcional)', required=False,
-        widget=Textarea(attrs={'rows': 2}))
+    message = CharField(label='Texto de mensaje (opcional)', required=False, widget=Textarea(attrs={'rows': 2}))
 
     article_id = CharField(widget=HiddenInput)
 

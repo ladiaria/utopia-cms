@@ -16,7 +16,7 @@ from .models import SubscriberEvento, SubscriberArticle, Registro
 
 try:
     current_site_name = Site.objects.get_current().name
-except ProgrammingError:
+except (ProgrammingError, Site.DoesNotExist):
     current_site_name = 'este sitio'
 
 

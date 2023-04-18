@@ -7,7 +7,7 @@ from crispy_forms.bootstrap import FormActions
 
 from django.http import Http404
 from django.contrib import messages
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.shortcuts import redirect, get_object_or_404, render
 from django.forms import HiddenInput
 from django.contrib.auth.decorators import permission_required, login_required
@@ -43,7 +43,7 @@ def index(request):
             # 'eventos': eventos,
             'top_users_week': top_users_week,
             'top_users_month': top_users_month,
-        }
+        },
     )
 
 
@@ -121,12 +121,15 @@ def profile(request):
 @never_cache
 @login_required
 def beneficios(request):
-    """ Register a benefit utilization """
+    """Register a benefit utilization"""
     try:
         # filter form default benefits by circuit of user's socio
-        form, success = RegistroForm(Beneficio.objects.filter(
-            circuit__in=request.user.socio.circuits.all()
-        ), request.POST or None), False
+        form, success = (
+            RegistroForm(
+                Beneficio.objects.filter(circuit__in=request.user.socio.circuits.all()), request.POST or None
+            ),
+            False,
+        )
         if form.is_valid():
             if request.POST.get('save'):
                 Registro.objects.create(
@@ -138,7 +141,8 @@ def beneficios(request):
                 form.fields['benefit'].widget = HiddenInput()
                 form.helper.layout = Layout(
                     HTML(u'¿Confirmar %(benefit)s para %(subscriber)s?' % form.cleaned_data),
-                    FormActions(Submit('save', u'Confirmar')))
+                    FormActions(Submit('save', u'Confirmar')),
+                )
         return render(request, 'comunidad/beneficios.html', {'form': form, 'is_comunidad': True, 'success': success})
 
     except Socio.DoesNotExist:

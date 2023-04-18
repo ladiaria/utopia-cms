@@ -1,10 +1,10 @@
 from __future__ import unicode_literals
-from django.conf.urls import url
+from django.urls import path, re_path
 
 from adzone.views import ad_view, ad_content
 
 urlpatterns = [
-    url(r'^view/(?P<id>[\d]+)/(?P<tracking>.*)$', ad_view,
+    re_path(r'^view/(?P<id>[\d]+)/(?P<tracking>.*)$', ad_view,
         name='adzone_ad_view'),
-    url(r'^content/$', ad_content, name='adzone_ad_content'),
+    path('content/', ad_content, name='adzone_ad_content'),
 ]

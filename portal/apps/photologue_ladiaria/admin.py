@@ -13,6 +13,7 @@ from photologue.admin import GalleryAdmin as GalleryAdminDefault
 from .models import PhotoExtended, Agency, Photographer
 
 
+@admin.register(Agency)
 class AgencyAdmin(admin.ModelAdmin):
     pass
 
@@ -64,7 +65,6 @@ class PhotoGalleryInline(admin.TabularInline):
     def photo_admin_thumbnail(self, instance):
         return instance.photo.admin_thumbnail()
     photo_admin_thumbnail.short_description = u'thumbnail'
-    photo_admin_thumbnail.allow_tags = True
 
     def photo_date_taken(self, instance):
         return instance.photo.date_taken
@@ -85,6 +85,7 @@ class GalleryAdmin(GalleryAdminDefault):
     exclude = ('photos', )
 
 
+@admin.register(Photographer)
 class PhotographerAdmin(admin.ModelAdmin):
     search_fields = ('name', )
 
@@ -177,8 +178,6 @@ admin.site.register(Photo, PhotoAdmin)
 admin.site.unregister(Gallery)
 admin.site.register(Gallery, GalleryAdmin)
 
-admin.site.register(Agency, AgencyAdmin)
-admin.site.register(Photographer, PhotographerAdmin)
 
 admin.site.unregister(PhotoEffect)
 admin.site.register(PhotoEffect, PhotoEffectAdmin)

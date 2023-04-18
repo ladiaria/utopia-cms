@@ -16,17 +16,20 @@ from .models import Advertiser, AdCategory, AdZone, TextAd, BannerAd, AdClick, A
 from .form import UploadFileForm
 
 
+@admin.register(Advertiser)
 class AdvertiserAdmin(admin.ModelAdmin):
     search_fields = ['company_name', 'website']
     list_display = ['company_name', 'website', 'user']
     raw_id_fields = ['user']
 
 
+@admin.register(AdCategory)
 class AdCategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ['title']}
     list_display = ['title', 'slug']
 
 
+@admin.register(AdZone)
 class AdZoneAdmin(admin.ModelAdmin):
     list_display = ['title', 'slug', 'description']
 
@@ -42,6 +45,7 @@ class AdBaseAdmin(admin.ModelAdmin):
         js = ('admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'), 'js/adbase_admin.js')
 
 
+@admin.register(AdClick)
 class AdClickAdmin(admin.ModelAdmin):
     search_fields = ['ad', 'source_ip']
     list_display = ['ad', 'click_date', 'source_ip']
@@ -79,6 +83,7 @@ class AdClickAdmin(admin.ModelAdmin):
                                             'source_ip',)
 
 
+@admin.register(AdImpression)
 class AdImpressionAdmin(admin.ModelAdmin):
     search_fields = ['ad', 'source_ip']
     list_display = ['ad', 'impression_date', 'source_ip']
@@ -116,10 +121,12 @@ class AdImpressionAdmin(admin.ModelAdmin):
     download_impressions.short_description = "Download selected Ad Impressions"
 
 
+@admin.register(TextAd)
 class TextAdAdmin(AdBaseAdmin):
     search_fields = ['title', 'url', 'content']
 
 
+@admin.register(BannerAd)
 class BannerAdAdmin(AdBaseAdmin):
     form = UploadFileForm
     list_display = [
@@ -128,10 +135,3 @@ class BannerAdAdmin(AdBaseAdmin):
     search_fields = ['title', 'url', 'content', 'mobile_content']
 
 
-admin.site.register(Advertiser, AdvertiserAdmin)
-admin.site.register(AdCategory, AdCategoryAdmin)
-admin.site.register(AdZone, AdZoneAdmin)
-admin.site.register(TextAd, TextAdAdmin)
-admin.site.register(BannerAd, BannerAdAdmin)
-admin.site.register(AdClick, AdClickAdmin)
-admin.site.register(AdImpression, AdImpressionAdmin)

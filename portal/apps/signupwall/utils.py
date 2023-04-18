@@ -32,8 +32,8 @@ def get_ip(request):
     """
 
     # if neither header contain a value, just use local loopback
-    ip_addresses = request.META.get(
-        'HTTP_CF_CONNECTING_IP', request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '127.0.0.1'))
+    ip_addresses = request.headers.get(
+        'cf-connecting-ip', request.headers.get('x-forwarded-for', request.META.get('REMOTE_ADDR', '127.0.0.1'))
     )
     if ip_addresses:
         # make sure we have one and only one IP

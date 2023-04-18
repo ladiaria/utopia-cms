@@ -15,7 +15,7 @@ def limited_free_article_mail(user):
     if user is authenticated checks if it has to send the free articles limit reach.
     See also automatic_mail module
     """
-    if user.is_authenticated():
+    if user.is_authenticated:
         subject = SUBJ_FREE_ARTICLES_LIMIT
         send_mail = False
         try:

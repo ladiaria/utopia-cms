@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 from builtins import str
 
+from django.db.models import CASCADE
 from django.db.models import Model, CharField, ForeignKey, DateField, FloatField, ImageField, SlugField
 from django.template.defaultfilters import slugify
 
@@ -26,7 +27,7 @@ class Currency(Model):
 
 
 class Exchange(Model):
-    currency = ForeignKey(Currency, blank=False, null=False)
+    currency = ForeignKey(Currency, on_delete=CASCADE, blank=False, null=False)
     date = DateField(u'fecha', auto_now_add=True)
     buy = FloatField(u'compra')
     sale = FloatField(u'venta')

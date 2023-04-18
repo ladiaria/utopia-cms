@@ -11,7 +11,7 @@ import ebooklib
 from ebooklib import epub, utils
 from bs4 import BeautifulSoup, Tag
 from django.views.generic import ListView, FormView, View, DetailView
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from .models import EpubFile
 from .forms import UploadEpubForm, EpubChangeSectionForm
@@ -62,43 +62,37 @@ class ParseView(DetailView):
             book = epub.read_epub(epub_file)
             for item in book.get_items():
                 # - 9 es el codigo de tipo de archivo xhtml
-                if (item.get_type() is 9):
+                if item.get_type() is 9:
                     content = item.get_body_content()
 
                     print(content)
 
-                    #reemplazo los estilos con classes css del xhtml del epub
-                    content = replace_style(content,
-                                            '<span class="char-style-override-1">',
-                                            '</span>', '<span>', '</span> ')
+                    # reemplazo los estilos con classes css del xhtml del epub
+                    content = replace_style(
+                        content, '<span class="char-style-override-1">', '</span>', '<span>', '</span> '
+                    )
 
-                    content = replace_style(content,
-                                            '<span class="char-style-override-3">',
-                                            '</span>', '_', '_')
+                    content = replace_style(content, '<span class="char-style-override-3">', '</span>', '_', '_')
 
-                    content = replace_style(content,
-                                            '<span class="Muy-destacado char-style-override-3">',
-                                            '</span>', '', '')
+                    content = replace_style(
+                        content, '<span class="Muy-destacado char-style-override-3">', '</span>', '', ''
+                    )
 
-                    content = replace_style(content,
-                                            '<span class="Muy-destacado char-style-override-4">',
-                                            '</span>', '', '')
+                    content = replace_style(
+                        content, '<span class="Muy-destacado char-style-override-4">', '</span>', '', ''
+                    )
 
-                    content = replace_style(content,
-                                            '<p class="Subt-tulo">',
-                                            '</p>', '<p class="Normal">\nS>', '</p>')
+                    content = replace_style(content, '<p class="Subt-tulo">', '</p>', '<p class="Normal">\nS>', '</p>')
 
-                    content = replace_style(content,
-                                            '<p class="Primer para-style-override-1">',
-                                            '</p>', '<p class="Primer">', '</p>')
+                    content = replace_style(
+                        content, '<p class="Primer para-style-override-1">', '</p>', '<p class="Primer">', '</p>'
+                    )
 
-                    content = replace_style(content,
-                                            '<span>', '</span>', ' ', ' ')
-
+                    content = replace_style(content, '<span>', '</span>', ' ', ' ')
 
                     soup = BeautifulSoup(content, 'html.parser')
 
-                    #cada subcuadro contiene un articulo
+                    # cada subcuadro contiene un articulo
                     subcuadro_nota = soup('div', {'class': 'Subcuadro-nota'})
 
                     for e in subcuadro_nota:
@@ -108,8 +102,11 @@ class ParseView(DetailView):
                         bajada = ''.join(tag.xpath('//p[@class="Bajada"]/text()'))
                         copete = ''.join(tag.xpath('//p[starts-with(@class, "Copete")]/text()'))
                         parrafos = '\n\n'.join(
-                            tag.xpath('(//p[@class="Primer"]|//p[@class="Normal"]|//p[@class="Normal"]/span '
-                                      '|//p[@class="Subt-tulo"]|//p[@class="Autor"])/text()'))
+                            tag.xpath(
+                                '(//p[@class="Primer"]|//p[@class="Normal"]|//p[@class="Normal"]/span '
+                                '|//p[@class="Subt-tulo"]|//p[@class="Autor"])/text()'
+                            )
+                        )
 
                         if titulo:
                             try:
@@ -117,9 +114,8 @@ class ParseView(DetailView):
                                     headline=titulo,
                                     deck=bajada,
                                     lead=copete,
-                                    #home_lead=copete,
+                                    # home_lead=copete,
                                     body=parrafos,
-
                                 )
                                 article.save()
                                 ar = Article.objects.get(id=article.id)
@@ -135,8 +131,7 @@ class ParseView(DetailView):
         except:
             traceback.print_exc()
             messages.error(self.request, 'Hubo un error al procesar el archivo')
-       
-       
+
         files = EpubFile.objects.order_by('-id')
         section = Section.objects.all()
         context['files'] = files
@@ -185,22 +180,22 @@ def replace_style(content, tag_abre_style, tag_cierra_style, tag_change_style, t
     encontre = True
     while encontre:
         posicion_abre_span = content.find(tag_abre_style)
-        #si no encuentra el span se va del loop
-        if (posicion_abre_span == -1):
+        # si no encuentra el span se va del loop
+        if posicion_abre_span == -1:
             encontre = False
         else:
-            #posicion de cierre del span
+            # posicion de cierre del span
             posicion_cierra_span = content.find(tag_cierra_style, posicion_abre_span)
-            #reemplaza el proximo cierre de span por el cierre de em
-            content = replace_at_position(content,tag_cierra_style, tag_close_style, posicion_cierra_span)
-            #reemplaza la apertura del span por la apertura del em
-            content = replace_at_position(content,tag_abre_style, tag_change_style, posicion_abre_span)
+            # reemplaza el proximo cierre de span por el cierre de em
+            content = replace_at_position(content, tag_cierra_style, tag_close_style, posicion_cierra_span)
+            # reemplaza la apertura del span por la apertura del em
+            content = replace_at_position(content, tag_abre_style, tag_change_style, posicion_abre_span)
 
     return content
 
 
-#reemplaza en la cadena total la cadena vieja por la cadena nueva
-#la cadena vieja esta ubicada en la cadena_total en la posicion pos
+# reemplaza en la cadena total la cadena vieja por la cadena nueva
+# la cadena vieja esta ubicada en la cadena_total en la posicion pos
 def replace_at_position(cadena_total, cadena_vieja, cadena_nueva, pos):
-    cadena_total = cadena_total[:pos] + cadena_nueva + cadena_total[pos+len(cadena_vieja):]
+    cadena_total = cadena_total[:pos] + cadena_nueva + cadena_total[pos + len(cadena_vieja) :]
     return cadena_total

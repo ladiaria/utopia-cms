@@ -2,12 +2,12 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from builtins import object
 from datetime import datetime
 
 from django.conf import settings
 from django.http import Http404
-from django.core.urlresolvers import resolve
+from django.urls import resolve
+from django.utils.deprecation import MiddlewareMixin
 
 from apps import mongo_db
 from signupwall.utils import get_ip
@@ -91,8 +91,7 @@ def subscriber_access(subscriber, article):
     )
 
 
-class SignupwallMiddleware(object):
-
+class SignupwallMiddleware(MiddlewareMixin):
     def process_request(self, request):
 
         # resolve path and get the target article
@@ -116,7 +115,7 @@ class SignupwallMiddleware(object):
         if user.is_staff:
             return
 
-        user_is_authenticated = user.is_authenticated()
+        user_is_authenticated = user.is_authenticated
 
         # ignore also signupwall if the user has subscriber_access to the article
         restricted_article = article.is_restricted()
@@ -163,9 +162,8 @@ class SignupwallMiddleware(object):
 
             if debug:
                 print(
-                    'DEBUG: signupwall.middleware.process_request - articles_visited_count (logged-in): %s' % (
-                        articles_visited_count
-                    )
+                    'DEBUG: signupwall.middleware.process_request - articles_visited_count (logged-in): %s'
+                    % (articles_visited_count)
                 )
 
         else:

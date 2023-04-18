@@ -6,7 +6,7 @@ from builtins import str
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.mail import send_mail
 from django.contrib.sites.models import Site
 from django.utils.http import int_to_base36, base36_to_int
@@ -25,7 +25,7 @@ class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
     def __init__(self, *args, **kwargs):
         if 'edition_download' in kwargs:
             self.edition_download = kwargs.get('edition_download')
-            del(kwargs['edition_download'])
+            del kwargs['edition_download']
         else:
             self.edition_download = None
         super(EmailConfirmationTokenGenerator, self).__init__(*args, **kwargs)
@@ -71,7 +71,7 @@ class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
         # timestamp is number of days since 2001-1-1.  Converted to
         # base 36, this gives us a 3 digit string until about 2121
         ts_b36 = int_to_base36(timestamp)
-        hash = (str(settings.SECRET_KEY) + str(user.id) + str(user.email) + str(bool(user.is_active)) + str(timestamp))
+        hash = str(settings.SECRET_KEY) + str(user.id) + str(user.email) + str(bool(user.is_active)) + str(timestamp)
         if self.edition_download:
             hash += str(user.get_profile().get_downloads())
         else:
@@ -150,4 +150,5 @@ def send_validation_email(subject, user, msg_template, url_generator, extra_cont
 
 def get_signup_validation_url(user):
     return reverse(
-        'account-signup-hash', kwargs={'user_id': str(user.id), 'hash': default_token_generator.make_token(user)})
+        'account-signup-hash', kwargs={'user_id': str(user.id), 'hash': default_token_generator.make_token(user)}
+    )

@@ -23,12 +23,12 @@ COMPRESS_OFFLINE = False
 COMPRESS_ENABLED = True
 
 if CLOSED_SITE or RESTRICT_ACCESS:
-    from .settings import INSTALLED_APPS, MIDDLEWARE_CLASSES
+    from .settings import INSTALLED_APPS, MIDDLEWARE
     INSTALLED_APPS += ('closed_site', )
-    MIDDLEWARE_CLASSES = (
+    MIDDLEWARE = (
         'closed_site.middleware.ClosedSiteMiddleware',
         'closed_site.middleware.RestrictedAccessMiddleware',
-    ) + MIDDLEWARE_CLASSES
+    ) + MIDDLEWARE
 
 COMPRESS_CACHE_BACKEND = 'default'
 

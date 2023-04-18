@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.contrib.auth.models import User
+from django.db.models import CASCADE
 from django.db.models import (
     Model,
     CharField,
@@ -14,7 +15,7 @@ from django.db.models import (
     permalink,
     EmailField,
 )
-
+from django.urls import reverse
 from thedaily.models import Subscriber
 
 
@@ -42,7 +43,7 @@ class Artist(Model):
 
 
 class BaseEvent(Model):
-    location = ForeignKey(Location, verbose_name='lugar')
+    location = ForeignKey(Location, on_delete=CASCADE, verbose_name='lugar')
     date = DateTimeField('fecha')
     title = CharField(u'título', max_length=255)
     image = ImageField(u'imagen', blank=True, null=True, upload_to="eventos")
@@ -68,18 +69,16 @@ class Event(BaseEvent):
     artists = ManyToManyField(Artist, verbose_name='artistas', related_name='events', blank=True)
     date_created = DateTimeField(u'fecha de creación', auto_now_add=True)
     created_by = ForeignKey(
-        User, editable=False, blank=False, null=True, verbose_name='creado por', related_name='created_events'
+        User, on_delete=CASCADE, editable=False, blank=False, null=True, verbose_name='creado por', related_name='created_events'
     )
     modified_by = ForeignKey(
-        User, blank=False, null=True, verbose_name='actualizado por', related_name='modified_events'
+        User, on_delete=CASCADE, blank=False, null=True, verbose_name='actualizado por', related_name='modified_events'
     )
 
-    @permalink
     def get_absolute_url(self):
-        return (
+        return reverse(
             'events-event_detail',
-            (),
-            {'year': self.date.year, 'month': self.date.month, 'day': self.date.day, 'event_slug': self.slug},
+            kwargs={'year': self.date.year, 'month': self.date.month, 'day': self.date.day, 'event_slug': self.slug},
         )
 
     def save(self, *args, **kwargs):
@@ -109,11 +108,11 @@ class Attendant(Model):
     """
     An attendant to an activity, can be any person related or not with a subscriber
     """
-    activity = ForeignKey(Activity)
+    activity = ForeignKey(Activity, on_delete=CASCADE)
     name = CharField(u'nombre', max_length=255)
     email = EmailField()
     is_subscriber = BooleanField(u'suscriptor', default=False)
-    subscriber = ForeignKey(Subscriber, null=True)
+    subscriber = ForeignKey(Subscriber, on_delete=CASCADE, null=True)
 
     class Meta:
         verbose_name = 'inscripto'

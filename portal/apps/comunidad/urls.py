@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from django.conf.urls import url
+from django.urls import path, re_path
 from django.views.generic import TemplateView
 
 from updown.views import AddRatingFromModel
@@ -10,21 +10,21 @@ from .views import (
 
 
 urlpatterns = [
-    url(r'^$', index, name='comunidad', ),
-    url(r'^perfil/$', profile, name='comunidad_profile'),
-    url(r'^article/(?P<slug>[-\w]+)$', article_detail, name='comunidad_article_detail'),
-    url(r'^add/article$', add_article, name='comunidad_article_add'),
-    url(r'^edit/article/(?P<slug>[-\w]+)$', edit_article, name='comunidad_article_edit'),
-    url(r'^evento/(?P<slug>[-\w]+)$', article_detail, name='comunidad_evento_detail'),
-    url(r'^add/evento', add_evento, name='comunidad_evento_add'),
-    url(r'^edit/evento/(?P<slug>[-\w]+)$', edit_evento, name='comunidad_evento_edit'),
-    url(
+    path('', index, name='comunidad', ),
+    path('perfil/', profile, name='comunidad_profile'),
+    re_path(r'^article/(?P<slug>[-\w]+)$', article_detail, name='comunidad_article_detail'),
+    path('add/article', add_article, name='comunidad_article_add'),
+    re_path(r'^edit/article/(?P<slug>[-\w]+)$', edit_article, name='comunidad_article_edit'),
+    re_path(r'^evento/(?P<slug>[-\w]+)$', article_detail, name='comunidad_evento_detail'),
+    re_path(r'^add/evento', add_evento, name='comunidad_evento_add'),
+    re_path(r'^edit/evento/(?P<slug>[-\w]+)$', edit_evento, name='comunidad_evento_edit'),
+    re_path(
         r"^(?P<object_id>\d+)/rate/(?P<score>[\d\-]+)$",
         AddRatingFromModel(),
         {'app_label': 'comunidad', 'model': 'SubscriberArticle', 'field_name': 'rating'},
         name="article_rating",
     ),
-    url(r'^formaparte', TemplateView.as_view(template_name='comunidad/formaparte.html'), name='formaparte'),
-    url(r'beneficios', beneficios, name='beneficios'),
-    url(r'^registro/(?P<beneficio_id>\d+)/(?P<hashed_subscriber_id>[\w]+)/$', add_registro)
+    re_path(r'^formaparte', TemplateView.as_view(template_name='comunidad/formaparte.html'), name='formaparte'),
+    re_path(r'beneficios', beneficios, name='beneficios'),
+    re_path(r'^registro/(?P<beneficio_id>\d+)/(?P<hashed_subscriber_id>[\w]+)/$', add_registro)
 ]

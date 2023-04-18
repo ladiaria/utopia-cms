@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 from django.test import TestCase
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from ..compat import get_user_model
 from ..models import create_notice_type, NoticeSetting, NoticeType
@@ -15,8 +15,7 @@ class TestViews(TestCase):
     def test_notice_settings_login_required(self):
         url = reverse("notification_notice_settings")
         response = self.client.get(url)
-        self.assertRedirects(response, "/accounts/login/?next={}".format(url),
-                             target_status_code=404)
+        self.assertRedirects(response, "/accounts/login/?next={}".format(url), target_status_code=404)
 
     def test_notice_settings(self):
         create_notice_type("label_1", "display", "description")

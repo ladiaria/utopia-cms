@@ -4,7 +4,6 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import sys
-from distutils.sysconfig import get_python_lib
 from os.path import abspath, basename, dirname, join, realpath
 from datetime import datetime
 import mimetypes
@@ -34,17 +33,15 @@ DEFAULT_URL_SCHEME = URL_SCHEME
 # disable template settings warning until fixed migrating django-mobile to django-amp-tools
 SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
 
-# django-mobile
-FLAVOURS = ('full', 'mobile', 'amp')
-FLAVOURS_GET_PARAMETER = 'display'
-FLAVOURS_COOKIE_SECURE = True
+# django-amp-tools
+AMP_TOOLS_GET_PARAMETER = "display"
 
 # Multi sub-domain secure cookie
 SESSION_COOKIE_DOMAIN = "." + SITE_DOMAIN
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_AGE = 2592000  # 30 days
 CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SAMESITE = 'lax'  # TODO: changed to "lax" for Django2.2, check for possible bad side-effects.
 SESSION_COOKIE_SAMESITE_FORCE_ALL = True
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
@@ -58,7 +55,7 @@ STATICFILES_FINDERS = (
 )
 
 INSTALLED_APPS = (
-    'django_mobile',
+    'amp_tools',
     'django.contrib.staticfiles',
     'admin_shortcuts',
     'django.contrib.admin',
@@ -69,7 +66,6 @@ INSTALLED_APPS = (
     'django.contrib.sitemaps',
     'django.contrib.sites',
     'background_task',
-    'subdomains',
     'audiologue',
     'tagging',
     'core.config.CoreConfig',
@@ -104,10 +100,8 @@ INSTALLED_APPS = (
     'signupwall',
     'homev3',
     'cartelera.config.CarteleraConfig',
-    'markdown',
+    'martor',
     'django_bleach',
-    'django_markdown',
-    'django_markup',
     'comunidad',
     'appconf',
     'star_ratings',
@@ -128,6 +122,26 @@ INSTALLED_APPS = (
 
 SITE_ID = 1
 
+# martor
+# disable emoji (our markdown filter not yet support this)
+MARTOR_TOOLBAR_BUTTONS = [
+    'bold',
+    'italic',
+    'horizontal',
+    'heading',
+    'pre-code',
+    'blockquote',
+    'unordered-list',
+    'ordered-list',
+    'link',
+    'image-link',
+    'image-upload',
+    'direct-mention',
+    'toggle-maximize',
+    'help',
+]
+MARTOR_ENABLE_LABEL = True  # enable field labels
+
 # photologue app need to add a custom migration
 MIGRATION_MODULES = {'photologue': 'photologue_ladiaria.photologue_migrations'}
 
@@ -135,12 +149,15 @@ ADMIN_SHORTCUTS = [
     {
         'title': 'Edición',
         'shortcuts': [
-            {'url_name': 'admin:core_edition_changelist', 'title': 'Ediciones'},
+            {'url_name': 'admin:core_edition_changelist', 'title': 'Ediciones', "icon": "newspaper"},
             {'url_name': 'admin:core_edition_add', 'title': 'Crear edición'},
             {'url_name': 'admin:core_article_add', 'title': 'Crear Artículo'},
         ],
     },
-    {'title': 'Reportes', 'shortcuts': [{'url': '/dashboard/', 'title': 'Estadísticas de usuarios'}]},
+    {
+        'title': 'Reportes',
+        'shortcuts': [{'url': '/dashboard/', 'title': 'Estadísticas de usuarios', "icon": "chart-line"}],
+    },
 ]
 
 REST_FRAMEWORK = {
@@ -160,16 +177,12 @@ ACTSTREAM_SETTINGS = {'FETCH_RELATIONS': False, 'USE_PREFETCH': True}
 CRISPY_ALLOWED_TEMPLATE_PACKS = ('bootstrap', 'uni_form', 'bootstrap3', 'bootstrap4', 'materialize_css_forms')
 CRISPY_TEMPLATE_PACK = 'materialize_css_forms'
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'django_cookies_samesite.middleware.CookiesSameSite',
-    'core.middleware.AMP.FlavoursCookieSecure',
-    'django_mobile.cache.middleware.UpdateCacheFlavourMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',              # runs during the response phase (top -> last)
     'core.middleware.cache.AnonymousResponse',                    # hacks cookie header for anon users (resp phase)
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'subdomains.middleware.SubdomainMiddleware',
-    'subdomains.middleware.SubdomainURLRoutingMiddleware',
     'libs.middleware.url.UrlMiddleware',
     'django.middleware.gzip.GZipMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -183,13 +196,11 @@ MIDDLEWARE_CLASSES = (
     'django_user_agents.middleware.UserAgentMiddleware',
     'signupwall.middleware.SignupwallMiddleware',
     'django.contrib.flatpages.middleware.FlatpageFallbackMiddleware',
-    'django_mobile.middleware.MobileDetectionMiddleware',
-    'django_mobile.middleware.SetFlavourMiddleware',
     'core.middleware.cache.AnonymousRequest',                     # hacks cookie header for anon users (req phase)
-    'django_mobile.cache.middleware.FetchFromCacheFlavourMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',           # runs during the request phase (top -> first)
     'social_django.middleware.SocialAuthExceptionMiddleware',
-    'core.middleware.AMP.OnlyArticleDetail',
+    "amp_tools.middleware.AMPDetectionMiddleware",
+    "core.middleware.AMP.OnlyArticleDetail",
 )
 
 LANGUAGES = (
@@ -230,11 +241,6 @@ HOME_PUBLICATIONS = []
 HASHIDS_SALT = 'top_secret_salt_phrase'
 USER_HASHID_SALT = 'top_secret_salt_phrase_for_users_ids_only'
 
-# A dictionary of urlconf module paths, keyed by their subdomain
-SUBDOMAIN_URLCONFS = {
-    None: 'urls',  # no subdomain, e.g. ``example.com``
-}
-
 # MEDIA
 MEDIA_ROOT = PROJECT_ABSOLUTE_DIR + '/media/'
 MEDIA_URL = '/media/'
@@ -257,23 +263,6 @@ CACHES = {
         'LOCATION': ['127.0.0.1:11211']
     }
 }
-
-# required for django mobile.
-# TODO: search for a django-mobile replacement because last version is not compatible with new "TEMPLATE" setting.
-TEMPLATE_LOADERS = (
-    (
-        'django_mobile.loader.CachedLoader',
-        (
-            'django_mobile.loader.Loader',
-            'django.template.loaders.filesystem.Loader',
-            'django.template.loaders.app_directories.Loader',
-            (
-                # needed to allow us to override admin_shortcuts' admin/index.html template
-                'django.template.loaders.filesystem.Loader', [join(get_python_lib(), "admin_shortcuts")],
-            ),
-        ),
-    ),
-)
 
 TEMPLATES = [
     {
@@ -298,11 +287,16 @@ TEMPLATES = [
                 "django.template.context_processors.i18n",
                 'django.template.context_processors.tz',
                 'adzone.context_processors.get_source_ip',
-                'django_mobile.context_processors.flavour',
                 'apps.thedaily.context_processors.permissions',
                 'django.template.context_processors.csrf',
             ],
-            'loaders': TEMPLATE_LOADERS,
+            'loaders': [
+                'amp_tools.loader.Loader',
+                (
+                    'django.template.loaders.cached.Loader',
+                    ['django.template.loaders.filesystem.Loader', 'django.template.loaders.app_directories.Loader'],
+                ),
+            ],
         },
     }
 ]

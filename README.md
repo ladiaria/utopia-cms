@@ -63,21 +63,18 @@
 
 ### Built With
 
-* [Django](https://djangoproject.com/)
-* [Python 3.6.8 - 3.7.11](https://www.python.org/)
+* [Django 2.2](https://djangoproject.com/)
+* [Python 3.10.6-9](https://www.python.org/)
 
 <!-- GETTING STARTED -->
 ## Getting Started
 
-To get a local copy up and running follow these simple example steps.
+To setup and start a local environment follow the installation steps.
 
-### Prerequisites
-
-* ``pip install -r requirements.txt``
 
 ### Installation
 
-Follow our [INSTALL](INSTALL.md) instructions in this repository to install requirements, setup the database and modify configuration.
+Follow our [INSTALL](INSTALL.md) instructions in this repository to install requirements, setup the database, modify configuration and start the server and its web front-end.
 
 
 ## Usage

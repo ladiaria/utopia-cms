@@ -1,19 +1,8 @@
-.markdown-help{
-	border: solid 1px;
-    display: inline-block;
-    padding: 12px;
-    margin-left: 12px;
-    width: 400px;
-}
-
-.field-main_section{
-    display: none;
-}
-
-.field-main li{
-    list-style-type: none;
-}
-
-.row-articlerel-selected{
-    border: 2px solid #F2A60D;
-}
+.martor-field{height: 400px !important;}
+.field-main_section{display: none;}
+.field-main li{list-style-type: none;}
+.row-articlerel-selected{border: 2px solid #F2A60D;}
+fieldset.module h2{font-size: 12px !important;font-weight: 400 !important;margin: 0 !important;}
+td.original p{height: auto !important;}
+.empty-form{display: none !important;}
+fieldset.collapse,fieldset.collapsed{display: block !important;}

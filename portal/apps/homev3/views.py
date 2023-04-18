@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from datetime import datetime
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import Http404, HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.vary import vary_on_cookie
@@ -72,7 +72,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
                         return redirect(redirect_slug)
                     try:
                         return HttpResponsePermanentRedirect(
-                            reverse('home', args=(settings.CORE_CATEGORY_REDIRECT[domain_slug], ))
+                            reverse('home', args=(settings.CORE_CATEGORY_REDIRECT[domain_slug],))
                         )
                     except NoReverseMatch:
                         raise Http404
@@ -97,7 +97,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
     }
 
-    is_authenticated = request.user.is_authenticated()
+    is_authenticated = request.user.is_authenticated
     if is_authenticated:
         context.update({'restricteds': [], 'restricteds_allowed': [], 'compute_follows': [], 'follows': []})
         user_has_subscriber = hasattr(request.user, 'subscriber')
@@ -105,21 +105,14 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             content_type=ContentType.objects.get_for_model(Article)
         ).values_list('object_id', flat=True)
 
-    for publication_slug in getattr(settings, 'HOMEV3_FEATURED_PUBLICATIONS', ()):
-        try:
-            ftop_articles = \
-                get_current_edition(publication=Publication.objects.get(slug=publication_slug)).top_articles
-            if ftop_articles:
-                if is_authenticated:
-                    ctx_update_article_extradata(context, request.user, user_has_subscriber, follow_set, ftop_articles)
-                fcover_article = ftop_articles[0]
-                ftop_articles.pop(0)
-            else:
-                fcover_article = None
-        except Publication.DoesNotExist:
-            pass
-        else:
-            context['featured_publications'].append((publication_slug, ftop_articles, fcover_article))
+    for pub in Publication.objects.filter(slug__in=getattr(settings, 'HOMEV3_FEATURED_PUBLICATIONS', ())):
+        ftop_articles = get_current_edition(publication=pub).top_articles
+        if ftop_articles:
+            if is_authenticated:
+                ctx_update_article_extradata(context, request.user, user_has_subscriber, follow_set, ftop_articles)
+            fcover_article = ftop_articles[0]
+            ftop_articles.pop(0)
+            context['featured_publications'].append((pub.slug, ftop_articles, fcover_article))
 
     # Context variables for the featured category component
     featured_category_slug = getattr(settings, 'HOMEV3_FEATURED_CATEGORY', None)
@@ -153,10 +146,12 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     if publication.slug != settings.DEFAULT_PUB:
         if year and month and day:
             date_published = datetime(
-                year=int(year), month=int(month), day=int(day), hour=publishing_hour, minute=publishing_minute)
-            if first_day.date() > date_published.date():
-                raise Http404
-            if date_published >= datetime.now() and not request.user.is_staff:
+                year=int(year), month=int(month), day=int(day), hour=publishing_hour, minute=publishing_minute
+            )
+            if (
+                first_day.date() > date_published.date()
+                or (date_published >= datetime.now() and not request.user.is_staff)
+            ):
                 raise Http404
             edition = get_object_or_404(Edition, date_published=date_published, publication=publication)
         else:
@@ -175,13 +170,16 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     else:
         if year and month and day:
             date_published = datetime(
-                year=int(year), month=int(month), day=int(day), hour=publishing_hour, minute=publishing_minute)
-            if first_day.date() > date_published.date():
-                raise Http404
-            if date_published >= datetime.now() and not request.user.is_staff:
+                year=int(year), month=int(month), day=int(day), hour=publishing_hour, minute=publishing_minute
+            )
+            if (
+                first_day.date() > date_published.date()
+                or (date_published >= datetime.now() and not request.user.is_staff)
+            ):
                 raise Http404
             ld_edition = get_object_or_404(
-                Edition, date_published=date_published, publication__slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL)
+                Edition, date_published=date_published, publication__slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL
+            )
         else:
             # get edition as usual
             ld_edition = get_current_edition()
@@ -195,6 +193,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
 
         if settings.DEBUG:
             print('DEBUG: Default home page view called.')
+
         context.update(
             {
                 'edition': ld_edition,

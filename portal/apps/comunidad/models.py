@@ -6,10 +6,12 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
-from django.template.defaultfilters import slugify
 from django.db.models.fields.related import ForeignKey
 from django.db.models.fields import DateTimeField
+from django.urls import reverse
+from django.template.defaultfilters import slugify
+from django.utils.safestring import mark_safe
+from django.contrib.auth.models import User
 
 from updown.fields import RatingField
 from core.models import ArticleBase, Article
@@ -35,15 +37,20 @@ class SubscriberArticle(ArticleBase):
             self.slug = slugify(self.headline)
         super(SubscriberArticle, self).save(*args, **kwargs)
 
-    @models.permalink
     def get_absolute_url(self):
-        return ('comunidad_article_detail', (), {'slug': self.slug})
+        return reverse('comunidad_article_detail', kwargs={'slug': self.slug})
 
 
 class SubscriberEvento(EventoBase):
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
     created_by = ForeignKey(
-        User, verbose_name='creado por', related_name='eventos_creados', editable=False, blank=False, null=True
+        User,
+        verbose_name='creado por',
+        related_name='eventos_creados',
+        editable=False,
+        blank=False,
+        null=True,
+        on_delete=models.CASCADE,
     )
 
     is_suscriber_evento = True
@@ -56,13 +63,12 @@ class SubscriberEvento(EventoBase):
             self.slug = slugify(self.title)
         super(SubscriberEvento, self).save(*args, **kwargs)
 
-    @models.permalink
     def get_absolute_url(self):
-        return ('comunidad_evento_detail', (), {'slug': self.slug})
+        return reverse('comunidad_evento_detail', kwargs={'slug': self.slug})
 
 
 class TopUser(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     points = models.IntegerField()
     date_created = DateTimeField('fecha de calculo', auto_now_add=True)
     type = models.CharField(max_length=20, choices=[('WEEK', 'WEEK'), ('MONTH', 'MONTH'), ('YEAR', 'YEAR')])
@@ -76,7 +82,7 @@ class Circuito(models.Model):
 
 
 class Socio(models.Model):
-    user = models.OneToOneField(User, verbose_name='usuario', related_name='socio')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name='usuario', related_name='socio')
     circuits = models.ManyToManyField(Circuito, verbose_name='circuitos')
 
     def __str__(self):
@@ -85,7 +91,7 @@ class Socio(models.Model):
 
 class Beneficio(models.Model):
     name = models.CharField('nombre', max_length=255)
-    circuit = models.ForeignKey(Circuito, verbose_name='circuito', related_name='beneficios')
+    circuit = models.ForeignKey(Circuito, on_delete=models.CASCADE, verbose_name='circuito', related_name='beneficios')
     limit = models.PositiveIntegerField('cupo general', null=True, blank=True)
     quota = models.PositiveIntegerField('cupo por suscriptor', default=1)
 
@@ -97,8 +103,8 @@ class Beneficio(models.Model):
 
 
 class Registro(models.Model):
-    subscriber = models.ForeignKey(Subscriber, verbose_name='suscriptor')
-    benefit = models.ForeignKey(Beneficio, verbose_name='beneficio')
+    subscriber = models.ForeignKey(Subscriber, on_delete=models.CASCADE, verbose_name='suscriptor')
+    benefit = models.ForeignKey(Beneficio, on_delete=models.CASCADE, verbose_name='beneficio')
     used = models.DateTimeField(auto_now_add=True, verbose_name='utilizado')
 
     def subscriber_email(self):
@@ -116,12 +122,11 @@ class Recommendation(models.Model):
     """
     Primary useful for a chrome extension
     """
+
     name = models.CharField('nombre', max_length=128, unique=True)
     urls = models.ManyToManyField(Url)
     comment = models.TextField('comentario')
-    article = models.ForeignKey(Article, null=True, blank=True)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, null=True, blank=True)
 
     def url_list(self):
-        return '<br>'.join(self.urls.values_list('url', flat=True))
-
-    url_list.allow_tags = True
+        return mark_safe('<br>'.join(self.urls.values_list('url', flat=True)))
