@@ -330,7 +330,7 @@ urlpatterns.extend(
 # Used to customize "/custom_email/*" urls using patterns from a custom app
 custom_email_urls_module = getattr(settings, 'CUSTOM_EMAIL_URLS_MODULE', None)
 if custom_email_urls_module:
-    urlpatterns.extend([path('custom_email/', include(custom_email_urls_module))])
+    urlpatterns.append(path('custom_email/', include(custom_email_urls_module)))
 
 urlpatterns.extend(
     [

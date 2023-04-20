@@ -41,8 +41,6 @@ SESSION_COOKIE_DOMAIN = "." + SITE_DOMAIN
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_AGE = 2592000  # 30 days
 CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'lax'  # TODO: changed to "lax" for Django2.2, check for possible bad side-effects.
-SESSION_COOKIE_SAMESITE_FORCE_ALL = True
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 AMP_DEBUG = False
@@ -179,7 +177,7 @@ CRISPY_TEMPLATE_PACK = 'materialize_css_forms'
 
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
-    'django_cookies_samesite.middleware.CookiesSameSite',
+    "core.middleware.SameSiteMiddleware",
     'django.middleware.cache.UpdateCacheMiddleware',              # runs during the response phase (top -> last)
     'core.middleware.cache.AnonymousResponse',                    # hacks cookie header for anon users (resp phase)
     'django.contrib.sessions.middleware.SessionMiddleware',

@@ -8,5 +8,6 @@ class OnlyArticleDetail(MiddlewareMixin):
 
     def process_request(self, request):
         # TODO: check when amp is ready to allow also the "authorization" and "pingback" requests
+        # TODO: what happens if resolve raises 404?
         if request.is_amp_detect and resolve(request.path_info).url_name != 'article_detail':
             return HttpResponseForbidden()

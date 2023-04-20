@@ -7,6 +7,7 @@ from datetime import datetime
 from django.conf import settings
 from django.http import Http404
 from django.urls import resolve
+from django.urls.exceptions import Resolver404
 from django.utils.deprecation import MiddlewareMixin
 
 from apps import mongo_db
@@ -94,8 +95,11 @@ def subscriber_access(subscriber, article):
 class SignupwallMiddleware(MiddlewareMixin):
     def process_request(self, request):
 
-        # resolve path and get the target article
-        path_resolved = resolve(request.path)
+        # try to resolve path and get the target article
+        try:
+            path_resolved = resolve(request.path)
+        except Resolver404:
+            return
         if path_resolved.url_name == 'article_detail':
             try:
                 article = get_article_by_url_path(request.path)

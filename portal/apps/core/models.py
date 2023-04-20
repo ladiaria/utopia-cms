@@ -61,7 +61,7 @@ from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 
 from apps import blacklisted
-from core.templatetags.ldml import ldmarkup, cleanhtml, remove_markup
+from core.templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from photologue_ladiaria.models import PhotoExtended
 from photologue.models import Gallery, Photo
 from audiologue.models import Audio
@@ -1280,8 +1280,8 @@ class ArticleBase(Model, CT):
     def unformatted_lead(self):
         return cleanhtml(ldmarkup(self.lead))
 
-    def formatted_body(self):
-        return ldmarkup(self.body, self.id)
+    def formatted_body(self, amp=False):
+        return (amp_ldmarkup if amp else ldmarkup)(self.body, self.id)
 
     def unformatted_body(self):
         return cleanhtml(self.formatted_body())

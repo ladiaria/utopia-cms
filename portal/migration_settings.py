@@ -40,8 +40,6 @@ SESSION_COOKIE_DOMAIN = "." + SITE_DOMAIN
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_AGE = 2592000  # 30 days
 CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'lax'
-SESSION_COOKIE_SAMESITE_FORCE_ALL = True
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 AMP_DEBUG = False
@@ -121,7 +119,25 @@ INSTALLED_APPS = (
 
 SITE_ID = 1
 
-MARTOR_ENABLE_LABEL = True
+# martor
+# disable emoji (our markdown filter not yet support this)
+MARTOR_TOOLBAR_BUTTONS = [
+    'bold',
+    'italic',
+    'horizontal',
+    'heading',
+    'pre-code',
+    'blockquote',
+    'unordered-list',
+    'ordered-list',
+    'link',
+    'image-link',
+    'image-upload',
+    'direct-mention',
+    'toggle-maximize',
+    'help',
+]
+MARTOR_ENABLE_LABEL = True  # enable field labels
 
 # photologue app need to add a custom migration
 MIGRATION_MODULES = {'photologue': 'photologue_ladiaria.photologue_migrations'}
@@ -160,7 +176,7 @@ CRISPY_TEMPLATE_PACK = 'materialize_css_forms'
 
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
-    'django_cookies_samesite.middleware.CookiesSameSite',
+    "core.middleware.SameSiteMiddleware",
     'django.middleware.cache.UpdateCacheMiddleware',              # runs during the response phase (top -> last)
     'core.middleware.cache.AnonymousResponse',                    # hacks cookie header for anon users (resp phase)
     'django.contrib.sessions.middleware.SessionMiddleware',

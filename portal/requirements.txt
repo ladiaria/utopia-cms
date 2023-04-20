@@ -8,7 +8,6 @@ social-auth-core==4.0.2
 python-dateutil==2.8.1
 python-memcached
 django-compressor
-django-cookies-samesite
 djangorestframework==3.13.1
 django-filter==2.4.0
 django-avatar==7.0.1
