@@ -1,6 +1,6 @@
 {% load bleach_tags core_tags ldml %}
 
-<article class="ld-card {{ article.photo_layout }}
+<div class="ld-card {{ article.photo_layout }}
             {% block class %}{% endblock %}{% if article.photo != None %} has_photo{% endif %}
             card-media-{{ media }} {{ publication }} {{ publication }}-section {{ card_type }} {{ card_display }} {{ card_size }}
             {% if card_display == 'horizontal' %}responsive{% endif %}"
@@ -8,16 +8,15 @@
   {% block image %}
     {% if not article_card_hide_photo and article.photo and card_type and article.photo_image_file_exists %}
       <a href="{{ article.get_absolute_url }}">
-        <img class="ld-card__img" src="{{ article.photo.get_700w_url }}" width="700"
-             height="{{ article.photo.get_700w_size.1 }}"{% if img_load_lazy %} loading="lazy"{% endif %}
-             title="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
+        <amp-img src="{{ article.photo.get_700w_url }}" layout="responsive"
+            width="700" height="{{ article.photo.get_700w_size.1 }}" id="main-photo-related"
+            title="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"/>        
       </a>
     {% endif %}
   {% endblock %}
   <div class="ld-card__body">
     <div class="ld-card__section">
       {% autoescape off %}{% publication_section article %}{% endautoescape %}
-      {% include 'article/article_card_lock_tooltip.html' %}
     </div>
     <h3 class="ld-card__title {% if not article.home_lead and not article.lead %}ld-card__title--mb{% endif %}">
       <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
@@ -42,9 +41,8 @@
         {% if not hide_date_published %}
           {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
         {% endif %}
-        {% with a=article %}{% include 'article/article_card_read_later.html' %}{% endwith %}
       </div>
     </div>
   </div>
   {% render_toolbar_for article %}
-</article>
+</div>

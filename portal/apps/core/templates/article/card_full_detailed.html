@@ -5,12 +5,11 @@
   <div class="ld-card ld-card--reg">
 
     {% render_toolbar_for article %}
-    {% if not article_card_hide_photo and article.photo %}
+    {% if not article_card_hide_photo and article.photo and article.photo_image_file_exists %}
       <a href="{{ article.get_absolute_url }}">
         <img class="ld-card__img" src="{{ article.photo.get_700w_url }}" width="700"
-             {% if article.photo_image_file_exists %}height="{{ article.photo.get_700w_size.1 }}"{% endif %}
-             title="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
-             {% if img_load_lazy %}loading="lazy"{% endif %}>
+             height="{{ article.photo.get_700w_size.1 }}"{% if img_load_lazy %} loading="lazy"{% endif %}
+             title="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
       </a>
     {% endif %}
 
