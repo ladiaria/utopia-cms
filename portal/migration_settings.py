@@ -174,10 +174,9 @@ ACTSTREAM_SETTINGS = {'FETCH_RELATIONS': False, 'USE_PREFETCH': True}
 CRISPY_ALLOWED_TEMPLATE_PACKS = ('bootstrap', 'uni_form', 'bootstrap3', 'bootstrap4', 'materialize_css_forms')
 CRISPY_TEMPLATE_PACK = 'materialize_css_forms'
 
-# TODO: SameSite was temporarely disabled, (verify that is not causing "logouts" and fix/enable ASAP)
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
-    # "core.middleware.SameSiteMiddleware",
+    "core.middleware.SameSiteMiddleware",
     'django.middleware.cache.UpdateCacheMiddleware',              # runs during the response phase (top -> last)
     'core.middleware.cache.AnonymousResponse',                    # hacks cookie header for anon users (resp phase)
     'django.contrib.sessions.middleware.SessionMiddleware',
