@@ -21,7 +21,7 @@ class AnonymousRequest(MiddlewareMixin):
                     request.COOKIES.get(settings.SESSION_COOKIE_NAME),
                 )
             )
-        if request.user.is_anonymous:
+        if hasattr(request, 'user') and not request.user.is_authenticated:
             clear = request.path == '/'
             if not (clear or settings.SIGNUPWALL_ENABLED):
                 clear = resolve(request.path_info).url_name == 'article_detail'
@@ -31,7 +31,7 @@ class AnonymousRequest(MiddlewareMixin):
 
 class AnonymousResponse(MiddlewareMixin):
     def process_response(self, request, response):
-        """idem as above (to make the page cache not be updated)"""
+        """ idem as above (to make the page cache not be updated) """
         if getattr(settings, 'HOME_CACHE_DEBUG', False) and request.path == '/':
             print(
                 "DEBUG: cache.process_response: anon=%s, COOKIE header=%s, session_key=%s"
@@ -41,7 +41,7 @@ class AnonymousResponse(MiddlewareMixin):
                     request.COOKIES.get(settings.SESSION_COOKIE_NAME),
                 )
             )
-        if hasattr(request, 'user') and request.user.is_anonymous:
+        if hasattr(request, 'user') and not request.user.is_authenticated:
             clear = request.path == '/'
             if not (clear or settings.SIGNUPWALL_ENABLED):
                 # TODO: maybe a try-except is not neccesary if we have the response status code

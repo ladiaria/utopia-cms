@@ -13,7 +13,7 @@ RESTRICT_ACCESS_LOGIN_URL = '/acceso-beep/'
 SECRET_KEY = ''
 
 # Site settings
-CLOSED_SITE = False
+CLOSED_SITE = False  # TODO: this feature should be reviewed (its middlewares are not ready for this Django version.
 SITE_DOMAIN = "yoogle.com"
 SESSION_COOKIE_DOMAIN = "." + SITE_DOMAIN
 ALLOWED_HOSTS = [SESSION_COOKIE_DOMAIN]

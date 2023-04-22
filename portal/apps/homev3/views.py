@@ -37,7 +37,11 @@ def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set,
                 context['follows'].append(a.id)
 
 
-@decorate_if_staff(decorator=never_cache)
+# TODO: check if commented line is needed (no cache for staff, journalists ussualy want to see changes inmediately).
+#       also "staff" should be changed to "auth" (this criteria is beeing used now in the decorator function code,
+#       changed because it was not doing any effect on authenticated users, it would be nice to try to let it work for
+#       auth users, but be very careful with all the things the home page can render different to an auth user).
+# @decorate_if_staff(decorator=never_cache)
 @decorate_if_no_staff(decorator=vary_on_cookie)
 @decorate_if_no_staff(
     decorator=cache_control(
