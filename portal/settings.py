@@ -498,6 +498,7 @@ CRM_UPDATE_USER_ENABLED = True
 
 # PWA
 PWA_SERVICE_WORKER_TEMPLATE = 'core/templates/sw/serviceworker.js'
+# Override and increment next variable every time you change anything related to cookies or the server CSP.
 PWA_SERVICE_WORKER_VERSION = 1
 
 # Useful settings for testing (test management command, should be overriden in local_test_settings.py if necessary)
