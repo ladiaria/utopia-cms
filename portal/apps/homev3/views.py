@@ -13,7 +13,7 @@ from django.views.decorators.cache import never_cache, cache_control
 from django.urls.exceptions import NoReverseMatch
 from django.contrib.contenttypes.models import ContentType
 
-from decorators import decorate_if_no_staff, decorate_if_staff
+from decorators import decorate_if_no_auth, decorate_if_auth
 
 from core.models import Edition, get_current_edition, Publication, Category, CategoryHome, Article
 from core.views.category import category_detail
@@ -37,13 +37,9 @@ def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set,
                 context['follows'].append(a.id)
 
 
-# TODO: check if commented line is needed (no cache for staff, journalists ussualy want to see changes inmediately).
-#       also "staff" should be changed to "auth" (this criteria is beeing used now in the decorator function code,
-#       changed because it was not doing any effect on authenticated users, it would be nice to try to let it work for
-#       auth users, but be very careful with all the things the home page can render different to an auth user).
-# @decorate_if_staff(decorator=never_cache)
-@decorate_if_no_staff(decorator=vary_on_cookie)
-@decorate_if_no_staff(
+@decorate_if_auth(decorator=never_cache)
+@decorate_if_no_auth(decorator=vary_on_cookie)
+@decorate_if_no_auth(
     decorator=cache_control(
         no_cache=True, no_store=True, must_revalidate=True, max_age=getattr(settings, 'HOMEV3_INDEX_CACHE_MAXAGE', 120)
     )

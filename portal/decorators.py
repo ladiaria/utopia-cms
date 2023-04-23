@@ -89,7 +89,7 @@ def render_response(template_prefix=None, always_use_requestcontext=True):
     return renderer
 
 
-def decorate_if_no_staff(decorator):
+def decorate_if_no_auth(decorator):
     """
     Returns decorated view if user is not authenticated. Un-decorated otherwise
     taken from: https://stackoverflow.com/questions/7315862/django-prevent-caching-view-if-user-is-logged-in
@@ -111,9 +111,9 @@ def decorate_if_no_staff(decorator):
     return _decorator
 
 
-def decorate_if_staff(decorator):
+def decorate_if_auth(decorator):
     """
-    Returns decorated view if user is staff. Un-decorated otherwise
+    Returns decorated view if user is authenticated. Un-decorated otherwise
     (the inverse version of decorate_if_no_staff)
     """
 
@@ -123,7 +123,7 @@ def decorate_if_staff(decorator):
 
         def _view(request, *args, **kwargs):
 
-            if request.user.is_staff:     # If user is staff
+            if request.user.is_authenticated:
                 return decorated_view(request, *args, **kwargs)  # view with decorator
             else:
                 return view(request, *args, **kwargs)  # view without decorator

@@ -40,7 +40,7 @@ from favit.models import Favorite
 
 from tagging.models import Tag
 from apps import mongo_db
-from decorators import decorate_if_no_staff, decorate_if_staff
+from decorators import decorate_if_no_auth, decorate_if_auth
 from core.forms import ReportErrorArticleForm, SendByEmailForm
 from core.models import Publication, Category, Article, ArticleUrlHistory
 from signupwall.middleware import subscriber_access
@@ -251,9 +251,9 @@ def article_detail_ipfs(request, article_id):
         )
 
 
-@decorate_if_staff(decorator=never_cache)
-@decorate_if_no_staff(decorator=vary_on_cookie)
-@decorate_if_no_staff(decorator=cache_page(120))
+@decorate_if_auth(decorator=never_cache)
+@decorate_if_no_auth(decorator=vary_on_cookie)
+@decorate_if_no_auth(decorator=cache_page(120))
 def article_detail_free(request, year, month, slug, domain_slug=None):
     return article_detail(request, int(year), int(month), slug, domain_slug)
 
