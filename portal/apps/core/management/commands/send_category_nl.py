@@ -19,7 +19,7 @@ from hashids import Hashids
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
-from django.db import close_old_connections, connection, IntegrityError, OperationalError
+from django.db import OperationalError
 from django.core.management.base import BaseCommand, CommandError
 from django.template import Engine, Context
 from django.contrib.sites.models import Site
@@ -407,22 +407,9 @@ def build_and_send(
         # update log stats counters only if subscriber_ids not given
         if not subscriber_ids:
             try:
-                # close connections because reach this point can take several minutes
-                close_old_connections()
-                # A transaction is needed because autocommit in django is broken in concurrent management processes
-                cursor = connection.cursor()
-                cursor.execute('BEGIN')
-                cursor.execute(
-                    """
-                    INSERT INTO dashboard_newsletterdelivery(
-                        delivery_date,newsletter_name,user_sent,subscriber_sent,user_refused,subscriber_refused
-                    )
-                    VALUES('%s','%s',%d,%d,%d,%d)
-                    """ % (today, category_slug, user_sent, subscriber_sent, user_refused, subscriber_refused)
+                nl_delivery, created = NewsletterDelivery.objects.get_or_create(
+                    delivery_date=today, newsletter_name=category_slug
                 )
-                cursor.execute('COMMIT')
-            except IntegrityError:
-                nl_delivery = NewsletterDelivery.objects.get(delivery_date=today, newsletter_name=category_slug)
                 nl_delivery.user_sent = (nl_delivery.user_sent or 0) + user_sent
                 nl_delivery.subscriber_sent = (nl_delivery.subscriber_sent or 0) + subscriber_sent
                 nl_delivery.user_refused = (nl_delivery.user_refused or 0) + user_refused
