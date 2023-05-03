@@ -60,11 +60,14 @@ def publications(request):
         slug_var = p.slug.replace('-', '_')
         result.update({slug_var.upper() + '_SUB': p.slug, slug_var + '_pub': p})
 
-    if request.is_amp_detect:
-        result['extra_header_template'] = getattr(settings, 'HOMEV3_EXTRA_HEADER_TEMPLATE_AMP', None)
-    else:
-        result['extra_header_template'] = getattr(settings, 'HOMEV3_EXTRA_HEADER_TEMPLATE', None)
+    result['extra_header_template'] = getattr(
+        settings, 'HOMEV3_EXTRA_HEADER_TEMPLATE%s' % ('_AMP' if request.is_amp_detect else ''), None
+    )
+    if not request.is_amp_detect:
         result['footer_template'] = settings.HOMEV3_FOOTER_TEMPLATE
+        result['subscribe_notice_template'] = getattr(
+            settings, "HOMEV3_SUBSCRIBE_NOTICE_TEMPLATE", "homev3/templates/subscribe_notice.html"
+        )
 
     # use this context processor to load also some other useful variables configured in settings
     result.update(

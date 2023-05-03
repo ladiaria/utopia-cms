@@ -253,6 +253,8 @@ urlpatterns = [
     ),
     # AMP copy iframe
     re_path(r'^copier/', TemplateView.as_view(template_name="core/templates/amp/article/copier.html"), name='copier'),
+    # AMP reader ID
+    path('amp-readerid/', include('django_amp_readerid.urls')),
 ]
 
 # Used to add customized url patterns from custom modules

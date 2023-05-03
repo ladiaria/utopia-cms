@@ -17,7 +17,7 @@
         <div class="align-center ld-text-secondary">O ingresá con tu email</div>
 
         <form class="row" method="post" action="{% url 'account-login' %}?next={{ next }}">
-          {% csrf_token %}{% crispy login_form %}
+          {% crispy login_form %}
           <div class="col s12 align-right">
             <a href="{% url 'account-password_reset' %}" class="underlined">¿Olvidaste tu contraseña?</a>
           </div>

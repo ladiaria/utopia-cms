@@ -34,12 +34,11 @@
     <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
     <script id="amp-access" type="application/json">
       {
-        "authorization": "https://{{ site.domain }}/usuarios/amp-access/authorization?rid=READER_ID&url=CANONICAL_URL&ref=DOCUMENT_REFERRER&_=RANDOM",
-        "pingback": "https://{{ site.domain }}/usuarios/amp-access/pingback?rid=READER_ID&url=CANONICAL_URL&ref=DOCUMENT_REFERRER&article_allowed=AUTHDATA(article_allowed)&article_restricted=AUTHDATA(article_restricted)&_=RANDOM",
-        "login": {
-          "sign-in": "https://{{ site.domain }}/usuarios/amp-access/login?rid=READER_ID&url=CANONICAL_URL",
-          "sign-out": "https://{{ site.domain }}/usuarios/amp-access/logout"
-        },
+        {% with common_params="?rid=READER_ID&url=CANONICAL_URL" %}
+          "authorization": "https://{{ site.domain }}{% url "amp-access-authorization" %}{{ common_params }}&ref=DOCUMENT_REFERRER&_=RANDOM",
+          "pingback": "https://{{ site.domain }}{% url "amp-access-pingback" %}{{ common_params }}&ref=DOCUMENT_REFERRER&article_allowed=AUTHDATA(article_allowed)&article_restricted=AUTHDATA(article_restricted)&_=RANDOM",
+          "login": "https://{{ site.domain }}{% url 'account-login' %}{{ common_params }}",
+        {% endwith %}
         "authorizationFallbackResponse": {"error": true, "access": false, "subscriber": false}
       }
     </script>

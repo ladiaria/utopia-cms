@@ -317,15 +317,33 @@
         $('.btn-close').click(function(){
           notification_close(this);
         });
-        $(window).on("subscribe_notice_show", function(){
-          var subscribe_notice = $('.subscribe-notice');
-          if(subscribe_notice.length){
-            subscribe_notice.removeClass("hide");
-            $('.btn-close-notice', subscribe_notice).click(function(){
+
+        var subscribe_notice = $('.subscribe-notice');
+        if(subscribe_notice.length){
+          subscribe_notice.removeClass("hide");
+          $('.btn-close-notice', subscribe_notice).click(function(){
+            {# TODO: "closed in session" also for non auth users (notice ajax-loaded like "bn" for not break cache) #}
+            {% if user.is_authenticated %}
+              $.get("{% url 'subscribe-notice-closed' %}", function(data){
+                subscribe_notice.hide();
+              });
+            {% else %}
               subscribe_notice.hide();
-            });
-          }
-        });
+            {% endif %}
+          });
+        }
+
+        const subscribeToggleButton = document.getElementById("btn-toggle-banner");
+        if(subscribeToggleButton){
+          subscribeToggleButton.addEventListener("click", function() {
+            document.getElementById("subscribe-notice-mobile").classList.toggle("collapsed");
+            document.getElementById("subscribe-notice-mobile").classList.toggle("expanded");
+            document.querySelector(".subscribe-notice__footer a").classList.toggle("ut-btn");
+            document.querySelector(".subscribe-notice__footer a").classList.toggle("ut-btn-subscription");
+            document.querySelector(".subscribe-notice__footer a").classList.toggle("ut-btn-subscription--mobile");
+          });
+        }
+
         {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
       });
 
@@ -374,25 +392,11 @@
       </div>
     {% endblock %}
 
-    <!-- Subscribe notice for logged-in non-subscribers -->
-    {% if not is_subscriber_any %}
+    <!-- Subscribe notice for not authenticated users or non-subscribers -->
+    {# TODO: can we implement this kind of notice in AMP? (we never did that) #}
+    {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
       {% if is_portada and publication == default_pub or is_detail %}
-        <div class="subscribe-notice hide-on-med-and-up hide">
-          <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=mobile-banner">Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i></a>
-          <span class="btn-close-notice" data-id="subscribe-notice">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#262626"/>
-            </svg>
-          </span>
-        </div>
-        <div class="subscribe-notice subscribe-notice__desktop hide-on-small-and-down hide">
-          <p>{% if default_pub.description %}{{ default_pub.description }} {% endif %}<a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=desktop-banner" class="ut-btn">Suscribite <span>por ${% subscriptionprice 'DDIGM' %}/mes</span></a></p>
-          <span class="btn-close-notice" data-id="subscribe-notice">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#262626"/>
-            </svg>
-          </span>
-        </div>
+        {% include subscribe_notice_template %}
       {% endif %}
     {% endif %}
 

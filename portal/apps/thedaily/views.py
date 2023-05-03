@@ -48,6 +48,8 @@ from django.template import TemplateDoesNotExist
 from actstream import actions
 from actstream.models import following
 from favit.models import Favorite
+from django_amp_readerid.decorators import readerid_assoc
+from django_amp_readerid.utils import amp_login_param, get_related_user
 
 from libs.utils import set_amp_cors_headers, decode_hashid
 from libs.tokens.email_confirmation import default_token_generator, get_signup_validation_url, send_validation_email
@@ -189,10 +191,18 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 @never_cache
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 @csrf_protect
+@readerid_assoc
 def login(request):
-    next_page = request.session.get('next', request.GET.get('next', '/'))
+    # next_page value got here will be available in session (TODO: explain how this happen)
+    return_param = amp_login_param(request, 'return')
+    if return_param:
+        # redirect email/google AMP logins (google social auth do not redirect to external urls)
+        next_page = "%s?url=%s" % (reverse("amp-readerid:redirect"), return_param)
+    else:
+        next_page = request.session.get('next', request.GET.get('next', '/'))
 
     if request.user.is_authenticated:
+        request.session.pop('next', None)  # if not removed, google signin from AMP will redirect in infinite loop
         return HttpResponseRedirect(next_page)
 
     initial, name_or_mail = {}, request.GET.get('name_or_mail')
@@ -290,6 +300,15 @@ def welcome(request, signup=False, subscribed=False):
 @never_cache
 @to_response
 def google_phone(request):
+    """
+    Ask for "phone" when using google-sign-in to create an account
+    TODO: when coming form AMP, the landing "welcome" page should be different because the expected behaviour is to go
+          back to the article AMP page that originated the login, ask UX team for feedback on what to do, one option is
+          to show the welcome page (with the content information adjusted) and after some seconds redirect to the
+          "next" page (the google page that closes the window and returns to the article amp page).
+          This adjusted content may be also wanted for non-amp, perhaps a new button that says "continue browsing to
+          the article '<article-title>'" if the sign-in was originated from an article page.
+    """
     # if planslug in session this came from a new subscription attemp and we should continue it
     planslug = request.session.get('planslug')
     if planslug:
@@ -1104,9 +1123,10 @@ def amp_access_authorization(request):
     except KeyError:
         return HttpResponseBadRequest()
 
-    path, authenticated = urlparse(url).path, request.user.is_authenticated
-    result, has_subscriber = {'authenticated': authenticated}, hasattr(request.user, 'subscriber')
-    subscriber_any = authenticated and has_subscriber and request.user.subscriber.is_subscriber_any()
+    user = get_related_user(request)
+    path, authenticated = urlparse(url).path, not user.is_anonymous  # TODO: check if this "is_anon" usage is correct
+    result, has_subscriber = {'authenticated': authenticated}, hasattr(user, 'subscriber')
+    subscriber_any = authenticated and has_subscriber and user.subscriber.is_subscriber_any()
     result['subscriber_any'] = subscriber_any
 
     if path == '/' or not settings.SIGNUPWALL_ENABLED:
@@ -1127,9 +1147,9 @@ def amp_access_authorization(request):
         if authenticated:
 
             if has_subscriber:
-                is_subscriber = subscriber_access(request.user.subscriber, article)
+                is_subscriber = subscriber_access(user.subscriber, article)
                 # newsletters
-                result.update([('nl_' + slug, True) for slug in request.user.subscriber.get_newsletters_slugs()])
+                result.update([('nl_' + slug, True) for slug in user.subscriber.get_newsletters_slugs()])
             else:
                 is_subscriber = False
 
@@ -1137,14 +1157,14 @@ def amp_access_authorization(request):
                 {
                     'subscriber': is_subscriber,
                     'article_allowed': is_subscriber or article.is_public(),
-                    'followed': article in following(request.user, Article),
-                    'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
+                    'followed': article in following(user, Article),
+                    'favourited': article in [f.target for f in Favorite.objects.for_user(user)],
                 }
             )
 
             if is_subscriber:
 
-                result.update({'access': True, 'edit': request.user.has_perm('core.change_article')})
+                result.update({'access': True, 'edit': user.has_perm('core.change_article')})
 
             else:
 
@@ -1155,7 +1175,7 @@ def amp_access_authorization(request):
                 articles_visited_count = len(articles_visited)
 
                 if mongo_db is not None:
-                    for x in mongo_db.core_articleviewedby.find({'user': request.user.id, 'allowed': None}):
+                    for x in mongo_db.core_articleviewedby.find({'user': user.id, 'allowed': None}):
                         articles_visited.add(x['article'])
                         articles_visited_count = len(articles_visited)
                         if articles_visited_count >= MAX_CREDITS + 2:
@@ -1164,7 +1184,7 @@ def amp_access_authorization(request):
                 signupwall_limit_reach = not article.is_public() and (articles_visited_count == MAX_CREDITS + 1)
                 if signupwall_limit_reach:
                     # this code is also in signupwall/middleware
-                    limited_free_article_mail(request.user)
+                    limited_free_article_mail(user)
 
                 credits = MAX_CREDITS - articles_visited_count
                 result['access'] = article.is_public() or (credits >= 0)
@@ -1206,8 +1226,9 @@ def amp_access_pingback(request):
 
             article_allowed = request.GET.get('article_allowed') == 'true'
             blocked = not article_allowed and request.GET.get('article_restricted') == 'true'
+            user = get_related_user(request)
 
-            if request.user.is_authenticated:
+            if not user.is_anonymous:
 
                 if mongo_db is not None and not blocked:
 
@@ -1215,7 +1236,7 @@ def amp_access_pingback(request):
                     if article_allowed:
                         set_values['allowed'] = True
                     mongo_db.core_articleviewedby.update_one(
-                        {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
+                        {'user': user.id, 'article': article.id}, {'$set': set_values}, upsert=True
                     )
 
             elif not article.is_public() and not blocked:
@@ -1528,6 +1549,12 @@ def notification_preview(request, template, days=False):
         else:
             raise Http404
     return result
+
+
+@never_cache
+def subscribe_notice_closed(request):
+    request.session['subscribe_notice_closed'] = True
+    return HttpResponse()
 
 
 @never_cache

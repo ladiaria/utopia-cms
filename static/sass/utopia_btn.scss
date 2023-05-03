@@ -7,7 +7,7 @@
   line-height: 20px;
   text-transform: uppercase;
   color: white;
-  padding:10px 20px;
+  padding: 10px 20px;
   background: $off-black;
   border-radius: 100px;
   display: inline-block;
@@ -19,7 +19,7 @@
   -webkit-tap-highlight-color: transparent;
   text-decoration: none;
   border: none;
-  transition:background 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+  transition: background 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
 
   svg {
     display: inline-block;
@@ -28,11 +28,9 @@
     position: relative;
     top: 1px;
 
-
     path:not([fill="none"]) {
       transition: fill 0.35s ease;
     }
-
   }
   i {
     font-style: normal;
@@ -43,20 +41,20 @@
     background-color: $off-black;
   }
 
-  &:hover{
+  &:hover {
     box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3);
     color: white;
-    background-color: #3A3A3A;
+    background-color: #3a3a3a;
   }
   &:active {
     box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.3);
     color: white;
-    background: #4D4F4F;
+    background: #4d4f4f;
     transform: translateY(1px);
   }
   &-light {
     // regular light button
-    background: $secondary-color;
+    background: $primary-color;
     color: $off-black;
 
     &:focus {
@@ -71,13 +69,12 @@
       background: $color-light-blue;
       color: $off-black;
     }
-
   }
   &-outline {
     // outlined button
     background: transparent;
-    border:2px solid $off-black;
-    padding:8px 18px ;
+    border: 2px solid $off-black;
+    padding: 8px 18px;
     color: $off-black;
 
     &:focus {
@@ -87,18 +84,18 @@
     &:hover {
       background: $off-black;
       color: white;
-      border:none;
-      padding:10px 20px;
+      border: none;
+      padding: 10px 20px;
 
       svg path:not([fill="none"]) {
         fill: white;
       }
     }
     &:active {
-      background: #4D4F4F;
-      border-color:#4D4F4F;
-      border:none;
-      padding:10px 20px;
+      background: #4d4f4f;
+      border-color: #4d4f4f;
+      border: none;
+      padding: 10px 20px;
 
       svg path:not([fill="none"]) {
         fill: white;
@@ -111,7 +108,7 @@
       color: white;
 
       &:hover {
-        background:white;
+        background: white;
         color: $off-black;
 
         svg path:not([fill="none"]) {
@@ -119,7 +116,7 @@
         }
       }
       &:active {
-        background:white;
+        background: white;
         color: $off-black;
 
         svg path:not([fill="none"]) {
@@ -129,16 +126,16 @@
     }
     &.disabled {
       cursor: default;
-      color:#A4A4A4;
-      border-color: #A4A4A4;
+      color: #a4a4a4;
+      border-color: #a4a4a4;
 
       &:hover,
       &:active {
         background: transparent;
-        color: #A4A4A4;
-        border:2px solid #A4A4A4;
+        color: #a4a4a4;
+        border: 2px solid #a4a4a4;
         box-shadow: none;
-        padding:8px 18px ;
+        padding: 8px 18px;
       }
     }
   }
@@ -146,14 +143,14 @@
   &-xs {
     font-size: 11px;
     line-height: 12px;
-    padding:4px 10px;
+    padding: 4px 10px;
 
     &.ut-btn-outline {
-      padding:2px 8px;
+      padding: 2px 8px;
 
       &:hover,
       &:active {
-        padding:4px 10px;
+        padding: 4px 10px;
       }
     }
   }
@@ -161,14 +158,14 @@
   &-s {
     font-size: 13px;
     line-height: 14px;
-    padding:8px 15px;
+    padding: 8px 15px;
 
     &.ut-btn-outline {
-      padding:6px 13px;
+      padding: 6px 13px;
 
       &:hover,
       &:active {
-        padding:8px 15px;
+        padding: 8px 15px;
       }
     }
   }
@@ -176,14 +173,14 @@
   &-l {
     font-size: 17px;
     line-height: 20px;
-    padding:15px 25px;
+    padding: 15px 25px;
 
     &.ut-btn-outline {
-      padding:13px 23px;
+      padding: 13px 23px;
 
       &:hover,
       &:active {
-        padding:15px 25px;
+        padding: 15px 25px;
       }
     }
   }
@@ -191,14 +188,14 @@
   &-xl {
     font-size: 19px;
     line-height: 22px;
-    padding:19px 25px;
+    padding: 19px 25px;
 
     &.ut-btn-outline {
-      padding:17px 23px;
+      padding: 17px 23px;
 
       &:hover,
       &:active {
-        padding:19px 25px;
+        padding: 19px 25px;
       }
     }
   }

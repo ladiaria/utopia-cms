@@ -41,6 +41,7 @@ from thedaily.views import (
     lista_lectura_favoritos,
     lista_lectura_historial,
     lista_lectura_toggle,
+    subscribe_notice_closed,
 )
 
 
@@ -78,6 +79,7 @@ urlpatterns = [
     path('api/comments/', user_comments_api),
     path('fromcrm', update_user_from_crm),
     path('suscripcion/editar', edit_subscription, name="edit-subscription"),
+    path('subscribe-notice-closed', subscribe_notice_closed, name='subscribe-notice-closed'),
     # Profile
     path('perfil/editar/', edit_profile, name="edit-profile"),
     re_path(
@@ -143,8 +145,8 @@ urlpatterns = [
         name="nl-category-unsubscribe",
     ),
 
-    path('amp-access/authorization', amp_access_authorization),
-    path('amp-access/pingback', amp_access_pingback),
+    path('amp-access/authorization', amp_access_authorization, name="amp-access-authorization"),
+    path('amp-access/pingback', amp_access_pingback, name="amp-access-pingback"),
 
     path('suscribite-por-telefono/', phone_subscription, name="phone-subscription"),
 

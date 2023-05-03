@@ -1,3 +1,23 @@
+# version 0.4.0 (2023-05-03)
+
+- The insecure and discouraged usage approach of SameSite=None on cookies that was active some time ago, to let the AMP pages work properly, was migrated to a better approach, using a new app just released by us which manages the relationships between the AMP reader ID and the Django user. Now the AMP pages will work again properly when the user is authenticated, but work is still needed to let the clicks on the fav and follow links work in AMP pages again; this will be addressed ASAP.
+- Fixed a duplicate csrf token loaded in login template.
+- AMP header template improved for better inheritance.
+- Many AMP page fixes of bugs introduced in previous release.
+- Subscribe notice moved to the bottom of the page and turn it render independent of other alerts that could be rendered at the same time. Also its close button action is now session-permanent and its content (moved to a template) can be overrided by settings.
+- CSS code and syntax improvements.
+- send_category_nl Management command fixed for django2.
+- sync_article_views Management command improvements.
+- Deprecated middleware removed.
+- cache middleware improvements using better "if" conditions.
+- Article cards templates improved specially taking care of settings that were ignored until now.
+- card_horizontal template not used, removed.
+- cache decorators changed from "staff" notion to "auth" because indeed was not working as expected for auth-but-non-staff users.
+- New management command to update NL delivery stats from the info parsed in the delivery log files.
+- Signupwall middleware improved when resolve path raises 404 error.
+- Emoji martor tool icon disabled because our markdown filter does not support it yet.
+- Settings module improved with comments and obsolote vars remotion.
+
 # version 0.3.9 (2023-04-18)
 
 - Django upgraded from 1.11 to 2.2.

@@ -55,6 +55,9 @@ future
 factory-boy
 w3storage
 
+# Our own repos (TODO: change to pypi package when released there):
+git+https://github.com/ladiaria/django-amp-readerid.git
+
 # Our forks:
 git+https://github.com/ladiaria/django-shorturls.git#egg=django-shorturls
 git+https://github.com/ladiaria/django-favit.git
