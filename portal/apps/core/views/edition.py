@@ -110,6 +110,6 @@ def rawpic_cover(request):
         raise Http404
     else:
         try:
-            return HttpResponse(open(edition.cover.path).read(), content_type="image/jpeg")
+            return HttpResponse(open(edition.cover.path, "rb").read(), content_type="image/jpeg")
         except IOError:
             raise Http404
