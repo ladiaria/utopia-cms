@@ -332,7 +332,7 @@ pip install -r requirements.txt
 
 # From version 0.0.9 to 0.1.0
 
-[Upgrade from 0.0.9 to 0.1.0 guide](docs/upgrade_from_009_to_010.md)
+[Upgrade from 0.0.9 to 0.1.0 guide](docs/upgrade_from_009_to_010.md) (archived)
 
 # From version 0.0.8 to 0.0.9
 

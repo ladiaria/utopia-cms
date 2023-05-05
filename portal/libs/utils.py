@@ -84,6 +84,9 @@ def md5file(filename):
     return digest.hexdigest()
 
 
+# TODO: check if the functions above this line are used, if not, remove.
+
+
 def set_amp_cors_headers(request, response):
     try:
         amp_source_origin = request.GET['__amp_source_origin']

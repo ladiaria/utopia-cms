@@ -99,14 +99,14 @@ def notify_new_subscription(subscription_url, extra_subject=''):
 
 @never_cache
 @csrf_exempt
-@login_required
 def nl_auth_subscribe(request, nltype, nlslug):
     """ Useful view to allow 1-click nl subscription for authenticated users (by ajax or POST) """
     from_amp = request.GET.get("__amp_source_origin")
-    if request.method == 'POST' or request.is_ajax() or from_amp:
+    user = get_related_user(request) if from_amp else request.user
+    if not user.is_anonymous and (request.method == 'POST' or request.is_ajax()):
         nlobj = get_object_or_404(Publication if nltype == "p" else Category, slug=nlslug, has_newsletter=True)
         try:
-            getattr(request.user.subscriber, ("" if nltype == "p" else "category_") + "newsletters").add(nlobj)
+            getattr(user.subscriber, ("" if nltype == "p" else "category_") + "newsletters").add(nlobj)
         except Exception:
             # for some reason UpdateCrmEx does not work in test (Python ver?)
             return HttpResponseBadRequest()
@@ -1123,11 +1123,15 @@ def amp_access_authorization(request):
     except KeyError:
         return HttpResponseBadRequest()
 
-    user = get_related_user(request)
-    path, authenticated = urlparse(url).path, not user.is_anonymous  # TODO: check if this "is_anon" usage is correct
+    user, reader_id = get_related_user(request, True)
+    path, authenticated = urlparse(url).path, not user.is_anonymous
     result, has_subscriber = {'authenticated': authenticated}, hasattr(user, 'subscriber')
     subscriber_any = authenticated and has_subscriber and user.subscriber.is_subscriber_any()
     result['subscriber_any'] = subscriber_any
+
+    if authenticated:
+        # Make the reader_id easily available in xhr post forms in AMP page
+        result["rid"] = reader_id
 
     if path == '/' or not settings.SIGNUPWALL_ENABLED:
 
