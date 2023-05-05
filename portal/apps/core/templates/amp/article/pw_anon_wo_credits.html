@@ -11,9 +11,7 @@
       </a>
     </div>
     <div class="ld-snackbar__text ld-snackbar__block">Si ya tenés una cuenta</div>
-    <div class="ld-snackbar__block">
-      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn bordered">ingresá</a>
-    </div>
+    <div class="ld-snackbar__block"><a on="tap:amp-access.login" class="btn bordered">ingresá</a></div>
     <div class="ld-snackbar__text ld-snackbar__block">
       o
       <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}">registrate</a>

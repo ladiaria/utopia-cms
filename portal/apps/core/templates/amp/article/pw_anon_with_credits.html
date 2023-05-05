@@ -17,9 +17,7 @@
       </a>
     </div>
     <div class="ld-snackbar__text ld-snackbar__block">Si ya tenés una cuenta</div>
-    <div class="ld-snackbar__block">
-      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn bordered">Ingresá</a>
-    </div>
+    <div class="ld-snackbar__block"><a on="tap:amp-access.login" class="btn bordered">Ingresá</a></div>
     <div class="ld-snackbar__text ld-snackbar__block">
       <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}">Registrate</a>
       para acceder a 10 artículos gratis por mes

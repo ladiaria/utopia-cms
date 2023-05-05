@@ -12,9 +12,7 @@
     </a>
     <div class="ld-subscribe-box__login ld-text-secondary">
       <p>¿Ya tenés cuenta?</p>
-      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ld-btn-dark-bordered--sm">
-        Ingresá
-      </a>
+      <a on="tap:amp-access.login" class="ld-btn-dark-bordered--sm">Ingresá</a>
     </div>
   </div>
 </section>
