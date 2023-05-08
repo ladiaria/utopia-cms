@@ -535,7 +535,6 @@ class SubscriptionForm(ModelForm):
     helper.form_tag = False
     helper.help_text_inline = True
     helper.error_text_inline = True
-    # TODO: check wether subscription_type_prices should also be included here
     helper.layout = Layout(
         *(
             HTML('<div class="col s12" style="margin-top: 30px; margin-bottom: 50px;">'),
@@ -548,6 +547,7 @@ class SubscriptionForm(ModelForm):
             HTML('<div class="ld-block--sm align-center">'),
             FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
             HTML('<div class="ld-text-secondary align-center ld-subscription-step" style="display:none;">Paso 1 de 2'),
+            Field('subscription_type_prices'),
         )
     )
 
@@ -579,6 +579,7 @@ class SubscriptionPromoCodeForm(SubscriptionForm):
             HTML('</div><div class="ld-block--sm align-center">'),
             FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
             HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
+            Field('subscription_type_prices'),
         )
 
     class Meta:
@@ -615,6 +616,7 @@ class SubscriptionCaptchaForm(SubscriptionForm):
                 HTML('</div><div class="ld-block--sm align-center">'),
                 FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
                 HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
+                Field('subscription_type_prices'),
             )
         )
 
@@ -637,6 +639,7 @@ class SubscriptionPromoCodeCaptchaForm(SubscriptionPromoCodeForm):
             HTML('</div><div class="ld-block--sm align-center">'),
             FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
             HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
+            Field('subscription_type_prices'),
         )
 
 

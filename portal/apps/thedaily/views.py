@@ -572,6 +572,9 @@ def subscribe(request, planslug, category_slug=None):
                     return HttpResponseRedirect(reverse('phone-subscription'))
 
             else:
+                if settings.DEBUG:
+                    print('%s errors: %s' % (type(subscriber_form_v), subscriber_form_v.errors))
+                    print('%s errors: %s' % (type(subscription_form_v), subscription_form_v.errors))
                 return (
                     'subscribe.html',
                     {
