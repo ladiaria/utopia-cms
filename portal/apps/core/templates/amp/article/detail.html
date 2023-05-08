@@ -356,6 +356,7 @@
           "readLaterToggle": "{{ SITE_URL }}usuarios/lista-lectura-toggle/${eventLabel}/{{ article.id }}/"
           {% block extra_requests %}{% endblock %}
         },
+        "extraUrlParams": {"rid": "ACCESS_READER_ID"},
         "triggers": {
           {% if article.audio %}
             "trackAudioPlay": {
@@ -371,9 +372,7 @@
           }
           {% block extra_triggers %}{% endblock %}
         },
-        "transport": {
-          "xhrpost": true
-        }
+        "transport": {"xhrpost": true, "useBody": true}
       }
     </script>
   </amp-analytics>

@@ -19,6 +19,8 @@ from django.contrib.auth.decorators import permission_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 
+from django_amp_readerid.utils import get_related_user
+
 from core.models import Article
 from .models import AudioStatistics
 
@@ -149,10 +151,12 @@ def audio_statistics_api(request):
 @require_POST
 def audio_statistics_api_amp(request):
 
-    if not hasattr(request.user, 'subscriber'):
+    user = get_related_user(request, use_body=True)
+
+    if not hasattr(user, 'subscriber'):
         return HttpResponseForbidden()
 
-    subscriber_id = request.user.subscriber.id
+    subscriber_id = user.subscriber.id
     audio_id = request.GET.get('audio_id')
 
     if AudioStatistics.objects.filter(subscriber_id=subscriber_id, audio_id=audio_id, amp_click=True).exists():

@@ -968,14 +968,17 @@ def lista_lectura_historial(request):
 @csrf_exempt
 @require_POST
 def lista_lectura_toggle(request, event, article_id):
+    """
+    TODO: describe this view
+          (its name should be changed, this view also works for toggle fav)
+    """
+    user = get_related_user(request, use_body=True)
 
-    if not hasattr(request.user, 'subscriber'):
+    if not hasattr(user, 'subscriber'):
         return HttpResponseForbidden()
 
-    subscriber_id = request.user.subscriber.id
-
     try:
-        user, article = Subscriber.objects.get(id=subscriber_id).user, Article.objects.get(id=article_id)
+        article = Article.objects.get(id=article_id)
     except Exception:
         return HttpResponseServerError()
 
