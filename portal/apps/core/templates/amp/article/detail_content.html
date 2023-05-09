@@ -7,7 +7,7 @@
   {% block article_body_content %}{{ article.body|amp_ldmarkup:article.id }}{% endblock %}
 </div>
 
-{% if article.type == "PA" or article.gallery %}
+{% if article.gallery %}
   <amp-image-lightbox id="lightbox1" layout="nodisplay"></amp-image-lightbox>
   <div class="gallery-wrap">
     {% for photo in article.gallery_photos %}

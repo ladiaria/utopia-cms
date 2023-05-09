@@ -309,11 +309,11 @@
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
           </div>
 
-          {% if article.type == "PA" or article.gallery.photos %}
+          {% if article.gallery %}
             <div class="thumbnails container gallery-wrap">
               <div id="galeriadefotos" class="responsive-images">
                 <div class="row">
-                  {% for photo in article.gallery.photos.all %}
+                  {% for photo in article.gallery_photos %}
                     <div data-responsive="{{ photo.get_400w_url }} 400px,
                                           {{ photo.get_700w_url }} 700px,
                                           {{ photo.get_900w_url }} 1000px"
