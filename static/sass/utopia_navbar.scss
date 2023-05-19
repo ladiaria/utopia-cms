@@ -1610,6 +1610,12 @@ body.interior {
         align-items: center;
         justify-content: space-between;
 
+        @media screen and (max-width: 340px) {
+            svg {
+                display: none;
+            }
+        }
+
         a {
             display: inline-block;
             font-weight: normal;

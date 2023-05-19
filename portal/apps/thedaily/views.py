@@ -562,6 +562,7 @@ def subscribe(request, planslug, category_slug=None):
                 if oauth2_state:
                     request.session['notify_phone_subscription'] = True
                     request.session['preferred_time'] = post.get('preferred_time')
+                    request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
                     return HttpResponseRedirect(
                         '%s?next=%s'
                         % (reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('phone-subscription'))
