@@ -287,6 +287,7 @@ def newsletter_browser_preview(request, slug, hashed_id):
     # TODO: obtain missing vars from hashed_id subscriber
     context.update(
         {
+            "browser_preview": True,
             "as_news": as_news,
             'hashed_id': hashed_id,
             'unsubscribe_url': unsubscribe_url,
