@@ -331,6 +331,7 @@ def google_phone(request):
             send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!')
             oas.delete()
             request.session['welcome'] = True
+            request.session.modified = True # TODO: see comments in portal.libs.social_auth_pipeline
             return HttpResponseRedirect(
                 '%s?next=%s'
                 % (reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('account-welcome'))
@@ -359,6 +360,7 @@ def subscribe(request, planslug, category_slug=None):
         auth = request.GET.get('auth')
         if auth:
             request.session['planslug'] = planslug
+            request.session.modified = True # TODO: see comments in portal.libs.social_auth_pipeline
             return HttpResponseRedirect(
                 '%s?next=%s'
                 % (

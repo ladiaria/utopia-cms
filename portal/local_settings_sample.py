@@ -50,9 +50,6 @@ DATABASES = {
 }
 
 TIME_ZONE = 'America/Montevideo'
-
-USE_I18N = True
-
 DATE_FORMAT = 'l j de F de Y'
 TIME_FORMAT = 'H:i:s'
 DATETIME_FORMAT = '%s %s' % (DATE_FORMAT, TIME_FORMAT)
