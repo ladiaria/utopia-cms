@@ -39,6 +39,14 @@ class NewsletterDelivery(Model):
     user_bounces = PositiveIntegerField(blank=True, null=True)
     subscriber_bounces = PositiveIntegerField(blank=True, null=True)
 
+    def __str__(self):
+        return "%s stats for '%s' delivered on %s: %s" % (
+            self.__class__.__name__,
+            self.newsletter_name,
+            str(self.delivery_date),
+            (self.user_opened, self.subscriber_opened),
+        )
+
     def delivery_date_short(self):
         return date_format(self.delivery_date, format=settings.SHORT_DATE_FORMAT, use_l10n=True)
 
