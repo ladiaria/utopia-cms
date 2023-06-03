@@ -426,7 +426,7 @@
     {% if not is_portada and not is_detail %}
       </div>
     {% endif %}
-
+    {% block main_close %}</main>{% endblock %}
     {% block footer_block %}
       <footer class="footer-portada{% if category %} footer-{{ category.slug }}{% endif %}">
         {% include footer_template %}
@@ -484,6 +484,5 @@
     {% block javascript %}{% endblock %}
     {% block footer_scripts %}{% endblock %}
     {% block footer_scripts_extra %}{% endblock %}
-    {% block main_close %}</main>{% endblock %}
   </body>
 </html>

@@ -161,8 +161,8 @@ a.ld-text-secondary,
 }
 
 body {
-    display: block;
-    min-height: 100vh;
+    display: flex;
+    min-height: 100%;
     flex-direction: column;
     padding-bottom: $line-height;
     padding-top: 0;
