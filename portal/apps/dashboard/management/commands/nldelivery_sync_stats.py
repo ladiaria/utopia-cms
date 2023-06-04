@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import sys
 import time
 from datetime import date
+import logging
 
 from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
@@ -37,7 +38,7 @@ def initialize_analyticsreporting():
     return analytics
 
 
-def get_report(analytics, start_date, end_date, campaign, delivery_date):
+def get_report(analytics, start_date, end_date, campaign, delivery_date, by_date):
     """
     Queries the Analytics Reporting API V4.
 
@@ -63,7 +64,6 @@ def get_report(analytics, start_date, end_date, campaign, delivery_date):
             {'name': 'ga:eventLabel'},
             {'name': 'ga:campaign'},
             {'name': 'ga:pageTitle'},
-            # {'name': 'ga:date'},
             # {'name': 'ga:hour'},
             # {'name': 'ga:minute'},
         ],
@@ -87,6 +87,8 @@ def get_report(analytics, start_date, end_date, campaign, delivery_date):
             },
         ],
     }
+    if by_date:
+        request_data["dimensions"].append({'name': 'ga:date'})
 
     return analytics.reports().batchGet(body={'reportRequests': [request_data]}).execute()
 
@@ -130,6 +132,13 @@ class Command(BaseCommand):
             '--no-sync', action='store_true', default=False, dest='no_sync', help='No sync, only print'
         )
         parser.add_argument(
+            '--by-date',
+            action='store_true',
+            default=False,
+            dest='by_date',
+            help='Include the date of the event, can be useful to debug, to know the ammount of events by date',
+        )
+        parser.add_argument(
             '--sync-rangeonly',
             action='store_true',
             default=False,
@@ -138,10 +147,12 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+
         analytics = initialize_analyticsreporting()
-        start_date, end_date = options.get('start_date'), options.get('end_date')
+        start_date, end_date, verbosity = options.get('start_date'), options.get('end_date'), options.get('verbosity')
         campaign_arg, today, empty_count = options.get('campaign'), date.today(), 0
-        delivery_date = options.get("delivery_date")
+        delivery_date, by_date = options.get("delivery_date"), options.get("by_date")
+        no_sync, sync_rangeonly = options.get('no_sync'), start_date and end_date and options.get('sync_rangeonly')
 
         if campaign_arg:
             campaigns = [campaign_arg]
@@ -152,10 +163,31 @@ class Command(BaseCommand):
                 delivery_date__gte=date(today.year - 1, today.month, 1)
             ).values_list("newsletter_name", flat=True).distinct()
 
+        # log
+        log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
+        log = logging.getLogger(__name__)
+        log.setLevel(logging.DEBUG)
+        # print also errors to stderr to receive cron alert
+        err_handler = logging.StreamHandler(sys.stderr)
+        err_handler.setLevel(logging.ERROR)
+        err_handler.setFormatter(log_formatter)
+        log.addHandler(err_handler)
+        if settings.DEBUG:
+            # print also to stdout if DEBUG
+            stdout_handler = logging.StreamHandler(sys.stdout)
+            stdout_handler.setLevel(logging.DEBUG)
+            stdout_handler.setFormatter(log_formatter)
+            log.addHandler(stdout_handler)
+        logfile = getattr(settings, "DASHBOARD_NLDELIVERY_SYNC_STATS_LOGFILE", None)
+        if logfile:
+            h = logging.FileHandler(filename=logfile)
+            h.setFormatter(log_formatter)
+            log.addHandler(h)
+
         # divide api calls into campaigns to lower the prob. to obtain limited 1000 rows results, otherwise pagination
         # should be implemented.
         for campaign in campaigns:
-            response = get_report(analytics, start_date, end_date, campaign, delivery_date)
+            response = get_report(analytics, start_date, end_date, campaign, delivery_date, by_date)
             try:
                 rows = response['reports'][0]['data']['rows']
             except (KeyError, IndexError):
@@ -164,33 +196,33 @@ class Command(BaseCommand):
             else:
                 bar = Bar('Processing "%s" \tresults:' % campaign, max=len(rows)) if options.get('progress') else None
 
-            no_sync = options.get('no_sync')
-            sync_rangeonly = start_date and end_date and options.get('sync_rangeonly')
-
             for row in rows:
                 if bar:
                     bar.next()
 
-                # NOTE: date, hour, minute can help to debug:
-                # event_label, campaign, page_title, ga_date, ga_hour, ga_minute = row['dimensions']
+                # NOTE: if hour / minute were uncommented in the get_report function, use:
+                # event_label, campaign, page_title, ga_hour, ga_minute[, ga_date] = row['dimensions']
 
-                event_label, campaign, page_title = row['dimensions']
+                if by_date:
+                    event_label, campaign, page_title, ga_date = row['dimensions']
+                else:
+                    event_label, campaign, page_title = row['dimensions']
                 count = row['metrics'][0]['values'][0]
 
                 if sync_rangeonly and (page_title < start_date or page_title > end_date):
                     continue
-                if no_sync:
-                    print('%s, %s, %s: %s' % (campaign, page_title, event_label, count))
-                    """
-                    print(
-                        '%s, %s, %s, %s %s:%s : %s' % (
-                            campaign, page_title, event_label, ga_date, ga_hour, ga_minute, count
-                        )
-                    )
-                    """
-                else:
+
+                if verbosity > 0:
+                    if by_date:
+                        log.info('%s, %s, %s, %s: %s' % (campaign, page_title, event_label, ga_date, count))
+                    else:
+                        log.info('%s, %s, %s: %s' % (campaign, page_title, event_label, count))
+
+                if not no_sync:
                     try:
-                        nl_delivery = NewsletterDelivery.objects.get(newsletter_name=campaign, delivery_date=page_title)
+                        nl_delivery = NewsletterDelivery.objects.get(
+                            newsletter_name=campaign, delivery_date=page_title
+                        )
                         if event_label == 'open_email':
                             nl_delivery.user_opened = (nl_delivery.user_opened or 0) + int(count)
                         else:
@@ -202,7 +234,7 @@ class Command(BaseCommand):
             if bar:
                 bar.finish()
 
-            time.sleep(1)  # wait a bit to be polite
+            time.sleep(1)  # wait a bit to be polite with GA api
 
         if empty_count == len(campaigns):
-            print('ERROR: No data could be found')
+            log.error('No data could be found')
