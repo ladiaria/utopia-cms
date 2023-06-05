@@ -164,7 +164,7 @@ class Command(BaseCommand):
             ).values_list("newsletter_name", flat=True).distinct()
 
         # log
-        log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
+        log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S')
         log = logging.getLogger(__name__)
         log.setLevel(logging.DEBUG)
         # print also errors to stderr to receive cron alert
