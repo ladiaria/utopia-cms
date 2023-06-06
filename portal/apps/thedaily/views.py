@@ -10,6 +10,7 @@ import json
 import requests
 import pymongo
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlparse
 from smtplib import SMTPRecipientsRefused
@@ -55,7 +56,7 @@ from libs.utils import set_amp_cors_headers, decode_hashid
 from libs.tokens.email_confirmation import default_token_generator, get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
 from apps import mongo_db
-from core.models import Publication, Category, Article, ArticleUrlHistory
+from core.models import Publication, Category, Article, ArticleUrlHistory, ArticleViewedBy
 from thedaily.models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState
 from thedaily.forms import (
     LoginForm,
@@ -1358,6 +1359,143 @@ def email_check_api(request):
         msg = 'No hay suscriptor asociado al usuario web'
 
     return HttpResponse(msg)
+
+
+@never_cache
+@csrf_exempt
+@require_POST
+def most_read_api(request):
+    """
+    Takes contact_id and email from POST to check if there is any other user
+    with the requested email. If it doesn't exist, it returns OK. Then, if it
+    exists, it checks if it's the same user that should have that email.
+    If it's not, it returns an error message.
+    """
+    from django.db.models import Count
+    try:
+
+        email = request.POST['email']
+
+        if not email or request.POST['ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
+            return HttpResponseForbidden()
+
+        user = User.objects.get(email=email)
+
+        # get top five most read articles by the user
+        most_read_articles = Article.objects.filter(viewed_by=user).values(
+            'headline',
+            'url_path',
+            'date_created'
+        ).annotate(total_views=Count("articleviewedby")).order_by("-total_views")[:5]
+
+    except KeyError:
+        return HttpResponseBadRequest('Parameter missing')
+    except ValueError:
+        return HttpResponseBadRequest('Wrong values')
+    except User.DoesNotExist:
+        return Http404("Usuario no encontrado")
+    except MultipleObjectsReturned:
+        return Http404("Multiples usuarios encontrados con el mismo email")
+    return HttpResponse(most_read_articles, status=200)
+
+
+@never_cache
+@csrf_exempt
+@require_POST
+def last_read_api(request):
+    """
+    Takes email from POST and get the five latest read articles for the given user
+    """
+    try:
+        email = request.POST.get('email')
+        api_key = request.POST.get('ldsocial_api_key')
+        if not email or api_key != settings.CRM_UPDATE_USER_API_KEY:
+            return HttpResponseForbidden()
+
+        user = User.objects.get(email=email)
+
+        # get latest read articles for the user
+        latest_read_articles = user.articleviewedby_set.all().values(
+            'article__headline',
+            'article__url_path',
+            'viewed_at').order_by("-viewed_at")[:5]
+        # formatting the list for CRM
+        articles_list = [{
+            'headline': a['article__headline'],
+            'url': a['article__url_path'],
+            'viewed_at': a['viewed_at'].strftime("%Y-%m-%d %H:%M:%S")
+        } for a in latest_read_articles]
+
+    except KeyError:
+        return HttpResponseBadRequest('Parameter missing')
+    except ValueError:
+        return HttpResponseBadRequest('Wrong values')
+    except User.DoesNotExist:
+        return JsonResponse({"message": "Usuario no encontrado"}, status=404)
+    except MultipleObjectsReturned:
+        return JsonResponse({"message": "Multiples usuarios encontrados con el mismo email"}, status=404)
+    return JsonResponse(articles_list, safe=False, status=200)
+
+
+@never_cache
+@csrf_exempt
+@require_POST
+def read_articles_percentage_api(request):
+    """
+    Takes email from POST and get the five latest read articles categories expressed in percentages
+    This take in consideration the articles read in the last 6 months
+    """
+    try:
+        email = request.POST.get('email')
+        api_key = request.POST.get('ldsocial_api_key')
+        if not email or api_key != settings.CRM_UPDATE_USER_API_KEY:
+            return HttpResponseForbidden()
+
+        user = User.objects.get(email=email)
+
+        # get six months ago date
+        six_moths_ago = datetime.today() - relativedelta(months=+6)
+        # get viewed articles
+        viewed_articles = Article.objects.filter(
+            viewed_by=user, articleviewedby__viewed_at__gt=six_moths_ago).select_related('main_section').distinct()
+        total_articles_count = viewed_articles.count()
+        index_object = dict()
+        category_ids_counts = dict()
+        for article in viewed_articles:
+            if article.main_section:
+                if article.main_section.section.slug in getattr(settings, 'DASHBOARD_MAIN_SECTION_SLUGS', []):
+                    index_object['object'] = article.main_section.section
+                    index_object['name'] = article.main_section.section.name
+                    index_object['slug_id'] = 'section-{}'.format(index_object['name'], article.main_section.section.name)
+                elif article.main_section.section and article.main_section.section.category:
+                    index_object['object'] = article.main_section.section.category
+                    index_object['name'] = article.main_section.section.category.name
+                    index_object['slug_id'] = 'category-{}'.format(str(article.main_section.section.category.name).lower())
+                elif (
+                        article.main_section.edition.publication
+                        and article.main_section.edition.publication.slug
+                        not in getattr(settings, "DASHBOARD_EXCLUDE_PUBLICATION_SLUGS", [])
+                ):
+                    index_object['object'] = article.main_section.edition.publication
+                    index_object['name'] = article.main_section.edition.publication.name
+                    index_object['slug_id'] = 'publication-{}'.format(article.main_section.edition.publication.slug)
+                if len(index_object) > 0:
+                    category_viewed_count = category_ids_counts.get(index_object['slug_id'], {'count': 0})
+                    category_viewed_count = category_viewed_count['count'] + 1
+                    category_ids_counts[index_object['slug_id']] = {
+                        'name': index_object['name'],
+                        'count': category_viewed_count,
+                        'category_percentage': category_viewed_count * 100 / total_articles_count
+                    }
+    except KeyError:
+        return HttpResponseBadRequest('Parameter missing')
+    except ValueError:
+        return HttpResponseBadRequest('Wrong values')
+    except User.DoesNotExist:
+        return JsonResponse({"message": "Usuario no encontrado"}, status=404)
+    except MultipleObjectsReturned:
+        return JsonResponse({"message": "Multiples usuarios encontrados con el mismo email"}, status=404)
+    return JsonResponse(category_ids_counts, status=200)
 
 
 @never_cache
