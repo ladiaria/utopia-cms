@@ -321,7 +321,7 @@
         var subscribe_notice = $('.subscribe-notice');
         if(subscribe_notice.length){
           subscribe_notice.removeClass("hide");
-          $('.btn-close-notice', subscribe_notice).click(function(){
+          $('.btn-close-notice', subscribe_notice).click(function() {
             {# TODO: "closed in session" also for non auth users (notice ajax-loaded like "bn" for not break cache) #}
             {% if user.is_authenticated %}
               $.get("{% url 'subscribe-notice-closed' %}", function(data){
@@ -332,6 +332,11 @@
             {% endif %}
           });
         }
+
+        setTimeout(() => {
+          document.querySelector(".subscribe-notice__desktop").classList.toggle("hidden");
+          document.querySelector(".subscribe-notice").classList.toggle("hidden");
+        }, 20000);
 
         const subscribeToggleButton = document.getElementById("btn-toggle-banner");
         if(subscribeToggleButton){
