@@ -732,7 +732,7 @@ a.ladiaria {
 
     &__title {
         font-family: "Roboto", sans-serif;
-        font-size: 50px;
+        font-size: 3rem;
         line-height: 1.1;
         color: #000;
         font-weight: bold;
@@ -755,6 +755,10 @@ a.ladiaria {
             vertical-align: top;
             position: relative;
             top:20px;
+        }
+
+        @media screen and (max-width: 600px) {
+            font-size: 2rem;
         }
     }
 

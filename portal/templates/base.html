@@ -334,20 +334,13 @@
         }
 
         setTimeout(() => {
-          document.querySelector(".subscribe-notice__desktop").classList.toggle("hidden");
-          document.querySelector(".subscribe-notice").classList.toggle("hidden");
+          $(".subscribe-notice__desktop, .subscribe-notice").toggleClass("hidden");
         }, 20000);
 
-        const subscribeToggleButton = document.getElementById("btn-toggle-banner");
-        if(subscribeToggleButton){
-          subscribeToggleButton.addEventListener("click", function() {
-            document.getElementById("subscribe-notice-mobile").classList.toggle("collapsed");
-            document.getElementById("subscribe-notice-mobile").classList.toggle("expanded");
-            document.querySelector(".subscribe-notice__footer a").classList.toggle("ut-btn");
-            document.querySelector(".subscribe-notice__footer a").classList.toggle("ut-btn-subscription");
-            document.querySelector(".subscribe-notice__footer a").classList.toggle("ut-btn-subscription--mobile");
-          });
-        }
+        $("#btn-toggle-banner").click(function() {
+          $("#subscribe-notice-mobile").toggleClass("collapsed expanded");
+          $(".subscribe-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
+        });
 
         {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
       });

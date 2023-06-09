@@ -11,7 +11,9 @@
 {% block body_class %}section-detail{% endblock %}
 
 {% block page_header %}
-  <div class="section_background {% if section.background_color %}styled{% endif %}" style="background-color:{{section.background_color}} !important">
+  <!-- TODO: Check if we can improve hardcoded white color -->
+  <div class="section_background{% if section.background_color and section.background_color != '#ffffff' %} styled{% endif %}"
+       style="background-color:{{ section.background_color }} !important">
     <div class="container container--narrow">
       <div class="section-detail__head {% if section.white_text %}white_text{% endif %}">
         {% if section.category and not backlink_skip_category %}

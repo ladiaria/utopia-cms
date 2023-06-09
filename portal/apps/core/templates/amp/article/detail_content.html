@@ -13,7 +13,8 @@
     {% for photo in article.gallery_photos %}
       <figure class="amp-img-block">
         <amp-img on="tap:lightbox1" tabindex="0" role="button" src="{{ photo.get_900w_url }}"
-                 alt="{{ photo.caption }}" title="{{ photo.caption }} - Ver"
+                 alt="{% if photo.caption %}{{ photo.caption }}{% else %}Foto Nº{{ forloop.counter }} de la galería del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+                 title="{% if photo.caption %}{{ photo.caption }}{% else %}Foto Nº{{ forloop.counter }} de la galería del artículo '{{ article.headline|remove_markup }}'{% endif %} - Ver"
                  layout="responsive"
                  width="{{ photo.image.width }}" height="{{ photo.image.height }}"/>
         <figcaption class="ld-caption">{{ photo.caption }}</figcaption>

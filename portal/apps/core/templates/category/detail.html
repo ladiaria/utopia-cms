@@ -187,7 +187,8 @@
             {% render_toolbar_for a %}
             {% if a.photo %}
               <a href="{{ a.get_absolute_url }}">
-                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" title="{{ a.photo.caption }}" alt="{{ a.photo.caption }}"
+                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" title="{{ a.photo.caption }}"
+                     alt="{% if a.photo.caption %}{{ a.photo.caption }}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% endif %}"
                      width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}
                      loading="lazy">
               </a>

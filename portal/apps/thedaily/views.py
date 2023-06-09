@@ -145,7 +145,9 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
         return HttpResponseRedirect(next_page)
     else:
         request.session['next'] = next_page
-        return HttpResponseRedirect(reverse('account-login'))
+        return HttpResponseRedirect(
+            reverse('account-login') + getattr(settings, "THEDAILY_NL_SUBSCRIBE_LOGIN_URL_PLUS", "")
+        )
 
 
 @never_cache

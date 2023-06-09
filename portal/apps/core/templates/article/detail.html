@@ -321,7 +321,8 @@
                          data-sub-html="{{ photo.caption }}"
                          class="col s4 m4 l4 gallery_thumb">
                       <a href="{{ photo.get_1200w_url }}" class="item img-{{ forloop.counter }}" data-sub-html=".caption">
-                        <img src="{{ photo.get_article_thumb_url }}" alt="{{ photo.caption }}" class="gallery_thumb">
+                        <img src="{{ photo.get_article_thumb_url }}" class="gallery_thumb"
+                             alt="{% if photo.caption %}{{ photo.caption }}{% else %}Foto Nº{{ forloop.counter }} de la galería del artículo '{{ article.headline|remove_markup }}'{% endif %}">
                         <div class="caption hide">
                           {{ photo.caption }}
                           {% if article.photo_author %}
