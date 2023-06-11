@@ -67,12 +67,13 @@ urls_custom_module = getattr(settings, 'THEDAILY_URLS_CUSTOM_MODULE', None)
 if urls_custom_module:
     custom_patterns = __import__(urls_custom_module, fromlist=['urlpatterns']).urlpatterns
 else:
-    custom_patterns = [path(
-        'planes/', RedirectView.as_view(url='/usuarios/suscribite/DDIGM/'), name="subscribe_landing")]
+    custom_patterns = [
+        path('planes/', RedirectView.as_view(url='/usuarios/suscribite/DDIGM/'), name="subscribe_landing")
+    ]
 
 urlpatterns = [
     path('', RedirectView.as_view(url='perfil/editar/')),
-    path('comentarios/', never_cache(TemplateView.as_view(template_name='thedaily/templates/comments.html')))
+    path('comentarios/', never_cache(TemplateView.as_view(template_name='thedaily/templates/comments.html'))),
 ] + custom_patterns + [
     re_path(r'^suscribite/(?P<planslug>\w+)/$', subscribe, name="subscribe"),
     re_path(r'^suscribite/(?P<planslug>\w+)/(?P<category_slug>\w+)/$', subscribe, name="subscribe"),
@@ -114,29 +115,41 @@ urlpatterns = [
     path('bienvenido/', welcome, {'subscribed': True}, name="account-welcome-s"),
 
     path('cambiar-password/', password_change, name="account-password_change"),
-    path('cambiar-password/hecho/', never_cache(TemplateView.as_view(
-        template_name='thedaily/templates/password_change_done.html')),
-        name="account-password_change-done"),
-    re_path(r'^cambiar-password/(?P<user_id>\d{1,})-(?P<hash>.*)/$', password_reset, name='account-password_change-hash'),
+    path(
+        'cambiar-password/hecho/',
+        never_cache(TemplateView.as_view(template_name='thedaily/templates/password_change_done.html')),
+        name="account-password_change-done",
+    ),
+    re_path(
+        r'^cambiar-password/(?P<user_id>\d{1,})-(?P<hash>.*)/$', password_reset, name='account-password_change-hash'
+    ),
     re_path(r'^completar-registro/(?P<user_id>\d{1,})-(?P<hash>.*)/$', complete_signup, name="account-signup-hash"),
     path('entrar/', login, name="account-login"),
-    path('error/login/', never_cache(TemplateView.as_view(
-        template_name='thedaily/templates/login_error.html')),
-        name="login-error"),
-    path('error/toomuch/', never_cache(TemplateView.as_view(
-        template_name='thedaily/templates/toomuch.html')),
-        name="account-error-toomuch"),
+    path(
+        'error/login/',
+        never_cache(TemplateView.as_view(template_name='thedaily/templates/login_error.html')),
+        name="login-error",
+    ),
+    path(
+        'error/toomuch/',
+        never_cache(TemplateView.as_view(template_name='thedaily/templates/toomuch.html')),
+        name="account-error-toomuch",
+    ),
     path('restablecer/', password_reset, name="account-password_reset"),
-    path('restablecer/correo-enviado/', never_cache(TemplateView.as_view(
-        template_name='thedaily/templates/password_reset_mail_sent.html')),
-        name="account-password_reset-mail_sent"),
+    path(
+        'restablecer/correo-enviado/',
+        never_cache(TemplateView.as_view(template_name='thedaily/templates/password_reset_mail_sent.html')),
+        name="account-password_reset-mail_sent",
+    ),
     path('confirm_email/', confirm_email, name='account-confirm_email'),
     path('session_refresh/', session_refresh, name='session-refresh'),
 
     # TODO: enter "bienvenido/" directly should not be allowed
-    path('bienvenido/tel/', never_cache(TemplateView.as_view(
-        template_name='thedaily/templates/phone_subscription_thankyou.html')),
-        name="telsubscribe_success"),
+    path(
+        'bienvenido/tel/',
+        never_cache(TemplateView.as_view(template_name='thedaily/templates/phone_subscription_thankyou.html')),
+        name="telsubscribe_success",
+    ),
 
     re_path(r'^referidos/(?P<hashed_id>\w+)/$', referrals, name="referrals"),
     re_path(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
@@ -169,5 +182,6 @@ urlpatterns = [
     re_path(
         r'^lista-lectura-toggle/(?P<event>add|remove|favToggle)/(?P<article_id>\d+)/$',
         lista_lectura_toggle,
-        name="lista-lectura-toggle"),
+        name="lista-lectura-toggle",
+    ),
 ]
