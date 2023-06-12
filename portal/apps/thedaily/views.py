@@ -1705,9 +1705,13 @@ def notification_preview(request, template, days=False):
 
 
 @never_cache
+@csrf_exempt
 def subscribe_notice_closed(request):
-    request.session['subscribe_notice_closed'] = True
-    return HttpResponse()
+    if request.method == "POST":
+        request.session['subscribe_notice_closed'] = True
+        return HttpResponse()
+    else:
+        return JsonResponse({"closed": request.session.get('subscribe_notice_closed', False)})
 
 
 @never_cache

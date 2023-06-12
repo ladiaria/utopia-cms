@@ -9,6 +9,7 @@ import socket
 from datetime import date, datetime, timedelta
 import traceback
 import json
+from pydoc import locate
 from hashids import Hashids
 
 from django.conf import settings
@@ -181,15 +182,8 @@ def newsletter_preview(request, slug):
             getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category.slug, '')
         )
         if not custom_subject:
-            callable_csubject = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category.slug, None)
-            if callable_csubject:
-                callable_splitted = callable_csubject.split('.')
-                callable_function_str = callable_splitted[-1]
-                callable_function = getattr(
-                    __import__('.'.join(callable_splitted[:-1]), fromlist=[callable_function_str]),
-                    callable_function_str,
-                )
-            email_subject += callable_function() if callable_csubject else remove_markup(cover_article.headline)
+            subject_call = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category.slug, None)
+            email_subject += locate(subject_call)() if subject_call else remove_markup(cover_article.headline)
 
         email_from = '%s <%s>' % (
             site.name

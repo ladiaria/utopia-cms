@@ -1433,7 +1433,7 @@ a.ld-link-low {
   line-height: 1.2;
   text-transform: uppercase;
   text-align: center;
-  padding:14px 0;
+  padding:14px 20px 14px 3px;
   position: fixed;
   width: 100%;
   z-index: 100;
@@ -1441,7 +1441,7 @@ a.ld-link-low {
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid #B4B4B4;
 
-    @media (max-width:640px){
+    @media #{$small-and-down} {
         top:auto;
         bottom: 65px;
 

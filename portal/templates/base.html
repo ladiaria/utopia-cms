@@ -300,7 +300,7 @@
         let userNameFromCookie = getCookie(userName);
         if(userNameFromCookie == null)
           setCookie(userName, null);
-        if(getCookie('notifyme', 1) != "false") {
+        if(getCookie('notifyme', 1) != "false"){
           var applicationServerPublicKey = "{{ CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY }}";
           var subscription_to_delete = null;
         }
@@ -313,6 +313,15 @@
         });
       }
 
+      function subscribe_notice_show(subscribe_notice){
+        subscribe_notice.removeClass("hide");
+        $('.btn-close-notice', subscribe_notice).click(function(){
+          $.post("{% url 'subscribe-notice-closed' %}", function(data){
+            subscribe_notice.hide();
+          });
+        });
+      }
+
       $(function(){
         $('.btn-close').click(function(){
           notification_close(this);
@@ -320,24 +329,22 @@
 
         var subscribe_notice = $('.subscribe-notice');
         if(subscribe_notice.length){
-          subscribe_notice.removeClass("hide");
-          $('.btn-close-notice', subscribe_notice).click(function() {
-            {# TODO: "closed in session" also for non auth users (notice ajax-loaded like "bn" for not break cache) #}
-            {% if user.is_authenticated %}
-              $.get("{% url 'subscribe-notice-closed' %}", function(data){
-                subscribe_notice.hide();
-              });
-            {% else %}
-              subscribe_notice.hide();
-            {% endif %}
-          });
+          {% if user.is_authenticated %}
+            subscribe_notice_show(subscribe_notice);
+          {% else %}
+            $.get("{% url 'subscribe-notice-closed' %}", function(data){
+              if(!data.closed){
+                subscribe_notice_show(subscribe_notice);
+              }
+            });
+          {% endif %}
         }
 
         setTimeout(() => {
           $(".subscribe-notice__desktop, .subscribe-notice").toggleClass("hidden");
         }, 20000);
 
-        $("#btn-toggle-banner").click(function() {
+        $("#btn-toggle-banner").click(function(){
           $("#subscribe-notice-mobile").toggleClass("collapsed expanded");
           $(".subscribe-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
         });

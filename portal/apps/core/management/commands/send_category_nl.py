@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# utopia-cms, 2018-2022, Aníbal Pacheco
+# utopia-cms, 2018-2023, Aníbal Pacheco
 from __future__ import unicode_literals
 
 from builtins import next
@@ -11,10 +11,11 @@ import locale
 import smtplib
 import time
 import json
-from csv import reader, writer
-from MySQLdb import ProgrammingError
 from datetime import date, datetime, timedelta
 from socket import error
+from csv import reader, writer
+from pydoc import locate
+from MySQLdb import ProgrammingError
 from hashids import Hashids
 from emails.django import DjangoMessage as Message
 
@@ -235,15 +236,8 @@ def build_and_send(
             getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(category_slug, '')
         )
         if not custom_subject:
-            callable_csubject = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category_slug, None)
-            if callable_csubject:
-                callable_splitted = callable_csubject.split('.')
-                callable_function_str = callable_splitted[-1]
-                callable_function = getattr(
-                    __import__('.'.join(callable_splitted[:-1]), fromlist=[callable_function_str]),
-                    callable_function_str,
-                )
-            email_subject += callable_function() if callable_csubject else remove_markup(cover_article.headline)
+            subject_call = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category_slug)
+            email_subject += locate(subject_call)() if subject_call else remove_markup(cover_article.headline)
 
         email_from = (
             site.name if category_slug in getattr(
