@@ -341,7 +341,9 @@
         }
 
         setTimeout(() => {
-          $(".subscribe-notice__desktop, .subscribe-notice").toggleClass("hidden");
+          $(".subscribe-notice__desktop").toggleClass("hidden");
+          $("#subscribe-notice-mobile").toggleClass("collapsed expanded");
+          $(".subscribe-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
         }, 20000);
 
         $("#btn-toggle-banner").click(function(){
