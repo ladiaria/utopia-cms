@@ -10,8 +10,6 @@ from core.models import Section, Publication, Category, get_current_edition
 
 register = Library()
 
-last_old_day = getattr(settings, 'LAST_OLD_DAY')
-
 
 @register.filter
 def get_item(dictionary, key):

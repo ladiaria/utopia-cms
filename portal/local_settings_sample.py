@@ -71,7 +71,6 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 SENDNEWSLETTER_LOGFILE = '/home/user/utopia-cms-data/sendnewsletter/%s-%s.log'
 
-LAST_OLD_DAY = datetime(2013, 6, 15)
 EMAIL_EDITION_NUMBER_OFFSET = 0
 
 # apps

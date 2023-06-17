@@ -15,6 +15,7 @@ from thedaily.models import (
     SubscriberEditionDownloads,
     EditionDownload,
     SubscriptionPrices,
+    OAuthState,
 )
 
 
@@ -112,6 +113,18 @@ class SubscriberAdmin(ModelAdmin):
                 success_counter, (" Error al enviar a: %s" % ', '.join(errors)) if errors else ""
             ),
         )
+
+    def save_model(self, request, obj, form, change):
+        if form.is_valid():
+            try:
+                super().save_model(request, obj, form, change)
+                # delete possible non-finished google signin (now is finished)
+                OAuthState.objects.get(user=obj.user).delete()
+            except OAuthState.DoesNotExist:
+                pass
+            except Exception as e:
+                if settings.DEBUG:
+                    print(e)
 
     send_account_info.short_description = "Enviar información de usuario"
 

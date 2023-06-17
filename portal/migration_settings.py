@@ -12,7 +12,6 @@ from django.conf.global_settings import DEFAULT_CHARSET
 from django.contrib.messages import constants as messages
 
 
-LAST_OLD_DAY = datetime(2014, 7, 22)
 FIRST_DAY = datetime(2009, 8, 1)
 
 PROJECT_ABSOLUTE_DIR = dirname(abspath(__file__))

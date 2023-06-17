@@ -202,7 +202,7 @@ def login(request):
         # redirect email/google AMP logins (google social auth do not redirect to external urls)
         next_page = "%s?url=%s" % (reverse("amp-readerid:redirect"), return_param)
     else:
-        next_page = request.session.get('next', request.GET.get('next', '/'))
+        next_page = request.GET.get('next', request.session.get('next', '/'))
 
     if request.user.is_authenticated:
         request.session.pop('next', None)  # if not removed, google signin from AMP will redirect in infinite loop
@@ -390,25 +390,37 @@ def subscribe(request, planslug, category_slug=None):
 
             is_subscriber = request.user.subscriber.is_subscriber()
 
-            initial = {
-                'email': request.user.email,
-                'first_name': request.user.subscriber.name
-                or ' '.join([request.user.first_name, request.user.last_name]).strip(),
-            }
-            if request.user.subscriber.phone:
-                initial['telephone'] = request.user.subscriber.phone
-
-            if subscription_price.ga_category == 'D':
-                subscriber_form = SubscriberForm(initial=initial)
-            else:
-                initial.update({'address': request.user.subscriber.address, 'city': request.user.subscriber.city})
-                if request.user.subscriber.province:
-                    initial['province'] = request.user.subscriber.province
-                subscriber_form = SubscriberAddressForm(initial=initial)
-
-            # do not show oauth button if this user is already associated
-            if request.user.social_auth.filter(provider='google-oauth2').exists():
+            if oauth2_state:
                 oauth2_button = False
+                profile = get_or_create_user_profile(oas.user)
+                if subscription_price.ga_category == 'D':
+                    subscriber_form = GoogleSignupForm(instance=profile)
+                else:
+                    if not profile.province:
+                        default_province = getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None)
+                        if default_province:
+                            profile.province = default_province
+                    subscriber_form = GoogleSignupAddressForm(instance=profile)
+            else:
+                initial = {
+                    'email': request.user.email,
+                    'first_name': request.user.subscriber.name
+                    or ' '.join([request.user.first_name, request.user.last_name]).strip(),
+                }
+                if request.user.subscriber.phone:
+                    initial['telephone'] = request.user.subscriber.phone
+
+                if subscription_price.ga_category == 'D':
+                    subscriber_form = SubscriberForm(initial=initial)
+                else:
+                    initial.update({'address': request.user.subscriber.address, 'city': request.user.subscriber.city})
+                    if request.user.subscriber.province:
+                        initial['province'] = request.user.subscriber.province
+                    subscriber_form = SubscriberAddressForm(initial=initial)
+
+                # do not show oauth button if this user is already associated
+                if request.user.social_auth.filter(provider='google-oauth2').exists():
+                    oauth2_button = False
 
         else:
             # not authenticated
@@ -459,14 +471,21 @@ def subscribe(request, planslug, category_slug=None):
                 if subscription and subscription_type:
                     # delete possible in-process subscription
                     subscription.subscription_type_prices.remove(subscription_type)
-                subscriber_form_v = (
-                    SubscriberForm if subscription_price.ga_category == 'D' else SubscriberAddressForm
-                )(post)
+                if oauth2_state:
+                    # if for any reason, a google state is still "unfinished" for an authenticated user, do the same
+                    # things that would be done in our next "elif" condition (bind the form). If not, the form save
+                    # that will be called will create a new Subscriber instead of update the existing one.
+                    subscriber_form_v = (
+                        GoogleSignupForm if subscription_price.ga_category == 'D' else GoogleSignupAddressForm
+                    )(post, instance=get_or_create_user_profile(oas.user))
+                else:
+                    subscriber_form_v = (
+                        SubscriberForm if subscription_price.ga_category == 'D' else SubscriberAddressForm
+                    )(post)
             elif oauth2_state:
-                profile = get_or_create_user_profile(oas.user)
                 subscriber_form_v = (
                     GoogleSignupForm if subscription_price.ga_category == 'D' else GoogleSignupAddressForm
-                )(post, instance=profile)
+                )(post, instance=get_or_create_user_profile(oas.user))
             else:
                 subscriber_form_v = (
                     SubscriberSignupForm if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm
@@ -525,6 +544,9 @@ def subscribe(request, planslug, category_slug=None):
                 else:
                     if oauth2_state:
                         user = oas.user
+                        # succesfull google sigin usage (form saved lines above), we can remove the oas object (just
+                        # like the google_phone view does after a succesfull POST)
+                        oas.delete()
                     else:
                         user = subscriber_form_v.signup_form.create_user()
                         try:
@@ -815,6 +837,13 @@ def edit_profile(request, user=None):
             try:
                 user_form.save()
                 profile_form.save()
+
+                # delete possible non-finished google signin (now is finished)
+                try:
+                    OAuthState.objects.get(user=user).delete()
+                except OAuthState.DoesNotExist:
+                    pass
+
                 if old_email != user.email:
                     was_sent = send_validation_email(
                         'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url
