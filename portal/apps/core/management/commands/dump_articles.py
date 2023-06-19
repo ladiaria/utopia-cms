@@ -39,6 +39,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # TODO: can be optimized writing as many objects as possible of the same type in only one json.
+        #       dump also audio media files (not only photos)
+        #       try to use "natural" FKs at least for the sections and also dump all "publicado en" (not only the main)
         verbose, dump_dir, photos = options.get('verbosity') > 1, options.get('dump_dir'), []
 
         for article_id in options.get('article_ids'):
