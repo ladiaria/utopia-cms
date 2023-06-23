@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Field, HTML
 
@@ -22,8 +23,8 @@ class ProfileForm(ModelForm):
     helper.help_text_inline = True
     helper.error_text_inline = True
     helper.layout = Layout(
-        Fieldset(u'Datos de suscriptor', 'document', 'phone'),
-        Fieldset(u'Ubicación', 'country', 'province', 'city', 'address'),
+        Fieldset('Datos de suscriptor', 'document', 'phone'),
+        Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
         HTML('</div>'),     # close div opened in edit_profile.html
         HTML('{% include "profile/submit.html" %}'),
         HTML(
@@ -71,7 +72,7 @@ class UserForm(ModelForm):
     helper.field_class = 'col-sm-8'
     helper.help_text_inline = True
     helper.error_text_inline = True
-    helper.layout = Layout(Fieldset(u'Datos personales', 'first_name', 'last_name', 'email'))
+    helper.layout = Layout(Fieldset('Datos personales', 'first_name', 'last_name', 'email'))
 
     class Meta:
         model = User
@@ -87,14 +88,14 @@ class UserForm(ModelForm):
         email = cleaned_data.get('email')
 
         if User.objects.filter(email__iexact=email).exclude(id=self.instance.id).exists():
-            msg = u'El email ingresado ya posee una cuenta de usuario.'
-            msg += u' <a href="/usuarios/entrar">Ingresar</a>.'
+            msg = 'El email ingresado ya posee una cuenta de usuario.'
+            msg += ' <a href="/usuarios/entrar">Ingresar</a>.'
             self._errors['email'] = self.error_class([msg])
             raise ValidationError(msg)
 
         if User.objects.filter(username__iexact=email).exclude(id=self.instance.id).exists():
             mail_managers("Multiple username in users", email)
-            msg = u'El email ingresado no puede ser utilizado.'
+            msg = 'El email ingresado no puede ser utilizado.'
             self._errors['email'] = self.error_class([msg])
             raise ValidationError(msg)
 
@@ -104,7 +105,7 @@ class UserForm(ModelForm):
         first_name = self.cleaned_data.get('first_name')
         if not RE_ALPHANUM.match(first_name):
             raise ValidationError(
-                u'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
+                'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
             )
         return first_name
 
@@ -112,5 +113,5 @@ class UserForm(ModelForm):
         # TODO: check if length should be validated here
         email = self.cleaned_data.get('email')
         if not email:
-            raise ValidationError(u'La dirección de correo electrónico no puede ser vacia.')
+            raise ValidationError('La dirección de correo electrónico no puede ser vacia.')
         return email

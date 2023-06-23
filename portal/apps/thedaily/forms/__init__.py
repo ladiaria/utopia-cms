@@ -872,9 +872,23 @@ class PasswordChangeBaseForm(Form):
         widget=PasswordInput(attrs={"autocomplete": "new-password", 'autocapitalize': 'none', 'spellcheck': 'false'}),
     )
 
+    def __init__(self, *args, **kwargs):
+        self.helper = FormHelper()
+        self.helper.form_id = 'change_password'
+        self.helper.form_class = 'form-horizontal'
+        self.helper.form_style = 'inline'
+        self.helper.form_method = 'post'
+        self.helper.layout = Layout(
+            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+            HTML('<div class="align-center">'),
+            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+            HTML('</div>'),
+        )
+        super().__init__(*args, **kwargs)
+
     def clean(self):
-        p1 = self.data.get('new_password_1', '')
-        p2 = self.data.get('new_password_2', '')
+        p1, p2 = self.data.get('new_password_1', ''), self.data.get('new_password_2', '')
         if p1 and p2:
             if p1 != p2:
                 raise ValidationError('Las contraseñas no coinciden.')
@@ -895,25 +909,18 @@ class PasswordChangeForm(PasswordChangeBaseForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.helper = FormHelper()
-        self.helper.form_id = 'change_password'
-        self.helper.form_class = 'form-horizontal'
-        self.helper.form_style = 'inline'
-        self.helper.form_method = 'post'
+        self.user = kwargs.get('user')
+        if 'user' in kwargs:
+            del kwargs['user']
+        super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
-            'old_password',
-            'new_password_1',
-            'new_password_2',
+            Field('old_password', template='materialize_css_forms/layout/password.html'),
+            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
             HTML('<div class="align-center">'),
             FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
             HTML('</div>'),
         )
-
-        self.user = kwargs.get('user')
-        if 'user' in kwargs:
-            del kwargs['user']
-
-        super(PasswordChangeForm, self).__init__(*args, **kwargs)
 
     def clean_old_password(self):
         from django.contrib.auth import authenticate
@@ -945,20 +952,16 @@ class PasswordResetForm(PasswordChangeBaseForm):
         del kwargs['hash']
         del kwargs['user']
 
-        self.helper = FormHelper()
-        self.helper.form_id = 'reset_password'
-        self.helper.form_class = 'form-horizontal'
-        self.helper.form_style = 'inline'
-        self.helper.form_method = 'post'
+        super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             Field('new_password_1', template='materialize_css_forms/layout/password.html'),
             Field('new_password_2', template='materialize_css_forms/layout/password.html'),
             Field('gonzo', type='hidden', value=initial['gonzo']),
             Field('hash', type='hidden', value=initial['gonzo']),
+            HTML('<div class="align-center">'),
             FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+            HTML('</div>'),
         )
-
-        super(PasswordResetForm, self).__init__(*args, **kwargs)
 
     def gen_gonzo(self):
         from libs.utils import do_gonzo
@@ -966,7 +969,7 @@ class PasswordResetForm(PasswordChangeBaseForm):
         return do_gonzo(self.hash)
 
     def clean(self, *args, **kwargs):
-        super(PasswordResetForm, self).clean(*args, **kwargs)
+        super().clean(*args, **kwargs)
         password = self.get_password()
         if password:
             if self.data.get('gonzo') != self.gen_gonzo():

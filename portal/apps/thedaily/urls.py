@@ -97,11 +97,6 @@ urlpatterns = [
     path('perfil/<int:user_id>/', user_profile, name="user-profile"),
 
     path('registrate/', signup, name="account-signup"),
-    path(
-        'cambiar-password/hecho/',
-        vary_on_cookie(TemplateView.as_view(template_name='thedaily/templates/password_change_done.html')),
-        name="account-password_change-done"
-    ),
     path('registrate/google/', google_phone, name="account-google"),
     path('salir/', auth_views.LogoutView.as_view(next_page='/usuarios/sesion-cerrada/'), name="account-logout"),
     path('sesion-cerrada/', never_cache(TemplateView.as_view(template_name='registration/logged_out.html'))),

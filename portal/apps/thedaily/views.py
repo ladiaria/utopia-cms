@@ -70,6 +70,7 @@ from thedaily.forms import (
     SubscriptionCaptchaForm,
     SubscriptionPromoCodeCaptchaForm,
     PasswordResetRequestForm,
+    PasswordChangeBaseForm,
     PasswordChangeForm,
     GoogleSignupForm,
     GoogleSignupAddressForm,
@@ -799,25 +800,26 @@ def session_refresh(request):
 @never_cache
 @to_response
 def password_change(request, user_id=None, hash=None):
-    password_change_form = PasswordChangeForm()
+    is_post = request.method == 'POST'
+    post = request.POST.copy() if is_post else None
     if user_id and hash:
-        password_change_form = PasswordResetForm(user=user_id, hash=hash)
         user = get_object_or_404(User, id=user_id)
+        form_kwargs = {'user': user_id, 'hash': hash}
+        password_change_form = PasswordResetForm(post, **form_kwargs) if is_post else PasswordResetForm(**form_kwargs)
     else:
         if not request.user.is_authenticated:
             raise Http404('Unauthorized access.')
         user = request.user
-    if request.method == 'POST':
-        post = request.POST.copy()
-        password_change_form = PasswordChangeForm(post, user=request.user)
-        if user_id and hash:
-            password_change_form = PasswordResetForm(post, user=user_id, hash=hash)
-        if password_change_form.is_valid():
-            user.set_password(password_change_form.get_password())
-            user.save()
-            user.backend = 'django.contrib.auth.backends.ModelBackend'
-            do_login(request, user)
-            return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
+        if user.has_usable_password():
+            password_change_form = PasswordChangeForm(post, user=request.user) if is_post else PasswordChangeForm()
+        else:
+            password_change_form = PasswordChangeBaseForm(post) if is_post else PasswordChangeBaseForm()
+    if is_post and password_change_form.is_valid():
+        user.set_password(password_change_form.get_password())
+        user.save()
+        user.backend = 'django.contrib.auth.backends.ModelBackend'
+        do_login(request, user)
+        return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
     return 'password_change.html', {'form': password_change_form, 'user_id': user_id, 'hash': hash}
 
 

@@ -62,7 +62,7 @@ class SubscriberAdmin(ModelAdmin):
     list_display = (
         'id', 'contact_id', 'user', 'user_is_active', 'user_email', 'name', 'pdf', 'get_newsletters'
     )
-    search_fields = ('user__username', 'name', 'user__email', 'contact_id', 'document', 'phone')
+    search_fields = ("id", "user__id", 'user__username', 'name', 'user__email', 'contact_id', 'document', 'phone')
     raw_id_fields = ('user', )
     readonly_fields = (
         'pdf',
