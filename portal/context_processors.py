@@ -37,7 +37,7 @@ def site(request):
         'meta_robots_content': 'noindex' if any(
             ['/' in r.disallowed.values_list('pattern', flat=True) for r in site.rule_set.all()]
         ) else 'all',
-        'country_name': pycountry.countries.get(alpha2=settings.LOCAL_COUNTRY).name,
+        'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
         'site_description': getattr(settings, 'HOMEV3_SITE_DESCRIPTION', site.name),
     }
 
@@ -123,12 +123,13 @@ def main_menus(request):
     }
 
     mobile_nav_search = getattr(settings, 'HOMEV3_MOBILE_NAV_SEARCH', 1)
+    mobile_nav_latest_article = getattr(settings, 'HOMEV3_MOBILE_NAV_LATEST_ARTICLE', 1)
     mobile_nav_ths = 3 + mobile_nav_search + getattr(settings, 'HOMEV3_MOBILE_NAV_EXTRA_THS', 0)
 
     menu_lal = getattr(settings, 'HOMEV3_LATEST_ARTICLE_LINKS', ())
     if menu_lal:
         result['MENU_LATEST_ARTICLE_LINKS'] = menu_lal
-        mobile_nav_ths += 1
+        mobile_nav_ths += mobile_nav_latest_article
         if len(menu_lal) > 1:
             result['MENU_LATEST_ARTICLE_LINKS_DROPDOWN'] = getattr(
                 settings, 'HOMEV3_LATEST_ARTICLE_LINKS_DROPDOWN', 'latest'
@@ -138,6 +139,7 @@ def main_menus(request):
         {
             'mobile_nav_ths': mobile_nav_ths,
             'mobile_nav_search': mobile_nav_search,
+            "mobile_nav_latest_article": mobile_nav_latest_article,
             'mobile_nav_detail_more': getattr(settings, 'HOMEV3_MOBILE_NAV_DETAIL_MORE', 1) or 0,
         }
     )

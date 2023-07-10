@@ -6,7 +6,7 @@ from builtins import object
 from django.conf import settings
 from django.http import HttpResponsePermanentRedirect, HttpResponseRedirect
 from django.urls import reverse, resolve, Resolver404
-from django.utils.http import urlquote
+from urllib.parse import quote
 from django.utils.deprecation import MiddlewareMixin
 
 
@@ -38,10 +38,10 @@ class UrlMiddleware(MiddlewareMixin):
                     newurl = "%s://%s%s" % (
                         request.is_secure() and 'https' or 'http',
                         new_url[0],
-                        urlquote(new_url[1]),
+                        quote(new_url[1]),
                     )
                 else:
-                    newurl = urlquote(new_url[1])
+                    newurl = quote(new_url[1])
                 if request.GET:
                     newurl += '?' + request.GET.urlencode()
                 return HttpResponsePermanentRedirect(newurl)

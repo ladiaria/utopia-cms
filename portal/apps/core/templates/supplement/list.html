@@ -17,31 +17,31 @@
                         <img src="{{ im.url }}" alt="Tapa del suplemento {{ supplement.name }} publicado el {{ supplement.date_published|date:"l j \de F \de Y" }}" loading="lazy">
                     {% endthumbnail %}
                 </a>
-                {% ifnotequal supplement.name "hp" %}
+                {% if supplement.name != "hp" %}
                     <div>
                         <a href="{{ supplement.get_absolute_url }}">Descargar PDF</a>
                     </div>
-                {% endifnotequal %}
+                {% endif %}
             </div>
         {% endfor %}
     </div>
-    {% ifnotequal supplements.paginator.num_pages 1 %}
+    {% if supplements.paginator.num_pages != 1 %}
         <div class="pagination">
             <span class="steps">
                 {% if supplements.has_previous %}
                     <a href="?pagina={{ supplements.previous_page_number }}">Anterior</a>
                 {% endif %}
                 {% for page_number in supplements.paginator.page_range %}
-                    {% ifequal supplements.number page_number %}
+                    {% if supplements.number == page_number %}
                         <span class="selected">{{ page_number }}</span>
                     {% else %}
                         <a class="page" href="?pagina={{ page_number }}">{{ page_number }}</a>
-                    {% endifequal %}
+                    {% endif %}
                 {% endfor %}
                 {% if supplements.has_next %}
                     <a class="next" href="?pagina={{ supplements.next_page_number }}">Siguiente</a>
                 {% endif %}
             </span>
         </div>
-    {% endifnotequal %}
+    {% endif %}
 {% endblock %}

@@ -53,6 +53,9 @@ class AdClickAdmin(admin.ModelAdmin):
     date_hierarchy = 'click_date'
     actions = ['download_clicks']
 
+    @admin.action(
+        description="Download selected Ad Clicks"
+    )
     def download_clicks(self, request, queryset):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="clicks.csv"'
@@ -74,7 +77,6 @@ class AdClickAdmin(admin.ModelAdmin):
                              impression.ad.advertiser.company_name,
                              impression.ad.zone.title))
         return response
-    download_clicks.short_description = "Download selected Ad Clicks"
 
     def get_queryset(self, request):
         qs = super(AdClickAdmin, self).get_queryset(request)
@@ -97,6 +99,9 @@ class AdImpressionAdmin(admin.ModelAdmin):
                                             'impression_date',
                                             'source_ip')
 
+    @admin.action(
+        description="Download selected Ad Impressions"
+    )
     def download_impressions(self, request, queryset):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="impressions.csv"'
@@ -118,7 +123,6 @@ class AdImpressionAdmin(admin.ModelAdmin):
                              impression.ad.advertiser.company_name,
                              impression.ad.zone.title))
         return response
-    download_impressions.short_description = "Download selected Ad Impressions"
 
 
 @admin.register(TextAd)

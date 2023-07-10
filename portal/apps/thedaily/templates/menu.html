@@ -1,6 +1,6 @@
 {% load core_tags %}
 
-<ul class="main-menu center hide-on-small-and-down{% ifnotequal publication default_pub %} {{ publication.slug }}{% endifnotequal %}">
+<ul class="main-menu center hide-on-small-and-down{% if publication != default_pub %} {{ publication.slug }}{% endif %}">
   <li class="nav-menu__portada">
     <a href="{% url 'home' %}"><span class="inner">Portada</span></a>
   </li>

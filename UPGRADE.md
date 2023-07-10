@@ -1,3 +1,19 @@
+# From version 0.4.0 to 0.4.1
+
+```
+git pull
+git checkout 0.4.1
+cd portal
+# activate your virtual env
+pip uninstall django-admin-shortcuts django-shorturls django-favit django-tagging-autocomplete
+pip install --upgrade -r requirements.txt
+cat libs/scripts/one_time/20230516_background_task_prefake.sql | ./manage.py dbshell
+./manage.py migrate background_task 0001 --fake
+./manage.py migrate thumbnail 0001 --fake
+./manage.py migrate
+./manage.py collectstatic -c
+```
+
 # From version 0.3.9 to 0.4.0
 
 ```
@@ -8,7 +24,6 @@ cd portal
 pip install -r requirements.txt
 ./manage.py migrate
 ```
-
 
 # From version 0.3.8 to 0.3.9
 

@@ -9,9 +9,15 @@ from datetime import datetime
 import mimetypes
 from freezegun import freeze_time
 
+import django
 from django.conf.global_settings import DEFAULT_CHARSET
 from django.contrib.messages import constants as messages
+from django.utils.encoding import smart_str, force_str
 
+
+# this fix an error with smart_text on some apps (django-tagging)
+django.utils.encoding.smart_text = smart_str
+django.utils.encoding.force_text = force_str
 
 FIRST_DAY = datetime(2009, 8, 1)
 
@@ -28,6 +34,7 @@ STATICFILES_DIRS = (join(SITE_ROOT, "../static/"), )
 SITE_DOMAIN = 'example.com'
 URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # disable template settings warning until fixed migrating django-mobile to django-amp-tools
 SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
@@ -104,7 +111,6 @@ INSTALLED_APPS = (
     'star_ratings',
     'tagging_autocomplete_tagit',
     'avatar',
-    'endless_pagination',
     'notification',
     'django.contrib.flatpages',
     'epubparser',
@@ -256,7 +262,7 @@ AVATAR_DEFAULT_IMAGE = 'identicon'
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
         'LOCATION': ['127.0.0.1:11211']
     }
 }
@@ -460,20 +466,22 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-# Opciones de django-social-auth
-SOCIAL_ADMIN_EMAIL_TO = ['social-admin@ladiaria.com.uy']
+# django-social-auth
 SOCIAL_AUTH_GOOGLE_OAUTH2_STRATEGY = 'social_django.strategy.DjangoStrategy'
 SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
     'https://www.googleapis.com/auth/plus.me',
     'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/userinfo.profile']
+    'https://www.googleapis.com/auth/userinfo.profile',
+]
+SOCIAL_AUTH_USERNAME_IS_FULL_EMAIL = True
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.auth_allowed',
     'social_core.pipeline.social_auth.social_user',
     'social_core.pipeline.user.get_username',
+    'libs.social_auth_pipeline.check_email_in_use',
     'social_core.pipeline.social_auth.associate_by_email',
     'social_core.pipeline.user.create_user',
     'libs.social_auth_pipeline.get_phone_number',
@@ -483,6 +491,7 @@ SOCIAL_AUTH_PIPELINE = (
 )
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 
+# misc
 COMPRESS_PRECOMPILERS = (
     ('text/less', 'lessc {infile} {outfile}'),
     ('text/x-scss', 'sass --scss {infile} {outfile}'),
@@ -515,6 +524,7 @@ FREEZE_TIME = None
 from local_settings import *
 
 SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
+CSRF_TRUSTED_ORIGINS = ['%s://%s' % (URL_SCHEME, SITE_DOMAIN)]
 ROBOTS_SITEMAP_URLS = [SITE_URL + 'sitemap.xml']
 LOCALE_NAME = "%s_%s.%s" % (LOCAL_LANG, LOCAL_COUNTRY, DEFAULT_CHARSET)
 

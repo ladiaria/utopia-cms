@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from django.conf import settings
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
@@ -9,7 +10,8 @@ from actstream.models import Follow
 from actstream.registry import check
 
 from core.models import Category
-from thedaily.models import Subscriber
+
+from .models import Subscriber
 
 
 def recent_following(user, *models):

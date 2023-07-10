@@ -19,7 +19,7 @@ class AgencyAdmin(admin.ModelAdmin):
 
 
 class PhotoExtendedModelForm(forms.ModelForm):
-    date_taken = forms.DateField(label=u'Tomada el', widget=admin.widgets.AdminDateWidget(), required=False)
+    date_taken = forms.DateField(label='Tomada el', widget=admin.widgets.AdminDateWidget(), required=False)
 
     def __init__(self, *args, **kwargs):
         super(PhotoExtendedModelForm, self).__init__(*args, **kwargs)
@@ -46,7 +46,7 @@ class PhotoExtendedInline(admin.StackedInline):
     can_delete = False
     fieldsets = (
         ('Metadatos', {'fields': ('date_taken', 'type', 'photographer', 'agency')}),
-        (u'Recorte para versión cuadrada', {
+        ('Recorte para versión cuadrada', {
             'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse', )}))
 
     class Media:
@@ -58,21 +58,27 @@ class PhotoGalleryInline(admin.TabularInline):
     model = Gallery.photos.through
     raw_id_fields = ('photo', )
     extra = 0
-    verbose_name = u'foto'
-    verbose_name_plural = u'fotos'
+    verbose_name = 'foto'
+    verbose_name_plural = 'fotos'
     readonly_fields = ['photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
 
+    @admin.display(
+        description='thumbnail'
+    )
     def photo_admin_thumbnail(self, instance):
         return instance.photo.admin_thumbnail()
-    photo_admin_thumbnail.short_description = u'thumbnail'
 
+    @admin.display(
+        description='tomada el'
+    )
     def photo_date_taken(self, instance):
         return instance.photo.date_taken
-    photo_date_taken.short_description = u'tomada el'
 
+    @admin.display(
+        description='fecha de creación'
+    )
     def photo_date_added(self, instance):
         return instance.photo.date_added
-    photo_date_added.short_description = u'fecha de creación'
 
 
 class GalleryAdmin(GalleryAdminDefault):

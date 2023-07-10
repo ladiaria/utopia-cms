@@ -40,7 +40,7 @@
         <div class="row">
           <h2 class="center-align u-mt-50">Creá tu cuenta</h2>
           <div class="col s12 align-center ld-block--sm">
-            <a href="{% url 'social:begin' backend='google-oauth2' %}?next={{ signup_form.next_page.value }}" class="ld-btn-google">con Google</a>
+            <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ signup_form.next_page.value|default:'/' }}" class="ld-btn-google">con Google</a>
           </div>
         </div>
         <div class="row">

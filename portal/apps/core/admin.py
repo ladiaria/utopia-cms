@@ -34,7 +34,7 @@ from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.utils.text import Truncator
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from .models import (
     Article,
@@ -80,7 +80,7 @@ class ArticleRelForm(ModelForm):
 class TopArticleRelBaseInlineFormSet(BaseInlineFormSet):
 
     def __init__(self, *args, **kwargs):
-        super(TopArticleRelBaseInlineFormSet, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.can_delete = False
 
 
@@ -102,7 +102,7 @@ class HomeTopArticleInline(TabularInline):
     classes = ('dynamic-order',)
 
     def get_queryset(self, request):
-        qs = super(HomeTopArticleInline, self).get_queryset(request)
+        qs = super().get_queryset(request)
         return qs.filter(home_top=True)
 
     class Media:
@@ -156,23 +156,23 @@ class EditionAdmin(ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         if obj:
             self.publication = obj.publication
-        return super(EditionAdmin, self).get_form(request, obj, **kwargs)
+        return super().get_form(request, obj, **kwargs)
 
     def get_inline_instances(self, request, obj=None):
         self.inlines = [HomeTopArticleInline]
         if self.publication:
             for section in self.publication.section_set.order_by('home_order'):
                 self.inlines.append(section_top_article_inline_class(section))
-        return super(EditionAdmin, self).get_inline_instances(request)
+        return super().get_inline_instances(request)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'cover':
             kwargs['queryset'] = self.articles_qs
             return db_field.formfield(**kwargs)
-        return super(EditionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_urls(self):
-        urls = super(EditionAdmin, self).get_urls()
+        urls = super().get_urls()
         my_urls = [
             path(
                 'add_article/<int:ed_id>/<int:sec_id>/<int:art_id>/',
@@ -189,7 +189,7 @@ class EditionAdmin(ModelAdmin):
         return HttpResponseRedirect("/admin/core/edition/" + ed_id)
 
     def save_related(self, request, form, formsets, change):
-        super(EditionAdmin, self).save_related(request, form, formsets, change)
+        super().save_related(request, form, formsets, change)
         update_category_home()
 
 
@@ -209,7 +209,7 @@ class SectionAdminModelForm(ModelForm):
 class SectionAdmin(ModelAdmin):
     form = SectionAdminModelForm
     list_editable = ('name', 'home_order', 'in_home')
-    list_filter = ('category', 'in_home', 'home_block_all_pubs', 'home_block_show_featured')
+    list_filter = ('category', 'in_home', 'home_block_all_pubs', 'home_block_show_featured', "publications")
     list_display = (
         'id',
         'name',
@@ -240,13 +240,14 @@ class SectionAdmin(ModelAdmin):
     )
 
     def save_related(self, request, form, formsets, change):
-        super(SectionAdmin, self).save_related(request, form, formsets, change)
+        super().save_related(request, form, formsets, change)
         update_category_home()
 
 
 class ArticleExtensionInline(TabularInline):
     model = ArticleExtension
     extra = 1
+    classes = ["collapse"]
 
 
 class ArticleBodyImageInline(TabularInline):
@@ -254,25 +255,32 @@ class ArticleBodyImageInline(TabularInline):
     extra = 0
     raw_id_fields = ('image', )
     readonly_fields = ['photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
+    classes = ["collapse"]
 
+    @admin.display(
+        description='thumbnail'
+    )
     def photo_admin_thumbnail(self, instance):
         return instance.image.admin_thumbnail()
-    photo_admin_thumbnail.short_description = 'thumbnail'
 
+    @admin.display(
+        description='tomada el'
+    )
     def photo_date_taken(self, instance):
         return instance.image.date_taken
-    photo_date_taken.short_description = 'tomada el'
 
+    @admin.display(
+        description='fecha de creación'
+    )
     def photo_date_added(self, instance):
         return instance.image.date_added
-    photo_date_added.short_description = 'fecha de creación'
 
 
 class ArticleRelAdminModelForm(ModelForm):
     main = ChoiceField(label='principal', widget=RadioSelect, choices=((1, ''), ), required=False)
 
     def __init__(self, *args, **kwargs):
-        super(ArticleRelAdminModelForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['section'].choices = section_choices()
 
     class Meta:
@@ -286,6 +294,7 @@ class ArticleEditionInline(TabularInline):
     raw_id_fields = ('edition', )
     form = ArticleRelAdminModelForm
     extra = 1
+    classes = ["collapse"]
 
 
 class ArticleAdminModelForm(ModelForm):
@@ -313,7 +322,7 @@ class ArticleAdminModelForm(ModelForm):
     def clean(self):
         if self.errors:
             raise ValidationError("")
-        cleaned_data = super(ArticleAdminModelForm, self).clean()
+        cleaned_data = super().clean()
         if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
             raise ValidationError("La configuración necesaria para publicar en IPFS no está definida.")
         date_value = (
@@ -335,29 +344,24 @@ class ArticleAdminModelForm(ModelForm):
         fields = "__all__"
 
 
+@admin.display(description='Foto', boolean=True)
 def has_photo(obj):
     return bool(obj.photo is not None)
 
 
-has_photo.short_description = 'Foto'
-has_photo.boolean = True
-
-
+@admin.display(description='Galería', boolean=True)
 def has_gallery(obj):
     return bool(obj.gallery is not None)
 
 
-has_gallery.short_description = 'Galería'
-has_gallery.boolean = True
-
 article_optional_inlines = []
-
 if 'core.attachments' in settings.INSTALLED_APPS:
     from core.attachments.models import Attachment
 
     class AttachmentInline(TabularInline):
         model = Attachment
         extra = 1
+        classes = ["collapse"]
 
     article_optional_inlines.append(AttachmentInline)
 
@@ -395,18 +399,16 @@ class ArticleAdmin(ModelAdmin):
     readonly_fields = ('date_published', )
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
 
+    @admin.display(description='Creado', ordering='date_created')
     def creation_date(self, obj):
         return obj.date_created.strftime("%d %b %Y %H:%M")
-    creation_date.admin_order_field = 'date_created'
-    creation_date.short_description = 'Creado'
 
+    @admin.display(description='Publicado', ordering='date_published')
     def publication_date(self, obj):
         if obj.date_published:
             return obj.date_published.strftime("%d %b %Y %H:%M")
         else:
             return ''
-    publication_date.admin_order_field = 'date_published'
-    publication_date.short_description = 'Publicado'
 
     fieldsets = (
         (None, {'fields': ('type', 'headline', 'slug', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide', )}),
@@ -442,7 +444,7 @@ class ArticleAdmin(ModelAdmin):
 
     def get_object(self, request, object_id, from_field=None):
         # Hook obj for use in formfield_for_manytomany
-        self.obj = super(ArticleAdmin, self).get_object(request, object_id)
+        self.obj = super().get_object(request, object_id)
         if not self.obj:
             raise Http404
         # Save old url_path to be used in save_related
@@ -460,25 +462,25 @@ class ArticleAdmin(ModelAdmin):
             else:
                 publication = None
             kwargs["queryset"] = publication.section_set.all()
-        return super(ArticleAdmin, self).formfield_for_manytomany(db_field, request, **kwargs)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'publication':
             return db_field.formfield(**kwargs)
-        return super(ArticleAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
         if form.is_valid():
             try:
                 obj.admin = True  # tell model's save method that we are calling it from the admin
-                super(ArticleAdmin, self).save_model(request, obj, form, change)
+                super().save_model(request, obj, form, change)
                 self.obj = obj
             except Exception as e:
                 if settings.DEBUG:
                     print(e)
 
     def save_related(self, request, form, formsets, change):
-        super(ArticleAdmin, self).save_related(request, form, formsets, change)
+        super().save_related(request, form, formsets, change)
 
         # main "main" section radiobutton in inline (also has js hacks) mapped to main_section attribute:
         save = False
@@ -556,7 +558,7 @@ class ArticleAdmin(ModelAdmin):
             q['type__exact'] = 'NE'  # Setea el filtro por defecto a noticias
             request.GET = q
             request.META['QUERY_STRING'] = request.GET.urlencode()
-        return super(ArticleAdmin, self).changelist_view(
+        return super().changelist_view(
             request, extra_context=extra_context)
 
     def delete_view(self, request, object_id, extra_context=None):
@@ -564,7 +566,7 @@ class ArticleAdmin(ModelAdmin):
         # this breaks the django six names collector, and this temporal change can hack this when deleting an article.
         # TODO: check if this issue is still present in py3
         Action.__str__ = lambda x: 'Article followed by user'
-        response = super(ArticleAdmin, self).delete_view(request, object_id, extra_context)
+        response = super().delete_view(request, object_id, extra_context)
         del Action.__str__
         return response
 
@@ -607,15 +609,14 @@ class PrintOnlyArticleAdmin(ModelAdmin):
         if db_field.name == 'edition':
             kwargs['queryset'] = get_editions()
             return db_field.formfield(**kwargs)
-        return super(ArticleAdmin, self).formfield_for_foreignkey(
-            db_field, request, **kwargs)
+        return super(ArticleAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+@admin.display(
+    description='Artículos publicados'
+)
 def published_articles(obj):
     return obj.articles_core.filter(is_published=True).count()
-
-
-published_articles.short_description = 'Artículos publicados'
 
 
 class JournalistForm(ModelForm):
@@ -669,7 +670,7 @@ class CustomSubjectAdminForm(ModelForm):
     )
 
     def clean(self):
-        cleaned_data = super(CustomSubjectAdminForm, self).clean()
+        cleaned_data = super().clean()
         if cleaned_data.get('newsletter_automatic_subject') is False and not cleaned_data.get('newsletter_subject'):
             raise ValidationError('Se debe incluir un asunto de newsletter al configurarlo como "manual".')
 
@@ -748,8 +749,11 @@ class PublicationAdmin(ModelAdmin):
 
     def get_changelist_form(self, request, **kwargs):
         kwargs.setdefault('form', PublicationAdminChangelistForm)
-        return super(PublicationAdmin, self).get_changelist_form(request, **kwargs)
+        return super().get_changelist_form(request, **kwargs)
 
+    @admin.action(
+        description="Enviar el newsletter de la publicación seleccionada"
+    )
     def send_newsletter(self, request, queryset):
         if queryset.count() > 1:
             self.message_user(
@@ -775,7 +779,6 @@ class PublicationAdmin(ModelAdmin):
                     "No es posible realizar el envío, la tarea para el envío de newsletters no está configurada",
                     level=messages.ERROR,
                 )
-    send_newsletter.short_description = "Enviar el newsletter de la publicación seleccionada"
 
 
 class CategoryAdminForm(CustomSubjectAdminForm):
@@ -854,6 +857,11 @@ class CategoryHomeArticleForm(ModelForm):
     class Meta:
         fields = ['position', 'pos', 'home', 'article', 'fixed']
         model = CategoryHomeArticle
+        widgets = {
+            "article": ForeignKeyRawIdWidgetMoreWords(
+                CategoryHomeArticle._meta.get_field("article").remote_field, site
+            )
+        }
 
 
 CategoryHomeArticleFormSetBase = inlineformset_factory(CategoryHome, CategoryHomeArticle, form=CategoryHomeArticleForm)
@@ -862,7 +870,7 @@ CategoryHomeArticleFormSetBase = inlineformset_factory(CategoryHome, CategoryHom
 class CategoryHomeArticleFormSet(CategoryHomeArticleFormSetBase):
 
     def add_fields(self, form, index):
-        super(CategoryHomeArticleFormSet, self).add_fields(form, index)
+        super().add_fields(form, index)
         form.fields["position"].widget = HiddenInput()
         if index is not None:
             form.fields["pos"].initial = index + 1
@@ -878,28 +886,6 @@ class CategoryHomeArticleInline(TabularInline):
     raw_id_fields = ('article', )
     verbose_name_plural = 'Artículos en portada'
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        # Overrided from django/contrib/admin/options.py
-        # Overrided with the only purpose to use the custom ForeignKeyRawIdWidgetMoreWords widget
-        """
-        Get a form Field for a ForeignKey.
-        """
-        db = kwargs.get('using')
-        if db_field.name in self.raw_id_fields:
-            kwargs['widget'] = ForeignKeyRawIdWidgetMoreWords(db_field.remote_field, self.admin_site, using=db)
-        elif db_field.name in self.radio_fields:
-            kwargs['widget'] = widgets.AdminRadioSelect(attrs={
-                'class': get_ul_class(self.radio_fields[db_field.name]),
-            })
-            kwargs['empty_label'] = _('None') if db_field.blank else None
-
-        if 'queryset' not in kwargs:
-            queryset = self.get_field_queryset(db, db_field, request)
-            if queryset is not None:
-                kwargs['queryset'] = queryset
-
-        return db_field.formfield(**kwargs)
-
     class Media:
         css = {'all': ('css/category_home.css', )}
 
@@ -911,11 +897,11 @@ class CategoryHomeAdmin(admin.ModelAdmin):
     inlines = [CategoryHomeArticleInline]
 
     def save_related(self, request, form, formsets, change):
-        super(CategoryHomeAdmin, self).save_related(request, form, formsets, change)
+        super().save_related(request, form, formsets, change)
         form.instance.dehole()
 
     def save_model(self, request, obj, form, change):
-        super(CategoryHomeAdmin, self).save_model(request, obj, form, change)
+        super().save_model(request, obj, form, change)
         obj.dehole()
 
 
@@ -924,7 +910,12 @@ class CategoryNewsletterArticleForm(ModelForm):
     class Meta:
         fields = ['order', 'featured', 'article']
         model = CategoryNewsletterArticle
-        widgets = {'order': TextInput(attrs={'size': 3})}
+        widgets = {
+            'order': TextInput(attrs={'size': 3}),
+            "article": ForeignKeyRawIdWidgetMoreWords(
+                CategoryNewsletterArticle._meta.get_field("article").remote_field, site
+            ),
+        }
 
 
 class CategoryNewsletterArticleInline(TabularInline):
@@ -935,31 +926,10 @@ class CategoryNewsletterArticleInline(TabularInline):
     fields = ('featured', 'article', 'order',)
     raw_id_fields = ('article', )
     verbose_name_plural = 'Artículos en newsletter'
-    classes = ('dynamic-order',)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        # Overrided from django/contrib/admin/options.py
-        # Overrided with the only purpose to use the custom ForeignKeyRawIdWidgetMoreWords widget
-        """
-        Get a form Field for a ForeignKey.
-        """
-        db = kwargs.get('using')
-        if db_field.name in self.raw_id_fields:
-            kwargs['widget'] = ForeignKeyRawIdWidgetMoreWords(db_field.remote_field, self.admin_site, using=db)
-        elif db_field.name in self.radio_fields:
-            kwargs['widget'] = widgets.AdminRadioSelect(attrs={
-                'class': get_ul_class(self.radio_fields[db_field.name]),
-            })
-            kwargs['empty_label'] = _('None') if db_field.blank else None
-
-        if 'queryset' not in kwargs:
-            queryset = self.get_field_queryset(db, db_field, request)
-            if queryset is not None:
-                kwargs['queryset'] = queryset
-
-        return db_field.formfield(**kwargs)
+    classes = ('dynamic-order', )
 
     class Media:
+        # jquery loaded again (admin uses custom js namespaces)
         js = (
             'admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'),
             'js/jquery-ui-1.12.1.custom.min.js',
@@ -1023,7 +993,7 @@ class BreakingNewsModuleAdmin(ModelAdmin):
     )
 
     def formfield_for_dbfield(self, db_field, **kwargs):
-        field = super(BreakingNewsModuleAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+        field = super().formfield_for_dbfield(db_field, **kwargs)
         if db_field.name in ('deck', 'embeds_description', 'notification_text'):
             field.widget.attrs['style'] = 'width:50em;'
         elif db_field.name in ('publications', 'categories'):
@@ -1033,7 +1003,7 @@ class BreakingNewsModuleAdmin(ModelAdmin):
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "articles":
             kwargs["queryset"] = Article.published.all()
-        return super(BreakingNewsModuleAdmin, self).formfield_for_manytomany(db_field, request, **kwargs)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -1115,6 +1085,9 @@ class PushNotificationAdmin(admin.ModelAdmin):
                     level=messages.SUCCESS,
                 )
 
+    @admin.action(
+        description="Enviar las notificaciones seleccionadas a todos los usuarios."
+    )
     def send_push_notification_to_all(self, request, queryset):
         # allow only to group members defined by setting
         restrict_group = getattr(settings, 'CORE_PUSH_NOTIFICATIONS_SENDALL_RESTRICT_GROUP', None)
@@ -1126,13 +1099,11 @@ class PushNotificationAdmin(admin.ModelAdmin):
         else:
             self.send_notifications(request, queryset)
 
+    @admin.action(
+        description="Enviar las notificaciones seleccionadas solamente al usuario en la sesión actual (sólo a mi)."
+    )
     def send_me_push_notification(self, request, queryset):
         self.send_notifications(request, queryset, False)
-
-    send_me_push_notification.short_description = \
-        "Enviar las notificaciones seleccionadas solamente al usuario en la sesión actual (sólo a mi)."
-
-    send_push_notification_to_all.short_description = "Enviar las notificaciones seleccionadas a todos los usuarios."
 
 
 site.unregister(Tag)

@@ -38,7 +38,7 @@
     {% endif %}
   </li>
 {% endif %}
-{% if MENU_LATEST_ARTICLE_LINKS %}
+{% if mobile_nav_latest_article and MENU_LATEST_ARTICLE_LINKS %}
   <li class="col s{{ mobile_nav_ths }}ths">
     <a class="nav-menu-button" href="{% url 'section-latest-article' section_slug=MENU_LATEST_ARTICLE_LINKS.0.0 %}">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M3,17.46V20.5a.5.5,0,0,0,.5.5H6.54a.469.469,0,0,0,.35-.15L17.81,9.94,14.06,6.19,3.15,17.1a.491.491,0,0,0-.15.36ZM20.71,7.04a1,1,0,0,0,0-1.41L18.37,3.29a1,1,0,0,0-1.41,0L15.13,5.12l3.75,3.75,1.83-1.83Z" fill="#262626"/></svg>

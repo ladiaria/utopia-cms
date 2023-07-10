@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
-from django.utils.translation import ugettext
+from django.utils.translation import gettext
 
 from notification import backends
 
@@ -23,7 +23,7 @@ class EmailBackend(backends.BaseBackend):
         context.update({
             "recipient": recipient,
             "sender": sender,
-            "notice": ugettext(notice_type.display),
+            "notice": gettext(notice_type.display),
         })
         context.update(extra_context)
 

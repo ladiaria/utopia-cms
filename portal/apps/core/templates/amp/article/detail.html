@@ -13,11 +13,11 @@
 
 {% block robots %}{% spaceless %}
   {# only override if allowed by robots app #}
-  {% ifnotequal meta_robots_content 'noindex' %}
+  {% if meta_robots_content != 'noindex' %}
     {% if section.is_satirical %}noindex{% elif not article.public %}noarchive{% else %}{{ block.super }}{% endif %}
   {% else %}
     {{ block.super }}
-  {% endifnotequal %}
+  {% endif %}
 {% endspaceless %}{% endblock %}
 
 {% block meta %}
@@ -85,11 +85,11 @@
 
     <div class="article-header">
 
-      {% ifequal section.slug 'humor' %}
+      {% if section.slug == 'humor' %}
         <div class="align-center">
           <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
         </div>
-      {% endifequal %}
+      {% endif %}
       <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
 
       <div class="article-date-author">
@@ -172,9 +172,11 @@
 
     {% if not article.public %}
       <div amp-access="authenticated AND NOT article_allowed AND article_restricted" amp-access-hide>
+        {# TODO: support to include a custom template name loaded in a ctx var, if given #}
         {% include 'article/pw_auth_restricted.html' %}
       </div>
       <div amp-access="NOT authenticated AND NOT article_allowed AND article_restricted" amp-access-hide>
+        {# TODO: support to include a custom template name loaded in a ctx var, if given #}
         {% include 'article/pw_anon_restricted.html' %}
       </div>
       <div amp-access="authenticated AND NOT subscriber AND access AND (article_allowed OR NOT article_restricted)" amp-access-hide>

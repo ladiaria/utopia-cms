@@ -9,14 +9,15 @@ from django.http import HttpResponseForbidden, HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 
 from decorators import render_response
-from libs.tokens.email_confirmation import download_token_generator
 from core.models import Edition, Supplement, get_current_edition
 from homev3.views import index
 from core.views.edition_calendar import EditionCalendar
+
 
 to_response = render_response('core/templates/edition/')
 
@@ -54,7 +55,7 @@ def is_valid_download_link(request):
     except Exception:
         raise Http404
     user = get_object_or_404(User, id=uid)
-    return download_token_generator.check_token(user=user, token='%s-%s' % (ts, token), timeout_days=1)
+    return default_token_generator.check_token(user=user, token='%s-%s' % (ts, token))
 
 
 @never_cache
@@ -68,7 +69,7 @@ def get_download_validation_url(edition, user):
             'day': edition.date_published.day,
         },
     )
-    return '%s?token=%i-%s' % (url, user.id, download_token_generator.make_token(user))
+    return '%s?token=%i-%s' % (url, user.id, default_token_generator.make_token(user))
 
 
 @never_cache

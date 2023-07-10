@@ -11,11 +11,11 @@
 
 {% block robots %}{% spaceless %}
   {# only override if allowed by robots app #}
-  {% ifnotequal meta_robots_content 'noindex' %}
+  {% if meta_robots_content != 'noindex' %}
     {% if section.is_satirical %}noindex{% elif not article.public %}noarchive{% else %}{{ block.super }}{% endif %}
   {% else %}
     {{ block.super }}
-  {% endifnotequal %}
+  {% endif %}
 {% endspaceless %}{% endblock %}
 
 {% block meta_og_title %}
@@ -841,7 +841,7 @@
           beforeSend: function(xhr, settings) {
             xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
           },
-          url: '/favit/add-or-remove',
+          url: "{% url 'favit.views.add_or_remove' %}",
           async: true,
           cache: false,
           type: 'POST',
@@ -861,7 +861,7 @@
             beforeSend: function(xhr, settings) {
               xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
             },
-            url: '/favit/add-or-remove',
+            url: "{% url 'favit.views.add_or_remove' %}",
             async: true,
             cache: false,
             type: 'POST',

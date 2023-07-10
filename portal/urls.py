@@ -24,20 +24,20 @@ from core.views.subscribe import subscribe
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
 from thedaily.models import Subscriber
-from thedaily.views import fav_add_or_remove
 from comunidad.models import Url, Recommendation
 from homev3.views import index
 from cartelera.views import vivo
 
 
 admin.autodiscover()
+admin.site.site_header, admin.site.enable_nav_sidebar = "CMS - %s" % settings.SITE_DOMAIN, False
 
 
 # Serializers define the API representation.
 class PhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PhotoExtended
-        fields = ('image',)
+        fields = ('image', )
 
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -272,9 +272,7 @@ urlpatterns.extend(
         re_path(r'^robots.txt', include('robots.urls')),
         path('shout/', include('shoutbox.urls')),
         path('activity/', include('actstream.urls')),
-
-        # favit add-or-remove wrapper (TODO: favit should be replaced asap with a more compatible Django1.11+ app)
-        path('favit/add-or-remove', fav_add_or_remove),
+        path('favit/', include('favit.urls')),
 
         # Vivo
         path('vivo/', vivo, name="cartelera-vivo"),

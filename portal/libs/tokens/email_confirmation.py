@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from __future__ import unicode_literals
+
 from builtins import str
 
 from emails.django import DjangoMessage as Message
@@ -9,78 +10,11 @@ from django.conf import settings
 from django.urls import reverse
 from django.core.mail import send_mail
 from django.contrib.sites.models import Site
-from django.utils.http import int_to_base36, base36_to_int
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth.tokens import default_token_generator
 from django.template import loader
 
 from libs.utils import smtp_connect
 from utils.error_log import error_log
-
-
-class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
-    """
-    Strategy object used to generate and check tokens for the email confirmation mechanism.
-    """
-
-    def __init__(self, *args, **kwargs):
-        if 'edition_download' in kwargs:
-            self.edition_download = kwargs.get('edition_download')
-            del kwargs['edition_download']
-        else:
-            self.edition_download = None
-        super(EmailConfirmationTokenGenerator, self).__init__(*args, **kwargs)
-
-    def make_token(self, user):
-        """
-        Returns a token that can be used once to do a password reset
-        for the given user.
-        """
-        return self._make_token_with_timestamp(user, self._num_days(self._today()))
-
-    def check_token(self, user, token, timeout_days=None):
-        """
-        Check that a password reset token is correct for a given user.
-        """
-        # Parse the token
-        try:
-            ts_b36, hash = token.split("-")
-        except ValueError:
-            return False
-
-        try:
-            ts = base36_to_int(ts_b36)
-        except ValueError:
-            return False
-
-        # Check that the timestamp/uid has not been tampered with
-        if self._make_token_with_timestamp(user, ts) != token:
-            return False
-
-        # Check the timestamp is within limit
-        if not timeout_days:
-            timeout_days = getattr(settings, 'EMAIL_CONFIRMATION_TIMEOUT_DAYS', None)
-        if timeout_days and (self._num_days(self._today()) - ts) > timeout_days:
-            return False
-
-        return True
-
-    def _make_token_with_timestamp(self, user, timestamp):
-        # from django.utils.hashcompat import sha_constructor
-        from hashlib import sha1
-
-        # timestamp is number of days since 2001-1-1.  Converted to
-        # base 36, this gives us a 3 digit string until about 2121
-        ts_b36 = int_to_base36(timestamp)
-        hash = str(settings.SECRET_KEY) + str(user.id) + str(user.email) + str(bool(user.is_active)) + str(timestamp)
-        if self.edition_download:
-            hash += str(user.get_profile().get_downloads())
-        else:
-            hash += str(user.password)
-        return "%s-%s" % (ts_b36, sha1(bytes(hash, 'utf8')).hexdigest()[::2])
-
-
-default_token_generator = EmailConfirmationTokenGenerator()
-download_token_generator = EmailConfirmationTokenGenerator(edition_download=True)
 
 
 def send_confirmation_link(*args, **kwargs):

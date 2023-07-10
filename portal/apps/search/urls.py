@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from django.conf.urls import *
+from django.urls import re_path
 from search.views import search
 
 urlpatterns = [
-    url(r'^$', search, name='search'),
-    url(r'^(?P<token>.+)/$', search, name='search_terms'),
+    re_path(r'^$', search, name='search'),
+    re_path(r'^(?P<token>.+)/$', search, name='search_terms'),
 ]

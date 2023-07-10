@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # utopia-cms 2023. Aníbal Pacheco.
 
-from MySQLdb import OperationalError
+from django.db.utils import OperationalError
 
 from background_task.management.commands.process_tasks import Command as ProcessTasksCommand
 

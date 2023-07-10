@@ -26,7 +26,7 @@
         {% endif %}
         <p style="text-align:center;">
           <a href="//{{ site.domain }}/{{ edition_obj.publication.slug }}/edicion/{{ edition_obj.date_published|date:'Y/m/j' }}/">
-            {{ edition_obj.date_published|date:"l j \d\e F \d\e Y"|capfirst }}{% ifnotequal edition_obj.publication default_pub %} ({{ edition_obj.publication.name }}){% endifnotequal %}
+            {{ edition_obj.date_published|date:"l j \d\e F \d\e Y"|capfirst }}{% if edition_obj.publication != default_pub %} ({{ edition_obj.publication.name }}){% endif %}
           </a>
         </p>
         {% comment %}
@@ -48,10 +48,10 @@
     {% endfor %}
   </div>
   <div class="row">
-    {% ifnotequal editions.paginator.num_pages 1 %}
+    {% if editions.paginator.num_pages != 1 %}
       <div class="pagination">
         {% if editions.has_other_pages %}{% include "pagination.html" with pager=editions %}{% endif %}
       </div>
-    {% endifnotequal %}
+    {% endif %}
   </div>
 {% endblock %}

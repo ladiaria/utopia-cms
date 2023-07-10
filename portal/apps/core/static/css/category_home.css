@@ -1,3 +1,4 @@
+h2:has(+ #content-main){max-width: 1170px;}
 td.field-pos {
   width: 60px;
 }

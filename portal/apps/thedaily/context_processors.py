@@ -90,6 +90,6 @@ def permissions(request):
                 },
             },
             settings.TALK_JWT_SECRET,
-        ).decode()
+        )
 
     return result

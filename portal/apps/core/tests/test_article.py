@@ -9,13 +9,13 @@ class ArticleTestCase(TestCase):
 
     fixtures = ['test']
     http_host_header_param = {'HTTP_HOST': settings.SITE_DOMAIN}
-    # add articles urls here, but keep the orther
-    urls_to_test = (
+    # add articles urls here, but keep the other
+    urls_to_test = [
         {'url': '/test/articulo/2020/11/test-article4/', 'headers': http_host_header_param},
         {'url': '/test/articulo/2020/11/test-article4/', 'amp': True, 'headers': http_host_header_param},
         {'url': '/test/articulo/2020/11/test-humor1/', 'headers': http_host_header_param},
         {'url': '/test/articulo/2020/11/test-humor1/', 'amp': True, 'headers': http_host_header_param}
-    )
+    ]
 
     def setUp(self):
         # run command for photo sizes

@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from django.conf import settings
 from django.db.models import signals
-from django.utils.translation import ugettext_noop as _
+from django.utils.translation import gettext_noop as _
 
 if "notification" in settings.INSTALLED_APPS:
     from notification import models as notification

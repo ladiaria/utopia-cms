@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from builtins import str, range
-import os
 import random
+import string
+from builtins import str, range
 from datetime import date, datetime, timedelta
 
 from hashids import Hashids
@@ -507,32 +507,10 @@ def truncatehtml_chars(string, length):
 truncatehtml_chars.is_safe = True
 
 
-# randomgen is taken from https://github.com/bkeating/django-templatetag-randomgen and fixed (*) here
-@register.tag(name="randomgen")
-def randomgen(parser, token):
-    items = []
-    bits = token.split_contents()
-    for item in bits:
-        items.append(item)
-    return RandomgenNode(items[1:])
-
-
-class RandomgenNode(Node):
-    def __init__(self, items):
-        self.items = []
-        for item in items:
-            self.items.append(item)
-
-    def render(self, context):
-        # (*) Note: we fixed index error in arg1 and arg2, but they can still raise errors if not passed correctly
-        arg1 = self.items[0] if self.items else None
-        arg2 = self.items[1] if len(self.items) > 1 else None
-        if "hash" in self.items:
-            result = os.urandom(16).encode('hex')
-        elif "float" in self.items:
-            result = random.uniform(int(arg1), int(arg2))
-        elif not self.items:
-            result = random.random()
-        else:
-            result = random.randint(int(arg1), int(arg2))
-        return result
+@register.simple_tag
+def randomgen():
+    """ Returns a 16 char length random string starting with a letter """
+    return (
+        random.choice(string.ascii_letters)
+        + ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(15))
+    )

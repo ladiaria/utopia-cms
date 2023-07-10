@@ -1,9 +1,33 @@
 from __future__ import unicode_literals
 
+from social_core.exceptions import AuthException
+
+from django.db.models import Q
 from django.http import HttpResponseRedirect
+from django.contrib.auth.models import User
 
 from thedaily.models import OAuthState
 from thedaily.views import get_or_create_user_profile
+
+
+class AuthIntegrityError(AuthException):
+    def __str__(self):
+        return "El email de la cuenta de Google utilizada ya está siendo usado por otro usuario."
+
+
+def check_email_in_use(backend, details, uid, user=None, *args, **kwargs):
+    """
+    Taken from https://stackoverflow.com/a/40631405/2292933 and modified by us.
+    Avoid associate an email already in use by another user.
+    """
+    email = details.get('email')
+    if user:
+        # logged-in assoc, check by username and email excluding the logged in user
+        if User.objects.filter(Q(email__iexact=email) | Q(username__iexact=email)).exclude(id=user.id).exists():
+            raise AuthIntegrityError(backend)
+    elif User.objects.filter(username__iexact=email).exclude(email__iexact=email).exists():
+        # a new assoc, username with the email should not exist (unless is the one who has that email)
+        raise AuthIntegrityError(backend)
 
 
 def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):

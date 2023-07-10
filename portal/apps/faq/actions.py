@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
-from django.utils.translation import ugettext_lazy as _
-from django.utils.translation import ugettext_noop, ungettext
+from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_noop, ngettext
 
 from faq.constants import DRAFTED, PUBLISHED, REMOVED, STATUS_CHOICES
 
@@ -19,7 +19,7 @@ def update_status(modeladmin, request, queryset, status):
         obj.save()
         # Now log what happened.
         # Use ugettext_noop() 'cause this is going straight into the db.
-        log_message = ugettext_noop(u'Changed status to \'%s\'.' %
+        log_message = gettext_noop(u'Changed status to \'%s\'.' %
             obj.get_status_display())
         modeladmin.log_change(request, obj, log_message)
 
@@ -30,7 +30,7 @@ def update_status(modeladmin, request, queryset, status):
         'verbose_name_plural': modeladmin.model._meta.verbose_name_plural,
         'verb': dict(STATUS_CHOICES)[status],
     }
-    user_message = ungettext(
+    user_message = ngettext(
         u'%(rows_updated)s %(verbose_name)s was successfully %(verb)s.',
         u'%(rows_updated)s  %(verbose_name_plural)s were successfully %(verb)s.',
         message_dict['rows_updated']) % message_dict

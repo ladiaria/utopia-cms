@@ -1,0 +1,89 @@
+{% load i18n %}
+
+{% if app_list %}
+  {% for app in app_list %}
+    <div class="app-{{ app.app_label }} module{% if app.app_url in request.path|urlencode %} current-app{% endif %}"
+      {% if app.name == 'Photologue' %}style="margin-bottom: 0px; border-bottom-width: 0px;"{% endif %}
+      {% if app.name == 'Photologue_Ladiaria' %}style="border-top-width: 0px;"{% endif %}>
+      <table>
+        {% if app.name != 'Photologue_Ladiaria' or app_list|length_is:"1" and app.name == 'Photologue_Ladiaria' %}
+          <caption>
+            <a href="{{ app.app_url }}" class="section" title="{% blocktranslate with name=app.name %}Models in the {{ name }} application{% endblocktranslate %}">{{ app.name }}</a>
+          </caption>
+        {% endif %}
+        {% for model in app.models %}
+          {% if model.name != 'Configuraciones extra' %}
+            <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
+              {% if model.admin_url %}
+                <th scope="row">
+                  <a href="{{ model.admin_url }}"{% if model.admin_url in request.path|urlencode %} aria-current="page"{% endif %}>
+                    {% if model.name == 'Efectos de foto' %}
+                      Efectos
+                    {% elif model.name == 'Configuraciones extra' %}
+                    {% else %}
+                      {{ model.name }}
+                    {% endif %}
+                  </a>
+                </th>
+              {% else %}
+                <th scope="row">
+                  {% if model.name == 'Efectos de foto' %}
+                    Efectos
+                  {% else %}
+                    {{ model.name }}
+                  {% endif %}
+                </th>
+              {% endif %}
+
+              {% if model.add_url %}
+                <td><a href="{{ model.add_url }}" class="addlink">{% translate 'Add' %}</a></td>
+              {% else %}
+                <td></td>
+              {% endif %}
+
+              {% if model.admin_url and show_changelinks %}
+                {% if model.view_only %}
+                  <td><a href="{{ model.admin_url }}" class="viewlink">{% translate 'View' %}</a></td>
+                {% else %}
+                  <td><a href="{{ model.admin_url }}" class="changelink">{% translate 'Change' %}</a></td>
+                {% endif %}
+              {% elif show_changelinks %}
+                <td></td>
+              {% endif %}
+            </tr>
+          {% endif %}
+        {% endfor %}
+        {% if request.path == "/admin/photologue/" %}
+          <tr>
+            <th scope="row"><a href="/admin/photologue_ladiaria/photographer/">Fotógrafos</a></th>
+            {% if perms.photologue_ladiaria.add_photographer %}
+              <td><a href="/admin/photologue_ladiaria/photographer/add/" class="addlink">{% translate 'Add' %}</a></td>
+            {% else %}
+              <td>&nbsp;</td>
+            {% endif %}
+            {% if perms.photologue_ladiaria.change_photographer %}
+              <td><a href="/admin/photologue_ladiaria/photographer/" class="changelink">{% translate 'Change' %}</a></td>
+            {% else %}
+              <td>&nbsp;</td>
+            {% endif %}
+          </tr>
+          <tr>
+            <th scope="row"><a href="/admin/photologue_ladiaria/agency/">Agencias</a></th>
+            {% if perms.photologue_ladiaria.add_agency %}
+              <td><a href="/admin/photologue_ladiaria/agency/add/" class="addlink">{% translate 'Add' %}</a></td>
+            {% else %}
+              <td>&nbsp;</td>
+            {% endif %}
+            {% if perms.photologue_ladiaria.change_agency %}
+              <td><a href="/admin/photologue_ladiaria/agency/" class="changelink">{% translate 'Change' %}</a></td>
+            {% else %}
+              <td>&nbsp;</td>
+            {% endif %}
+          </tr>
+        {% endif %}
+      </table>
+    </div>
+  {% endfor %}
+{% else %}
+  <p>{% translate 'You don’t have permission to view or edit anything.' %}</p>
+{% endif %}

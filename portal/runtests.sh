@@ -4,4 +4,4 @@
 TEST_MODULES="homev3 core thedaily"
 # exit now if we are being sourced by another script or shell
 [[ "${#BASH_SOURCE[@]}" -gt "1" ]] && { return 0; }
-python -W ignore manage.py test --settings=test_settings -k ${TEST_MODULES}
+python -W ignore manage.py test --settings=test_settings --keepdb ${TEST_MODULES}

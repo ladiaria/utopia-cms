@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from ..compat import get_user_model
-from ..models import create_notice_type, NoticeSetting, NoticeType
+from notification.models import create_notice_type, NoticeSetting, NoticeType
 
 from . import get_backend_id
 

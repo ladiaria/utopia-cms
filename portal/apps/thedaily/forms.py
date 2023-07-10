@@ -8,6 +8,7 @@ from django.template.defaultfilters import slugify
 from django.conf import settings
 from django.http import UnreadablePostError
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 from django.core.mail import mail_managers
 from django.forms import (
@@ -31,13 +32,11 @@ from crispy_forms.layout import Layout, BaseInput, Field, Fieldset, HTML
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.utils import get_template_pack
 
-from thedaily.models import Subscription, Subscriber
-
-from libs.tokens.email_confirmation import default_token_generator
+from .models import Subscription, Subscriber, email_extra_validations
 
 
 CSS_CLASS = 'form-input1'
-RE_ALPHANUM = re.compile(u'^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$')
+RE_ALPHANUM = re.compile('^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$')
 
 
 def check_password_strength(password):
@@ -48,7 +47,7 @@ def check_password_strength(password):
 
 
 class Submit(BaseInput):
-    """Use a custom submit because crispy's adds btn and btn-primary in the class attribute"""
+    """ Use a custom submit because crispy's adds btn and btn-primary in the class attribute """
 
     input_type = 'submit'
 
@@ -66,7 +65,7 @@ class EmailInput(TextInput):
 
 
 class LoginForm(Form):
-    """Login form"""
+    """ Login form """
 
     name_or_mail = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
     password = CharField(
@@ -97,7 +96,7 @@ class LoginForm(Form):
                 template='materialize_css_forms/layout/password-login.html',
             ),
         )
-        super(LoginForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def clean(self):
         data = self.data
@@ -127,8 +126,70 @@ terms_and_conditions_layout_tuple = (
 )
 
 
-class SignupForm(ModelForm):
-    """Formulario con campos para crear una instancia del modelo User"""
+class BaseUserForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-sm-2'
+        self.helper.field_class = 'col-sm-8'
+        self.helper.help_text_inline = True
+        self.helper.error_text_inline = True
+
+    def custom_clean(self, exclude_self=False, error_use_next=True):
+        cleaned_data = super().clean()
+        error_msg = email_extra_validations(
+            cleaned_data.get('email'),
+            self.instance.id if exclude_self else None,
+            error_use_next and (cleaned_data.get('next_page', '/') or "/"),
+        )
+        if error_msg:
+            self._errors['email'] = self.error_class([error_msg])
+            raise ValidationError(error_msg)
+        else:
+            self.instance.email_extra_validations_done = True  # useful flag for the pre_save signal
+            return cleaned_data
+
+    def clean(self):
+        return self.custom_clean()
+
+    def clean_first_name(self):
+        first_name = self.cleaned_data.get('first_name')
+        if not RE_ALPHANUM.match(first_name):
+            self._errors['first_name'] = self.error_class(
+                ['El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.']
+            )
+        return first_name
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        return email.lower()
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email')
+
+class UserForm(BaseUserForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(Fieldset('Datos personales', 'first_name', 'last_name', 'email'))
+
+    def clean(self):
+        return self.custom_clean(True, False)
+
+    class Meta(BaseUserForm.Meta):
+        widgets = {
+            'email': EmailInput(
+                attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
+            ),
+        }
+
+
+class SignupForm(BaseUserForm):
+    """ Formulario con campos para crear una instancia del modelo User """
 
     first_name = CharField(
         label='Nombre',
@@ -149,15 +210,10 @@ class SignupForm(ModelForm):
     next_page = CharField(required=False, widget=HiddenInput())
 
     def __init__(self, *args, **kwargs):
-        self.helper = FormHelper()
+        super().__init__(*args, **kwargs)
         self.helper.form_id = 'signup_form'
-        self.helper.form_class = 'form-horizontal'
-        self.helper.label_class = 'col-sm-2'
-        self.helper.field_class = 'col-sm-8'
         self.helper.render_unmentioned_fields = False
         self.helper.form_tag = True
-        self.helper.help_text_inline = True
-        self.helper.error_text_inline = True
         self.helper.layout = Layout(
             *('first_name', 'email', 'phone', Field('password', template='materialize_css_forms/layout/password.html'))
             + terms_and_conditions_layout_tuple
@@ -168,57 +224,6 @@ class SignupForm(ModelForm):
                 HTML('</div">'),
             )
         )
-        super(SignupForm, self).__init__(*args, **kwargs)
-
-    class Meta:
-        model = User
-        fields = ('first_name', 'email', 'password')
-        widgets = {
-            'password': PasswordInput(
-                attrs={
-                    'class': 'textinput textInput',
-                    'autocomplete': 'new-password',
-                    'autocapitalize': 'none',
-                    'spellcheck': 'false',
-                }
-            ),
-        }
-
-    def clean(self):
-        cleaned_data = super(SignupForm, self).clean()
-        email = cleaned_data.get('email')
-        if not email:
-            msg = 'El email ingresado no es un email válido.'
-            self._errors['email'] = self.error_class([msg])
-            raise ValidationError(msg)
-
-        password = cleaned_data.get('password')
-
-        if User.objects.filter(email__iexact=email).exists():
-            msg = 'El email ingresado ya posee una cuenta de usuario.'
-            msg += ' <a href="/usuarios/entrar/?next=%s">Ingresar</a>.' % self.cleaned_data.get('next_page', '/')
-            self._errors['email'] = self.error_class([msg])
-            raise ValidationError(msg)
-
-        if User.objects.filter(username__iexact=email).exists():
-            mail_managers("Multiple username in users", email)
-            msg = 'El email ingresado no puede ser utilizado.'
-            self._errors['email'] = self.error_class([msg])
-            raise ValidationError(msg)
-
-        return cleaned_data
-
-    def clean_first_name(self):
-        first_name = self.cleaned_data.get('first_name')
-        if not RE_ALPHANUM.match(first_name):
-            self._errors['first_name'] = self.error_class(
-                ['El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.']
-            )
-        return first_name
-
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        return email.lower()
 
     def clean_password(self):
         data = self.cleaned_data
@@ -250,9 +255,72 @@ class SignupForm(ModelForm):
         user.save()
         return user
 
+    class Meta(BaseUserForm.Meta):
+        fields = ('first_name', 'email', 'password')
+        widgets = {
+            'password': PasswordInput(
+                attrs={
+                    'class': 'textinput textInput',
+                    'autocomplete': 'new-password',
+                    'autocapitalize': 'none',
+                    'spellcheck': 'false',
+                }
+            )
+        }
+
+
+class ProfileForm(ModelForm):
+    # TODO: init method here
+    helper = FormHelper()
+    helper.form_tag = False
+    helper.form_class = 'form-horizontal'
+    helper.label_class = 'col-sm-2'
+    helper.field_class = 'col-sm-8'
+    helper.help_text_inline = True
+    helper.error_text_inline = True
+    helper.layout = Layout(
+        Fieldset('Datos de suscriptor', 'document', 'phone'),
+        Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
+        HTML('</div>'),     # close div opened in edit_profile.html
+        HTML('{% include "profile/submit.html" %}'),
+        HTML(
+            '{%% include "%s" %%}' % getattr(settings, 'THEDAILY_SUBSRIPTIONS_TEMPLATE', 'profile/suscripciones.html')
+        ),
+        Field('newsletters', template='profile/newsletters.html'),
+        Field('category_newsletters', template='profile/category_newsletters.html'),
+        HTML(
+            '''
+            <section id="ld-comunicaciones" class="ld-block section scrollspy">
+              <h2 class="ld-title ld-title--underlined">Comunicaciones</h2>
+            '''
+        ),
+        Field('allow_news', template=getattr(settings, 'THEDAILY_ALLOW_NEWS_TEMPLATE', 'profile/allow_news.html')),
+        Field('allow_promotions', template='profile/allow_promotions.html'),
+        Field('allow_polls', template='profile/allow_polls.html'),
+        HTML('</section>'),
+    )
+
+    class Meta:
+        model = Subscriber
+        # TODO: use fields instead of exclude
+        exclude = (
+            'contact_id',
+            'user',
+            'name',
+            'profile_photo',
+            'downloads',
+            'pdf',
+            'lento_pdf',
+            'ruta',
+            'plan_id',
+            'ruta_lento',
+            'ruta_fs',
+            'last_paid_subscription',
+        )
+
 
 class SubscriberForm(ModelForm):
-    """Formulario con la información para crear un suscriptor"""
+    """ Formulario con la información para crear un suscriptor """
 
     first_name = CharField(
         label='Nombre',
@@ -689,10 +757,10 @@ class GoogleSigninForm(ModelForm):
 
 
 class GoogleSignupForm(GoogleSigninForm):
-    """Child class to use the same form but without the submit button"""
+    """ Child class to use the same form but without the submit button """
 
     def __init__(self, *args, **kwargs):
-        super(GoogleSignupForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.helper.form_tag = False
         self.helper.layout = Layout(
             HTML('<div class="ld-block--sm align-center">Para continuar completá los siguientes datos</div>'), 'phone'
@@ -700,11 +768,11 @@ class GoogleSignupForm(GoogleSigninForm):
 
     def is_valid(self, *args):
         # wrapper to allow compatibility with calls with arguments
-        return super(GoogleSignupForm, self).is_valid()
+        return super().is_valid()
 
 
 class GoogleSignupAddressForm(GoogleSignupForm):
-    """Child class to not exclude address info (address, city and province)"""
+    """ Child class to not exclude address info (address, city and province) """
 
     address = CharField(
         label='Dirección',
@@ -716,7 +784,7 @@ class GoogleSignupAddressForm(GoogleSignupForm):
     province = ChoiceField(label='Departamento', choices=settings.THEDAILY_PROVINCE_CHOICES)
 
     def __init__(self, *args, **kwargs):
-        super(GoogleSignupAddressForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             HTML('<div class="ld-block--sm align-center">Para continuar completá los siguientes datos</div>'),
             'phone',

@@ -20,6 +20,7 @@ from emails.django import DjangoMessage as Message
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import IntegrityError
+from django.db.models.query_utils import Q
 from django.core.mail import send_mail, mail_admins, mail_managers
 from django.urls import reverse
 from django.core.exceptions import MultipleObjectsReturned
@@ -36,10 +37,11 @@ from django.http import (
 from django.forms.utils import ErrorList
 from django.contrib import messages
 from django.contrib.auth import authenticate, logout, login as do_login
-from django.contrib.auth.decorators import login_required
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
@@ -49,16 +51,21 @@ from django.template import TemplateDoesNotExist
 from actstream import actions
 from actstream.models import following
 from favit.models import Favorite
+from favit.utils import is_xhr
 from django_amp_readerid.decorators import readerid_assoc
 from django_amp_readerid.utils import amp_login_param, get_related_user
 
-from libs.utils import set_amp_cors_headers, decode_hashid
-from libs.tokens.email_confirmation import default_token_generator, get_signup_validation_url, send_validation_email
-from utils.error_log import error_log
 from apps import mongo_db
+from libs.utils import set_amp_cors_headers, decode_hashid
+from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
+from utils.error_log import error_log
+from decorators import render_response
+
 from core.models import Publication, Category, Article, ArticleUrlHistory, ArticleViewedBy
-from thedaily.models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState
-from thedaily.forms import (
+from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access
+
+from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState
+from .forms import (
     LoginForm,
     SignupForm,
     SubscriberForm,
@@ -77,13 +84,11 @@ from thedaily.forms import (
     SubscriberSignupForm,
     SubscriberSignupAddressForm,
     ConfirmEmailRequestForm,
+    ProfileForm,
+    UserForm,
 )
-from thedaily.forms.subscriber import ProfileForm, UserForm
-from thedaily.utils import recent_following, add_default_category_newsletters
-from thedaily.email_logic import limited_free_article_mail
-from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access
-
-from decorators import render_response
+from .utils import recent_following, add_default_category_newsletters
+from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx
 from .tasks import send_notification, notify_digital, notify_paper
 
@@ -105,7 +110,7 @@ def nl_auth_subscribe(request, nltype, nlslug):
     """ Useful view to allow 1-click nl subscription for authenticated users (by ajax or POST) """
     from_amp = request.GET.get("__amp_source_origin")
     user = get_related_user(request) if from_amp else request.user
-    if not user.is_anonymous and (request.method == 'POST' or request.is_ajax()):
+    if not user.is_anonymous and (request.method == 'POST' or is_xhr(request)):
         nlobj = get_object_or_404(Publication if nltype == "p" else Category, slug=nlslug, has_newsletter=True)
         try:
             getattr(user.subscriber, ("" if nltype == "p" else "category_") + "newsletters").add(nlobj)
@@ -892,7 +897,7 @@ def edit_profile(request, user=None):
 def lista_lectura_leer_despues(request):
     followings = recent_following(request.user, Article)
     followings_count = len(followings)
-    if request.is_ajax():
+    if is_xhr(request):
         return HttpResponse(followings_count)
 
     # paginator for leer_despues
@@ -916,7 +921,7 @@ def lista_lectura_favoritos(request):
     user = request.user
     favoritos = [favorito.target for favorito in Favorite.objects.for_user(user)]
     favoritos_count = len(favoritos)
-    if request.is_ajax():
+    if is_xhr(request):
         return HttpResponse(favoritos_count)
 
     # paginator for favoritos
@@ -931,37 +936,6 @@ def lista_lectura_favoritos(request):
     # end paginator for favoritos
 
     return 'lista-lectura.html', {'favoritos': favoritos, 'favoritos_count': favoritos_count}
-
-
-@never_cache
-@login_required
-def fav_add_or_remove(request):
-    """
-    Cloned from favit.views and modified only the response with content_type arg to make it run in Django 1.11+.
-    """
-    if not request.is_ajax():
-        return HttpResponseNotAllowed()
-
-    user = request.user
-
-    try:
-        app_model = request.POST["target_model"]
-        obj_id = int(request.POST["target_object_id"])
-    except (KeyError, ValueError):
-        return HttpResponseBadRequest()
-
-    fav = Favorite.objects.get_favorite(user, obj_id, model=app_model)
-
-    if fav is None:
-        Favorite.objects.create(user, obj_id, app_model)
-        status = 'added'
-    else:
-        fav.delete()
-        status = 'deleted'
-
-    response = {'status': status, 'fav_count': Favorite.objects.for_object(obj_id, app_model).count()}
-
-    return HttpResponse(json.dumps(response, ensure_ascii=False), content_type='application/json')
 
 
 @never_cache
@@ -989,7 +963,7 @@ def lista_lectura_historial(request):
         avb.article for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at')
     ]
     historial_count = len(historial)
-    if request.is_ajax():
+    if is_xhr(request):
         return HttpResponse(historial_count)
 
     page = request.GET.get('pagina', 1)
@@ -1353,30 +1327,31 @@ def users_api(request):
 @require_POST
 def email_check_api(request):
     """
-    Takes contact_id and email from POST to check if there is any other user
-    with the requested email. If it doesn't exist, it returns OK. Then, if it
-    exists, it checks if it's the same user that should have that email.
-    If it's not, it returns an error message.
+    If no subscriber wit the contact_id given: ok
+    else:
+      if exist user with the given email/username/social_auth:
+        the subscriber of this user should have the same contact_id given
     """
     try:
 
-        email = request.POST['email']
-        contact_id = int(request.POST['contact_id'])
+        email, contact_id = request.POST['email'], int(request.POST['contact_id'])
 
         if not email or not contact_id or request.POST['ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
             return HttpResponseForbidden()
 
-        subscriber_from_crm = Subscriber.objects.filter(contact_id=contact_id)
+        if Subscriber.objects.filter(contact_id=contact_id).exists():
 
-        if not subscriber_from_crm.exists():
-            return HttpResponse('OK')
+            if getattr(
+                User.objects.select_related('subscriber').get(
+                    Q(username=email) | Q(email=email) | Q(social_auth__uid=email)
+                ).subscriber,
+                "contact_id",
+                None,
+            ) != contact_id:
+                msg = 'Ya existe otro usuario en la web utilizando ese email'
+            else:
+                msg = 'OK'
 
-        user = User.objects.select_related('subscriber').get(email=email)
-
-        user_contact_id = getattr(user.subscriber, 'contact_id', None)
-
-        if (user_contact_id and user_contact_id != contact_id) or (user_contact_id is None):
-            msg = 'Ya existe otro usuario en la web con ese email'
         else:
             msg = 'OK'
 

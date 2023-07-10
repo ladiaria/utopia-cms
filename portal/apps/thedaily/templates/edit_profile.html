@@ -19,10 +19,11 @@
     <form action="" method="post" class="form-horizontal" id="edit-profile-form">
       <section class="ld-block">
         <div id="datos" class="section scrollspy">
-        <h2 class="ld-title ld-title--underlined ">Tus datos</h2>
-        {% crispy user_form %}
-        {% crispy profile_form %}
-        {% include "profile/submit.html" %}
+          <h2 class="ld-title ld-title--underlined">Tus datos</h2>
+          {% crispy user_form %}
+          {% crispy profile_form %}
+          {% include "profile/submit.html" %}
+        {# TODO: div not closed, a new version of this template is under development #}
       </section>
     </form>
 
@@ -53,7 +54,7 @@
       <h2 class="ld-title ld-title--underlined">Ingreso con Google</h2>
       {% if google_oauth2_assoc %}
         {% if google_oauth2_allow_disconnect %}
-          <form action="{% url 'social:disconnect_individual' backend='google-oauth2' association_id=google_oauth2_assoc.id %}" method="post">
+          <form action="{% url 'social:disconnect_individual' 'google-oauth2' google_oauth2_assoc.id %}" method="post">
             {% csrf_token %}
             <input class="ut-btn" type="submit" id="desconectar" value="desconectar" name="desconectar"/>
           </form>
@@ -61,7 +62,7 @@
           <div>Tu cuenta de usuario está asociada a tu cuenta de Google</div>
         {% endif %}
       {% else %}
-        <a class="ut-btn" href="{% url 'social:begin' backend='google-oauth2' %}" title="Conectá tu cuenta de Google">
+        <a class="ut-btn" href="{% url 'social:begin' 'google-oauth2' %}" title="Conectá tu cuenta de Google">
           conectar
         </a>
       {% endif %}

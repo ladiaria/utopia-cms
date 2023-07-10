@@ -12,13 +12,13 @@
           <input class="filled-in" type="checkbox"{% if choice.0 in field.value or choice.0|stringformat:"s" in field.value or choice.0|stringformat:"s" == field.value|stringformat:"s" %} checked="checked"{% endif %} name="{{ field.html_name }}" id="id_{{ field.html_name }}_{{ forloop.counter }}" value="{{ choice.0|unlocalize }}"/>
           <label for="id_{{ field.html_name}}_{{ forloop.counter }}"{% if flat_attrs %} {{ flat_attrs|safe }}{% endif %}>
             {% for publication in publication_newsletters %}
-              {% ifequal choice.1 publication.name %}
+              {% if choice.1 == publication.name %}
                 <h3 class="ld-title-second">{{ publication.profile_newsletter_name }}</h3>
                 {% if publication.newsletter_tagline %}<div>{{ publication.newsletter_tagline|safe }}.</div>{% endif %}
                 {% if publication.newsletter_periodicity %}
                   <h4 class="ld-caption">Periodicidad: {{ publication.newsletter_periodicity }}.</h4>
                 {% endif %}
-              {% endifequal %}
+              {% endif %}
             {% endfor %}
           </label>
         </div>

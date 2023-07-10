@@ -6,7 +6,6 @@ import datetime
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-from django.utils.timezone import utc
 import django.utils.timezone
 
 
@@ -31,7 +30,7 @@ class Migration(migrations.Migration):
                 ('since', models.DateTimeField(auto_now_add=True, verbose_name='Since')),
                 ('updated', models.DateTimeField(auto_now=True, verbose_name='Updated')),
                 ('start_showing', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Start showing')),
-                ('stop_showing', models.DateTimeField(default=datetime.datetime(9999, 12, 29, 23, 59, 59, 999999, tzinfo=utc), verbose_name='Stop showing')),
+                ('stop_showing', models.DateTimeField(default=datetime.datetime(9999, 12, 29, 23, 59, 59, 999999, tzinfo=datetime.timezone.utc), verbose_name='Stop showing')),
             ],
             options={
                 'verbose_name': 'Ad Base',

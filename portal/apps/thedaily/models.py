@@ -11,7 +11,9 @@ from hashids import Hashids
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
-from django.core.validators import RegexValidator
+from django.core.mail import mail_managers
+from django.core.validators import RegexValidator, validate_email
+from django.core.exceptions import ValidationError
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from django.db.models import CASCADE
 from django.db.models import (
@@ -31,11 +33,15 @@ from django.db.models import (
     ManyToManyField,
 )
 from django.db.models.signals import post_save, pre_save, m2m_changed
+from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.urls import reverse
 
+from social_django.models import UserSocialAuth
+
 from apps import mongo_db
 from core.models import Edition, Publication, Category, ArticleViewedBy
+
 from .exceptions import UpdateCrmEx
 
 
@@ -288,15 +294,66 @@ def updatecrmuser(contact_id, field, value):
         r.raise_for_status()
 
 
+def email_extra_validations(email, instance_id=None, next_page=None, allow_blank=False):
+    msg, error_msg_prefix = None, "El email ingresado "
+    error_msg_exists = error_msg_prefix + "ya posee una cuenta de usuario"
+    error_msg_next = ("?next=" + next_page) if next_page else ""
+    exclude_kwargs_user = {'id': instance_id} if instance_id else {}
+    exclude_kwargs_user_sa = {'user_id': instance_id} if instance_id else {}
+
+    if not email:
+        if not allow_blank:
+            msg = error_msg_prefix + 'no es un email válido.'
+
+    else:
+
+        try:
+            validate_email(email)
+        except ValidationError as ve:
+            msg = ve.message
+        else:
+
+            if User.objects.filter(email__iexact=email).exclude(**exclude_kwargs_user).exists():
+                # TODO: use "reverse" to build the url
+                msg = '%s. <a href="/usuarios/entrar/%s">Ingresar</a>.' % (error_msg_exists, error_msg_next)
+
+            elif UserSocialAuth.objects.filter(uid=email).exclude(**exclude_kwargs_user_sa).exists():
+                # TODO: use "reverse" to build the url
+                msg = '%s asociada a Google. <a href="/login/google-oauth2/%s">Ingresar con Google</a>.' % (
+                    error_msg_exists, error_msg_next
+                )
+
+            elif User.objects.filter(username__iexact=email).exclude(**exclude_kwargs_user).exists():
+                mail_managers("Multiple username in users", email)
+                msg = error_msg_prefix + 'no puede ser utilizado.'
+
+    return msg
+
+
 @receiver(pre_save, sender=User)
 def user_pre_save(sender, instance, **kwargs):
+    email_extra_validations_done, error_msg = getattr(instance, "email_extra_validations_done", False), None
+    if email_extra_validations_done:
+        # remove flag
+        del instance.email_extra_validations_done
 
-    if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
-        return True
     try:
         actualusr = sender.objects.get(pk=instance.id)
+        if not email_extra_validations_done:
+            # email extra validations (user modification)
+            error_msg = email_extra_validations(instance.email, instance.id, allow_blank=True)
     except User.DoesNotExist:
+        if not email_extra_validations_done:
+            # email extra validations (user creation)
+            error_msg = email_extra_validations(instance.email, allow_blank=True)
         actualusr = instance
+
+    # raise if email extra validations returned something
+    if error_msg:
+        raise IntegrityError(error_msg)
+
+    if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
+        return True  # TODO: why True and not just "return"?
 
     # sync email if changed
     if actualusr.email != instance.email:
@@ -360,8 +417,14 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
 def createUserProfile(sender, instance, **kwargs):
     """
     Create a UserProfile object each time a User is created ; and link it.
+    Also keep sync the email field on Subscriptions
     """
     Subscriber.objects.get_or_create(user=instance)
+    if instance.email:
+        try:
+            instance.suscripciones.exclude(email=instance.email).update(email=instance.email)
+        except Exception:
+            pass
 
 
 class OAuthState(Model):

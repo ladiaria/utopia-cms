@@ -1,3 +1,35 @@
+# version 0.4.1 (2023-07-10)
+
+- Django upgraded from 2.2 to 4.1.4.
+- The support for sections custom templates usage was improved.
+- randomgen template tag simplifications.
+- Unneeded "in-repo" apps removed.
+- Useful script to "clear" the paywall for anon users created.
+- GTM loaded in AMP only if configured.
+- Custom ForeignKeyRawIdWidget usage simplification.
+- Obsolete documentation and scripts archived.
+- SSL certificates generation scripts updated.
+- TODO's comments updated and added.
+- Dynamic imports using `__import__` where migrated to pydoc's `locate` (easier) usage.
+- A process_tasks command wrapper was created to ignore databse lock exceptions.
+- Fix `__str__` methods for some models.
+- Fix audio stats api usage in AMP.
+- Fix photo galleries template rendering in article detail.
+- Better login links in AMP.
+- Improvements rendering photos in category detail.
+- Improvements on newsletter browser previews.
+- Syntax code style improvements.
+- core.view.edition.rawpic_cover fix.
+- nldelivery_sync_stats management command improvements.
+- NewsletterDelivery model improvements.
+- subscribe_notice template fixes.
+- Obsolete settings removed.
+- OauthState objects better usage, removed in some scenarios to avoid dummy data creation.
+- Subscription, Login, Passwords forms improvements and fixed including extra validations.
+- "most read" API created to return user reading useful data.
+- subscribe_notice_closed view improvements to allow a "closed in session" status.
+- CSS improvements.
+
 # version 0.4.0 (2023-05-03)
 
 - The insecure and discouraged usage approach of SameSite=None on cookies that was active some time ago, to let the AMP pages work properly, was migrated to a better approach, using a new app just released by us which manages the relationships between the AMP reader ID and the Django user. Now the AMP pages will work again properly when the user is authenticated, but work is still needed to let the clicks on the fav and follow links work in AMP pages again; this will be addressed ASAP.

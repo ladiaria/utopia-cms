@@ -481,7 +481,9 @@
   </head>
 
   <body class="{% block body_class %}{% endblock %}">
-    <amp-analytics config="https://www.googletagmanager.com/amp.json?id={{ GTM_AMP_CONTAINER_ID }}&gtm.url=SOURCE_URL" data-credentials="include"></amp-analytics>
+    {% if GTM_AMP_CONTAINER_ID %}
+      <amp-analytics config="https://www.googletagmanager.com/amp.json?id={{ GTM_AMP_CONTAINER_ID }}&gtm.url=SOURCE_URL" data-credentials="include"></amp-analytics>
+    {% endif %}
     <header amp-access="NOT authenticated" amp-access-hide>
       {% render_header %}
       {% if extra_header_template %}{% include extra_header_template %}{% endif %}

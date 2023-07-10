@@ -38,28 +38,11 @@ var prepareFields = function(){
     $('div.inline-group div.inline-related').each(function(){
         var fs = $(this).find('fieldset');
         var h2 = $(this).find('h2:first');
-
         // Don't collapse if fieldset contains errors
-        fs.addClass('collapse' + fs.find('div').hasClass('errors')?' collapsed':'');
-
-        // Add toggle link if missing
-        if ($('a', h2).length == 0){
-          var a = $('<a class="collapse-toggle" href="#" style="display:inline;">' + gettext('Show') + '</a>');
-          h2.append(a);
-          a.before(' (').after(')');
-          a.click(function(event){
-              event.preventDefault();
-              if (!fs.hasClass('collapsed')){
-                  fs.addClass('collapsed');
-                  $(this).html(gettext('Show'));
-              } else {
-                  fs.removeClass('collapsed');
-                  $(this).html(gettext('Hide'));
-              }
-          }).css('cursor', 'pointer');
-        }
+        fs.addClass('collapse' + fs.find('div').hasClass('errors') ? ' collapsed' : '');
         return;
     });
+    // custom position for the "extensions" inline
     var div_body = $('#id_body').closest('.form-row');
     var div_body_clone = div_body.clone();
     div_body_clone.html($('#extensions-group'));

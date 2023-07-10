@@ -7,14 +7,14 @@ from django.test.utils import override_settings
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core import mail
-from django.utils.six.moves import cPickle as pickle  # pylint: disable-msg=F
+from six.moves import cPickle as pickle  # pylint: disable-msg=F
 
-from ..models import NoticeType, NoticeSetting, NoticeQueueBatch
-from ..models import LanguageStoreNotAvailable
-from ..models import get_notification_language, create_notice_type, send_now, send, queue
-from ..compat import get_user_model
+from notification.models import NoticeType, NoticeSetting, NoticeQueueBatch
+from notification.models import LanguageStoreNotAvailable
+from notification.models import get_notification_language, create_notice_type, send_now, send, queue
+from notification.compat import get_user_model
 
-from .models import Language
+from notification.tests.models import Language
 
 from . import get_backend_id
 

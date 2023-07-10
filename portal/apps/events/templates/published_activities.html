@@ -19,14 +19,14 @@
       Las inscripciones para esta actividad están cerradas.
     {% else %}
       <p style="font-size:1.5em;">Inscribite:</p>
-      {% ifequal activity.id activity_id %}
+      {% if activity.id == activity_id %}
         {% include "attendant_form.html" %}
         {% if success %}
           <br>Inscripción recibida correctamente, muchas gracias.
         {% endif %}
       {% else %}
         {% attendant_form activity.id %}
-      {% endifequal %}
+      {% endif %}
     {% endif %}
     <br>
   {% endfor %}

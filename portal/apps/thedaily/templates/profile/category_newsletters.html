@@ -7,21 +7,21 @@
 
           {# This acts as an anchor taking into account the topbar padding #}
           {% for category in category_newsletters %}
-            {% ifequal choice.1 category.name %}
+            {% if choice.1 == category.name %}
               <div id="category-newsletter-{{ category.slug }}" class="item-newsletter__anchor"></div>
-            {% endifequal %}
+            {% endif %}
           {% endfor %}
 
           <input class="filled-in" type="checkbox"{% if choice.0 in field.value or choice.0|stringformat:"s" in field.value or choice.0|stringformat:"s" == field.value|stringformat:"s" %} checked="checked"{% endif %} name="{{ field.html_name }}" id="id_{{ field.html_name }}_{{ forloop.counter }}" value="{{ choice.0|unlocalize }}"/>
           <label for="id_{{ field.html_name}}_{{ forloop.counter }}"{% if flat_attrs %} {{ flat_attrs|safe }}{% endif %}>
             {% for category in category_newsletters %}
-              {% ifequal choice.1 category.name %}
+              {% if choice.1 == category.name %}
                 <h3 class="ld-title-second">{{ choice.1 }}</h3>
                 {% if category.newsletter_tagline %}<div>{{ category.newsletter_tagline }}.</div>{% endif %}
                 {% if category.newsletter_periodicity %}
                   <h4 class="ld-caption">Periodicidad: {{ category.newsletter_periodicity }}.</h4>
                 {% endif %}
-              {% endifequal %}
+              {% endif %}
             {% endfor %}
           </label>
 

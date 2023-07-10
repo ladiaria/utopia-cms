@@ -981,7 +981,6 @@ a.ladiaria {
   }
 }
 
-
 .ld-messages {
   text-align: center;
   margin: 0;
@@ -996,7 +995,8 @@ a.ladiaria {
   background: #2ecc71;
   font-weight: normal;
 
-  &.alert-warning {
+  &.alert-warning,
+  &.alert-social-auth {
     border-bottom: 1px solid #b73d31;
     background: #e74c3c;
 

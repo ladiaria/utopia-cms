@@ -1,3 +1,4 @@
+h2:has(+ #content-main){max-width: 950px;}
 .martor-field{height: 400px !important;}
 .field-main_section{display: none;}
 .field-main li{list-style-type: none;}

@@ -96,7 +96,7 @@ def set_amp_cors_headers(request, response):
         access_control_allow_origin = amp_source_origin
     else:
         try:
-            access_control_allow_origin = request.META['HTTP_ORIGIN']
+            access_control_allow_origin = request.headers['origin']
         except KeyError:
             return HttpResponseBadRequest()
     amp_access_main_header_name = 'AMP-Access-Control-Allow-Source-Origin'

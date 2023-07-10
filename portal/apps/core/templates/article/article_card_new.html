@@ -32,7 +32,7 @@
       <div class="ld-card__intro ld-card__intro--lead">{{ article.lead|ldmarkup|bleach }}</div>
     {% endif %}
 
-    {% ifnotequal card_type 'AC' %}
+    {% if card_type != 'AC' %}
       <div class="ld-card__byline">
         {% with authors=article.get_authors %}
           {% if authors %}
@@ -48,7 +48,7 @@
         {% endif %}
         {% with a=article %}{% include 'article/article_card_read_later.html' %}{% endwith %}
       </div>
-    {% endifnotequal %}
+    {% endif %}
     {% block footer %}{% endblock %}{# TODO: check if needed #}
   </div>
   {% render_toolbar_for article %}

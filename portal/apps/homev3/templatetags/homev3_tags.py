@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.conf import settings
-from django.template import Library, TemplateDoesNotExist, loader
+from django.template import Library, Engine, TemplateDoesNotExist, loader
 from django.template.base import Node
 
 from core.models import Section, Publication, Category, get_current_edition
@@ -41,9 +41,16 @@ class RenderSectionNode(Node):
 
             elif section and section.in_home:
 
-                if section.slug in getattr(settings, 'CORE_RENDER_SECTION_CUSTOM_TEMPLATES', ()):
-
-                    template = '%s/%s.html' % (settings.CORE_RENDER_SECTION_TEMPLATE_DIR, section.slug)
+                template_dir = getattr(settings, "CORE_RENDER_SECTION_TEMPLATE_DIR", None)
+                if template_dir:
+                    template_try = '%s/%s.html' % (template_dir, section.slug)
+                    template_engine = Engine.get_default()
+                    try:
+                        template_engine.get_template(template_try)
+                    except TemplateDoesNotExist:
+                        pass
+                    else:
+                        template = template_try
 
                 if section.slug not in getattr(settings, 'CORE_RENDER_SECTION_ARTICLES_TEMPLATE_OVERRIDES', ()):
 

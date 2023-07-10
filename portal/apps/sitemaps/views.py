@@ -27,9 +27,9 @@ def index(
         protocol = req_protocol if site.protocol is None else site.protocol
         sitemap_url = reverse(sitemap_url_name, kwargs={'section': section})
         absolute_url = '%s://%s%s' % (protocol, req_site.domain, sitemap_url)
-        sites.append(absolute_url)
+        sites.append({"location": absolute_url})
         for page in range(2, site.paginator.num_pages + 1):
-            sites.append('%s?p=%s' % (absolute_url, page))
+            sites.append({"location": '%s?p=%s' % (absolute_url, page)})
 
     return TemplateResponse(request, template_name, {'sitemaps': sites}, content_type=mimetype)
 

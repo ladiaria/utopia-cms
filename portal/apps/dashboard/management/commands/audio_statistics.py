@@ -23,7 +23,6 @@ class Command(BaseCommand):
         parser.add_argument(
             '--progress', action='store_true', default=False, dest='progress', help='Show a progress bar'
         )
-
         parser.add_argument(
             '--out-prefix',
             action='store',
@@ -87,14 +86,13 @@ class Command(BaseCommand):
 
         w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, '{}audio_statistics.csv'.format(out_prefix)), 'w'))
         for article in articles.iterator():
-            # TODO: duration calculation disabled, it raises a UnicodeDecodeError and should be investigated.
-            # audio_info = mutagen.File(article.audio.file).info; duration = timedelta(seconds=int(audio_info.length))
             w.writerow(
                 [
                     article.headline,
                     article.get_absolute_url(),
                     article.section,
-                    article.date_published,
+                    article.date_published.date(),
+                    article.get_audio_length(),
                     article.audio.audiostatistics_set.filter(percentage__isnull=False).count(),
                     article.audio.audiostatistics_set.filter(amp_click=True).count(),
                     article.audio.audiostatistics_set.filter(percentage=0).count(),

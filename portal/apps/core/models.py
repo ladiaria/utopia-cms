@@ -19,6 +19,7 @@ from requests.exceptions import ConnectionError
 from sorl.thumbnail import get_thumbnail
 from PIL import Image
 import readtime
+import mutagen
 
 from martor.models import MartorField
 
@@ -838,11 +839,11 @@ class Section(Model):
         desde = datetime.now() - timedelta(days=60)
         return Article.objects.filter(sections__id=self.id, date_published__gt=desde).order_by('views')[:10]
 
-    def published_articles(self):
+    def published_articles(self, **filter_kwargs):
         """
-        Returns all this section's published articles
+        Returns all this section's published articles supporting filtering by keyword args
         """
-        return self.articles_core.filter(is_published=True).distinct()
+        return self.articles_core.filter(is_published=True, **filter_kwargs).distinct()
 
     def latest_articles(self):
         """
@@ -1207,6 +1208,16 @@ class ArticleBase(Model, CT):
 
     def get_photos_wo_cover(self):
         return self.gallery.photos.exclude(id__exact=self.photo.id if self.photo else 0)
+
+    def get_audio_length(self):
+        if self.audio:
+            try:
+                td = timedelta(seconds=int(mutagen.File(self.audio.file).info.length))
+            except FileNotFoundError:
+                pass
+            else:
+                strtd = str(td)
+                return strtd.split(":", 1)[-1] if td.seconds < 3600 else strtd
 
     def has_photo(self):
         try:

@@ -9,7 +9,7 @@ from markdown2 import markdown
 from django.template import Library
 from django.template.loader import render_to_string
 from django.template.defaultfilters import stringfilter
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 from django.utils.html import strip_tags
 
@@ -26,7 +26,7 @@ IMAGE_RE = r'%s\s*(\d*)' % IMAGE_KW
 
 def normalize(value):
     nre = re.compile(r'\r\n|\r|\n')
-    return nre.sub('\n', force_text(value))
+    return nre.sub('\n', force_str(value))
 
 
 def to_p(value):
@@ -95,7 +95,7 @@ def ldmarkup(value, args='', amp=False):
         reg = re.compile(IMAGE_RE, re.UNICODE + re.MULTILINE)
         value = reg.sub(lambda x: get_image(x, args, amp), value)
     return mark_safe(
-        force_text(markdown(value, extras=['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra']).strip())
+        force_str(markdown(value, extras=['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra']).strip())
     )
 
 
@@ -106,7 +106,7 @@ def ldmarkup_extension(value, args='', amp=False):
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
     value = reg.sub(r'\n\n\1\n----', value)
     value = markdown(value, extras=['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra']).strip()
-    return mark_safe(force_text(value))
+    return mark_safe(force_str(value))
 
 
 @register.filter
