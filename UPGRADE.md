@@ -5,7 +5,7 @@ git pull
 git checkout 0.4.1
 cd portal
 # activate your virtual env
-pip uninstall django-admin-shortcuts django-shorturls django-favit django-tagging-autocomplete
+pip uninstall django-admin-shortcuts django-shorturls django-favit django-tagging-autocomplete django-updown
 pip install --upgrade -r requirements.txt
 cat libs/scripts/one_time/20230516_background_task_prefake.sql | ./manage.py dbshell
 ./manage.py migrate background_task 0001 --fake
