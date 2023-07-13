@@ -99,7 +99,7 @@ class HomeTopArticleInline(TabularInline):
     raw_id_fields = ('article', )
     verbose_name_plural = 'Nota de tapa y titulines'
     formset = TopArticleRelInlineFormSet
-    classes = ('dynamic-order',)
+    classes = ('dynamic-order', )
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -923,7 +923,7 @@ class CategoryNewsletterArticleInline(TabularInline):
     extra = 20
     max_num = 20
     form = CategoryNewsletterArticleForm
-    fields = ('featured', 'article', 'order',)
+    fields = ('featured', 'article', 'order')
     raw_id_fields = ('article', )
     verbose_name_plural = 'Artículos en newsletter'
     classes = ('dynamic-order', )

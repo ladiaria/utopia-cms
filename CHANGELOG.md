@@ -10,7 +10,7 @@
 - Obsolete documentation and scripts archived.
 - SSL certificates generation scripts updated.
 - TODO's comments updated and added.
-- Dynamic imports using `__import__` where migrated to pydoc's `locate` (easier) usage.
+- Dynamic imports using `__import__` were migrated to pydoc's `locate` (easier) usage.
 - A process_tasks command wrapper was created to ignore databse lock exceptions.
 - Fix `__str__` methods for some models.
 - Fix audio stats api usage in AMP.
