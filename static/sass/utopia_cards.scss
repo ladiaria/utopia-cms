@@ -442,40 +442,6 @@ img {
     a {
       text-decoration: none;
     }
-
-    .lock-tooltip {
-      position: relative;
-
-      .lock {
-        margin-left: 5px;
-      }
-
-      .lock-tooltip-content {
-        display: none;
-        position: absolute;
-        z-index: 1;
-        text-align: left;
-        background: $off-black;
-        color: white;
-        font-size: 12px;
-        line-height: 14px;
-        padding: 6px 8px;
-        border-radius: 4px;
-        min-width: 185px;
-        left: -20px;
-        top: 18px;
-        text-transform: none;
-
-        @media (min-width: 640px) {
-          left: 24px;
-          top: -5px;
-        }
-      }
-
-      &:hover .lock-tooltip-content {
-        display: block;
-      }
-    }
   }
   &__photoauthor {
     display: block;
@@ -536,6 +502,45 @@ img {
       }
     }
   }
+}
+
+.lock-tooltip {
+  position: relative;
+
+  .lock {
+    margin-left: 5px;
+  }
+
+  .lock-tooltip-content {
+    display: none;
+    position: absolute;
+    z-index: 1;
+    text-align: left;
+    background: $off-black;
+    color: white;
+    font-size: 12px;
+    line-height: 14px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    min-width: 185px;
+    left: -20px;
+    top: 18px;
+    text-transform: none;
+
+    @media (min-width: 640px) {
+      left: 24px;
+      top: -5px;
+    }
+  }
+
+  &:hover .lock-tooltip-content {
+    display: block;
+  }
+}
+
+body.lento-pub .lock-tooltip-content {
+  left: 34px;
+  top: -8px;
 }
 
 .ld-grid-clear {
