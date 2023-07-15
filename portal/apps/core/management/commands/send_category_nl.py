@@ -346,9 +346,11 @@ def build_and_send(
                     msg.attach(filename=f_ad_basename, data=open(f_ad, "rb"))
 
                 # send using smtp to receive bounces in another mailbox
+                send_result = None
                 try:
                     if not no_deliver:
-                        smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [s_user_email], msg.as_string())
+                        send_result = smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [s_user_email], msg.as_string())
+                        assert not send_result
                     log.info(
                         "Email %s to %ssubscriber %s\t%s" % (
                             'simulated' if no_deliver else 'sent', '' if is_subscriber else 'non-', s_id, s_user_email
@@ -358,6 +360,14 @@ def build_and_send(
                         subscriber_sent += 1
                     else:
                         user_sent += 1
+                except AssertionError:
+                    if not no_deliver:
+                        log.error(
+                            "Delivery errors for %ssubscriber %s: %s" % (
+                                '' if is_subscriber else 'non-', s_id, send_result
+                            )
+                        )
+                        # TODO: retry?
                 except smtplib.SMTPRecipientsRefused:
                     log.warning(
                         "Email refused for %ssubscriber %s\t%s" % ('' if is_subscriber else 'non-', s_id, s_user_email)
