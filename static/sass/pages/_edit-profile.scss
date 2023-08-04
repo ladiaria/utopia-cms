@@ -465,6 +465,7 @@ body.ld-profile-edit {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
+        flex: 1;
 
         .new {
           background-color: #219653;
@@ -601,6 +602,11 @@ body.ld-profile-edit {
   padding: 10px 20px;
   border-radius: 8px;
   border: 1px solid #6fcf97;
+  width: max-content;
+
+  @media screen and (max-width: 350px) {
+    width: 90%;
+  }
 
   svg {
     margin-right: 16px;
@@ -618,8 +624,6 @@ body.ld-profile-edit {
 
   @media #{$medium-and-down} {
     min-width: auto;
-    left: 4%;
-    transform: translateX(-2%);
     align-items: center;
 
     svg {
@@ -673,6 +677,7 @@ body.ld-profile-edit {
   &__container {
     background-color: white;
     padding: 8px;
+    height: fit-content;
 
     @media #{$medium-and-up} {
       margin: 100px 8px;
