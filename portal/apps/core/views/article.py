@@ -97,7 +97,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
 
     if settings.DEBUG:
         print('DEBUG: article_detail view called with (%d, %d, %s, %s)' % (year, month, slug, domain_slug))
-    if settings.AMP_DEBUG and request.is_amp_detect:
+    if settings.AMP_DEBUG and getattr(request, "is_amp_detect", False):
         print('AMP DEBUG: request.META=%s' % request.META)
 
     # 1. obtener articulo
@@ -160,10 +160,9 @@ def article_detail(request, year, month, slug, domain_slug=None):
     signupwall_exclude_request_condition = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
     # If the call to the condition with the request as argument returns True, the visit is not logged to mongodb.
 
+    is_amp_detect = getattr(request, "is_amp_detect", False)
     if settings.CORE_LOG_ARTICLE_VIEWS and not (
-        signupwall_exclude_request_condition(request)
-        or getattr(request, 'restricted_article', False)
-        or request.is_amp_detect
+        signupwall_exclude_request_condition(request) or getattr(request, 'restricted_article', False) or is_amp_detect
     ):
         if request.user.is_authenticated and mongo_db is not None:
             # register this view
@@ -223,7 +222,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         )
 
     template = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE', 'article/detail.html')
-    if request.is_amp_detect:
+    if is_amp_detect:
         template = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_AMP', template)
     return render(request, template, context)
 

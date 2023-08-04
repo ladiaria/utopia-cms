@@ -1,0 +1,25 @@
+<section id="notificaciones" class="scrollspy edit_profile_card">
+  <div class="edit_profile_card__header">
+    <h2 class="title">Notificaciones push</h2>
+  </div>
+  <div class="edit_profile_card__inner-section">
+    <div class="edit_profile_card__inner-section_header">
+      <label class="title" for="allow_notification">Activar en éste dispositivo</label>
+      <div class="switch-container">
+        <span class="label-text on" style="display: none;">Activadas</span>
+        <span class="label-text off">Activar</span>
+        <label class="switch">
+          <input type="checkbox" id="allow_notification" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="edit_profile_card__inner-section_body">
+      <p class="description">
+        Mantenete al tanto de las novedades de <span class="italic">{{ site.name }}</span>.
+        Vas a poder activarlas y desactivarlas cuando quieras accediendo a éste panel.
+      </p>
+    </div>
+  </div>
+  {# TODO: additional info like "notifications will not be received if the device is set to block them" #}
+</section>

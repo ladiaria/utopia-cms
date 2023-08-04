@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from operator import attrgetter
+
 from django.conf import settings
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.db.models import Value
 from django.contrib.contenttypes.models import ContentType
 
 from actstream.models import Follow
 from actstream.registry import check
 
-from core.models import Category
+from core.models import Category, Publication
 
 from .models import Subscriber
 
@@ -69,3 +72,18 @@ def subscribers_nl_iter_filter(iter, filter_func):
     for item in iter:
         if filter_func(item):
             yield item
+
+
+def get_all_newsletters():
+    return list(Publication.objects.filter(has_newsletter=True)) + list(Category.objects.filter(has_newsletter=True))
+
+
+def get_profile_newsletters_ordered():
+    custom_order = getattr(settings, 'THEDAILY_EDIT_PROFILE_NEWSLETTERS_CUSTOM_ORDER', ())
+    publications = list(Publication.objects.filter(has_newsletter=True).annotate(nltype=Value('p')))
+    categories = list(Category.objects.filter(has_newsletter=True).annotate(nltype=Value('c')))
+    nl_unsorted = publications + categories
+    nl_custom_ordered = [next((x for x in nl_unsorted if x.slug == o), None) for o in custom_order]
+    nl_alpha = [nl_obj for nl_obj in nl_unsorted if nl_obj not in nl_custom_ordered]
+    nl_alpha.sort(key=attrgetter("slug"))
+    return [nl_obj for nl_obj in nl_custom_ordered if nl_obj] + nl_alpha

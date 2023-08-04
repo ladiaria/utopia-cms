@@ -32,7 +32,7 @@ from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter, subscribers_nl_iter_filter
 from dashboard.models import NewsletterDelivery
-from libs.utils import smtp_connect
+from libs.utils import smtp_connect, smtp_server_choice, smtp_quit
 
 
 # CFG
@@ -274,12 +274,15 @@ def build_and_send(
     if not offline:
         subscribers_iter = subscribers_nl_iter(receivers, starting_from_s, starting_from_ns)
 
-    # Connect to the SMTP server and send all emails
-    try:
-        smtp = None if no_deliver or export_only else smtp_connect()
-    except error:
-        log.error("MTA down, '%s %s' was used for partitions and mod" % (partitions, mod))
-        return
+    # connect to smtp servers and send the emails
+    smtp_servers = []
+    if not(no_deliver or export_only):
+        for alt_index in range(len(getattr(settings, "EMAIL_ALTERNATIVE", [])) + 1):
+            smtp_servers.append(smtp_connect(alt_index))
+        if not any(smtp_servers):
+            # At least 1 smtp server must be available
+            log.error("All MTA down, '%s %s' was used for partitions and mod" % (partitions, mod))
+            return
 
     subscriber_sent, user_sent, subscriber_refused, user_refused = 0, 0, 0, 0
     retry_last_delivery, s_id, is_subscriber = False, None, None
@@ -346,14 +349,26 @@ def build_and_send(
                     msg.attach(filename=f_ad_basename, data=open(f_ad, "rb"))
 
                 # send using smtp to receive bounces in another mailbox
-                send_result = None
+                send_result, smtp_index_choosed = None, None
                 try:
                     if not no_deliver:
-                        send_result = smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [s_user_email], msg.as_string())
+                        smtp_index_choosed = smtp_server_choice(s_user_email, smtp_servers)
+                        if smtp_index_choosed is None:
+                            send_result = "No SMTP server available"
+                        else:
+                            send_result = smtp_servers[smtp_index_choosed].sendmail(
+                                settings.NOTIFICATIONS_FROM_MX, [s_user_email], msg.as_string()
+                            )
                         assert not send_result
                     log.info(
-                        "Email %s to %ssubscriber %s\t%s" % (
-                            'simulated' if no_deliver else 'sent', '' if is_subscriber else 'non-', s_id, s_user_email
+                        "%sEmail %s to %ssubscriber %s\t%s" % (
+                            "(mod %d) " % mod if mod is not None else "",
+                            'simulated' if no_deliver else 'sent(%s)' % (
+                                ("A%d" % smtp_index_choosed) if smtp_index_choosed else "M"
+                            ),
+                            '' if is_subscriber else 'non-',
+                            s_id,
+                            s_user_email,
                         )
                     )
                     if is_subscriber:
@@ -376,7 +391,7 @@ def build_and_send(
                         subscriber_refused += 1
                     else:
                         user_refused += 1
-                except smtplib.SMTPServerDisconnected:
+                except (smtplib.SMTPServerDisconnected, smtplib.SMTPSenderRefused):
                     # Retries are made only once per iteration to avoid infinite loop if MTA got down at all
                     retry_last_delivery = not retry_last_delivery
                     log_message = "MTA down, email to %s not sent. Reconnecting " % s_user_email
@@ -385,7 +400,8 @@ def build_and_send(
                     else:
                         log.error(log_message + "for the next delivery ...")
                     try:
-                        smtp = smtp_connect()
+                        if smtp_index_choosed is not None:
+                            smtp_servers[smtp_index_choosed] = smtp_connect(smtp_index_choosed)
                     except error:
                         log.warning('MTA reconnect failed')
                 else:
@@ -403,10 +419,7 @@ def build_and_send(
 
     if not export_only:
         if not no_deliver:
-            try:
-                smtp.quit()
-            except smtplib.SMTPServerDisconnected:
-                pass
+            smtp_quit(smtp_servers)
 
         # update log stats counters only if subscriber_ids not given
         if not subscriber_ids:
@@ -423,7 +436,8 @@ def build_and_send(
                 log.error('Delivery stats not updated: %s' % e)
 
         log.info(
-            '%s stats: user_sent: %d, subscriber_sent: %s, user_refused: %d, subscriber_refused: %d' % (
+            '%s%s stats: user_sent: %d, subscriber_sent: %s, user_refused: %d, subscriber_refused: %d' % (
+                "(mod %d) " % mod if mod is not None else "",
                 'Simulation' if no_deliver else 'Delivery',
                 user_sent,
                 subscriber_sent,
@@ -558,5 +572,9 @@ class Command(BaseCommand):
         )
         if not export_only:
             log.info(
-                "%s completed in %.0f seconds" % ('Simulation' if no_deliver else 'Delivery', time.time() - start_time)
+                "%s%s completed in %.0f seconds" % (
+                    "(mod %d) " % mod if mod is not None else "",
+                    'Simulation' if no_deliver else 'Delivery',
+                    time.time() - start_time,
+                )
             )

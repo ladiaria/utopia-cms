@@ -28,7 +28,7 @@ class ArticleTestCase(TestCase):
     def test_article_response(self):
         c = Client()
         with self.settings(DEBUG=True):
-            for item in self.urls_to_test[:2]:
+            for item in self.urls_to_test[:2]:  # TODO: fix for all urls
                 response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))
                 # test success response
                 self.assertEqual(response.status_code, 200, (response.status_code, response))
@@ -47,10 +47,15 @@ class ArticleTestCase(TestCase):
                 # test meta noindex for not humor articles
                 self.assertNotIn('<meta name="robots" content="noindex">', content)
 
+            # status 200 also for the display param with a "not considered" value
+            item = self.urls_to_test[0]
+            response = c.get(item['url'], {'display': 'x'}, **item.get('headers', {}))
+            self.assertEqual(response.status_code, 200, (response.status_code, response))
+
     def test_humor_article_noindex(self):
         c = Client()
         with self.settings(DEBUG=True, CORE_SATIRICAL_SECTIONS=('humor', )):
-            for item in self.urls_to_test[2:]:
+            for item in self.urls_to_test[2:]:  # TODO: fix for all urls
                 response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))
 
                 content = response.content.decode()

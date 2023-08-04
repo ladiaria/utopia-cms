@@ -29,6 +29,7 @@ from thedaily.views import (
     welcome,
     nl_category_subscribe,
     nl_category_unsubscribe,
+    communication_subscribe,
     disable_profile_property,
     notification_preview,
     phone_subscription,
@@ -158,6 +159,7 @@ urlpatterns = [
         nl_category_unsubscribe,
         name="nl-category-unsubscribe",
     ),
+    re_path(r'^communication-subscribe/(?P<com_type>\w+)/$', communication_subscribe, name="communication-subscribe"),
 
     path('amp-access/authorization', amp_access_authorization, name="amp-access-authorization"),
     path('amp-access/pingback', amp_access_pingback, name="amp-access-pingback"),

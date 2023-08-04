@@ -1,12 +1,25 @@
-<div class="row ld-profile-row">
-  <div class="col">
-    <h3 class="ld-title-second">Promociones</h3>
+<div class="edit_profile_card__inner-section">
+  <div class="edit_profile_card__inner-section_header">
+    <label class="title" for="id_{{ field.name }}">Promociones</label>
+    <div class="switch-container">
+      <span class="label-text on" {% if not field.value %}style="display: none;"{% endif %}>Activadas</span>
+      <span class="label-text off" {% if field.value %}style="display: none;"{% endif %}>Activar</span>
+      <label class="switch">
+        <input
+          type="checkbox"
+          id="id_{{ field.name }}"
+          name="{{ field.name }}"
+          data-url="{% url 'communication-subscribe' com_type='allow_promotions' %}"
+          data-key="com_subscribe"
+          {% if field.value %} checked{% endif %}
+        />
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+  <div class="edit_profile_card__inner-section_body">
     <p>
       Podemos contactarte para ofrecerte nuevos productos, promociones y otros beneficios.
     </p>
-    <div class="">
-        <input id="id_{{ field.name }}" name="{{ field.name }}" class="filled-in" type="checkbox"{% if field.value %} checked{% endif %}/>
-        <label for="id_{{ field.name }}">Deseo recibir promociones</label>
-    </div>
   </div>
 </div>

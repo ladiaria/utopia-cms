@@ -1,4 +1,5 @@
 django==4.1.4
+Pillow<10
 bleach
 bleach-whitelist
 django-activity-stream==1.4.2

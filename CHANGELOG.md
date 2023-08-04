@@ -1,3 +1,17 @@
+# version 0.4.2 (2023-08-04)
+
+- User profile UX improvements.
+- core migrations updates, inculding Category and Publications new field to indicate if the newsletter is "new".
+- support for more than one alternative smtp server for newsletter delivery,
+- Avoid AttributeError when check if a request is AMP.
+- Respect image is_public attribute for inline articles images.
+- "with" template tag usage syntax updated.
+- homev3 and core tests fixes and updates to test AMP middleware.
+- "super" calls simplified in some modules.
+- "exclude" usage in forms changed unhardcoding fields that should be removed soon.
+- Custom ordering support for newswletters cards in user profile.
+- Pillow requirement added in requirements.txt.
+
 # version 0.4.1 (2023-07-10)
 
 - Django upgraded from 2.2 to 4.1.4.

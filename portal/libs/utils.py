@@ -3,9 +3,11 @@ from __future__ import unicode_literals
 
 from builtins import str
 
+from socket import error
 from hashlib import md5
 import re
 import smtplib
+from random import choices
 from hashids import Hashids
 
 from django.conf import settings
@@ -107,24 +109,82 @@ def set_amp_cors_headers(request, response):
     return response
 
 
-def smtp_connect(alternative=False):
+def smtp_quit(smtp_servers):
+    for smtp_conn in smtp_servers:
+        if smtp_conn:
+            try:
+                smtp_conn.quit()
+            except smtplib.SMTPServerDisconnected:
+                pass
+
+
+def smtp_connect(alternative=0):
     """
     Authenticate to SMTP (if any auth needed) and return the conn instance.
-    If alternative is True, connect to the alternative SMTP instead of the default.
+    If alternative > 0, connect to the alternative SMTP configured in setting list (1-indexed).
     """
     email_conf = {}
-    for setting in ('HOST', 'PORT', 'HOST_USER', 'HOST_PASSWORD', 'USE_TLS'):
-        email_conf[setting] = getattr(settings, ('EMAIL_%s' + setting) % ('ALTERNATIVE_' if alternative else ''), None)
-
-    s = smtplib.SMTP(email_conf['HOST'], email_conf['PORT'])
-    if email_conf['USE_TLS']:
-        s.starttls()
-    if email_conf['HOST_USER']:
+    if alternative:
         try:
-            s.login(email_conf['HOST_USER'], email_conf['HOST_PASSWORD'])
+            email_conf = getattr(settings, "EMAIL_ALTERNATIVE", [])[alternative - 1]
+        except IndexError:
+            pass
+    else:
+        for setting in ('HOST', 'PORT', 'HOST_USER', 'HOST_PASSWORD', 'USE_TLS'):
+            email_conf[setting] = getattr(settings, 'EMAIL_' + setting, None)
+
+    host, port = email_conf.get('HOST'), email_conf.get('PORT')
+    try:
+        s = smtplib.SMTP(host, port) if host and port else None
+    except error:
+        s = None
+    if s and email_conf.get('USE_TLS'):
+        s.starttls()
+    if s and email_conf.get('HOST_USER'):
+        try:
+            s.login(email_conf.get('HOST_USER'), email_conf.get('HOST_PASSWORD'))
         except smtplib.SMTPException:
             pass
     return s
+
+
+smtp_dom_not_allowed = [getattr(settings, "EMAIL_DOMAINS_NOT_ALLOWED", [])]
+
+try:
+    smtp_servers_weights = [settings.EMAIL_MAIN_SERVER_WEIGHT]
+except AttributeError:
+    # when using weights, all weights must be configured, otherwise they are ignored
+    smtp_servers_weights = None
+
+for email_conf in getattr(settings, "EMAIL_ALTERNATIVE", []):
+    smtp_dom_not_allowed.append(email_conf.get("DOMAINS_NOT_ALLOWED", []))
+    if smtp_servers_weights:
+        try:
+            smtp_servers_weights.append(email_conf["WEIGHT"])
+        except KeyError:
+            smtp_servers_weights = None
+
+
+def smtp_server_choice(user_email, servers_available, force_ignore_weights=False):
+    """
+    This function will return the index to the (main server + alternative servers) list filtered by the availability
+    list given, randomnly choosed to deliver the email given.
+    TODO: choices are "fixed" for the same domain in the same delivery, then, to avoid unnecesary repeated calls to
+          this function, a class can be written to fill a hashtable for caching those per-domain choices.
+          The class instance will be created and used only in the delivery command.
+          (Note that the servers availability can change in the same delivery execution)
+    """
+    email_domain, choices_data, weights = user_email.split("@")[1], [], None
+    for alt_index, not_allowed in enumerate(smtp_dom_not_allowed):
+        if servers_available[alt_index] and email_domain not in not_allowed:
+            choices_data.append(alt_index)
+    if choices_data:
+        if not force_ignore_weights and smtp_servers_weights:
+            weights = [smtp_servers_weights[alt_index] for alt_index in choices_data]
+        index_chosen = choices(choices_data, weights=weights)[0]
+    else:
+        index_chosen = None
+    return index_chosen
 
 
 def decode_hashid(hashed_id):

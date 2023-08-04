@@ -1,5 +1,6 @@
 {% load bleach_tags core_tags ldml %}
 
+{% if image.is_public %}{# don't indent this block, it get broken and we don't know why #}
 <div class="inline-image-wrap article_body_image-{{ display }}">
   <figure class="principal">
     <picture class="materialboxed">
@@ -37,3 +38,4 @@
     {% endif %}
   </figure>
 </div>
+{% endif %}

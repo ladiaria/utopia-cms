@@ -7,7 +7,7 @@
       <span class="ld-main-menu__title">Tu cuenta</span>
       <ul class="navmenu-list  ld-menu-list">
         <li class="ld-main-menu__item small">
-          <a href="{% url 'edit-profile' %}">Opciones</a>
+          <a href="{% url 'edit-profile' %}">Perfil</a>
         </li>
         {% if user.is_staff %}
           <li class="ld-main-menu__item small">
@@ -44,7 +44,7 @@
       <span class="ld-main-menu__title">Tu cuenta</span>
       <ul class="navmenu-list ">
         <li class="ld-main-menu__item small">
-          <a href="{% url 'edit-profile' %}">Opciones</a>
+          <a href="{% url 'edit-profile' %}">Perfil</a>
         </li>
         {% if not is_subscriber_any %}
           <li class="ld-main-menu__item small">

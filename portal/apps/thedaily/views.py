@@ -85,9 +85,10 @@ from .forms import (
     SubscriberSignupAddressForm,
     ConfirmEmailRequestForm,
     ProfileForm,
+    ProfileExtraDataForm,
     UserForm,
 )
-from .utils import recent_following, add_default_category_newsletters
+from .utils import recent_following, add_default_category_newsletters, get_profile_newsletters_ordered
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx
 from .tasks import send_notification, notify_digital, notify_paper
@@ -109,11 +110,37 @@ def notify_new_subscription(subscription_url, extra_subject=''):
 def nl_auth_subscribe(request, nltype, nlslug):
     """ Useful view to allow 1-click nl subscription for authenticated users (by ajax or POST) """
     from_amp = request.GET.get("__amp_source_origin")
+    nl_subscribe_activated = request.POST.get("nl_subscribe", "true") == "true"
     user = get_related_user(request) if from_amp else request.user
     if not user.is_anonymous and (request.method == 'POST' or is_xhr(request)):
         nlobj = get_object_or_404(Publication if nltype == "p" else Category, slug=nlslug, has_newsletter=True)
+        nl_field = ("" if nltype == "p" else "category_") + "newsletters"
         try:
-            getattr(user.subscriber, ("" if nltype == "p" else "category_") + "newsletters").add(nlobj)
+            if nl_subscribe_activated:
+                getattr(user.subscriber, nl_field).add(nlobj)
+            else:
+                getattr(user.subscriber, nl_field).remove(nlobj)
+        except Exception:
+            # for some reason UpdateCrmEx does not work in test (Python ver?)
+            return HttpResponseBadRequest()
+        return set_amp_cors_headers(request, JsonResponse({})) if from_amp else HttpResponse()
+    else:
+        return HttpResponseForbidden()
+
+
+@never_cache
+@csrf_exempt
+def communication_subscribe(request, com_type):
+    """ Useful view to allow 1-click communications subscription for authenticated users (by ajax or POST) """
+    from_amp = request.GET.get("__amp_source_origin")
+    subscribe_activated = request.POST.get("com_subscribe") == "true"
+    user = get_related_user(request) if from_amp else request.user
+    if not user.is_anonymous and (request.method == 'POST' or request.is_ajax()):
+        target_field = com_type  # assuming the field here
+        try:
+            if getattr(user.subscriber, target_field) != subscribe_activated:
+                setattr(user.subscriber, target_field, subscribe_activated)
+                user.subscriber.save()
         except Exception:
             # for some reason UpdateCrmEx does not work in test (Python ver?)
             return HttpResponseBadRequest()
@@ -838,6 +865,7 @@ def edit_profile(request, user=None):
     if request.method == 'POST':
         user_form = UserForm(request.POST, instance=user)
         profile_form = ProfileForm(request.POST, instance=profile)
+        profile_data_form = ProfileExtraDataForm(request.POST, instance=profile)
 
         old_email = user.email
         if user_form.is_valid() and profile_form.is_valid():
@@ -874,6 +902,7 @@ def edit_profile(request, user=None):
     else:
         user_form = UserForm(instance=user)
         profile_form = ProfileForm(instance=profile)
+        profile_data_form = ProfileExtraDataForm(instance=profile)
 
     try:
         oauth2_assoc = UserSocialAuth.objects.get(user=user, provider='google-oauth2')
@@ -883,11 +912,21 @@ def edit_profile(request, user=None):
     return 'edit_profile.html', {
         'user_form': user_form,
         'profile_form': profile_form,
+        'profile_data_form': profile_data_form,
         'is_subscriber_digital': user.subscriber.is_digital_only(),
         'google_oauth2_assoc': oauth2_assoc,
         'google_oauth2_allow_disconnect': oauth2_assoc and (user.email != oauth2_assoc.uid),
         'publication_newsletters': Publication.objects.filter(has_newsletter=True),
-        'category_newsletters': Category.objects.filter(has_newsletter=True),
+        'newsletters': get_profile_newsletters_ordered(),
+        "incomplete_field_count": sum(
+            not bool(value) for value in (
+                user.get_full_name(),
+                user.subscriber.document,
+                user.email,
+                user.subscriber.phone,
+                user.subscriber.address,
+            )
+        ),
     }
 
 

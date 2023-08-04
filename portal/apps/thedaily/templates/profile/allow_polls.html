@@ -1,23 +1,26 @@
-<div class="row ld-profile-row">
-  <div class="col">
-    <h3 class="ld-title-second">Investigación</h3>
+<div class="edit_profile_card__inner-section">
+  <div class="edit_profile_card__inner-section_header">
+    <label for="id_{{ field.name }}" class="title">Investigación</label>
+    <div class="switch-container">
+      <span class="label-text on" {% if not field.value %}style="display: none;"{% endif %}>Activadas</span>
+      <span class="label-text off" {% if field.value %}style="display: none;"{% endif %}>Activar</span>
+      <label class="switch">
+        <input
+          type="checkbox"
+          id="id_{{ field.name }}"
+          name="{{ field.name }}"
+          data-url="{% url 'communication-subscribe' com_type='allow_polls' %}"
+          data-key="com_subscribe"
+          {% if field.value %} checked{% endif %}
+        />
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+  <div class="edit_profile_card__inner-section_body">
     <p>
       Regularmente realizamos encuestas a quienes leen <i>{{ site.name }}</i> para evaluar
       sus intereses e incorporar esas necesidades a nuestro periodismo.
     </p>
-    <div class="">
-      <input id="id_{{ field.name }}" name="{{ field.name }}" class="filled-in" type="checkbox"{% if field.value %} checked{% endif %}/>
-      <label for="id_{{ field.name }}">Deseo participar de encuestas</label>
-    </div>
-  </div>
-</div>
-<div class="row ld-profile-row">
-  <div class="col">
-    <h3 class="ld-title-second">Seguridad</h3>
-    <p>Notificaciones esenciales por motivos de seguridad de tu cuenta. No es posible desactivar esta notificación.</p>
-    <div class="">
-      <input id="id_seguridad" name="id_seguridad" class="filled-in" type="checkbox" checked disabled />
-      <label for="id_seguridad">Recibiré notificaciones de seguridad</label>
-    </div>
   </div>
 </div>

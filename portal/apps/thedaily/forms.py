@@ -33,6 +33,7 @@ from crispy_forms.bootstrap import FormActions
 from crispy_forms.utils import get_template_pack
 
 from .models import Subscription, Subscriber, email_extra_validations
+from .utils import get_all_newsletters
 
 
 CSS_CLASS = 'form-input1'
@@ -53,7 +54,7 @@ class Submit(BaseInput):
 
     def __init__(self, *args, **kwargs):
         self.field_classes = 'submit submitButton' if get_template_pack() == 'uni_form' else ''
-        super(Submit, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class PhoneInput(TextInput):
@@ -170,6 +171,7 @@ class BaseUserForm(ModelForm):
         model = User
         fields = ('first_name', 'last_name', 'email')
 
+
 class UserForm(BaseUserForm):
 
     def __init__(self, *args, **kwargs):
@@ -281,17 +283,48 @@ class ProfileForm(ModelForm):
     helper.layout = Layout(
         Fieldset('Datos de suscriptor', 'document', 'phone'),
         Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
-        HTML('</div>'),     # close div opened in edit_profile.html
-        HTML('{% include "profile/submit.html" %}'),
+    )
+
+    class Meta:
+        model = Subscriber
+        fields = ('address', 'country', 'city', 'province', 'document', 'phone')
+
+
+class ProfileExtraDataForm(ModelForm):
+    helper = FormHelper()
+    helper.form_tag = False
+    helper.form_class = 'form-horizontal'
+    helper.label_class = 'col-sm-2'
+    helper.field_class = 'col-sm-8'
+    helper.help_text_inline = True
+    helper.error_text_inline = True
+    helper.layout = Layout(
         HTML(
             '{%% include "%s" %%}' % getattr(settings, 'THEDAILY_SUBSRIPTIONS_TEMPLATE', 'profile/suscripciones.html')
         ),
-        Field('newsletters', template='profile/newsletters.html'),
-        Field('category_newsletters', template='profile/category_newsletters.html'),
+        # include push notifications section if it's configured
+        HTML(
+            '{%% if push_notifications_keys_set %%}{%% include "%s" %%}{%% endif %%}' % (
+                "profile/push_notifications.html"
+            )
+        ),
         HTML(
             '''
-            <section id="ld-comunicaciones" class="ld-block section scrollspy">
-              <h2 class="ld-title ld-title--underlined">Comunicaciones</h2>
+            <section id="newsletters" class="scrollspy edit_profile_card">
+                <div id="{{ field.auto_id }}_wrapper">
+                    <div id="ld-newsletters" class="ld-block ld-section-newsletters">
+            '''
+        ),
+        Field('newsletters', template='profile/newsletters.html'),
+        HTML(
+            '''
+                    </div>
+                </div>
+            </section>
+            <section id="ld-comunicaciones" class="scrollspy edit_profile_card">
+                <div class="edit_profile_card__header">
+                    <h2 class="title">Comunicaciones</h2>
+                </div>
             '''
         ),
         Field('allow_news', template=getattr(settings, 'THEDAILY_ALLOW_NEWS_TEMPLATE', 'profile/allow_news.html')),
@@ -300,23 +333,13 @@ class ProfileForm(ModelForm):
         HTML('</section>'),
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["newsletters"].choices = [(item.slug, item.name) for item in get_all_newsletters()]
+
     class Meta:
         model = Subscriber
-        # TODO: use fields instead of exclude
-        exclude = (
-            'contact_id',
-            'user',
-            'name',
-            'profile_photo',
-            'downloads',
-            'pdf',
-            'lento_pdf',
-            'ruta',
-            'plan_id',
-            'ruta_lento',
-            'ruta_fs',
-            'last_paid_subscription',
-        )
+        fields = ('allow_news', 'allow_promotions', 'allow_polls', "newsletters")
 
 
 class SubscriberForm(ModelForm):
@@ -351,7 +374,7 @@ class SubscriberForm(ModelForm):
                 Field('telephone'),
             ),
         )
-        super(SubscriberForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     class Meta:
         model = Subscriber
@@ -378,7 +401,7 @@ class SubscriberForm(ModelForm):
         return self.cleaned_data.get('email').lower()
 
     def is_valid(self, subscription_type, payment_type='tel'):
-        result = super(SubscriberForm, self).is_valid()
+        result = super().is_valid()
         if result and payment_type == 'tel':
             # continue validation to check for repeated email and subsc. type, for "tel" subscriptions in same day:
             try:
@@ -413,7 +436,7 @@ class SubscriberAddressForm(SubscriberForm):
     )
 
     def __init__(self, *args, **kwargs):
-        super(SubscriberAddressForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-sm-2'
         self.helper.field_class = 'col-sm-8'
@@ -437,10 +460,10 @@ class SubscriberAddressForm(SubscriberForm):
 
 
 class SubscriberSubmitForm(SubscriberForm):
-    """Adds a submit button to the SubscriberForm"""
+    """ Adds a submit button to the SubscriberForm """
 
     def __init__(self, *args, **kwargs):
-        super(SubscriberSubmitForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-sm-2'
         self.helper.field_class = 'col-sm-8'
@@ -468,7 +491,7 @@ class SubscriberSignupForm(SubscriberForm):
         terms_and_conditions = terms_and_conditions_field
 
     def __init__(self, *args, **kwargs):
-        super(SubscriberSignupForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-sm-2'
         self.helper.field_class = 'col-sm-8'
@@ -497,9 +520,9 @@ class SubscriberSignupForm(SubscriberForm):
             )
             signup_form_valid = signup_form.is_valid()
             result = signup_form_valid and (
-                super(SubscriberSignupForm, self).is_valid(subscription_type, payment_type)
+                super().is_valid(subscription_type, payment_type)
                 if payment_type
-                else super(SubscriberSignupForm, self).is_valid(subscription_type)
+                else super().is_valid(subscription_type)
             )
             if result:
                 self.signup_form = signup_form
@@ -530,7 +553,7 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
         terms_and_conditions = terms_and_conditions_field
 
     def __init__(self, *args, **kwargs):
-        super(SubscriberSignupAddressForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             'first_name',
             'email',
@@ -564,9 +587,9 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
             )
             signup_form_valid = signup_form.is_valid()
             result = signup_form_valid and (
-                super(SubscriberSignupAddressForm, self).is_valid(subscription_type, payment_type)
+                super().is_valid(subscription_type, payment_type)
                 if payment_type
-                else super(SubscriberSignupAddressForm, self).is_valid(subscription_type)
+                else super().is_valid(subscription_type)
             )
             if result:
                 self.signup_form = signup_form
@@ -638,7 +661,7 @@ class SubscriptionPromoCodeForm(SubscriptionForm):
     promo_code = CharField(label='Código promocional (opcional)', required=False, max_length=8)
 
     def __init__(self, *args, **kwargs):
-        super(SubscriptionPromoCodeForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             'promo_code',
             HTML('<div class="col s12" style="margin-top: 25px;margin-bottom: 25px;">'),
@@ -667,7 +690,7 @@ class SubscriptionCaptchaForm(SubscriptionForm):
     captcha = ReCaptchaField(label='')
 
     def __init__(self, *args, **kwargs):
-        super(SubscriptionCaptchaForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             *(
                 HTML('<div class="col s12" style="margin-top: 30px; margin-bottom: 25px;">'),
@@ -693,7 +716,7 @@ class SubscriptionPromoCodeCaptchaForm(SubscriptionPromoCodeForm):
     captcha = ReCaptchaField(label='')
 
     def __init__(self, *args, **kwargs):
-        super(SubscriptionPromoCodeCaptchaForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             'promo_code',
             HTML('<div class="col s12" style="margin-top: 30px; margin-bottom: 25px;">'),
@@ -732,7 +755,7 @@ class GoogleSigninForm(ModelForm):
             + terms_and_conditions_layout_tuple
             + (FormActions(Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l')),)
         )
-        super(GoogleSigninForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     class Meta:
         model = Subscriber
@@ -829,7 +852,7 @@ class PasswordResetRequestForm(Form):
             HTML('</div>'),
         )
 
-        super(PasswordResetRequestForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def clean(self):
         nom = self.data.get('name_or_mail', '').strip()

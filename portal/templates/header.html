@@ -56,7 +56,7 @@
 
 {% if is_subscriber %}
   <ul id="user-dropdown" class="dropdown-content hide-on-med-and-down">
-    <li><a href="{% url 'edit-profile' %}">Opciones</a></li>
+    <li><a href="{% url 'edit-profile' %}">Perfil</a></li>
     <li>
       <a href="{% url 'lista-lectura-leer-despues' %}">
         Leer después <span class="num">{{ user|count_following }}</span>
@@ -71,7 +71,7 @@
   </ul>
 {% elif user.is_authenticated %}
   <ul id="user-dropdown" class="dropdown-content hide-on-med-and-down">
-    <li><a href="{% url 'edit-profile' %}">Opciones</a></li>
+    <li><a href="{% url 'edit-profile' %}">Perfil</a></li>
     <li>
       <a href="{% url 'lista-lectura-leer-despues' %}">
         Leer después <span class="num">{{ user|count_following }}</span>

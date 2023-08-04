@@ -1297,9 +1297,13 @@ body.frontpage #main-header.nav-down #nav-principal span.nav-menu__pill {
 
 .nav-extended {
     padding: 50px 0 50px 0;
-    margin-bottom: $line-height / 2;
+    // TODO: remove next line or explain why is commented
+    // margin-bottom: $line-height / 2;
     color: $off-black;
-    background-color: $secondary-color;
+    background-color: white;
+    box-shadow: 0px 4px 24px 0px #00000040;
+    position: relative;
+    z-index: 1;
 
     &__title {
       font-family: "Roboto", sans-serif;

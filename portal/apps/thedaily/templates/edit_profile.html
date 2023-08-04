@@ -1,138 +1,235 @@
 {% extends "base.html" %}
 {% load static crispy_forms_tags %}
 
-{% block page_title %}Panel de opciones | la diaria{% endblock %}
+{% block page_title %}Panel de opciones | {{ site.name }}{% endblock %}
 {% block body_class %}thedaily ld-profile-edit{% endblock %}
 
 {% block page_header %}
   <div class="main nav-extended">
-    <div class="container container--narrow">
-      <h1 class="nav-extended__title">Opciones</h1>
-      <div class="nav-extended__tagline">Panel de opciones de tu suscripción.</div>
-    </div>
+    <h1 class="nav-extended__title">Perfil</h1>
+    <div class="nav-extended__tagline">Panel de opciones de tu cuenta.</div>
   </div>
 {% endblock %}
 
 {% block content %}
 
-  <div class="user-form">
-    <form action="" method="post" class="form-horizontal" id="edit-profile-form">
-      <section class="ld-block">
-        <div id="datos" class="section scrollspy">
-          <h2 class="ld-title ld-title--underlined">Tus datos</h2>
+  <div class="col table-col hide-on-med-and-down">
+    <ul class="section table-of-contents">
+      <li><span class="table-title">Perfil</span></li>
+      <li><a href="#datos">Tus datos</a></li>
+      <li><a href="#suscripciones">Suscripciones</a></li>
+      {% if push_notifications_keys_set %}
+        <li><a href="#notificaciones">Notificaciones Push</a></li>
+      {% endif %}
+      <li><a href="#newsletters">Newsletters</a></li>
+      <li><a href="#ld-comunicaciones">Comunicaciones</a></li>
+      <li><a href="#lista-lectura">Lista de lectura</a></li>
+      <li><a href="#ayuda">Ayuda</a></li>
+    </ul>
+  </div>
+  <!-- Notification -->
+  <div id="edit_profile_notification" style="display: none;">
+    <!-- notification icon -->
+    <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M21 7L9 19L3.5 13.5L4.91 12.09L9 16.17L19.59 5.59L21 7Z" fill="white"/>
+    </svg>
+    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M13.46 12L19 17.54V19H17.54L12 13.46L6.46 19H5V17.54L10.54 12L5 6.46V5H6.46L12 10.54L17.54 5H19V6.46L13.46 12Z" fill="white"/>
+    </svg>
+    <p>Tus cambios fueron guardados</p>
+  </div>
+  <!-- Edit profile modal -->
+  <div id="edit_profile_modal" class="edit_profile_modal__background" style="display: none;">
+    <div class="edit_profile_modal__container">
+      <div class="edit_profile_modal__container__header">
+        <p>Editá tu información</p>
+        <button id="edit_profile_modal__close_btn" aria-label="Close button" type="button">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19.3327 2.54666L17.4527 0.666664L9.99935 8.12L2.54602 0.666664L0.666016 2.54666L8.11935 10L0.666016 17.4533L2.54602 19.3333L9.99935 11.88L17.4527 19.3333L19.3327 17.4533L11.8793 10L19.3327 2.54666Z" fill="#262626"/>
+          </svg>
+        </button>
+      </div>
+      <form action="{% url 'edit-profile' %}" method="POST" id="user_form">
+        <div class="edit_profile_modal__container__body">
+          {% csrf_token %}
           {% crispy user_form %}
           {% crispy profile_form %}
-          {% include "profile/submit.html" %}
-        {# TODO: div not closed, a new version of this template is under development #}
-      </section>
-    </form>
-
-    {% if push_notifications_keys_set %}
-      <section class="ld-block section scrollspy" id="notificaciones">
-        <h2 class="ld-title ld-title--underlined">Notificaciones</h2>
-        <input type="checkbox" id="allow_notification" name="allow_notification" class="filled-in">
-        <label for="allow_notification">Permitir notificaciones en este dispositivo.</label>
-        <br> <br> <br>
-        <div class="row">
-          <input class="ut-btn" type="submit" name="allow_notification-btn" id="allow_notification-btn" value="Guardar cambios"/>
         </div>
-        {# TODO: additional info like "notifications will not be received if the device is set to block them" #}
-      </section>
-    {% endif %}
+        <div class="edit_profile_modal__container__footer">
+          <p class="required-fields">* Datos obligatorios</p>
+          <div class="edit_profile_modal__container__footer-btn_container">
+            <input class="ut-btn" type="submit" id="submit-id-save_changes" value="Guardar cambios" name="save_changes"/>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- End of edit profile modal -->
+  <div class="profile-sections-container">
 
-    <section class="ld-block section scrollspy" id="lista-lectura">
-      <h2 class="ld-title ld-title--underlined">Lista de lectura</h2>
-      <div class="row ld-profile-row">
-        <p>Los artículos que guardaste para leer después, tus favoritos e historial de visitados.</p>
-        <a class="ut-btn" href="{% url 'lista-lectura-leer-despues' %}">Ir a lista de lectura</a>
-      </div>
-    </section>
-
-    {% block extra_content %}{% endblock %}
-
-    <section class="ld-block section scrollspy" id="google">
-      <h2 class="ld-title ld-title--underlined">Ingreso con Google</h2>
-      {% if google_oauth2_assoc %}
-        {% if google_oauth2_allow_disconnect %}
-          <form action="{% url 'social:disconnect_individual' 'google-oauth2' google_oauth2_assoc.id %}" method="post">
-            {% csrf_token %}
-            <input class="ut-btn" type="submit" id="desconectar" value="desconectar" name="desconectar"/>
-          </form>
-        {% else %}
-          <div>Tu cuenta de usuario está asociada a tu cuenta de Google</div>
+    <section id="datos" class="scrollspy edit_profile_card">
+      <div class="edit_profile_card__header">
+        <h2 class="title">Tus datos</h2>
+        {% if incomplete_field_count %}
+          <span class="title-notification warning">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2.16667 0.5H13.8333C14.2754 0.5 14.6993 0.675595 15.0118 0.988155C15.3244 1.30072 15.5 1.72464 15.5 2.16667V13.8333C15.5 14.2754 15.3244 14.6993 15.0118 15.0118C14.6993 15.3244 14.2754 15.5 13.8333 15.5H2.16667C1.72464 15.5 1.30072 15.3244 0.988155 15.0118C0.675595 14.6993 0.5 14.2754 0.5 13.8333V2.16667C0.5 1.72464 0.675595 1.30072 0.988155 0.988155C1.30072 0.675595 1.72464 0.5 2.16667 0.5ZM8.83333 8.83333V3.83333H7.16667V8.83333H8.83333ZM8.83333 12.1667V10.5H7.16667V12.1667H8.83333Z" fill="#EDA314"/>
+            </svg>
+            {{ incomplete_field_count }} datos incompletos
+          </span>
         {% endif %}
-      {% else %}
-        <a class="ut-btn" href="{% url 'social:begin' 'google-oauth2' %}" title="Conectá tu cuenta de Google">
-          conectar
+      </div>
+      {% with subscriber=user.subscriber %}
+        <div class="edit_profile_card__subtitle">
+          <p class="edit_profile_card__subtitle_name">{{ subscriber.get_full_name }}</p>
+          {% if subscriber.contact_id %}
+            <p class="edit_profile_card__subtitle_identification">
+              <span class="bold">Número de identificación:</span> {{ subscriber.contact_id }}
+            </p>
+          {% endif %}
+        </div>
+        <div class="edit_profile_card__body profile-data">
+          <p class="edit_profile_card__body_line">
+            <span class="bold">Documento de identidad: </span>
+            <span class="value">
+              {% if subscriber.document %}
+                {{ subscriber.document }}
+              {% else %}
+                sin asignar <span class="needs-attention-icon"></span>
+              {% endif %}
+            </span>
+          </p>
+          <p class="edit_profile_card__body_line">
+            <span class="bold">Correo electrónico: </span>
+            <span class="value">
+              {% if user.email %}
+                {{ user.email }}
+              {% else %}
+                sin asingar <span class="needs-attention-icon"></span>
+              {% endif %}
+            </span>
+          </p>
+          <p class="edit_profile_card__body_line">
+            <span class="bold">Teléfono móvil: </span>
+            <span class="value">
+              {% if subscriber.phone %}
+                {{ subscriber.phone }}
+              {% else %}
+                sin asingar <span class="needs-attention-icon"></span>
+              {% endif %}
+            </span>
+          </p>
+          <p class="edit_profile_card__body_line">
+            <span class="bold">Dirección: </span>
+            <span class="value">
+              {% if subscriber.address %}
+                {{ subscriber.address }}
+              {% else %}
+                sin asingar <span class="needs-attention-icon"></span>
+              {% endif %}
+            </span>
+          </p>
+        {% endwith %}
+        {% if google_oauth2_assoc %}
+          {% if google_oauth2_allow_disconnect %}
+            <form class="edit_profile_card__body_line google-disconnect" action="{% url 'social:disconnect_individual' 'google-oauth2' google_oauth2_assoc.id %}" method="post">
+              {% csrf_token %}
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 6.99984L9 18.9998L3.5 13.4998L4.91 12.0898L9 16.1698L19.59 5.58984L21 6.99984Z" fill="#262626"/>
+              </svg><span>Ingreso con Google asociado</span><input type="submit" id="desconectar" value="desconectar" name="desconectar"/>
+            </form>
+          {% else %}
+            <p class="edit_profile_card__body_line">
+              <span class="bold">Tu cuenta de usuario está asociada a tu cuenta de Google</span>
+            </p>
+          {% endif %}
+        {% else %}
+          <p class="edit_profile_card__body_line google-disconnect">
+            <a href="{% url 'social:begin' 'google-oauth2' %}" title="Configurar tu ingreso con Google">Configurar tu ingreso con Google</a>
+          </p>
+        {% endif %}
+
+      </div>
+      <div class="edit_profile_card__footer">
+        <a href="{% url 'account-password_change' %}">Cambiar contraseña</a>
+        <button id="edit_profile_btn" class="ut-btn ut-btn-outline">Editar
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.8067 3.69335C12.0667 3.43335 12.0667 3.00002 11.8067 2.75335L10.2467 1.19335C10 0.933352 9.56667 0.933352 9.30667 1.19335L8.08 2.41335L10.58 4.91335M0 10.5V13H2.5L9.87333 5.62002L7.37333 3.12002L0 10.5Z" fill="#262626"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    {% crispy profile_data_form %}
+
+    <section id="lista-lectura" class="scrollspy edit_profile_card">
+      <div class="edit_profile_card__header">
+        <h2 class="title">Lista de lectura</h2>
+      </div>
+      <p>Accedé a todos los artículos que guardaste para leer después, tus favoritos e historial de visitados.</p>
+      <div class="edit_profile_card__footer">
+        <a class="ut-btn ut-btn-outline" href="{% url 'lista-lectura-leer-despues' %}">Ir a lista de lectura
+          <svg width="12" height="16" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.33333 0V1.33333H9.72667L3.17333 7.88667L4.11333 8.82667L10.6667 2.27333V4.66667H12V0M10.6667 10.6667H1.33333V1.33333H6V0H1.33333C0.593333 0 0 0.6 0 1.33333V10.6667C0 11.0203 0.140476 11.3594 0.390524 11.6095C0.640573 11.8595 0.979711 12 1.33333 12H10.6667C11.0203 12 11.3594 11.8595 11.6095 11.6095C11.8595 11.3594 12 11.0203 12 10.6667V6H10.6667V10.6667Z" fill="#262626"/>
+          </svg>
         </a>
-      {% endif %}
+      </div>
     </section>
 
-    <section class="ld-block section scrollspy" id="seguridad">
-      <h2 class="ld-title ld-title--underlined">Seguridad</h2>
-      <p><a href="{% url 'account-password_change' %}">Cambiar contraseña</a></p>
-    </section>
-
-    <section class="ld-block section scrollspy" id="accesibilidad">
-      <h2 class="ld-title ld-title--underlined">Accesibilidad</h2>
-      <p>Queremos tener un sitio web accesible para todas las personas.</p>
-      <p>
-        Si encontrás alguna dificultad para utilizar el sitio web podés reportar el problema y obtener ayuda a través de las vías listadas en la <a href="{% url 'contact-form' %}">página de contacto</a>.
-      </p>
-      <p>
-        Muchas gracias.
-      </p>
-      <p>
-        <a href="/accesibilidad/">Más información sobre accesibilidad</a>
-      </p>
-    </section>
-
-    <section class="ld-block section scrollspy" id="ayuda">
-      <h2 class="ld-title ld-title--underlined">Ayuda</h2>
-      <div class="row ld-profile-row">
-        <div class="col">
-          <h3 class="ld-title-second">Centro de ayuda</h3>
-          <p>Información sobre nuestros productos y preguntas frecuentes.</p>
-          <p><a href="/ayuda/">Ir al centro de ayuda</a></p>
+    <section id="ayuda" class="scrollspy edit_profile_card">
+      <div class="edit_profile_card__header">
+        <h2 class="title">Ayuda</h2>
+      </div>
+      <div class="edit_profile_card__inner-section">
+        <div class="edit_profile_card__inner-section_header">
+          <h2 class="title">Centro de ayuda</h2>
+        </div>
+        {% block help_body %}{% endblock %}
+        <div class="edit_profile_card__inner-section_footer">
+          <a class="link" href="/ayuda/">Ir al centro de ayuda</a>
         </div>
       </div>
-      <div class="row ld-profile-row">
-        <div class="col m8">
-          <h3 class="ld-title-second">Contacto</h3>
-          <p><a href="{% url 'contact-form' %}">Formulario de contacto</a></p>
-          {% block contact_extra %}{% endblock %}
+      <div class="edit_profile_card__inner-section">
+        <div class="edit_profile_card__inner-section_header">
+          <h2 class="title">Contacto</h2>
         </div>
+        <p><a href="{% url 'contact-form' %}">Formulario de contacto</a></p>
+        {% block contact_extra %}{% endblock %}
       </div>
 
       {% if poll_url %}
-        <div class="row ld-profile-row">
-          <div class="col">
-            <h3 class="ld-title-second">Danos tu opinión</h3>
-            <p>Queremos obtener información sobre tu experiencia con la suscripción.</p>
-            <p>Esta pequeña encuesta nos va a servir para evaluar y aplicar cambios en base a tus opiniones y necesidades.</p>
-            <p><a href="{{ poll_url }}" rel="noreferrer noopener">Completar encuesta <svg class="external" xmlns="http://www.w3.org/2000/svg" width="13.25" height="13.25" viewBox="0 0 13.25 13.25"><path d="M0,0H13.25V13.25H0Z" fill="none"></path><g transform="translate(1.656 1.656)"><path d="M12.385,7.969h0a.554.554,0,0,0-.552.552v3.312H4.1V4.1H7.417a.554.554,0,0,0,.552-.552h0A.554.554,0,0,0,7.417,3H4.1A1.107,1.107,0,0,0,3,4.1v7.729a1.107,1.107,0,0,0,1.1,1.1h7.729a1.107,1.107,0,0,0,1.1-1.1V8.521A.554.554,0,0,0,12.385,7.969Z" transform="translate(-3 -3)" fill="#262626"></path><path d="M15.218,3H12.3a.273.273,0,0,0-.193.469L13.175,4.54,8.869,8.847a.55.55,0,0,0,0,.778h0a.55.55,0,0,0,.778,0l4.3-4.3L15.019,6.4a.279.279,0,0,0,.475-.2V3.276A.273.273,0,0,0,15.218,3Z" transform="translate(-5.556 -3)" fill="#262626"></path></g></svg></a></p>
-          </div>
+      <div class="edit_profile_card__inner-section">
+        <div class="edit_profile_card__inner-section_header">
+          <h2 class="title">Danos tu opinión</h2>
         </div>
+        <p>Queremos obtener información sobre tu experiencia con la suscripción.</p>
+        <p>Esta pequeña encuesta nos va a servir para evaluar y aplicar cambios en base a tus opiniones y necesidades.</p>
+        <div class="edit_profile_card__inner-section_footer">
+          <a class="link" href="{{ poll_url }}" rel="noreferrer noopener">Completar encuesta
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7.33333 0V1.33333H9.72667L3.17333 7.88667L4.11333 8.82667L10.6667 2.27333V4.66667H12V0M10.6667 10.6667H1.33333V1.33333H6V0H1.33333C0.593333 0 0 0.6 0 1.33333V10.6667C0 11.0203 0.140476 11.3594 0.390524 11.6095C0.640573 11.8595 0.979711 12 1.33333 12H10.6667C11.0203 12 11.3594 11.8595 11.6095 11.6095C11.8595 11.3594 12 11.0203 12 10.6667V6H10.6667V10.6667Z" fill="#A4A4A4"/>
+            </svg>
+          </a>
+        </div>
+      </div>
       {% endif %}
+
+      <div class="edit_profile_card__inner-section">
+        <div class="edit_profile_card__inner-section_header">
+          <h2 class="title">Accesibilidad</h2>
+        </div>
+        <div class="edit_profile_card__inner-section_body">
+          <p>Queremos tener un sitio web accesible para todas las personas. Si encontrás alguna dificultad para utilizar el sitio web podés reportar el problema y obtener ayuda en nuestra página de contacto.</p>
+        </div>
+        <div class="edit_profile_card__inner-section_footer">
+          <a class="link" href="/accesibilidad/">Más información
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7.33333 0V1.33333H9.72667L3.17333 7.88667L4.11333 8.82667L10.6667 2.27333V4.66667H12V0M10.6667 10.6667H1.33333V1.33333H6V0H1.33333C0.593333 0 0 0.6 0 1.33333V10.6667C0 11.0203 0.140476 11.3594 0.390524 11.6095C0.640573 11.8595 0.979711 12 1.33333 12H10.6667C11.0203 12 11.3594 11.8595 11.6095 11.6095C11.8595 11.3594 12 11.0203 12 10.6667V6H10.6667V10.6667Z" fill="#A4A4A4"/>
+            </svg>
+          </a>
+        </div>
+      </div>
     </section>
-  </div>
-  <div class="col table-col hide-on-med-and-down">
-    <ul class="section table-of-contents">
-      <li><span class="table-title">Contenidos</span></li>
-      <li><a href="#datos">Tus datos</a></li>
-      <li><a href="#suscripciones">Suscripciones</a></li>
-      <li><a href="#newsletters">Newsletters</a></li>
-      <li><a href="#ld-comunicaciones">Comunicaciones</a></li>
-      {% if push_notifications_keys_set %}
-        <li><a href="#notificaciones">Notificaciones</a></li>
-      {% endif %}
-      <li><a href="#lista-lectura">Lista de lectura</a></li>
-      {% block right_menu_extra %}{% endblock %}
-      <li><a href="#google">Ingreso con Google</a></li>
-      <li><a href="#seguridad">Seguridad</a></li>
-      <li><a href="#accesibilidad">Accesibilidad</a></li>
-      <li><a href="#ayuda">Ayuda</a></li>
-    </ul>
   </div>
 
 {% endblock %}
@@ -156,57 +253,194 @@
         }
       {% endif %}
     {% endif %}
-    $(document).ready(function(){
+    $(document).ready(function() {
       $('.scrollspy').scrollSpy();
-      var footerHeight = $('.footer-portada').height();
-      var mainHeight = $('#main-content').height();
-      var tableHeight = $('.table-of-contents').height();
-      var bottomOffset = mainHeight - footerHeight - tableHeight;
+      const mainHeight = $('#main-content').height();
+      const tableHeight = $('.table-of-contents').height();
+      const bottomOffset = mainHeight - tableHeight;
+
       $('.table-of-contents').pushpin({
         offset: 75,
         top: 320,
         bottom: bottomOffset,
         scrollOffset: 0
       });
+
+      setTimeout(() => {
+        if (document.querySelector(".alert.alert-success.ld-message")) {
+          document.querySelector(".alert.alert-success.ld-message").style.display = "none";
+        }
+      }, 3000);
+
+      function showNotification(notification) {
+        const isError = notification.type === "error";
+        const notificationBox = document.querySelector("#edit_profile_notification");
+        notificationBox.style.display = "flex";
+        notificationBox.classList.remove("error");
+        if (isError) notificationBox.classList.add("error");
+        notificationBox.querySelector("p").textContent = notification.text;
+
+        setTimeout(function() {
+          notificationBox.style.display = "none";
+        }, isError ? 3000 : 2000);
+      }
+
+      function revertSwitch(switchHTMLElement) {
+        const input = switchHTMLElement.querySelector('input[type="checkbox"]');
+        const offLabel = switchHTMLElement.querySelector('.off');
+        const onLabel = switchHTMLElement.querySelector('.on');
+        const slider = switchHTMLElement.querySelector(".slider");
+
+        input.checked = !input.checked;
+
+        slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
+        offLabel.style.display = input.checked ? "none" : "inline-block";
+        onLabel.style.display = input.checked ? "inline-block" : "none";
+      }
+
       {% if push_notifications_keys_set %}
-        $('#allow_notification-btn').click(function(){
-          setCookie('show_msg', "true", 1);
-          if($('#allow_notification').prop('checked') && getCookie('notifyme', 1) == "false"){
-            rp();
-          } else if(!$('#allow_notification').prop('checked') && getCookie('notifyme', 1) == "true"){
-            // TODO: DELETE can return 400 (and then a js error) if there is no DeviceSubscribed to remove.
-            unsubscribeUser();
-          }
-        });
-        // push notifications checkbox event
-        $('#allow_notification').change(function(){
-          navigator.permissions.query({name:'notifications'}).then(function(result){
-            if(result.state == 'denied'){
-              // TODO: change alert merging with UX tooltip/new-text design
-              alert('Debe habilitar las notificaciones en su navegador.');
-              $('#allow_notification').prop("checked", false);
-              return;
-            }
-          });
-        });
-        function setNotificationCheckStatus(){
+        function setNotificationCheckStatus() {
           navigator.serviceWorker.getRegistration()
-          .then(reg => reg.pushManager.getSubscription())
-          .then(subscription => {
-            if(getCookie('notifyme', 1) == null){
-              setCookie('notifyme', "false", 1);
-            }
-            if(subscription && getCookie('notifyme', 1) == "true"){
-              $('#allow_notification').prop("checked", true);
-            }else{
-              $('#allow_notification').prop("checked", false);
-            }
-          }).catch(err => {
-            console.log('Error unsubscribing', err);
-          });
+            .then(reg => {
+              console.log(reg);
+              return reg.pushManager.getSubscription()
+            })
+            .then(subscription => {
+              if(getCookie('notifyme', 1) == null) {
+                setCookie('notifyme', "false", 1);
+              }
+              if(subscription && getCookie('notifyme', 1) == "true") {
+                const switchElement = document.getElementById("notificaciones").querySelector(".switch-container");
+                revertSwitch(switchElement);  // Since it always load in false, we revert to true
+              }
+            })
+            .catch(err => {
+              console.log('Error initializing push notifications switch', err);
+            });
         }
         setNotificationCheckStatus();
       {% endif %}
+
+      // switches functionality
+      function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement, inputId) {
+        const notificationBox = document.querySelector("#edit_profile_notification");
+        if (inputId === 'allow_notification') {
+          {% if push_notifications_keys_set %}
+            navigator.permissions.query({ name: 'notifications' })
+              .then(function(result) {
+                if(result.state === 'denied'){
+                  // TODO: change alert merging with UX tooltip/new-text design
+                  showNotification({
+                    type: "error",
+                    text: "Debe habilitar las notificaciones en su navegador."
+                  });
+                  revertSwitch(switchHTMLElement);
+                  return;
+                }
+              });
+
+            setCookie('show_msg', "true", 1);
+
+            if($('#allow_notification').prop('checked') && getCookie('notifyme', 1) == "false") {
+              rp();
+              showNotification({
+                text: "Tus cambios fueron guardados"
+              })
+            } else if(!$('#allow_notification').prop('checked') && getCookie('notifyme', 1) == "true") {
+              // TODO: DELETE can return 400 (and then a js error) if there is no DeviceSubscribed to remove.
+              unsubscribeUser();
+            }
+          {% endif %}
+        } else {
+          $.ajax({
+            type: "POST",
+            data: data,
+            url: newsletterUrl,
+            cache: false,
+            success: function(html, textStatus) {
+              showNotification({
+                text: "Tus cambios fueron guardados"
+              });
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+              showNotification({
+                text: "No se pudieron guardar los cambios, intentá de nuevo más tarde",
+                type: "error",
+                duration: 3000,
+              });
+
+              setTimeout(function() {
+                revertSwitch(switchHTMLElement)
+              }, 250);
+            }
+          });
+        }
+      }
+
+      const switches = document.querySelectorAll('.switch-container');
+      for (let i = 0; i < switches.length; i++) {
+        const switchElement = switches[i];
+        const input = switchElement.querySelector('input[type="checkbox"]');
+        const offLabel = switchElement.querySelector('.off');
+        const onLabel = switchElement.querySelector('.on');
+        if (offLabel) offLabel.style.display = input.checked ? "none" : "inline-block";
+        if (onLabel) onLabel.style.display = input.checked ? "inline-block" : "none";
+
+        input.addEventListener("change", () => {
+          const slider = switchElement.querySelector(".slider");
+          const newsletterUrl = input.getAttribute('data-url');
+          const dataKey = input.getAttribute('data-key');
+
+          slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
+          offLabel.style.display = input.checked ? "none" : "inline-block";
+          onLabel.style.display = input.checked ? "inline-block" : "none";
+          handleNewsletterSwitchChange(newsletterUrl, { [dataKey]: input.checked }, switchElement, input.id);
+        });
+      }
+
+      // Open modal
+      document.getElementById("edit_profile_btn").addEventListener("click", function(e){
+        e.stopPropagation();
+        document.getElementById("edit_profile_modal").style.display = "flex";
+        document.querySelector('html').style.overflow = "hidden";
+      });
+
+      // Close modal when clicking outside
+      document.getElementById("edit_profile_modal").addEventListener("click", function(e){
+        document.getElementById("edit_profile_modal").style.display = "none";
+        document.querySelector('html').style.overflow = "auto";
+      });
+
+      // Close modal when clicking on close button
+      document.getElementById("edit_profile_modal__close_btn").addEventListener("click", function(e){
+        document.getElementById("edit_profile_modal").style.display = "none";
+        document.querySelector('html').style.overflow = "auto";
+      });
+
+      // Prevent modal from closing when clicking inside
+      document.querySelector("#edit_profile_modal .edit_profile_modal__container").addEventListener("click", function(e) {
+        e.stopPropagation();
+      });
+
+      const subscriptionCancelBtns = document.getElementsByClassName("subscription-cancel-btn");
+
+      for (let i = 0; i < subscriptionCancelBtns.length; i++) {
+        subscriptionCancelBtns[i].style.display = "none";
+      }
+
+      if (document.getElementById("edit-subscriptions-btn")) {
+
+        document.getElementById("edit-subscriptions-btn").addEventListener("click", function(e) {
+
+          e.target.classList.contains("active") ? e.target.classList.remove("active") : e.target.classList.add("active");
+
+          for (let i = 0; i < subscriptionCancelBtns.length; i++) {
+            subscriptionCancelBtns[i].style.display = subscriptionCancelBtns[i].style.display === "block" ||
+              !subscriptionCancelBtns[i].style.display ? "none" : "block";
+          }
+        });
+      }
     });
   </script>
 {% endblock %}
