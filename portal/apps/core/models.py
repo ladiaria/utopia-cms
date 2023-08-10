@@ -1211,13 +1211,15 @@ class ArticleBase(Model, CT):
     def get_photos_wo_cover(self):
         return self.gallery.photos.exclude(id__exact=self.photo.id if self.photo else 0)
 
-    def get_audio_length(self):
+    def get_audio_length(self, seconds=False):
         if self.audio:
             try:
                 td = timedelta(seconds=int(mutagen.File(self.audio.file).info.length))
             except FileNotFoundError:
                 pass
             else:
+                if seconds:
+                    return td.seconds
                 strtd = str(td)
                 return strtd.split(":", 1)[-1] if td.seconds < 3600 else strtd
 

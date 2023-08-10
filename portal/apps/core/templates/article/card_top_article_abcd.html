@@ -12,7 +12,7 @@
   <div class="ld-card__body">
     <div class="ld-card__section">
       {% autoescape off %}{% publication_section a %}{% endautoescape %}
-      {% with article=a %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
+      {% include 'article/article_card_lock_tooltip.html' with article=a %}
     </div>
     <h2 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
       <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>

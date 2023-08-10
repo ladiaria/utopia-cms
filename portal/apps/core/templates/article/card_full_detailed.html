@@ -42,7 +42,7 @@
           {% if not hide_date_published %}
             {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
           {% endif %}
-          {% with a=article %}{% include 'article/article_card_read_later.html' %}{% endwith %}
+          {% include 'article/article_card_read_later.html' with a=article %}
         </div>
       </div>
     </div>

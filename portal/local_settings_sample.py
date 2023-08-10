@@ -20,6 +20,7 @@ ALLOWED_HOSTS = [SESSION_COOKIE_DOMAIN]
 
 COMPRESS_OFFLINE = False
 COMPRESS_ENABLED = True
+KEY_PREFIX = SITE_DOMAIN  # see: https://docs.djangoproject.com/en/4.1/ref/settings/#key-prefix
 
 if CLOSED_SITE or RESTRICT_ACCESS:
     from .settings import INSTALLED_APPS, MIDDLEWARE
@@ -28,8 +29,6 @@ if CLOSED_SITE or RESTRICT_ACCESS:
         'closed_site.middleware.ClosedSiteMiddleware',
         'closed_site.middleware.RestrictedAccessMiddleware',
     ) + MIDDLEWARE
-
-COMPRESS_CACHE_BACKEND = 'default'
 
 ADMINS = (
     ('Admin', 'admin@example.com'),
