@@ -16,6 +16,7 @@ from django.conf import settings
 from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect, Http404
 from django.views.decorators.cache import never_cache
 from django.contrib.sites.models import Site
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
@@ -238,15 +239,22 @@ def newsletter_preview(request, slug):
 
 
 @never_cache
-def newsletter_browser_preview(request, slug, hashed_id):
-    decoded = decode_hashid(hashed_id)
-    # TODO: if authenticated => assert same logged in user
-    if decoded:
-        subscriber = get_object_or_404(Subscriber, id=decoded[0])
-        if not subscriber.user:
+def newsletter_browser_preview(request, slug, hashed_id=None):
+    if hashed_id:
+        decoded = decode_hashid(hashed_id)
+        # TODO: if authenticated => assert same logged in user
+        if decoded:
+            subscriber = get_object_or_404(Subscriber, id=decoded[0])
+            if not subscriber.user:
+                raise Http404
+        else:
             raise Http404
     else:
-        raise Http404
+        # called from the auth view wrapper
+        try:
+            subscriber = request.user.subscriber
+        except AttributeError:
+            return HttpResponseForbidden()
     try:
         context = json.loads(open(join(settings.SENDNEWSLETTER_EXPORT_DIR, '%s_ctx.json' % slug)).read())
     except IOError:
@@ -273,18 +281,19 @@ def newsletter_browser_preview(request, slug, hashed_id):
         context['featured_articles'] = dp_featured_articles
     site_url = context['site_url']
     as_news = request.GET.get("as_news", "0").lower() in ("true", "1")
-    if as_news:
-        unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
-    else:
-        unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-            '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, slug, hashed_id, slug)
-    # TODO: obtain missing vars from hashed_id subscriber
+    if hashed_id:
+        if as_news:
+            unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
+        else:
+            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
+                '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, slug, hashed_id, slug)
+        context['unsubscribe_url'] = unsubscribe_url
+    # TODO: obtain missing vars from hashed_id subscriber (TODO: which are those vars?)
     context.update(
         {
             "browser_preview": True,
             "as_news": as_news,
             'hashed_id': hashed_id,
-            'unsubscribe_url': unsubscribe_url,
             'subscriber_id': subscriber.id,
             'is_subscriber': subscriber.is_subscriber(),
             'is_subscriber_any': subscriber.is_subscriber_any(),
@@ -292,3 +301,10 @@ def newsletter_browser_preview(request, slug, hashed_id):
         }
     )
     return render(request, '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug), context)
+
+
+@never_cache
+@login_required
+def nl_browser_authpreview(request, slug):
+    """ wrapper view for the special url pattern for authenticated users """
+    return newsletter_browser_preview(request, slug)

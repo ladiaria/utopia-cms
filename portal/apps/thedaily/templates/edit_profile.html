@@ -49,7 +49,7 @@
           </svg>
         </button>
       </div>
-      <form action="{% url 'edit-profile' %}" method="POST" id="user_form">
+      <form action="{% url 'edit-profile' %}" method="post" id="user_form">
         <div class="edit_profile_modal__container__body">
           {% csrf_token %}
           {% crispy user_form %}

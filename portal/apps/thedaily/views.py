@@ -661,25 +661,6 @@ def subscribe(request, planslug, category_slug=None):
         )
 
 
-@never_cache
-@login_required
-@to_response
-def edit_subscription(request):
-    user = request.user
-    subscription_form = SubscriptionForm()
-
-    if request.method == 'POST':  # If the form has been submitted...
-        subscription_form = SubscriptionForm(request.POST, instance=user)
-
-        if subscription_form.is_valid():  # All validation rules pass
-            subscription_form.save()
-            messages.success(request, 'Suscripción Actualizada.')
-        else:
-            subscription_form = SubscriptionForm(instance=user)
-
-    return 'edit_subscription.html', {'subscription_form': subscription_form}
-
-
 def hash_validate(user_id, hash):
     user = get_object_or_404(User, id=user_id)
     if not default_token_generator.check_token(user, hash):

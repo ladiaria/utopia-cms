@@ -16,7 +16,6 @@ from thedaily.views import (
     signup,
     edit_profile,
     update_user_from_crm,
-    edit_subscription,
     confirm_email,
     password_change,
     password_reset,
@@ -86,7 +85,6 @@ urlpatterns = [
     path('api/last_read/', last_read_api),
     path('api/comments/', user_comments_api),
     path('fromcrm', update_user_from_crm),
-    path('suscripcion/editar', edit_subscription, name="edit-subscription"),
     path('subscribe-notice-closed', subscribe_notice_closed, name='subscribe-notice-closed'),
     # Profile
     path('perfil/editar/', edit_profile, name="edit-profile"),
@@ -147,7 +145,9 @@ urlpatterns = [
         name="telsubscribe_success",
     ),
 
+    # TODO: "referidos" template should be de-customized
     re_path(r'^referidos/(?P<hashed_id>\w+)/$', referrals, name="referrals"),
+
     re_path(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
     path('nlsubscribe/', nl_subscribe, name="nl-subscribe"),  # can be useful if a "next" session variable was set
     re_path(r'^nlsubscribe/(?P<nltype>[pc])\.(?P<nlslug>\w+)/$', nl_auth_subscribe, name="nl-auth-subscribe"),

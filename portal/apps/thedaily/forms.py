@@ -308,23 +308,11 @@ class ProfileExtraDataForm(ModelForm):
                 "profile/push_notifications.html"
             )
         ),
-        HTML(
-            '''
-            <section id="newsletters" class="scrollspy edit_profile_card">
-                <div id="{{ field.auto_id }}_wrapper">
-                    <div id="ld-newsletters" class="ld-block ld-section-newsletters">
-            '''
-        ),
         Field('newsletters', template='profile/newsletters.html'),
         HTML(
             '''
-                    </div>
-                </div>
-            </section>
             <section id="ld-comunicaciones" class="scrollspy edit_profile_card">
-                <div class="edit_profile_card__header">
-                    <h2 class="title">Comunicaciones</h2>
-                </div>
+              <div class="edit_profile_card__header"><h2 class="title">Comunicaciones</h2></div>
             '''
         ),
         Field('allow_news', template=getattr(settings, 'THEDAILY_ALLOW_NEWS_TEMPLATE', 'profile/allow_news.html')),

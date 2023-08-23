@@ -27,7 +27,7 @@
 - Clone the project repository to any local destination directory and init its git submodules (this can take some minutes):
 
   ```
-  user@host:~ $ git clone -b django2 https://github.com/ladiaria/utopia-cms
+  user@host:~ $ git clone -b main https://github.com/ladiaria/utopia-cms
   cd utopia-cms && git submodule update --init
   ```
 

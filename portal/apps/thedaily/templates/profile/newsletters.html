@@ -1,67 +1,70 @@
 {% load l10n crispy_forms_filters %}
 
-<div class="edit_profile_card__header">
-  <h2 class="title">Newsletters</h2>
-</div>
-<p>
-  {% if newsletters %}
-    Elegí los newsletters que quieras y recibí los contenidos en tu email.
-  {% else %}
-    Por el momento no hay newsletters disponibles.
-  {% endif %}
-</p>
+<section id="newsletters" class="scrollspy edit_profile_card">
+  <div id="{{ field.auto_id }}_wrapper">
+    <div id="ld-newsletters" class="ld-block ld-section-newsletters">
 
-{% for nlobj in newsletters %}
+      <div class="edit_profile_card__header"><h2 class="title">Newsletters</h2></div>
+      <p>
+        {% if newsletters %}
+          Elegí los newsletters que quieras y recibí los contenidos en tu email.
+        {% else %}
+          Por el momento no hay newsletters disponibles.
+        {% endif %}
+      </p>
 
-  <div id="newsletter-{{choice.1|slugify}}" class="item-newsletter__anchor"></div>
-  <div class="item-newsletter item-newsletter--{{choice.1|slugify}} profile-check edit_profile_card__inner-section">
-    {% for choice in field.field.choices %}
-      {% if choice.1 == nlobj.name %}
-        <div class="edit_profile_card__inner-section_header">
-          <label class="title" for="id_{{ field.html_name }}_{{ forloop.counter }}">
-            {{ nlobj.profile_newsletter_name|default:nlobj.name }}
-            {% if nlobj.newsletter_new_pill %} <span class="new">NUEVO</span> {% endif %}
-          </label>
-          <div class="switch-container">
-            <span class="label-text on" style="display: none;">Activadas</span>
-            <span class="label-text off">Activar</span>
-            <label class="switch">
-              <input
-                type="checkbox"
-                id="id_{{ field.html_name }}_{{ forloop.counter }}"
-                name="{{ field.html_name }}"
-                value="{{ choice.0|unlocalize }}"
-                data-url="{% url 'nl-auth-subscribe' nltype=nlobj.nltype nlslug=nlobj.slug %}"
-                data-key="nl_subscribe"
-                {% if nlobj.nltype == "p" and nlobj in user.subscriber.newsletters.all %}
-                  checked="checked"
-                {% elif nlobj.nltype == "c" and nlobj in user.subscriber.category_newsletters.all %}
-                  checked="checked"
+      {% for nlobj in newsletters %}
+
+        <div class="item-newsletter profile-check edit_profile_card__inner-section">
+          {% for choice in field.field.choices %}
+            {% if choice.1 == nlobj.name %}
+              <div class="edit_profile_card__inner-section_header">
+                <label class="title" for="id_{{ field.html_name }}_{{ forloop.counter }}">
+                  {{ nlobj.profile_newsletter_name|default:nlobj.name }}
+                  {% if nlobj.newsletter_new_pill %} <span class="new">NUEVO</span> {% endif %}
+                </label>
+                <div class="switch-container">
+                  <span class="label-text on" style="display: none;">Activadas</span>
+                  <span class="label-text off">Activar</span>
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      id="id_{{ field.html_name }}_{{ forloop.counter }}"
+                      name="{{ field.html_name }}"
+                      value="{{ choice.0|unlocalize }}"
+                      data-url="{% url 'nl-auth-subscribe' nltype=nlobj.nltype nlslug=nlobj.slug %}"
+                      data-key="nl_subscribe"
+                      {% if nlobj.nltype == "p" and nlobj in user.subscriber.newsletters.all %}
+                        checked="checked"
+                      {% elif nlobj.nltype == "c" and nlobj in user.subscriber.category_newsletters.all %}
+                        checked="checked"
+                      {% endif %}
+                    />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="edit_profile_card__inner-section_body">
+                {% if nlobj.newsletter_periodicity %}
+                  <p class="periodicity">{{ nlobj.newsletter_periodicity }}.</p>
                 {% endif %}
-              />
-              <span class="slider"></span>
-            </label>
-          </div>
+                {% if nlobj.newsletter_tagline %}
+                  <p class="description">{{ nlobj.newsletter_tagline|safe }}.</p>
+                {% endif %}
+                <div class="edit_profile_card__inner-section_footer">
+                  <a class="link" href="{% url nlobj.nltype|add:'-nl-browser-authpreview' slug=nlobj.slug %}">Previsualizar
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7.33333 0V1.33333H9.72667L3.17333 7.88667L4.11333 8.82667L10.6667 2.27333V4.66667H12V0M10.6667 10.6667H1.33333V1.33333H6V0H1.33333C0.593333 0 0 0.6 0 1.33333V10.6667C0 11.0203 0.140476 11.3594 0.390524 11.6095C0.640573 11.8595 0.979711 12 1.33333 12H10.6667C11.0203 12 11.3594 11.8595 11.6095 11.6095C11.8595 11.3594 12 11.0203 12 10.6667V6H10.6667V10.6667Z" fill="#A4A4A4"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
         </div>
-        <div class="edit_profile_card__inner-section_body">
-          {% if nlobj.newsletter_periodicity %}
-            <p class="periodicity">{{ nlobj.newsletter_periodicity }}.</p>
-          {% endif %}
-          {% if nlobj.newsletter_tagline %}
-            <p class="description">{{ nlobj.newsletter_tagline|safe }}.</p>
-          {% endif %}
-          {% comment "TODO: fill the link with the browser preview link" %}
-            <div class="edit_profile_card__inner-section_footer">
-              <a class="link" href="#">Previsualizar
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7.33333 0V1.33333H9.72667L3.17333 7.88667L4.11333 8.82667L10.6667 2.27333V4.66667H12V0M10.6667 10.6667H1.33333V1.33333H6V0H1.33333C0.593333 0 0 0.6 0 1.33333V10.6667C0 11.0203 0.140476 11.3594 0.390524 11.6095C0.640573 11.8595 0.979711 12 1.33333 12H10.6667C11.0203 12 11.3594 11.8595 11.6095 11.6095C11.8595 11.3594 12 11.0203 12 10.6667V6H10.6667V10.6667Z" fill="#A4A4A4"/>
-                </svg>
-              </a>
-            </div>
-          {% endcomment %}
-        </div>
-      {% endif %}
-    {% endfor %}
-  </div>
 
-{% endfor %}
+      {% endfor %}
+
+    </div>
+  </div>
+</section>
