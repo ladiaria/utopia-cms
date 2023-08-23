@@ -26,7 +26,7 @@
         <nav>
           <ul class="navbar-right-tools right">
             {% if user.is_authenticated %}
-              <li class="hide-on-med-and-down">
+              <li class="hide-on-small-and-down">
                 <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="user-dropdown">
                   Tu cuenta
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="27" viewBox="0 0 24 24">
@@ -37,9 +37,16 @@
               </li>
             {% else %}
               <li class="hide-on-med-and-down">
-                <a href="{% url 'account-login' %}?next={% if is_portada %}{{ SITE_URL }}{% else %}{{ request.path }}{% endif %}" class="ut-btn ut-btn-light ut-btn-outline ut-btn-s ingresar">ingresá</a>
+                <a href="{% url 'account-login' %}?next={{ request.path }}"
+                   class="ut-btn ut-btn-light ut-btn-outline ut-btn-s ingresar">
+                   ingresá
+                </a>
               </li>
-              <li class="hide-on-med-and-down"><a class="ut-btn ut-btn-s ut-btn-light suscribirse right" href="{% url 'subscribe_landing' %}">suscribite</a></li>
+              <li class="hide-on-med-and-down">
+                <a class="ut-btn ut-btn-s ut-btn-light suscribirse" href="{% url 'subscribe_landing' %}">
+                  suscribite
+                </a>
+              </li>
             {% endif %}
             <li class="hide-on-small-and-down">
               <button class="nav-menu-button right js-ld-main-menu-toggle">
@@ -60,7 +67,7 @@
   </div>
 
   {% if is_subscriber_any %}
-    <ul id="user-dropdown" class="dropdown-content hide-on-med-and-down">
+    <ul id="user-dropdown" class="dropdown-content hide-on-small-and-down">
       <li><a href="{% url 'edit-profile' %}">Perfil</a></li>
       {% if poll_url %}
         <li><a href="{{ poll_url }}" rel="noreferrer noopener">Danos tu opinión <svg class="external" xmlns="http://www.w3.org/2000/svg" width="13.25" height="13.25" viewBox="0 0 13.25 13.25"><path d="M0,0H13.25V13.25H0Z" fill="none"></path><g transform="translate(1.656 1.656)"><path d="M12.385,7.969h0a.554.554,0,0,0-.552.552v3.312H4.1V4.1H7.417a.554.554,0,0,0,.552-.552h0A.554.554,0,0,0,7.417,3H4.1A1.107,1.107,0,0,0,3,4.1v7.729a1.107,1.107,0,0,0,1.1,1.1h7.729a1.107,1.107,0,0,0,1.1-1.1V8.521A.554.554,0,0,0,12.385,7.969Z" transform="translate(-3 -3)" fill="#262626"></path><path d="M15.218,3H12.3a.273.273,0,0,0-.193.469L13.175,4.54,8.869,8.847a.55.55,0,0,0,0,.778h0a.55.55,0,0,0,.778,0l4.3-4.3L15.019,6.4a.279.279,0,0,0,.475-.2V3.276A.273.273,0,0,0,15.218,3Z" transform="translate(-5.556 -3)" fill="#262626"></path></g></svg></a></li>
@@ -72,7 +79,7 @@
       <li><a href="{% url 'account-logout' %}">Cerrar sesión</a></li>
     </ul>
   {% elif user.is_authenticated %}
-    <ul id="user-dropdown" class="dropdown-content hide-on-med-and-down">
+    <ul id="user-dropdown" class="dropdown-content hide-on-small-and-down">
       <li><a href="{% url 'edit-profile' %}">Perfil</a></li>
       {% if not is_subscriber_any %}
         <li><a href="{% url 'subscribe_landing' %}">Suscribite</a></li>
