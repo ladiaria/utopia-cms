@@ -16,8 +16,8 @@ class UploadFileForm(forms.ModelForm):
         return self.cleaned_data
 
     def check_file(self, form):
-        content = self.cleaned_data["content"]
-        mobile_content = self.cleaned_data["mobile_content"]
+        content = self.cleaned_data.get("content")
+        mobile_content = self.cleaned_data.get("mobile_content")
 
         content_excedeed, mobile_content_excedeed = False, False
         if content:
