@@ -152,7 +152,7 @@ class Publication(Model):
         return self.name or ''
 
     def save(self, *args, **kwargs):
-        super(Publication, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse(
@@ -160,7 +160,7 @@ class Publication(Model):
         )
 
     def profile_newsletter_name(self):
-        """Returns the newsletter name to show in the edit profile view"""
+        """ Returns the newsletter name to show in the edit profile view """
         if self.slug in getattr(settings, "THEDAILY_EDIT_PROFILE_PUBLICATIONS_NL_USE_NAMEONLY", []):
             return self.name
         else:

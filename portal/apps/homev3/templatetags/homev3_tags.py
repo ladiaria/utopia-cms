@@ -175,16 +175,21 @@ class RenderCategoryRowNode(Node):
 
 @register.simple_tag(takes_context=True)
 def render_publication_grid(context, data):
-    publication_slug, flatten_ctx = data[0], context.flatten()
+    publication, section_slug, flatten_ctx = data[0], data[3], context.flatten()
+    try:
+        featured_section = Section.objects.get(slug=section_slug) if section_slug else None
+    except Section.DoesNotExist:
+        featured_section = None
     flatten_ctx.update(
         {
-            'publication': Publication.objects.get(slug=publication_slug),
+            'publication': publication,
             'top_articles': data[1],
             'cover_article': data[2],
+            "featured_section": featured_section,
         }
     )
     return loader.render_to_string(
-        '%s/%s_grid.html' % (settings.HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR, publication_slug), flatten_ctx
+        '%s/%s_grid.html' % (settings.HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR, publication.slug), flatten_ctx
     )
 
 

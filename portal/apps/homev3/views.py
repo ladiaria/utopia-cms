@@ -106,14 +106,20 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             content_type=ContentType.objects.get_for_model(Article)
         ).values_list('object_id', flat=True)
 
-    for pub in Publication.objects.filter(slug__in=getattr(settings, 'HOMEV3_FEATURED_PUBLICATIONS', ())):
+    for pub_item in getattr(settings, 'HOMEV3_FEATURED_PUBLICATIONS', ()):
+        pub_item_is_tuple = type(pub_item) is tuple
+        try:
+            pub = Publication.objects.get(slug=pub_item[0] if pub_item_is_tuple else pub_item)
+        except Publication.DoesNotExist:
+            continue
+        featured_section_slug = pub_item[1] if pub_item_is_tuple and len(pub_item) > 1 else None
         ftop_articles = get_current_edition(publication=pub).top_articles
         if ftop_articles:
             if is_authenticated:
                 ctx_update_article_extradata(context, request.user, user_has_subscriber, follow_set, ftop_articles)
             fcover_article = ftop_articles[0]
             ftop_articles.pop(0)
-            context['featured_publications'].append((pub.slug, ftop_articles, fcover_article))
+            context['featured_publications'].append((pub, ftop_articles, fcover_article, featured_section_slug))
 
     # Context variables for the featured category component
     featured_category_slug = getattr(settings, 'HOMEV3_FEATURED_CATEGORY', None)

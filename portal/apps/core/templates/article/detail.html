@@ -135,7 +135,7 @@
                   <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
                   <!--[if IE 9]></video><![endif]-->
                   <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
-                        data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
+                       data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
                 </picture>
               </figure>
             </div>
@@ -147,8 +147,8 @@
                   <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
                   <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
                   <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
-                        data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
-                        width="700" height="{{ article.photo.get_700w_size.1 }}">
+                       data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                       width="700" height="{{ article.photo.get_700w_size.1 }}">
                 </picture>
                 <figcaption class="article-caption container ld-caption">
                   {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
