@@ -5,8 +5,8 @@ bleach-whitelist
 django-activity-stream==1.4.2
 django-bleach==3.0.1
 freezegun
-social-auth-app-django==5.1.0
-social-auth-core>4.1.0
+social-auth-app-django
+social-auth-core
 python-dateutil==2.8.1
 pymemcache==4.0.0
 django-compressor
@@ -23,6 +23,7 @@ sorl-thumbnail==12.9.0
 django-extensions==3.2.1
 django-nose==1.4.6
 django-recaptcha>2.0.6
+django-reversion
 django4-background-tasks
 pycountry==22.3.5
 PyMongo
@@ -39,7 +40,7 @@ django-tagging==0.5.0
 django-elasticsearch-dsl
 django-model-utils==4.3.1
 django-photologue==3.15.1
-django-robots==5.0
+django-robots
 django-sortedm2m
 django-star-ratings==0.9.2
 mysqlclient

@@ -212,7 +212,7 @@
 
     <!-- JavaScript -->
     <script src="{% static 'js/index.js' %}"></script>
-    <script src="{% static 'admin/js/jquery.min.js' %}"></script>
+    <script src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
     {% if user.is_authenticated and CORE_PUSH_NOTIFICATIONS_OFFER and push_notifications_keys_set %}
       <script src="{% static 'js/push_notifications.js' %}"></script>
       <script type="text/javascript">

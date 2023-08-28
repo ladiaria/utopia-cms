@@ -30,7 +30,6 @@ from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User
 from django.contrib.sitemaps import ping_google
 from django.db import connection
-from django.db.models import CASCADE
 from django.db.models import (
     Q,
     Manager,
@@ -53,7 +52,10 @@ from django.db.models import (
     URLField,
     Index,
     SET_NULL,
+    CASCADE,
 )
+from django.db.models.signals import post_save
+from django.db.utils import OperationalError
 from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
@@ -71,7 +73,7 @@ from tagging.models import Tag
 from videologue.models import Video, YouTubeVideo
 import w3storage
 
-from .managers import PublishedArticleManager
+from .managers import get_published_kwargs, PublishedArticleManager
 from .utils import (
     datetime_isoformat,
     get_pdf_pdf_upload_to,
@@ -366,21 +368,24 @@ class Edition(PortableDocumentFormatBaseModel):
 
     @property
     def top_articles(self):
-        return list(
-            OrderedDict.fromkeys(
-                [
-                    ar.article
-                    for ar in self.articlerel_set.prefetch_related(
-                        'article__main_section__edition__publication',
-                        'article__main_section__section',
-                        'article__photo__extended__photographer',
-                        'article__byline',
-                    )
-                    .filter(article__is_published=True, home_top=True)
-                    .order_by('top_position')
-                ]
+        try:
+            return list(
+                OrderedDict.fromkeys(
+                    [
+                        ar.article
+                        for ar in self.articlerel_set.prefetch_related(
+                            'article__main_section__edition__publication',
+                            'article__main_section__section',
+                            'article__photo__extended__photographer',
+                            'article__byline',
+                        )
+                        .filter(article__is_published=True, home_top=True)
+                        .order_by('top_position')
+                    ]
+                )
             )
-        )
+        except OperationalError:
+            return []
 
     def get_articles_in_section(self, section):
         return list(
@@ -903,26 +908,14 @@ class Journalist(Model):
     def get_absolute_url(self):
         return reverse(
             'journalist_detail',
-            kwargs={
-                'journalist_job': 'columnista' if self.job == 'CO' else 'periodista',
-                'journalist_slug': self.slug,
-            },
+            kwargs={'journalist_job': self.get_job_display().lower(), 'journalist_slug': self.slug},
         )
-
-    def get_published(self):
-        if self.job == 'PE':
-            published = Article.objects.filter(byline__id=self.id)
-        if self.job == "FO":
-            published = PhotoExtended.objects.filter(byline__id=self.id)
-        else:
-            published = None
-        return published
 
     def get_sections(self):
         return self.sections.all()
 
     class Meta:
-        ordering = ('name',)
+        ordering = ('name', )
         verbose_name = 'periodista'
         verbose_name_plural = 'periodistas'
 
@@ -1231,10 +1224,13 @@ class ArticleBase(Model, CT):
 
     def photo_image_file_exists(self):
         try:
-            result = bool(self.photo.image.file)
+            result = self.has_photo() and bool(self.photo.image.file)
         except IOError:
             result = False
         return result
+
+    def photo_render_allowed(self):
+        return self.photo_image_file_exists() and self.photo.is_public
 
     @property
     def photo_width(self):
@@ -1389,14 +1385,8 @@ class ArticleBase(Model, CT):
         indexes = [Index(fields=['type', 'date_published', 'is_published'])]
 
 
-class ArticleManager(Manager):
-    # TODO: this is the default, why overrided to do nothing?
-    def get_queryset(self):
-        return super(ArticleManager, self).get_queryset()
-
-
 class Article(ArticleBase):
-    objects = ArticleManager()  # TODO: @ArticleManager TODO comment
+    objects = Manager()  # needed because the parent class is abstract
     sections = ManyToManyField(
         Section,
         verbose_name='sección',
@@ -1432,6 +1422,8 @@ class Article(ArticleBase):
     newsletter_featured = BooleanField('destacado en newsletter', default=False)
     ipfs_upload = BooleanField('Publicar en IPFS', default=False)
     ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
+    # SuperDesk article ID
+    sp_id = CharField(max_length=100, null=True, blank=True)
 
     def save(self, *args, **kwargs):
 
@@ -1657,6 +1649,9 @@ class Article(ArticleBase):
             and not self.additional_access.exists()
         )
 
+    def published_collections(self):
+        return self.linked_collections.filter(**get_published_kwargs())
+
     def nl_serialize(self, for_cover=False):
         authors = self.get_authors()
         result = {
@@ -1676,6 +1671,66 @@ class Article(ArticleBase):
                 if self.photo_author:
                     result.update({'photo_author': self.photo_author.name, 'photo_type': self.photo_type})
         return result
+
+
+class ArticleCollection(Article):
+    objects = Manager()  # needed to avoid django to use the "published" as the default manager
+    traversal_categorization = BooleanField(
+        "categorización transversal",
+        default=False,
+        help_text="Si está marcada, prioriza la categorización de la colección para todo el contenido de la colección",
+    )
+    related_articles = ManyToManyField(
+        Article,
+        blank=False,
+        through='ArticleCollectionRelated',
+        related_name='linked_collections',
+    )
+
+    def related_articles_ordered(self):
+        return self.related_articles.filter(**get_published_kwargs()).order_by("articlecollectionrelated")
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if settings.ELASTICSEARCH_DSL_AUTOSYNC:
+            # call post_save for the article obj to trigger potential elastic index upd
+            post_save.send(Article, instance=self.article_ptr)
+
+    class Meta:
+        verbose_name = "colección"
+        verbose_name_plural = "colecciones"
+        indexes = []
+
+
+class ArticleCollectionRelated(Model):
+    collection = ForeignKey(ArticleCollection, related_name="linked_articles", on_delete=CASCADE)
+    article = ForeignKey(
+        Article, verbose_name='artículo', limit_choices_to={"articlecollection__isnull": True}, on_delete=CASCADE
+    )
+    position = PositiveSmallIntegerField('orden en la colección', default=None, null=True)
+
+    def __str__(self):
+        # Custom text version to be useful in the admin change form
+        article_str = self.article.__str__()
+        return " - ".join(
+            [
+                (("%d: " % self.position) if self.position else "")
+                + (
+                    date_format(
+                        self.article.date_published,
+                        format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shorter format
+                        use_l10n=True,
+                    ) if self.article.is_published else "NP"
+                ),
+                (article_str[:10] + " …") if len(article_str) > 10 else article_str,
+            ]
+        )
+
+    class Meta:
+        verbose_name = "artículo vinculado"
+        verbose_name_plural = "artículos vinculados"
+        unique_together = ("collection", "article")
+        ordering = ('position', '-article__date_published')
 
 
 class ArticleRel(Model):
@@ -1786,16 +1841,16 @@ class CategoryHome(Model):
         return '%s - %s' % (self.category, self.cover())
 
     def articles_ordered(self):
-        return self.articles.order_by('home_articles').prefetch_related(
+        return self.articles.filter(is_published=True).order_by('home_articles').prefetch_related(
             'main_section__edition__publication', 'main_section__section', 'photo__extended__photographer', 'byline'
         )
 
     def cover(self):
-        """Returns the article in the 1st position"""
+        """ Returns the article in the 1st position """
         return self.articles_ordered().first()
 
     def non_cover_articles(self):
-        """Returns the articles from 2nd position"""
+        """ Returns the articles from 2nd position """
         return self.articles_ordered()[1:]
 
     def set_article(self, article, position):
@@ -2248,9 +2303,9 @@ def get_current_edition(publication=None):
     if publication:
         filters['publication'] = publication.id
     else:
-        filters['publication__in'] = [
-            p.id for p in Publication.objects.filter(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL)
-        ]
+        filters['publication__in'] = Publication.objects.filter(
+            slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL
+        ).values_list('id', flat=True)
 
     filters['date_published__lt' + ('e' if now > publishing else '')] = today
     try:

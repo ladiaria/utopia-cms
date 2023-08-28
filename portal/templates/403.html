@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="subscription-header">
+    <div class="row align-left">
+      <div class="col s12 m8 offset-m2">
+        <h2>Se necesitan permisos para acceder a esta página</h2>
+        {% if user.is_authenticated %}
+        <p class="align-center"><a href="{% url 'account-login' %}">Ingresa</a></p>
+        {% else %}
+          <p>El usuario con el que estás accediendo no los posee.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+

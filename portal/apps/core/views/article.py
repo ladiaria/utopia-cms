@@ -206,11 +206,12 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'comments_count': comments_count,
         'publication': publication,
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
-        'publication_newsletters': Publication.objects.filter(has_newsletter=True).exclude(
-            slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL
+        'publication_newsletters':
+            Publication.objects.filter(has_newsletter=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL),
+        'date_published_use_main_publication': (
+            publication
+            and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())
         ),
-        'date_published_use_main_publication': publication
-        and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ()),
     }
 
     if user_is_authenticated:

@@ -50,8 +50,7 @@ class PhotoExtendedInline(admin.StackedInline):
             'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse', )}))
 
     class Media:
-        # jquery loaded again (admin uses custom js namespaces)
-        js = ('admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'), 'js/jquery.cropbox.js')
+        js = ('js/jquery.cropbox.js', )
 
 
 class PhotoGalleryInline(admin.TabularInline):

@@ -13,7 +13,11 @@ from pydoc import locate
 from hashids import Hashids
 
 from django.conf import settings
-from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect, Http404
+from django.core.exceptions import PermissionDenied
+from django.http import (
+    HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect, HttpResponseNotFound, Http404
+)
+from django.template.exceptions import TemplateDoesNotExist
 from django.views.decorators.cache import never_cache
 from django.contrib.sites.models import Site
 from django.contrib.auth.decorators import login_required
@@ -25,7 +29,7 @@ from libs.utils import decode_hashid
 from core.models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
 from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
-from faq.models import Question, Topic
+from faq.models import Topic
 
 
 # Initialize the hashid object with salt from settings and custom length
@@ -35,8 +39,7 @@ hashids = Hashids(settings.HASHIDS_SALT, 32)
 @never_cache
 def category_detail(request, slug):
 
-    category, inner_sections = get_object_or_404(Category, slug=slug), []
-    question_list, questions_topic = [], None
+    category, inner_sections, questions_topic = get_object_or_404(Category, slug=slug), [], None
     category_home = get_object_or_404(CategoryHome, category=category)
     try:
         featured_section1 = category.section_set.get(home_order=1)
@@ -58,9 +61,8 @@ def category_detail(request, slug):
             pass
 
     if slug in getattr(settings, 'CORE_CATEGORIES_ENABLE_QUESTIONS', ()):
-        question_list = Question.published.filter(topic__slug=slug)
         try:
-            questions_topic = Topic.objects.get(slug=slug)
+            questions_topic = Topic.published.get(slug=slug)
         except Topic.DoesNotExist:
             pass
 
@@ -81,7 +83,6 @@ def category_detail(request, slug):
             'featured_section3': featured_section3,
             'inner_sections': inner_sections,
             'edition': get_latest_edition(),
-            'question_list': question_list,
             'questions_topic': questions_topic,
             'big_photo': category.full_width_cover_image,
             'site_description': (
@@ -104,7 +105,7 @@ def newsletter_preview(request, slug):
         or request.META.get('REMOTE_ADDR')
         in (socket.gethostbyname('localhost'), socket.gethostbyname(socket.gethostname()))
     ):
-        return HttpResponseForbidden()
+        raise PermissionDenied
 
     # removed or changed categories redirects by settings
     category_redirections = getattr(settings, 'CORE_CATEGORY_REDIRECT', {})
@@ -184,7 +185,8 @@ def newsletter_preview(request, slug):
         )
         if not custom_subject:
             subject_call = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category.slug, None)
-            email_subject += locate(subject_call)() if subject_call else remove_markup(cover_article.headline)
+            email_subject += \
+                locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "headline", ""))
 
         email_from = '%s <%s>' % (
             site.name
@@ -226,8 +228,10 @@ def newsletter_preview(request, slug):
             is_subscriber_val = request.GET.get(is_subscriber_var)
             if is_subscriber_val and is_subscriber_val.lower() in ('false', '0'):
                 context[is_subscriber_var] = False
-
-        return render(request, '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug), context)
+        try:
+            return render(request, '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug), context)
+        except TemplateDoesNotExist:
+            return HttpResponseNotFound()
 
     except Exception as e:
         if settings.DEBUG:

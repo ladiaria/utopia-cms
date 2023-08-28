@@ -1,3 +1,19 @@
+# From version 0.4.2 to 0.4.3
+
+```
+git pull
+git checkout 0.4.3
+cd portal
+# update your local settings based on local_settings_sample.py
+# activate your virtual env
+pip install django-reversion
+pip install --upgrade django-robots social-auth-app-django
+pip install --force-reinstall git+https://github.com/ladiaria/django-tagging-autocomplete-tag-it.git
+./manage.py migrate
+./manage.py createinitialrevisions
+./manage.py collectstatic -c
+```
+
 # From version 0.4.1 to 0.4.2
 
 ```

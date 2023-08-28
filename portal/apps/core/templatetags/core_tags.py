@@ -17,7 +17,7 @@ from django.utils.text import Truncator
 
 from tagging.models import Tag, TaggedItem
 
-from core.models import Article, Supplement, Category
+from core.models import Article, ArticleCollection, Supplement, Category
 from core.forms import SendByEmailForm
 from core.utils import datetime_timezone
 
@@ -328,6 +328,29 @@ def render_tagrow(context, tagname, article_type, articles_max=4):
             flatten_ctx.update({'latest_articles': articles[i: i + 4]})
             result += loader.render_to_string('core/templates/tagrow.html', flatten_ctx)
         return mark_safe(result)
+    else:
+        return ''
+
+
+@register.simple_tag(takes_context=True)
+def render_collectionrow(context):
+    """
+    Renders a row with the latest 4 published collections for the publication or category assigned in the conext vars.
+    """
+    publication, filter_kwargs = context.get("publication"), {}
+    if publication:
+        filter_kwargs["main_section__edition__publication"] = publication
+    else:
+        category = context.get("category")
+        if category:
+            filter_kwargs["main_section__section__category"] = category
+        else:
+            return ""
+    articles = ArticleCollection.published.filter(**filter_kwargs)
+    if articles:
+        flatten_ctx = context.flatten()
+        flatten_ctx.update({'latest_articles': [a.article_ptr for a in articles[:4]]})
+        return loader.render_to_string('core/templates/tagrow.html', flatten_ctx)
     else:
         return ''
 

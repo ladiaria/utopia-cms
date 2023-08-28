@@ -65,14 +65,23 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
         else:
             articles = list(
                 Article.objects.raw(
+                    # TODO: "is_published" notion should be the same used in core.managers.get_published_kwargs
                     """
-                SELECT a.id
-                FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
-                    JOIN core_edition e ON ar.edition_id=e.id
-                WHERE ar.section_id=%d AND a.is_published
-                GROUP BY a.id
-                ORDER BY a.date_published DESC"""
-                    % section.id
+                    SELECT DISTINCT(id) FROM (
+                        SELECT a.id,a.date_published
+                        FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
+                        WHERE a.is_published AND ar.section_id=%d
+                        UNION
+                        SELECT id,date_published FROM core_article WHERE is_published AND id IN (
+                            SELECT cr.article_id
+                            FROM core_articlecollectionrelated cr
+                                JOIN core_articlecollection c ON cr.collection_id=c.article_ptr_id
+                                JOIN core_article a ON c.article_ptr_id=a.id
+                                JOIN core_articlerel ar ON ar.id=a.main_section_id
+                            WHERE c.traversal_categorization AND ar.section_id=%d AND a.is_published
+                        )
+                    ) AS foo
+                    ORDER BY date_published DESC""" % (section.id, section.id)
                 )
             )
 

@@ -41,8 +41,7 @@ class AdBaseAdmin(admin.ModelAdmin):
     search_fields = ['title', 'url']
 
     class Media:
-        # jquery loaded again (admin uses custom js namespaces)
-        js = ('admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'), 'js/adbase_admin.js')
+        js = ('admin/js/jquery.init.js', 'js/adbase_admin.js')
 
 
 @admin.register(AdClick)
@@ -137,5 +136,3 @@ class BannerAdAdmin(AdBaseAdmin):
         'title', 'content_basename', 'mobile_content_basename',
         'start_showing', 'stop_showing', 'category', 'zone']
     search_fields = ['title', 'url', 'content', 'mobile_content']
-
-

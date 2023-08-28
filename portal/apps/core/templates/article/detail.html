@@ -72,57 +72,87 @@
   <main>
     <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
 
-      {% if article.photo %}
-        {% if article.photo.is_public %}{# TODO: do this check also in all places rendering article's photos #}
-          {% if header_display == 'FW' %}
-            <div>{# closed in line 247 #}
-              <div class="fullwidth-container">
-                <div class="main-photo">
-                  <div>
-                    <figure class="js-figure principal {{ card_size }}"
-                            alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                            data-src="{{ article.photo.get_1200w_url }}">
-                      <picture>
-                        <!--[if IE 9]><video style="display: none;"><![endif]-->
-                        <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                        <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
-                        <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
-                        <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
-                        <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
-                        <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
-                        <!--[if IE 9]></video><![endif]-->
-                        <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
-                            data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
-                      </picture>
-                      <figcaption class="caption">
-                        {% if article.photo.caption %}
-                          <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
-                        {% endif %}
-                        {% if article.photo_author %}
-                          <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
-                        {% endif %}
-                      </figcaption>
-                    </figure>
-                  </div>
+      {# TODO: apply this 'render_allowed' condition also in all places that render article's photos #}
+      {% if article.photo_render_allowed %}
+        {% if header_display == 'FW' %}
+          <div>{# closed in line 279 #}
+            <div class="fullwidth-container">
+              <div class="main-photo">
+                <div>
+                  <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}"
+                          alt="{{ article.photo_caption }}">
+                    <picture>
+                      <!--[if IE 9]><video style="display: none;"><![endif]-->
+                      <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                      <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+                      <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+                      <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+                      <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+                      <!--[if IE 9]></video><![endif]-->
+                      <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
+                           data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
+                    </picture>
+                    <figcaption class="caption">
+                      {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+                      {% if article.photo_author %}
+                        <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
+                      {% endif %}
+                    </figcaption>
+                  </figure>
                 </div>
               </div>
-            {# missing close div here is closed correctly in line 247 #}
+            </div>
+          {# missing close div here is closed correctly in line 279 #}
+        {% else %}
+          {% if article.articlecollection %}
+            <div class="collection-header">
+              <div class="collection-intro">
+                <svg id="collection-logo" xmlns="http://www.w3.org/2000/svg" width="22" height="21" viewBox="0 0 22 21" fill="none">
+                  <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
+                </svg>
+                <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+                <svg id="line-svg" xmlns="http://www.w3.org/2000/svg" width="180" height="2" viewBox="0 0 180 2" fill="none">
+                  <path d="M0 1.08124H180" stroke="#A4A4A4"/>
+                </svg>
+                {% if article.has_deck %}
+                  <p class="collection-description">{{ article.deck|ldmarkup|bleach }}</p>
+                {% endif %}
+                {% if article.photo_author %}
+                  <p class="photo-author">{{ article.photo_type }}: {{ article.photo_author }}</p>
+                {% endif %}
+                <svg width="44" height="35" viewBox="0 0 44 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12.82 10.0812L22 19.2612L31.18 10.0812L34 12.9212L22 24.9212L10 12.9212L12.82 10.0812Z" fill="#A4A4A4"/>
+                </svg>
+              </div>
+              <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}"
+                      alt="{{ article.photo_caption }}">
+                <picture>
+                  <!--[if IE 9]><video style="display: none;"><![endif]-->
+                  <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                  <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+                  <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+                  <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+                  <!--[if IE 9]></video><![endif]-->
+                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
+                        data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
+                </picture>
+              </figure>
+            </div>
           {% else %}
-            <div class="container-photo photo {{ card_size|default:'BG' }} {{ article.photo_layout }}">
+            <div class="container-photo photo BG {{ article.photo_layout }}">
               <figure class="principal">
                 <picture class="materialboxed">
                   <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
                   <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
                   <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
                   <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
-                      data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
-                      width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}>
+                        data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                        width="700" height="{{ article.photo.get_700w_size.1 }}">
                 </picture>
                 <figcaption class="article-caption container ld-caption">
-                  <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
-                  {% if article.photo_author %}
-                    <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
-                  {% endif %}
+                  {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+                  {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
                 </figcaption>
               </figure>
             </div>
@@ -136,7 +166,9 @@
             <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
           </div>
         {% endif %}
-        <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+        {% if not article.articlecollection %}
+          <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+        {% endif %}
         {% if article.date_published %}
           <div class="article-date-author">
             Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
@@ -243,7 +275,7 @@
           {% endif %}
         {% endif %}
       </div>
-      {% if article.photo and article.photo.is_public and header_display == 'FW' %}
+      {% if article.photo_render_allowed and header_display == 'FW' %}
         </div>{# opened in line 78 #}
       {% endif %}
 
@@ -251,9 +283,7 @@
         {% if article.has_deck %}
           <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
         {% endif %}
-        {% if article.has_lead %}
-          <p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>
-        {% endif %}
+        {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
       {% endif %}
 
       {# begin restricted content #}
@@ -267,9 +297,7 @@
 
           {% if not request.signupwall %}
             {# Soft wall: Registro|Suscripción #}
-            {% if not article.public %}
-              {% include 'article/paywall/pw_anon_with_credits.html' %}
-            {% endif %}
+            {% if not article.public %}{% include 'article/paywall/pw_anon_with_credits.html' %}{% endif %}
           {% else %}
             {# signupwall raised #}
             <!-- Hard wall -->
@@ -286,9 +314,7 @@
             <!-- user is not subscriber -->
             {% if not request.signupwall %}
               {# Soft wall: Suscripción #}
-              {% if not article.public %}
-                {% include 'article/paywall/pw_auth_with_credits.html' %}
-              {% endif %}
+              {% if not article.public %}{% include 'article/paywall/pw_auth_with_credits.html' %}{% endif %}
             {% else %}{# signupwall raised #}
               {# Hard wall -> Suscripción #}
               <!-- Hard wall / suscripción-->
@@ -303,10 +329,75 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall %}{# closed in line 558 #}
+        {% if not request.signupwall %}{# closed in line 650 #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
+
+            {# colection articles #}
+            {% if article.articlecollection %}
+              <div class="collection-articles">
+                {% with related_articles=article.articlecollection.related_articles_ordered %}
+                  {% if related_articles %}
+                    <h2 class="collection-articles--title">Artículos en la colección</h2>
+
+                    {% for ra in related_articles %}
+                      <div class="collection-article">
+                        <div class="collection-article--photo">
+                          {% if ra.photo_render_allowed %}
+                            <a href="{{ ra.get_absolute_url }}?referer_collection={{ article.id }}">
+                              <img class="ld-card__img" src="{{ ra.photo.get_450w_url }}" loading="lazy"
+                                   title="{{ ra.photo_caption }}" alt="{{ ra.photo_caption }}"
+                                   width="450" height="{{ ra.photo.get_450w_size.1 }}">
+                            </a>
+                          {% endif %}
+                        </div>
+                        <div class="collection-article--content">
+                          <h3 class="collection-article--title">
+                            <a href="{{ ra.get_absolute_url }}?referer_collection={{ article.id }}">{{ ra }}</a>
+                          </h3>
+                          {% if ra.has_deck or ra.has_lead %}
+                            {% if ra.has_deck %}
+                              <p class="collection-article--text">{{ ra.deck|ldmarkup|bleach }}</p>
+                            {% endif %}
+                            {% if ra.has_lead %}
+                              <p class="collection-article--text">{{ ra.get_lead|urlize|ldmarkup|bleach }}</p>
+                            {% endif %}
+                          {% endif %}
+                        </div>
+                      </div>
+                    {% endfor %}
+
+                  {% else %}
+                    Esta colección aún no tiene artículos publicados.
+                  {% endif %}
+                {% endwith %}
+              </div>
+            {% else %}
+              {% with linked_collections=article.published_collections %}
+                {% if linked_collections %}
+                  <div class="collection-articles">
+                    <svg id="collection-logo" xmlns="http://www.w3.org/2000/svg" width="22" height="21" viewBox="0 0 22 21" fill="none">
+                      <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
+                    </svg>
+                    <span>Este artículo forma parte de las colecciones:</span>
+                    <ul>
+                      {% for collection in linked_collections %}
+                        <li>
+                          <a href="{{ collection.get_absolute_url }}">{{ collection }}</a>
+                          {% comment "example to use a 'back' link if arrived from a collection page" %}
+                            {% if request.GET.referer_collection|add:"0" == collection.article_ptr_id %}
+                              (<a href="{{ collection.get_absolute_url }}">back to collection</a>)
+                            {% endif %}
+                          {% endcomment %}
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endif %}
+              {% endwith %}
+            {% endif %}
+            {# END collection articles #}
           </div>
 
           {% if article.gallery %}
@@ -317,10 +408,10 @@
                     <div data-responsive="{{ photo.get_400w_url }} 400px,
                                           {{ photo.get_700w_url }} 700px,
                                           {{ photo.get_900w_url }} 1000px"
-                         data-src="{{ photo.get_1200w_url }}"
-                         data-sub-html="{{ photo.caption }}"
+                         data-src="{{ photo.get_1200w_url }}" data-sub-html="{{ photo.caption }}"
                          class="col s4 m4 l4 gallery_thumb">
-                      <a href="{{ photo.get_1200w_url }}" class="item img-{{ forloop.counter }}" data-sub-html=".caption">
+                      <a href="{{ photo.get_1200w_url }}" class="item img-{{ forloop.counter }}"
+                         data-sub-html=".caption">
                         <img src="{{ photo.get_article_thumb_url }}" class="gallery_thumb"
                              alt="{% if photo.caption %}{{ photo.caption }}{% else %}Foto Nº{{ forloop.counter }} de la galería del artículo '{{ article.headline|remove_markup }}'{% endif %}">
                         <div class="caption hide">
@@ -556,7 +647,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 306 #}
+        {% endif %}{# opened in line 332 #}
 
       {% else %}{# restricted content message #}
 
@@ -573,7 +664,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 702 #}
+    {% if not request.signupwall %}{# closed in line 796 #}
 
       {% if article.public %}
 
@@ -595,7 +686,10 @@
           <div id="comentarios">
             <div class="container">
 
-              <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}" data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}" data-article-url="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-login-url="{{ URL_SCHEME }}://{{ site.domain }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
+              <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}"
+                       data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}"
+                       data-article-url="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}"
+                       data-login-url="{{ URL_SCHEME }}://{{ site.domain }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
                 <span class="title">Comentar este artículo</span>
                 <button class="ut-btn">
                   {% if comments_count > 0 %}{{ comments_count }} comentario{{comments_count|pluralize:"s"}}{% else %}Comentar{% endif %}
@@ -657,15 +751,18 @@
               </a>
             </li>
             <li class="hide-on-med-and-down">
-              <span class="a cur-p" onclick="window.print()" aria-label="Imprimir artículo"><svg class="share-print-icon"  width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M28.3075 10.5395H5.6945C5.05786 10.5386 4.42729 10.6633 3.83893 10.9065C3.25057 11.1497 2.71598 11.5066 2.26581 11.9568C1.81563 12.407 1.45871 12.9416 1.2155 13.5299C0.972295 14.1183 0.847579 14.7489 0.848501 15.3855V21.8465C0.851138 22.7023 1.19229 23.5224 1.79746 24.1275C2.40263 24.7327 3.22266 25.0739 4.0785 25.0765H7.3085V28.3065C7.31114 29.1623 7.65229 29.9824 8.25746 30.5875C8.86263 31.1927 9.68266 31.5339 10.5385 31.5365H23.4615C24.3173 31.5339 25.1374 31.1927 25.7425 30.5875C26.3477 29.9824 26.6889 29.1623 26.6915 28.3065V25.0765H29.9215C30.7773 25.0739 31.5974 24.7327 32.2025 24.1275C32.8077 23.5224 33.1489 22.7023 33.1515 21.8465V15.3855C33.1524 14.749 33.0278 14.1186 32.7847 13.5304C32.5416 12.9422 32.1849 12.4077 31.7349 11.9575C31.2849 11.5074 30.7506 11.1504 30.1625 10.9071C29.5743 10.6638 28.944 10.5388 28.3075 10.5395ZM21.8485 28.3065H12.1545C11.7266 28.3052 11.3166 28.1346 11.014 27.832C10.7114 27.5294 10.5408 27.1194 10.5395 26.6915V20.2305H23.4615V26.6915C23.4602 27.1191 23.2899 27.5288 22.9877 27.8313C22.6856 28.1338 22.2761 28.3047 21.8485 28.3065ZM28.3095 17.0005C27.9901 17.0005 27.6778 16.9058 27.4123 16.7283C27.1467 16.5509 26.9397 16.2986 26.8174 16.0035C26.6952 15.7084 26.6632 15.3837 26.7255 15.0704C26.7878 14.7572 26.9417 14.4694 27.1675 14.2435C27.3934 14.0177 27.6812 13.8638 27.9944 13.8015C28.3077 13.7392 28.6324 13.7712 28.9275 13.8934C29.2226 14.0157 29.4749 14.2227 29.6523 14.4883C29.8298 14.7538 29.9245 15.0661 29.9245 15.3855C29.9232 15.8138 29.7523 16.2241 29.4493 16.5267C29.1463 16.8294 28.7358 16.9997 28.3075 17.0005H28.3095ZM25.0765 2.4635H8.9245C8.49658 2.46482 8.08657 2.63539 7.78398 2.93798C7.48139 3.24057 7.31082 3.65058 7.3095 4.0785V7.3085C7.31082 7.73642 7.48139 8.14644 7.78398 8.44902C8.08657 8.75161 8.49658 8.92218 8.9245 8.9235H25.0765C25.5044 8.92218 25.9144 8.75161 26.217 8.44902C26.5196 8.14644 26.6902 7.73642 26.6915 7.3085V4.0785C26.6902 3.65058 26.5196 3.24057 26.217 2.93798C25.9144 2.63539 25.5044 2.46482 25.0765 2.4635Z" fill="#262626"/>
-                <title>Imprimir artículo</title>
-              </svg></span>
+              <span class="a cur-p" onclick="window.print()" aria-label="Imprimir artículo">
+                <svg class="share-print-icon" width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M28.3075 10.5395H5.6945C5.05786 10.5386 4.42729 10.6633 3.83893 10.9065C3.25057 11.1497 2.71598 11.5066 2.26581 11.9568C1.81563 12.407 1.45871 12.9416 1.2155 13.5299C0.972295 14.1183 0.847579 14.7489 0.848501 15.3855V21.8465C0.851138 22.7023 1.19229 23.5224 1.79746 24.1275C2.40263 24.7327 3.22266 25.0739 4.0785 25.0765H7.3085V28.3065C7.31114 29.1623 7.65229 29.9824 8.25746 30.5875C8.86263 31.1927 9.68266 31.5339 10.5385 31.5365H23.4615C24.3173 31.5339 25.1374 31.1927 25.7425 30.5875C26.3477 29.9824 26.6889 29.1623 26.6915 28.3065V25.0765H29.9215C30.7773 25.0739 31.5974 24.7327 32.2025 24.1275C32.8077 23.5224 33.1489 22.7023 33.1515 21.8465V15.3855C33.1524 14.749 33.0278 14.1186 32.7847 13.5304C32.5416 12.9422 32.1849 12.4077 31.7349 11.9575C31.2849 11.5074 30.7506 11.1504 30.1625 10.9071C29.5743 10.6638 28.944 10.5388 28.3075 10.5395ZM21.8485 28.3065H12.1545C11.7266 28.3052 11.3166 28.1346 11.014 27.832C10.7114 27.5294 10.5408 27.1194 10.5395 26.6915V20.2305H23.4615V26.6915C23.4602 27.1191 23.2899 27.5288 22.9877 27.8313C22.6856 28.1338 22.2761 28.3047 21.8485 28.3065ZM28.3095 17.0005C27.9901 17.0005 27.6778 16.9058 27.4123 16.7283C27.1467 16.5509 26.9397 16.2986 26.8174 16.0035C26.6952 15.7084 26.6632 15.3837 26.7255 15.0704C26.7878 14.7572 26.9417 14.4694 27.1675 14.2435C27.3934 14.0177 27.6812 13.8638 27.9944 13.8015C28.3077 13.7392 28.6324 13.7712 28.9275 13.8934C29.2226 14.0157 29.4749 14.2227 29.6523 14.4883C29.8298 14.7538 29.9245 15.0661 29.9245 15.3855C29.9232 15.8138 29.7523 16.2241 29.4493 16.5267C29.1463 16.8294 28.7358 16.9997 28.3075 17.0005H28.3095ZM25.0765 2.4635H8.9245C8.49658 2.46482 8.08657 2.63539 7.78398 2.93798C7.48139 3.24057 7.31082 3.65058 7.3095 4.0785V7.3085C7.31082 7.73642 7.48139 8.14644 7.78398 8.44902C8.08657 8.75161 8.49658 8.92218 8.9245 8.9235H25.0765C25.5044 8.92218 25.9144 8.75161 26.217 8.44902C26.5196 8.14644 26.6902 7.73642 26.6915 7.3085V4.0785C26.6902 3.65058 26.5196 3.24057 26.217 2.93798C25.9144 2.63539 25.5044 2.46482 25.0765 2.4635Z" fill="#262626"/>
+                  <title>Imprimir artículo</title>
+                </svg>
+              </span>
             </li>
             <li>
               <span class="a cur-p btn-copy" onclick="copyToClipboard('#url', '.tooltip-article')" aria-label="Copiar enlace">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/>
-                <title>Copiar enlace</title>
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15">
+                  <path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/>
+                  <title>Copiar enlace</title>
                 </svg>
               </span>
               <span class="copied-tooltip off tooltip-article"></span>
@@ -674,15 +771,11 @@
           </ul>
         </section>
 
-        {% if user.is_authenticated %}
-          {% include 'pwa-module.html' %}
-        {% endif %}
+        {% if user.is_authenticated %}{% include 'pwa-module.html' %}{% endif %}
 
         {% block featured_content %}{% endblock %}
 
-        {% if article.show_related_articles %}
-          {% render_related article %}
-        {% endif %}
+        {% if article.show_related_articles %}{% render_related article %}{% endif %}
 
         {% if not is_subscriber %}
           <section id="header-pub" class="col s12 center-align article__bottom-ad ld-block">
@@ -700,7 +793,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 575 #}
+    {% endif %}{# opened in line 667 #}
 
     {% block article_extra %}{% endblock %}
 
@@ -753,7 +846,12 @@
                 </a>
               </li>
               <li>
-                <span class="cur-p" onclick="copyToClipboard('#url', '.tooltip-navbar')" aria-label="Copiar enlace"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#ffffff"/><title>Copiar enlace</title></svg></span>
+                <span class="cur-p" onclick="copyToClipboard('#url', '.tooltip-navbar')" aria-label="Copiar enlace">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15">
+                    <path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#ffffff"/>
+                    <title>Copiar enlace</title>
+                  </svg>
+                </span>
                 <span class="copied-tooltip off tooltip-navbar"></span>
               </li>
             </ul>

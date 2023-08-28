@@ -1,7 +1,7 @@
 (function($) {
-    $(document).on('formset:added', function(event, $row, formsetName) {
-        if (formsetName == 'articlerel_set') {
-            $("[name=main_section_radio]", $row).change(function(){
+    $(document).on('formset:added', function(event) {
+        if (event.detail.formsetName == 'articlerel_set') {
+            $("[name=main_section_radio]", $(event.target)).change(function(){
                 main_section_row_selected($(this));
             });
         }

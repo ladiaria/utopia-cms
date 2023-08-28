@@ -14,7 +14,7 @@ function dismissRelatedLookupPopupCustom(win, chosenId) {
     win.close();
 }
 
-$(document).ready(function() {
+$(function() {
     $("a[data-popup-opener]").click(function(event) {
         event.preventDefault();
         dismissRelatedLookupPopupCustom(window, $(this).data("popup-opener"));

@@ -1,3 +1,5 @@
+// TODO: check usage of this script
+
 $(function () {
 	  $(document).load(
 		function(){

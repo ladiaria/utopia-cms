@@ -1,10 +1,66 @@
-{% load core_tags ldml videologue_tags %}
+{% load core_tags ldml videologue_tags bleach_tags %}
 
 <div class="article-body paywalled-content">
   <p amp-access="edit" amp-access-hide>
     <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="edit-link">Editar</a>
   </p>
   {% block article_body_content %}{{ article.body|amp_ldmarkup:article.id }}{% endblock %}
+
+  {# colection articles #}
+  {% if article.articlecollection %}
+    <div class="collection-articles">
+      {% with related_articles=article.articlecollection.related_articles_ordered %}
+        {% if related_articles %}
+          <h2 class="title">Artículos en la colección</h2>
+
+          {% for ra in related_articles %}
+            <div class="collection-article">
+              <div class="photo">
+                {% if ra.photo_render_allowed %}
+                  <a href="{{ ra.get_absolute_url }}?referer_collection={{ article.id }}">
+                    <amp-img class="ld-card__img" src="{{ ra.photo.get_250w_url }}" title="{{ ra.photo_caption }}"
+                             alt="{{ ra.photo_caption }}" width="250" height="{{ ra.photo.get_250w_size.1 }}">
+                  </a>
+                {% endif %}
+              </div>
+              <div class="content">
+                <h3 class="title">
+                  <a href="{{ ra.get_absolute_url }}?referer_collection={{ article.id }}">{{ ra }}</a>
+                </h3>
+                {% if ra.has_deck or ra.has_lead %}
+                  {% if ra.has_deck %}<p class="text">{{ ra.deck|ldmarkup|bleach }}</p>{% endif %}
+                  {% if ra.has_lead %}
+                    <p class="text">{{ ra.get_lead|urlize|ldmarkup|bleach }}</p>
+                  {% endif %}
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+
+        {% else %}
+          Esta colección aún no tiene artículos publicados.
+        {% endif %}
+      {% endwith %}
+    </div>
+  {% else %}
+    {% with linked_collections=article.published_collections %}
+      {% if linked_collections %}
+        <div class="collection-articles">
+          <svg id="collection-logo" xmlns="http://www.w3.org/2000/svg" width="22" height="21" viewBox="0 0 22 21" fill="none">
+            <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
+          </svg>
+          <span>Este artículo forma parte de las colecciones:</span>
+          <ul>
+            {% for collection in linked_collections %}
+              <li><a href="{{ collection.get_absolute_url }}">{{ collection }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    {% endwith %}
+  {% endif %}
+  {# END collection articles #}
+
 </div>
 
 {% if article.gallery %}

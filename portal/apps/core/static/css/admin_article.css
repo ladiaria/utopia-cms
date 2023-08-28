@@ -7,3 +7,4 @@ fieldset.module h2{font-size: 12px !important;font-weight: 400 !important;margin
 td.original p{height: auto !important;}
 .empty-form{display: none !important;}
 fieldset.collapse,fieldset.collapsed{display: block !important;}
+.change-form .object-tools{margin-top: -100px;}

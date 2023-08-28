@@ -237,7 +237,8 @@ def build_and_send(
         )
         if not custom_subject:
             subject_call = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category_slug)
-            email_subject += locate(subject_call)() if subject_call else remove_markup(cover_article.headline)
+            email_subject += \
+                locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "headline", ""))
 
         email_from = (
             site.name if category_slug in getattr(

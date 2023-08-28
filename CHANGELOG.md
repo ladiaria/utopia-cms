@@ -1,3 +1,26 @@
+# version 0.4.3 (2023-08-28)
+
+- Article collections feature.
+- Archived work to support a work-in-progress Superdesk integration.
+- Articles version management using django-reversion.
+- Migrations and Python requirements updated.
+- Fixes for Django Admin formset:added custom js event.
+- Better jQuery and many other static assets management.
+- Improvements on article rendering consistency according to the is_published method and the 'public' photo attribute.
+- Forbidden (403) new template for better used feedback when staff members are not logged-in or using a wrong user.
+- Install guide fix (branch name to fectn).
+- Avoid error in Adzone.admin when form data came with no files keys because a previous validation failed.
+- 'vivo' base template maedia queries improvements.
+- Article admin action to publish/unpublish.
+- Python code style improved.
+- Article model managers and methods simplifications and improvements.
+- Article detail AMP template improvements.
+- "with" template tag usage syntax updated.
+- Support for newsletters preview links in user profile.
+- Obsolete views and templates removed.
+- Sample settnigs updated.
+- Social auth new pipeline to check if the email is used by another user social auth association.
+
 # version 0.4.2 (2023-08-04)
 
 - User profile UX improvements.

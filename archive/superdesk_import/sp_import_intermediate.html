@@ -1,0 +1,150 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+
+{% block content %}
+<form action="/admin/core/article/sp_import/" method="post">
+    {% csrf_token %}
+    <p>
+        Seleccione los artículos a importar
+    </p>
+
+    <div class="results">
+        <table>
+
+            <thead>
+            <tr>
+                <th>
+                    <div class="text">
+            <span>
+              <input type="checkbox" id="action-toggle">
+            </span>
+                    </div>
+                </th>
+                <th>
+                    <div class="text">
+                        <a href="#">Título</a>
+                    </div>
+                </th>
+                <th>
+                    <div class="text">
+                        <a href="#">Creado en</a>
+                    </div>
+                </th>
+                <th>
+                    <div class="text">
+                        <a href="#">Autor</a>
+                    </div>
+                </th>
+                <th>
+                    <div class="text">
+                        <a href="#">Publicación</a>
+                    </div>
+                </th>
+                <th>
+                    <div class="text">
+                        <a href="#">Destino</a>
+                    </div>
+                </th>
+                <th>
+                    <div class="text">
+                        <a href="#">Sección</a>
+                    </div>
+                </th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for sp_art in sp_articles %}
+            <tr class="{% cycle 'row1' 'row2' %}">
+                <td class="action-checkbox">
+          <span>
+              <input type="checkbox" class="action-toggle" id="action-toggle{{forloop.counter}}" value="{{ sp_art.sp_id }}" name="items[]">
+            </span>
+                </td>
+                <td> {{ sp_art.headline }}</td>
+                <td> {{ sp_art.date_created}}</td>
+                <td>
+                    <p>
+                        {% for author in sp_art.authors %}
+                        {{ author.name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+
+                </td>
+                <td> {{ sp_art.publication.name }}</td>
+                <td>
+                    {% if sp_art.exists %}
+                        Actualiza {{ sp_art.id }}
+                    {% else %}
+                    <p style="pointer-events:none;">Artículo nuevo</p>
+                    {% endif %}
+                </td>
+                <td class="section-td">
+                    {% if not sp_art.exists %}
+                        {% for field in art_rel_form.visible_fields %}
+                            {% if 'section' in field.name %}
+
+                                {{ field.errors }}
+                                {{ field }}
+                                {{ field.help_text }}
+
+                            {% endif %}
+                        {% endfor %}
+                        <input type="hidden" name="selected-section-{{ sp_art.sp_id }}"/>
+                    {% else %}
+                        <p></p>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+    <input type="hidden" name="action" value="import_articles"/>
+    <input type="hidden" name="tmp_file" value="{{tmp_file}}"/>
+    <input type="submit" name="import" value="Importar"/>
+</form>
+{% endblock %}
+{% block footer %}
+{{ block.super }}
+<script src="{% if debug %}{% static 'admin/js/vendor/jquery/jquery.js' %}{% else %}{% static 'admin/js/vendor/jquery/jquery.min.js' %}{% endif %}"></script>
+<script type="text/javascript">
+    // import article intermediate page logic
+    $(function(){
+    // Section select handling. Set the selected value to the hidden input for send
+      $( "td > select[name=section]" ).each(function(){
+	    // set the new ids for selects
+	    var h_input = $( this).next( "input[name^=selected-section-]" );
+	    var new_id = "id-section-" + h_input.attr("name").substring(17);
+	    $( this ).attr("id", new_id);
+	    // init all selects with not required prop assuming no one checkbox it is selected
+	    $( this ).prop("required", false);
+	  });
+      $( "td > select[name=section]" ).each(function(){
+        var current_select = $( this );
+        current_select.change(function () {
+          var value = current_select.find("option:selected").val()
+          var target_input = current_select.next( "input[name^=selected-section-]" );
+          target_input.val(value);
+        })
+        .change();
+      });
+      // checkbox selection feature
+      $( "#action-toggle" ).change(function(){
+        var main_checkbox = $(this);
+        $( ".action-toggle" ).each(function(){
+            $(this).prop("checked", main_checkbox.prop("checked"));
+        });
+      }).change();
+      // individual checkbox selection feature for handle the section select required property
+      $( ".action-toggle" ).change(function(){
+        var main_checkbox = $(this);
+        var art_id = main_checkbox.val();
+        // set the same checked value to the select required prop
+        $( "select#id-section-" + art_id ).prop("required", main_checkbox.prop("checked"));
+      }).change();
+    });
+</script>
+{% endblock %}

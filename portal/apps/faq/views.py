@@ -37,24 +37,10 @@ class TopicDetailView(DetailView):
     Context:
         topic
             An :model:`faq.Topic` object.
-        question_list
-            A list of all published :model:`faq.Question` objects that relate
-            to the given :model:`faq.Topic`.
-
     """
-
     model = Topic
     context_object_name = 'topic'
     queryset = Topic.published.all()
-
-    def get_context_data(self, **kwargs):
-        context = super(TopicDetailView, self).get_context_data(**kwargs)
-        context['question_list'] = Question.published.filter(topic__slug=self.get_object().slug)
-        return context
-
-    # return object_detail(request, queryset=Topic.published.all(),
-    #     extra_context=extra_context, template_object_name='topic',
-    #     template_name_field='template_name', slug=slug)
 
 
 def question_detail(request, topic_slug, slug):

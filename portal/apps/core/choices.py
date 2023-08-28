@@ -12,7 +12,7 @@ NOTA_H3 = 'H3'
 def section_choices():
     """
     Returns a hierarchical and ordered choice structure for the sections gruped by category giving precedence to the
-    sections whith category.
+    sections with category.
     TODO: Obtain the first "-----" default option in a more elegant way.
     """
     # Sections with category

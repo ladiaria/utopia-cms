@@ -17,24 +17,25 @@ from decorators import decorate_if_no_auth, decorate_if_auth
 
 from core.models import Edition, get_current_edition, Publication, Category, CategoryHome, Article
 from core.views.category import category_detail
-from faq.models import Question, Topic
+from faq.models import Topic
 from cartelera.models import LiveEmbedEvent
 
 
 def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set, articles):
     for a in articles:
-        is_restricted, compute_follow = a.is_restricted(), False
-        if is_restricted:
-            context['restricteds'].append(a.id)
-            if user_has_subscriber and user.subscriber.is_subscriber(a.main_section.edition.publication.slug):
-                context['restricteds_allowed'].append(a.id)
-                compute_follow = True
-        else:
-            compute_follow = True
+        compute_follow, a_id = True, a.id
+        if a.is_restricted():
+            context['restricteds'].append(a_id)
+            compute_follow = (
+                user_has_subscriber and user.subscriber.is_subscriber(a.main_section.edition.publication.slug)
+            )
+            if compute_follow:
+                context['restricteds_allowed'].append(a_id)
+
         if compute_follow:
-            context['compute_follows'].append(a.id)
-            if str(a.id) in follow_set:
-                context['follows'].append(a.id)
+            context['compute_follows'].append(a_id)
+            if str(a_id) in follow_set:
+                context['follows'].append(a_id)
 
 
 @decorate_if_auth(decorator=never_cache)
@@ -122,9 +123,9 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         category_cover_article, category_destacados = category_home.cover(), category_home.non_cover_articles()
         if is_authenticated:
             ctx_update_article_extradata(
-                context, request.user, user_has_subscriber, follow_set, [category_cover_article]
+                context, request.user, user_has_subscriber, follow_set,
+                [category_cover_article] + list(category_destacados)
             )
-            ctx_update_article_extradata(context, request.user, user_has_subscriber, follow_set, category_destacados)
         context.update(
             {
                 'fcategory': category,
@@ -133,15 +134,12 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             }
         )
 
-    questions_topic_slug = getattr(settings, 'HOMEV3_QUESTIONS_TOPIC_SLUG', None)
+    questions_topic_slug, questions_topic = getattr(settings, 'HOMEV3_QUESTIONS_TOPIC_SLUG', None), None
     if questions_topic_slug:
-        question_list = Question.published.filter(topic__slug=questions_topic_slug)
         try:
-            questions_topic = Topic.objects.get(slug=questions_topic_slug)
+            questions_topic = Topic.published.get(slug=questions_topic_slug)
         except Topic.DoesNotExist:
-            questions_topic = None
-    else:
-        question_list, questions_topic = [], None
+            pass
 
     if publication.slug != settings.DEFAULT_PUB:
         if year and month and day:
@@ -221,7 +219,6 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             'is_portada': True,
             'cover_article': cover_article,
             'destacados': top_articles,
-            'question_list': question_list,
             'questions_topic': questions_topic,
             'big_photo': publication.full_width_cover_image,
         }

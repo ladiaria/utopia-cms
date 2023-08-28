@@ -13,6 +13,8 @@ from actstream.models import Action
 from tagging.models import Tag, TaggedItem
 from tagging.forms import TagField
 from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
+from reversion.admin import VersionAdmin
+from martor.widgets import AdminMartorWidget
 
 from django.conf import settings
 from django.urls import path
@@ -30,7 +32,7 @@ from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, T
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.utils.text import Truncator
@@ -38,6 +40,8 @@ from django.utils.translation import gettext as _
 
 from .models import (
     Article,
+    ArticleCollection,
+    ArticleCollectionRelated,
     ArticleExtension,
     ArticleBodyImage,
     Edition,
@@ -106,10 +110,10 @@ class HomeTopArticleInline(TabularInline):
         return qs.filter(home_top=True)
 
     class Media:
-        # jquery loaded again (admin uses custom js namespaces)
+        # jquery loaded again (admin uses custom js namespaces and we use jquery-ui)
         js = (
-            'admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'),
-            'js/jquery-ui-1.12.1.custom.min.js',
+            'admin/js/jquery.js',
+            'js/jquery-ui-1.13.2.custom.min.js',
             'js/homev2/dynamic_edition_admin.js',
             'js/RelatedObjectLookupsCustom.js',
         )
@@ -186,7 +190,7 @@ class EditionAdmin(ModelAdmin):
         section = get_object_or_404(Section, pk=sec_id)
         article = get_object_or_404(Article, pk=art_id)
         ArticleRel.objects.create(edition=edition, section=section, article=article)
-        return HttpResponseRedirect("/admin/core/edition/" + ed_id)
+        return HttpResponseRedirect("/admin/core/edition/" + ed_id)  # TODO: use "reverse" to build the target url
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
@@ -297,6 +301,21 @@ class ArticleEditionInline(TabularInline):
     classes = ["collapse"]
 
 
+class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
+    """
+    Overrided to use a custom js, because we found this error in the upstream project:
+    https://github.com/agusmakmun/django-markdown-editor/pull/217
+    """
+
+    @property
+    def media(self):
+        result = super().media
+        js_files = list(result._js_lists[1])
+        js_files.remove('martor/js/martor.bootstrap.min.js')
+        result._js_lists[1] = js_files
+        return result
+
+
 class ArticleAdminModelForm(ModelForm):
     headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
     slug = CharField(
@@ -342,6 +361,7 @@ class ArticleAdminModelForm(ModelForm):
     class Meta:
         model = Article
         fields = "__all__"
+        widgets = {"body": UtopiaCmsAdminMartorWidget()}
 
 
 @admin.display(description='Foto', boolean=True)
@@ -372,7 +392,7 @@ def get_editions():
 
 
 @admin.register(Article, site=site)
-class ArticleAdmin(ModelAdmin):
+class ArticleAdmin(VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     form = ArticleAdminModelForm
 
@@ -398,18 +418,6 @@ class ArticleAdmin(ModelAdmin):
     raw_id_fields = ('photo', 'gallery', 'main_section')
     readonly_fields = ('date_published', )
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
-
-    @admin.display(description='Creado', ordering='date_created')
-    def creation_date(self, obj):
-        return obj.date_created.strftime("%d %b %Y %H:%M")
-
-    @admin.display(description='Publicado', ordering='date_published')
-    def publication_date(self, obj):
-        if obj.date_published:
-            return obj.date_published.strftime("%d %b %Y %H:%M")
-        else:
-            return ''
-
     fieldsets = (
         (None, {'fields': ('type', 'headline', 'slug', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide', )}),
         (
@@ -441,6 +449,52 @@ class ArticleAdmin(ModelAdmin):
             },
         ),
     )
+    actions = ["toggle_published"]
+
+    @admin.action(description="Publicar o despublicar según valor del campo 'publicado'")
+    def toggle_published(self, request, queryset):
+        if 'apply' in request.POST:
+            success_counter, error_counter = 0, 0
+            for article in queryset:
+                article.is_published = not article.is_published
+                try:
+                    article.save()
+                except Exception:
+                    error_counter += 1
+                else:
+                    success_counter += 1
+            if success_counter:
+                self.message_user(request, "Fueron modificados {} artículo(s)".format(success_counter))
+            if error_counter:
+                self.message_user(
+                    request,
+                    "Hubo error al intentar modificar{} artículo(s)".format(error_counter),
+                    level=messages.ERROR,
+                )
+            return HttpResponseRedirect(request.get_full_path())
+        elif 'cancel' in request.POST:
+            return HttpResponseRedirect(request.get_full_path())
+        return render(request, "admin/toggle_published_intermediate.html", {"articles": queryset})
+
+    def get_urls(self):
+        return [
+            path(
+                "<path:object_id>/history_adminlog/",
+                self.admin_site.admin_view(self.adminlog_history_view),
+                name="%s_%s_history_adminlog" % (self.model._meta.app_label, self.model._meta.model_name),
+            ),
+        ] + super().get_urls()
+
+    @admin.display(description='Creado', ordering='date_created')
+    def creation_date(self, obj):
+        return obj.date_created.strftime("%d %b %Y %H:%M")
+
+    @admin.display(description='Publicado', ordering='date_published')
+    def publication_date(self, obj):
+        if obj.date_published:
+            return obj.date_published.strftime("%d %b %Y %H:%M")
+        else:
+            return ''
 
     def get_object(self, request, object_id, from_field=None):
         # Hook obj for use in formfield_for_manytomany
@@ -552,14 +606,35 @@ class ArticleAdmin(ModelAdmin):
         # TODO: check if code below may be called also from the model save method
         update_category_home()
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        """
+        Conditions to redirect to the collection change view:
+        - This is not already the change view of a collection
+        - The object to change is a colection
+        - The user has permissions to change a collection
+        TODO: fix 404 for non-published collections
+        """
+        article = Article.objects.get(id=object_id)
+        if (
+            type(site._registry[ArticleCollection]) != type(self)
+            and hasattr(article, "articlecollection")
+            and request.user.has_perm('core.change_articlecollection')
+        ):
+            return HttpResponseRedirect(
+                reverse(
+                    '%s:%s_articlecollection_change' % (self.admin_site.name, article._meta.app_label),
+                    args=(object_id, ),
+                )
+            )
+        return super(ArticleAdmin, self).change_view(request, object_id, form_url, extra_context)
+
     def changelist_view(self, request, extra_context=None):
         if 'type__exact' not in request.GET:
             q = request.GET.copy()
             q['type__exact'] = 'NE'  # Setea el filtro por defecto a noticias
             request.GET = q
             request.META['QUERY_STRING'] = request.GET.urlencode()
-        return super().changelist_view(
-            request, extra_context=extra_context)
+        return super().changelist_view(request, extra_context=extra_context)
 
     def delete_view(self, request, object_id, extra_context=None):
         # actstream does not return unicode when rendering an Action if the target object has non-ascii chars,
@@ -570,15 +645,105 @@ class ArticleAdmin(ModelAdmin):
         del Action.__str__
         return response
 
+    def adminlog_history_view(self, request, object_id, extra_context=None):
+        object_history_template_bak = self.object_history_template
+        self.object_history_template = None
+        response = super(VersionAdmin, self).history_view(request, object_id)
+        self.object_history_template = object_history_template_bak
+        return response
+
     class Media:
         css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
-        # jquery loaded again (admin uses custom js namespaces)
         js = (
-            'admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'),
             'js/jquery.charcounter-orig.js',
             'js/utopiacms_martor_semantic.js',
             'js/homev2/article_admin.js',
         )
+
+
+class ForeignKeyRawIdWidgetMoreWords(widgets.ForeignKeyRawIdWidget):
+    """
+    Overrided from django/contrib/admin/widgets.py
+    To rise the quantity of words truncated in the last line of method.
+    """
+    utopia_words = 30
+
+    def label_and_url_for_value(self, value):
+        key = self.rel.get_related_field().name
+        try:
+            obj = self.rel.model._default_manager.using(self.db).get(**{key: value})
+        except (ValueError, self.rel.model.DoesNotExist, ValidationError):
+            return '', ''
+
+        try:
+            url = reverse(
+                '%s:%s_%s_change' % (self.admin_site.name, obj._meta.app_label, obj._meta.object_name.lower()),
+                args=(obj.pk, ),
+            )
+        except NoReverseMatch:
+            url = ''  # Admin not registered for target model.
+
+        return Truncator(obj).words(self.utopia_words, truncate='...'), url
+
+
+class ForeignKeyRawIdWidgetMoreWords20(ForeignKeyRawIdWidgetMoreWords):
+    utopia_words = 20
+
+
+class ArticleCollectionRelatedForm(ModelForm):
+
+    class Meta:
+        fields = ['position', 'article']
+        model = ArticleCollectionRelated
+        widgets = {
+            'position': TextInput(attrs={'size': 3}),
+            "article": ForeignKeyRawIdWidgetMoreWords20(
+                CategoryHomeArticle._meta.get_field("article").remote_field, site
+            )
+        }
+
+
+class ArticleCollectionRelatedFormSet(BaseInlineFormSet):
+    """
+    For validation purposes, taken from: https://stackoverflow.com/a/1884760
+    min_num and validate_min better options cannot be used because the validation we want also depends on other fields.
+    """
+    def is_valid(self):
+        return super().is_valid() and not any([bool(e) for e in self.errors])
+
+    def clean(self):
+        if self.data.get('is_published') and not getattr(settings, "CORE_ALLOW_EMPTY_COLLECTIONS", True):
+            # get forms that actually have valid data
+            count = 0
+            for form in self.forms:
+                try:
+                    if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                        count += 1
+                except AttributeError:
+                    # annoyingly, if a subform is invalid Django explicity raises
+                    # an AttributeError for cleaned_data
+                    pass
+            if count < 1:
+                raise ValidationError("No se permite publicar una colección sin artículos relacionados.")
+
+
+class ArticleCollectionRelatedInline(TabularInline):
+    model = ArticleCollection.related_articles.through
+    fk_name = "collection"
+    form = ArticleCollectionRelatedForm
+    formset = ArticleCollectionRelatedFormSet
+    raw_id_fields = ('article', )
+    verbose_name_plural = 'Artículos vinculados'
+    classes = ["collapse"]
+
+    class Media:
+        css = {'all': ('css/article_collection_related.css', )}
+
+
+@admin.register(ArticleCollection, site=site)
+class ArticleCollectionAdmin(ArticleAdmin):
+    fieldsets = ArticleAdmin.fieldsets + (("Colección", {"fields": ("traversal_categorization", )}), )
+    inlines = ArticleAdmin.inlines + [ArticleCollectionRelatedInline]
 
 
 @admin.register(EditionHeader, site=site)
@@ -602,7 +767,7 @@ class SupplementAdmin(ModelAdmin):
 @admin.register(PrintOnlyArticle, site=site)
 class PrintOnlyArticleAdmin(ModelAdmin):
     list_display = ('headline', 'deck', 'edition')
-    list_filter = ('date_created',)
+    list_filter = ('date_created', )
     search_fields = ['headline', 'deck']
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -636,7 +801,7 @@ class JournalistForm(ModelForm):
 class JournalistAdmin(ModelAdmin):
     form = JournalistForm
     list_display = ('name', 'job', published_articles)
-    list_filter = ('job',)
+    list_filter = ('job', )
     search_fields = ['name']
     fieldsets = (
         (None, {'fields': ('name', 'email', 'image', 'bio', 'job', 'sections')}),
@@ -751,9 +916,7 @@ class PublicationAdmin(ModelAdmin):
         kwargs.setdefault('form', PublicationAdminChangelistForm)
         return super().get_changelist_form(request, **kwargs)
 
-    @admin.action(
-        description="Enviar el newsletter de la publicación seleccionada"
-    )
+    @admin.action(description="Enviar el newsletter de la publicación seleccionada")
     def send_newsletter(self, request, queryset):
         if queryset.count() > 1:
             self.message_user(
@@ -823,33 +986,6 @@ class CategoryAdmin(ModelAdmin):
         ('Metadatos', {'fields': (('html_title', ), ('meta_description', ))}),
     )
     raw_id_fields = ('full_width_cover_image', )
-
-
-class ForeignKeyRawIdWidgetMoreWords(widgets.ForeignKeyRawIdWidget):
-    """
-    Overrided from django/contrib/admin/widgets.py
-    To rise the quantity of words truncated in the last line of method.
-    """
-    def label_and_url_for_value(self, value):
-        key = self.rel.get_related_field().name
-        try:
-            obj = self.rel.model._default_manager.using(self.db).get(**{key: value})
-        except (ValueError, self.rel.model.DoesNotExist, ValidationError):
-            return '', ''
-
-        try:
-            url = reverse(
-                '%s:%s_%s_change' % (
-                    self.admin_site.name,
-                    obj._meta.app_label,
-                    obj._meta.object_name.lower(),
-                ),
-                args=(obj.pk,)
-            )
-        except NoReverseMatch:
-            url = ''  # Admin not registered for target model.
-
-        return Truncator(obj).words(30, truncate='...'), url
 
 
 class CategoryHomeArticleForm(ModelForm):
@@ -930,10 +1066,10 @@ class CategoryNewsletterArticleInline(TabularInline):
     classes = ('dynamic-order', )
 
     class Media:
-        # jquery loaded again (admin uses custom js namespaces)
+        # jquery loaded again (admin uses custom js namespaces and we use jquery-ui)
         js = (
-            'admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'),
-            'js/jquery-ui-1.12.1.custom.min.js',
+            'admin/js/jquery.js',
+            'js/jquery-ui-1.13.2.custom.min.js',
             'js/homev2/dynamic_edition_admin.js',
             'js/RelatedObjectLookupsCustom.js',
         )
@@ -1009,12 +1145,12 @@ class BreakingNewsModuleAdmin(ModelAdmin):
 
 class TagAdmin(admin.ModelAdmin):
     model = Tag
-    search_fields = ('name',)
+    search_fields = ('name', )
 
 
 class TaggedItemAdmin(admin.ModelAdmin):
     model = TaggedItem
-    search_fields = ('name',)
+    search_fields = ('name', )
 
 
 @admin.register(DeviceSubscribed, site=site)
@@ -1039,7 +1175,7 @@ class PushNotificationAdmin(admin.ModelAdmin):
     # TODO: adjust change_list columns width
     model = PushNotification
     list_display = ('message', 'article', 'sent', 'tag')
-    raw_id_fields = ('article',)
+    raw_id_fields = ('article', )
     actions = ['send_me_push_notification', 'send_push_notification_to_all']
     readonly_fields = ('sent', 'tag')
 
@@ -1056,7 +1192,7 @@ class PushNotificationAdmin(admin.ModelAdmin):
                 level=messages.ERROR,
                 extra_tags='wn' + str(messages_sent),
             )
-            return HttpResponseRedirect("./")
+            return HttpResponseRedirect("./")  # TODO: use "reverse" to build the target url
         for ms in queryset:
             with transaction.atomic():
                 if ms.overwrite:
@@ -1086,9 +1222,7 @@ class PushNotificationAdmin(admin.ModelAdmin):
                     level=messages.SUCCESS,
                 )
 
-    @admin.action(
-        description="Enviar las notificaciones seleccionadas a todos los usuarios."
-    )
+    @admin.action(description="Enviar las notificaciones seleccionadas a todos los usuarios.")
     def send_push_notification_to_all(self, request, queryset):
         # allow only to group members defined by setting
         restrict_group = getattr(settings, 'CORE_PUSH_NOTIFICATIONS_SENDALL_RESTRICT_GROUP', None)

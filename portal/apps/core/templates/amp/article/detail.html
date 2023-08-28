@@ -39,12 +39,16 @@
 {% block content %}
 
   <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
-    {% if article.photo and article.photo_image_file_exists %}
+
+    {% if article.photo_render_allowed %}
       {% if header_display == 'FW' %}
         <div class="{{ article.header_display }}">
           <div class="align-center">
-            <figure class="principal {{ card_size }}" alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
-              <amp-img height="{{ article.photo_height }}" width="{{ article.photo_width }}" layout="responsive" id="main-photo" src="{{ article.photo.get_med_url }}" alt="{{ article.photo.caption }}" title="{{ article.photo.caption }}"></amp-img>
+            <figure class="principal" alt="{{ article.photo_caption }}">
+              <amp-img height="{{ article.photo_height }}" width="{{ article.photo_width }}" layout="responsive"
+                       id="main-photo" src="{{ article.photo.get_med_url }}" alt="{{ article.photo_caption }}"
+                       title="{{ article.photo_caption }}">
+              </amp-img>
             </figure>
             <figcaption class="article-caption ld-caption">
               <div class="container">
@@ -54,32 +58,76 @@
             </figcaption>
           </div>
         </div>
-      {% elif header_display == 'BG' %}
-        <div class="photo align-center">
-          <figure class="principal">
-            <amp-img id="main-photo" layout="responsive" media="(min-width: 320px) and (max-width: 700px)"
-                     height="{{ article.photo_height }}" width="{{ article.photo_width }}"
-                     class="materialboxed responsive-img {{ article.photo_layout }}"
-                     data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
-                     src="{{ article.photo.get_700w_url }}"></amp-img>
-            <amp-img id="main-photo" layout="responsive" media="(min-width: 701px) and (max-width: 900px)"
-                     height="{{ article.photo_height }}" width="{{ article.photo_width }}"
-                     class="materialboxed responsive-img {{ article.photo_layout }}"
-                     data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
-                     src="{{ article.photo.get_900w_url }}"></amp-img>
-            <amp-img id="main-photo" layout="responsive" media="(min-width: 901px)"
-                     height="{{ article.photo_height }}" width="{{ article.photo_width }}"
-                     class="materialboxed responsive-img {{ article.photo_layout }}"
-                     data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
-                     src="{{ article.photo.get_1200w_url }}"></amp-img>
-          </figure>
-          <figcaption class="article-caption ld-caption">
-            <div class="container">
-              <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
-              {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
+      {% else %}
+        {% if article.articlecollection %}
+          <div class="collection-header">
+            <div class="collection-intro">
+              <svg id="collection-logo" xmlns="http://www.w3.org/2000/svg" width="22" height="21" viewBox="0 0 22 21" fill="none">
+                <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
+              </svg>
+              <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+              <svg id="line-svg" xmlns="http://www.w3.org/2000/svg" width="180" height="2" viewBox="0 0 180 2" fill="none">
+                <path d="M0 1.08124H180" stroke="#A4A4A4"/>
+              </svg>
+              {% if article.has_deck %}
+                <p class="collection-description">{{ article.deck|ldmarkup|bleach }}</p>
+              {% endif %}
+              {% if article.photo_author %}
+                <p class="photo-author">{{ article.photo_type }}: {{ article.photo_author }}</p>
+              {% endif %}
+              <svg width="44" height="35" viewBox="0 0 44 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12.82 10.0812L22 19.2612L31.18 10.0812L34 12.9212L22 24.9212L10 12.9212L12.82 10.0812Z"
+                      fill="#A4A4A4"/>
+              </svg>
             </div>
-          </figcaption>
-        </div>
+            <figure class="js-figure principal">
+              <amp-img class="responsive-img {{ article.photo_layout }}" alt="{{ article.photo_caption }}" width="250"
+                       height="{{ article.photo.get_250w_size.1 }}" media="(max-width: 399px)"
+                       src="{{ article.photo.get_250w_url }}" data-caption="{{ article.photo_caption }}"></amp-img>
+              <amp-img class="responsive-img {{ article.photo_layout }}" alt="{{ article.photo_caption }}" width="350"
+                       height="{{ article.photo.get_350w_size.1 }}" media="(min-width: 400px) and (max-width: 499px)"
+                       src="{{ article.photo.get_350w_url }}" data-caption="{{ article.photo_caption }}"></amp-img>
+              <amp-img class="responsive-img {{ article.photo_layout }}" alt="{{ article.photo_caption }}" width="450"
+                       height="{{ article.photo.get_450w_size.1 }}" media="(min-width: 500px) and (max-width: 599px)"
+                       src="{{ article.photo.get_450w_url }}" data-caption="{{ article.photo_caption }}"></amp-img>
+              <amp-img class="responsive-img {{ article.photo_layout }}" alt="{{ article.photo_caption }}" width="550"
+                       height="{{ article.photo.get_550w_size.1 }}" media="(min-width: 600px) and (max-width: 699px)"
+                       src="{{ article.photo.get_550w_url }}" data-caption="{{ article.photo_caption }}"></amp-img>
+              <amp-img class="responsive-img {{ article.photo_layout }}" alt="{{ article.photo_caption }}" width="600"
+                       height="{{ article.photo.get_600w_size.1 }}" media="(min-width: 700px) and (max-width: 769px)"
+                       src="{{ article.photo.get_600w_url }}" data-caption="{{ article.photo_caption }}"></amp-img>
+              <amp-img class="responsive-img {{ article.photo_layout }}" alt="{{ article.photo_caption }}" width="700"
+                       height="{{ article.photo.get_700w_size.1 }}" media="(min-width: 770px)"
+                       src="{{ article.photo.get_700w_url }}" data-caption="{{ article.photo_caption }}"></amp-img>
+            </figure>
+          </div>
+        {% else %}
+          <div class="photo align-center">
+            <figure class="principal">
+              <amp-img id="main-photo" layout="responsive" media="(min-width: 320px) and (max-width: 700px)"
+                      height="{{ article.photo_height }}" width="{{ article.photo_width }}"
+                      class="materialboxed responsive-img {{ article.photo_layout }}"
+                      data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                      src="{{ article.photo.get_700w_url }}"></amp-img>
+              <amp-img id="main-photo" layout="responsive" media="(min-width: 701px) and (max-width: 900px)"
+                      height="{{ article.photo_height }}" width="{{ article.photo_width }}"
+                      class="materialboxed responsive-img {{ article.photo_layout }}"
+                      data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                      src="{{ article.photo.get_900w_url }}"></amp-img>
+              <amp-img id="main-photo" layout="responsive" media="(min-width: 901px)"
+                      height="{{ article.photo_height }}" width="{{ article.photo_width }}"
+                      class="materialboxed responsive-img {{ article.photo_layout }}"
+                      data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
+                      src="{{ article.photo.get_1200w_url }}"></amp-img>
+            </figure>
+            <figcaption class="article-caption ld-caption">
+              <div class="container">
+                {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+                {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
+              </div>
+            </figcaption>
+          </div>
+        {% endif %}
       {% endif %}
     {% endif %}
 
@@ -90,7 +138,9 @@
           <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
         </div>
       {% endif %}
-      <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+      {% if not article.articlecollection %}
+        <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+      {% endif %}
 
       <div class="article-date-author">
         {% with authors=article.get_authors %}
@@ -144,18 +194,18 @@
       {% endif %}
       <div amp-access="authenticated AND NOT followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         <div class="read-later">
-          <button id="rl-toggle0" data-vars-event-label="add" class="read-later__btn read-later__add" [class]="hideClass" on="tap:rl-toggle0.hide,rl-info0.hide,rl-toggle1.show,rl-info1.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</button>
-          <div id="rl-info0" class="info read-later__add__info" hidden [class]="secondaryText">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-          <button id="rl-toggle1" data-vars-event-label="remove" class="read-later__btn read-later__saved first" hidden [class]="showClass" on="tap:rl-toggle1.hide,rl-info1.hide,rl-toggle0.show,rl-info0.show"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</button>
-          <div id="rl-info1" class="info read-later__saved__info first" hidden [class]="textClass">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+          <button id="rl-toggle0" data-vars-event-label="add" class="read-later__btn read-later__add" on="tap:rl-toggle0.hide,rl-info0.hide,rl-toggle1.show,rl-info1.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</button>
+          <div id="rl-info0" class="info read-later__add__info" hidden>El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+          <button id="rl-toggle1" data-vars-event-label="remove" class="read-later__btn read-later__saved first" hidden on="tap:rl-toggle1.hide,rl-info1.hide,rl-toggle0.show,rl-info0.show"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</button>
+          <div id="rl-info1" class="info read-later__saved__info first" hidden>El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
         </div>
       </div>
       <div amp-access="NOT access AND authenticated AND followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         <div class="read-later">
-          <button id="rl-wall-0" data-vars-event-label="remove" class="read-later__btn read-later__saved" [class]="removeClass" on="tap:rl-wall-0.hide,rl-wall-3.hide,rl-wall-1.show,rl-wall-2.show"> Quitar de Leer después</button>
-          <button id="rl-wall-2" data-vars-event-label="add" class="read-later__btn read-later__add" hidden [class]="hideClass" on="tap:rl-wall-2.hide,rl-wall-1.hide,rl-wall-0.show,rl-wall-3.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</button>
-          <div id="rl-wall-1" class="info read-later__add__info" hidden [class]="sText">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-          <div id="rl-wall-3" class="info read-later__saved__info first" hidden [class]="textClass">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+          <button id="rl-wall-0" data-vars-event-label="remove" class="read-later__btn read-later__saved" on="tap:rl-wall-0.hide,rl-wall-3.hide,rl-wall-1.show,rl-wall-2.show"> Quitar de Leer después</button>
+          <button id="rl-wall-2" data-vars-event-label="add" class="read-later__btn read-later__add" hidden on="tap:rl-wall-2.hide,rl-wall-1.hide,rl-wall-0.show,rl-wall-3.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</button>
+          <div id="rl-wall-1" class="info read-later__add__info" hidden>El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+          <div id="rl-wall-3" class="info read-later__saved__info first" hidden>El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
         </div>
       </div>
 
@@ -228,31 +278,31 @@
 
     <div amp-access="access AND authenticated AND followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       <div class="read-later u-mb-60">
-        <div id="rlt1" class="info read-later__saved__info" [class]="removeText">
+        <div id="rlt1" class="info read-later__saved__info">
           Este artículo está guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a><br>
           ¿Terminaste de leerlo?
         </div>
-        <button id="rlt2" data-vars-event-label="remove" class="read-later__btn read-later__saved" [class]="removeClass" on="tap:rlt1.hide,rlt2.hide,rlt3.show,rlt4.show"> Quitar de Leer después</button>
-        <button id="rlt3" data-vars-event-label="add" class="read-later__btn read-later__add" hidden [class]="showClass" on="tap:rlt3.hide,rlt4.hide,rlt5.show,rlt6.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"></path><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"></path></svg> Leer después</button>
-        <div id="rlt4" class="info read-later__add__info" hidden [class]="sText">El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-        <button id="rlt5" data-vars-event-label="remove" class="read-later__btn read-later__saved" hidden [class]="hClass" on="tap:rlt5.hide,rlt6.hide,rlt3.show,rlt4.show"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</button>
-        <div id="rlt6" class="info read-later__saved__info" hidden [class]="addedClass">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+        <button id="rlt2" data-vars-event-label="remove" class="read-later__btn read-later__saved" on="tap:rlt1.hide,rlt2.hide,rlt3.show,rlt4.show"> Quitar de Leer después</button>
+        <button id="rlt3" data-vars-event-label="add" class="read-later__btn read-later__add" hidden on="tap:rlt3.hide,rlt4.hide,rlt5.show,rlt6.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"></path><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"></path></svg> Leer después</button>
+        <div id="rlt4" class="info read-later__add__info" hidden>El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+        <button id="rlt5" data-vars-event-label="remove" class="read-later__btn read-later__saved" hidden on="tap:rlt5.hide,rlt6.hide,rlt3.show,rlt4.show"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</button>
+        <div id="rlt6" class="info read-later__saved__info" hidden>El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
       </div>
     </div>
 
     <div class="fav u-mb-60" amp-access-hide amp-access="access AND authenticated AND favourited AND (article_allowed OR NOT article_restricted)">
-      <button id="rltf1" data-vars-event-label="favToggle" class="fav__btn fav__saved" [class]="hideClass" on="tap:rltf1.hide,rltf_favourited.hide,rltf2.show,rltf3.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-874 -9241)"><g transform="translate(874 9241)"><path d="M0,0H24V24H0Z" fill="none" /><path d="M0,0H24V24H0Z" fill="none"/></g><g transform="translate(874.557 9242.428)"  fill="none"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</button>
-      <div id="rltf_favourited" class="info" [class]="textSaved">Guardaste este artículo como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-      <div id="rltf4" class="info" hidden [class]="secondaryText">El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-      <button id="rltf2" data-vars-event-label="favToggle" class="fav__btn fav__add" hidden [class]="showClass" on="tap:rltf2.hide,rltf3.hide,rltf1.show,rltf4.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-1433 -9241)"><path d="M0,0H24V24H0Z" transform="translate(1433 9241)" fill="none"/><path d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(1433.556 9242.438)" fill="#262626"/></g></svg> Guardar como favorito</button>
-      <div id="rltf3" class="info" hidden [class]="textFavClass">El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
+      <button id="rltf1" data-vars-event-label="favToggle" class="fav__btn fav__saved" on="tap:rltf1.hide,rltf_favourited.hide,rltf2.show,rltf3.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-874 -9241)"><g transform="translate(874 9241)"><path d="M0,0H24V24H0Z" fill="none" /><path d="M0,0H24V24H0Z" fill="none"/></g><g transform="translate(874.557 9242.428)"  fill="none"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</button>
+      <div id="rltf_favourited" class="info">Guardaste este artículo como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
+      <div id="rltf4" class="info" hidden >El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
+      <button id="rltf2" data-vars-event-label="favToggle" class="fav__btn fav__add" hidden on="tap:rltf2.hide,rltf3.hide,rltf1.show,rltf4.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-1433 -9241)"><path d="M0,0H24V24H0Z" transform="translate(1433 9241)" fill="none"/><path d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(1433.556 9242.438)" fill="#262626"/></g></svg> Guardar como favorito</button>
+      <div id="rltf3" class="info" hidden>El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
     </div>
 
     <div class="fav u-mb-60" amp-access-hide amp-access="access AND authenticated AND NOT favourited AND (article_allowed OR NOT article_restricted)">
-      <button id="rltf5" data-vars-event-label="favToggle" class="fav__btn fav__saved" hidden [class]="hideClass" on="tap:rltf5.hide,rltf8.hide,rltf7.show,rltf6.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-874 -9241)"><g transform="translate(874 9241)"><path d="M0,0H24V24H0Z" fill="none" /><path d="M0,0H24V24H0Z" fill="none"/></g><g transform="translate(874.557 9242.428)"  fill="none"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</button>
-      <button id="rltf7" data-vars-event-label="favToggle" class="fav__btn fav__add" [class]="showClass" on="tap:rltf6.hide,rltf7.hide,rltf5.show,rltf8.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-1433 -9241)"><path d="M0,0H24V24H0Z" transform="translate(1433 9241)" fill="none"/><path d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(1433.556 9242.438)" fill="#262626"/></g></svg> Guardar como favorito</button>
-      <div id="rltf6" class="info" hidden [class]="textClass">El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-      <div id="rltf8" class="info" hidden [class]="secondaryText">El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
+      <button id="rltf5" data-vars-event-label="favToggle" class="fav__btn fav__saved" hidden on="tap:rltf5.hide,rltf8.hide,rltf7.show,rltf6.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-874 -9241)"><g transform="translate(874 9241)"><path d="M0,0H24V24H0Z" fill="none" /><path d="M0,0H24V24H0Z" fill="none"/></g><g transform="translate(874.557 9242.428)"  fill="none"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</button>
+      <button id="rltf7" data-vars-event-label="favToggle" class="fav__btn fav__add" on="tap:rltf6.hide,rltf7.hide,rltf5.show,rltf8.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-1433 -9241)"><path d="M0,0H24V24H0Z" transform="translate(1433 9241)" fill="none"/><path d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(1433.556 9242.438)" fill="#262626"/></g></svg> Guardar como favorito</button>
+      <div id="rltf6" class="info" hidden>El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
+      <div id="rltf8" class="info" hidden>El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
     </div>
 
     {% if tag_list %}

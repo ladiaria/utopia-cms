@@ -121,6 +121,7 @@ INSTALLED_APPS = (
     'favit',
     'social_django',
     "django_amp_readerid.apps.DjangoAmpReaderidConfig",
+    "reversion",
 )
 
 SITE_ID = 1
@@ -144,6 +145,8 @@ MARTOR_TOOLBAR_BUTTONS = [
     'help',
 ]
 MARTOR_ENABLE_LABEL = True  # enable field labels
+# Used to fix a js error, see core.admin.UtopiaCmsAdminMartorWidget for more info
+MARTOR_ALTERNATIVE_JS_FILE_THEME = "js/martor/utopiacms.martor.bootstrap.js"
 
 # photologue app need to add a custom migration
 MIGRATION_MODULES = {'photologue': 'photologue_ladiaria.photologue_migrations'}
@@ -235,7 +238,7 @@ BASE_SUB = None
 DEFAULT_PUB = 'default'
 
 FIRST_DAY_OF_WEEK = 0     # 0 is Sunday
-# Convert to calendar module, where 0 is Monday :/
+# Convert to calendar module, where 0 is Monday:
 FIRST_DAY_OF_WEEK_CAL = (FIRST_DAY_OF_WEEK - 1) % 7
 
 HOME_PUBLICATIONS = []
@@ -396,7 +399,7 @@ DEFAULT_BYLINE = 'Difusión, S/D de autor.'
 
 # django-tagging and autocomplete-taggit
 FORCE_LOWERCASE_TAGS = False
-TAGGING_AUTOCOMPLETE_JS_BASE_URL = '%sjs/jquery-tag-it-utopia/' % STATIC_URL
+TAGGING_AUTOCOMPLETE_JS_BASE_URL = '%sjquery-tag-it/' % STATIC_URL
 TAGGING_AUTOCOMPLETE_JQUERY_UI_FILE = 'jquery-ui.min.js'
 
 # home

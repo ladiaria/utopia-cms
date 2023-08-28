@@ -243,6 +243,17 @@
 
   {% block featured_content %}{% endblock %}
 
+  {% render_collectionrow as collectionrow %}
+  {% if collectionrow %}
+    <section class="frontpage-section">
+      <div class="container">
+        <div class="section-detail__head"><h3 class="section-detail__title">Colecciones de {{ category }}</h3></div>
+          {{ collectionrow }}
+        <div class="row footer-section"><div class="col s12"/></div>
+      </div>
+    </section>
+  {% endif %}
+
   {% block big_photo %}
     {% if big_photo %}
       <section id="category-bigphoto" class="section-big-photo frontpage-section section-big-photo--category">

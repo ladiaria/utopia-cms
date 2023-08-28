@@ -1,0 +1,28 @@
+#linked_articles-group th.original {
+  width: 120px !important;
+  padding: initial !important;
+}
+#linked_articles-group td.original {
+  padding: initial !important;
+}
+#linked_articles-group tr.dynamic-linked_articles td {
+  padding-top: 1.4em !important;
+}
+#linked_articles-group td.field-position {
+  width: 80px;
+}
+#linked_articles-group td.field-article {
+  padding-bottom: 1em;
+}
+#linked_articles-group td.field-article strong {
+  display: inline-block;
+  position: absolute;
+  margin-right: 90px;
+  margin-top: 5px;
+}
+#linked_articles-group td.delete {
+  width: 70px;
+}
+#linked_articles-group .vForeignKeyRawIdAdminField {
+  width: 5em;
+}

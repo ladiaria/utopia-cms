@@ -66,7 +66,10 @@ $(function(){
             $(value).attr('checked', true).parents("tr").addClass('row-articlerel-selected');
         }
         $(value).change(function(){
-            $("#id_main_section").val($(this).attr('data-articlerel-id'));
+            var rel_id = $(this).attr('data-articlerel-id');
+            if (rel_id) {
+                $("#id_main_section").val(rel_id);
+            }
             main_section_row_selected($(this));
         });
     });
