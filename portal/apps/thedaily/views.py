@@ -885,10 +885,16 @@ def edit_profile(request, user=None):
         profile_form = ProfileForm(instance=profile)
         profile_data_form = ProfileExtraDataForm(instance=profile)
 
+    # Google oauth note: disconnections are discouraged when the email used is the same as the user's email because
+    #                    once disconnected, if the user has no valid password, he/she would not be able to login again
+    #                    without a successful pasword reset.
+    oauth2_assoc, google_oauth2_multiple = None, False
     try:
         oauth2_assoc = UserSocialAuth.objects.get(user=user, provider='google-oauth2')
     except UserSocialAuth.DoesNotExist:
-        oauth2_assoc = None
+        pass
+    except UserSocialAuth.MultipleObjectsReturned:
+        oauth2_assoc, google_oauth2_multiple = True, True
 
     return 'edit_profile.html', {
         'user_form': user_form,
@@ -896,7 +902,9 @@ def edit_profile(request, user=None):
         'profile_data_form': profile_data_form,
         'is_subscriber_digital': user.subscriber.is_digital_only(),
         'google_oauth2_assoc': oauth2_assoc,
-        'google_oauth2_allow_disconnect': oauth2_assoc and (user.email != oauth2_assoc.uid),
+        'google_oauth2_multiple': google_oauth2_multiple,
+        'google_oauth2_allow_disconnect':
+            not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
         'publication_newsletters': Publication.objects.filter(has_newsletter=True),
         'newsletters': get_profile_newsletters_ordered(),
         "incomplete_field_count": sum(
