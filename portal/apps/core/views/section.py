@@ -19,7 +19,7 @@ from core.models import Edition, Publication, Article, Section
 
 
 @never_cache
-def section_detail(request, section_slug, tag=None, year=None, month=None, day=None):
+def section_detail(request, section_slug, tag=None, year=None, month=None, day=None):  # TODO: review the tag argument
 
     # removed or changed sections redirects by settings
     if section_slug in getattr(settings, 'CORE_SECTION_REDIRECT', {}):

@@ -288,8 +288,7 @@ def reorder_tag_list(article, tags):
 
 
 def get_article_tags(article):
-    article_tags = Tag.objects.get_for_object(article)
-    return article_tags
+    return Tag.objects.get_for_object(article)
 
 
 def report_error(request, article):
