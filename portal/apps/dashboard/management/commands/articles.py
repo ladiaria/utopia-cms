@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from django.urls import resolve
 
 from apps import mongo_db
-from core.models import Article, Section, Publication, ArticleUrlHistory, Category
+from core.models import Article, ArticleRel, Section, Publication, ArticleUrlHistory, Category
 from signupwall.middleware import get_article_by_url_kwargs
 
 
@@ -232,15 +232,20 @@ class Command(BaseCommand):
                     .count()
                 )
             elif isinstance(ar_id[0], Publication):
-                articles_count = 0
                 category_or_publication = ar_id[0]
-                for section in category_or_publication.section_set.all():
-                    articles_count += section.articles_core.filter(
-                        date_published__gte=last_month_first,
-                        date_published__lte=dt_until,
-                    ).count()
+                articles_count = len(
+                    set(
+                        [
+                            ar.article.id for ar in ArticleRel.objects.filter(
+                                edition__publication=category_or_publication,
+                                article__date_published__gte=last_month_first,
+                                article__date_published__lte=dt_until,
+                                article__is_published=True,
+                            )
+                        ]
+                    )
+                )
             elif isinstance(ar_id[0], Section):
-                articles_count = 0
                 category_or_publication = ar_id[0]
                 articles_count = category_or_publication.articles_core.filter(
                     date_published__gte=last_month_first,

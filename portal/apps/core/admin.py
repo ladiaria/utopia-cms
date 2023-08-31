@@ -14,6 +14,7 @@ from tagging.models import Tag, TaggedItem
 from tagging.forms import TagField
 from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
 from reversion.admin import VersionAdmin
+from martor.models import MartorField
 from martor.widgets import AdminMartorWidget
 
 from django.conf import settings
@@ -311,7 +312,7 @@ class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
     def media(self):
         result = super().media
         js_files = list(result._js_lists[1])
-        js_files.remove('martor/js/martor.bootstrap.min.js')
+        js_files[js_files.index('martor/js/martor.bootstrap.min.js')] = "js/martor/utopiacms.martor.bootstrap.js"
         result._js_lists[1] = js_files
         return result
 
@@ -361,7 +362,6 @@ class ArticleAdminModelForm(ModelForm):
     class Meta:
         model = Article
         fields = "__all__"
-        widgets = {"body": UtopiaCmsAdminMartorWidget()}
 
 
 @admin.display(description='Foto', boolean=True)
@@ -394,8 +394,9 @@ def get_editions():
 @admin.register(Article, site=site)
 class ArticleAdmin(VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
+    actions = ["toggle_published"]
     form = ArticleAdminModelForm
-
+    formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
     prepopulated_fields = {'slug': ('headline', )}
     filter_horizontal = ('byline', )
     list_display = (
@@ -449,7 +450,6 @@ class ArticleAdmin(VersionAdmin):
             },
         ),
     )
-    actions = ["toggle_published"]
 
     @admin.action(description="Publicar o despublicar según valor del campo 'publicado'")
     def toggle_published(self, request, queryset):
@@ -654,11 +654,7 @@ class ArticleAdmin(VersionAdmin):
 
     class Media:
         css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
-        js = (
-            'js/jquery.charcounter-orig.js',
-            'js/utopiacms_martor_semantic.js',
-            'js/homev2/article_admin.js',
-        )
+        js = ('js/jquery.charcounter-orig.js', 'js/utopiacms_martor_semantic.js', 'js/homev2/article_admin.js')
 
 
 class ForeignKeyRawIdWidgetMoreWords(widgets.ForeignKeyRawIdWidget):

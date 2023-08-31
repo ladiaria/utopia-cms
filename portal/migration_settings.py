@@ -145,8 +145,6 @@ MARTOR_TOOLBAR_BUTTONS = [
     'help',
 ]
 MARTOR_ENABLE_LABEL = True  # enable field labels
-# Used to fix a js error, see core.admin.UtopiaCmsAdminMartorWidget for more info
-MARTOR_ALTERNATIVE_JS_FILE_THEME = "js/martor/utopiacms.martor.bootstrap.js"
 
 # photologue app need to add a custom migration
 MIGRATION_MODULES = {'photologue': 'photologue_ladiaria.photologue_migrations'}
