@@ -28,5 +28,7 @@ def latest_activity(user):
     if not latest_activity:
         latest_activity = ArticleViewedBy.objects.filter(user=user).aggregate(Max('viewed_at'))['viewed_at__max']
 
-    # Sometimes user.date_joined > user.last_login but only for 1 or 2 seconds, using last_login is good enough.
-    return max(latest_activity, user.last_login) if latest_activity else user.last_login
+    to_compare = max(user.last_login, user.date_joined) if user.last_login else user.date_joined
+    if hasattr(user, "subscriber"):
+        to_compare = max(to_compare, user.subscriber.date_created)
+    return max(latest_activity, to_compare) if latest_activity else to_compare

@@ -358,7 +358,7 @@ def build_and_send(
                             send_result = "No SMTP server available"
                         else:
                             send_result = smtp_servers[smtp_index_choosed].sendmail(
-                                settings.NOTIFICATIONS_FROM_MX, [s_user_email], msg.as_string()
+                                settings.NEWSLETTERS_FROM_MX, [s_user_email], msg.as_string()
                             )
                         assert not send_result
                     log.info(
@@ -392,7 +392,7 @@ def build_and_send(
                         subscriber_refused += 1
                     else:
                         user_refused += 1
-                except (smtplib.SMTPServerDisconnected, smtplib.SMTPSenderRefused):
+                except smtplib.SMTPServerDisconnected:
                     # Retries are made only once per iteration to avoid infinite loop if MTA got down at all
                     retry_last_delivery = not retry_last_delivery
                     log_message = "MTA down, email to %s not sent. Reconnecting " % s_user_email
@@ -405,6 +405,12 @@ def build_and_send(
                             smtp_servers[smtp_index_choosed] = smtp_connect(smtp_index_choosed)
                     except error:
                         log.warning('MTA reconnect failed')
+                except (smtplib.SMTPSenderRefused, smtplib.SMTPDataError):
+                    # This means that is very probabble that this server will not work at all for any iteration, so we
+                    # will remove it from the available servers list and retry this delivery if possible.
+                    # If no available servers left, raise smth that can be handled by the next except to print&break
+                    # TODO: do this
+                    pass
                 else:
                     retry_last_delivery = False
 

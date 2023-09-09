@@ -2,6 +2,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
+# TODO: check if the 3 imports above are needed
 
 import sys
 from os.path import abspath, basename, dirname, join, realpath
@@ -315,6 +316,7 @@ NOTIFICATIONS_FROM_ADDR1 = 'suscriptores@example.com'
 NOTIFICATIONS_FROM_ADDR2 = 'ventas@example.com'
 NOTIFICATIONS_TO_ADDR = 'suscripciones@example.com'
 NOTIFICATIONS_FROM_MX = NOTIFICATIONS_FROM_ADDR1
+NEWSLETTERS_FROM_MX = NOTIFICATIONS_FROM_MX
 
 NEWSLETTER_IMG_FORMAT = 'jpg'
 

@@ -2,11 +2,17 @@
 from __future__ import unicode_literals
 
 from builtins import str
+
+from django.http import HttpResponseRedirect
+from django.contrib import admin
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.admin import ModelAdmin, site
 from django.contrib.admin.sites import AlreadyRegistered
+from django.contrib.messages import constants as messages
 
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
-from thedaily.models import (
+from .models import (
     Subscription,
     ExteriorSubscription,
     WebSubscriber,
@@ -17,6 +23,22 @@ from thedaily.models import (
     SubscriptionPrices,
     OAuthState,
 )
+from .exceptions import UpdateCrmEx
+
+
+class UserAdmin(BaseUserAdmin):
+    list_display = ("id", "username", "email", "first_name", "last_name", "is_active", "is_staff")
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        result = None
+        try:
+            result = super().change_view(request, object_id, form_url, extra_context)
+        except UpdateCrmEx:
+            self.message_user(
+                request, 'Error de comunicación con el CRM, no se aplicaron los cambios', level=messages.ERROR
+            )
+            result = HttpResponseRedirect(request.get_full_path())
+        return result
 
 
 class SubscriptionAdmin(ModelAdmin):
@@ -133,6 +155,10 @@ class SubscriptionPricesAdmin(ModelAdmin):
     list_display = ('id', 'subscription_type', 'price', 'order', 'auth_group', 'publication')
     list_editable = ('subscription_type', 'price', 'order', 'auth_group', 'publication')
 
+
+# Re-register UserAdmin
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
 
 site.register(Subscription, SubscriptionAdmin)
 site.register(ExteriorSubscription, ExteriorSubscriptionAdmin)

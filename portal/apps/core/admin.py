@@ -626,7 +626,7 @@ class ArticleAdmin(VersionAdmin):
                     args=(object_id, ),
                 )
             )
-        return super(ArticleAdmin, self).change_view(request, object_id, form_url, extra_context)
+        return super().change_view(request, object_id, form_url, extra_context)
 
     def changelist_view(self, request, extra_context=None):
         if 'type__exact' not in request.GET:

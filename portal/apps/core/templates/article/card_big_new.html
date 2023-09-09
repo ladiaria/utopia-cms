@@ -7,13 +7,12 @@
       <div class="ld-card ld-card--big">
         {% render_toolbar_for article %}
         {% block image %}
-          {% if article.photo %}
+          {% if article.photo_render_allowed %}
             <a href="{{ article.get_absolute_url }}">
               <picture>
                 <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 700px)">
                 <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0)">
-                <img class="ld-card__img" data-sizes="auto"
-                     width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}
+                <img class="ld-card__img" data-sizes="auto" width="700" height="{{ article.photo.get_700w_size.1 }}"
                      title="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
               </picture>
             </a>
