@@ -21,7 +21,7 @@ def latest_activity(user):
             )
         )
         if latest_activity:
-            latest_activity = latest_activity[0]['latest_activity']
+            latest_activity = latest_activity[0]['latest_activity'].replace(microsecond=0)
     else:
         latest_activity = None
 

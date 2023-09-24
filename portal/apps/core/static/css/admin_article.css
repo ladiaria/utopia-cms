@@ -8,3 +8,5 @@ td.original p{height: auto !important;}
 .empty-form{display: none !important;}
 fieldset.collapse,fieldset.collapsed{display: block !important;}
 .change-form .object-tools{margin-top: -100px;}
+.dynamic-extensions td.field-body{width:50%;}
+.dynamic-extensions td.field-body textarea{width:100%;}

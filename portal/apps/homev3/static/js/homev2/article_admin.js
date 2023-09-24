@@ -33,20 +33,10 @@ var prepareFields = function(){
         $('.form-row.field-gallery').parent('fieldset').show();
         $('.inline-group').show();
     }
-
     $('#homearticle_set-group').hide();
-    $('div.inline-group div.inline-related').each(function(){
-        var fs = $(this).find('fieldset');
-        var h2 = $(this).find('h2:first');
-        // Don't collapse if fieldset contains errors
-        fs.addClass('collapse' + fs.find('div').hasClass('errors') ? ' collapsed' : '');
-        return;
-    });
     // custom position for the "extensions" inline
-    var div_body = $('#id_body').closest('.form-row');
-    var div_body_clone = div_body.clone();
-    div_body_clone.html($('#extensions-group'));
-    div_body.after(div_body_clone);
+    var fset_body = $('#id_body').closest('fieldset');
+    fset_body.after($('#extensions-group'));
 }
 
 var main_section_row_selected = function(radio_field){
