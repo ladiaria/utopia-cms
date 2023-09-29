@@ -8,6 +8,8 @@ import json
 import requests
 import pymongo
 from hashids import Hashids
+from pymailcheck import split_email
+from validate_email_address import validate_email as domain_validate_email
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
@@ -39,7 +41,7 @@ from django.urls import reverse
 
 from social_django.models import UserSocialAuth
 
-from apps import mongo_db
+from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
 
 from .exceptions import UpdateCrmEx
@@ -103,7 +105,7 @@ class Subscriber(Model):
     )
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
-    document = CharField('documento', max_length=50, blank=True, null=True)
+    document = CharField('documento de identidad', max_length=50, blank=True, null=True)
     phone = CharField('teléfono', max_length=20)
 
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
@@ -213,6 +215,10 @@ class Subscriber(Model):
             self.category_newsletters.values_list('slug', flat=True)
         )
 
+    def remove_newsletters(self):
+        self.newsletters.clear()
+        self.category_newsletters.clear()
+
     def get_newsletters(self):
         return ', '.join(self.get_newsletters_slugs())
 
@@ -294,8 +300,9 @@ def updatecrmuser(contact_id, field, value):
         r.raise_for_status()
 
 
-def email_extra_validations(email, instance_id=None, next_page=None, allow_blank=False):
+def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
     msg, error_msg_prefix = None, "El email ingresado "
+    error_msg_invalid = error_msg_prefix + 'no es un email válido.'
     error_msg_exists = error_msg_prefix + "ya posee una cuenta de usuario"
     error_msg_next = ("?next=" + next_page) if next_page else ""
     exclude_kwargs_user = {'id': instance_id} if instance_id else {}
@@ -303,29 +310,47 @@ def email_extra_validations(email, instance_id=None, next_page=None, allow_blank
 
     if not email:
         if not allow_blank:
-            msg = error_msg_prefix + 'no es un email válido.'
+            msg = error_msg_invalid
 
     else:
+        email = email.lower()
+        if old_email:
+            old_email = old_email.lower()
 
-        try:
-            validate_email(email)
-        except ValidationError as ve:
-            msg = ve.message
+        # 1. check if this email (only "on change") is included in our bouncers list
+        if old_email != email and email in bouncer_blocklisted:
+            msg = error_msg_prefix + "registra exceso de rebotes, no se permite su utilización."
         else:
 
-            if User.objects.filter(email__iexact=email).exclude(**exclude_kwargs_user).exists():
-                # TODO: use "reverse" to build the url
-                msg = '%s. <a href="/usuarios/entrar/%s">Ingresar</a>.' % (error_msg_exists, error_msg_next)
+            # 2. Django email validation
+            try:
+                validate_email(email)
+            except ValidationError as ve:
+                msg = ve.message
+            else:
 
-            elif UserSocialAuth.objects.filter(uid=email).exclude(**exclude_kwargs_user_sa).exists():
-                # TODO: use "reverse" to build the url
-                msg = '%s asociada a Google. <a href="/login/google-oauth2/%s">Ingresar con Google</a>.' % (
-                    error_msg_exists, error_msg_next
-                )
+                # 3. Domain validation + already used validation
+                if (
+                    not split_email(email)["domain"] in whitelisted_domains()
+                    and not bool(
+                        domain_validate_email(email, getattr(settings, "THEDAILY_VALIDATE_EMAIL_CHECK_MX", True))
+                    )
+                ):
+                    msg = error_msg_invalid
 
-            elif User.objects.filter(username__iexact=email).exclude(**exclude_kwargs_user).exists():
-                mail_managers("Multiple username in users", email)
-                msg = error_msg_prefix + 'no puede ser utilizado.'
+                elif User.objects.filter(email__iexact=email).exclude(**exclude_kwargs_user).exists():
+                    # TODO: use "reverse" to build the url
+                    msg = '%s. <a href="/usuarios/entrar/%s">Ingresar</a>.' % (error_msg_exists, error_msg_next)
+
+                elif UserSocialAuth.objects.filter(uid=email).exclude(**exclude_kwargs_user_sa).exists():
+                    # TODO: use "reverse" to build the url
+                    msg = '%s asociada a Google. <a href="/login/google-oauth2/%s">Ingresar con Google</a>.' % (
+                        error_msg_exists, error_msg_next
+                    )
+
+                elif User.objects.filter(username__iexact=email).exclude(**exclude_kwargs_user).exists():
+                    mail_managers("Multiple username in users", email)
+                    msg = error_msg_prefix + 'no puede ser utilizado.'
 
     return msg
 
@@ -341,11 +366,11 @@ def user_pre_save(sender, instance, **kwargs):
         actualusr = sender.objects.get(pk=instance.id)
         if not email_extra_validations_done:
             # email extra validations (user modification)
-            error_msg = email_extra_validations(instance.email, instance.id, allow_blank=True)
+            error_msg = email_extra_validations(actualusr.email, instance.email, instance.id, allow_blank=True)
     except User.DoesNotExist:
         if not email_extra_validations_done:
             # email extra validations (user creation)
-            error_msg = email_extra_validations(instance.email, allow_blank=True)
+            error_msg = email_extra_validations(None, instance.email, allow_blank=True)
         actualusr = instance
 
     # raise if email extra validations returned something
@@ -375,10 +400,11 @@ def subscriber_pre_save(sender, instance, **kwargs):
         return True
     try:
         actual_sub = sender.objects.get(pk=instance.id)
-        for f in list(settings.CRM_UPDATE_SUBSCRIBER_FIELDS.values()):
+        # TODO: change this 1-field-per-request approach to a new 1-request-only approach with all chanmges
+        for crm_field, f in list(settings.CRM_UPDATE_SUBSCRIBER_FIELDS.items()):
             if getattr(actual_sub, f) != getattr(instance, f):
                 try:
-                    updatecrmuser(instance.contact_id, f, getattr(instance, f))
+                    updatecrmuser(instance.contact_id, crm_field, getattr(instance, f))
                 except requests.exceptions.RequestException:
                     raise UpdateCrmEx("No se ha podido actualizar tu perfil, contactate con nosotros")
     except Subscriber.DoesNotExist:

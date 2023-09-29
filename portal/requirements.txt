@@ -25,6 +25,9 @@ django-nose==1.4.6
 django-recaptcha>2.0.6
 django-reversion
 django4-background-tasks
+pymailcheck
+py3DNS
+validate_email_address
 pycountry==22.3.5
 PyMongo
 pyPdf

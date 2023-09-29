@@ -43,7 +43,7 @@ class HomeTestCase(TestCase):
             self.assertEqual(response.status_code, 403, (response.status_code, response))
 
     def test_home_logged_in(self):
-        email, password = 'u1@example.com', User.objects.make_random_password()
+        email, password = 'u1@gmail.com', User.objects.make_random_password()
         user = User.objects.create_user(email, email, password)
         user.is_active = True
         user.save()
@@ -55,7 +55,7 @@ class HomeTestCase(TestCase):
                 self.assertEqual(response.status_code, 200)
 
     def test_home_staff_logged_in(self):
-        email, password = 'u1@example.com', User.objects.make_random_password()
+        email, password = 'u1@gmail.com', User.objects.make_random_password()
         user = User.objects.create_user(email, email, password)
         user.is_active, user.is_staff = True, True
         user.save()

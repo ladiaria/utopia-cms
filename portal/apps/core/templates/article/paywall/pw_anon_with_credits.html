@@ -22,7 +22,7 @@
     </div>
     <div class="ld-snackbar__text">
       <a href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}">Registrate</a>
-      para acceder a 10 artículos gratis por mes
+      para acceder a {{ signupwall_max_credits }} artículos gratis por mes
     </div>
   </div>
 </div>

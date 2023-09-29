@@ -123,6 +123,14 @@ def terms_and_conditions():
         return ''
 
 
+@register.simple_tag
+def nlsubscribed(user, nlobj):
+    return (
+        (nlobj.nltype == "p" and nlobj in user.subscriber.newsletters.all())
+        or (nlobj.nltype == "c" and nlobj in user.subscriber.category_newsletters.all())
+    )
+
+
 @register.filter(name='hasreplies')
 def comment_has_replies(value):
     return value.last_child is not None

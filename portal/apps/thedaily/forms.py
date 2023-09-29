@@ -141,6 +141,7 @@ class BaseUserForm(ModelForm):
     def custom_clean(self, exclude_self=False, error_use_next=True):
         cleaned_data = super().clean()
         error_msg = email_extra_validations(
+            self.instance.email,
             cleaned_data.get('email'),
             self.instance.id if exclude_self else None,
             error_use_next and (cleaned_data.get('next_page', '/') or "/"),
@@ -170,6 +171,7 @@ class BaseUserForm(ModelForm):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email')
+        labels = {"last_name": "Apellido", "email": "Email"}
 
 
 class UserForm(BaseUserForm):
@@ -380,7 +382,7 @@ class SubscriberForm(ModelForm):
         telephone = self.cleaned_data.get('telephone')
         if not telephone.isdigit():
             raise ValidationError("Ingresá sólo números en el teléfono.")
-        elif any(telephone.startswith(t) for t in getattr(settings, 'TELEPHONES_BLACKLIST', [])):
+        elif any(telephone.startswith(t) for t in getattr(settings, 'TELEPHONES_BLOCKLIST', [])):
             # Raise error to minimize the info given to possible bot
             raise UnreadablePostError
         return telephone
@@ -754,7 +756,7 @@ class GoogleSigninForm(ModelForm):
         phone = self.cleaned_data.get('phone')
         if not phone.isdigit():
             raise ValidationError("Ingresá sólo números en el teléfono.")
-        elif any(phone.startswith(t) for t in getattr(settings, 'TELEPHONES_BLACKLIST', [])):
+        elif any(phone.startswith(t) for t in getattr(settings, 'TELEPHONES_BLOCKLIST', [])):
             # Raise error to minimize the info given to possible bot
             raise UnreadablePostError
         return phone

@@ -1,44 +1,23 @@
-<div class="edit_profile_card__inner-section">
-  <div class="edit_profile_card__inner-section_header">
-    <label class="title" for="id_seguridad">Seguridad</label>
-    <div class="switch-container">
-      <span class="label-text on disabled">Obligatorias</span>
-      <label class="switch">
-        <input
-          type="checkbox"
-          id="id_seguridad"
-          name="id_seguridad"
-          checked
-          disabled
-        />
-        <span class="slider"></span>
-      </label>
+{% extends "thedaily/templates/profile/allow_communication.html" %}
+
+{% block required %}
+  <div class="edit_profile_card__inner-section">
+    <div class="edit_profile_card__inner-section_header">
+      <label class="title" for="id_seguridad">Seguridad</label>
+      <div class="switch-container">
+        <span class="label-text on disabled">Obligatorias</span>
+        <label class="switch">
+          <input type="checkbox" id="id_seguridad" name="id_seguridad" checked="checked" disabled="disabled"/>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="edit_profile_card__inner-section_body">
+      <p>Notificaciones esenciales por motivos de seguridad de tu cuenta. No es posible desactivar esta notificación.</p>
     </div>
   </div>
-  <div class="edit_profile_card__inner-section_body">
-    <p>Notificaciones esenciales por motivos de seguridad de tu cuenta. No es posible desactivar esta notificación.</p>
-  </div>
-</div>
-<div class="edit_profile_card__inner-section">
-  <div class="edit_profile_card__inner-section_header">
-    <label class="title" for="id_{{ field.name }}">Novedades</label>
-    <div class="switch-container">
-      <span class="label-text on" {% if not field.value %}style="display: none;"{% endif %}>Activadas</span>
-      <span class="label-text off" {% if field.value %}style="display: none;"{% endif %}>Activar</span>
-      <label class="switch">
-        <input
-          type="checkbox"
-          id="id_{{ field.name }}"
-          name="{{ field.name }}"
-          data-url="{% url 'communication-subscribe' com_type='allow_news' %}"
-          data-key="com_subscribe"
-          {% if field.value %} checked{% endif %}
-        />
-        <span class="slider"></span>
-      </label>
-    </div>
-  </div>
-  <div class="edit_profile_card__inner-section_body">
-    {% block description %}{% endblock %}
-  </div>
-</div>
+{% endblock %}
+
+{% block label %}Novedades{% endblock %}
+
+{% block data_url %}data-url="{% url 'communication-subscribe' com_type='allow_news' %}"{% endblock %}

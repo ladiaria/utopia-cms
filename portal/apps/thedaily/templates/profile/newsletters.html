@@ -1,4 +1,4 @@
-{% load l10n crispy_forms_filters %}
+{% load l10n crispy_forms_filters thedaily_tags %}
 
 <section id="newsletters" class="scrollspy edit_profile_card">
   <div id="{{ field.auto_id }}_wrapper">
@@ -23,9 +23,10 @@
                   {{ nlobj.profile_newsletter_name|default:nlobj.name }}
                   {% if nlobj.newsletter_new_pill %} <span class="new">NUEVO</span> {% endif %}
                 </label>
+                {% nlsubscribed user nlobj as nlchecked %}
                 <div class="switch-container">
                   <span class="label-text on" style="display: none;">Activadas</span>
-                  <span class="label-text off">Activar</span>
+                  <span class="label-text off{% if email_is_bouncer %} grey-text{% endif %}">Activar</span>
                   <label class="switch">
                     <input
                       type="checkbox"
@@ -34,11 +35,8 @@
                       value="{{ choice.0|unlocalize }}"
                       data-url="{% url 'nl-auth-subscribe' nltype=nlobj.nltype nlslug=nlobj.slug %}"
                       data-key="nl_subscribe"
-                      {% if nlobj.nltype == "p" and nlobj in user.subscriber.newsletters.all %}
-                        checked="checked"
-                      {% elif nlobj.nltype == "c" and nlobj in user.subscriber.category_newsletters.all %}
-                        checked="checked"
-                      {% endif %}
+                      data-bouncer="{{ email_is_bouncer|lower }}"
+                      {% if nlchecked %}checked="checked"{% elif email_is_bouncer %}disabled="disabled"{% endif %}
                     />
                     <span class="slider"></span>
                   </label>

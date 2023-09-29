@@ -3,7 +3,9 @@ from __future__ import unicode_literals
 
 from builtins import str
 
+from django.conf import settings
 from django.http import HttpResponseRedirect
+from django.db.models.deletion import Collector
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -23,6 +25,7 @@ from .models import (
     SubscriptionPrices,
     OAuthState,
 )
+from .utils import collector_analysis
 from .exceptions import UpdateCrmEx
 
 
@@ -96,7 +99,7 @@ class SubscriberAdmin(ModelAdmin):
         'get_latest_article_visited',
     )
     list_filter = ['newsletters', 'category_newsletters', 'pdf', 'allow_news', 'allow_promotions', 'allow_polls']
-    actions = ['send_account_info']
+    actions = ['send_account_info', "delete_user"]
     fieldsets = (
         (None, {
             'fields': (
@@ -136,6 +139,35 @@ class SubscriberAdmin(ModelAdmin):
             ),
         )
 
+    def delete_user(self, request, queryset):
+        msg_err, msg_success = None, None
+        if queryset.count() > 1:
+            msg_err = "La acción no permite seleccionar más de un suscriptor"
+        else:
+            s = queryset[0]
+            u = s.user
+            if s.plan_id or u.is_active or u.is_staff or u.is_superuser:
+                msg_err = "No se permite eliminar usuarios 'staff' o usuarios activos"
+            else:
+                collector = Collector(using='default')
+                collector.collect([u])
+                safe_to_delete, msg_err = collector_analysis(collector.data)
+                if safe_to_delete:
+                    try:
+                        u.delete()
+                    except Exception as e:
+                        message = e.message
+                    else:
+                        msg_success = "El suscriptor seleccionado y su usuario fueron eliminados correctamente"
+                else:
+                    msg_err = "El conjunto de datos relacionados al usuario que se pretende eliminar se considera " \
+                              "importante o demasiado grande: %s" % msg_err
+        if msg_success:
+            self.message_user(request, msg_success)
+        else:
+            self.message_user(request, msg_err, level=messages.ERROR)
+
+
     def save_model(self, request, obj, form, change):
         if form.is_valid():
             try:
@@ -149,6 +181,7 @@ class SubscriberAdmin(ModelAdmin):
                     print(e)
 
     send_account_info.short_description = "Enviar información de usuario"
+    delete_user.short_description = "Eliminar suscriptor y usuario asociado"
 
 
 class SubscriptionPricesAdmin(ModelAdmin):

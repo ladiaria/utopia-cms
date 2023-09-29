@@ -100,17 +100,23 @@
             </span>
           </p>
           <p class="edit_profile_card__body_line">
-            <span class="bold">Correo electrónico: </span>
+            <span class="bold">Email: </span>
             <span class="value">
               {% if user.email %}
                 {{ user.email }}
+                {% if email_is_bouncer %}
+                  <p class="error red-text">
+                    Exceso de rebotes, te sugerimos que ingreses a tu email para revisar si hay algún problema y
+                    chequear que te quede espacio suficiente para recibir emails.
+                  </p>
+                {% endif %}
               {% else %}
                 sin asingar <span class="needs-attention-icon"></span>
               {% endif %}
             </span>
           </p>
           <p class="edit_profile_card__body_line">
-            <span class="bold">Teléfono móvil: </span>
+            <span class="bold">Teléfono: </span>
             <span class="value">
               {% if subscriber.phone %}
                 {{ subscriber.phone }}
@@ -341,12 +347,12 @@
 
             setCookie('show_msg', "true", 1);
 
-            if($('#allow_notification').prop('checked') && getCookie('notifyme', 1) == "false") {
+            if($("#" + inputId).prop('checked') && getCookie('notifyme', 1) == "false") {
               rp();
               showNotification({
                 text: "Tus cambios fueron guardados"
               })
-            } else if(!$('#allow_notification').prop('checked') && getCookie('notifyme', 1) == "true") {
+            } else if(!$("#" + inputId).prop('checked') && getCookie('notifyme', 1) == "true") {
               // TODO: DELETE can return 400 (and then a js error) if there is no DeviceSubscribed to remove.
               unsubscribeUser();
             }
@@ -382,6 +388,8 @@
       for (let i = 0; i < switches.length; i++) {
         const switchElement = switches[i];
         const input = switchElement.querySelector('input[type="checkbox"]');
+        const dataKey = input.getAttribute('data-key');
+        const dataBouncer = eval(input.getAttribute('data-bouncer'));
         const offLabel = switchElement.querySelector('.off');
         const onLabel = switchElement.querySelector('.on');
         if (offLabel) offLabel.style.display = input.checked ? "none" : "inline-block";
@@ -390,21 +398,30 @@
         input.addEventListener("change", () => {
           const slider = switchElement.querySelector(".slider");
           const newsletterUrl = input.getAttribute('data-url');
-          const dataKey = input.getAttribute('data-key');
-
           slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
           offLabel.style.display = input.checked ? "none" : "inline-block";
           onLabel.style.display = input.checked ? "inline-block" : "none";
           handleNewsletterSwitchChange(newsletterUrl, { [dataKey]: input.checked }, switchElement, input.id);
+          // disable input after a bouncer NL or communication deactivation
+          if (["nl_subscribe", "com_subscribe"].includes(dataKey) && !input.checked && dataBouncer) {
+            input.setAttribute("disabled", "disabled");
+          }
         });
       }
 
       // Open modal
-      document.getElementById("edit_profile_btn").addEventListener("click", function(e){
-        e.stopPropagation();
+      function edit_profile_open_modal(){
         document.getElementById("edit_profile_modal").style.display = "flex";
         document.querySelector('html').style.overflow = "hidden";
+      }
+      document.getElementById("edit_profile_btn").addEventListener("click", function(e){
+        e.stopPropagation();
+        edit_profile_open_modal();
       });
+      // open also on errors
+      {% if user_form.errors %}
+        edit_profile_open_modal();
+      {% endif %}
 
       // Close modal when clicking outside
       document.getElementById("edit_profile_modal").addEventListener("click", function(e){

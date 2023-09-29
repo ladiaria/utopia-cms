@@ -7,8 +7,9 @@
     </select>
     </div>
     <label for="id_{{ field.id_for_label }}" {% if field.field.required %}class="required"{% endif %}>
-            {{ field.label|safe }}{% if field.field.required %}<span class="asterisk"> (requerido)</span>{% endif %}
-        </label>
+        {{ field.label|safe }}
+        {% if field.field.required %}<span class="asterisk asterisk-select">*</span>{% endif %}
+    </label>
     {% for error in field.errors %}
         <small id="error_{{ forloop.counter }}_id_{{ field.name }}" class="error red-text">
             {{ error }}

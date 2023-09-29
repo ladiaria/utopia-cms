@@ -378,6 +378,7 @@ MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
 # Change to false if the signupwall middleware is removed
 SIGNUPWALL_ENABLED = True
+SIGNUPWALL_MAX_CREDITS = 10
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = 'Nueva suscripción'
@@ -483,7 +484,7 @@ COMPRESS_PRECOMPILERS = (
 
 BLEACH_STRIP_TAGS = True
 
-# Online sync User fields with CRM (empty, using hardcoded fields only)
+# Online sync User fields with CRM (key=crm_contact_field_name, value=cms_subscriber_field_name)
 CRM_UPDATE_SUBSCRIBER_FIELDS = {}
 # Online sync User fields with CRM enabled by default
 CRM_UPDATE_USER_ENABLED = True

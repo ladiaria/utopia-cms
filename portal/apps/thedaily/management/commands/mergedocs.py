@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+# TODO: This command should be reviewed and updated/deleted
 """
 Test cases:
 * 1 subscriber, 1 user                                 OK
@@ -7,12 +7,10 @@ Test cases:
 * 2 subscribers, 1 user                                OK
 * 2 subscribers, no email for the user at the end
 * 2 subscribers, 2 users (one with things)
-
-This command should be reviewed and updated/deleted, apacheco
-
 """
 from __future__ import print_function
 from __future__ import unicode_literals
+
 from collections import Iterable
 
 from django.core.management.base import BaseCommand
@@ -24,11 +22,14 @@ from django.db.models import Count
 from django.template.loader import render_to_string
 from django.contrib.auth.hashers import is_password_usable
 from django.contrib.admin.util import NestedObjects
+from django.contrib.sites.models import Site
 
 from core.models import Article
 from thedaily.models import Subscriber
 
-# Classes that cannot be deleted in a user or subscriber cascade deletion
+
+# Classes that cannot be deleted in a user or subscriber cascade deletion.
+# TODO: migrate using ..utils.collector_analysis
 PROTECTED_CLASSES = (Article, )
 
 
@@ -55,21 +56,20 @@ def delete_bastard(obj):
 
 
 class Command(BaseCommand):
+    # TODO: upgrade to django4 (args usage)
     help = 'Merge subscribers and users with same document'
     args = "mergedocs"
 
     def handle(self, *args, **options):
         # for each repeated document
-        for dupedoc in Subscriber.objects.values('document').\
-                annotate(Count('id')).order_by().filter(document__isnull=False,
-                id__count__gt=1):
+        for dupedoc in Subscriber.objects.values(
+            'document'
+        ).annotate(Count('id')).order_by().filter(document__isnull=False, id__count__gt=1):
             try:
                 # obtain a subscriber with this document and contact_id set
-                costumer = Subscriber.objects.get(document=dupedoc['document'],
-                    contact_id__isnull=False)
+                costumer = Subscriber.objects.get(document=dupedoc['document'], contact_id__isnull=False)
                 # iterate over the others and merge fileds into the costumer
-                for s in Subscriber.objects.filter(document=dupedoc['document'],
-                        contact_id__isnull=True):
+                for s in Subscriber.objects.filter(document=dupedoc['document'], contact_id__isnull=True):
                     # merge the fields for the user object that can be blank
                     for f in ('first_name', 'last_name', 'email'):
                         try:
@@ -84,23 +84,19 @@ class Command(BaseCommand):
                             print("Merging %s from %s to %s" % (f, s, costumer))
                     # set password if has user (loop not broken) and if required
                     else:
-                        if not is_password_usable(costumer.user.password) and \
-                                is_password_usable(s.user.password):
+                        if not is_password_usable(costumer.user.password) and is_password_usable(s.user.password):
                             costumer.user.password = s.user.password
                             costumer.user.save()
-                            print("Merging password from %s to %s" % (s,
-                                costumer))
+                            print("Merging password from %s to %s" % (s, costumer))
                 # iterate again to check email field and deletion
-                for s in Subscriber.objects.filter(document=dupedoc['document'],
-                        contact_id__isnull=True):
+                for s in Subscriber.objects.filter(document=dupedoc['document'], contact_id__isnull=True):
                     if not costumer.user.email:
                         # if email still blank set username if is a valid email
                         try:
                             validate_email(s.user.username)
                             costumer.user.email = s.user.username
                             costumer.user.save()
-                            print("Merging username from %s to %s's email" % \
-                                (s, costumer))
+                            print("Merging username from %s to %s's email" % (s, costumer))
                         except ValidationError:
                             pass
                     # delete the bastards
@@ -111,15 +107,13 @@ class Command(BaseCommand):
                     costumer.user.save()
                     print("Activating %s" % costumer)
                 ctx = {'email': costumer.user.email}
-                if costumer.user.username != costumer.user.email and not \
-                        costumer.user.username.isdigit():
+                if costumer.user.username != costumer.user.email and not costumer.user.username.isdigit():
                     ctx['username'] = costumer.user.username
                 costumer.user.email_user(
-                    '[ladiaria.com.uy] Tu cuenta de usuario',
-                    render_to_string(
-                        'notifications/validation_email.html', ctx))
+                    '[%s] Tu cuenta de usuario' % Site.objects.get_current().name,
+                    render_to_string('notifications/validation_email.html', ctx),
+                )
             except Subscriber.DoesNotExist:
-                print("Ningún suscriptor con id de cliente con documento %s" \
-                    % dupedoc)
+                print("Ningún suscriptor con id de cliente con documento %s" % dupedoc)
             except MultipleObjectsReturned as e:
                 print(e.message)

@@ -1,4 +1,3 @@
-/* global Coral, jQuery */
 (function($){
 
   function dismissPaywallSnackbar(){
@@ -58,7 +57,7 @@
       }
     });
 
-    $('.alert-close').click(function(){
+    $('.alert-close').on("click", function(){
       $(".alert-box").fadeOut("slow", function(){});
     });
 
@@ -139,10 +138,11 @@
     $('.ld-audio__overlay-close-btn').on('click', function(){
       $('.ld-audio__overlay').removeClass('active');
     });
+
     // toggle password visibility
-    $(".toggle-password").click(function(){
+    $(".toggle-password").on("click", function(){
       $(this).toggleClass("visibility-on");
-      var id = $(this).attr("toggle");
+      var id = $(this).data("toggle");
       var input = $(id);
       if(input.attr("type") == "password"){
         input.attr("type", "text");
@@ -152,7 +152,7 @@
     });
 
     // show more article tags
-    $('.article-tags > .expand').click(function(){
+    $('.article-tags > .expand').on("click", function(){
       $('.article-tags .more-tags').removeClass('hidden');
       $(this).hide();
       return false;
@@ -160,7 +160,7 @@
 
     // faq component behavior
     $('.ld-collapsible').addClass('js');
-    $('.ld-collapsible > li > .collapsible-header').click(function(){
+    $('.ld-collapsible > li > .collapsible-header').on("click", function(){
       $(this).parent('li').toggleClass('active');
       $(this).next('.collapsible-body').slideToggle();
     });

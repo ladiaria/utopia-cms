@@ -63,7 +63,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 
-from apps import blacklisted
+from apps import blocklisted
 from core.templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from photologue_ladiaria.models import PhotoExtended
 from photologue.models import Gallery, Photo
@@ -198,7 +198,7 @@ class Publication(Model):
                 .exclude(user__email='')
                 .values_list('user__email', flat=True)
             )
-            - blacklisted
+            - blocklisted
         )
 
     subscriber_count.short_description = 'Suscrip. NL'
@@ -639,7 +639,7 @@ class Category(Model):
                 .exclude(user__email='')
                 .values_list('user__email', flat=True)
             )
-            - blacklisted
+            - blocklisted
         )
 
     subscriber_count.short_description = 'Suscrip. NL'

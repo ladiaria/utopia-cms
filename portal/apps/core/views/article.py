@@ -206,6 +206,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'comments_count': comments_count,
         'publication': publication,
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
+        "signupwall_truncate": getattr(settings, "SIGNUPWALL_TRUNCATE_ARTICLE_CHARS", 100),
+        "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
         'publication_newsletters':
             Publication.objects.filter(has_newsletter=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL),
         'date_published_use_main_publication': (

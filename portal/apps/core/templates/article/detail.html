@@ -301,7 +301,9 @@
           {% else %}
             {# signupwall raised #}
             <!-- Hard wall -->
-            <div class="article-body article-body--faded">{{ article.body|ldmarkup:article.id|truncatehtml:100 }}</div>
+            <div class="article-body article-body--faded">
+              {{ article.body|ldmarkup:article.id|truncatehtml:signupwall_truncate }}
+            </div>
             {% include 'article/paywall/pw_anon_wo_credits.html' %}
           {% endif %}
 
@@ -319,7 +321,7 @@
               {# Hard wall -> Suscripción #}
               <!-- Hard wall / suscripción-->
               <div class="article-body article-body--faded">
-                {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
+                {{ article.body|ldmarkup:article.id|truncatehtml:signupwall_truncate }}
               </div>
               {% include 'article/paywall/pw_auth_wo_credits.html' %}
             {% endif %}
@@ -329,7 +331,7 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall %}{# closed in line 650 #}
+        {% if not request.signupwall %}{# closed in line 652 #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
@@ -647,7 +649,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 332 #}
+        {% endif %}{# opened in line 334 #}
 
       {% else %}{# restricted content message #}
 
@@ -664,7 +666,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 796 #}
+    {% if not request.signupwall %}{# closed in line 798 #}
 
       {% if article.public %}
 
@@ -793,7 +795,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 667 #}
+    {% endif %}{# opened in line 669 #}
 
     {% block article_extra %}{% endblock %}
 

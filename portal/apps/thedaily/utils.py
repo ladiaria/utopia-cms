@@ -3,18 +3,44 @@ from __future__ import unicode_literals
 
 from operator import attrgetter
 
+from actstream.models import Follow
+from actstream.registry import check
+from social_django.models import UserSocialAuth
+
 from django.conf import settings
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.db.models import Value
+from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
-from actstream.models import Follow
-from actstream.registry import check
-
-from core.models import Category, Publication
+from core.models import Category, Publication, ArticleViewedBy
+from thedaily.models import Subscriber, SentMail, OAuthState
 
 from .models import Subscriber
+
+
+non_relevant_data_max_ammounts = {
+    User: 1,
+    Subscriber: 1,
+    Subscriber.newsletters.through: 10,
+    Subscriber.category_newsletters.through: 10,
+    UserSocialAuth: 1,
+    SentMail: 10,
+    ArticleViewedBy: 10,
+    OAuthState: 1,
+}
+
+
+def collector_analysis(collector_data, indent_level=1):
+    data_keys = set(collector_data.keys())
+    safety, report = True, ""
+    for key in collector_data:
+        key_count = len(collector_data[key])
+        if key not in non_relevant_data_max_ammounts or key_count > non_relevant_data_max_ammounts[key]:
+            safety = False
+        report += "\n%s%s: %d" % ("\t" * indent_level, key, key_count)
+    return safety, report
 
 
 def recent_following(user, *models):

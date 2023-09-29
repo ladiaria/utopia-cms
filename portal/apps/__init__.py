@@ -12,6 +12,7 @@ TODO: if mongo server fails after this global vars are set, the global client in
 from __future__ import unicode_literals
 
 import csv
+import json
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 
@@ -32,8 +33,27 @@ try:
 except ServerSelectionTimeoutError:
     mongo_db = None
 
-# blacklisted emails
-global blacklisted
-blacklisted = set(
-    [row[0] for row in csv.reader(open(settings.CORE_NEWSLETTER_BLACKLIST))]
-) if hasattr(settings, 'CORE_NEWSLETTER_BLACKLIST') else set()
+# two email block lists (bounces in last 7 days, and bounces max ammount reached)
+global blocklisted, bouncer_blocklisted
+blocklisted, bouncer_blocklisted = [
+    (
+        set(
+            [row[0] for row in csv.reader(open(getattr(settings, csv_setting)))]
+        ) if hasattr(settings, csv_setting) else set()
+    ) for csv_setting in ('CORE_NEWSLETTER_BLOCKLIST', "THEDAILY_EMAILBOUNCE_MAX_REACHED_CSV")
+]
+
+
+def whitelisted_domains(update_list=None):
+    dlist_json = getattr(settings, "THEDAILY_DOMAIN_WHITELIST_JSON", None)
+    if not dlist_json:
+        return []
+    if update_list is None:
+        fobj = open(dlist_json)
+        dlist = json.loads(fobj.read()).get("domains", [])
+        fobj.close()
+        return dlist
+    else:
+        fobj = open(dlist_json, "w")
+        fobj.write(json.dumps({"domains": update_list}))
+        fobj.close()

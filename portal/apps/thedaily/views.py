@@ -47,6 +47,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.decorators.cache import never_cache, cache_control
 from django.template import TemplateDoesNotExist
+from django.utils.html import strip_tags
 
 from actstream import actions
 from actstream.models import following
@@ -55,7 +56,7 @@ from favit.utils import is_xhr
 from django_amp_readerid.decorators import readerid_assoc
 from django_amp_readerid.utils import amp_login_param, get_related_user
 
-from apps import mongo_db
+from apps import mongo_db, bouncer_blocklisted
 from libs.utils import set_amp_cors_headers, decode_hashid
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
@@ -119,9 +120,10 @@ def nl_auth_subscribe(request, nltype, nlslug):
             if nl_subscribe_activated:
                 getattr(user.subscriber, nl_field).add(nlobj)
             else:
+                assert user.email and user.email not in bouncer_blocklisted
                 getattr(user.subscriber, nl_field).remove(nlobj)
         except Exception:
-            # for some reason UpdateCrmEx does not work in test (Python ver?)
+            # TODO: check when UpdateCrmEx raised in test (Python ver?)
             return HttpResponseBadRequest()
         return set_amp_cors_headers(request, JsonResponse({})) if from_amp else HttpResponse()
     else:
@@ -135,14 +137,19 @@ def communication_subscribe(request, com_type):
     from_amp = request.GET.get("__amp_source_origin")
     subscribe_activated = request.POST.get("com_subscribe") == "true"
     user = get_related_user(request) if from_amp else request.user
-    if not user.is_anonymous and (request.method == 'POST' or request.is_ajax()):
+    if (
+        not user.is_anonymous
+        and (request.method == 'POST' or request.is_ajax())
+        and user.email
+        and user.email not in bouncer_blocklisted
+    ):
         target_field = com_type  # assuming the field here
         try:
             if getattr(user.subscriber, target_field) != subscribe_activated:
                 setattr(user.subscriber, target_field, subscribe_activated)
                 user.subscriber.save()
         except Exception:
-            # for some reason UpdateCrmEx does not work in test (Python ver?)
+            # TODO: check when UpdateCrmEx raised in test (Python ver?)
             return HttpResponseBadRequest()
         return set_amp_cors_headers(request, JsonResponse({})) if from_amp else HttpResponse()
     else:
@@ -162,7 +169,7 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
         decoded = decode_hashid(hashed_id)
         if decoded:
             subscriber = get_object_or_404(Subscriber, id=decoded[0])
-            if not subscriber.user:
+            if (not subscriber.user or not subscriber.user.email or subscriber.user.email in bouncer_blocklisted):
                 raise Http404
             try:
                 subscriber.newsletters.add(publication)
@@ -200,7 +207,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
         decoded = decode_hashid(hashed_id)
         if decoded:
             subscriber = get_object_or_404(Subscriber, id=decoded[0])
-            if not subscriber.user:
+            if (not subscriber.user or not subscriber.user.email or subscriber.user.email in bouncer_blocklisted):
                 raise Http404
             try:
                 subscriber.category_newsletters.add(category)
@@ -850,9 +857,8 @@ def edit_profile(request, user=None):
 
         old_email = user.email
         if user_form.is_valid() and profile_form.is_valid():
+
             try:
-                user_form.save()
-                profile_form.save()
 
                 # delete possible non-finished google signin (now is finished)
                 try:
@@ -866,20 +872,31 @@ def edit_profile(request, user=None):
                     )
                     if not was_sent:
                         raise Exception("Error al enviar email de verificación para el usuario %s" % user)
+                    user_form.save()
+                    profile_form.save()
                     user.is_active = False
                     user.save()
                     messages.success(request, 'Perfil actualizado, revisá tu email para verificar el cambio de email.')
                     logout(request)
                     return HttpResponseRedirect(reverse('account-logout'))
                 else:
+                    user_form.save()
+                    profile_form.save()
                     messages.success(request, 'Perfil Actualizado.')
+
             except UpdateCrmEx as e:
+                user.refresh_from_db()
                 messages.warning(request, e.displaymessage)
+
             except Exception as exc:
+                user.refresh_from_db()
                 msg = "Error al enviar email de verificacion para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 user_form.add_error(None, msg)
                 profile_form.add_error(None, msg)
+
+        else:
+            user.refresh_from_db()
     else:
         user_form = UserForm(instance=user)
         profile_form = ProfileForm(instance=profile)
@@ -916,6 +933,7 @@ def edit_profile(request, user=None):
                 user.subscriber.address,
             )
         ),
+        "email_is_bouncer": user.email in bouncer_blocklisted,
     }
 
 
@@ -1143,10 +1161,12 @@ def update_user_from_crm(request):
                     mail_managers('Multiple email in users', email)
                     return HttpResponseServerError()
                 except IntegrityError as ie:
-                    mail_managers('IntegrityError saving user', str(ie))
+                    mail_managers('IntegrityError saving user', "%s: %s" % (email, strip_tags(str(ie))))
                     return HttpResponseServerError()
         except IntegrityError as ie:
-            mail_managers('IntegrityError saving user', str(ie))
+            mail_managers(
+                'IntegrityError saving User or Subscriber', "contact_id=%s, %s" % (contact_id, strip_tags(str(ie)))
+            )
             return HttpResponseServerError()
         except KeyError:
             pass
@@ -1217,7 +1237,7 @@ def amp_access_authorization(request):
 
             else:
 
-                MAX_CREDITS = 10
+                MAX_CREDITS = settings.SIGNUPWALL_MAX_CREDITS
 
                 # Find up to MAX_CREDITS + 2 articles (more than that makes no difference in this logic)
                 articles_visited = set() if (article.is_public() or restricted_article) else set([article.id])
@@ -1685,7 +1705,7 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
 @never_cache
 @to_response
 def disable_profile_property(request, property_id, hashed_id):
-    """Disables the profile bool property_id related to the subscriber matching the hashed_id argument given"""
+    """ Disables the profile bool property_id related to the subscriber matching the hashed_id argument given """
     try:
         subscriber = get_object_or_404(Subscriber, id=decode_hashid(hashed_id)[0])
         if not subscriber.user:

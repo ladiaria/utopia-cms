@@ -155,7 +155,8 @@ class SignupwallMiddleware(MiddlewareMixin):
             # for the user in this month and add 1 if this article is not restricted and is not in the set,
             # we not need to know if there are more than credits+2.
             # Raise signupwall if the user has more than credits.
-            credits, articles_visited = 10, set() if restricted_article else set([article.id])
+            credits = settings.SIGNUPWALL_MAX_CREDITS
+            articles_visited = set() if restricted_article else set([article.id])
             articles_visited_count = len(articles_visited)
             if mongo_db is not None:
                 for x in mongo_db.core_articleviewedby.find({'user': user.id, 'allowed': None}):

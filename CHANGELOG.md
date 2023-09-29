@@ -1,3 +1,26 @@
+# version 0.4.4 (2023-09-29)
+
+- toggle pass js fixed.
+- Support for signupwall max credits configured by settings.
+- Better new style on login/registration/subscription forms
+- Truncate chars ammount for walled article given by settings.
+- Subscriber modelAdmin action to allow delete the user related whit constraints.
+- Support to whitelist domains on email domain validation that was also included now.
+- Allow to check on email validation against a bouncers email list.
+- Better position and css for article-extensions in Article admin.
+- Removed code already addressed by the new version of 'collapse.js' included (and used since we updated to Django4) in Django4.
+- dahsboard: report datetime column improved, css and js in admin for core.Article fixed and improved.
+- syntax code style improved in many modeules.
+- smtp exception handling improved in send_category_nl (wip).
+- photo rendering improved in cover article template.
+- fix latest activity value in dashboard app.
+- Handle CRM Exception in a better UserAdmin.
+- separate "From" header on notification and newsletter deliveries in two different settings.
+- core: martor custom script order fix.
+- dashboard: fix article counter for publication, remove custom hardcoded values and improve amother mngmnt command.
+- avoid error if more than one Google oauth assoc.
+- Support to receive also a featured section for the tag that renders a publication grid.
+
 # version 0.4.3 (2023-08-28)
 
 - Article collections feature.

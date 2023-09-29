@@ -1,0 +1,25 @@
+{% block required %}{% endblock %}
+<div class="edit_profile_card__inner-section">
+  <div class="edit_profile_card__inner-section_header">
+    <label class="title" for="id_{{ field.name }}">{% block label %}{% endblock %}</label>
+    <div class="switch-container">
+      <span class="label-text on" {% if not field.value %}style="display: none;"{% endif %}>Activadas</span>
+      <span class="label-text off{% if email_is_bouncer %} grey-text{% endif %}" {% if field.value %}style="display: none;"{% endif %}>Activar</span>
+      <label class="switch">
+        <input
+          type="checkbox"
+          id="id_{{ field.name }}"
+          name="{{ field.name }}"
+          {% block data_url %}{% endblock %}
+          data-key="com_subscribe"
+          data-bouncer="{{ email_is_bouncer|lower }}"
+          {% if field.value %}checked="checked"{% elif email_is_bouncer %}disabled="disabled"{% endif %}
+        />
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+  <div class="edit_profile_card__inner-section_body">
+    {% block description %}{% endblock %}
+  </div>
+</div>

@@ -26,7 +26,7 @@ from django.template import Engine, Context
 from django.contrib.sites.models import Site
 from django.utils import translation
 
-from apps import blacklisted
+from apps import blocklisted
 from core.models import Category, CategoryNewsletter, Section, Article, get_latest_edition
 from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
@@ -203,7 +203,7 @@ def build_and_send(
                 receivers = receivers.filter(allow_news=True).exclude(category_newsletters__slug=category_slug)
             else:
                 receivers = receivers.filter(category_newsletters__slug=category_slug)
-            receivers = receivers.exclude(user__email__in=blacklisted)
+            receivers = receivers.exclude(user__email__in=blocklisted)
             # if both "starting_from" we can filter now with the minimum
             if starting_from_s and starting_from_ns:
                 receivers = receivers.filter(user__email__gt=min(starting_from_s, starting_from_ns))
