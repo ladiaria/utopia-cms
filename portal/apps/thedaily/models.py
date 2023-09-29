@@ -363,9 +363,12 @@ def user_pre_save(sender, instance, **kwargs):
         del instance.email_extra_validations_done
 
     try:
+        update_fields, bypass = kwargs.get("update_fields"), False
+        if update_fields:
+            bypass = len(update_fields) == 1 and any(field in update_fields for field in ("last_login", "password"))
         actualusr = sender.objects.get(pk=instance.id)
-        if not email_extra_validations_done:
-            # email extra validations (user modification)
+        if not bypass and not email_extra_validations_done:
+            # email extra validations on user modification (login and password change actions are not considered).
             error_msg = email_extra_validations(actualusr.email, instance.email, instance.id, allow_blank=True)
     except User.DoesNotExist:
         if not email_extra_validations_done:

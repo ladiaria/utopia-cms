@@ -836,7 +836,7 @@ def password_change(request, user_id=None, hash=None):
             password_change_form = PasswordChangeBaseForm(post) if is_post else PasswordChangeBaseForm()
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
-        user.save()
+        user.save(update_fields=["password"])
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
