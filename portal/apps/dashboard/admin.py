@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-
 from __future__ import unicode_literals
+
 from django.contrib.admin import ModelAdmin, SimpleListFilter, site
+
+from apps.admin import ReadOnlyModelAdmin
 from dashboard.models import NewsletterDelivery, AudioStatistics
 
 
@@ -39,9 +41,10 @@ class NewsletterDeliveryAdmin(ModelAdmin):
     date_hierarchy = 'delivery_date'
 
 
-class AudioStatisticsAdmin(ModelAdmin):
+class AudioStatisticsAdmin(ReadOnlyModelAdmin):
+    # TODO: audio linked to audio asset
     list_display = ['audio', 'subscriber', 'percentage', 'amp_click']
-    raw_id_fields = ['audio', 'subscriber']
+    list_filter = ['percentage']
 
 
 site.register(NewsletterDelivery, NewsletterDeliveryAdmin)
