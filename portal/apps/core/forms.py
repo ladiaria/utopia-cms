@@ -19,34 +19,8 @@ def gen_gonzo(form, aslug='', aid=''):
     return do_gonzo(aslug, aid)
 
 
-class EditionForm(Form):
-    article = CharField(widget=HiddenInput)
-    gonzo = CharField(widget=HiddenInput)
-
-    def __init__(self, *args, **kwargs):
-        initial = {}
-        if 'article' in kwargs:
-            self.article = kwargs.get('article')
-            initial['article'] = self.article.slug
-            del kwargs['article']
-        else:
-            raise ValidationError('Missing article')
-        initial['gonzo'] = gen_gonzo(self)
-        if 'initial' in kwargs:
-            kwargs['initial'].update(initial)
-        else:
-            kwargs['initial'] = initial
-        super(ArticleForm, self).__init__(*args, **kwargs)
-
-    def clean(self):
-        data = self.cleaned_data
-        gonzo = data.get('gonzo', '')
-        if gonzo != gen_gonzo(self, data.get('article', ''), self.article.id):
-            raise ValidationError('Ha ocurrido un error interno.')
-        return data
-
-
 class ArticleForm(Form):
+    # TODO: check if this class is needed
     article = CharField(widget=HiddenInput)
     gonzo = CharField(widget=HiddenInput)
 
@@ -63,7 +37,7 @@ class ArticleForm(Form):
             kwargs['initial'].update(initial)
         else:
             kwargs['initial'] = initial
-        super(ArticleForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def clean(self):
         data = self.cleaned_data

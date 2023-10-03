@@ -22,12 +22,12 @@ class PhotoExtendedModelForm(forms.ModelForm):
     date_taken = forms.DateField(label='Tomada el', widget=admin.widgets.AdminDateWidget(), required=False)
 
     def __init__(self, *args, **kwargs):
-        super(PhotoExtendedModelForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.instance.id:
             self.initial['date_taken'] = self.instance.image.date_taken
 
     def save(self, commit=True):
-        instance = super(PhotoExtendedModelForm, self).save(commit=commit)
+        instance = super().save(commit=commit)
         instance.image.date_taken = self.cleaned_data['date_taken']
         if not instance.image._old_image:
             # this is a new image, we need to "fake" the old image to avoid photologue.Photo attemp to rm a "None" file

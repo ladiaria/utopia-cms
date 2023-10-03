@@ -1,3 +1,13 @@
+# version 0.4.5 (2023-10-03)
+
+- ReadOnlyModelAdmin class to use for some ModelAdmin.
+- allow logins and password changes with invalid email domains.
+- suqare version field length upd in photologue custom app.
+- better verbose name in Subscriber model.
+- Archived unused things, super calls simplifications. EditionAdmin fixes and TODO's.
+- Allow deletion in AudioStats modeladmin.
+- collector analysis "settings" updates.
+
 # version 0.4.4 (2023-09-29)
 
 - toggle pass js fixed.

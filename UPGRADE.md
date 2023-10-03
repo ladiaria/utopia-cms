@@ -1,3 +1,14 @@
+# From version 0.4.4 to 0.4.5
+
+```
+git pull
+git checkout 0.4.5
+cd portal
+# activate your virtual env
+./manage.py migrate
+./manage.py collectstatic -c
+```
+
 # From version 0.4.3 to 0.4.4
 
 ```

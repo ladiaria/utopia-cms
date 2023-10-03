@@ -16,6 +16,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from core.models import Category, Publication, ArticleViewedBy
 from thedaily.models import Subscriber, SentMail, OAuthState
+from dashboard.models import AudioStatistics
 
 from .models import Subscriber
 
@@ -29,6 +30,8 @@ non_relevant_data_max_ammounts = {
     SentMail: 10,
     ArticleViewedBy: 10,
     OAuthState: 1,
+    AudioStatistics: 10,
+    Follow: 10,
 }
 
 

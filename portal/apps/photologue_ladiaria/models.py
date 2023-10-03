@@ -55,7 +55,9 @@ class PhotoExtended(models.Model):
     radius_length = models.SmallIntegerField(
         'radio', blank=True, null=True, help_text='mitad del lado del cuadrado para recorte (pixeles)'
     )
-    square_version = models.ImageField('versión cuadrada', upload_to=get_storage_path, blank=True, null=True)
+    square_version = models.ImageField(
+        'versión cuadrada', upload_to=get_storage_path, max_length=255, blank=True, null=True
+    )
     weight = models.SmallIntegerField(
         'orden de la imagen en la galería', default=0, help_text='el número más bajo se muestra primero.'
     )
@@ -120,7 +122,7 @@ class PhotoExtended(models.Model):
                 pass
         else:
             self.square_version = None
-        super(PhotoExtended, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def get_square_version_filename(self):
         return os.path.basename(self.square_version.path)

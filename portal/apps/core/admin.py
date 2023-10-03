@@ -151,6 +151,16 @@ def section_top_article_inline_class(section):
 
 @admin.register(Edition, site=site)
 class EditionAdmin(ModelAdmin):
+    # TODO: This class should be improved/fixed:
+    #       - section_id missing for "new" ArticleRel rows, this can be fixed handling the js event, we did this some
+    #         time ago in the article admin js.
+    #       - the header cells for each fieldset get broken when a row has a new td because of errors (no position)
+    #       - rearrange better the rows with info and data (new article link inserts at the begginig)
+    #       - It's necessary to show the section_id in the fieldset header? ("[[id]]")
+    #       - But all this, for what? with more than ~20 sections this UX is useless, it must be migrated to something
+    #         similar to the "publihed in" at the bottom of the Article's change form, and only keep here in the actual
+    #         version, the first draggable block with the featured articles. And also try to allow insertion of "new"
+    #         rows in the draggable block.
     fields = ('date_published', 'pdf', 'cover', 'publication')
     list_display = ('edition_pub', 'title', 'pdf', 'cover', 'get_supplements')
     list_filter = ('date_published', 'publication')

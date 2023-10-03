@@ -290,7 +290,8 @@ class Subscriber(Model):
 
     class Meta:
         verbose_name = 'suscriptor'
-        permissions = (("es_suscriptor_%s" % settings.DEFAULT_PUB, "Es suscriptor actualmente"),)
+        verbose_name_plural = "suscriptores"
+        permissions = (("es_suscriptor_%s" % settings.DEFAULT_PUB, "Es suscriptor actualmente"), )
 
 
 def updatecrmuser(contact_id, field, value):

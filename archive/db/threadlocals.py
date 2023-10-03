@@ -1,4 +1,5 @@
-# threadlocals middleware, usado para obtener el current user. TODO: ver si es necesario
+# deprecated, archived.
+# threadlocals middleware, can be used to obtain current user.
 from __future__ import unicode_literals
 
 from django.utils.deprecation import MiddlewareMixin

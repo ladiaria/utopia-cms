@@ -46,6 +46,10 @@ class AudioStatisticsAdmin(ReadOnlyModelAdmin):
     list_display = ['audio', 'subscriber', 'percentage', 'amp_click']
     list_filter = ['percentage']
 
+    def has_delete_permission(self, request, obj=None):
+        # redefine calling super of parent class to avoid usage of parent class definition (we allow deletion)
+        return super(ReadOnlyModelAdmin, self).has_delete_permission(request, obj)
+
 
 site.register(NewsletterDelivery, NewsletterDeliveryAdmin)
 site.register(AudioStatistics, AudioStatisticsAdmin)

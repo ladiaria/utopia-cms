@@ -3,7 +3,7 @@ var InlineOrdering = {
     init: function () {
         $("th:contains('Orden')").hide();
         $('td[class$=-top_position]').hide();
-        $('td[class$=-position]').hide();
+        $('td[class$=-position]:not(:has(.errorlist))').hide();
 
         var inline_group_containers = $('.inline-group').has('.dynamic-order');
         // Rompemos el tbody para hacer multiples tbody.
@@ -144,6 +144,7 @@ var InlineOrdering = {
                 var i = 0;
                 if(container.find('tr[id^=articlerel_set]').length > 0){
                     var order_field = 'top_position';
+                    // TODO: explain better the next comment:
                     // For fix the entire page uncomment these lines and build the section for store
                     /*if(container.find('h2:contains("Nota de tapa y titulines")').length > 0){
                         var order_field = 'top_position';
