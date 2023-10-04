@@ -539,6 +539,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        category_slug = options.get('category_slug')[0]
+        if category_slug in getattr(settings, "SENDNEWSLETTER_CATEGORY_DISALLOW_DEFAULT_CMD", ()):
+            raise CommandError("The newsletter of this category is not allowed to be sent using this command")
         partitions, mod, offline = options.get('partitions'), options.get('mod'), options.get('offline')
         export_subscribers, export_context = options.get('export_subscribers'), options.get('export_context')
         export_only = export_subscribers or export_context
@@ -546,8 +549,6 @@ class Command(BaseCommand):
             raise CommandError('--export-* options can not be used with --offline')
         if partitions is None and mod is not None or mod is None and partitions is not None:
             raise CommandError('--partitions must be used with --mod')
-        category_slug = options.get('category_slug')[0]
-        # TODO: add a new setting to force error on slugs that you don't want to be sent using this command
         try:
             no_deliver = options.get('no_deliver')
             category = category_slug if offline else Category.objects.get(slug=category_slug)
