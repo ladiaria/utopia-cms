@@ -694,7 +694,7 @@
                        data-login-url="{{ URL_SCHEME }}://{{ site.domain }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
                 <span class="title">Comentar este artículo</span>
                 <button class="ut-btn">
-                  {% if comments_count > 0 %}{{ comments_count }} comentario{{comments_count|pluralize:"s"}}{% else %}Comentar{% endif %}
+                  {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
                 </button>
               </section>
 

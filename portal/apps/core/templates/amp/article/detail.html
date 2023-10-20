@@ -333,7 +333,7 @@
         <div class="talk-login align-center">
         <span class="title">Comentar este artículo</span>
           <a href="{{ request.path }}#comentarios" class="ld-btn--sm ld-btn-subscribe-to-comment">
-            {% if comments_count > 0 %}{{ comments_count }} comentario{{comments_count|pluralize:"s"}}{% else %}Comentar{% endif %}
+            {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
           </a>
         </div>
       </div>

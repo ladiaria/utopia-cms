@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from builtins import str
 
+from email.utils import make_msgid
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
@@ -39,6 +40,7 @@ def send_confirmation_link(*args, **kwargs):
         mail_to=(user.first_name, user.email),
         mail_from=from_mail,
         subject=subject,
+        headers={'Message-Id': make_msgid("u." + str(user.id)), "Return-Path": settings.NOTIFICATIONS_FROM_MX}
     )
     if (
         not getattr(settings, 'LOCAL_EMAIL_BACKEND_TEST', False)

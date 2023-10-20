@@ -42,12 +42,11 @@ DATABASES = {
         'NAME': 'utopiacms',
         'USER': 'utopiacms_user',
         'PASSWORD': 'password',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
-        },
-    },
+        'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"},
+    }
 }
 
+# example of custom datetime formatting
 TIME_ZONE = 'America/Montevideo'
 DATE_FORMAT = 'l j de F de Y'
 TIME_FORMAT = 'H:i:s'

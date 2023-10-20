@@ -318,14 +318,21 @@ def signup(request):
                 if next_page:
                     return HttpResponseRedirect(next_page)
                 else:
-                    return 'welcome.html', {'signup_mail': user.email}
+                    return settings.THEDAILY_WELCOME_TEMPLATE, {'signup_mail': user.email}
             except Exception as exc:
                 msg = "Error al enviar email de verificación para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 if user:
                     user.delete()
                 signup_form.add_error(None, msg)
-    return 'signup.html', {'signup_form': signup_form, 'errors': signup_form.errors.get('__all__')}
+    return (
+        'signup.html',
+        {
+            'signup_form': signup_form,
+            'errors': signup_form.errors.get('__all__'),
+            "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+        },
+    )
 
 
 @never_cache
@@ -335,7 +342,11 @@ def welcome(request, signup=False, subscribed=False):
     """
     if request.session.get('welcome'):
         request.session.pop('welcome')
-        return render(request, settings.THEDAILY_WELCOME_TEMPLATE, {'signup': signup, 'subscribed': subscribed})
+        return render(
+            request,
+            settings.THEDAILY_WELCOME_TEMPLATE,
+            {'signup': signup, 'subscribed': subscribed, "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
+        )
     else:
         return HttpResponseRedirect(reverse('home'))
 
@@ -371,7 +382,12 @@ def google_phone(request):
         google_signin_form = GoogleSigninForm(request.POST, instance=profile)
         if google_signin_form.is_valid():
             google_signin_form.save()
-            send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!')
+            send_notification(
+                oas.user,
+                'notifications/signup.html',
+                '¡Te damos la bienvenida!',
+                {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
+            )
             oas.delete()
             request.session['welcome'] = True
             request.session.modified = True # TODO: see comments in portal.libs.social_auth_pipeline
@@ -383,7 +399,10 @@ def google_phone(request):
         # if is a new user add the default category newsletters (reached only from "free" subscriptions)
         if request.GET.get('is_new') == '1':
             add_default_category_newsletters(profile)
-    return 'google_signup.html', {'google_signin_form': google_signin_form}
+    return (
+        'google_signup.html',
+        {'google_signin_form': google_signin_form, "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
+    )
 
 
 @never_cache
@@ -693,7 +712,7 @@ def get_password_validation_url(user):
 @never_cache
 @to_response
 def complete_signup(request, user_id, hash):
-    """This view is executed when the user clicks account activation button in his/her email."""
+    """ This view is executed when the user clicks account activation button in his/her email. """
     user = hash_validate(user_id, hash)
     user.is_active = True
     if user.username != user.email:
@@ -730,7 +749,12 @@ def complete_signup(request, user_id, hash):
                 notify_paper(user)
 
     if send_default_welcome:
-        send_notification(user, 'notifications/signup.html', 'Tu cuenta gratuita está activa')
+        send_notification(
+            user,
+            'notifications/signup.html',
+            'Tu cuenta gratuita está activa',
+            {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
+        )
 
     request.session['welcome'] = 'account-welcome' + ('-s' if is_subscriber_any else '')
 
@@ -923,6 +947,7 @@ def edit_profile(request, user=None):
         'google_oauth2_allow_disconnect':
             not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
         'publication_newsletters': Publication.objects.filter(has_newsletter=True),
+        'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
         'newsletters': get_profile_newsletters_ordered(),
         "incomplete_field_count": sum(
             not bool(value) for value in (
@@ -934,6 +959,7 @@ def edit_profile(request, user=None):
             )
         ),
         "email_is_bouncer": user.email in bouncer_blocklisted,
+        "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
     }
 
 

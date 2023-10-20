@@ -4,6 +4,12 @@
 
 {% block page_title %}Cuenta gratuita{% endblock %}
 
+{% block page_description %}{% spaceless %}
+{% with credits_pl=signupwall_max_credits|pluralize %}
+{{ signupwall_max_credits }} artículo{{ credits_pl }} gratuito{{ credits_pl }} al mes y newsletters. Para acceso ilimitado suscribite.
+{% endwith %}
+{% endspaceless %}{% endblock %}
+
 {% block body_class %}thedaily subscribe hide-mobile-nav{% endblock %}
 
 {% block navbar %}
@@ -32,7 +38,10 @@
         <h1 class="ld-title-big">Cuenta gratuita</h1>
         <div class="price">$0/mes</div>
         <span class="ld-text-secondary">
-          10 artículos gratuitos al mes y newsletters.<br>
+          {% with credits_pl=signupwall_max_credits|pluralize %}
+            {{ signupwall_max_credits }} artículo{{ credits_pl }} gratuito{{ credits_pl }} al mes y newsletters.
+          {% endwith %}
+          <br>
           Para acceso ilimitado <a href="{% url 'subscribe' planslug='DDIGM' %}">suscribite</a>.
         </span>
       </div>

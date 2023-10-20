@@ -35,11 +35,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         delivery_date, newsletter_name = options.get('delivery_date')[0], options.get('newsletter_name')[0]
-        stat_item_prefixes, stats_item_suffixes = ("user", "subscriber"), ("sent", "refused")
-        stats_found_collector = {}
-        for stat_item_prefix in stat_item_prefixes:
-            for stat_item_suffix in stats_item_suffixes:
-                stats_found_collector[stat_item_prefix + "_" + stat_item_suffix] = 0
+        stats_found_collector = {"user_sent": 0, "subscriber_sent": 0}
         stat_keys = stats_found_collector.keys()
         try:
             for line in open(settings.SENDNEWSLETTER_LOGFILE % (newsletter_name, delivery_date)).readlines():

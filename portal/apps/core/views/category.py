@@ -127,7 +127,7 @@ def newsletter_preview(request, slug):
             context.update(
                 {
                     'cover_article_section': cover_article.publication_section() if cover_article else None,
-                    'articles': [(a, a.publication_section()) for a in category_nl.non_cover_articles()],
+                    'articles': [(a, False, a.publication_section()) for a in category_nl.non_cover_articles()],
                     'featured_article_section': featured_article.publication_section() if featured_article else None,
                     'featured_articles': [
                         (a, a.publication_section()) for a in category_nl.non_cover_featured_articles()
@@ -141,7 +141,7 @@ def newsletter_preview(request, slug):
 
             cover_article = category_home.cover()
             cover_article_section = cover_article.publication_section() if cover_article else None
-            top_articles = [(a, a.publication_section()) for a in category_home.non_cover_articles()]
+            top_articles = [(a, False, a.publication_section()) for a in category_home.non_cover_articles()]
 
             listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
             if listonly_section:
@@ -217,7 +217,6 @@ def newsletter_preview(request, slug):
                 'headers_preview': headers,
                 'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=date.today()).capitalize(),
                 'cover_article': cover_article,
-                'enable_photo_byline': settings.CORE_ARTICLE_ENABLE_PHOTO_BYLINE,
                 'featured_article': featured_article,
             }
         )
@@ -274,7 +273,7 @@ def newsletter_browser_preview(request, slug, hashed_id=None):
     for a, a_section in context['articles']:
         dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
         a['date_published'] = dp_article
-        dp_articles.append((a, a_section))
+        dp_articles.append((a, False, a_section))
     context['articles'] = dp_articles
     if 'featured_articles' in context:
         dp_featured_articles = []

@@ -32,8 +32,6 @@ class NewsletterDelivery(Model):
     newsletter_name = CharField(max_length=64)
     user_sent = PositiveIntegerField(blank=True, null=True)
     subscriber_sent = PositiveIntegerField(blank=True, null=True)
-    user_refused = PositiveIntegerField(blank=True, null=True)
-    subscriber_refused = PositiveIntegerField(blank=True, null=True)
     user_opened = PositiveIntegerField(blank=True, null=True)
     subscriber_opened = PositiveIntegerField(blank=True, null=True)
     user_bounces = PositiveIntegerField(blank=True, null=True)

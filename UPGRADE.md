@@ -1,3 +1,15 @@
+# From version 0.4.5 to 0.4.6
+
+```
+git pull
+git checkout 0.4.6
+cd portal
+# update your local settings if necessary, checking the changes of settings.py and local_settings_sample.py since 0.4.5
+# activate your virtual env
+./manage.py migrate
+./manage.py collectstatic -c
+```
+
 # From version 0.4.4 to 0.4.5
 
 ```

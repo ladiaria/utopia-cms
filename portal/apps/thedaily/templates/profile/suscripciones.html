@@ -14,7 +14,10 @@
       <div class="card-plan">
         <h3 class="ld-title-second">Cuenta gratuita</h3>
         <p>
-          Hasta 10 artículos gratuitos al mes y newsletters.<br>
+          {% with credits_pl=signupwall_max_credits|pluralize %}
+            {{ signupwall_max_credits }} artículo{{ credits_pl }} gratuito{{ credits_pl }} al mes y newsletters.
+          {% endwith %}
+          <br>
           Para acceso ilimitado de artículos y más beneficios suscribite.
         </p>
         <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn">Suscribite</a>

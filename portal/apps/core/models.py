@@ -311,8 +311,7 @@ class EditionSection(models.Model):
 
 
 class Edition(PortableDocumentFormatBaseModel):
-    """A publication's edition."""
-
+    """ A publication's edition. """
     title = TextField('título', null=True)
     publication = ForeignKey(
         Publication, on_delete=CASCADE, verbose_name='publicación', related_name="%(app_label)s_%(class)s"
@@ -1589,6 +1588,15 @@ class Article(ArticleBase):
             except IndexError:
                 result = self.date_published.date()
             return result
+
+    def last_published_by_category_slug(self, category_slug):
+        if self.is_published:
+            try:
+                category = Category.objects.get(slug=category_slug)
+            except Category.DoesNotExist:
+                pass
+            else:
+                return self.last_published_by_category(category)
 
     def publication_section(self, publication=None):
 

@@ -33,7 +33,10 @@
 {% block content %}
   <div class="subscribe-header center-align">
     <h1 class="ld-title-big">Cuenta gratuita</h1>
-    <span class="ld-text-secondary">Accedé a 10 artículos gratis por mes con la cuenta gratuita.</span>
+    <span class="ld-text-secondary">
+      Accedé a {{ signupwall_max_credits }} artículo{{ signupwall_max_credits|pluralize }} gratis por mes con la
+      cuenta gratuita.
+    </span>
   </div>
 
   <div class="subscribe-body">

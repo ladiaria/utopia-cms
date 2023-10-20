@@ -9,6 +9,7 @@ import re
 import smtplib
 from random import choices
 from hashids import Hashids
+from pymailcheck import split_email
 
 from django.conf import settings
 from django.db import IntegrityError
@@ -173,9 +174,8 @@ def smtp_server_choice(user_email, servers_available, force_ignore_weights=False
           this function, a class can be written to fill a hashtable for caching those per-domain choices.
           The class instance will be created and used only in the delivery command.
           (Note that the servers availability can change in the same delivery execution)
-    TODO: use pymailcheck.split_email instead of str.split
     """
-    email_domain, choices_data, weights = user_email.split("@")[1], [], None
+    email_domain, choices_data, weights = split_email(user_email)["domain"], [], None
     for alt_index, not_allowed in enumerate(smtp_dom_not_allowed):
         if servers_available[alt_index] and email_domain not in not_allowed:
             choices_data.append(alt_index)

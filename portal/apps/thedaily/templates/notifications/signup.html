@@ -88,7 +88,7 @@
                                       {% block body %}
                                         <p>Hola, ¿cómo estás?</p>
                                         <p>Gracias por registrarte.</p>
-                                        <p>Tu cuenta gratuita te permite leer hasta 10 artículos por mes y recibir una variedad de newsletters.</p>
+                                        <p>Tu cuenta gratuita te permite leer hasta {{ signupwall_max_credits }} artículo{{ signupwall_max_credits|pluralize }} por mes y recibir una variedad de newsletters.</p>
                                         <p>
                                           <span style="font-weight: bold;">Newsletters</span><br>
                                           Recibí en tu email contenidos según tus intereses.<br>

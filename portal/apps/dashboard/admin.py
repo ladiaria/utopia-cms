@@ -30,8 +30,6 @@ class NewsletterDeliveryAdmin(ModelAdmin):
         'newsletter_name',
         'user_sent',
         'subscriber_sent',
-        'user_refused',
-        'subscriber_refused',
         'user_opened',
         'subscriber_opened',
         'user_bounces',

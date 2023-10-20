@@ -485,8 +485,8 @@ BLEACH_STRIP_TAGS = True
 
 # Online sync User fields with CRM (key=crm_contact_field_name, value=cms_subscriber_field_name)
 CRM_UPDATE_SUBSCRIBER_FIELDS = {}
-# Online sync User fields with CRM enabled by default
-CRM_UPDATE_USER_ENABLED = True
+# Online sync User fields with CRM disabled by default
+CRM_UPDATE_USER_ENABLED = False
 
 # PWA
 PWA_SERVICE_WORKER_TEMPLATE = 'core/templates/sw/serviceworker.js'

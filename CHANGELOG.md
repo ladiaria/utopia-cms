@@ -1,3 +1,18 @@
+# version 0.4.6 (2023-10-20)
+
+- A new command super class to send newsletters, this was the first step on opensourcing the whole NL delivery that we pretend to publish in the next release.
+- Install doc updated.
+- New method in Article model.
+- Templates syntax style improved.
+- Unneeded refused count in NL stats model removed
+- Some settings variables names changed to a better name.
+- Unicode and syntax style improvements in some modules.
+- Max credits in signupwall unhardcoded keeping its default of 10 but now this value can be overrided in new setting.
+- Fixes in edit profile template.
+- Allow to override page desc in signup template.
+- wellcome template setting usage missing fixed
+- Some TODO's done.
+
 # version 0.4.5 (2023-10-03)
 
 - ReadOnlyModelAdmin class to use for some ModelAdmin.

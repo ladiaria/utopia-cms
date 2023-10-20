@@ -297,7 +297,7 @@ class Subscriber(Model):
 def updatecrmuser(contact_id, field, value):
     data = {"contact_id": contact_id, "field": field, "value": value}
     if settings.CRM_UPDATE_USER_ENABLED:
-        r = requests.post(settings.CRM_UPDATE_USER_URI, data=data)
+        r = requests.post(settings.CRM_API_UPDATE_USER_URI, data=data)
         r.raise_for_status()
 
 
@@ -385,11 +385,11 @@ def user_pre_save(sender, instance, **kwargs):
         return True  # TODO: why True and not just "return"?
 
     # sync email if changed
-    if actualusr.email != instance.email:
+    if settings.CRM_UPDATE_USER_ENABLED and actualusr.email != instance.email:
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
             requests.post(
-                settings.CRM_UPDATE_USER_URI,
+                settings.CRM_API_UPDATE_USER_URI,
                 data={'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email},
             ).raise_for_status()
         except requests.exceptions.RequestException:
