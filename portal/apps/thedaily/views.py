@@ -84,6 +84,8 @@ from decorators import render_response
 from .exceptions import UpdateCrmEx
 from .tasks import send_notification, notify_digital, notify_paper
 
+import solana
+from hashlib import sha256
 
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
@@ -1601,10 +1603,17 @@ def telephone_subscription_msg(user, preferred_time):
 @never_cache
 @to_response
 def buy_single_article(request):
-    # TODO: validate the transaction
+    # TODO: test the transaction validation
     article_id = request.POST.get('article_id')
     user_id = request.POST.get('user_id')
-    if request.method == 'POST' and article_id and user_id:
+    public_key = request.POST.get('public_key')
+    transaction = request.POST.get('transaction')
+    signature = request.POST.get('signature')
+    if request.method == 'POST' and article_id and user_id and public_key and transaction and signature:
+        hash = sha256(transaction).hexdigest()
+        valid = solana.signature.verify_signature(public_key, hash, signature)
+        if not valid:
+            return HttpResponse('Invalid signature', status=400)
         user = get_object_or_404(User, id=user_id)
         article = get_object_or_404(Article, id=article_id)
         user.subscriber.articles_bought.add(article)
