@@ -78,7 +78,7 @@ INSTALLED_APPS = (
     'groupedtags.config.GroupedTagsConfig',
     'django_extensions',
     'generator',
-    'memcached',
+    # 'memcached',  TODO: replace this removed repo app with this app: https://github.com/bartTC/django-memcache-status
     'shoutbox',
     'thedaily',
     'videologue',
@@ -524,7 +524,7 @@ except ImportError as e:
 FREEZE_TIME = None
 
 # Override previous settings with values in local_settings.py settings file
-from local_settings import *
+from local_settings import *  # noqa
 
 SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
 CSRF_TRUSTED_ORIGINS = ['%s://%s' % (URL_SCHEME, SITE_DOMAIN)]

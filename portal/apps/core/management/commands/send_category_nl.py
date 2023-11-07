@@ -222,7 +222,6 @@ class Command(SendNLCommand):
             email_from = context['email_from']
             site_url = context['site_url']
             list_id = context['list_id']
-            ga_property_id = context['ga_property_id']
             r = reader(open(offline_csv_file))
             if self.subscriber_ids:
                 subscribers_iter = subscribers_nl_iter_filter(r, lambda row: int(row[0]) in self.subscriber_ids)
@@ -236,7 +235,6 @@ class Command(SendNLCommand):
                 list_id = 'novedades <%s>' % settings.SITE_DOMAIN
             else:
                 list_id = '%s <%s.%s>' % (self.category_slug, __name__, settings.SITE_DOMAIN)
-            ga_property_id = getattr(settings, 'GA_PROPERTY_ID', None)
             custom_subject = self.category.newsletter_automatic_subject is False and self.category.newsletter_subject
             email_subject = custom_subject or (
                 getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_PREFIX', {}).get(self.category_slug, '')
@@ -256,7 +254,7 @@ class Command(SendNLCommand):
         translation.activate(settings.LANGUAGE_CODE)
 
         if not self.export_subscribers or self.export_context:
-            common_ctx = {'site_url': site_url, 'ga_property_id': ga_property_id, 'custom_subject': custom_subject}
+            common_ctx = {'site_url': site_url, 'custom_subject': custom_subject}
         if self.export_only:
             if self.export_context:
                 export_ctx.update(common_ctx)
@@ -353,6 +351,13 @@ class Command(SendNLCommand):
                             'is_subscriber': is_subscriber,
                             'is_subscriber_any': is_subscriber_any,
                             'is_subscriber_default': is_subscriber_default,
+                            "track_open_event_url": "%s/usuarios/nl_track/%c_%s_%s_%s.gif" % (
+                                site_url,
+                                "s" if is_subscriber else "r",
+                                hashed_id,
+                                self.category_slug,
+                                today.strftime("%Y%m%d"),
+                            ),
                         }
                     )
 

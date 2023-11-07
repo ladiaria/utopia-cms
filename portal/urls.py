@@ -268,7 +268,6 @@ urlpatterns.extend(
         path('dashboard/', include('dashboard.urls')),
         path('fotos/', include('photologue.urls')),
         path('genera-la-noticia/', contribute, name='generator-contribute'),
-        path('memcached/', include('memcached.urls')),
         re_path(r'^robots.txt', include('robots.urls')),
         path('shout/', include('shoutbox.urls')),
         path('activity/', include('actstream.urls')),

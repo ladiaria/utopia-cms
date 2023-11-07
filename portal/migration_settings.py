@@ -77,7 +77,6 @@ INSTALLED_APPS = (
     'groupedtags.config.GroupedTagsConfig',
     'django_extensions',
     'generator',
-    'memcached',
     'shoutbox',
     'thedaily',
     'videologue',
@@ -500,7 +499,7 @@ except ImportError as e:
 FREEZE_TIME = None
 
 # Override previous settings with values in local_migration_settings.py settings file
-from local_migration_settings import *
+from local_migration_settings import *  # noqa
 
 SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
 CSRF_TRUSTED_ORIGINS = ['%s://%s' % (URL_SCHEME, SITE_DOMAIN)]

@@ -9,13 +9,16 @@ import os
 import json
 import requests
 import pymongo
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlparse
+from uuid import uuid4
 from smtplib import SMTPRecipientsRefused
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
+from PIL import Image
+from ga4mp import GtagMP
 
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -45,7 +48,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from django.views.decorators.cache import never_cache, cache_control
+from django.views.decorators.cache import never_cache, cache_control, cache_page
 from django.template import TemplateDoesNotExist
 from django.utils.html import strip_tags
 
@@ -891,11 +894,13 @@ def edit_profile(request, user=None):
                     pass
 
                 if old_email != user.email:
+                    # TODO: send the email after saving the user and take actions if it not sent
                     was_sent = send_validation_email(
                         'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url
                     )
                     if not was_sent:
                         raise Exception("Error al enviar email de verificación para el usuario %s" % user)
+                    UserSocialAuth.objects.filter(user=user, provider='google-oauth2').delete()
                     user_form.save()
                     profile_form.save()
                     user.is_active = False
@@ -1726,6 +1731,37 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
         return 'nlunsubscribe.html', ctx
     except IndexError:
         raise Http404
+
+
+@cache_page(60 * 60 * 24 * 365)  # 1-year cache timeout since only the first open event by nl/user is significant
+def nl_track_open_event(request, s8r_or_registered, hashed_id, nl_campaign, nl_date):
+    ga_api_secret, debug = getattr(settings, "GA_API_SECRET", None), request.GET.get("debug") == "1"
+    if ga_api_secret and settings.GA_MEASUREMENT_ID:
+        tracker = GtagMP(ga_api_secret, settings.GA_MEASUREMENT_ID, str(uuid4()))
+        subscriber = get_object_or_404(Subscriber, id=decode_hashid(hashed_id)[0])
+        ga4_response = requests.post(
+            # use "...com/debug/mp/coll.." for debug
+            "https://www.google-analytics.com/%smp/collect?&api_secret=%s&measurement_id=%s" % (
+                "debug/" if debug else "", ga_api_secret, settings.GA_MEASUREMENT_ID
+            ),
+            json={
+                "client_id": tracker.random_client_id(),
+                "user_id": str(subscriber.id),
+                "events": [
+                    {
+                        "name": 'open_email_%c' % s8r_or_registered,
+                        "params": {"campaign": nl_campaign, "date": nl_date, "subscriber_id": str(subscriber.id)},
+                    }
+                ],
+            },
+        )
+        if debug:
+            # for debugging: make a request to the gif url adding ?debug=1
+            print("DEBUG: nl_track_open_event GA4 resp (%s): %s" % (ga4_response.status_code, ga4_response.json()))
+    response = HttpResponse(content_type="image/gif")
+    one_pixel_img = Image.new('RGBA', (1, 1), (0, 0, 0, 0))
+    one_pixel_img.save(response, "GIF", transparency=0)
+    return response
 
 
 @never_cache

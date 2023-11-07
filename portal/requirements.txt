@@ -33,9 +33,7 @@ PyMongo
 pyPdf
 pyquery==2.0.0
 rsa<4.7
-google-api-python-client
 hashids
-oauth2client
 emails
 pandas
 ebooklib
@@ -46,6 +44,8 @@ django-photologue==3.15.1
 django-robots
 django-sortedm2m
 django-star-ratings==0.9.2
+ga4mp
+google-analytics-data
 mysqlclient
 BeautifulSoup4
 progress

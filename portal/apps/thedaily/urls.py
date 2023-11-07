@@ -45,6 +45,7 @@ from thedaily.views import (
     lista_lectura_historial,
     lista_lectura_toggle,
     subscribe_notice_closed,
+    nl_track_open_event,
 )
 
 
@@ -158,6 +159,11 @@ urlpatterns = [
         r'^nlunsubscribe/c/(?P<category_slug>\w+)/(?P<hashed_id>\w+)/$',
         nl_category_unsubscribe,
         name="nl-category-unsubscribe",
+    ),
+    re_path(
+        r'^nl_track/(?P<s8r_or_registered>[sr])_(?P<hashed_id>\w+)_(?P<nl_campaign>\w+)_(?P<nl_date>\d{8}).gif$',
+        nl_track_open_event,
+        name="nl-track-open-event",
     ),
     re_path(r'^communication-subscribe/(?P<com_type>\w+)/$', communication_subscribe, name="communication-subscribe"),
 

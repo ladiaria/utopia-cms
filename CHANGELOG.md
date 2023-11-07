@@ -1,3 +1,5 @@
+# version 0.4.7 (to be released soon)
+
 # version 0.4.6 (2023-10-20)
 
 - A new command super class to send newsletters, this was the first step on opensourcing the whole NL delivery that we pretend to publish in the next release.

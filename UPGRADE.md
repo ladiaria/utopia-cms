@@ -1,3 +1,14 @@
+# From version 0.4.6 to 0.4.7
+
+```
+git pull
+git checkout 0.4.7
+cd portal
+# if `nldelivery_sync_stats` command is a command that you use in your environment, update your local settings checking the changes for this version on this command and also in `settings.py`.
+pip uninstall auth2client google-api-python-client
+pip install ga4mp google-analytics-data
+```
+
 # From version 0.4.5 to 0.4.6
 
 ```
