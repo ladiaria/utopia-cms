@@ -28,7 +28,10 @@ class HomeTestCase(TestCase):
         {'url': '/test/articulo/2020/11/test-article3/', 'amp': True, 'headers': http_host_header_param},
     )
 
-    def test_home(self):
+    def test1_home(self):
+        # a way to make this test fail by settings (may be useful to know if you get noticed when tests are failing)
+        self.assertFalse(getattr(settings, "HOMEV3_FIRST_TEST_SHOULD_FAIL", False))
+
         c = Client()
         with self.settings(DEBUG=True, DEFAULT_PUB="default"):
             for item in self.urls_to_test:
@@ -42,7 +45,7 @@ class HomeTestCase(TestCase):
             response = c.get(item['url'], {'display': 'amp'}, **item.get('headers', {}))
             self.assertEqual(response.status_code, 403, (response.status_code, response))
 
-    def test_home_logged_in(self):
+    def test2_home_logged_in(self):
         email, password = 'u1@gmail.com', User.objects.make_random_password()
         user = User.objects.create_user(email, email, password)
         user.is_active = True
@@ -54,7 +57,7 @@ class HomeTestCase(TestCase):
                 response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))
                 self.assertEqual(response.status_code, 200)
 
-    def test_home_staff_logged_in(self):
+    def test3_home_staff_logged_in(self):
         email, password = 'u1@gmail.com', User.objects.make_random_password()
         user = User.objects.create_user(email, email, password)
         user.is_active, user.is_staff = True, True
