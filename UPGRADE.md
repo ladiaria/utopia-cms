@@ -6,8 +6,11 @@ git checkout 0.4.7
 cd portal
 rm -rf apps/memcached
 # if `nldelivery_sync_stats` command is a command that you use in your environment, update your local settings checking the changes for this version on this command and also in `settings.py`.
-pip uninstall auth2client google-api-python-client
-pip install ga4mp google-analytics-data
+# activate your virtual env
+pip uninstall auth2client google-api-python-client validate_email_address
+pip install --upgrade -r requirements.txt
+./manage.py migrate
+./manage.py collectstatic -c
 ```
 
 # From version 0.4.5 to 0.4.6

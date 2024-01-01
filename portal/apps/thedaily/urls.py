@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.urls import path, re_path
 from django.views.generic import TemplateView, RedirectView
-from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import views as auth_views
 
@@ -52,14 +51,14 @@ from thedaily.views import (
 # Used to override some views
 views_custom_module = getattr(settings, 'THEDAILY_VIEWS_CUSTOM_MODULE', None)
 if views_custom_module:
-    signup = __import__(views_custom_module, fromlist=['signup']).signup
-    google_phone = __import__(views_custom_module, fromlist=['google_phone']).google_phone
-    confirm_email = __import__(views_custom_module, fromlist=['confirm_email']).confirm_email
-    edit_profile = __import__(views_custom_module, fromlist=['edit_profile']).edit_profile
-    complete_signup = __import__(views_custom_module, fromlist=['complete_signup']).complete_signup
-    password_reset = __import__(views_custom_module, fromlist=['password_reset']).password_reset
-    phone_subscription = __import__(views_custom_module, fromlist=['phone_subscription']).phone_subscription
-    amp_access_authorization = __import__(
+    signup = __import__(views_custom_module, fromlist=['signup']).signup  # noqa
+    google_phone = __import__(views_custom_module, fromlist=['google_phone']).google_phone  # noqa
+    confirm_email = __import__(views_custom_module, fromlist=['confirm_email']).confirm_email  # noqa
+    edit_profile = __import__(views_custom_module, fromlist=['edit_profile']).edit_profile  # noqa
+    complete_signup = __import__(views_custom_module, fromlist=['complete_signup']).complete_signup  # noqa
+    password_reset = __import__(views_custom_module, fromlist=['password_reset']).password_reset  # noqa
+    phone_subscription = __import__(views_custom_module, fromlist=['phone_subscription']).phone_subscription  # noqa
+    amp_access_authorization = __import__(  # noqa
         views_custom_module, fromlist=['amp_access_authorization']
     ).amp_access_authorization
 
@@ -87,6 +86,12 @@ urlpatterns = [
     path('api/comments/', user_comments_api),
     path('fromcrm', update_user_from_crm),
     path('subscribe-notice-closed', subscribe_notice_closed, name='subscribe-notice-closed'),
+    path(
+        'unsubscribed-nls-notice-closed',
+        subscribe_notice_closed,
+        {"key": "unsubscribed_nls"},
+        name='unsubscribed-nls-notice-closed',
+    ),
     # Profile
     path('perfil/editar/', edit_profile, name="edit-profile"),
     re_path(

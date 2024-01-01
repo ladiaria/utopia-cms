@@ -84,7 +84,7 @@ INSTALLED_APPS = (
     'adzone',
     'exchange',
     'faq',
-    'captcha',
+    'django_recaptcha',
     'photologue',
     'sortedm2m',
     'photologue_ladiaria',

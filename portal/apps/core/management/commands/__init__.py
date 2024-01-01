@@ -15,7 +15,7 @@ class NoSuitableServer(Exception):
 
 class SendNLCommand(BaseCommand):
 
-    retry_last_delivery, subscriber_sent, user_sent, smtp_servers = False, 0, 0, []
+    retry_last_delivery, ignore_on_retrying, subscriber_sent, user_sent, smtp_servers = False, None, 0, 0, []
 
     def add_arguments(self, parser):
         parser.add_argument('subscriber_ids', nargs='*', type=int)
@@ -124,7 +124,12 @@ class SendNLCommand(BaseCommand):
         send_result, smtp_index_choosed, mta_label = None, None, None
         try:
             if not self.no_deliver:
-                smtp_index_choosed = smtp_server_choice(s_user_email, self.smtp_servers)
+                choice_kwargs = {}
+                if self.retry_last_delivery and self.ignore_on_retrying:
+                    # if there is a server index to be ignored, set it now
+                    choice_kwargs["ignore_from_available"] = self.ignore_on_retrying
+                smtp_index_choosed = smtp_server_choice(s_user_email, self.smtp_servers, **choice_kwargs)
+                self.ignore_on_retrying = None  # blank possible ignore on retrying index used
                 if smtp_index_choosed is None:
                     raise NoSuitableServer(
                         "No suitable server available for %ssubscriber %s\t%s" % (
@@ -169,7 +174,9 @@ class SendNLCommand(BaseCommand):
                 log.error(log_message + ". Retry failed, message not sent.")
         except smtplib.SMTPRecipientsRefused:
             # It's very probabbly that this is a local delivery to an unknown mailbox, it will not be retried.
-            log.warning("Email refused for %ssubscriber %s\t%s" % ('' if is_subscriber else 'non-', s_id, s_user_email))
+            log.warning(
+                "Email refused for %ssubscriber %s\t%s" % ('' if is_subscriber else 'non-', s_id, s_user_email)
+            )
         except smtplib.SMTPServerDisconnected:
             # Retries are made only once per iteration for equality on other errors.
             # (avoid infinite loop on disconnections is caller's responsibility)
@@ -181,16 +188,22 @@ class SendNLCommand(BaseCommand):
                 log.error(log_message + ' MTA reconnect failed')
             else:
                 (log.warning if self.retry_last_delivery else log.error)(log_message)
-        except (smtplib.SMTPSenderRefused, smtplib.SMTPDataError):
+        except (smtplib.SMTPSenderRefused, smtplib.SMTPDataError) as smtp_exc:
             # This means that is very probabble that this server will not work at all for any iteration, so we
-            # will make it unavailable and retry this delivery (only once).
+            # will make it unavailable (on most conditions, see last if here) and retry this delivery (only once).
             self.retry_last_delivery = not self.retry_last_delivery
             log_message = "MTA(%s) error, email to %s not sent." % (mta_label, s_user_email)
             if self.retry_last_delivery:
                 log.warning(log_message + " Will be retried using another server...")
             else:
                 log.error(log_message)
-            self.smtp_servers[smtp_index_choosed] = None
+            if type(smtp_exc) is smtplib.SMTPSenderRefused and smtp_exc.smtp_code == 552:
+                # msg size err. (if that is the case, the server is still working but this message is too large for it)
+                # we must ignore the server in the retry attempt, if such.
+                if self.retry_last_delivery:
+                    self.ignore_on_retrying = smtp_index_choosed
+            else:
+                self.smtp_servers[smtp_index_choosed] = None
         else:
             self.retry_last_delivery = False
 

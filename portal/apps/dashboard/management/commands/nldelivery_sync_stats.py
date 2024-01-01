@@ -16,7 +16,7 @@ from django.core.management.base import BaseCommand
 from dashboard.models import NewsletterDelivery
 
 
-def get_report(event_name, start_date, end_date, campaign, delivery_date):
+def get_report(event_name, start_date, end_date, campaign, delivery_date, limit=None):
 
     credentials = service_account.Credentials.from_service_account_file(settings.DASHBOARD_GA_SECRETS)
     client = data_v1beta.BetaAnalyticsDataClient(credentials=credentials)
@@ -30,7 +30,7 @@ def get_report(event_name, start_date, end_date, campaign, delivery_date):
         ],
         metrics=[{"name": "eventCount"}],
         date_ranges=[{"start_date": start_date, "end_date": end_date}],
-        limit=1,
+        limit=limit,
         dimension_filter={
             "and_group": {
                 "expressions": [
@@ -92,28 +92,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        if not (hasattr(settings, "DASHBOARD_GA_PROPERTY") and hasattr(settings, "DASHBOARD_GA_SECRETS")):
-            log.error('No Google Analytics property or secrets json file are configured in settings.')
-
         start_date, end_date, verbosity = options.get('start_date'), options.get('end_date'), options.get('verbosity')
         campaign_arg, today, empty_count, no_sync = options.get('campaign'), date.today(), 0, options.get('no_sync')
-
-        filter_kwargs = {}
-        if campaign_arg:
-            campaigns = [campaign_arg]
-            filter_kwargs = {"newsletter_name": campaign_arg}
-        if start_date == "today":
-            delivery_date = today
-        elif start_date == "yesterday":
-            delivery_date = today - timedelta(1)
-        elif start_date.endswith("daysAgo"):
-            delivery_date = today - timedelta(int(start_date[0]))
-        else:
-            delivery_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-        filter_kwargs["delivery_date"] = delivery_date
-        campaigns = NewsletterDelivery.objects.filter(
-            **filter_kwargs
-        ).values_list("newsletter_name", flat=True).distinct()
 
         # log
         log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S')
@@ -137,10 +117,30 @@ class Command(BaseCommand):
             h.setFormatter(log_formatter)
             log.addHandler(h)
 
+        if not (hasattr(settings, "DASHBOARD_GA_PROPERTY") and hasattr(settings, "DASHBOARD_GA_SECRETS")):
+            log.error('No Google Analytics property or secrets json file are configured in settings.')
+
+        filter_kwargs = {}
+        if campaign_arg:
+            campaigns = [campaign_arg]
+            filter_kwargs = {"newsletter_name": campaign_arg}
+        if start_date == "today":
+            delivery_date = today
+        elif start_date == "yesterday":
+            delivery_date = today - timedelta(1)
+        elif start_date.endswith("daysAgo"):
+            delivery_date = today - timedelta(int(start_date[0]))
+        else:
+            delivery_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        filter_kwargs["delivery_date"] = delivery_date
+        campaigns = NewsletterDelivery.objects.filter(
+            **filter_kwargs
+        ).values_list("newsletter_name", flat=True).distinct()
+
         delivery_date_formatted = delivery_date.strftime("%Y%m%d")
         for campaign in campaigns:
             for event_name in ['open_email_r', 'open_email_s']:
-                response = get_report(event_name, start_date, end_date, campaign, delivery_date_formatted)
+                response = get_report(event_name, start_date, end_date, campaign, delivery_date_formatted, 1)
 
                 try:
                     rows = response.row_count
@@ -158,13 +158,12 @@ class Command(BaseCommand):
                             newsletter_name=campaign, delivery_date=delivery_date
                         )
                         if event_name == 'open_email_r':
-                            nl_delivery.user_opened = (nl_delivery.user_opened or 0) + rows
+                            nl_delivery.user_opened = rows
                         else:
-                            nl_delivery.subscriber_opened = (nl_delivery.subscriber_opened or 0) + rows
+                            nl_delivery.subscriber_opened = rows
                         nl_delivery.save()
                     except NewsletterDelivery.DoesNotExist:
                         pass
-
 
                 time.sleep(1)  # wait a bit to be polite with GA api
 

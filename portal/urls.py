@@ -364,10 +364,11 @@ else:
     ]
 
 if 'debug_toolbar' in settings.INSTALLED_APPS:
-    # WARNING: more settings are needed to use django-debug-toolbar<1.11.1
+    # WARNING/TODO: more settings are needed to use django-debug-toolbar.
     import debug_toolbar
     urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))
 
+# TODO: document a way to serve media in development runtime
 if settings.DEBUG:
     urlpatterns += staticfiles_urlpatterns()
     urlpatterns.append(re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}))

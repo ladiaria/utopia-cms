@@ -31,15 +31,21 @@ def gtm(request):
 
 
 def site(request):
-    site = Site.objects.get_current()
-    return {
-        'site': site,
-        'meta_robots_content': 'noindex' if any(
-            ['/' in r.disallowed.values_list('pattern', flat=True) for r in site.rule_set.all()]
-        ) else 'all',
-        'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
-        'site_description': getattr(settings, 'HOMEV3_SITE_DESCRIPTION', site.name),
-    }
+    result = {'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name}
+    try:
+        site = Site.objects.get_current()
+        result.update(
+            {
+                'site': site,
+                'meta_robots_content': 'noindex' if any(
+                    ['/' in r.disallowed.values_list('pattern', flat=True) for r in site.rule_set.all()]
+                ) else 'all',
+                'site_description': getattr(settings, 'HOMEV3_SITE_DESCRIPTION', site.name),
+            }
+        )
+    except Site.DoesNotExist:
+        pass
+    return result
 
 
 def publications(request):

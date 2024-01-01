@@ -215,8 +215,8 @@
     <script src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
     {% if user.is_authenticated and CORE_PUSH_NOTIFICATIONS_OFFER and push_notifications_keys_set %}
       <script src="{% static 'js/push_notifications.js' %}"></script>
-      <script type="text/javascript">
-
+      <script type="text/javascript">{# TODO: this should be moved to static js file, also "many" random cookies are #}
+                                     {#       generated, why not use the session instead of another cookies?         #}
         function confirmFunction () {
           rp();
           $('.pwa-prompt').hide();
@@ -252,9 +252,11 @@
                     if (
                       home_arriving_value.moment == 1 && datesAreOnSameDay(new Date(home_arriving_value.time), now)
                     ) {
-                      // 2nd time in the same day, offer to allow notifications.
-                      $('.pwa-prompt').show();
-                      setCookie('home_arriving', JSON.stringify({'moment': 2, 'time': now}), 1);
+                      // 2nd time in the same day, offer to allow notifications only if the NLs header wasn't rendered.
+                      if($("#choose-nl-container").length == 0){
+                        $('.pwa-prompt').show();
+                        setCookie('home_arriving', JSON.stringify({'moment': 2, 'time': now}), 1);
+                      }
                     } else {
                       // Neither first nor 2nd in the same day, so, check if last arrived date is +24h ago;
                       // to only offer allow notifications once per day.

@@ -21,8 +21,8 @@ from django.shortcuts import get_object_or_404
 
 from django_amp_readerid.utils import get_related_user
 
-from core.models import Article
-from .models import AudioStatistics
+from .management.commands.nldelivery_sync_stats import get_report
+from .models import AudioStatistics, NewsletterDelivery
 
 
 to_response = render_response('dashboard/templates/')
@@ -164,3 +164,27 @@ def audio_statistics_api_amp(request):
             return HttpResponse()
         except ValidationError:
             return HttpResponseBadRequest("Unique object already exists")
+
+
+@never_cache
+def nl_open(request, nl_delivery_id, nl_delivery_segment):
+    nl_delivery_obj = get_object_or_404(NewsletterDelivery, id=nl_delivery_id)
+    ga4_response = get_report(
+        "open_email" + ("_s" if nl_delivery_segment == "subscriber" else "_r"),
+        str(nl_delivery_obj.delivery_date),
+        "today",
+        nl_delivery_obj.newsletter_name,
+        nl_delivery_obj.delivery_date.strftime("%Y%m%d"),
+        int(getattr(nl_delivery_obj, nl_delivery_segment + "_opened") * 1.5),  # limit rows to 50% more
+    )
+    rows = getattr(ga4_response, "rows", [])
+    if rows:
+        response = HttpResponse(content_type="text/csv")
+        w = writer(response)
+        w.writerows([r.dimension_values[-1].value] for r in rows)
+        response['Content-Disposition'] = 'attachment; filename=nlopen_%s_%s.csv' % (
+            nl_delivery_id, nl_delivery_segment
+        )
+    else:
+        response = HttpResponse()
+    return response

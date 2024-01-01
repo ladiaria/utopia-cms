@@ -27,9 +27,19 @@
       $('#header-pub').load("{% url 'adzone_ad_content' %}");
     });
   </script>
+  {% if unsubscribed_newsletters %}
+    <script src="{% static 'js/unsubscribed_nls.js' %}"></script>
+  {% endif %}
 {% endblock %}
 
 {% block body_class %}homepage{% endblock %}
+
+{% block navbar %}
+  {% if unsubscribed_newsletters %}
+    {% include 'unsubscribed_nls.html' %}
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
 
 {% block content %}
 

@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 from django.urls import path, re_path
 
-from .views import index, export_csv, load_table, audio_statistics_api, audio_statistics_api_amp
+from .views import index, export_csv, load_table, audio_statistics_api, audio_statistics_api_amp, nl_open
 
 
 tables = (
@@ -29,4 +29,5 @@ urlpatterns = [
     re_path(r'^table/(?P<table_id>{})/$'.format(formatted_tables), load_table, name="load_table"),
     path('audio_statistics_api/', audio_statistics_api, name="audio_statistics_api"),
     path('audio_statistics_api_amp/', audio_statistics_api_amp, name="audio_statistics_api_amp"),
+    re_path(r"nl_open/(?P<nl_delivery_id>\d{1,})/(?P<nl_delivery_segment>user|subscriber)/", nl_open, name="nl_open"),
 ]

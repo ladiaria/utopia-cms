@@ -88,7 +88,11 @@ class Command(SendNLCommand):
             offline_ctx_file = join(settings.SENDNEWSLETTER_EXPORT_DIR, '%s_ctx.json' % self.category_slug)
             offline_csv_file = join(settings.SENDNEWSLETTER_EXPORT_DIR, '%s_subscribers.csv' % self.category_slug)
             if self.offline:
-                context = json.loads(open(offline_ctx_file).read())
+                try:
+                    context = json.loads(open(offline_ctx_file).read())
+                except FileNotFoundError as fnfe_exc:
+                    log.error("Offline context missing, tip: you can create it using --export-context option")
+                    raise CommandError(fnfe_exc)
                 # de-serialize dates
                 dp_cover = datetime.strptime(context['cover_article']['date_published'], '%Y-%m-%d').date()
                 context['cover_article']['date_published'] = dp_cover
@@ -140,7 +144,7 @@ class Command(SendNLCommand):
                             'cover_article_section':
                                 cover_article.publication_section().name if cover_article else None,
                             'articles':
-                                [(a, a.publication_section()) for a in category_nl.non_cover_articles()],
+                                [(a, False, a.publication_section()) for a in category_nl.non_cover_articles()],
                             'featured_article_section': featured_article_section,
                             'featured_articles':
                                 [(a, a.publication_section()) for a in category_nl.non_cover_featured_articles()],
@@ -152,13 +156,13 @@ class Command(SendNLCommand):
             if not (self.offline or self.export_subscribers) or self.export_context:
                 cover_article = self.category.home.cover()
                 cover_article_section = cover_article.publication_section() if cover_article else None
-                top_articles = [(a, a.publication_section()) for a in self.category.home.non_cover_articles()]
+                top_articles = [(a, False, a.publication_section()) for a in self.category.home.non_cover_articles()]
 
                 listonly_section = getattr(
                     settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}
                 ).get(self.category_slug)
                 if listonly_section:
-                    top_articles = [t for t in top_articles if t[1].slug == listonly_section]
+                    top_articles = [t for t in top_articles if t[2].slug == listonly_section]
                     if cover_article_section.slug != listonly_section:
                         cover_article = top_articles.pop(0)[0] if top_articles else None
                         cover_article_section = cover_article.publication_section() if cover_article else None
@@ -181,7 +185,7 @@ class Command(SendNLCommand):
                 if self.export_context:
                     export_ctx['articles'] = [
                         (
-                            t[0].nl_serialize(position == 0), {'name': t[1].name, 'slug': t[1].slug}
+                            t[0].nl_serialize(position == 0), {'name': t[2].name, 'slug': t[2].slug}
                         ) for position, t in enumerate(top_articles)
                     ]
                 else:
@@ -214,7 +218,9 @@ class Command(SendNLCommand):
                 if self.starting_from_s and self.starting_from_ns:
                     receivers = receivers.filter(user__email__gt=min(self.starting_from_s, self.starting_from_ns))
                 if self.partitions is not None and self.mod is not None:
-                    receivers = receivers.extra(where=['MOD(%s.id,%d)=%d' % (Subscriber._meta.db_table, self.partitions, self.mod)])
+                    receivers = receivers.extra(
+                        where=['MOD(%s.id,%d)=%d' % (Subscriber._meta.db_table, self.partitions, self.mod)]
+                    )
 
         if self.offline:
             custom_subject = context['custom_subject']
@@ -222,7 +228,11 @@ class Command(SendNLCommand):
             email_from = context['email_from']
             site_url = context['site_url']
             list_id = context['list_id']
-            r = reader(open(offline_csv_file))
+            try:
+                r = reader(open(offline_csv_file))
+            except FileNotFoundError as fnfe_exc:
+                log.error("Offline receipts csv missing, tip: you can create it using --export-subscribers option")
+                raise CommandError(fnfe_exc)
             if self.subscriber_ids:
                 subscribers_iter = subscribers_nl_iter_filter(r, lambda row: int(row[0]) in self.subscriber_ids)
             elif self.partitions is not None and self.mod is not None:
@@ -282,7 +292,7 @@ class Command(SendNLCommand):
             subscribers_iter = subscribers_nl_iter(receivers, self.starting_from_s, self.starting_from_ns)
 
         # connect to smtp servers
-        if not(self.no_deliver or self.export_only):
+        if not (self.no_deliver or self.export_only):
             for alt_index in range(len(getattr(settings, "EMAIL_ALTERNATIVE", [])) + 1):
                 self.smtp_servers.append(smtp_connect(alt_index))
             if not any(self.smtp_servers):
@@ -363,7 +373,8 @@ class Command(SendNLCommand):
 
                     headers = common_headers.copy()
                     headers['Message-Id'] = make_msgid(str(s_id))
-                    headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
+                    headers['List-Unsubscribe'] = '<%s>' % unsubscribe_url
+                    headers['List-Unsubscribe-Post'] = "List-Unsubscribe=One-Click"
 
                     msg = Message(
                         html=email_template.render(Context(context)),

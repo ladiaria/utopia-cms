@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
+
 from builtins import map
 from past.builtins import basestring
+
 from django.template import loader, Context, RequestContext, TemplateSyntaxError
 from django.http import HttpResponse
 
@@ -114,7 +116,7 @@ def decorate_if_no_auth(decorator):
 def decorate_if_auth(decorator):
     """
     Returns decorated view if user is authenticated. Un-decorated otherwise
-    (the inverse version of decorate_if_no_staff)
+    (the opposite version of decorate_if_no_auth)
     """
 
     def _decorator(view):

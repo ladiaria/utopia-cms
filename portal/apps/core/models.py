@@ -256,7 +256,7 @@ class PortableDocumentFormatBaseModel(Model):
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
-        return self.pdf[self.pdf.rfind('/') + 1 :]
+        return self.pdf[self.pdf.rfind('/') + 1:]
 
     class Meta:
         abstract = True
@@ -1702,7 +1702,7 @@ class ArticleCollection(Article):
         super().save(*args, **kwargs)
         if settings.ELASTICSEARCH_DSL_AUTOSYNC:
             # call post_save for the article obj to trigger potential elastic index upd
-            post_save.send(Article, instance=self.article_ptr)
+            post_save.send(Article, instance=self.article_ptr, using="default")
 
     class Meta:
         verbose_name = "colección"

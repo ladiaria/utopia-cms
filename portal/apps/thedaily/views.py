@@ -9,7 +9,7 @@ import os
 import json
 import requests
 import pymongo
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlparse
@@ -34,7 +34,6 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseServerError,
-    HttpResponseNotAllowed,
     JsonResponse,
 )
 from django.forms.utils import ErrorList
@@ -65,13 +64,14 @@ from libs.tokens.email_confirmation import get_signup_validation_url, send_valid
 from utils.error_log import error_log
 from decorators import render_response
 
-from core.models import Publication, Category, Article, ArticleUrlHistory, ArticleViewedBy
+from core.models import Publication, Category, Article, ArticleUrlHistory
 from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access
 
 from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState
 from .forms import (
     LoginForm,
     SignupForm,
+    SignupCaptchaForm,
     SubscriberForm,
     SubscriberAddressForm,
     GoogleSigninForm,
@@ -107,6 +107,14 @@ def notify_new_subscription(subscription_url, extra_subject=''):
     rcv = settings.SUBSCRIPTION_EMAIL_TO
     from_mail = getattr(settings, 'DEFAULT_FROM_EMAIL')
     send_mail(subject, settings.SITE_URL + subscription_url, from_mail, rcv, fail_silently=True)
+
+
+def no_captcha(request):
+    # captcha when enabled and not ignored => nocaptcha = not(enabled and not ignored) = not enabled or ignored
+    # TODO: do not asume CF for getting the country (do it like signupwall gets the ip_address)
+    return not getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_ENABLED', True) or request.headers.get(
+        'cf-ipcountry', settings.THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY
+    ) in getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED', [])
 
 
 @never_cache
@@ -297,10 +305,11 @@ def signup(request):
     email = request.GET.get('email')
     if email:
         initial['email'] = email
-    signup_form = SignupForm(initial=initial)
+    signup_form_class = SignupForm if no_captcha(request) else SignupCaptchaForm
+    signup_form = signup_form_class(initial=initial)
     if request.method == 'POST':
         post = request.POST.copy()
-        signup_form = SignupForm(post)
+        signup_form = signup_form_class(post)
         if signup_form.is_valid():
             user = None
             try:
@@ -393,7 +402,7 @@ def google_phone(request):
             )
             oas.delete()
             request.session['welcome'] = True
-            request.session.modified = True # TODO: see comments in portal.libs.social_auth_pipeline
+            request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
             return HttpResponseRedirect(
                 '%s?next=%s'
                 % (reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('account-welcome'))
@@ -425,7 +434,7 @@ def subscribe(request, planslug, category_slug=None):
         auth = request.GET.get('auth')
         if auth:
             request.session['planslug'] = planslug
-            request.session.modified = True # TODO: see comments in portal.libs.social_auth_pipeline
+            request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
             return HttpResponseRedirect(
                 '%s?next=%s'
                 % (
@@ -508,14 +517,9 @@ def subscribe(request, planslug, category_slug=None):
                 subscription_in_process = subscription and subscription.subscriber
 
         PROMOCODE_ENABLED = getattr(settings, 'THEDAILY_PROMOCODE_ENABLED', False)
-        # captcha when enabled and not ignored => nocaptcha = not(enabled and not ignored) = not enabled or ignored
-        # TODO: do not asume CF for getting the country (do it like signupwall gets the ip_address)
-        nocaptcha = not getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_ENABLED', True) or request.headers.get(
-            'cf-ipcountry', settings.THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY
-        ) in getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED', [])
         subscription_formclass = (
             (SubscriptionPromoCodeForm if PROMOCODE_ENABLED else SubscriptionForm)
-            if nocaptcha
+            if no_captcha(request)
             else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
         )
 
@@ -1553,11 +1557,15 @@ def read_articles_percentage_api(request):
                 if article.main_section.section.slug in getattr(settings, 'DASHBOARD_MAIN_SECTION_SLUGS', []):
                     index_object['object'] = article.main_section.section
                     index_object['name'] = article.main_section.section.name
-                    index_object['slug_id'] = 'section-{}'.format(index_object['name'], article.main_section.section.name)
+                    index_object['slug_id'] = 'section-{}'.format(  # noqa
+                        index_object['name'], article.main_section.section.name  # TODO: fix unused arg at possition 1
+                    )
                 elif article.main_section.section and article.main_section.section.category:
                     index_object['object'] = article.main_section.section.category
                     index_object['name'] = article.main_section.section.category.name
-                    index_object['slug_id'] = 'category-{}'.format(str(article.main_section.section.category.name).lower())
+                    index_object['slug_id'] = 'category-{}'.format(
+                        str(article.main_section.section.category.name).lower()
+                    )
                 elif (
                         article.main_section.edition.publication
                         and article.main_section.edition.publication.slug
@@ -1600,7 +1608,7 @@ def user_comments_api(request):
                 requests.post(
                     talk_url + 'api/graphql',
                     headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
-                    data='{"query":"query user($id:ID!){user(id:$id){comments{nodes{story{url,metadata{title}},body}}}}",'
+                    data='{"query":"query user($id:ID!){user(id:$id){comments{nodes{story{url,metadata{title}},body}}}}",'  # noqa
                     '"variables":{"id":%d},"operationName":"user"}' % User.objects.get(email__iexact=email).id,
                 ).json()['data']['user']['comments']
             )
@@ -1673,6 +1681,7 @@ def referrals(request, hashed_id):
         return 'form_referral.html'
 
 
+@csrf_exempt
 @never_cache
 @to_response
 def nlunsubscribe(request, publication_slug, hashed_id):
@@ -1703,6 +1712,7 @@ def nlunsubscribe(request, publication_slug, hashed_id):
         raise Http404
 
 
+@csrf_exempt
 @never_cache
 @to_response
 def nl_category_unsubscribe(request, category_slug, hashed_id):
@@ -1764,6 +1774,7 @@ def nl_track_open_event(request, s8r_or_registered, hashed_id, nl_campaign, nl_d
     return response
 
 
+@csrf_exempt
 @never_cache
 @to_response
 def disable_profile_property(request, property_id, hashed_id):
@@ -1822,12 +1833,12 @@ def notification_preview(request, template, days=False):
 
 @never_cache
 @csrf_exempt
-def subscribe_notice_closed(request):
+def subscribe_notice_closed(request, key="subscribe"):
     if request.method == "POST":
-        request.session['subscribe_notice_closed'] = True
+        request.session[key + '_notice_closed'] = True
         return HttpResponse()
     else:
-        return JsonResponse({"closed": request.session.get('subscribe_notice_closed', False)})
+        return JsonResponse({"closed": request.session.get(key + '_notice_closed', False)})
 
 
 @never_cache

@@ -1,4 +1,23 @@
-# version 0.4.7 (to be released soon)
+# version 0.4.7 (2023-12-31)
+
+- Many improvements and fixes.
+- Email validation using a better python module.
+- Pixel track on NL templates to push events to GA4 + nldelivery_sync command migrated to use that info from GA4.
+- Also NL open email stats can be retrieved from GA4 events.
+- Memcached local repo app removed and a TODO commented to replace it by another app ASAP.
+- Documentation updates.
+- Allow to fail a first test in a test module.
+- Allow custom more items in dropdown menu using a custom template by settings.
+- Http forbidden custom template.
+- Support to include captcha also in signup page.
+- Fix layout bugs in edit profile.
+- An optional component in the home page to subscribe to Newsletter with one click.
+- Push notifications offer popup shown only if no NLs new header is present.
+- Better tools to deduplicate users.
+- Section detail view support to completely customize its context using functions defined in a python module by settings.
+- Important fixes in the send newsletter management command parent class.
+- Fix photo type and author on article's gallery photos.
+- Python module requirements updates.
 
 # version 0.4.6 (2023-10-20)
 

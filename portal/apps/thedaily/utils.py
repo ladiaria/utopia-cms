@@ -1,49 +1,92 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import random as rdm
 from operator import attrgetter
+from pydoc import locate
 
 from actstream.models import Follow
 from actstream.registry import check
+from favit.models import Favorite
 from social_django.models import UserSocialAuth
 
 from django.conf import settings
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.db.models import Value
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
-from core.models import Category, Publication, ArticleViewedBy
-from thedaily.models import Subscriber, SentMail, OAuthState
+from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
+from .models import Subscriber, SentMail, OAuthState, SubscriberEvent
 
-from .models import Subscriber
 
-
-non_relevant_data_max_ammounts = {
+non_relevant_data_max_amounts = {
     User: 1,
     Subscriber: 1,
+    SubscriberEvent: 1,
     Subscriber.newsletters.through: 10,
     Subscriber.category_newsletters.through: 10,
     UserSocialAuth: 1,
     SentMail: 10,
     ArticleViewedBy: 10,
+    DeviceSubscribed: 10,
     OAuthState: 1,
     AudioStatistics: 10,
     Follow: 10,
+    Favorite: 10,
+    User.user_permissions.through: 3,
 }
+for key, val in getattr(settings, "THEDAILY_COLLECTOR_ANALYSIS_EXTRA_AMOUNTS", {}).items():
+    keyclass = locate(key)
+    if keyclass:
+        non_relevant_data_max_amounts[keyclass] = val
+
+movable = (
+    SubscriberEvent,
+    ArticleViewedBy,
+    Subscriber.newsletters.through,
+    Subscriber.category_newsletters.through,
+    AudioStatistics,
+    Follow,
+    Favorite,
+    User.user_permissions.through,
+)
 
 
-def collector_analysis(collector_data, indent_level=1):
-    data_keys = set(collector_data.keys())
+def collector_analysis(collector_data, indent_level=1, ignore_movable=False):
     safety, report = True, ""
     for key in collector_data:
         key_count = len(collector_data[key])
-        if key not in non_relevant_data_max_ammounts or key_count > non_relevant_data_max_ammounts[key]:
-            safety = False
+        if key not in non_relevant_data_max_amounts or key_count > non_relevant_data_max_amounts[key]:
+            if not ignore_movable or key not in movable:
+                safety = False
         report += "\n%s%s: %d" % ("\t" * indent_level, key, key_count)
     return safety, report
+
+
+def move_data(s0, s1):
+    # copies "movable" data from subscriber s0 to subscriber s1
+    for avb in ArticleViewedBy.objects.filter(user=s0.user):
+        try:
+            ArticleViewedBy.objects.filter(id=avb.id).update(user=s1.user)
+        except IntegrityError:
+            pass
+    for uperm in User.user_permissions.through.objects.filter(user=s0.user):
+        try:
+            User.user_permissions.through.objects.filter(id=uperm.id).update(user=s1.user)
+        except IntegrityError:
+            pass
+    Follow.objects.filter(user=s0.user).update(user=s1.user)
+    Favorite.objects.filter(user=s0.user).update(user=s1.user)
+    SubscriberEvent.objects.filter(subscriber=s0).update(subscriber=s1)
+    AudioStatistics.objects.filter(subscriber=s0).update(subscriber=s1)
+    for p in s0.newsletters.all():
+        s1.newsletters.add(p)
+    for c in s0.category_newsletters.all():
+        s1.category_newsletters.add(c)
 
 
 def recent_following(user, *models):
@@ -64,6 +107,24 @@ def add_default_category_newsletters(subscriber):
                 subscriber.category_newsletters.add(category)
         except Category.DoesNotExist:
             pass
+
+
+def unsubscribed_newsletters(subscriber):
+    """
+    Get unsubscribed newsletters for subscriber supplied
+    @params: subscriber instance
+    @return: List of unsubscribed newsletters
+    """
+    publications = list(Publication.objects.filter(has_newsletter=True).annotate(nltype=Value('p')))
+    categories = list(Category.objects.filter(has_newsletter=True).annotate(nltype=Value('c')))
+    all_nl = publications + categories  # get newsletters for cards presentation format
+    if subscriber:
+        subscribed_nls = list(subscriber.newsletters.all()) + list(subscriber.category_newsletters.all())
+        result_nl = list(set(all_nl) - set(subscribed_nls))
+        rdm.shuffle(result_nl)
+        return result_nl
+    else:
+        return all_nl
 
 
 def subscribers_nl_iter(receivers, starting_from_s, starting_from_ns):

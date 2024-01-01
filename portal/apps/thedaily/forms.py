@@ -4,6 +4,12 @@ from __future__ import unicode_literals
 from datetime import date
 import re
 
+from django_recaptcha.fields import ReCaptchaField
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, BaseInput, Field, Fieldset, HTML
+from crispy_forms.bootstrap import FormActions
+from crispy_forms.utils import get_template_pack
+
 from django.template.defaultfilters import slugify
 from django.conf import settings
 from django.http import UnreadablePostError
@@ -25,12 +31,6 @@ from django.forms import (
 )
 from django.urls import reverse
 from django.core.exceptions import MultipleObjectsReturned
-
-from captcha.fields import ReCaptchaField
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, BaseInput, Field, Fieldset, HTML
-from crispy_forms.bootstrap import FormActions
-from crispy_forms.utils import get_template_pack
 
 from .models import Subscription, Subscriber, email_extra_validations
 from .utils import get_all_newsletters
@@ -271,6 +271,27 @@ class SignupForm(BaseUserForm):
                 }
             )
         }
+
+
+class SignupCaptchaForm(SignupForm):
+    captcha = ReCaptchaField(label='')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper.layout = Layout(
+            *('first_name', 'email', 'phone', Field('password', template='materialize_css_forms/layout/password.html'))
+            + terms_and_conditions_layout_tuple
+            + (
+                HTML(
+                    '<strong>Comprobá que no sos un robot</strong>'
+                ),
+                'captcha',
+                'next_page',
+                HTML('<div class="align-center">'),
+                Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l'),
+                HTML('</div">'),
+            )
+        )
 
 
 class ProfileForm(ModelForm):

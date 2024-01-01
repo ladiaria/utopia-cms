@@ -156,7 +156,7 @@ class SubscriberAdmin(ModelAdmin):
                     try:
                         u.delete()
                     except Exception as e:
-                        message = e.message
+                        message = e.message  # noqa
                     else:
                         msg_success = "El suscriptor seleccionado y su usuario fueron eliminados correctamente"
                 else:
@@ -166,7 +166,6 @@ class SubscriberAdmin(ModelAdmin):
             self.message_user(request, msg_success)
         else:
             self.message_user(request, msg_err, level=messages.ERROR)
-
 
     def save_model(self, request, obj, form, change):
         if form.is_valid():

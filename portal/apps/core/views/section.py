@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from builtins import str
 import json
 from datetime import date
+from pydoc import locate
 
 from django.conf import settings
 from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseRedirect, Http404
@@ -48,7 +49,13 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
             )
         context['site_description'] += "."
 
-    if section_slug in getattr(settings, 'CORE_SECTIONS_DETAIL_USE_CATEGORY', ()):
+    custom_ctx_modname, custom_ctx_function = getattr(settings, 'CORE_SECTION_DETAIL_CUSTOM_CTX_MODULE', None), None
+    if custom_ctx_modname:
+        custom_ctx_function = getattr(locate(custom_ctx_modname), section_slug.replace("-", "_"), custom_ctx_function)
+    if custom_ctx_function:
+        custom_ctx_function(context)
+        publication = None
+    elif section_slug in getattr(settings, 'CORE_SECTIONS_DETAIL_USE_CATEGORY', ()):
         articles, publication = section.category.articles(), None
     else:
         if section.publications.exists():
@@ -88,16 +95,19 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
         context['publication_use_headline'] = \
             publication.slug in getattr(settings, 'CORE_PUBLICATIONS_SECTION_DETAIL_USE_HEADLINE', ())
 
-    paginator = Paginator(articles, 10)
-    try:
-        articles = paginator.page(page)
-    except PageNotAnInteger:
-        articles = paginator.page(1)
-    except EmptyPage:
-        articles = paginator.page(paginator.num_pages)
+    context["publication"] = publication
+    if not custom_ctx_function:
+        paginator = Paginator(articles, 10)
+        try:
+            articles = paginator.page(page)
+        except PageNotAnInteger:
+            articles = paginator.page(1)
+        except EmptyPage:
+            articles = paginator.page(paginator.num_pages)
+        context["articles"] = articles
 
-    # support custom templates
     template = "core/templates/section/detail.html"
+    # custom template support
     template_dir = getattr(settings, "CORE_SECTION_TEMPLATE_DIR", None)
     if template_dir:
         template_try = '%s/%s.html' % (template_dir, section_slug)
@@ -115,7 +125,6 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
         else:
             template = template_try
 
-    context.update({'articles': articles, 'publication': publication})
     return render(request, template, context)
 
 

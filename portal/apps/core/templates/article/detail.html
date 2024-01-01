@@ -331,7 +331,7 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall %}{# closed in line 652 #}
+        {% if not request.signupwall %}{# closed in line 654 #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
@@ -418,8 +418,10 @@
                              alt="{% if photo.caption %}{{ photo.caption }}{% else %}Foto Nº{{ forloop.counter }} de la galería del artículo '{{ article.headline|remove_markup }}'{% endif %}">
                         <div class="caption hide">
                           {{ photo.caption }}
-                          {% if article.photo_author %}
-                            <span class="small soft">{{ article.photo_type }}: {{ article.photo_author }}</span>
+                          {% if photo.extended.photographer %}
+                            <span class="small soft">
+                              {{ photo.extended.get_type_display }}: {{ photo.extended.photographer }}
+                            </span>
                           {% endif %}
                         </div>
                       </a>
@@ -666,7 +668,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 798 #}
+    {% if not request.signupwall %}{# closed in line 800 #}
 
       {% if article.public %}
 
@@ -795,7 +797,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 669 #}
+    {% endif %}{# opened in line 671 #}
 
     {% block article_extra %}{% endblock %}
 

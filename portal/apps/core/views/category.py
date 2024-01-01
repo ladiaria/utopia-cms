@@ -145,7 +145,7 @@ def newsletter_preview(request, slug):
 
             listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
             if listonly_section:
-                top_articles = [t for t in top_articles if t[1].slug == listonly_section]
+                top_articles = [t for t in top_articles if t[2].slug == listonly_section]
                 if cover_article_section.slug != listonly_section:
                     cover_article = top_articles.pop(0)[0] if top_articles else None
                     cover_article_section = cover_article.publication_section() if cover_article else None
@@ -204,7 +204,8 @@ def newsletter_preview(request, slug):
         else:
             unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
                 '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
-        headers['List-Unsubscribe'] = headers['List-Unsubscribe-Post'] = '<%s>' % unsubscribe_url
+        headers['List-Unsubscribe'] = '<%s>' % unsubscribe_url
+        headers['List-Unsubscribe-Post'] = "List-Unsubscribe=One-Click"
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
 
         context.update(

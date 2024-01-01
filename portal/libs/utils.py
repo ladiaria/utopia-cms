@@ -166,18 +166,19 @@ for email_conf in getattr(settings, "EMAIL_ALTERNATIVE", []):
             smtp_servers_weights = None
 
 
-def smtp_server_choice(user_email, servers_available, force_ignore_weights=False):
+def smtp_server_choice(user_email, servers_available, force_ignore_weights=False, ignore_from_available=None):
     """
     This function will return the index to the (main server + alternative servers) list filtered by the availability
-    list given, randomnly choosed to deliver the email given.
+    list given, not using the one ignored (if such arg received), randomnly choosed to deliver the email given.
     TODO: choices are "fixed" for the same domain in the same delivery, then, to avoid unnecesary repeated calls to
           this function, a class can be written to fill a hashtable for caching those per-domain choices.
           The class instance will be created and used only in the delivery command.
-          (Note that the servers availability can change in the same delivery execution)
+          (Note that the servers availability can change in the same delivery execution, also be careful if
+          "ignore_from_available" is not None)
     """
     email_domain, choices_data, weights = split_email(user_email)["domain"], [], None
     for alt_index, not_allowed in enumerate(smtp_dom_not_allowed):
-        if servers_available[alt_index] and email_domain not in not_allowed:
+        if servers_available[alt_index] and email_domain not in not_allowed and ignore_from_available != alt_index:
             choices_data.append(alt_index)
     if choices_data:
         if not force_ignore_weights and smtp_servers_weights:

@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from django.conf import settings
+from django.urls import reverse
 from django.db.models import CASCADE
 from django.db.models import (
     CharField, Model, DateField, ForeignKey, PositiveIntegerField, PositiveSmallIntegerField, BooleanField
@@ -15,10 +16,22 @@ from audiologue.models import Audio
 from thedaily.models import Subscriber
 
 
-def nl_delivery_stats_cell(sent, opened):
-    sent_row = 'Envíos: %s' % (sent if sent is not None else 'Pendiente')
+def nl_delivery_stats_cell(sent, opened, nl_delivery_id=None, nl_delivery_segment=None):
+    sent_row, link_open_tag = 'Envíos: %s' % (sent if sent is not None else 'Pendiente'), ""
+    if opened is not None and sent and nl_delivery_id and nl_delivery_segment:
+        reverse_kwargs = {"nl_delivery_id": nl_delivery_id, "nl_delivery_segment": nl_delivery_segment}
+        link_open_tag = (
+            '<a href="%s" title="Click to download the subscribers id list in CSV format">' % (
+                reverse("nl_open", kwargs=reverse_kwargs)
+            )
+        )
     opened_row = 'Apertura: %s' % (
-        ('%s (%.2f%%)' % (opened, (opened / sent) * 100)) if opened is not None and sent else 'Pendiente'
+        '%s%s%s (%.2f%%)' % (
+            link_open_tag,
+            opened,
+            "</a>" if link_open_tag else "",
+            (opened / sent) * 100,
+        ) if opened is not None and sent else 'Pendiente',
     )
     return '<br>'.join((sent_row, opened_row))
 
@@ -63,12 +76,12 @@ class NewsletterDelivery(Model):
     get_newsletter_name.short_description = 'newsletter'
 
     def user_stats(self):
-        return mark_safe(nl_delivery_stats_cell(self.user_sent, self.user_opened))
+        return mark_safe(nl_delivery_stats_cell(self.user_sent, self.user_opened, self.id, "user"))
 
     user_stats.short_description = 'cuenta gratuita'
 
     def subscriber_stats(self):
-        return mark_safe(nl_delivery_stats_cell(self.subscriber_sent, self.subscriber_opened))
+        return mark_safe(nl_delivery_stats_cell(self.subscriber_sent, self.subscriber_opened, self.id, "subscriber"))
 
     subscriber_stats.short_description = 'suscripciones de pago'
 

@@ -4,11 +4,11 @@
 
 - Python:
 
-  The Python version we recomend to use is any version from 3.10.6 to 3.11.5
+  The Python version we recomend to use is any version from 3.10.6 to 3.11.6
 
-  If your system has a native Python installation in version 3.10.6 - 3.11.5 you can use it, and no installing another Python version may be required.
+  If your system has a native Python installation in version 3.10.6 - 3.11.6 you can use it, and no installing another Python version may be required.
 
-  If not, we recommend install the version 3.11.5 using pyenv: https://github.com/pyenv/pyenv
+  If not, we recommend install the version 3.11.6 using pyenv: https://github.com/pyenv/pyenv
 
 - System packages:
 

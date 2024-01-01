@@ -9,7 +9,7 @@ import requests
 import pymongo
 from hashids import Hashids
 from pymailcheck import split_email
-from validate_email_address import validate_email as domain_validate_email
+from pyisemail import is_email
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
@@ -333,9 +333,7 @@ def email_extra_validations(old_email, email, instance_id=None, next_page=None, 
                 # 3. Domain validation + already used validation
                 if (
                     not split_email(email)["domain"] in whitelisted_domains()
-                    and not bool(
-                        domain_validate_email(email, getattr(settings, "THEDAILY_VALIDATE_EMAIL_CHECK_MX", True))
-                    )
+                    and not is_email(email, check_dns=getattr(settings, "THEDAILY_VALIDATE_EMAIL_CHECK_MX", True))
                 ):
                     msg = error_msg_invalid
 

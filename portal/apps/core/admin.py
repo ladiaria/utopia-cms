@@ -28,7 +28,6 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
-from django.contrib.admin.options import get_ul_class
 from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
@@ -37,7 +36,6 @@ from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.utils.text import Truncator
-from django.utils.translation import gettext as _
 
 from .models import (
     Article,
@@ -541,7 +539,7 @@ class ArticleAdmin(VersionAdmin):
                 self.obj = obj
             except Exception as e:
                 if settings.DEBUG:
-                    print(e)
+                    print("DEBUG: error in core.admin.ArticleAdmin.save_model: %s" % e)
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
@@ -626,7 +624,7 @@ class ArticleAdmin(VersionAdmin):
         """
         article = Article.objects.get(id=object_id)
         if (
-            type(site._registry[ArticleCollection]) != type(self)
+            type(site._registry[ArticleCollection]) is not type(self)
             and hasattr(article, "articlecollection")
             and request.user.has_perm('core.change_articlecollection')
         ):
