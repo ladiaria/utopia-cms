@@ -56,7 +56,6 @@ class Command(BaseCommand):
         last_month_first = datetime.combine(last_month.replace(day=1), datetime.min.time())
         month_before_last = last_month_first - timedelta(1)
         dt_until = datetime.combine(this_month_first, datetime.min.time())
-        print(f"{this_month_first}, {last_month_first}, {dt_until}")
 
         find_filters = {"user": {"$exists": True}, "path_visited": {"$exists": True}}
         if not live:
