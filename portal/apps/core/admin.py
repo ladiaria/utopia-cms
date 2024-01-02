@@ -662,7 +662,12 @@ class ArticleAdmin(VersionAdmin):
 
     class Media:
         css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
-        js = ('js/jquery.charcounter-orig.js', 'js/utopiacms_martor_semantic.js', 'js/homev2/article_admin.js')
+        js = (
+            'js/jquery.charcounter-orig.js',
+            'js/utopiacms_martor_semantic.js',
+            'js/utopiacms_martor_fullheight.js',
+            'js/homev2/article_admin.js',
+        )
 
 
 class ForeignKeyRawIdWidgetMoreWords(widgets.ForeignKeyRawIdWidget):

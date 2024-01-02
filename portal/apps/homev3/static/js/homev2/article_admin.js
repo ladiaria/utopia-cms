@@ -44,23 +44,25 @@ var main_section_row_selected = function(radio_field){
     $("[name=main_section_radio]:not(:checked)").parents("tr").removeClass('row-articlerel-selected');
 }
 
-$(function(){
-    prepareFields();
-    $("#id_type").change(prepareFields);
-    $.each($(".field-main input"), function(index, value){
-        $(value).attr('name', 'main_section_radio');
-        $(value).attr('data-articlerel-id', $("#id_articlerel_set-" + index + "-id").val());
-        $(value).val(index);
-        var main_section_selected = $("#id_main_section").val();
-        if(main_section_selected && main_section_selected == $(value).attr('data-articlerel-id')){
-            $(value).attr('checked', true).parents("tr").addClass('row-articlerel-selected');
-        }
-        $(value).change(function(){
-            var rel_id = $(this).attr('data-articlerel-id');
-            if (rel_id) {
-                $("#id_main_section").val(rel_id);
+if (window.jQuery) {
+    $(function(){
+        prepareFields();
+        $("#id_type").change(prepareFields);
+        $.each($(".field-main input"), function(index, value){
+            $(value).attr('name', 'main_section_radio');
+            $(value).attr('data-articlerel-id', $("#id_articlerel_set-" + index + "-id").val());
+            $(value).val(index);
+            var main_section_selected = $("#id_main_section").val();
+            if(main_section_selected && main_section_selected == $(value).attr('data-articlerel-id')){
+                $(value).attr('checked', true).parents("tr").addClass('row-articlerel-selected');
             }
-            main_section_row_selected($(this));
+            $(value).change(function(){
+                var rel_id = $(this).attr('data-articlerel-id');
+                if (rel_id) {
+                    $("#id_main_section").val(rel_id);
+                }
+                main_section_row_selected($(this));
+            });
         });
     });
-});
+}

@@ -20,16 +20,18 @@ var markdownToH4 = function(editor) {
         );
     }
 };
-$(function(){
-    if (typeof ace !== "undefined") {
-        var editor = ace.edit('martor-body');
-        editor.commands.addCommand({
-            name: 'markdownToH4',
-            bindKey: {win: 'Ctrl-Alt-4', mac: 'Command-Option-4'},
-            exec: function(editor) {
-                markdownToH4(editor);
-            },
-            readOnly: true
-        });
-    }
-});
+if (window.jQuery) {
+    $(function(){
+        if (typeof ace !== "undefined") {
+            var editor = ace.edit('martor-body');
+            editor.commands.addCommand({
+                name: 'markdownToH4',
+                bindKey: {win: 'Ctrl-Alt-4', mac: 'Command-Option-4'},
+                exec: function(editor) {
+                    markdownToH4(editor);
+                },
+                readOnly: true
+            });
+        }
+    });
+}

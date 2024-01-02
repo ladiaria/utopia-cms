@@ -1,8 +1,12 @@
 /* Copyright (c) 2007 Tom Deater (http://www.tomdeater.com) */
+/* utopia-cms: added the if in line 5 to not raise js error if no jquery defined */
+
 $(function(){
-    $('textarea.vLargeTextField').each(function(){
-        $(this).charCounter();
-    });
+	if (window.jQuery) {
+		$('textarea.vLargeTextField').each(function(){
+			$(this).charCounter();
+		});
+	}
 });
 (function($) {
 	$.fn.charCounter = function (settings) {
