@@ -620,20 +620,23 @@ class ArticleAdmin(VersionAdmin):
         - This is not already the change view of a collection
         - The object to change is a colection
         - The user has permissions to change a collection
-        TODO: fix 404 for non-published collections
         """
-        article = Article.objects.get(id=object_id)
-        if (
-            type(site._registry[ArticleCollection]) is not type(self)
-            and hasattr(article, "articlecollection")
-            and request.user.has_perm('core.change_articlecollection')
-        ):
-            return HttpResponseRedirect(
-                reverse(
-                    '%s:%s_articlecollection_change' % (self.admin_site.name, article._meta.app_label),
-                    args=(object_id, ),
+        try:
+            article = Article.objects.get(id=object_id)
+        except Article.DoesNotExist:
+            pass
+        else:
+            if (
+                type(site._registry[ArticleCollection]) is not type(self)
+                and hasattr(article, "articlecollection")
+                and request.user.has_perm('core.change_articlecollection')
+            ):
+                return HttpResponseRedirect(
+                    reverse(
+                        '%s:%s_articlecollection_change' % (self.admin_site.name, article._meta.app_label),
+                        args=(object_id, ),
+                    )
                 )
-            )
         return super().change_view(request, object_id, form_url, extra_context)
 
     def changelist_view(self, request, extra_context=None):
