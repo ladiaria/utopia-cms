@@ -280,18 +280,20 @@ def login(request):
         return HttpResponseRedirect(next_page)
 
     article_id, login_formclass, response, login_error = request.GET.get('article'), LoginForm, None, None
-    template = getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html')
-    context = {'next_page': next_page, 'next': pathname2url(next_page.encode('utf8'))}
+    template, context = getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html'), {}
     if article_id:
         try:
             article = Article.objects.get(id=article_id)
         except (ValueError, Article.DoesNotExist):
             pass
         else:
+            next_page = article.get_absolute_url()
             if "prelogin" not in request.POST:
                 login_formclass = get_formclass(request, "PreLogin")
             template = hard_paywall_template()
             context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "article": article})
+
+    context.update({'next_page': next_page, 'next': pathname2url(next_page.encode('utf8'))})
 
     initial, name_or_mail = {}, request.GET.get('name_or_mail')
     if name_or_mail:
@@ -315,6 +317,17 @@ def login(request):
                         # attempt.
                         request.session.pop("google-oauth2_state", None)
                         request.session.modified = True
+                        # terms and conds acceptance save
+                        if (
+                            request.session.get("terms_and_conds_accepted")
+                            and not user.subscriber.terms_and_conds_accepted
+                        ):
+                            user.subscriber.terms_and_conds_accepted = True
+                            try:
+                                user.subscriber.save()
+                            except Exception:
+                                # do not break login if an error raised during the subscriber object save
+                                pass
                         response = HttpResponseRedirect(next_page)
                     else:
                         response = HttpResponseRedirect(reverse('account-confirm_email'))
@@ -457,7 +470,7 @@ def welcome(request, signup=False, subscribed=False):
 @to_response
 def google_phone(request):
     """
-    Ask for "phone" when using google-sign-in to create an account
+    Ask for "phone" and terms and conditions acceptance when using google-sign-in to create an account
     TODO: when coming form AMP, the landing "welcome" page should be different because the expected behaviour is to go
           back to the article AMP page that originated the login, ask UX team for feedback on what to do, one option is
           to show the welcome page (with the content information adjusted) and after some seconds redirect to the
@@ -466,10 +479,10 @@ def google_phone(request):
           the article '<article-title>'" if the sign-in was originated from an article page.
     """
     # if planslug in session this came from a new subscription attemp and we should continue it
-    planslug = request.session.get('planslug')
+    planslug, is_new = request.session.get('planslug'), request.GET.get('is_new') == '1'
     if planslug:
         request.session.pop('planslug')
-        if request.GET.get('is_new') == '1':
+        if is_new:
             # default category newsletters are not added here because some subscriptions may not add the default
             # category newsletters. TODO: Add a M2M relation from subscriptionprices(planslug) to Category
             pass
@@ -478,10 +491,14 @@ def google_phone(request):
         oas = OAuthState.objects.get(state=request.session.get('google-oauth2_state'))
     except OAuthState.DoesNotExist:
         raise Http404
+
     profile = get_or_create_user_profile(oas.user)
-    google_signin_form = GoogleSigninForm(instance=profile)
+    form_kwargs = {"instance": profile}
+    if request.session.get("terms_and_conds_accepted"):
+        form_kwargs["initial"] = {"terms_and_conds_accepted": True}
+
     if request.method == 'POST':
-        google_signin_form = GoogleSigninForm(request.POST, instance=profile)
+        google_signin_form = GoogleSigninForm(request.POST, **form_kwargs)
         if google_signin_form.is_valid():
             google_signin_form.save()
             send_notification(
@@ -498,12 +515,18 @@ def google_phone(request):
                 % (reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('account-welcome'))
             )
     else:
+        google_signin_form = GoogleSigninForm(**form_kwargs)
         # if is a new user add the default category newsletters (reached only from "free" subscriptions)
-        if request.GET.get('is_new') == '1':
+        if is_new:
             add_default_category_newsletters(profile)
+
     return (
         'google_signup.html',
-        {'google_signin_form': google_signin_form, "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
+        {
+            'google_signin_form': google_signin_form,
+            "is_new": is_new,  # TODO: this should be used to render different labels in the template
+            "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+        },
     )
 
 

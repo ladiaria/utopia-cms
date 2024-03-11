@@ -300,7 +300,8 @@ class SignupForm(BaseUserForm):
         user = User.objects.create_user(email, email, password)
         if not user.subscriber.phone:
             user.subscriber.phone = ''.join(DIGIT_RE.findall(self.cleaned_data.get('phone', '')))
-        user.subscriber.terms_and_conds_accepted = self.cleaned_data.get('terms_and_conds_accepted')
+        if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
+            user.subscriber.terms_and_conds_accepted = self.cleaned_data.get('terms_and_conds_accepted')
         user.subscriber.save()
         user.first_name = self.cleaned_data.get('first_name')
         user.last_name = self.cleaned_data.get('last_name', '')
@@ -807,7 +808,9 @@ class GoogleSigninForm(ModelForm):
 
     class Meta:
         model = Subscriber
-        fields = ('phone',)
+        fields = ('phone',) + (
+            ("terms_and_conds_accepted",) if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID else ()
+        )
         widgets = {'phone': PhoneInput(attrs={'autocomplete': 'tel', 'spellcheck': 'false'})}
 
     def clean_phone(self):

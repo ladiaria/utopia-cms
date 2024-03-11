@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from social_core.exceptions import AuthException
 
+from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User
@@ -40,7 +41,9 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
               this doesn't seem to be the right way, we believe that the "partial" approach is the right solution.
     """
     subscriber = get_or_create_user_profile(user)
-    if not subscriber.phone:
+    if not subscriber.phone or (
+        settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID and not subscriber.terms_and_conds_accepted
+    ):
         state = kwargs['request'].GET['state']
         try:
             oas = OAuthState.objects.get(user=user)
@@ -48,6 +51,7 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
             oas.save()
         except OAuthState.DoesNotExist:
             OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
+        # TODO: try to use "next" (may be in kwargs)
         is_new, query_params = kwargs.get('is_new'), ''
         if is_new:
             query_params = '?is_new=1'
