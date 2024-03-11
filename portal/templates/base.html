@@ -112,7 +112,9 @@
       {% if HOMEV3_CUSTOM_CSS %}
         <link href="{% static HOMEV3_CUSTOM_CSS %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endif %}
+      {% block css %}{% endblock %}
     {% endcompress %}
+    {% block extra_css %}{% endblock %}
 
     {% compress css %}
       <link href="{% static 'sass/print.scss' %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
@@ -204,11 +206,6 @@
       </script>
       <!-- End user data -->
     {% endif %}
-
-    {% compress css %}
-      {% block css %}{% endblock %}
-    {% endcompress %}
-    {% block extra_css %}{% endblock %}
 
     <!-- JavaScript -->
     <script src="{% static 'js/index.js' %}"></script>
@@ -353,7 +350,9 @@
           $(".subscribe-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
         });
 
-        {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
+        {% block read_later_events %}
+          {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
+        {% endblock %}
       });
 
     </script>
@@ -452,7 +451,7 @@
                 {% include 'mobile_nav_items.html' %}
               {% endwith %}
             {% else %}
-              {% include 'mobile_nav_items.html' %}
+              {% block mobile_nav_not_is_detail%}{% include 'mobile_nav_items.html' %}{% endblock %}
             {% endif %}
           </ul>
         </div>

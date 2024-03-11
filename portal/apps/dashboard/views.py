@@ -18,9 +18,9 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import permission_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
-
 from django_amp_readerid.utils import get_related_user
 
+from thedaily.utils import get_profile_newsletters_ordered
 from .management.commands.nldelivery_sync_stats import get_report
 from .models import AudioStatistics, NewsletterDelivery
 
@@ -45,6 +45,8 @@ def index(request):
             'activity_rows': is_admin or is_seller,
             'is_financial': is_admin or is_financial,
             'financial_extra_items_template': getattr(settings, 'DASHBOARD_FINANCIAL_EXTRA_ITEMS_TEMPLATE', None),
+            "newsletters": get_profile_newsletters_ordered(),
+            "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
         },
     )
 

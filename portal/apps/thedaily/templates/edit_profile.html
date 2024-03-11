@@ -84,7 +84,7 @@
           <p class="edit_profile_card__subtitle_name">{{ subscriber.get_full_name }}</p>
           {% if subscriber.contact_id %}
             <p class="edit_profile_card__subtitle_identification">
-              <span class="bold">Número de identificación:</span> {{ subscriber.contact_id }}
+              <span class="bold">Número de {{ id_number_label|default:'identificación' }}:</span> {{ subscriber.contact_id }}
             </p>
           {% endif %}
         </div>
@@ -111,7 +111,7 @@
                   </p>
                 {% endif %}
               {% else %}
-                sin asingar <span class="needs-attention-icon"></span>
+                sin asignar <span class="needs-attention-icon"></span>
               {% endif %}
             </span>
           </p>
@@ -121,7 +121,7 @@
               {% if subscriber.phone %}
                 {{ subscriber.phone }}
               {% else %}
-                sin asingar <span class="needs-attention-icon"></span>
+                sin asignar <span class="needs-attention-icon"></span>
               {% endif %}
             </span>
           </p>
@@ -131,7 +131,7 @@
               {% if subscriber.address %}
                 {{ subscriber.address }}
               {% else %}
-                sin asingar <span class="needs-attention-icon"></span>
+                sin asignar <span class="needs-attention-icon"></span>
               {% endif %}
             </span>
           </p>

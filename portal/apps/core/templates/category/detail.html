@@ -46,10 +46,10 @@
 
         <div class="ld-grid-area area-main">
 
-          <div class="ld-card ld-card--big">
+          <div class="ld-card ld-card--big ld-card--{{ cover_article.type }}{% block cover_article_extra_class %}{% endblock %}">
             {% render_toolbar_for cover_article %}
-            {% block image %}
-              {% if cover_article.photo %}
+            {% block image %}{# TODO: check if anybody need this block (it seems that nobody needs it) #}
+              {% if cover_article.photo_render_allowed %}
                 <a href="{{ cover_article.get_absolute_url }}">
                   <figure>
                     <picture>
@@ -67,19 +67,7 @@
             <div class="ld-card__body">
 
               {% with article=cover_article %}
-                {% if render_hierarchy %}
-                  <div class="ld-card__section">
-                    {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
-                    {% include 'article/article_card_lock_tooltip.html' %}
-                  </div>
-                {% elif article.section %}
-                  <div class="ld-card__section">
-                    <a href="{{ article.section.get_absolute_url }}">{{ article.section }}</a>
-                    {% include 'article/article_card_lock_tooltip.html' %}
-                  </div>
-                {% elif article.is_restricted %}
-                  <div class="ld-card__section">{% include 'article/article_card_lock_tooltip.html' %}</div>
-                {% endif %}
+                {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
               {% endwith %}
 
               <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
@@ -99,7 +87,7 @@
                   {% if authors %}
                     <div class="ld-card__author">
                       {% for author in authors %}
-                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                        <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
                       {% endfor %}
                     </div>
                   {% endif %}
@@ -107,7 +95,7 @@
                 {% if not hide_date_published %}
                   {% autoescape off %}{% date_published_verbose cover_article %}{% endautoescape %}
                 {% endif %}
-                {% with a=cover_article %}{% include 'article/article_card_read_later.html' %}{% endwith %}
+                {% include 'article/article_card_read_later.html' with a=cover_article %}
               </div>
             </div>
           </div>
@@ -119,30 +107,18 @@
       <div class="ld-grid-area area-third">
 
         {% for a in destacados|slice:":5" %}
-          <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}">
+          <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}
+                      ld-card--{{ a.type }}{% block destacados_right_extra_class %}{% endblock %}">
             {% render_toolbar_for a %}
-            {% if a.photo %}
+            {% if a.photo_render_allowed %}
               <a href="{{ a.get_absolute_url }}" class="ld-card__img-link">
-                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" loading="lazy"
-                     title="{{ a.photo_caption }}" alt="{{ a.photo_caption }}"
-                     width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}>
+                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" loading="lazy" title="{{ a.photo_caption }}"
+                     alt="{{ a.photo_caption }}" width="700" height="{{ a.photo.get_700w_size.1 }}">
               </a>
             {% endif %}
             <div class="ld-card__body">
               {% with article=a %}
-                {% if render_hierarchy %}
-                  <div class="ld-card__section">
-                    {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
-                    {% include 'article/article_card_lock_tooltip.html' %}
-                  </div>
-                {% elif article.section %}
-                  <div class="ld-card__section">
-                    <a href="{{ article.section.get_absolute_url }}">{{ article.section }}</a>
-                    {% include 'article/article_card_lock_tooltip.html' %}
-                  </div>
-                {% elif article.is_restricted %}
-                  <div class="ld-card__section">{% include 'article/article_card_lock_tooltip.html' %}</div>
-                {% endif %}
+                {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
               {% endwith %}
               <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a></h3>
               {% if a.home_lead or a.deck %}
@@ -155,8 +131,7 @@
                   {% if authors %}
                     <div class="ld-card__author">
                       {% for author in authors %}
-                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>
-                        {% if not forloop.last %}, {% endif %}
+                        <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
                       {% endfor %}
                     </div>
                   {% endif %}
@@ -183,31 +158,17 @@
 
       {% for a in destacados|slice:"5:9" %}
         <div class="ld-grid-area ld-grid-area-col area-col-{% cycle 'a' 'b' 'c' 'd' %}">
-          <div class="ld-card ld-card--reg">
+          <div class="ld-card ld-card--reg ld-card--{{ a.type }}{% block destacados_abcd_extra_class %}{% endblock %}">
             {% render_toolbar_for a %}
-            {% if a.photo %}
+            {% if a.photo_render_allowed %}
               <a href="{{ a.get_absolute_url }}">
-                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" title="{{ a.photo.caption }}"
-                     alt="{% if a.photo.caption %}{{ a.photo.caption }}{% else %}Foto principal del artículo '{{ a.headline|remove_markup }}'{% endif %}"
-                     width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}
-                     loading="lazy">
+                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" title="{{ a.photo_caption }}"
+                     alt="{{ a.photo_caption }}" loading="lazy" width="700" height="{{ a.photo.get_700w_size.1 }}">
               </a>
             {% endif %}
             <div class="ld-card__body">
               {% with article=a %}
-                {% if render_hierarchy %}
-                  <div class="ld-card__section">
-                    {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
-                    {% include 'article/article_card_lock_tooltip.html' %}
-                  </div>
-                {% elif article.section %}
-                  <div class="ld-card__section">
-                    <a href="{{ article.section.get_absolute_url }}">{{ article.section }}</a>
-                    {% include 'article/article_card_lock_tooltip.html' %}
-                  </div>
-                {% elif article.is_restricted %}
-                  <div class="ld-card__section">{% include 'article/article_card_lock_tooltip.html' %}</div>
-                {% endif %}
+                {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
               {% endwith %}
               <h3 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
                 <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
@@ -220,8 +181,7 @@
                   {% if authors %}
                     <div class="ld-card__author">
                       {% for author in authors %}
-                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>
-                        {% if not forloop.last %}, {% endif %}
+                        <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
                       {% endfor %}
                     </div>
                   {% endif %}

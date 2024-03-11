@@ -27,25 +27,14 @@
 {% block content %}
 
   {% if subscription_in_process %}
-
+    {# TODO: try to reproduce this condition and write how to do it #}
     <main class="ld-content">
       <div class="row">
         <div class="col s12 m8 offset-m2">
-          <h1 class="ld-title-huge">Validá tu cuenta</h1>
-          <p>
-            Te hemos enviado un email para activar tu cuenta, para poder completar la suscripción te pedimos que lo hagas y luego vuelvas a recargar esta página.
-          </p>
-          <p>
-            Si no te llegó el email de activación podés <a href="{% url 'account-confirm_email' %}">volver a solicitarlo</a>
-            o también <a href="{% url 'session-refresh' %}">refrescar la sesión</a> para comenzar nuevamente la solicitud de suscripción. Muchas gracias.
-          </p>
-          <p>
-            ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
-          </p>
+          {% include 'subscription_in_process.html' %}
         </div>
       </div>
     </main>
-
   {% else %}
 
     {% if is_already_subscribed %}
@@ -126,22 +115,20 @@
 
 {% endblock %}
 
-{% block footer_block %}
-  {% include 'footer_simple.html' with disable_signup=True %}
-{% endblock %}
+{% block footer_block %}{% include 'footer_simple.html' with disable_signup=True %}{% endblock %}
 
 {% block javascript %}
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
   <script>
     $(function(){
-      $('label[for="id_terms_and_conditions"] a').click(function(event){
+      $('label[for="id_terms_and_conds_accepted"] a').click(function(event){
         event.preventDefault();
         $('.modal').modal('open');
       });
     });
     function accept_terms_and_conds(){
       $('.modal').modal('close');
-      $('#id_terms_and_conditions').prop('checked', true);
+      $('#id_terms_and_conds_accepted').prop('checked', true);
     }
   </script>
 {% endblock %}

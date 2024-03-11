@@ -69,14 +69,14 @@
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
   <script>
     $(function(){
-      $('label[for="id_terms_and_conditions"] a').click(function(event){
+      $('label[for="id_terms_and_conds_accepted"] a').click(function(event){
         event.preventDefault();
         $('.modal').modal('open');
       });
     });
     function accept_terms_and_conds(){
       $('.modal').modal('close');
-      $('#id_terms_and_conditions').prop('checked', true);
+      $('#id_terms_and_conds_accepted').prop('checked', true);
     }
   </script>
 {% endblock %}

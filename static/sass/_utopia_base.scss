@@ -3,6 +3,7 @@ html {
   font-size: 100%;
   line-height: 1.4;
   height: 100%;
+  scroll-behavior: smooth;
 
   @media all and (min-width: 400px) {
     font-size: 100%;
@@ -464,7 +465,7 @@ fieldset {
 }
 
 // terms and conditions
-#div_id_terms_and_conditions {
+#div_id_terms_and_conds_accepted {
   margin: 30px 0 40px;
 
   label {

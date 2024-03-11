@@ -6,6 +6,7 @@ import re
 
 from markdown2 import markdown
 
+from django.conf import settings
 from django.template import Library
 from django.template.loader import render_to_string
 from django.template.defaultfilters import stringfilter
@@ -78,6 +79,16 @@ def get_image(match, aid, amp=False):
             return ''
     except Article.DoesNotExist:
         return ''
+
+
+@register.simple_tag
+def photo_byline(article, allowed=True):
+    # if allowed by setting and not disallowed by the allow arg given, it returns the article's "photo_autor" entry if
+    # article arg is dict (useful in "offline" rendering), otherwise (if it is an Article object) returns the method.
+    if settings.CORE_ARTICLE_ENABLE_PHOTO_BYLINE and allowed:
+        return (dict.get if type(article) is dict else getattr)(article, "photo_author", "")
+    else:
+        return ""
 
 
 @register.filter

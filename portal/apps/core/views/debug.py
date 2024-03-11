@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from django_user_agents.utils import get_user_agent
 
 from django.conf import settings
+from django.http import JsonResponse
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.cache import never_cache
 from django.contrib.admin.views.decorators import staff_member_required
@@ -36,3 +37,13 @@ def staff_only(request):
 @login_required
 def auth_only(request):
     return 'auth_only.html'
+
+
+@never_cache
+@login_required
+def session_popkey(request, key):
+    """
+    Removes a key from the user session
+    """
+    request.session.pop(key, None)
+    return JsonResponse({"status": "key was removed"})

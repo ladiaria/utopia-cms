@@ -1,4 +1,4 @@
-{% load bleach_tags core_tags homev3_tags adzone_tags static ldml %}
+{% load static bleach_tags core_tags homev3_tags adzone_tags ldml %}
 
 <section class="frontpage-section" data-template="category_grid">
   <div class="container">
@@ -10,19 +10,18 @@
       {% if category_cover_article %}
 
         <div class="ld-grid-area area-main grid-home">
-          <div class="ld-card ld-card--big">
+          <div class="ld-card ld-card--big ld-card--{{ category_cover_article.type }}{% block cover_article_extra_class %}{% endblock %}">
             {% render_toolbar_for category_cover_article %}
-            {% block image %}
-              {% if category_cover_article.photo %}
+            {% block image %}{# TODO: check if needed #}
+              {% if category_cover_article.photo_render_allowed %}
                 <a href="{{ category_cover_article.get_absolute_url }}">
                   <figure  data-src="{{ category_cover_article.photo.get_1200w_url }}">
                     <picture>
                       <source srcset="{{ category_cover_article.photo.get_1200w_url }}" media="(min-width: 700px)">
                       <source srcset="{{ category_cover_article.photo.get_700w_url }}" media="(min-width: 0)">
-                      <img class="ld-card__img" loading="lazy"
-                           width="700"{% if category_cover_article.photo_image_file_exists %} height="{{ category_cover_article.photo.get_700w_size.1 }}"{% endif %}
-                           title="{{ category_cover_article.photo_caption }}"
-                           alt="{{ category_cover_article.photo_caption }}">
+                      <img class="ld-card__img" loading="lazy" title="{{ category_cover_article.photo_caption }}"
+                            width="700" height="{{ category_cover_article.photo.get_700w_size.1 }}"
+                            alt="{{ category_cover_article.photo_caption }}">
                     </picture>
                   </figure>
                 </a>
@@ -30,7 +29,9 @@
             {% endblock %}
             <div class="ld-card__body">
               <div class="ld-card__section">
-                {% autoescape off %}{% publication_section category_cover_article %}{% endautoescape %}
+                {% block cover_article_section %}
+                  {% autoescape off %}{% render_hierarchy category_cover_article %}{% endautoescape %}
+                {% endblock %}
                 {% with article=category_cover_article %}
                   {% include 'article/article_card_lock_tooltip.html' %}
                 {% endwith %}
@@ -55,7 +56,7 @@
                   {% if authors %}
                     <div class="ld-card__author">
                       {% for author in authors %}
-                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>
+                        <a href="{{ author.get_absolute_url }}">{{ author }}</a>
                         {% if not forloop.last %}, {% endif %}
                       {% endfor %}
                     </div>
@@ -74,18 +75,20 @@
 
       <div class="ld-grid-area area-third">
         {% for a in category_destacados|slice:":5" %}
-          <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}">
+          <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}
+                      ld-card--{{ a.type }}{% block destacados_right_extra_class %}{% endblock %}">
             {% render_toolbar_for a %}
-            {% if a.photo %}
+            {% if a.photo_render_allowed %}
               <a href="{{ a.get_absolute_url }}" class="ld-card__img-link">
-                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" loading="lazy"
-                     title="{{ a.photo_caption }}" alt="{{ a.photo_caption }}"
-                     width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}>
+                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" loading="lazy" alt="{{ a.photo_caption }}"
+                      title="{{ a.photo_caption }}" width="700" height="{{ a.photo.get_700w_size.1 }}">
               </a>
             {% endif %}
             <div class="ld-card__body">
               <div class="ld-card__section">
-                {% autoescape off %}{% publication_section a %}{% endautoescape %}
+                {% block destacados_right_section %}
+                  {% autoescape off %}{% render_hierarchy a %}{% endautoescape %}
+                {% endblock %}
                 {% with article=a %}{% include 'article/article_card_lock_tooltip.html' %}{% endwith %}
               </div>
               <h3 class="ld-card__title ld-card__title--mb">
@@ -101,7 +104,8 @@
                   {% if authors %}
                     <div class="ld-card__author">
                       {% for author in authors %}
-                        <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                        <a href="{{ author.get_absolute_url }}">{{ author }}</a>
+                        {% if not forloop.last %}, {% endif %}
                       {% endfor %}
                     </div>
                   {% endif %}
@@ -115,14 +119,16 @@
             {% if a.photo.extended.square_version %}
               <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
                 <img class="ld-card__img" width="700" height="700" loading="lazy"
-                     title="{{ a.photo_caption }}" alt="{{ a.photo_caption }}"
-                     src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}">
+                    title="{{ a.photo_caption }}" alt="{{ a.photo_caption }}"
+                    src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}">
               </a>
             {% endif %}
           </div>
         {% endfor %}
       </div>
+
       <div class="ld-grid-clear"></div>
+
     </div>
 
     <div class="row footer-section">

@@ -1,0 +1,20 @@
+{% load crispy_forms_tags %}
+
+{# NOTE: form tag is closed in hard_paywall.html #}
+{% if login_form %}
+  <form id="hardpw-login" method="post">
+    {% crispy login_form %}
+    {% if 'password' in login_form.fields %}
+      <div class="col s12 align-right">
+        <a href="{% url 'account-password_reset' %}" class="underlined">¿Olvidaste tu contraseña?</a>
+      </div>
+      <div class="row">
+        <div class="col align-center s12">
+          <button name="prelogin" value="1" class="form-submit-login submit ut-btn ut-btn-light ut-btn-l" type="submit">Ingresar</button>
+        </div>
+      </div>
+    {% endif %}
+{% else %}
+  <form id="hardpw-signup" method="post" action="{{ signup_form.helper.form_action }}">
+    {% crispy signup_form %}
+{% endif %}

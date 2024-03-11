@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
+from pydoc import locate
+
 from django.conf import settings
 from django.urls import path, re_path
 from django.views.generic import TemplateView, RedirectView
@@ -48,24 +51,19 @@ from thedaily.views import (
 )
 
 
-# Used to override some views
+# override views
 views_custom_module = getattr(settings, 'THEDAILY_VIEWS_CUSTOM_MODULE', None)
 if views_custom_module:
-    signup = __import__(views_custom_module, fromlist=['signup']).signup  # noqa
-    google_phone = __import__(views_custom_module, fromlist=['google_phone']).google_phone  # noqa
-    confirm_email = __import__(views_custom_module, fromlist=['confirm_email']).confirm_email  # noqa
-    edit_profile = __import__(views_custom_module, fromlist=['edit_profile']).edit_profile  # noqa
-    complete_signup = __import__(views_custom_module, fromlist=['complete_signup']).complete_signup  # noqa
-    password_reset = __import__(views_custom_module, fromlist=['password_reset']).password_reset  # noqa
-    phone_subscription = __import__(views_custom_module, fromlist=['phone_subscription']).phone_subscription  # noqa
-    amp_access_authorization = __import__(  # noqa
-        views_custom_module, fromlist=['amp_access_authorization']
-    ).amp_access_authorization
+    # TODO: restrict the object set that can be overrideable
+    for objname in getattr(settings, "THEDAILY_VIEWS_CUSTOM_MODULE_OBJECTS", ()):
+        obj = locate(".".join([views_custom_module, objname]))
+        if obj:
+            locals()[objname] = obj
 
-# Used to override some urls
+# override urls
 urls_custom_module = getattr(settings, 'THEDAILY_URLS_CUSTOM_MODULE', None)
 if urls_custom_module:
-    custom_patterns = __import__(urls_custom_module, fromlist=['urlpatterns']).urlpatterns
+    custom_patterns = locate(".".join([urls_custom_module, 'urlpatterns']))
 else:
     custom_patterns = [
         path('planes/', RedirectView.as_view(url='/usuarios/suscribite/DDIGM/'), name="subscribe_landing")
@@ -147,7 +145,11 @@ urlpatterns = [
     # TODO: enter "bienvenido/" directly should not be allowed
     path(
         'bienvenido/tel/',
-        never_cache(TemplateView.as_view(template_name='thedaily/templates/phone_subscription_thankyou.html')),
+        never_cache(
+            TemplateView.as_view(
+                template_name=settings.THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR + '/phone_subscription_thankyou.html'
+            )
+        ),
         name="telsubscribe_success",
     ),
 

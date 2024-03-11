@@ -1,20 +1,24 @@
 {% extends "notifications/new_subscription.html" %}
 
 {% block body %}
-  <p>
-    Gracias por suscribirte. El periodismo que hacemos existe porque hay gente como vos que lo hace posible.
-  </p>
-  <p>
-    <span style="font-weight: bold;">Edición papel</span><br>
-    Recibirás en tu casa (a la dirección que nos hayas indicado) nuestro diario papel.
-  </p>
-  <p>
-    <span style="font-weight: bold;">Edición digital</span><br>
-    También tenés acceso ilimitado a todos los contenidos digitales y demás beneficios de la suscripción digital (newsletters, comentar artículos, navegar sin publicidad), ingresá con tu cuenta y disfrutá la experiencia completa.
-  </p>
-  <p>
-    <a style="padding: 12px 15px; border-radius: 100px; background-color: #6ef9ff; color: #262626; text-transform: uppercase; font-weight: bold; text-decoration: none; display: inline-block; font-size: 14px;" href="{{ SITE_URL }}usuarios/entrar/">
-      ingresar
-    </a>
-  </p>
+  <tr>
+    <td>
+      <p>
+        Gracias por suscribirte. El periodismo que hacemos existe porque hay gente como vos que lo hace posible.
+      </p>
+      <p>
+        <span style="font-weight: bold;">Edición papel</span><br>
+        Recibirás en tu casa (a la dirección que nos hayas indicado) nuestro diario papel.
+      </p>
+      <p>
+        <span style="font-weight: bold;">Edición digital</span><br>
+        También tenés acceso ilimitado a todos los contenidos digitales y demás beneficios de la suscripción digital (newsletters, comentar artículos, navegar sin publicidad), ingresá con tu cuenta y disfrutá la experiencia completa.
+      </p>
+      <p>
+        <a style="padding: 12px 15px; border-radius: 100px; background-color: #6ef9ff; color: #262626; text-transform: uppercase; font-weight: bold; text-decoration: none; display: inline-block; font-size: 14px;" href="{{ SITE_URL }}usuarios/entrar/">
+          ingresar
+        </a>
+      </p>
+    </td>
+  </tr>
 {% endblock %}

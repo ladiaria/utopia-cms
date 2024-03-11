@@ -2,6 +2,8 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from os.path import join
+
 from future import standard_library
 from builtins import str
 import requests
@@ -32,6 +34,7 @@ from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache, cache_page
 from django.views.decorators.vary import vary_on_cookie
+from django.template import Engine, TemplateDoesNotExist
 from django.template.defaultfilters import slugify
 
 from actstream.models import following
@@ -193,6 +196,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
     publication = article.main_section.edition.publication if article.main_section else None
     context = {
         'article': article,
+        "photo_render_allowed": article.photo_render_allowed(),
         'is_detail': True,
         'report_form': report_form,
         'domain': domain,
@@ -222,9 +226,37 @@ def article_detail(request, year, month, slug, domain_slug=None):
             }
         )
 
-    template = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE', 'article/detail.html')
-    if is_amp_detect:
-        template = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_AMP', template)
+    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
+    template = "article/detail"
+    template_engine = Engine.get_default()
+
+    # custom template support and custom article.type-based tmplates, search for the template iterations:
+    # TODO: 16 tests cases: this 4 scenarios * 2 combinations of dir custom settings * 2 cann/AMP
+    # 1- search w custom dir w tp
+    # 2- search w custom dir wo tp
+    # 3- search wo custom dir w tp
+    # 4. search wo custom dir wo tp (provided default template)
+    for dir_try in ([template_dir] if template_dir else []) + [""]:
+        template_try = join(dir_try, template + (article.type or "") + ".html")
+        try:
+            template_engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            # when cases 1 or 3 fail
+            template_try = join(dir_try, template + ".html")
+            try:
+                template_engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                # when case 2 fail (case 4 should never fail)
+                pass
+            else:
+                template = template_try
+                # case 4 succeed stopiteration normally or break when case 2 succeed
+                if dir_try:
+                    break
+        else:
+            template = template_try
+            break  # when cases 1 or 3 succeed
+
     return render(request, template, context)
 
 

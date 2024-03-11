@@ -1,0 +1,108 @@
+{% extends "subscribe.html" %}
+{% load static core_tags thedaily_tags ldml bleach_tags crispy_forms_tags %}
+
+{% block page_title %}Muro de pago{% endblock %}
+
+{% block css %}
+  <link href="{% static 'sass/hard_paywall.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
+{% block body_class %}{{ block.super }} hard-paywall{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+  {% if article %}
+    <div class="article-container">
+      {% if user.is_authenticated %}
+        <h1 class="article-container__title">Suscribite para continuar leyendo este artículo</h1>
+        <svg class="article-container__chevron-down-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M7.41 8.57996L12 13.17L16.59 8.57996L18 9.99996L12 16L6 9.99996L7.41 8.57996Z" fill="#A4A4A4"/>
+        </svg>
+      {% endif %}
+      <div class="article-container__article-card">
+        {% if article.photo_render_allowed %}
+          <img src="{{ article.photo.get_350w_url }}" alt="{{ article.photo_caption }}">
+        {% endif %}
+        <p class="article-container__article-card__section">
+          {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
+        </p>
+        <p class="article-container__article-card__title">{{ article.headline|ldmarkup|bleach }}</p>
+        {% with authors=article.get_authors %}
+          {% if authors %}
+            <p class="article-container__article-card__author">Por: {{ authors.0 }}</p>
+          {% endif %}
+        {% endwith %}
+        {% block article_container_footer %}{% endblock %}
+      </div>
+    </div>
+  {% endif %}
+  {% block payment %}
+    <div class="payment-column {% if not user.is_authenticated %}anonymous{% endif %}">
+      <a class="payment-column__close-btn" href="{{ SITE_URL }}">Cerrar
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M13.46 12L19 17.54V19H17.54L12 13.46L6.46 19H5V17.54L10.54 12L5 6.46V5H6.46L12 10.54L17.54 5H19V6.46L13.46 12Z" fill="#262626"/>
+        </svg>
+      </a>
+      {% if not user.is_authenticated and not 'password' in login_form.fields and not signup_form %}
+        <p>Creá tu cuenta gratis o ingresá</p>
+        <p>
+          Si te registrás accedés a {{ signupwall_max_credits }} artículos gratuitos por mes y recibís gratis nuestras
+          newsletters
+        </p>
+      {% endif %}
+      <div class="payment-container {% if not user.is_authenticated %}anonymous{% endif %}">
+        {% if user.is_authenticated %}
+          <div class="payment-container__chip-subscription">
+            <p>Suscripción digital</p>
+          </div>
+          <div class="payment-container__mobile-header">
+            <p>{% if article %}Suscribite para continuar leyendo este artículo{% else %}Suscripción digital{% endif %}</p>
+          </div>
+          <p class="payment-container__price">${% subscriptionprice 'DDIGM' %}/mes</p>
+        {% endif %}
+        {% if not user.is_authenticated %}
+          {% if 'password' in login_form.fields %}
+            <p><strong>Ingresá</strong></p>
+          {% elif signup_form %}
+            <p><strong>Creá tu cuenta</strong></p>
+            <p>{{ signupwall_max_credits }} artículos gratuitos por mes y recibís gratis nuestras newsletters</p>
+          {% else %}
+            <p>Ingresá tu email</p>
+          {% endif %}
+        {% endif %}
+        {% block payment_content %}
+          <div class="payment-container__form-container">
+            {% if user.is_authenticated %}
+              <form id="hardpw-subscribe" method="post" class="form-{{ planslug }}">
+                {% crispy subscriber_form %}
+            {% else %}
+              {% include 'hard_paywall_anon_forms.html' %}
+            {% endif %}
+            {% if subscription_form %}
+              {% crispy subscription_form %}{{ subscription_form.media }}
+            {% endif %}
+            </form>{# tag opened in the if or else(included file) in this div #}
+          </div>
+          {% if not user.is_authenticated and 'password' not in login_form.fields %}
+            <div class="payment-container__anonymous">
+              <p>o ingresá con Google</p>
+              <div class="google-auth align-center u-mb-60">
+                <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ article.get_absolute_url }}" class="ld-btn-google">
+                  ingresar con google
+                </a>
+              </div>
+              <div class="payment-container__anonymous__log-in">
+                <p>¿Ya tenés cuenta?</p>
+                <a href="{% url 'account-login' %}">Ingresá</a>
+              </div>
+            </div>
+          {% endif %}
+        {% endblock %}
+      </div>
+      {% block payment_footer %}{% endblock %}
+    </div>
+  {% endblock %}
+{% endblock %}
+
+{% block footer_block %}{% endblock %}

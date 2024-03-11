@@ -1,0 +1,73 @@
+; =====================================
+;  celery supervisor utopia-cms workers
+; =====================================
+
+[program:utopiacms_beat]
+command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp beat -l INFO -S django
+environment=DJANGO_SETTINGS_MODULE="settings"
+directory=/home/user/utopia-cms/portal/
+user=user
+numprocs=1
+stdout_logfile=/var/log/celery/utopiacms_beat.log
+stderr_logfile=/var/log/celery/utopiacms_beat.log
+autostart=true
+autorestart=true
+startsecs=10
+stopasgroup=true
+priority=999
+
+[program:utopiacms_w1]
+command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker -n utopiacms_w1@%%h -Q upd_category_home -c 1 -l INFO
+environment=DJANGO_SETTINGS_MODULE="settings"
+directory=/home/user/utopia-cms/portal/
+user=user
+numprocs=1
+stdout_logfile=/var/log/celery/utopiacms_beat.log
+stderr_logfile=/var/log/celery/utopiacms_beat.log
+autostart=true
+autorestart=true
+startsecs=10
+stopasgroup=true
+priority=999
+
+[program:utopiacms_w2]
+command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker -n utopiacms_w2@%%h -Q upd_articles_url -c 1 -l INFO
+environment=DJANGO_SETTINGS_MODULE="settings"
+directory=/home/user/utopia-cms/portal/
+user=user
+numprocs=1
+stdout_logfile=/var/log/celery/utopiacms_w1.log
+stderr_logfile=/var/log/celery/utopiacms_w1.log
+autostart=true
+autorestart=true
+startsecs=10
+stopasgroup=true
+priority=999
+
+[program:utopiacms_w3]
+command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker -n utopiacms_w3@%%h -Q concurrent_tasks -c 2 -l INFO
+environment=DJANGO_SETTINGS_MODULE="settings"
+directory=/home/user/utopia-cms/portal/
+user=user
+numprocs=1
+stdout_logfile=/var/log/celery/utopiacms_w2.log
+stderr_logfile=/var/log/celery/utopiacms_w2.log
+autostart=true
+autorestart=true
+startsecs=10
+stopasgroup=true
+priority=999
+
+[program:utopiacms_test]
+command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker --beat -l INFO -S django
+environment=DJANGO_SETTINGS_MODULE="celery_test_settings"
+directory=/home/user/utopia-cms/portal/
+user=user
+numprocs=1
+stdout_logfile=/var/log/celery/utopiacms_test.log
+stderr_logfile=/var/log/celery/utopiacms_test.log
+autostart=false
+autorestart=false
+startsecs=10
+stopasgroup=true
+priority=999

@@ -11,8 +11,8 @@ class ArticleTestCase(TestCase):
     http_host_header_param = {'HTTP_HOST': settings.SITE_DOMAIN}
     # add articles urls here, but keep the other
     urls_to_test = [
-        {'url': '/test/articulo/2020/11/test-article4/', 'headers': http_host_header_param},
-        {'url': '/test/articulo/2020/11/test-article4/', 'amp': True, 'headers': http_host_header_param},
+        {'url': '/spinoff/articulo/2020/11/test-article4/', 'headers': http_host_header_param},
+        {'url': '/spinoff/articulo/2020/11/test-article4/', 'amp': True, 'headers': http_host_header_param},
         {'url': '/test/articulo/2020/11/test-humor1/', 'headers': http_host_header_param},
         {'url': '/test/articulo/2020/11/test-humor1/', 'amp': True, 'headers': http_host_header_param}
     ]
@@ -25,7 +25,7 @@ class ArticleTestCase(TestCase):
         command = Command()
         command.handle()
 
-    def test_article_response(self):
+    def test01_article_response(self):
         c = Client()
         with self.settings(DEBUG=True):
             for item in self.urls_to_test[:2]:  # TODO: fix for all urls
@@ -52,7 +52,7 @@ class ArticleTestCase(TestCase):
             response = c.get(item['url'], {'display': 'x'}, **item.get('headers', {}))
             self.assertEqual(response.status_code, 200, (response.status_code, response))
 
-    def test_humor_article_noindex(self):
+    def test02_humor_article_noindex(self):
         c = Client()
         with self.settings(DEBUG=True, CORE_SATIRICAL_SECTIONS=('humor', )):
             for item in self.urls_to_test[2:]:  # TODO: fix for all urls

@@ -1,26 +1,17 @@
 {% load bleach_tags core_tags ldml %}
 
-<div class="ld-card" data-id="{{ article.id }}" data-template="article_card_new">
-  {% block image %}
-    {% if article.photo and card_type != 'OP' %}
+<div class="ld-card ld-card--{{ article.type }}{% block article_extra_class %}{% endblock %}" data-id="{{ article.id }}" data-template="article_card_new">
+  {% block image %}{# TODO: check if needed #}
+    {% if article.photo_render_allowed and card_type != 'OP' %}
       <a href="{{ article.get_absolute_url }}">
-        <img class="ld-card__img"
-             src="{{ article.photo.get_700w_url }}"
-             width="700"
-             {% if article.photo_image_file_exists %}
-             height="{{ article.photo.get_700w_size.1 }}"
-             {% endif %}
-             title="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-             alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-             loading="lazy">
+        <img class="ld-card__img" src="{{ article.photo.get_700w_url }}" width="700" alt="{{ article.photo_caption }}"
+             height="{{ article.photo.get_700w_size.1 }}" title="{{ article.photo_caption }}" loading="lazy">
       </a>
     {% endif %}
   {% endblock %}
   <div class="ld-card__body">
     <div class="ld-card__section">
-      {% autoescape off %}
-        {% if render_hierarchy %}{% render_hierarchy article %}{% else %}{% publication_section article %}{% endif %}
-      {% endautoescape %}
+      {% block article_section %}{% autoescape off %}{% render_hierarchy article %}{% endautoescape %}{% endblock %}
       {% include 'article/article_card_lock_tooltip.html' %}
     </div>
     <h3 class="ld-card__title {% if not article.home_lead and not article.lead %}ld-card__title--mb{% endif %}">
@@ -38,7 +29,7 @@
           {% if authors %}
             <div class="ld-card__author">
               {% for author in authors %}
-                <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
               {% endfor %}
             </div>
           {% endif %}

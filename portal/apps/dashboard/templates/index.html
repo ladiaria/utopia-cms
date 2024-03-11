@@ -9,15 +9,18 @@
     <meta name="author" content="">
     <link rel="icon" href="{% static 'favicon.ico' %}">
 
-    <title>Panel de estadísticas de usuarios</title>
+    <title>{{ site.name }} - Panel de estadísticas de usuarios y previsualización de newsletters</title>
 
     <!-- Bootstrap core CSS -->
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
 
+    {# bs bundle js for sidebar-collapse #}
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
     <!-- Custom styles for this template -->
     <link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
 
-    <!-- Boostrap table -->
+    <!-- jquery, Boostrap + table & datepicker -->
     <script src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.css">
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
@@ -25,6 +28,68 @@
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/js/bootstrap-datepicker.min.js"></script>
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker.min.css">
     <script>
+      function nl_switches_submit(hash){
+        let a_elem = $("a[href='" + hash + "']");
+        let [c1, c2, c3, c4] = $("#nl_switches :checkbox");
+        let c1_checked = $(c1).is(":checked");
+        if(!c1_checked || $(c3).is(":checked") || $(c4).is(":checked")){
+          let qparam = "";
+          // only when "as news" or not subscribed to default pub (staff user is always subscribed)
+          if(!c1_checked){
+            // case 0-1: is_subscriber_default=0; case 0-0: is_subscriber_any=0
+            qparam += ($(c2).is(":checked") ? c1.name : c2.name) + "=0";
+          }
+          $.each([c3, c4], function(i, c_elem){
+            if($(c_elem).is(":checked")){
+              qparam += (qparam ? "&" : "") + c_elem.name + "=1";
+            }
+          });
+          // change url and click (use a post-hook to revert the changes, otherwise the item in sidebar left dirty)
+          a_elem.data(
+            {"url": a_elem.data("url") + "?" + qparam, "control": "nl_item_data_defaults"}
+          );
+        }
+        a_elem.trigger("click");
+        return false;
+      }
+      function nl_item_data_defaults(hash){
+        let a_elem = $("a[href='" + hash + "']");
+        a_elem.data({"url": a_elem.data("url").split("?")[0], "control": "nl_switches"});
+      }
+      function nl_switches(hash){
+        $('#control-content').html(`
+          <form id="nl_switches" onsubmit="return nl_switches_submit('` + hash + `')">
+            <fieldset class="border-bottom">
+              <input type="checkbox" id="nl_switches_1" name="is_subscriber_default" checked="checked">
+              <label class="pr-2 align-middle" for="nl_switches_1">Suscriptor pago de {{ DEFAULT_PUB }}</label>
+              <input type="checkbox" id="nl_switches_2" name="is_subscriber_any" checked="checked" disabled="disabled">
+              <label class="pr-2 align-middle" for="nl_switches_2">Suscriptor pago de al menos una publicación</label>
+              <input type="checkbox" id="nl_switches_3" name="as_news">
+              <label class="pr-2 align-middle" for="nl_switches_3">"as news"</label>
+              <input type="checkbox" id="nl_switches_4" name="s_pdf">
+              <label class="pr-2 align-middle" for="nl_switches_4">"s_pdf"</label>
+              <button type="submit" class="btn btn-primary mb-2" style="padding-top:3px">`
+                + feather.icons["refresh-cw"].toSvg() + ` Recargar
+              </button>
+            </fieldset>
+          </form>
+        `);
+        $("#nl_switches_1").on("change", function(){
+          if($(this).is(":checked")){
+            $("#nl_switches_2").prop({"checked": true, "disabled": true});
+          }else{
+            $("#nl_switches_2").prop("disabled", false);
+          }
+        });
+        $("#nl_switches_2").on("change", function(){
+          if($(this).is(":checked")){
+            $("#nl_switches_4").prop("disabled", false);
+          }else{
+            $("#nl_switches_4").prop({"checked": false, "disabled": true});
+          }
+        });
+        $('#control-content').show();
+      }
       $(function(){
         var current_date = new Date()  // will be used as "last month" date
         current_date.setMonth(current_date.getMonth() - 1);
@@ -32,30 +97,51 @@
         if(month < 10){
           month = '0' + month;
         }
-        $(document).ready(function(){
-          var hash = $(location).prop('hash');
-          var tableId = hash.substr(1);
-          $('#inner-content').html("<img style='top:20%;left:50%; position:absolute;' src='{% static 'images/loading.gif' %}'>");
-          if( hash == ""){
-            $('#inner-content').load('/dashboard/table/articles/');
-          }else {
-            var table_url = '/dashboard/table/' + tableId + '/'
-            if(tableId == 'subscribers'){
-              // subscribers table needs year and month
-              table_url += '?month=' + month + "&year=" + current_date.getFullYear();
-            }
-            $('#inner-content').load(table_url);
+
+        var loading_img = $(
+          "<img>", {style: 'top:20%;left:50%;position:absolute', src: "{% static 'images/loading.gif' %}"}
+        );
+
+        // loaded content clicked in the sidebar, event handler
+        $('a.embed').on("click", function(){
+          let a_elem = $(this);
+          let hash = a_elem.attr("href");
+          // uncollapse parent (if collapsed)
+          let collapsible_parent = a_elem.closest("div.collapse");
+          if(!collapsible_parent.hasClass("show")){
+            collapsible_parent.collapse("show");
           }
-        });
-        $('a.embed').click(function(){
-          var table_url = '/dashboard/table/' + this.id + '/'
-          $('#inner-content').html("<img style='top:20%;left:50%; position:absolute;' src='{% static 'images/loading.gif' %}'>");
-          if(this.id == 'subscribers'){
+          // build content url and load it
+          let content_url = a_elem.data("url") || ('/dashboard/table/' + hash.substr(1) + '/');
+          if(hash == "#subscribers"){
             // subscribers table needs year and month
-            table_url += '?month=' + month + "&year=" + current_date.getFullYear();
+            content_url += '?month=' + month + "&year=" + current_date.getFullYear();
           }
-          $('#inner-content').load(table_url);
+          $('#inner-content').html(loading_img).load(content_url, function( response, status, xhr ) {
+            if ( status == "error" ) {  // load on error anyway
+              $(this).html(response);
+            }
+            ctrl_func = a_elem.data("control");
+            if(ctrl_func){
+              window[ctrl_func](hash);
+            }else{
+              $('#control-content').hide();
+            }
+            let abs_url = "{{ site_url }}" + content_url;
+            $(this).find("#loaded_url").html(abs_url).attr("href", abs_url);
+          });
         });
+
+        // feather collapse/uncollapse icon change for collapsible elements in sidebar
+        $("div.collapse").on("shown.bs.collapse hidden.bs.collapse", function(){
+          let a_elem = $(this).prev("a");
+          $("span", a_elem).html(
+            feather.icons["chevron-" + (a_elem.hasClass("collapsed") ? "right" : "down")].toSvg()
+          );
+        });
+
+        // load initial default content by location hash (defaults to #articles)
+        $("a[href='" + ($(location).prop('hash') || "#articles") + "']").trigger("click");
       });
     </script>
   </head>
@@ -118,21 +204,21 @@
               </a>
             </li>
             {% if activity_rows %}
-            <li class="nav-item">
-              <a class="embed nav-link" id="activity" data-toggle="tab" href="#activity" role="tab" aria-controls="activity" aria-selected="false">
-                <span data-feather="users"></span>
-                Actividad
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="embed nav-link" id="activity_only_digital" data-toggle="tab" href="#activity_only_digital" role="tab" aria-controls="activity" aria-selected="false">
-                <span data-feather="users"></span>
-                Actividad (sólo digitales)
-              </a>
-            </li>
+              <li class="nav-item">
+                <a class="embed nav-link" id="activity" data-toggle="tab" href="#activity" role="tab" aria-controls="activity" aria-selected="false">
+                  <span data-feather="users"></span>
+                  Actividad
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="embed nav-link" id="activity_only_digital" data-toggle="tab" href="#activity_only_digital" role="tab" aria-controls="activity" aria-selected="false">
+                  <span data-feather="users"></span>
+                  Actividad (sólo digitales)
+                </a>
+              </li>
             {% endif %}
             {% if is_financial %}
-              {# No financial options yet, but you can define yours in this included template defined in settings #}
+              {# No financial options yet, but you can define yours in this included template configured by settings #}
               {% if financial_extra_items_template %}
                 {% include financial_extra_items_template %}
               {% endif %}
@@ -143,11 +229,39 @@
                 Estadísticas de audio
               </a>
             </li>
-         </ul>
+            {% if newsletters %}
+              <li class="nav-item">
+                <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#nls-collapse" aria-expanded="false">
+                  <span><i data-feather="chevron-right"></i></span>
+                  Newsletters "preview"
+                </a>
+                <div class="collapse" id="nls-collapse" style="">
+                  <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 ml-2">
+                    {% for nlobj in newsletters %}
+                      {% with preview_url=nlobj.newsletter_preview_url %}
+                        {% if preview_url %}
+                          <li>
+                            <a href="#{{ nlobj.nltype }}-{{ nlobj.slug }}-nl-preview" class="embed nav-link"
+                               data-url="{{ preview_url }}" data-control="nl_switches">
+                              <span data-feather="eye"></span>
+                              {{ nlobj.profile_newsletter_name|default:nlobj.name }}
+                            </a>
+                          </li>
+                        {% endif %}
+                      {% endwith %}
+                    {% endfor %}
+                  </ul>
+                </div>
+              </li>
+            {% endif %}
+          </ul>
         </div>
       </nav>
 
       <main role="main" class="tab-content" id="myTabContent">
+        <div role="tabpanel">
+          <div id="control-content" class="ml-sm-auto col-lg-10 mt-2 mb-2"></div>
+        </div>
         <div id="inner-content"></div>
       </main>{# tab-content #}
 

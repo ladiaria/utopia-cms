@@ -1,28 +1,30 @@
 # -*- coding: utf-8 -*-
+from settings import INSTALLED_APPS
 
 
 INTERNAL_IPS = ('127.0.0.1', '0.0.0.0', '*')
 REMOTE_ADDR = ('*')
 
-DEBUG = True
+DEBUG = True  # remove this line or set to False in production
 TEMPLATE_DEBUG = DEBUG
 REMOVE_WWW = not DEBUG
+AMP_SIMULATE = True  # remove this line or set to False in production
 RESTRICT_ACCESS = False
 RESTRICT_ACCESS_LOGIN_URL = '/acceso-beep/'
-SECRET_KEY = ''
+SECRET_KEY = ''  # fill with any value as described in INSTALL.md
 
 # Site settings
 CLOSED_SITE = False  # TODO: this feature should be reviewed (its middlewares are not ready for this Django version.
-SITE_DOMAIN = "yoogle.com"
+SITE_DOMAIN = "yoogle.com"  # Don't use this domain in production, use a "real" one you own
 SESSION_COOKIE_DOMAIN = "." + SITE_DOMAIN
 ALLOWED_HOSTS = [SESSION_COOKIE_DOMAIN]
 
-COMPRESS_OFFLINE = False
+COMPRESS_OFFLINE = not DEBUG
 COMPRESS_ENABLED = True
 KEY_PREFIX = SITE_DOMAIN  # see: https://docs.djangoproject.com/en/4.1/ref/settings/#key-prefix
 
 if CLOSED_SITE or RESTRICT_ACCESS:
-    from .settings import INSTALLED_APPS, MIDDLEWARE
+    from settings import MIDDLEWARE
     INSTALLED_APPS += ('closed_site', )
     MIDDLEWARE = (
         'closed_site.middleware.ClosedSiteMiddleware',
@@ -30,7 +32,7 @@ if CLOSED_SITE or RESTRICT_ACCESS:
     ) + MIDDLEWARE
 
 ADMINS = (
-    ('Admin', 'admin@example.com'),
+    ('Admin', 'admin@example.com'),  # change to a real mailbox for non-dev deployments
 )
 
 MANAGERS = ADMINS
@@ -59,7 +61,7 @@ LOGIN_REDIRECT_URL = '/'
 
 # EMAIL
 EMAIL_SUBJECT_PREFIX = '[cms] '
-DEFAULT_FROM_EMAIL = 'cms dev <cms@example.com>'
+DEFAULT_FROM_EMAIL = 'cms dev <cms@example.com>'  # change to a real mailbox for non-dev deployments
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 2500
 
@@ -68,9 +70,6 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 SENDNEWSLETTER_LOGFILE = '/home/user/utopia-cms-data/sendnewsletter/%s-%s.log'
 
 EMAIL_EDITION_NUMBER_OFFSET = 0
-
-# apps
-# MONGODB_CONNECT_AT_CLIENT_CREATION = False  # needed for Python 3.6.8
 
 # Social auth for a local dev server
 USE_X_FORWARDED_HOST = True

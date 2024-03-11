@@ -24,7 +24,7 @@
 {% endblock %}
 
 {% block meta %}
-  {% include 'article/detail_meta.html' %}
+  {% include meta_include_template|default:'article/detail_meta.html' %}
   <!-- AMP -->
   <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
   <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
@@ -73,9 +73,9 @@
     <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
 
       {# TODO: apply this 'render_allowed' condition also in all places that render article's photos #}
-      {% if article.photo_render_allowed %}
+      {% if photo_render_allowed %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 279 #}
+          <div>{# closed in line 273 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -102,7 +102,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 279 #}
+          {# missing close div here is closed correctly in line 273 #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -111,6 +111,7 @@
                   <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
                 </svg>
                 <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+                {% if include_after_headline %}{% include include_after_headline %}{% endif %}
                 <svg id="line-svg" xmlns="http://www.w3.org/2000/svg" width="180" height="2" viewBox="0 0 180 2" fill="none">
                   <path d="M0 1.08124H180" stroke="#A4A4A4"/>
                 </svg>
@@ -168,6 +169,7 @@
         {% endif %}
         {% if not article.articlecollection %}
           <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+          {% if include_after_headline %}{% include include_after_headline %}{% endif %}
         {% endif %}
         {% if article.date_published %}
           <div class="article-date-author">
@@ -196,17 +198,9 @@
           {% endwith %}
           {% if section %}
             <span class="small">
-              {% if 'elecciones' in article.get_categories_slugs %}
-                {% with special_sections='apuntes-de-campana datos-elecciones-2019' %}
-                  {% if section.slug in special_sections.split %}
-                    <a href="{{ section.get_absolute_url }}">{{ section }}</a>
-                  {% else %}
-                    <a href="{% url 'section_detail' section_slug='elecciones-2019' %}">{{ section.category }}</a>
-                  {% endif %}
-                {% endwith %}
-              {% else %}
+              {% block byline_section %}
                 <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
-              {% endif %}
+              {% endblock %}
             </span>
           {% endif %}
         </div>
@@ -275,7 +269,7 @@
           {% endif %}
         {% endif %}
       </div>
-      {% if article.photo_render_allowed and header_display == 'FW' %}
+      {% if photo_render_allowed and header_display == 'FW' %}
         </div>{# opened in line 78 #}
       {% endif %}
 
@@ -294,17 +288,18 @@
         {# signupwall #}
 
         {% if not user.is_authenticated %}
+          {# TODO: can be simplified regarding the comment inside next "else" branch #}
 
           {% if not request.signupwall %}
             {# Soft wall: Registro|Suscripción #}
             {% if not article.public %}{% include 'article/paywall/pw_anon_with_credits.html' %}{% endif %}
           {% else %}
-            {# signupwall raised #}
-            <!-- Hard wall -->
+            {% comment "signupwall raised code cannot be reached anymore because now we redirect to another page" %}
             <div class="article-body article-body--faded">
               {{ article.body|ldmarkup:article.id|truncatehtml:signupwall_truncate }}
             </div>
             {% include 'article/paywall/pw_anon_wo_credits.html' %}
+            {% endcomment %}
           {% endif %}
 
         {% else %}
@@ -314,16 +309,17 @@
             <!-- user is subscriber -->
           {% else %}
             <!-- user is not subscriber -->
+            {# TODO: can be simplified regarding the comment inside next "else" branch #}
             {% if not request.signupwall %}
               {# Soft wall: Suscripción #}
               {% if not article.public %}{% include 'article/paywall/pw_auth_with_credits.html' %}{% endif %}
-            {% else %}{# signupwall raised #}
-              {# Hard wall -> Suscripción #}
-              <!-- Hard wall / suscripción-->
+            {% else %}
+              {% comment "signupwall raised code cannot be reached anymore because now we redirect to another page" %}
               <div class="article-body article-body--faded">
                 {{ article.body|ldmarkup:article.id|truncatehtml:signupwall_truncate }}
               </div>
               {% include 'article/paywall/pw_auth_wo_credits.html' %}
+              {% endcomment %}
             {% endif %}
           {% endif %}
 
@@ -331,7 +327,7 @@
 
         {# END signupwall #}
 
-        {% if not request.signupwall %}{# closed in line 654 #}
+        {% if not request.signupwall %}{# closed in line 648 #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
@@ -651,7 +647,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 334 #}
+        {% endif %}{# opened in line 328 #}
 
       {% else %}{# restricted content message #}
 
@@ -668,7 +664,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 800 #}
+    {% if not request.signupwall %}{# closed in line 794 #}
 
       {% if article.public %}
 
@@ -797,7 +793,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 671 #}
+    {% endif %}{# opened in line 665 #}
 
     {% block article_extra %}{% endblock %}
 

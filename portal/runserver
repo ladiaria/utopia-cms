@@ -1,9 +1,10 @@
 #!/bin/sh
 
-# utopia-cms 2021, Aníbal Pacheco
+# utopia-cms 2021,2024 Aníbal Pacheco
 # An utility shell script to clear cache and run the Django development server with an optional parameter.
 # Example: ./runserver yoogle.com:8000
 
+SVACTIVE="systemctl is-active --quiet supervisord"
+`$SVACTIVE` && supervisorctl restart utopiacms_w1 utopiacms_w2 utopiacms_w3 utopiacms_beat
 python -W ignore manage.py clear_cache
 python -W ignore manage.py runserver $1
-

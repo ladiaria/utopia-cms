@@ -1,17 +1,21 @@
 {% extends "notifications/new_subscription.html" %}
 
-{% block body %}
-  <p>
-    Gracias por suscribirte.
-  </p>
-  <p>
-    <strong>Tu cuenta</strong><br>
-    Obtené acceso ilimitado ingresando al sitio con tu email y eligiendo una contraseña.
-  </p>
-  <p>
-    <a href="https://{{ site.domain }}{{ validation_url }}" style="background-color: #6ef9ff; color: #262626; padding: 10px 20px 10px 20px; text-decoration: none; text-transform: uppercase; line-height: 30px; height: 30px; font-size: 14px; font-weight: bold; letter-spacing: .5px; vertical-align: middle; border-radius:100px">elegí la contraseña</a>
-  </p>
-  <p>
-    Consejo: Guardá la contraseña en algún lugar seguro para no olvidarla (por ejemplo si el navegador te pregunta para guardarla).
-  </p>
+{% block body %}{# TODO: check if URL_SCHEME can be used instead of the hardcoded 'https' #}
+  <tr>
+    <td>
+      <p>
+        Gracias por suscribirte.
+      </p>
+      <p>
+        <strong>Tu cuenta</strong><br>
+        Obtené acceso ilimitado ingresando al sitio con tu email y eligiendo una contraseña.
+      </p>
+      <p>
+        <a href="https://{{ site.domain }}{{ validation_url }}" style="background-color: #6ef9ff; color: #262626; padding: 10px 20px 10px 20px; text-decoration: none; text-transform: uppercase; line-height: 30px; height: 30px; font-size: 14px; font-weight: bold; letter-spacing: .5px; vertical-align: middle; border-radius:100px">elegí la contraseña</a>
+      </p>
+      <p>
+        Consejo: Guardá la contraseña en algún lugar seguro para no olvidarla (por ejemplo si el navegador te pregunta para guardarla).
+      </p>
+    </td>
+  </tr>
 {% endblock %}

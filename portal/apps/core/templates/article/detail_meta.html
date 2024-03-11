@@ -19,11 +19,13 @@
     <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static satirical_social_img %}">
   {% endwith %}
 {% elif default_pub.open_graph_image %}
-  <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static default_pub.open_graph_image %}{% endif %}">
-{% elif article.photo %}
+  {% block article_photo_and_pub_og %}
+    <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if photo_render_allowed %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static default_pub.open_graph_image %}{% endif %}">
+  {% endblock %}
+{% elif photo_render_allowed %}
   <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_article_main_url }}?r={% randomgen %}">
 {% endif %}
-{% if article.photo %}
+{% if photo_render_allowed %}
   <meta property="og:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
 {% endif %}
 <!-- End Open Graph (http://ogp.me) -->
@@ -33,11 +35,11 @@
 <!-- End Meta tags Google -->
 
 <!-- Meta tags Twitter -->
-<meta name="twitter:card" content="summary{% if article.photo %}_large_image{% endif %}">
+<meta name="twitter:card" content="summary{% if photo_render_allowed %}_large_image{% endif %}">
 {% if HOMEV3_TWITTER_SITE_META %}
   <meta name="twitter:site" content="@{{ HOMEV3_TWITTER_SITE_META }}">
 {% endif %}
-{% if article.photo %}
+{% if photo_render_allowed %}
   <meta name="twitter:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
 {% endif %}
 <!-- End Meta tags Twitter -->

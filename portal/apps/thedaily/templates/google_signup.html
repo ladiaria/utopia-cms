@@ -4,6 +4,7 @@
 {% block page_title %}Registrate con tu cuenta de Google{% endblock %}
 
 {% block css %}
+  {% block css_super %}{{ block.super }}{% endblock %}
   <style>
     legend{font-weight: bold;}
   </style>
@@ -14,7 +15,8 @@
 {% block navbar %}
   <div id="main-header">
     <nav class="subscription_black">
-      <a href="{% url 'subscribe_landing' %}">
+      {# TODO: adding class "header-logo emergentes" may fix visual bug but may break children templates, verify #}
+      <a href="{% url 'subscribe_landing' %}">{# TODO: for signup-only, link to home is better than this #}
         <img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_WIDTH }}" height="42">
       </a>
     </nav>
@@ -31,6 +33,7 @@
 {% endblock %}
 
 {% block content %}
+  {% block content_main_open %}<main class="ld-content">{% endblock %}
   <div class="subscribe-header center-align">
     <h1 class="ld-title-big">Cuenta gratuita</h1>
     <span class="ld-text-secondary">
@@ -38,7 +41,6 @@
       cuenta gratuita.
     </span>
   </div>
-
   <div class="subscribe-body">
     <div class="ld-content">
       <div class="row">
@@ -46,39 +48,29 @@
           <p class="ld-text-secondary align-center u-mt-50">Por último, ingresá tu teléfono</p>
         </div>
       </div>
-
       <div class="row">
         <div class="col s12 m8 offset-m2"><div class="align-center">{% crispy google_signin_form %}</div></div>
       </div>
     </div>
-    <div class="whatsapp-contact-container{% if subscriber_form.errors %} with-errors{%endif%}">
-      <a href="https://wa.me/59899128821/?text=Hola,%20tengo%20una%20consulta_web" target="_blank" rel="noreferrer noopener">
-        <!-- Whatsapp icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M10.0335 1.6665C5.4835 1.6665 1.77516 5.37484 1.77516 9.92484C1.77516 11.3832 2.1585 12.7998 2.87516 14.0498L1.7085 18.3332L6.0835 17.1832C7.29183 17.8415 8.65016 18.1915 10.0335 18.1915C14.5835 18.1915 18.2918 14.4832 18.2918 9.93317C18.2918 7.72484 17.4335 5.64984 15.8752 4.0915C14.3168 2.52484 12.2418 1.6665 10.0335 1.6665ZM10.0418 3.05817C11.8752 3.05817 13.5918 3.77484 14.8918 5.07484C16.1835 6.37484 16.9002 8.09984 16.9002 9.93317C16.9002 13.7165 13.8168 16.7915 10.0335 16.7915C8.80016 16.7915 7.59183 16.4665 6.54183 15.8332L6.29183 15.6915L3.69183 16.3748L4.3835 13.8415L4.21683 13.5748C3.5335 12.4998 3.16683 11.2248 3.16683 9.92484C3.17516 6.1415 6.25016 3.05817 10.0418 3.05817ZM7.1085 6.10817C6.97516 6.10817 6.75016 6.15817 6.5585 6.3665C6.37516 6.57484 5.8335 7.08317 5.8335 8.0915C5.8335 9.10817 6.57516 10.0832 6.66683 10.2248C6.7835 10.3665 8.1335 12.4498 10.2085 13.3332C10.7002 13.5582 11.0835 13.6832 11.3835 13.7748C11.8752 13.9332 12.3252 13.9082 12.6835 13.8582C13.0835 13.7998 13.9002 13.3582 14.0752 12.8748C14.2502 12.3915 14.2502 11.9832 14.2002 11.8915C14.1418 11.8082 14.0085 11.7582 13.8002 11.6665C13.5918 11.5498 12.5752 11.0498 12.3918 10.9832C12.2002 10.9165 12.0835 10.8832 11.9252 11.0832C11.7918 11.2915 11.3918 11.7582 11.2752 11.8915C11.1502 12.0332 11.0335 12.0498 10.8335 11.9498C10.6168 11.8415 9.95016 11.6248 9.16683 10.9248C8.55016 10.3748 8.14183 9.69984 8.01683 9.4915C7.91683 9.2915 8.0085 9.1665 8.1085 9.07484C8.20016 8.98317 8.3335 8.83317 8.41683 8.70817C8.52516 8.5915 8.5585 8.49984 8.62516 8.3665C8.69183 8.22484 8.6585 8.10817 8.6085 8.00817C8.5585 7.9165 8.14183 6.88317 7.96683 6.47484C7.80016 6.07484 7.6335 6.12484 7.50016 6.1165C7.3835 6.1165 7.25016 6.10817 7.1085 6.10817Z" fill="#57DF5C"/>
-        </svg>
-        <span>¿Necesitás ayuda?</span>
-      </a>
-      <p>Si preferís que te llamemos, <a href="{% url 'contact-form' %}" target="_blank" rel="noopener noreferrer">completá este formulario</a></p>
-    </div>
+    {% block subscribe_body_footer %}{% endblock %}
   </div>
+  {% block content_main_close %}</main>{% endblock %}
 {% endblock %}
 
-{% block footer_block %}
-{% endblock footer_block %}
+{% block footer_block %}{% include 'footer_simple.html' with disable_signup=True %}{% endblock %}
 
 {% block javascript %}
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
   <script>
     $(function(){
-      $('label[for="id_terms_and_conditions"] a').click(function(event){
+      $('label[for="id_terms_and_conds_accepted"] a').on("click", function(event){
         event.preventDefault();
         $('.modal').modal('open');
       });
     });
     function accept_terms_and_conds(){
       $('.modal').modal('close');
-      $('#id_terms_and_conditions').prop('checked', true);
+      $('#id_terms_and_conds_accepted').prop('checked', true);
     }
   </script>
 {% endblock %}

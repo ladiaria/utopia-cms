@@ -3,7 +3,7 @@
   <div class="edit_profile_card__inner-section_header">
     <label class="title" for="id_{{ field.name }}">{% block label %}{% endblock %}</label>
     <div class="switch-container">
-      <span class="label-text on" {% if not field.value %}style="display: none;"{% endif %}>Activadas</span>
+      <span class="label-text on" {% if not field.value %}style="display: none;"{% endif %}>Activada</span>
       <span class="label-text off{% if email_is_bouncer %} grey-text{% endif %}" {% if field.value %}style="display: none;"{% endif %}>Activar</span>
       <label class="switch">
         <input

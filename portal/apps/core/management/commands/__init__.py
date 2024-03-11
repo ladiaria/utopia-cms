@@ -1,5 +1,7 @@
+import sys
 import time
-from datetime import date
+import logging
+from datetime import datetime
 import smtplib
 
 from django.conf import settings
@@ -25,6 +27,20 @@ class SendNLCommand(BaseCommand):
             default=False,
             dest='no_deliver',
             help='Do not send the emails, only log',
+        )
+        parser.add_argument(
+            '--no-logfile',
+            action='store_true',
+            default=False,
+            dest='no_logfile',
+            help='Do not log to any file, log only to stdout and stderr',
+        )
+        parser.add_argument(
+            '--no-update-stats',
+            action='store_true',
+            default=False,
+            dest='no_update_stats',
+            help='Do not update or create any delivery stats objects',
         )
         if getattr(self, "offline", True):
             parser.add_argument(
@@ -108,6 +124,8 @@ class SendNLCommand(BaseCommand):
             'starting_from_ns',
             'subscriber_ids',
             'delay',
+            "no_logfile",
+            "no_update_stats",
         ):
             if getattr(self, arg, True):
                 setattr(self, arg, options.get(arg))
@@ -119,6 +137,24 @@ class SendNLCommand(BaseCommand):
                 raise CommandError('--export-* options can not be used with --offline')
         if self.partitions is None and self.mod is not None or self.mod is None and self.partitions is not None:
             raise CommandError('--partitions must be used with --mod')
+        self.nl_delivery_dt = datetime.now()
+
+    def initlog(self, log, substitution_prefix):
+        log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
+        log.setLevel(logging.DEBUG)
+        # print also errors to stderr to receive cron alert
+        err_handler = logging.StreamHandler(sys.stderr)
+        err_handler.setLevel(logging.ERROR)
+        err_handler.setFormatter(log_formatter)
+        log.addHandler(err_handler)
+        if not self.export_only and not self.no_logfile:
+            h = logging.FileHandler(
+                filename=settings.SENDNEWSLETTER_LOGFILE % (
+                    substitution_prefix + ("_as_news" if self.as_news else ""), self.nl_delivery_dt.strftime('%Y%m%d'),
+                )
+            )
+            h.setFormatter(log_formatter)
+            log.addHandler(h)
 
     def sendmail(self, s_user_email, log, msg, is_subscriber, s_id):
         send_result, smtp_index_choosed, mta_label = None, None, None
@@ -212,11 +248,11 @@ class SendNLCommand(BaseCommand):
             if not self.no_deliver:
                 smtp_quit(self.smtp_servers)
 
-            # update log stats counters only if subscriber_ids not given
-            if newsletter_name and not self.subscriber_ids:
+            # update log stats counters only if subscriber_ids not given and not called with --no-update-stats
+            if newsletter_name and not self.subscriber_ids and not self.no_update_stats:
                 try:
                     nl_delivery, created = NewsletterDelivery.objects.get_or_create(
-                        delivery_date=date.today(), newsletter_name=newsletter_name
+                        delivery_date=self.nl_delivery_dt.date(), newsletter_name=newsletter_name
                     )
                     nl_delivery.user_sent = (nl_delivery.user_sent or 0) + self.user_sent
                     nl_delivery.subscriber_sent = (nl_delivery.subscriber_sent or 0) + self.subscriber_sent
@@ -236,6 +272,6 @@ class SendNLCommand(BaseCommand):
                 "%s%s completed in %.0f seconds" % (
                     "(mod %d) " % self.mod if self.mod is not None else "",
                     'Simulation' if self.no_deliver else 'Delivery',
-                    time.time() - self.start_time,
+                    time.time() - self.nl_delivery_dt.timestamp(),
                 )
             )

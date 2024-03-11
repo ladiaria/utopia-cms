@@ -24,6 +24,40 @@
   }
 },
 {
+  "pk": 3,
+  "model": "core.publication",
+  "fields": {
+    "weight": 0,
+    "headline": "A restricted publication",
+    "public": true,
+    "slug": "restrictedpub",
+    "name": "Restricted publication",
+    "newsletter_header_color": "#262626"
+  }
+},
+{
+  "pk": 1,
+  "model": "thedaily.subscriptionprices",
+  "fields": {
+    "subscription_type": "DDIGM",
+    "ga_category": "D",
+    "price": "350.00",
+    "ga_name": "suscripción digital",
+    "order": 1
+  }
+},
+{
+  "pk": 2,
+  "model": "thedaily.subscriptionprices",
+  "fields": {
+    "subscription_type": "PAPYDIM",
+    "ga_category": "P",
+    "price": "790.00",
+    "ga_name": "papel lunes a viernes",
+    "order": 2
+  }
+},
+{
   "pk": 1,
   "model": "core.edition",
   "fields": {
@@ -50,6 +84,17 @@
   "model": "core.edition",
   "fields": {
     "publication": 1,
+    "pdf_md5": "",
+    "downloads": 0,
+    "date_published": "2020-11-19",
+    "date_created": "2020-11-19T04:21:05"
+  }
+},
+{
+  "pk": 4,
+  "model": "core.edition",
+  "fields": {
+    "publication": 3,
     "pdf_md5": "",
     "downloads": 0,
     "date_published": "2020-11-19",
@@ -144,7 +189,7 @@
     "headline": "test article",
     "tags": "test",
     "show_related_articles": true,
-    "public": false,
+    "public": true,
     "body": "test.",
     "views": 0,
     "date_published": "2020-11-19T04:20:02",
@@ -167,14 +212,14 @@
     "byline": [2],
     "headline": "test article2",
     "show_related_articles": true,
-    "public": false,
+    "public": true,
     "body": "test.",
     "views": 0,
     "date_published": "2020-11-19T04:20:02",
     "last_modified": "2020-11-19T04:25:57",
     "url_path": "/spinoff/articulo/2020/11/test-article2/",
     "slug": "test-article2",
-    "main_section": 1,
+    "main_section": 2,
     "allow_comments": false,
     "date_created": "2020-11-19T04:24:28",
     "is_published": true
@@ -190,10 +235,10 @@
     "byline": [],
     "headline": "test article3",
     "show_related_articles": true,
-    "public": false,
+    "public": true,
     "body": "test.",
     "views": 0,
-    "date_published": "2020-11-20T04:20:02",
+    "date_published": "2020-11-20T04:20:03",
     "last_modified": "2020-11-20T04:25:57",
     "url_path": "/test/articulo/2020/11/test-article3/",
     "slug": "test-article3",
@@ -214,14 +259,14 @@
     "byline": [],
     "headline": "test article4",
     "show_related_articles": true,
-    "public": false,
+    "public": true,
     "body": "test.",
     "views": 0,
     "date_published": "2020-11-20T04:20:02",
     "last_modified": "2020-11-20T04:25:57",
-    "url_path": "/test/articulo/2020/11/test-article4/",
+    "url_path": "/spinoff/articulo/2020/11/test-article4/",
     "slug": "test-article4",
-    "main_section": 3,
+    "main_section": 4,
     "allow_comments": false,
     "date_created": "2020-11-19T04:24:28",
     "is_published": true,
@@ -238,7 +283,7 @@
     "byline": [],
     "headline": "test humor1",
     "show_related_articles": true,
-    "public": false,
+    "public": true,
     "body": "test.",
     "views": 0,
     "date_published": "2020-11-20T04:20:02",
@@ -246,6 +291,51 @@
     "url_path": "/test/articulo/2020/11/test-humor1/",
     "slug": "test-humor1",
     "main_section": 6,
+    "allow_comments": false,
+    "date_created": "2020-11-19T04:24:28",
+    "is_published": true
+  }
+},
+{
+  "pk": 6,
+  "model": "core.article",
+  "fields": {
+    "newsletter_featured": false,
+    "allow_related": true,
+    "only_initials": false,
+    "byline": [],
+    "headline": "test restricted1",
+    "show_related_articles": true,
+    "body": "test.",
+    "views": 0,
+    "date_published": "2020-11-20T04:20:02",
+    "last_modified": "2020-11-20T04:25:57",
+    "url_path": "/restrictedpub/articulo/2020/11/test-restricted1/",
+    "slug": "test-restricted1",
+    "main_section": 7,
+    "allow_comments": false,
+    "date_created": "2020-11-19T04:24:28",
+    "is_published": true
+  }
+},
+{
+  "pk": 7,
+  "model": "core.article",
+  "fields": {
+    "newsletter_featured": false,
+    "allow_related": true,
+    "only_initials": false,
+    "byline": [],
+    "headline": "test article7",
+    "show_related_articles": true,
+    "public": true,
+    "body": "test.",
+    "views": 0,
+    "date_published": "2020-11-20T04:20:02",
+    "last_modified": "2020-11-20T04:25:57",
+    "url_path": "/spinoff/articulo/2020/11/test-article7/",
+    "slug": "test-article7",
+    "main_section": 8,
     "allow_comments": false,
     "date_created": "2020-11-19T04:24:28",
     "is_published": true
@@ -295,7 +385,7 @@
     "home_top": true,
     "section": 1,
     "edition": 2,
-    "article": 3,
+    "article": 4,
     "top_position": 2
   }
 },
@@ -324,6 +414,30 @@
   }
 },
 {
+  "pk": 7,
+  "model": "core.articlerel",
+  "fields": {
+    "position": 1,
+    "home_top": true,
+    "section": 1,
+    "edition": 4,
+    "article": 6,
+    "top_position": 1
+  }
+},
+{
+  "pk": 8,
+  "model": "core.articlerel",
+  "fields": {
+    "position": 2,
+    "home_top": true,
+    "section": 1,
+    "edition": 2,
+    "article": 7,
+    "top_position": 2
+  }
+},
+{
   "pk": 1,
   "model": "core.articleurlhistory",
   "fields": {
@@ -345,6 +459,14 @@
   "fields": {
     "article": 3,
     "absolute_url": "/test/articulo/2020/11/test-article3/"
+  }
+},
+{
+  "pk": 4,
+  "model": "core.articleurlhistory",
+  "fields": {
+    "article": 7,
+    "absolute_url": "/spinoff/articulo/2020/11/test-article7/"
   }
 },
 {

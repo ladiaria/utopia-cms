@@ -7,7 +7,9 @@
       <h2 class="section-detail__title">{{ publication_obj }}{% if publication_obj.new_pill %} <span class="new-pill">Nuevo</span>{% endif %}</h2>
     </div>
 
-    {% with destacados=publication_destacados %}{% render_section None top_index=1 %}{% endwith %}
+    {% with destacados=publication_destacados publication=publication_obj %}
+      {% render_section None top_index=1 %}
+    {% endwith %}
 
     <div class="row footer-section">
       <div class="col s12">

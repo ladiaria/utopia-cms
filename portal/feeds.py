@@ -13,6 +13,8 @@ from core.templatetags.ldml import ldmarkup, cleanhtml
 site = Site.objects.get_current()
 
 
+# TODO: unicode improvements
+
 class LatestArticles(Feed):
     feed_type = DefaultFeed
     title = site.name
@@ -56,6 +58,7 @@ class LatestArticlesByCategory(Feed):
         return u'%s - %s' % (site.name, obj.name)
 
     def link(self, obj):
+        # TODO: redefined (fix)
         return obj.get_absolute_url()
 
     def description(self, obj):

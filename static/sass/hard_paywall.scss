@@ -1,0 +1,320 @@
+@import "variables";
+@import "../materialize/sass/components/variables";
+
+body.hard-paywall {
+  background-color: #edf6f5;
+  h1,
+  p {
+    line-height: normal;
+    font-family: AntennaCond, sans-serif;
+    margin: 0;
+  }
+
+  .container {
+    width: 100%;
+    display: flex;
+    gap: 165px;
+    justify-content: center;
+    padding: 84px;
+
+    @media #{$medium-and-down} {
+      padding: 20px 14px 140px;
+    }
+
+    .article-container {
+      max-width: 366px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+
+      @media #{$medium-and-down} {
+        display: none;
+      }
+
+      &__title {
+        text-align: center;
+        font-size: px-to-rem(24px);
+        font-weight: 700;
+        padding: 8px 16px;
+      }
+      &__chevron-down-icon {
+        align-self: center;
+      }
+
+      &__article-card {
+        margin-top: 16px;
+        background-color: white;
+        border-radius: 24px;
+        padding: 32px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+        border: 1px solid #e0e0e0;
+
+        img {
+          border-radius: 8px;
+        }
+
+        &__section {
+          font-size: px-to-rem(14px);
+          text-transform: uppercase;
+        }
+
+        &__title {
+          font-family: "Meta Serif", serif;
+          font-size: px-to-rem(20px);
+          font-weight: 500;
+        }
+
+        &__author {
+          color: #a4a4a4;
+          font-size: px-to-rem(14px);
+        }
+
+        &__ladiaria-logo {
+          border-top: 1px solid #e0e0e0;
+          padding: 16px 0;
+          display: flex;
+          justify-content: center;
+        }
+      }
+    }
+    .payment-column {
+      max-width: 400px;
+      width: 100%;
+      position: relative;
+
+      &.anonymous {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      &__close-btn {
+        position: absolute;
+        top: -50px;
+        right: -165px;
+        border-radius: 18px;
+        background: rgba(141, 141, 141, 0.16);
+        display: inline-flex;
+        padding: 4px 16px;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+
+        @media #{$medium-and-down} {
+          display: none;
+        }
+      }
+
+      .payment-container {
+        border: 1px solid #828282;
+        box-shadow: 0px 3.676px 14.703px 0px rgba(0, 0, 0, 0.1);
+        position: relative;
+        border-radius: 8px;
+        background-color: white;
+        padding-top: 24px;
+        text-align: center;
+
+        &.anonymous {
+          padding-top: 40px;
+        }
+
+        @media #{$medium-and-down} {
+          padding-top: 0;
+
+          &.anonymous {
+            padding-top: 0;
+          }
+        }
+
+        &__chip-subscription {
+          border-radius: 18px;
+          padding: 8px 16px;
+          background: #878787;
+          color: #fff;
+          text-align: center;
+          font-family: Roboto;
+          font-size: px-to-rem(15px);
+          font-weight: 700;
+          text-transform: uppercase;
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+          top: -18px;
+
+          @media #{$medium-and-down} {
+            display: none;
+          }
+        }
+
+        &__mobile-header {
+          display: none;
+
+          @media #{$medium-and-down} {
+            display: block;
+            border-bottom: 1px solid #e0e0e0;
+            background: #f3f3f3;
+            text-align: center;
+            font-size: px-to-rem(18px);
+            font-weight: 700;
+            padding: 16px 0;
+            border-top-right-radius: 8px;
+            border-top-left-radius: 8px;
+            margin-bottom: 8px;
+
+            p {
+              max-width: 200px;
+              margin: 0 auto;
+            }
+          }
+        }
+
+        &__price {
+          color: #eb5757;
+          font-size: px-to-rem(25.73px);
+          font-weight: 700;
+        }
+
+        &__full-price {
+          font-size: px-to-rem(20px);
+          padding-bottom: 10px;
+        }
+
+        &__cancel-advice {
+          color: #eb5757;
+          padding-bottom: 16px;
+        }
+
+        &__form-container {
+          padding: 16px 20px;
+
+          .form-DDIGM {
+            padding: 0 60px;
+
+            @media #{$medium-and-down} {
+              padding: 0 16px;
+            }
+          }
+
+          img {
+            padding-bottom: 20px;
+            max-height: 400px;
+          }
+          button {
+            border-radius: 65px;
+            background: $off-black;
+            padding: 10px 21px;
+            color: #fff;
+            text-align: center;
+            font-family: Roboto;
+            font-size: px-to-rem(15px);
+            font-weight: 700;
+            text-transform: uppercase;
+            border: none;
+          }
+        }
+
+        &__anonymous {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 26px;
+          &__see-benefits {
+            border-radius: 17px;
+            background: #f3f3f3;
+            padding: 8px 21px;
+            font-family: Roboto;
+            font-size: px-to-rem(15px);
+            font-weight: 700;
+            text-transform: uppercase;
+          }
+
+          .plan-collapsible-container {
+            background-color: white;
+            border-radius: 8px;
+            z-index: 1;
+            max-width: 303px;
+
+            &__header {
+              background-color: #f3f3f3;
+              font-family: AntennaCond, sans-serif;
+              text-align: center;
+              padding: 14px;
+              position: relative;
+              border-radius: 8px;
+              border-bottom-left-radius: 0;
+              border-bottom-right-radius: 0;
+              border-bottom: 1px solid #d8d8d8;
+
+              h4 {
+                margin: 0;
+                font-size: 1.5rem;
+              }
+
+              button {
+                position: absolute;
+                right: 14px;
+                top: 9px;
+                background-color: #f3f3f3;
+                padding: 13px;
+                border: none;
+                width: 40px;
+                height: 40px;
+              }
+            }
+
+            .plan-collapsible {
+              padding: 16px;
+              margin: 0 14.5px;
+
+              li {
+                border-bottom: 1px solid #d8d8d8;
+
+                &:last-child {
+                  border-bottom: none;
+                }
+
+                &__body {
+                  font-size: 0.875rem;
+                }
+              }
+            }
+          }
+          &__log-in {
+            border-top: 1px solid #e0e0e0;
+            background: #f3f3f3;
+            align-self: stretch;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            padding: 16px 0 24px;
+
+            p {
+              font-size: px-to-rem(15px);
+              font-weight: 700;
+              font-family: Roboto;
+            }
+            a {
+              font-family: Roboto;
+              font-size: px-to-rem(15px);
+              text-decoration-line: underline;
+            }
+          }
+        }
+      }
+    }
+    .register-container {
+      text-align: center;
+      font-size: px-to-rem(15px);
+      padding-top: 39px;
+      a {
+        font-family: Roboto;
+        text-decoration: underline;
+      }
+      p {
+        font-family: Roboto;
+      }
+    }
+  }
+}

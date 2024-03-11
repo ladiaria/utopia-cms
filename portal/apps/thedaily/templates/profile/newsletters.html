@@ -7,7 +7,7 @@
       <div class="edit_profile_card__header"><h2 class="title">Newsletters</h2></div>
       <p>
         {% if newsletters %}
-          Elegí los newsletters que quieras y recibí los contenidos en tu email.
+          Elegí las newsletters que quieras y recibí los contenidos en tu email.
         {% else %}
           Por el momento no hay newsletters disponibles.
         {% endif %}
@@ -25,7 +25,7 @@
                 </label>
                 {% nlsubscribed user nlobj as nlchecked %}
                 <div class="switch-container">
-                  <span class="label-text on" style="display: none;">Activadas</span>
+                  <span class="label-text on" style="display: none;">Activada</span>
                   <span class="label-text off{% if email_is_bouncer %} grey-text{% endif %}">Activar</span>
                   <label class="switch">
                     <input

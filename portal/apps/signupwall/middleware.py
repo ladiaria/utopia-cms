@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 from datetime import datetime
 
 from django.conf import settings
-from django.http import Http404
-from django.urls import resolve
+from django.http import Http404, HttpResponseRedirect
+from django.urls import resolve, reverse
 from django.urls.exceptions import Resolver404
 from django.utils.deprecation import MiddlewareMixin
 
@@ -16,7 +16,7 @@ from core.models import Article
 from thedaily.email_logic import limited_free_article_mail
 
 
-debug = getattr(settings, 'SIGNUPWALL_DEBUG', False)
+debug = getattr(settings, 'SIGNUPWALL_DEBUG', settings.DEBUG)
 
 
 def get_article_by_url_kwargs(kwargs):
@@ -92,6 +92,11 @@ def subscriber_access(subscriber, article):
     )
 
 
+def is_google_amp(request):
+    # TODO: implement the validation of Google requests made to feed its AMP cache
+    return False
+
+
 class SignupwallMiddleware(MiddlewareMixin):
     def process_request(self, request):
 
@@ -103,6 +108,15 @@ class SignupwallMiddleware(MiddlewareMixin):
         if path_resolved.url_name == 'article_detail':
             try:
                 article = get_article_by_url_path(request.path)
+                # ignore AMP-feeding requests by Google and also AMP requests in "simulation"
+                if (
+                    is_google_amp(request)
+                    or (
+                        getattr(settings, 'AMP_SIMULATE', False)
+                        and request.GET.get(settings.AMP_TOOLS_GET_PARAMETER) == 'amp'
+                    )
+                ):
+                    return
             except Article.DoesNotExist:
                 # ignore signupwall for not-found articles (core.views.article.article_detail will redirect if the
                 # article is found in article's URL history)
@@ -173,15 +187,22 @@ class SignupwallMiddleware(MiddlewareMixin):
 
         else:
 
-            # anon users, they will face the signupwall.
-            articles_visited_count, credits = 1, 0
+            # anon users, they will face the signupwall (see note related in settings.py).
+            articles_visited_count, credits = 1, settings.SIGNUPWALL_ANON_MAX_CREDITS
 
         if raise_signupwall and user_is_authenticated:
             if articles_visited_count == credits + 1:
                 limited_free_article_mail(user)
 
         if raise_signupwall and (articles_visited_count > credits) or restricted_article:
-            # TODO: Why is this next function set here?
-            request.signupwall = {'next': next}
+            if restricted_article:
+                request.signupwall = True
+            else:
+                if user_is_authenticated:
+                    urlname, reverse_kwargs = "subscribe", {"planslug": "DDIGM"}
+                else:
+                    urlname, reverse_kwargs = "account-login", {}
+                # TODO: check redirect status code for the next line
+                return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
         else:
             request.credits = credits - articles_visited_count

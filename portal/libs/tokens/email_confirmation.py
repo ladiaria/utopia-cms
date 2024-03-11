@@ -3,6 +3,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from builtins import str
+import traceback
 
 from email.utils import make_msgid
 from emails.django import DjangoMessage as Message
@@ -54,13 +55,17 @@ def send_confirmation_link(*args, **kwargs):
             smtp.quit()
             result = True  # success confirmation
         except Exception as e:
-            error_log('Error sending confirmation email'.format(str(e)))
+            if settings.DEBUG:
+                print(traceback.format_exc())
+            error_log('Error sending confirmation email - ' + str(e))
 
     else:
         try:
             result = send_mail(subject, message.as_string(), settings.NOTIFICATIONS_FROM_MX, [user.email]) > 0
         except Exception as e:
-            error_log('Error sending confirmation email'.format(str(e)))
+            if settings.DEBUG:
+                print(traceback.format_exc())
+            error_log('Error sending confirmation email - ' + str(e))
 
     return result
 

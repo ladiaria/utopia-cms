@@ -19,12 +19,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='category',
             name='newsletter_new_pill',
-            field=models.BooleanField(default=False, verbose_name='pill de "nuevo" para el newsletter en el perfil de usuario'),
+            field=models.BooleanField(default=False, verbose_name='pill de "nuevo" para la newsletter en el perfil de usuario'),
         ),
         migrations.AddField(
             model_name='publication',
             name='newsletter_new_pill',
-            field=models.BooleanField(default=False, verbose_name='pill de "nuevo" para el newsletter en el perfil de usuario'),
+            field=models.BooleanField(default=False, verbose_name='pill de "nuevo" para la newsletter en el perfil de usuario'),
         ),
         migrations.AlterField(
             model_name='article',

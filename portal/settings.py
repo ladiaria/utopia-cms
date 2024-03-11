@@ -9,6 +9,7 @@ from os.path import abspath, basename, dirname, join, realpath
 from datetime import datetime
 import mimetypes
 from freezegun import freeze_time
+from kombu import Queue
 
 import django
 from django.conf.global_settings import DEFAULT_CHARSET
@@ -70,7 +71,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sitemaps',
     'django.contrib.sites',
-    'background_task',
     'audiologue',
     'tagging',
     'core.config.CoreConfig',
@@ -124,6 +124,8 @@ INSTALLED_APPS = (
     'social_django',
     "django_amp_readerid.apps.DjangoAmpReaderidConfig",
     "reversion",
+    "django_celery_results",
+    "django_celery_beat",
 )
 
 SITE_ID = 1
@@ -153,16 +155,17 @@ MIGRATION_MODULES = {'photologue': 'photologue_ladiaria.photologue_migrations'}
 
 ADMIN_SHORTCUTS = [
     {
-        'title': 'Edición',
+        'title': 'Links directos (edición)',
         'shortcuts': [
+            {'url_name': 'admin:core_publication_changelist', 'title': 'Publicaciones', "icon": "newspaper"},
             {'url_name': 'admin:core_edition_changelist', 'title': 'Ediciones', "icon": "newspaper"},
             {'url_name': 'admin:core_edition_add', 'title': 'Crear edición'},
             {'url_name': 'admin:core_article_add', 'title': 'Crear Artículo'},
         ],
     },
     {
-        'title': 'Reportes',
-        'shortcuts': [{'url': '/dashboard/', 'title': 'Estadísticas de usuarios', "icon": "chart-line"}],
+        'title': 'Reportes y otras utilidades',
+        'shortcuts': [{'url': '/dashboard/', 'title': 'Reportes, estadísticas y "previews"', "icon": "chart-line"}],
     },
 ]
 
@@ -230,10 +233,7 @@ ROOT_URLCONF = 'urls'
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 
-# Base (TODO: check usage and remove or explain this setting)
-BASE_SUB = None
-
-# Default publication slug. Please read this related issue: https://github.com/ladiaria/utopia-cms/issues/29
+# Default publication slug.
 DEFAULT_PUB = 'default'
 
 FIRST_DAY_OF_WEEK = 0     # 0 is Sunday
@@ -322,10 +322,38 @@ NEWSLETTER_IMG_FORMAT = 'jpg'
 SENDNEWSLETTER_EXPORT_DIR = '/var/local/utopiacms/sendnewsletter_export'
 SENDNEWSLETTER_LOGFILE = '/var/log/utopiacms/sendnewsletter/%s-%s.log'
 
-# apps
+# celery
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_CACHE_BACKEND = "default"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+"""
+With this minimal set of queues you can start at least 3 workers to process this 3 different queues, upd_* is meant to
+be used in a worker with only one process (concurrency 1), and the concurrent_tasks queue can be used with any
+concurrency, those 3 workers can be started executing below commands, also a .ini sample conf for supervisor is
+provided inside the "docs" directory in the root of the project. In portal directory, in a different shell for each
+command, run:
 
-# background tasks
-MAX_ATTEMPTS = 1
+$ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp worker -Q upd_category_home -c 1 -l INFO -n utopiacms_w1@%h
+$ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp worker -Q upd_articles_url -c 1 -l INFO -n utopiacms_w2@%h
+$ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp worker -Q concurrent_tasks -c 2 -l INFO -n utopiacms_w3@%h
+
+If you want to use/test celery-beat, you also need a worker for it which can be started this way:
+
+$ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp beat -l INFO -S django
+
+"""
+CELERY_QUEUES = {
+    'upd_category_home': {'exchange': 'upd_category_home', 'binding_key': 'upd_category_home'},
+    "upd_articles_url": {'exchange': 'upd_articles_url', 'binding_key': 'upd_articles_url'},
+    'concurrent_tasks': {'exchange': 'concurrent_tasks', 'binding_key': 'concurrent_tasks'},
+}
+CELERY_TASK_ROUTES = {
+    'core.tasks.update_category_home_task': {'queue': 'upd_category_home'},
+    'core.tasks.update_article_urls': {'queue': 'upd_articles_url'},
+    'core.tasks.send_push_notification_task': {'queue': 'concurrent_tasks'},
+}
+CELERY_TASK_QUEUES = [Queue(k, routing_key=k) for k in CELERY_QUEUES.keys()]
+DJANGO_CELERY_BEAT_TZ_AWARE = False
 
 # Elasticsearch is disabled by default, to enable it you need to adjust this settings according to your Elasticsearch
 # installation, see https://django-elasticsearch-dsl.readthedocs.io/en/latest/quickstart.html#install-and-configure
@@ -336,6 +364,8 @@ ELASTICSEARCH_DSL = {}
 ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
 SEARCH_ELASTIC_USE_FUZZY = False  # Ignored when previous setting is True (not allowed by Elasticsearch).
+
+# apps
 
 # core
 # publications that use the root url as their home page
@@ -397,6 +427,7 @@ CORE_PUSH_NOTIFICATIONS_OPTIONS = {
 # Change to false if the signupwall middleware is removed
 SIGNUPWALL_ENABLED = True
 SIGNUPWALL_MAX_CREDITS = 10
+SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: The implementation for values greater than 0 is not available yet
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = 'Nueva suscripción'
@@ -411,6 +442,7 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
 )
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_WELCOME_TEMPLATE = 'welcome.html'
+THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR = "thedaily/templates"
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
 
 # photologue

@@ -98,3 +98,11 @@ body {
   border-color: transparent;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
 }
+
+/* 404 django responses when settings.DEBUG is True */
+div#summary, div#template, div#traceback, div#requestinfo, div#explanation {
+  margin-left: 220px;
+  padding-left: 16px;
+}
+div#requestinfo h2{margin-left: auto;}
+div#requestinfo h3{margin-bottom: auto; margin-left: auto;}

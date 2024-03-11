@@ -17,6 +17,20 @@ welcome_email_template = 'notifications/new_subscription%s.html'
 welcome_email_sub = 'Tu suscripción %s está activa'
 
 
+def send_notification_message(subject, message, mailto):
+    if (
+        not getattr(settings, 'LOCAL_EMAIL_BACKEND_TEST', False)
+        and settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
+    ):
+        # send using smtp to receive bounces in another mailbox
+        s = smtp_connect()
+        s.sendmail(settings.NOTIFICATIONS_FROM_MX, [mailto], message.as_string())
+        s.quit()
+    else:
+        # normal django send
+        send_mail(subject, message.as_string(), settings.NOTIFICATIONS_FROM_MX, [mailto])
+
+
 def send_notification(user, email_template, email_subject, extra_context={}):
     extra_context.update(
         {
@@ -33,18 +47,7 @@ def send_notification(user, email_template, email_subject, extra_context={}):
         mail_from=(settings.NOTIFICATIONS_FROM_NAME, settings.NOTIFICATIONS_FROM_ADDR1),
         headers={'Message-Id': make_msgid("u." + str(user.id)), "Return-Path": settings.NOTIFICATIONS_FROM_MX}
     )
-
-    if (
-        not getattr(settings, 'LOCAL_EMAIL_BACKEND_TEST', False)
-        and settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
-    ):
-        # send using smtp to receive bounces in another mailbox
-        s = smtp_connect()
-        s.sendmail(settings.NOTIFICATIONS_FROM_MX, [user.email], msg.as_string())
-        s.quit()
-    else:
-        # normal django send
-        send_mail(email_subject, msg.as_string(), settings.NOTIFICATIONS_FROM_MX, [user.email])
+    send_notification_message(email_subject, msg, user.email)
 
 
 def notify_digital(user, seller_fullname=None):

@@ -177,9 +177,14 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             )
             if first_day.date() > date_published.date() or (date_published >= datetime.now() and not user.is_staff):
                 raise Http404
-            ld_edition = get_object_or_404(
-                Edition, date_published=date_published, publication__slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL
-            )
+            try:
+                ld_edition = get_object_or_404(
+                    Edition,
+                    date_published=date_published,
+                    publication__slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL,
+                )
+            except Edition.MultipleObjectsReturned:
+                ld_edition = get_object_or_404(Edition, date_published=date_published, publication=publication)
         else:
             # get edition as usual
             ld_edition = get_current_edition()

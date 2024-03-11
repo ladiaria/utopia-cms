@@ -33,6 +33,7 @@
                 type="checkbox"
                 id="id_{{ nl_item.slug }}"
                 name="{{ nl_item.slug }}"
+                class="input_nl_home"{# a custom class that can be useful for example in GA to find the element #}
                 data-key="com_subscribe"
                 data-url="{% url 'nl-auth-subscribe' nltype=nl_item.nltype nlslug=nl_item.slug %}"
               />

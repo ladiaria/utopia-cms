@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from django.utils import timezone
 
-from thedaily.models import SentMail, SubscriberEvent
+from thedaily.models import SubscriberEvent
 
 
 # WARNING: a change in this variables should be also made in database rows already inserted.

@@ -4,9 +4,7 @@
 {% block page_title %}Suscribite por teléfono{% endblock %}
 {% block body_class %}thedaily subscribe hide-mobile-nav{% endblock %}
 
-{% block meta %}
-  <meta name="robots" content="noindex">
-{% endblock %}
+{% block meta %}<meta name="robots" content="noindex">{% endblock %}
 
 {% block navbar %}
   <div id="main-header">
@@ -19,19 +17,22 @@
 {% endblock %}
 
 {% block content %}
-
   <div class="subscribe-body">
     <div class="ld-content">
       <div class="center-align">
-        <h1 class="ld-title-big">Recibimos tu información</h1>
-        <p>Te llamaremos en las próximas 48 horas para realizar la suscripción.</p>
-        {% if display %}
-          <div class="center-align">
-            <p>
-              Mientras tanto, te enviamos un email a {{ email }} para que vayas validando tu cuenta.
-              Revisá tu bandeja de entrada y seguí los pasos (si no te llega el email, revisá la carpeta Spam).
-            </p>
-          </div>
+        {% if phone_blocklisted %}
+          <h1 class="ld-title-big">Información no válida</h1>
+        {% else %}
+          <h1 class="ld-title-big">{% if already_done %}Ya r{% else %}R{% endif %}ecibimos tu información</h1>
+          <p>Te llamaremos en las próximas 48 horas para realizar la suscripción.</p>
+          {% if not already_done and display %}
+            <div class="center-align">
+              <p>
+                Mientras tanto, te enviamos un email a {{ email }} para que vayas validando tu cuenta.
+                Revisá tu bandeja de entrada y seguí los pasos (si no te llega el email, revisá la carpeta Spam).
+              </p>
+            </div>
+          {% endif %}
         {% endif %}
         <p class="ld-text-secondary align-center"><a href='/'>Ir a la portada</a></p>
       </div>
@@ -39,6 +40,4 @@
   </div>
 {% endblock %}
 
-{% block footer_block %}
-  {% include 'footer_simple.html' %}
-{% endblock footer_block %}
+{% block footer_block %}{% include 'footer_simple.html' %}{% endblock footer_block %}

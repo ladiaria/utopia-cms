@@ -6,6 +6,7 @@ from django.template import Library, Engine, TemplateDoesNotExist, loader
 from django.template.base import Node
 
 from core.models import Section, Publication, Category, get_current_edition
+from core.utils import get_category_template
 
 
 register = Library()
@@ -93,6 +94,11 @@ class RenderSectionNode(Node):
 
 
 @register.simple_tag(takes_context=True)
+def render_section(context, section_slug, article_type=None, top_index=None):
+    return RenderSectionNode(context, section_slug, article_type, top_index).render(context)
+
+
+@register.simple_tag(takes_context=True)
 def publication_title(context):
     publication = context.get('publication')
     site_name, country_name = context.get('site').name, context.get('country_name')
@@ -103,11 +109,6 @@ def publication_title(context):
             else "%s | %s | %s" % (publication.headline, site_name, country_name)
         )
     )
-
-
-@register.simple_tag(takes_context=True)
-def render_section(context, section_slug, article_type=None, top_index=None):
-    return RenderSectionNode(context, section_slug, article_type, top_index).render(context)
 
 
 @register.simple_tag(takes_context=True)
@@ -165,10 +166,7 @@ class RenderCategoryRowNode(Node):
                         'category_destacados': [None] + latest_articles,
                     }
                 )
-                template = 'category_row.html'
-                if category.slug in getattr(settings, 'HOMEV3_CATEGORIES_ROW_CUSTOM_TEMPLATES', ()):
-                    template = '%s/row/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, category.slug)
-                return loader.render_to_string(template, flatten_ctx)
+                return loader.render_to_string(get_category_template(category.slug, "category_row"), flatten_ctx)
             else:
                 return ''
 

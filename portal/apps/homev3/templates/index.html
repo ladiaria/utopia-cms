@@ -45,40 +45,50 @@
 
   {% render_cover %}
 
-  {% if fcategory %}{% with prefetched_article_data=True %}{% include 'category_grid.html' %}{% endwith %}{% endif %}
+  {# next include can changes this variables, so we backup them, and restore them later using the backed values #}
+  {% with publication_bak=publication category_bak=category %}
 
-  {# "with" variable should be reset for the content that is not yet "prefetch-aware" #}
+    {% if fcategory %}
+      {% include fcategory_template|default:'category_grid.html' with prefetched_article_data=True %}
+    {% endif %}
 
-  {% with prefetched_article_data=False %}
-    {% for section in featured_sections.0 %}{% render_section section %}{% endfor %}
-    {% for publication_slug in home_publications %}{% render_publication_row publication_slug %}{% endfor %}
+    {% with publication=publication_bak category=category_bak %}
+
+      {# prefetch var reset for content that is not yet "prefetch-aware" (on this and also more with blocks below) #}
+      {% with prefetched_article_data=False %}
+        {% for section in featured_sections.0 %}{% render_section section %}{% endfor %}
+        {% for publication_slug in home_publications %}{% render_publication_row publication_slug %}{% endfor %}
+      {% endwith %}
+
+      {% if not hide_first_featured_publication and featured_publications.0 %}
+        {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.0 %}{% endwith %}
+      {% endif %}
+
+      {% with prefetched_article_data=False %}
+        {% for section in featured_sections.1 %}{% render_section section %}{% endfor %}
+      {% endwith %}
+
+      {% if featured_publications.1 %}
+        {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.1 %}{% endwith %}
+      {% endif %}
+
+      {% with prefetched_article_data=False %}
+        {% for section in featured_sections.2 %}{% render_section section %}{% endfor %}
+      {% endwith %}
+
+      {# news wall commented out due to performance issues #}
+      {# include 'news_wall.html' #}
+
+      {% include bigphoto_template %}
+
+      {# other custom components can be included also like this commented includes: #}
+      {# include 'components.html' #}
+
+      {% block extra_homepage %}{% endblock %}
+
+    {% endwith %}
+
   {% endwith %}
-
-  {% if not hide_first_featured_publication and featured_publications.0 %}
-    {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.0 %}{% endwith %}
-  {% endif %}
-
-  {% with prefetched_article_data=False %}
-    {% for section in featured_sections.1 %}{% render_section section %}{% endfor %}
-  {% endwith %}
-
-  {% if featured_publications.1 %}
-    {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.1 %}{% endwith %}
-  {% endif %}
-
-  {% with prefetched_article_data=False %}
-    {% for section in featured_sections.2 %}{% render_section section %}{% endfor %}
-  {% endwith %}
-
-  {# news wall commented out due to performance issues #}
-  {# include 'news_wall.html' #}
-
-  {% include bigphoto_template %}
-
-  {# other custom components can be included also like this commented includes: #}
-  {# include 'components.html' #}
-
-  {% block extra_homepage %}{% endblock %}
 
 {% endblock %}
 

@@ -85,8 +85,7 @@ class Migration(migrations.Migration):
                 ('last_paid_subscription', models.DateTimeField(blank=True, null=True, verbose_name='Ultima subscripcion comienzo')),
             ],
             options={
-                'verbose_name': 'suscriptor',
-                'permissions': (('es_suscriptor_default', 'Es suscriptor actualmente'),),
+                'verbose_name': 'suscriptor', 'verbose_name_plural': 'suscriptores',
             },
         ),
         migrations.CreateModel(

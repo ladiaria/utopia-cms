@@ -56,7 +56,6 @@ def publications(request):
         default_pub = None
 
     result = {
-        'BASE_SUB': settings.BASE_SUB,
         'DEFAULT_PUB': DEFAULT_PUB,
         'default_pub': default_pub,
         'custom_icons_publications': getattr(settings, 'CORE_CUSTOM_ICONS_PUBLICATIONS', None),

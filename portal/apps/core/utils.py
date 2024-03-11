@@ -8,12 +8,14 @@ from time import timezone
 from datetime import datetime, tzinfo, timedelta
 from dateutil import tz
 from math import copysign
-from os import path
+from os.path import join
 import pytz
 from pytz import country_timezones, country_names
 import requests
 
 from django.conf import settings
+from django.template import Engine
+from django.template.exceptions import TemplateDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from django.utils.deconstruct import deconstructible
 
@@ -56,31 +58,28 @@ def get_pdf_pdf_upload_to(instance, filename):
     except AttributeError:
         publication_slug = instance.edition.publication.slug
     timestamp = instance.date_published.strftime('%Y%m%d')
-    return path.join(
-        'editions', publication_slug, timestamp, instance.get_pdf_filename())
+    return join('editions', publication_slug, timestamp, instance.get_pdf_filename())
 
 
 def get_pdf_cover_upload_to(instance, filename):
     timestamp = instance.date_published.strftime('%Y%m%d')
-    return path.join(
-        'editions', instance.publication.slug, timestamp,
-        instance.get_cover_filename())
+    return join('editions', instance.publication.slug, timestamp, instance.get_cover_filename())
 
 
 def get_supplement_directory(instance):
     if instance.edition:
         date_strftime = instance.edition.date_published.strftime('%Y%m%d')
-        directory = path.join('editions', date_strftime, 'supplement')
+        directory = join('editions', date_strftime, 'supplement')
     else:
         date_strftime = instance.date_created.strftime('%Y%m%d')
-        directory = path.join('supplements', date_strftime)
+        directory = join('supplements', date_strftime)
     return directory
 
 
 def get_supplement_pdf_upload_to(instance, filename):
     directory = get_supplement_directory(instance)
     name = instance.slug.replace('-', '_')
-    return path.join(directory, '%s.pdf' % name)
+    return join(directory, '%s.pdf' % name)
 
 
 def get_pdfpage_pdf_upload_to(instance, filename):
@@ -95,6 +94,33 @@ def get_pdfpageimage_file_upload_to(instance, filename):
     pass
 
 
+def get_category_template(category_slug, template_destination="detail"):
+    default_dir = {"newsletter": "core/templates"}.get(template_destination, 'core/templates/category')
+    custom_dir = getattr(settings, "CORE_CATEGORIES_TEMPLATE_DIR", None)
+    destination_subdir = {"category_row": "row", "newsletter": "newsletter"}.get(template_destination, "")
+
+    template = join(default_dir, destination_subdir, template_destination + ".html")
+    if custom_dir:
+        engine = Engine.get_default()
+        # search by slug
+        template_try = join(custom_dir, destination_subdir, category_slug + ".html")
+        try:
+            engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            # then using "default" names instead of slugs
+            template_try = join(custom_dir, destination_subdir, template_destination + ".html")
+            try:
+                engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template = template_try
+        else:
+            template = template_try
+    # if custom dir is not defined, no search is needed
+    return template
+
+
 def add_punctuation(text):
     valid_chars = 'AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789"'
     if text != '':
@@ -104,6 +130,7 @@ def add_punctuation(text):
 
 
 def update_article_url_in_coral_talk(article_id, new_url_path):
+    # TODO: should be reviewed
     requests.post(
         settings.TALK_URL + 'api/graphql',
         headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},

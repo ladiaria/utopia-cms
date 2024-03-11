@@ -2,10 +2,10 @@
 
 <article class="ld-grid-simple__area">
 
-  <div class="ld-card ld-card--reg">
+  <div class="ld-card ld-card--reg ld-card--{{ article.type }}{% block article_extra_class %}{% endblock %}">
 
     {% render_toolbar_for article %}
-    {% if not article_card_hide_photo and article.photo and article.photo_image_file_exists %}
+    {% if not article_card_hide_photo and article.photo_render_allowed %}
       <a href="{{ article.get_absolute_url }}">
         <img class="ld-card__img" src="{{ article.photo.get_700w_url }}" width="700"
              height="{{ article.photo.get_700w_size.1 }}"{% if img_load_lazy %} loading="lazy"{% endif %}
@@ -15,7 +15,7 @@
 
     <div class="ld-card__body">
       <div class="ld-card__section">
-        {% autoescape off %}{% publication_section article %}{% endautoescape %}
+        {% block article_section %}{% autoescape off %}{% render_hierarchy article %}{% endautoescape %}{% endblock %}
         {% include 'article/article_card_lock_tooltip.html' %}
       </div>
       <h3 class="ld-card__title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
@@ -27,14 +27,14 @@
 
       <div class="ld-card__byline-wrap">
         <div class="ld-card__byline">
-          {% if not article_card_hide_photo and CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo_author %}
+          {% if not article_card_hide_photo and CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo_render_allowed and article.photo_author %}
             <div class="ld-card__photoauthor">{{ article.photo_type }}: {{ article.photo_author }}</div>
           {% endif %}
           {% with authors=article.get_authors %}
             {% if authors %}
               <div class="ld-card__author">
                 {% for author in authors %}
-                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                  <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
                 {% endfor %}
               </div>
             {% endif %}

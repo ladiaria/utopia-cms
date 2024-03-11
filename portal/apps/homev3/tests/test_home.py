@@ -6,6 +6,8 @@ from django.test import TestCase
 from django.test.client import Client
 from django.contrib.auth.models import User
 
+from core.factories import UserFactory
+
 
 class HomeTestCase(TestCase):
 
@@ -46,24 +48,23 @@ class HomeTestCase(TestCase):
             self.assertEqual(response.status_code, 403, (response.status_code, response))
 
     def test2_home_logged_in(self):
-        email, password = 'u1@gmail.com', User.objects.make_random_password()
-        user = User.objects.create_user(email, email, password)
-        user.is_active = True
+        password, user = User.objects.make_random_password(), UserFactory()
+        user.set_password(password)
         user.save()
         c = Client()
-        c.login(username=email, password=password)
+        c.login(username=user.username, password=password)
         with self.settings(DEBUG=True, DEFAULT_PUB="default"):
             for item in self.urls_to_test:
                 response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))
                 self.assertEqual(response.status_code, 200)
 
     def test3_home_staff_logged_in(self):
-        email, password = 'u1@gmail.com', User.objects.make_random_password()
-        user = User.objects.create_user(email, email, password)
-        user.is_active, user.is_staff = True, True
+        password, user = User.objects.make_random_password(), UserFactory()
+        user.set_password(password)
+        user.is_staff = True
         user.save()
         c = Client()
-        c.login(username=email, password=password)
+        c.login(username=user.username, password=password)
         with self.settings(DEBUG=True, DEFAULT_PUB="default"):
             for item in self.urls_to_test + ({'url': '/admin/'}, ):
                 response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))

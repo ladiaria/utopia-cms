@@ -8,6 +8,7 @@ from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
 from pydoc import locate
+from kombu.exceptions import OperationalError
 
 from actstream.models import Action
 from tagging.models import Tag, TaggedItem
@@ -366,6 +367,7 @@ class ArticleAdminModelForm(ModelForm):
             targets = targets.exclude(id=self.instance.id)
         if targets:
             raise ValidationError('Ya existe un artículo en ese mes con el mismo título.')
+        return cleaned_data
 
     class Meta:
         model = Article
@@ -928,12 +930,12 @@ class PublicationAdmin(ModelAdmin):
         kwargs.setdefault('form', PublicationAdminChangelistForm)
         return super().get_changelist_form(request, **kwargs)
 
-    @admin.action(description="Enviar el newsletter de la publicación seleccionada")
+    @admin.action(description="Enviar la newsletter de la publicación seleccionada")
     def send_newsletter(self, request, queryset):
         if queryset.count() > 1:
             self.message_user(
                 request,
-                "No se permite enviar más de un newsletter a la vez, seleccione solamente una publicación",
+                "No se permite enviar más de una newsletter a la vez, seleccione solamente una publicación",
                 level=messages.ERROR,
             )
         else:
@@ -987,6 +989,7 @@ class CategoryAdmin(ModelAdmin):
                     ('full_width_cover_image', 'full_width_cover_image_title'),
                     ('full_width_cover_image_lead', ),
                     ('has_newsletter', "newsletter_new_pill"),
+                    ("newsletter_from_name", "newsletter_from_email"),
                     ('newsletter_tagline', 'newsletter_periodicity'),
                     ('subscribe_box_question', ),
                     ('subscribe_box_nl_subscribe_auth', ),
@@ -1167,6 +1170,8 @@ class TaggedItemAdmin(admin.ModelAdmin):
 
 @admin.register(DeviceSubscribed, site=site)
 class DeviceSubscribedAdmin(admin.ModelAdmin):
+    # TODO: derive from a new baseclass who handles an action post with more fields than DATA_MAX... (show a message
+    #       error instead of error 500)
     model = DeviceSubscribed
     list_display = ('user', 'time_created', 'browser')
     readonly_fields = ('user', 'time_created', 'subscription_info')
@@ -1219,20 +1224,23 @@ class PushNotificationAdmin(admin.ModelAdmin):
                         tag_as_id(ms)
                 else:
                     tag_as_id(ms)
-                send_push_notification(
-                    ms.message,
-                    ms.tag,
-                    urljoin(settings.SITE_URL, ms.article.get_absolute_url()),
-                    ms.article.photo.image.url if ms.article.photo else None,
-                    None if all_users else request.user,
-                )
-                ms.sent = timezone.now()
-                ms.save()
-                self.message_user(
-                    request,
-                    'Las notificaciones selecciondas fueron correctamente agendadas para envío',
-                    level=messages.SUCCESS,
-                )
+                try:
+                    send_push_notification(
+                        ms.message,
+                        ms.tag,
+                        urljoin(settings.SITE_URL, ms.article.get_absolute_url()),
+                        ms.article.photo.image.url if ms.article.photo else None,
+                        None if all_users else request.user,
+                    )
+                except OperationalError as oe_exc:
+                    msg = "ERROR: send_push_notification_task could not be started (%s)" % oe_exc
+                    msg_level = messages.ERROR
+                else:
+                    ms.sent = timezone.now()
+                    ms.save()
+                    msg = 'Las notificaciones selecciondas fueron correctamente agendadas para envío'
+                    msg_level = messages.SUCCESS
+                self.message_user(request, msg, level=msg_level)
 
     @admin.action(description="Enviar las notificaciones seleccionadas a todos los usuarios.")
     def send_push_notification_to_all(self, request, queryset):

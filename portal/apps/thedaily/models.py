@@ -12,7 +12,7 @@ from pymailcheck import split_email
 from pyisemail import is_email
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, Permission
 from django.core.mail import mail_managers
 from django.core.validators import RegexValidator, validate_email
 from django.core.exceptions import ValidationError
@@ -44,7 +44,7 @@ from social_django.models import UserSocialAuth
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
 
-from .exceptions import UpdateCrmEx
+from .exceptions import UpdateCrmEx, EmailValidationError
 
 
 GA_CATEGORY_CHOICES = (('D', 'Digital'), ('P', 'Papel'))
@@ -111,6 +111,7 @@ class Subscriber(Model):
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
     downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
 
+    terms_and_conds_accepted = BooleanField(default=False)
     pdf = BooleanField(default=False)
     lento_pdf = BooleanField('pdf L.', default=False)
     ruta = PositiveSmallIntegerField(blank=True, null=True)
@@ -145,7 +146,7 @@ class Subscriber(Model):
         self.downloads += 1
         self.save()
 
-    def is_subscriber(self, pub_slug=settings.DEFAULT_PUB):
+    def is_subscriber(self, pub_slug=settings.DEFAULT_PUB, operation="get"):
         try:
 
             if self.user:
@@ -157,10 +158,16 @@ class Subscriber(Model):
                     is_subscriber_custom = __import__(
                         settings.THEDAILY_IS_SUBSCRIBER_CUSTOM_MODULE, fromlist=['is_subscriber']
                     ).is_subscriber
-                    return is_subscriber_custom(self, pub_slug)
+                    return is_subscriber_custom(self, pub_slug, operation)
 
                 else:
-                    return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
+                    if operation == "get":
+                        return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
+                    elif operation == "set":
+                        self.user.user_permissions.add(Permission.objects.get(codename='es_suscriptor_' + pub_slug))
+                        return True
+                    else:
+                        raise ValueError("Unknown operation")
 
         except User.DoesNotExist:
             # rare, but we saw once this exception happen
@@ -291,18 +298,19 @@ class Subscriber(Model):
     class Meta:
         verbose_name = 'suscriptor'
         verbose_name_plural = "suscriptores"
-        permissions = (("es_suscriptor_%s" % settings.DEFAULT_PUB, "Es suscriptor actualmente"), )
 
 
 def updatecrmuser(contact_id, field, value):
     data = {"contact_id": contact_id, "field": field, "value": value}
     if settings.CRM_UPDATE_USER_ENABLED:
-        r = requests.post(settings.CRM_API_UPDATE_USER_URI, data=data)
-        r.raise_for_status()
+        update_url = getattr(settings, "CRM_API_UPDATE_USER_URI", None)
+        if update_url:
+            r = requests.post(update_url, data=data)
+            r.raise_for_status()
 
 
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
-    msg, error_msg_prefix = None, "El email ingresado "
+    msg, error_msg_prefix, error_code = None, "El email ingresado ", None
     error_msg_invalid = error_msg_prefix + 'no es un email válido.'
     error_msg_exists = error_msg_prefix + "ya posee una cuenta de usuario"
     error_msg_next = ("?next=" + next_page) if next_page else ""
@@ -311,7 +319,7 @@ def email_extra_validations(old_email, email, instance_id=None, next_page=None, 
 
     if not email:
         if not allow_blank:
-            msg = error_msg_invalid
+            msg, error_code = error_msg_invalid, EmailValidationError.INVALID
 
     else:
         email = email.lower()
@@ -321,13 +329,14 @@ def email_extra_validations(old_email, email, instance_id=None, next_page=None, 
         # 1. check if this email (only "on change") is included in our bouncers list
         if old_email != email and email in bouncer_blocklisted:
             msg = error_msg_prefix + "registra exceso de rebotes, no se permite su utilización."
+            error_code = EmailValidationError.INVALID
         else:
 
             # 2. Django email validation
             try:
                 validate_email(email)
             except ValidationError as ve:
-                msg = ve.message
+                msg, error_code = ve.message, EmailValidationError.INVALID
             else:
 
                 # 3. Domain validation + already used validation
@@ -335,7 +344,7 @@ def email_extra_validations(old_email, email, instance_id=None, next_page=None, 
                     not split_email(email)["domain"] in whitelisted_domains()
                     and not is_email(email, check_dns=getattr(settings, "THEDAILY_VALIDATE_EMAIL_CHECK_MX", True))
                 ):
-                    msg = error_msg_invalid
+                    msg, error_code = error_msg_invalid, EmailValidationError.INVALID
 
                 elif User.objects.filter(email__iexact=email).exclude(**exclude_kwargs_user).exists():
                     # TODO: use "reverse" to build the url
@@ -351,7 +360,7 @@ def email_extra_validations(old_email, email, instance_id=None, next_page=None, 
                     mail_managers("Multiple username in users", email)
                     msg = error_msg_prefix + 'no puede ser utilizado.'
 
-    return msg
+    return msg, error_code
 
 
 @receiver(pre_save, sender=User)
@@ -368,11 +377,13 @@ def user_pre_save(sender, instance, **kwargs):
         actualusr = sender.objects.get(pk=instance.id)
         if not bypass and not email_extra_validations_done:
             # email extra validations on user modification (login and password change actions are not considered).
-            error_msg = email_extra_validations(actualusr.email, instance.email, instance.id, allow_blank=True)
+            error_msg, error_code = email_extra_validations(
+                actualusr.email, instance.email, instance.id, allow_blank=True
+            )
     except User.DoesNotExist:
         if not email_extra_validations_done:
             # email extra validations (user creation)
-            error_msg = email_extra_validations(None, instance.email, allow_blank=True)
+            error_msg, error_code = email_extra_validations(None, instance.email, allow_blank=True)
         actualusr = instance
 
     # raise if email extra validations returned something
@@ -384,14 +395,18 @@ def user_pre_save(sender, instance, **kwargs):
 
     # sync email if changed
     if settings.CRM_UPDATE_USER_ENABLED and actualusr.email != instance.email:
+        err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
-            requests.post(
-                settings.CRM_API_UPDATE_USER_URI,
-                data={'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email},
-            ).raise_for_status()
+            update_url = getattr(settings, "CRM_API_UPDATE_USER_URI", None)
+            if update_url:
+                requests.post(
+                    update_url, data={'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
+                ).raise_for_status()
+            else:
+                raise UpdateCrmEx(err_msg)
         except requests.exceptions.RequestException:
-            raise UpdateCrmEx("No se ha podido actualizar tu email, contactate con nosotros")
+            raise UpdateCrmEx(err_msg)
 
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")

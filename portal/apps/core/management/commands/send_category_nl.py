@@ -4,13 +4,11 @@ from __future__ import unicode_literals
 
 from builtins import next
 
-import sys
 from os.path import basename, join
 import logging
 import locale
-import time
 import json
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from csv import reader, writer
 from pydoc import locate
 from MySQLdb import ProgrammingError
@@ -26,27 +24,21 @@ from django.contrib.sites.models import Site
 from django.utils import translation
 
 from apps import blocklisted
-from core.models import Category, CategoryNewsletter, Section, Article, get_latest_edition
+from core.models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
+from core.utils import get_category_template
 from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter, subscribers_nl_iter_filter
-from libs.utils import smtp_connect
+from libs.utils import smtp_connect, nl_serialize_multi
 
 from . import SendNLCommand
 
 
 # CFG
-today, EMAIL_ATTACH, ATTACHMENTS = date.today(), True, []
+EMAIL_ATTACH, ATTACHMENTS = True, []
 
 # log
-log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-# print also errors to stderr to receive cron alert
-err_handler = logging.StreamHandler(sys.stderr)
-err_handler.setLevel(logging.ERROR)
-err_handler.setFormatter(log_formatter)
-log.addHandler(err_handler)
 
 # Initialize the hashid object with salt from settings and custom length
 hashids = Hashids(settings.HASHIDS_SALT, 32)
@@ -77,7 +69,7 @@ class Command(SendNLCommand):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
         export_ctx = {
             'newsletter_campaign': self.category_slug,
-            'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=today).capitalize(),
+            'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=self.nl_delivery_dt).capitalize(),
             'hide_after_content_block': self.hide_after_content_block,
         }
         context = export_ctx.copy()
@@ -94,78 +86,72 @@ class Command(SendNLCommand):
                     log.error("Offline context missing, tip: you can create it using --export-context option")
                     raise CommandError(fnfe_exc)
                 # de-serialize dates
-                dp_cover = datetime.strptime(context['cover_article']['date_published'], '%Y-%m-%d').date()
-                context['cover_article']['date_published'] = dp_cover
+                cover_article = context['cover_article']
+                if cover_article:
+                    dp_cover = datetime.strptime(cover_article['date_published'], '%Y-%m-%d').date()
+                    context['cover_article']['date_published'] = dp_cover
                 featured_article = context['featured_article']
                 if featured_article:
                     dp_featured = datetime.strptime(featured_article['date_published'], '%Y-%m-%d').date()
                     context['featured_article']['date_published'] = dp_featured
                 dp_articles = []
-                for a, a_section in context['articles']:
+                for a in context['articles']:
                     dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
                     a['date_published'] = dp_article
-                    dp_articles.append((a, False, a_section))
+                    dp_articles.append((a, False))
                 context['articles'] = dp_articles
                 if 'featured_articles' in context:
                     dp_featured_articles = []
-                    for a, a_section in context['featured_articles']:
+                    for a in context['featured_articles']:
                         dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
                         a['date_published'] = dp_article
-                        dp_featured_articles.append((a, a_section))
+                        dp_featured_articles.append(a)
                     context['featured_articles'] = dp_featured_articles
             elif not self.export_subscribers or self.export_context:
                 category_nl = CategoryNewsletter.objects.get(category=self.category, valid_until__gt=datetime.now())
                 cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
-                featured_article_section = featured_article.publication_section() if featured_article else None
                 if self.export_context:
                     export_ctx.update(
                         {
                             'articles': [
-                                (
-                                    a.nl_serialize(position == 0), {'name': section.name, 'slug': section.slug}
-                                ) for position, (a, section) in enumerate(
-                                    [(a, a.publication_section()) for a in category_nl.non_cover_articles()]
-                                )
+                                a.nl_serialize(
+                                    position == 0, category=self.category
+                                ) for position, a in enumerate(category_nl.non_cover_articles())
                             ],
-                            'featured_article_section':
-                                featured_article_section.name if featured_article_section else None,
-                            'featured_articles': [
-                                (
-                                    a.nl_serialize(), {'name': section.name, 'slug': section.slug}
-                                ) for a, section in [
-                                    (a, a.publication_section()) for a in category_nl.non_cover_featured_articles()
-                                ]
-                            ],
+                            'featured_articles': nl_serialize_multi(
+                                category_nl.non_cover_featured_articles(), self.category
+                            ),
                         }
                     )
                 else:
                     context.update(
                         {
-                            'cover_article_section':
-                                cover_article.publication_section().name if cover_article else None,
-                            'articles':
-                                [(a, False, a.publication_section()) for a in category_nl.non_cover_articles()],
-                            'featured_article_section': featured_article_section,
-                            'featured_articles':
-                                [(a, a.publication_section()) for a in category_nl.non_cover_featured_articles()],
+                            'articles': nl_serialize_multi(
+                                [(a, False) for a in category_nl.non_cover_articles()], self.category, dates=False
+                            ),
+                            'featured_articles': nl_serialize_multi(
+                                category_nl.non_cover_featured_articles(), self.category, dates=False
+                            ),
                         }
                     )
 
         except CategoryNewsletter.DoesNotExist:
 
             if not (self.offline or self.export_subscribers) or self.export_context:
-                cover_article = self.category.home.cover()
-                cover_article_section = cover_article.publication_section() if cover_article else None
-                top_articles = [(a, False, a.publication_section()) for a in self.category.home.non_cover_articles()]
+                try:
+                    cover_article = self.category.home.cover()
+                except CategoryHome.DoesNotExist as dne:
+                    raise CommandError(dne)
+                cover_article_section = cover_article.get_section(self.category) if cover_article else None
+                top_articles = [(a, False) for a in self.category.home.non_cover_articles()]
 
                 listonly_section = getattr(
                     settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}
                 ).get(self.category_slug)
                 if listonly_section:
-                    top_articles = [t for t in top_articles if t[2].slug == listonly_section]
-                    if cover_article_section.slug != listonly_section:
+                    top_articles = [t for t in top_articles if getattr(t[0].section, "slug", None) == listonly_section]
+                    if getattr(cover_article_section, "slug", None) != listonly_section:
                         cover_article = top_articles.pop(0)[0] if top_articles else None
-                        cover_article_section = cover_article.publication_section() if cover_article else None
 
                 featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
                 nl_featured = Article.objects.filter(
@@ -183,17 +169,20 @@ class Command(SendNLCommand):
                     featured_article = None
 
                 if self.export_context:
-                    export_ctx['articles'] = [
-                        (
-                            t[0].nl_serialize(position == 0), {'name': t[2].name, 'slug': t[2].slug}
-                        ) for position, t in enumerate(top_articles)
-                    ]
+                    export_ctx.update(
+                        {
+                            'opinion_article': nl_serialize_multi(opinion_article, self.category, True),
+                            'articles': [
+                                t[0].nl_serialize(position == 0, category=self.category)
+                                for position, t in enumerate(top_articles)
+                            ],
+                        }
+                    )
                 else:
                     context.update(
                         {
-                            'opinion_article': opinion_article,
-                            'cover_article_section': cover_article_section,
-                            'articles': top_articles,
+                            'opinion_article': nl_serialize_multi(opinion_article, self.category, True, False),
+                            'articles': nl_serialize_multi(top_articles, self.category, dates=False),
                         }
                     )
 
@@ -254,11 +243,14 @@ class Command(SendNLCommand):
                 email_subject += \
                     locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "headline", ""))
 
+            # TODO: encapsulate this in a Category model method
             email_from = (
-                self.site.name if self.category_slug in getattr(
-                    settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ()
-                ) else ('%s %s' % (self.site.name, self.category.name)),
-                settings.NOTIFICATIONS_FROM_ADDR1,
+                self.category.newsletter_from_name or (
+                    self.site.name if self.category_slug in getattr(
+                        settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ()
+                    ) else ('%s %s' % (self.site.name, self.category.name))
+                ),
+                self.category.newsletter_from_email or settings.NOTIFICATIONS_FROM_ADDR1,
             )
 
         translation.activate(settings.LANGUAGE_CODE)
@@ -273,8 +265,8 @@ class Command(SendNLCommand):
                         'email_subject': email_subject,
                         'email_from': email_from,
                         'list_id': list_id,
-                        'cover_article': cover_article.nl_serialize(True),
-                        'featured_article': featured_article.nl_serialize(True) if featured_article else None,
+                        'cover_article': nl_serialize_multi(cover_article, self.category, True),
+                        'featured_article': nl_serialize_multi(featured_article, self.category, True),
                     }
                 )
                 open(offline_ctx_file, 'w').write(json.dumps(export_ctx))
@@ -286,7 +278,12 @@ class Command(SendNLCommand):
             common_headers = {'List-ID': list_id, "Return-Path": settings.NEWSLETTERS_FROM_MX}
             if not self.offline:
                 context.update(common_ctx)
-                context.update({'cover_article': cover_article, 'featured_article': featured_article})
+                context.update(
+                    {
+                        'cover_article': nl_serialize_multi(cover_article, self.category, True, False),
+                        'featured_article': nl_serialize_multi(featured_article, self.category, True, False),
+                    }
+                )
 
         if not self.offline:
             subscribers_iter = subscribers_nl_iter(receivers, self.starting_from_s, self.starting_from_ns)
@@ -300,10 +297,8 @@ class Command(SendNLCommand):
                 log.error("All MTA down, '%s %s' was used for partitions and mod" % (self.partitions, self.mod))
                 return
 
-        s_id, is_subscriber = None, None
-        email_template = Engine.get_default().get_template(
-            '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, self.category_slug)
-        )
+        s_id, is_subscriber, nl_delivery_date = None, None, self.nl_delivery_dt.strftime("%Y%m%d")
+        email_template = Engine.get_default().get_template(get_category_template(self.category_slug, "newsletter"))
 
         while True:
 
@@ -366,7 +361,7 @@ class Command(SendNLCommand):
                                 "s" if is_subscriber else "r",
                                 hashed_id,
                                 self.category_slug,
-                                today.strftime("%Y%m%d"),
+                                nl_delivery_date,
                             ),
                         }
                     )
@@ -396,6 +391,9 @@ class Command(SendNLCommand):
                                 s_user_email if s_id else None, is_subscriber, self.partitions, self.mod
                             )
                         )
+                        # TODO: here we can try only once to reconnect all servers again (this scenario can be
+                        #       reproduced with stop and continue the process after half/one hour using
+                        #       "kill -[STOP|CONT] <pid>")
                         break
 
             except (ProgrammingError, OperationalError, StopIteration) as exc:
@@ -417,16 +415,8 @@ class Command(SendNLCommand):
         try:
             self.category = self.category_slug if self.offline else Category.objects.get(slug=self.category_slug)
         except Category.DoesNotExist:
-            raise CommandError('No category matching the slug given found')
-        if not self.export_only:
-            h = logging.FileHandler(
-                filename=settings.SENDNEWSLETTER_LOGFILE % (
-                    self.category_slug + ("_as_news" if self.as_news else ""), today.strftime('%Y%m%d')
-                )
-            )
-            h.setFormatter(log_formatter)
-            log.addHandler(h)
-            self.start_time = time.time()
+            raise CommandError('No category matching the given slug found')
+        self.initlog(log, self.category_slug)
         site_id = options.get("site_id")
         self.site = Site.objects.get(id=site_id) if site_id else Site.objects.get_current()
         self.build_and_send()

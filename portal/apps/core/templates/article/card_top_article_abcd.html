@@ -1,17 +1,16 @@
 {% load bleach_tags core_tags ldml %}
 
-<div class="ld-card ld-card--reg">
+<div class="ld-card ld-card--reg ld-card--{{ a.type }}{% block destacados_abcd_extra_class %}{% endblock %}">
   {% render_toolbar_for a %}
-  {% if a.photo %}
+  {% if a.photo_render_allowed %}
     <a href="{{ a.get_absolute_url }}">
-      <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" loading="lazy"
-           title="{{ a.photo_caption }}" alt="{{ a.photo_caption }}"
-           width="700"{% if a.photo_image_file_exists %} height="{{ a.photo.get_700w_size.1 }}"{% endif %}>
+      <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" loading="lazy" title="{{ a.photo_caption }}"
+           alt="{{ a.photo_caption }}" width="700" height="{{ a.photo.get_700w_size.1 }}">
     </a>
   {% endif %}
   <div class="ld-card__body">
     <div class="ld-card__section">
-      {% autoescape off %}{% publication_section a %}{% endautoescape %}
+      {% block destacados_abcd_section %}{% autoescape off %}{% render_hierarchy a %}{% endautoescape %}{% endblock %}
       {% include 'article/article_card_lock_tooltip.html' with article=a %}
     </div>
     <h2 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
@@ -28,7 +27,7 @@
         {% if authors %}
           <div class="ld-card__author">
             {% for author in authors %}
-              <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+              <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
             {% endfor %}
           </div>
         {% endif %}

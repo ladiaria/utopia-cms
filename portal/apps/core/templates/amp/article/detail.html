@@ -23,7 +23,7 @@
 {% block meta %}
   <!-- Open Graph (http://ogp.me) -->
   <meta property="og:title" content="{% autoescape on %}{{ article.headline|remove_markup }}{% endautoescape %}">
-  {% include 'article/detail_meta.html' %}
+  {% include meta_include_template|default:'article/detail_meta.html' %}
 
   <!-- Canonical -->
   <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
@@ -66,6 +66,7 @@
                 <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
               </svg>
               <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+              {% if include_after_headline %}{% include include_after_headline %}{% endif %}
               <svg id="line-svg" xmlns="http://www.w3.org/2000/svg" width="180" height="2" viewBox="0 0 180 2" fill="none">
                 <path d="M0 1.08124H180" stroke="#A4A4A4"/>
               </svg>
@@ -140,13 +141,16 @@
       {% endif %}
       {% if not article.articlecollection %}
         <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+        {% if include_after_headline %}{% include include_after_headline %}{% endif %}
       {% endif %}
 
+      {% if article.date_published %}
+        <div class="article-date-author">
+          Publicado{% if article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small">{{ article.date_published_verbose.lower }}{% if authors %} · {% endif %}</span>
+        </div>
+      {% endif %}
       <div class="article-date-author">
         {% with authors=article.get_authors %}
-          {% if article.date_published %}
-            Publicado{% if article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small">{{ article.date_published_verbose.lower }}{% if authors %} · {% endif %}</span>
-          {% endif %}
           {% if authors %}
             Escribe
             {% for author in authors %}
@@ -161,17 +165,9 @@
         {% endwith %}
         {% if section %}
           <span class="small">
-            {% if 'elecciones' in article.get_categories_slugs %}
-              {% with special_sections='apuntes-de-campana datos-elecciones-2019' %}
-                {% if section.slug in special_sections.split %}
-                  <a href="{{ section.get_absolute_url }}">{{ section }}</a>
-                {% else %}
-                  <a href="{% url 'section_detail' section_slug='elecciones-2019' %}">{{ section.category }}</a>
-                {% endif %}
-              {% endwith %}
-            {% else %}
+            {% block byline_section %}
               <a href="{% url 'section_detail' section_slug=section.slug %}" title="Más artículos en {{ section }}.">{{ section }}</a>
-            {% endif %}
+            {% endblock %}
           </span>
         {% endif %}
       </div>

@@ -11,25 +11,23 @@ import traceback
 import json
 from pydoc import locate
 from hashids import Hashids
+from favit.utils import is_xhr
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.http import (
-    HttpResponseServerError, HttpResponseForbidden, HttpResponsePermanentRedirect, HttpResponseNotFound, Http404
-)
-from django.template.exceptions import TemplateDoesNotExist
+from django.http import HttpResponseForbidden, HttpResponsePermanentRedirect, Http404
 from django.views.decorators.cache import never_cache
 from django.contrib.sites.models import Site
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from libs.utils import decode_hashid
-
-from core.models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
-from core.templatetags.ldml import remove_markup
+from libs.utils import decode_hashid, nl_serialize_multi
 from thedaily.models import Subscriber
 from faq.models import Topic
+from ..models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
+from ..utils import get_category_template
+from ..templatetags.ldml import remove_markup
 
 
 # Initialize the hashid object with salt from settings and custom length
@@ -68,16 +66,12 @@ def category_detail(request, slug):
 
     return render(
         request,
-        '%s/%s.html'
-        % (
-            getattr(settings, 'CORE_CATEGORIES_TEMPLATE_DIR', 'core/templates/category'),
-            category.slug if category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_TEMPLATES', ()) else 'detail',
-        ),
+        get_category_template(slug),
         {
             'category': category,
             'cover_article': category_home.cover(),
             'destacados': category_home.non_cover_articles(),
-            'is_portada': True,
+            'is_portada': slug not in getattr(settings, 'CORE_CATEGORY_DETAIL_FORCE_IS_PORTADA_OFF', ()),
             'featured_section1': featured_section1,
             'featured_section2': featured_section2,
             'featured_section3': featured_section3,
@@ -116,39 +110,51 @@ def newsletter_preview(request, slug):
 
     site = Site.objects.get_current()
     category = get_object_or_404(Category, slug=slug)
+    context = {
+        'category': category,
+        'newsletter_campaign': category.slug,
+        "request_is_xhr": is_xhr(request),
+    }
+    render_kwargs = {"context": context}
+    template_name = None
 
     try:
 
-        context = {'category': category, 'newsletter_campaign': category.slug}
+        assert slug not in getattr(settings, "SENDNEWSLETTER_CATEGORY_DISALLOW_DEFAULT_CMD", ()), \
+            "The newsletter of this area (if any) is not allowed be previewed using the area newsletter preview URL"
+
+        if not category.has_newsletter:
+            context["preview_warn"] = "The 'has_newsletter' attribute for this area is not checked"
 
         try:
             category_nl = CategoryNewsletter.objects.get(category=category, valid_until__gt=datetime.now())
             cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
             context.update(
                 {
-                    'cover_article_section': cover_article.publication_section() if cover_article else None,
-                    'articles': [(a, False, a.publication_section()) for a in category_nl.non_cover_articles()],
-                    'featured_article_section': featured_article.publication_section() if featured_article else None,
-                    'featured_articles': [
-                        (a, a.publication_section()) for a in category_nl.non_cover_featured_articles()
-                    ],
+                    'articles': nl_serialize_multi(
+                        [(a, False) for a in category_nl.non_cover_articles()], category, dates=False
+                    ),
+                    'featured_articles': nl_serialize_multi(
+                        category_nl.non_cover_featured_articles(), category, dates=False
+                    ),
                 }
             )
 
         except CategoryNewsletter.DoesNotExist:
 
-            category_home = get_object_or_404(CategoryHome, category=category)
+            category_home = CategoryHome.objects.get(category=category)
 
             cover_article = category_home.cover()
-            cover_article_section = cover_article.publication_section() if cover_article else None
-            top_articles = [(a, False, a.publication_section()) for a in category_home.non_cover_articles()]
+            cover_article_section = cover_article.get_section(category) if cover_article else None
+            top_articles = [(a, False) for a in category_home.non_cover_articles()]
 
             listonly_section = getattr(settings, 'CORE_CATEGORY_NEWSLETTER_LISTONLY_SECTIONS', {}).get(category.slug)
             if listonly_section:
-                top_articles = [t for t in top_articles if t[2].slug == listonly_section]
-                if cover_article_section.slug != listonly_section:
+                top_articles = [
+                    t for t in top_articles if getattr(t[0].get_section(category), "slug", None) == listonly_section
+                ]
+                if getattr(cover_article_section, "slug", None) != listonly_section:
                     cover_article = top_articles.pop(0)[0] if top_articles else None
-                    cover_article_section = cover_article.publication_section() if cover_article else None
 
             featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
             nl_featured = (
@@ -168,9 +174,8 @@ def newsletter_preview(request, slug):
 
             context.update(
                 {
-                    'opinion_article': opinion_article,
-                    'cover_article_section': cover_article_section,
-                    'articles': top_articles,
+                    'opinion_article': nl_serialize_multi(opinion_article, category, True, False),
+                    'articles': nl_serialize_multi(top_articles, category, dates=False),
                 }
             )
 
@@ -189,10 +194,12 @@ def newsletter_preview(request, slug):
                 locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "headline", ""))
 
         email_from = '%s <%s>' % (
-            site.name
-            if category.slug in getattr(settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ())
-            else ('%s %s' % (site.name, category.name)),
-            settings.NOTIFICATIONS_FROM_ADDR1,
+            category.newsletter_from_name or (
+                site.name
+                if category.slug in getattr(settings, 'CORE_CATEGORY_NL_FROM_NAME_SITEONLY', ())
+                else ('%s %s' % (site.name, category.name))
+            ),
+            category.newsletter_from_email or settings.NOTIFICATIONS_FROM_ADDR1,
         )
 
         headers = {'From': email_from, 'Subject': email_subject}
@@ -217,8 +224,8 @@ def newsletter_preview(request, slug):
                 'custom_subject': custom_subject,
                 'headers_preview': headers,
                 'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=date.today()).capitalize(),
-                'cover_article': cover_article,
-                'featured_article': featured_article,
+                'cover_article': nl_serialize_multi(cover_article, category, True, False),
+                'featured_article': nl_serialize_multi(featured_article, category, True, False),
             }
         )
 
@@ -228,10 +235,8 @@ def newsletter_preview(request, slug):
             is_subscriber_val = request.GET.get(is_subscriber_var)
             if is_subscriber_val and is_subscriber_val.lower() in ('false', '0'):
                 context[is_subscriber_var] = False
-        try:
-            return render(request, '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug), context)
-        except TemplateDoesNotExist:
-            return HttpResponseNotFound()
+
+        template_name = get_category_template(slug, "newsletter")
 
     except Exception as e:
         if settings.DEBUG:
@@ -239,11 +244,17 @@ def newsletter_preview(request, slug):
             print(exc_type)
             print(exc_value)
             print(traceback.extract_tb(exc_traceback))
-        return HttpResponseServerError('ERROR: %s' % e)
+        if "headers_preview" not in context:
+            context["headers_preview"] = True
+        template_name, context["preview_err"] = "newsletter/error.html", e
+        render_kwargs["status"] = 406
+
+    return render(request, template_name, **render_kwargs)
 
 
 @never_cache
 def newsletter_browser_preview(request, slug, hashed_id=None):
+    category = get_object_or_404(Category, slug=slug)
     if hashed_id:
         decoded = decode_hashid(hashed_id)
         # TODO: if authenticated => assert same logged in user
@@ -271,17 +282,24 @@ def newsletter_browser_preview(request, slug, hashed_id=None):
         dp_featured = datetime.strptime(featured_article['date_published'], '%Y-%m-%d').date()
         context['featured_article']['date_published'] = dp_featured
     dp_articles = []
-    for a, a_section in context['articles']:
-        dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
-        a['date_published'] = dp_article
-        dp_articles.append((a, False, a_section))
+    for a in context['articles']:
+        try:
+            dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
+            a['date_published'] = dp_article
+        except TypeError:
+            pass
+        else:
+            dp_articles.append((a, False))
     context['articles'] = dp_articles
     if 'featured_articles' in context:
         dp_featured_articles = []
-        for a, a_section in context['featured_articles']:
-            dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
-            a['date_published'] = dp_article
-            dp_featured_articles.append((a, a_section))
+        for a in context['featured_articles']:
+            try:
+                dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
+                a['date_published'] = dp_article
+            except TypeError:
+                pass
+            dp_featured_articles.append(a)
         context['featured_articles'] = dp_featured_articles
     site_url = context['site_url']
     as_news = request.GET.get("as_news", "0").lower() in ("true", "1")
@@ -295,6 +313,7 @@ def newsletter_browser_preview(request, slug, hashed_id=None):
     # TODO: obtain missing vars from hashed_id subscriber (TODO: which are those vars?)
     context.update(
         {
+            "category": category,
             "browser_preview": True,
             "as_news": as_news,
             'hashed_id': hashed_id,
@@ -304,7 +323,7 @@ def newsletter_browser_preview(request, slug, hashed_id=None):
             'is_subscriber_default': subscriber.is_subscriber(settings.DEFAULT_PUB),
         }
     )
-    return render(request, '%s/newsletter/%s.html' % (settings.CORE_CATEGORIES_TEMPLATE_DIR, slug), context)
+    return render(request, get_category_template(slug, "newsletter"), context)
 
 
 @never_cache

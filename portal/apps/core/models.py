@@ -4,32 +4,32 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
 
-from builtins import str
-from builtins import range
 from past.utils import old_div
 import os
-import time
 import locale
 import tempfile
 import operator
-from copy import copy
+import json
 from datetime import date, datetime, timedelta
 from collections import OrderedDict
 from requests.exceptions import ConnectionError
+from kombu.exceptions import OperationalError as KombuOperationalError
 from sorl.thumbnail import get_thumbnail
 from PIL import Image
 import readtime
 import mutagen
-
+import w3storage
 from martor.models import MartorField
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse
+from django.urls.exceptions import NoReverseMatch
 from django.http import HttpResponse, Http404
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.sitemaps import ping_google
-from django.db import connection
+from django.db import IntegrityError, connection
 from django.db.models import (
     Q,
     Manager,
@@ -56,24 +56,26 @@ from django.db.models import (
 )
 from django.db.models.signals import post_save
 from django.db.utils import OperationalError
+from django.template import Engine, Context
 from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
+from django.template.exceptions import TemplateDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 
 from apps import blocklisted
-from core.templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from photologue_ladiaria.models import PhotoExtended
 from photologue.models import Gallery, Photo
 from audiologue.models import Audio
 from tagging.fields import TagField
 from tagging.models import Tag
+import thedaily
 from videologue.models import Video, YouTubeVideo
-import w3storage
 
 from .managers import get_published_kwargs, PublishedArticleManager
+from .templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from .utils import (
     datetime_isoformat,
     get_pdf_pdf_upload_to,
@@ -81,6 +83,7 @@ from .utils import (
     CT,
     smart_quotes,
     update_article_url_in_coral_talk,
+    get_category_template,
 )
 
 
@@ -104,7 +107,7 @@ class Publication(Model):
     weight = PositiveSmallIntegerField('orden', default=0)
     public = BooleanField('público', default=True)
     has_newsletter = BooleanField('tiene NL', default=False)
-    newsletter_new_pill = BooleanField('pill de "nuevo" para el newsletter en el perfil de usuario', default=False)
+    newsletter_new_pill = BooleanField('pill de "nuevo" para la newsletter en el perfil de usuario', default=False)
     newsletter_name = CharField(max_length=64, blank=True, null=True)
     newsletter_tagline = CharField(max_length=128, blank=True, null=True)
     newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
@@ -148,16 +151,58 @@ class Publication(Model):
     publisher_logo_width = PositiveSmallIntegerField(blank=True, null=True)
     publisher_logo_height = PositiveSmallIntegerField(blank=True, null=True)
 
+    __original_slug = None  # needed for articles url update on save
+
     def __str__(self):
-        return self.name or ''
+        return self.name
+
+    def __init__(self, *args, **kwargs):
+        # needed for articles url update on save
+        super().__init__(*args, **kwargs)
+        self.__original_slug = self.slug
 
     def save(self, *args, **kwargs):
+        # needed for articles url update
         super().save(*args, **kwargs)
+        if getattr(settings, "CORE_PUBLICATIONS_PERMS_UPDATE", True):
+            # also permission creation for insert or update on save (see github issue 29)
+            try:
+                Permission.objects.update_or_create(
+                    codename="es_suscriptor_" + self.__original_slug,
+                    defaults={
+                        "name": "Es suscriptor " + ("actualmente" if self.slug == settings.DEFAULT_PUB else self.name),
+                        "content_type": ContentType.objects.get_for_model(thedaily.models.Subscriber),
+                        "codename": "es_suscriptor_" + self.slug,
+                    },
+                )
+            except IntegrityError:
+                pass
+        if self.__original_slug != self.slug:
+            try:
+                from .tasks import update_article_urls
+                update_article_urls.delay(self.slug)
+            except KombuOperationalError as oe_exc:
+                if settings.DEBUG:
+                    print("ERROR: update_article_urls could not be started (%s)" % oe_exc)
+        self.__original_slug = self.slug
 
     def get_absolute_url(self):
         return reverse(
             'home', kwargs={} if self.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL else {'domain_slug': self.slug}
         )
+
+    def newsletter_preview_url(self):
+        """ Returns the url for the NL staff-allowed preview """
+        try:
+            # allow a custom-by-slug override url pattern defined by a third-party module
+            result = reverse("publication-%s-nl-preview" % self.slug)
+        except NoReverseMatch:
+            try:
+                # TODO: not yet opensourced (we have a privative version that should be opensourced asap)
+                result = reverse("publication-nl-preview", kwargs={"publication_slug": self.slug})
+            except NoReverseMatch:
+                result = None
+        return result
 
     def profile_newsletter_name(self):
         """ Returns the newsletter name to show in the edit profile view """
@@ -365,6 +410,13 @@ class Edition(PortableDocumentFormatBaseModel):
     def get_pdf_filename(self):
         return '%s-%s.pdf' % (self.publication.slug, self.date_published.strftime('%Y%m%d'))
 
+    def cover_image_file_exists(self):
+        try:
+            result = self.cover and bool(self.cover.file)
+        except IOError:
+            result = False
+        return result
+
     @property
     def top_articles(self):
         try:
@@ -514,14 +566,16 @@ class Supplement(PortableDocumentFormatBaseModel):
 
 
 class Category(Model):
-    name = CharField('nombre', max_length=16, unique=True)
-    slug = CharField('slug', max_length=16, blank=True, null=True)
+    name = CharField('nombre', max_length=50, unique=True)
+    slug = SlugField('slug', blank=True, null=True)
     description = TextField('descripción', blank=True, null=True)
     order = PositiveSmallIntegerField('orden', blank=True, null=True)
     has_newsletter = BooleanField('tiene NL', default=False)
-    newsletter_new_pill = BooleanField('pill de "nuevo" para el newsletter en el perfil de usuario', default=False)
+    newsletter_new_pill = BooleanField('pill de "nuevo" para la newsletter en el perfil de usuario', default=False)
     newsletter_tagline = CharField(max_length=128, blank=True, null=True)
     newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
+    newsletter_from_name = CharField("nombre en el 'From' del mensaje", max_length=64, blank=True, null=True)
+    newsletter_from_email = EmailField("email en el 'From' del mensaje", blank=True, null=True)
     newsletter_automatic_subject = BooleanField(default=True)
     newsletter_subject = CharField('asunto', max_length=256, blank=True, null=True)
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
@@ -655,6 +709,18 @@ class Category(Model):
     def get_absolute_url(self):
         return reverse('home', kwargs={'domain_slug': self.slug})
 
+    def newsletter_preview_url(self):
+        """ Returns the url for the NL staff-allowed preview """
+        try:
+            # allow a custom-by-slug override url pattern defined by a third-party module
+            result = reverse("category-%s-nl-preview" % self.slug)
+        except NoReverseMatch:
+            try:
+                result = reverse("category-nl-preview", kwargs={"slug": self.slug})
+            except NoReverseMatch:
+                result = None
+        return result
+
     class Meta:
         verbose_name = 'área'
         ordering = ('order', 'name')
@@ -709,6 +775,18 @@ class Section(Model):
 
     def __str__(self):
         return self.name
+
+    def nl_display_name(self):
+        """
+        This method allows to include the "hierarchy" for those categories that allow that feature by settings for the
+        purpose to be rendered in newsletters cards, where calling the aticle hierarchy template tag will not be a good
+        approach.
+        """
+        if self.category:
+            allowed = getattr(settings, "CORE_CATEGORY_ALLOW_RENDER_HIERARCHY", ())
+            if allowed and self.category.slug in allowed:
+                return '&nbsp;›&nbsp;'.join([str(self.category), str(self)])
+        return str(self)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
@@ -1098,6 +1176,10 @@ class ArticleBase(Model, CT):
         date_value = self.date_published or self.date_created or now
         # No puede haber otro publicado con date_published en el mismo mes que date_value o no publicado con
         # date_created en el mismo mes que date_value, con el mismo slug. TODO: translate this comment to english.
+        if type(date_value) is str:
+            # needed if for example, assigning from a shell using strings for dates.
+            # TODO: this only works if elasticsearch is off (improve this)
+            date_value = datetime.strptime(date_value, "%Y-%m-%d %H:%M:%S")
         targets = Article.objects.filter(
             Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
             | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
@@ -1147,6 +1229,10 @@ class ArticleBase(Model, CT):
 
     def build_url_path(self):
         date_value = self.date_published or self.date_created
+        if type(date_value) is str:
+            # needed if for example, assigning from a shell using strings for dates.
+            # TODO: this only works if elasticsearch is off (improve this)
+            date_value = datetime.strptime(date_value, "%Y-%m-%d %H:%M:%S")
         reverse_kwargs = {'year': date_value.year, 'month': date_value.month, 'slug': self.slug}
         main_section = getattr(self, 'main_section', None)
         if main_section:
@@ -1250,6 +1336,10 @@ class ArticleBase(Model, CT):
     @property
     def photo_layout(self):
         return 'landscape' if not self.photo or self.photo.extended.is_landscape else 'portrait'
+
+    @property
+    def photo_filename_ext(self):
+        return self.photo_image_file_exists() and os.path.splitext(self.photo.image_filename())[1].lower()
 
     @property
     def photo_type(self):
@@ -1534,16 +1624,31 @@ class Article(ArticleBase):
 
     get_publications.short_description = 'publicaciones'
 
-    @property
-    def section(self):
+    def get_section(self, category=None):
+        """
+        If category_slug is given, the result will be "filtered" by category, if this filtered set is not empty, the
+        result will be one of them, otherwise If the set is empty (or no category_slug is given) it returns the main
+        section where this article is published in, or the first section found if no main_section.
+        TODO: unify with self.publication_section
+        """
+        result, main_section = None, None
         try:
             if self.main_section:
-                return self.main_section.section
-            else:
-                s = self.sections.all()[:1]
-                return s[0] if s else None
+                main_section = self.main_section.section
+                if not category or main_section.category == category:
+                    result = main_section
         except ArticleRel.DoesNotExist:
-            return None
+            pass
+        # return first match by category, if no match at all, return main or first without filtering
+        s = self.sections
+        if not result:
+            if category:
+                result = s.filter(category=category).first()
+        return result or (main_section or s.first())
+
+    @property
+    def section(self):
+        return self.get_section()
 
     def last_published_by_publication_slug(self, publication_slug=None):
         """
@@ -1599,7 +1704,7 @@ class Article(ArticleBase):
                 return self.last_published_by_category(category)
 
     def publication_section(self, publication=None):
-
+        # TODO: unify with self.publication_section
         if self.main_section:
 
             if not publication or self.main_section.edition.publication == publication:
@@ -1660,17 +1765,21 @@ class Article(ArticleBase):
     def published_collections(self):
         return self.linked_collections.filter(**get_published_kwargs())
 
-    def nl_serialize(self, for_cover=False):
+    def nl_serialize(self, for_cover=False, publication=None, category=None, dates=True):
         authors = self.get_authors()
+        section = self.publication_section(publication) if publication else self.get_section(category)
         result = {
             'id': self.id,
             'get_absolute_url': self.get_absolute_url(),
-            'date_published': str(self.date_published.date()),
+            'date_published': str(self.date_published.date()) if dates else self.date_published,
             'headline': self.headline,
             'home_lead': self.home_lead,
             'deck': self.deck,
             'has_byline': self.has_byline(),
             'get_authors': [a.name for a in authors] if authors else None,
+            "section": {
+                "slug": section.slug, "name": section.name, "nl_display_name": section.nl_display_name()
+            } if section else None,
         }
         if for_cover:
             result['body'] = self.body
@@ -1678,6 +1787,19 @@ class Article(ArticleBase):
                 result['photo'] = {'get_700w_url': self.photo.get_700w_url(), 'caption': self.photo.caption}
                 if self.photo_author:
                     result.update({'photo_author': self.photo_author.name, 'photo_type': self.photo_type})
+        # extra data for category NLs
+        if category:
+            nl_email_template = get_category_template(category.slug, "newsletter")
+            engine = Engine.get_default()
+            try:
+                extra_meta_template = engine.get_template(
+                    os.path.join(os.path.dirname(nl_email_template), "article_extra_meta/%s.json" % category.slug)
+                )
+            except TemplateDoesNotExist:
+                pass
+            else:
+                extra_meta_data = json.loads(extra_meta_template.render(Context({"article": self})))
+                result.update(extra_meta_data)
         return result
 
 
@@ -1719,7 +1841,7 @@ class ArticleCollectionRelated(Model):
 
     def __str__(self):
         # Custom text version to be useful in the admin change form
-        article_str = self.article.__str__()
+        article_str = str(self.article)
         return " - ".join(
             [
                 (("%d: " % self.position) if self.position else "")
@@ -1885,164 +2007,6 @@ class CategoryHome(Model):
         verbose_name = 'portada de área'
         verbose_name_plural = 'portadas de área'
         ordering = ('category',)
-
-
-def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run=False, sql_debug=False):
-    """
-    Updates categories homes based on articles publishing dates
-    """
-    # fill each category bucket with latest articles.
-    # @dry_run: Do not change anything. It forces a debug message when a change would be made.
-    # TODO: calculate not fixed count before and better stop algorithm.
-    buckets, category_sections, cat_needed_defaults, cat_needed, start_time = {}, {}, {}, {}, time.time()
-    categories, categories_to_fill = Category.objects.filter(slug__in=categories), []
-
-    for cat in categories:
-        needed = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_NEEDED', {}).get(cat.slug, 10)
-        cat_needed_defaults[cat.slug] = needed
-        exclude_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_SECTIONS', {}).get(cat.slug, [])
-        articles_count = cat.articles_count(needed, exclude_sections, sql_debug)
-        include_extra_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_INCLUDE_EXTRA_SECTIONS', {}).get(
-            cat.slug, []
-        )
-
-        # NOTICE: tag exclude filtering (if defined by settings) is ignored to evaluate this needed limits
-        if articles_count < needed and include_extra_sections:
-            articles_count += ArticleRel.articles_count(needed - articles_count, include_extra_sections, sql_debug)
-
-        if articles_count:
-            categories_to_fill.append(cat.slug)
-            buckets[cat.slug], cat_needed[cat.slug] = [], articles_count
-            category_sections[cat.slug] = set(
-                list(cat.section_set.values_list('id', flat=True))
-                + (
-                    list(Section.objects.filter(slug__in=include_extra_sections).values_list('id', flat=True))
-                    if include_extra_sections
-                    else []
-                )
-            ) - set(
-                Section.objects.filter(slug__in=exclude_sections).values_list('id', flat=True)
-                if exclude_sections
-                else []
-            )
-
-    if categories_to_fill:
-        if settings.DEBUG:
-            print('DEBUG: update_category_home begin')
-
-        lowest_date, max_date = Edition.objects.last().date_published, date.today()
-        days_step = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DAYS_STEP', 30)
-        exclude_tags = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_TAGS', {})
-        min_date_iter, max_date_iter, stop = max_date - timedelta(days_step), max_date, False
-
-        while max_date_iter > lowest_date:
-
-            for ar in (
-                ArticleRel.objects.select_related('article', 'edition')
-                .filter(edition__date_published__range=(min_date_iter, max_date_iter), article__is_published=True)
-                .order_by('-edition__date_published', '-article__date_published')
-                .iterator()
-            ):
-
-                if categories_to_fill:
-                    # insert the article (if matches criteria) limiting upto needed quantity with no dupe articles
-                    article = ar.article
-                    for cat_slug in categories_to_fill:
-                        if (
-                            article not in [x[0] for x in buckets[cat_slug]]
-                            and ar.section_id in category_sections[cat_slug]
-                            and not (
-                                cat_slug in exclude_tags
-                                and any(slugify(t.name) in exclude_tags[cat_slug] for t in article.get_tags())
-                            )
-                        ):
-                            buckets[cat_slug].append((article, (ar.edition.date_published, article.date_published)))
-                            if len(buckets[cat_slug]) == cat_needed[cat_slug]:
-                                categories_to_fill.remove(cat_slug)
-                else:
-                    stop = True
-                    break
-
-            if stop:
-                break
-            else:
-                max_date_iter = min_date_iter - timedelta(1)
-                min_date_iter = max_date_iter - timedelta(days_step)
-
-    # iterate over the buckets and compute free places to fill
-    for category_slug, articles in list(buckets.items()):
-        category = categories.get(slug=category_slug)
-
-        try:
-            home = category.home
-        except CategoryHome.DoesNotExist:
-            continue
-
-        try:
-            home_cover = CategoryHomeArticle.objects.get(home=home, position=1)
-        except CategoryHomeArticle.DoesNotExist:
-            home_cover = None
-        cover_id = home_cover.article_id if home_cover else None
-        cover_fixed = home_cover.fixed if home_cover else False
-        category_fixed_content, free_places = ([cover_id], []) if cover_fixed else ([], [0])
-
-        try:
-            for i in range(2, cat_needed_defaults[category_slug] + 1):
-                try:
-                    position_i = CategoryHomeArticle.objects.get(home=home, position=i)
-                    a = position_i.article
-                    aid, afixed = a.id, position_i.fixed
-                    if afixed:
-                        category_fixed_content.append(aid)
-                    else:
-                        free_places.append(i)
-                except CategoryHomeArticle.DoesNotExist:
-                    free_places.append(i)
-
-        except IndexError:
-            pass
-
-        # if not free places nothing will be done, then continue
-        if not free_places:
-            continue
-
-        # make list with the new articles based on the free places
-        free_places2, category_content = copy(free_places), []
-        for article, date_published_tuple in articles:
-
-            if article.id in category_fixed_content:
-                continue
-
-            # append in category_content to be reordered later
-            category_content.append((free_places.pop(), date_published_tuple, article))
-
-            if not len(free_places):
-                break
-
-        # sort new articles
-        category_content.sort(key=operator.itemgetter(1), reverse=True)
-
-        # update the content
-        for i, ipos in enumerate(free_places2):
-
-            try:
-                old_pos, date_pub, art = category_content[i]
-
-                if ipos:
-                    if settings.DEBUG or dry_run:
-                        print('DEBUG: update %s home position %d: %s' % (home.category, ipos, art))
-                    if not dry_run:
-                        home.set_article(art, ipos)
-                else:
-                    if settings.DEBUG or dry_run:
-                        print('DEBUG: update %s home cover: %s' % (home.category, art))
-                    if not dry_run:
-                        home.set_article(art, 1)
-            except IndexError:
-                pass
-
-    if settings.DEBUG:
-        print('DEBUG: update_category_home completed in %.0f seconds' % (time.time() - start_time))
 
 
 class CategoryNewsletterArticle(Model):
@@ -2317,7 +2281,15 @@ def get_current_edition(publication=None):
 
     filters['date_published__lt' + ('e' if now > publishing else '')] = today
     try:
-        return Edition.objects.filter(**filters).latest()
+        results = Edition.objects.filter(**filters)
+        result = results.latest()
+        if not publication and result.publication.slug != settings.DEFAULT_PUB:
+            # give priority to default pub if no pub given and "latest" include at least one for the default pub
+            return results.filter(
+                publication__slug=settings.DEFAULT_PUB, date_published=result.date_published
+            ).first() or result
+        else:
+            return result
     except Exception as e:
         if settings.DEBUG:
             print('ERROR: %s' % e)

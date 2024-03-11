@@ -61,8 +61,12 @@ class PhotoExtended(models.Model):
     weight = models.SmallIntegerField(
         'orden de la imagen en la galería', default=0, help_text='el número más bajo se muestra primero.'
     )
-    photographer = models.ForeignKey(Photographer, on_delete=models.CASCADE, verbose_name='autor', related_name='photos', blank=True, null=True)
-    agency = models.ForeignKey(Agency, on_delete=models.CASCADE, verbose_name='agencia', related_name='photos', blank=True, null=True)
+    photographer = models.ForeignKey(
+        Photographer, on_delete=models.CASCADE, verbose_name='autor', related_name='photos', blank=True, null=True
+    )
+    agency = models.ForeignKey(
+        Agency, on_delete=models.CASCADE, verbose_name='agencia', related_name='photos', blank=True, null=True
+    )
 
     class Meta:
         verbose_name = 'configuración extra'

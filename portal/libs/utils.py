@@ -13,6 +13,7 @@ from pymailcheck import split_email
 
 from django.conf import settings
 from django.db import IntegrityError
+from django.db.models.query import QuerySet
 from django.http import HttpResponseBadRequest
 
 from tagging.models import Tag, TaggedItem
@@ -187,6 +188,17 @@ def smtp_server_choice(user_email, servers_available, force_ignore_weights=False
     else:
         index_chosen = None
     return index_chosen
+
+
+def nl_serialize_multi(article_many, category, for_cover=False, dates=True):
+    if type(article_many) in (QuerySet, list):
+        return [
+            (
+                t[0].nl_serialize(t[1], category=category, dates=dates), t[1]
+            ) if type(t) is tuple else t.nl_serialize(category=category, dates=dates) for t in article_many
+        ]
+    elif article_many:
+        return article_many.nl_serialize(for_cover, category=category, dates=dates)
 
 
 def decode_hashid(hashed_id):

@@ -140,6 +140,7 @@
     <span class="ld-main-menu__title">Más</span>
     <ul class="navmenu-list">
       <li class="ld-main-menu__item"><a href="{% url 'search' %}">Buscar</a></li>
+      {% block extra_items_plus %}{% endblock %}
       <li class="ld-main-menu__item"><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
       {% block extra_items_more %}{% endblock %}
       {% for s_slug, desktop_short, mobile_short, text_long in MENU_LATEST_ARTICLE_LINKS %}

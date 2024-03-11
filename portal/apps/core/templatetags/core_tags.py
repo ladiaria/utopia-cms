@@ -5,13 +5,15 @@ import random
 import string
 from builtins import str, range
 from datetime import date, datetime, timedelta
+from os.path import join
 
 from hashids import Hashids
 
 from django.conf import settings
 from django.urls import reverse
-from django.template import Library, Node, TemplateSyntaxError, Variable, loader
-from django.template.defaultfilters import stringfilter
+from django.template import Engine, Library, Node, TemplateSyntaxError, Variable, loader
+from django.template.defaultfilters import stringfilter, slugify
+from django.template.exceptions import TemplateDoesNotExist
 from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 
@@ -72,7 +74,18 @@ def render_related(context, article, amp=False):
     upd_dict.update({'is_detail': False, 'amp': amp})
     flatten_ctx = context.flatten()
     flatten_ctx.update(upd_dict)
-    return loader.render_to_string('core/templates/article/related.html', flatten_ctx)
+    # search custom template by slug
+    template, engine = 'core/templates/article/related.html', Engine.get_default()
+    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
+    if template_dir:
+        template_try = join(template_dir, "article/related", slugify(section) + ".html")
+        try:
+            engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            pass
+        else:
+            template = template_try
+    return loader.render_to_string(template, flatten_ctx)
 
 
 # Media select
@@ -113,14 +126,15 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
         card_type = article.type
 
     card_display = "horizontal" if article.photo and article.photo.extended.is_portrait else "vertical"
+    template_try_to_override, template_override = False, None
 
     # WARN: template value assigned here may change in next if block. TODO: fix this anti-pattern.
     if card_size == "FW":
         template = "card_full.html"
     elif card_size == "FD":
-        template = "card_full_detailed.html"
+        template, template_try_to_override = "card_full_detailed.html", True
     elif card_size == "FF":
-        template = "card_big_new.html"
+        template, template_try_to_override = "card_big_new.html", True
         card_display = "horizontal"
     elif card_size == "BG":
         template = "card_big.html"
@@ -142,7 +156,19 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
         template = "card_summary.html"
 
     if card_size == "FN":
-        template = "article_card_new.html"
+        template, template_try_to_override = "article_card_new.html", True
+
+    if template_try_to_override:
+        engine = Engine.get_default()
+        template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
+        if template_dir:
+            template_try = join(template_dir, "article", template)
+            try:
+                engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template_override = template_try
 
     flatten_ctx = context.flatten()
     flatten_ctx.update(
@@ -156,7 +182,8 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
         }
     )
     return loader.render_to_string(
-        'core/templates/%sarticle/%s' % ('amp/' if flatten_ctx.get("amp") else '', template), flatten_ctx
+        template_override or ('core/templates/%sarticle/%s' % ('amp/' if flatten_ctx.get("amp") else '', template)),
+        flatten_ctx,
     )
 
 
@@ -267,33 +294,84 @@ def render_supplements():
     return loader.render_to_string('core/templates/supplement_list.html', {'supplements': supplements})
 
 
-@register.simple_tag
-def render_hierarchy(article):
+@register.simple_tag(takes_context=True)
+def publication_section(context, article, pub=None):
     """
-    Returns HTML to print links with the article hierarchy using its main category (or publication if the category is
-    None and publication is included in the custom setting) and its main section.
+    Returns the anchor tag with the atricle.publication_section using the publication given by parameter or:
+    publication_obj or publication context variables as the publication argument (or default_pub if both are None).
+    TODO: why default_pub as last option instead of the article's "main_pub"?
     """
-    section = article.section
+    section = article.publication_section(
+        pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
+    )
     if section:
-        if section.category:
-            parent = (reverse('home', kwargs={'domain_slug': section.category.slug}), section.category)
+        use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
+        s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
+        if use_section_link:
+            return '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
         else:
-            parent = (
-                None
-                if (
-                    not article.main_section
-                    or article.main_section.edition.publication.slug
-                    in getattr(settings, 'CORE_HIERARCHY_USE_PUBLICATION', ())
-                )
-                else (
-                    reverse('home', kwargs={'domain_slug': article.main_section.edition.publication.slug}),
-                    article.main_section.edition.publication,
-                )
-            )
-        child = '<a href="%s">%s</a>' % (section.get_absolute_url(), section)
-        return '&nbsp;›&nbsp;'.join(['<a href="%s">%s</a>' % parent, child]) if parent else child
+            return '<span>%s</span>' % s_name
     else:
         return ''
+
+
+@register.simple_tag(takes_context=True)
+def render_hierarchy(context, article, force_use_links=False):
+    """
+    A "parent > child" two items hierarchy to be rendered as part of the article metadata, since an article can be
+    published in many sections of many publications, this information may be adjusted to match as best as possible the
+    context on which the article is part of. This function tries to do this automatically receiving the context.
+    But also can be very customized by settings, that's why the code is quite big and has many if-branches, the above
+    similar function publication_section, also helps here, is used when the most important object in the context is
+    a Publication and render a hierarchy structure with a possible parent can result redundant.
+    """
+    publication, category = context.get("publication"), context.get("category")
+    section = article.publication_section(publication) if publication else article.get_section(category)
+    if section:
+        use_section_link = (
+            force_use_links in (True, "True") or getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
+        )
+        parent, use_parent_link = [], getattr(settings, 'CORE_ARTICLE_CARDS_PARENT_LINK', use_section_link)
+        if section.category or category:
+            allowed, parent_allow = getattr(settings, "CORE_CATEGORY_ALLOW_RENDER_HIERARCHY", ()), True
+            # break with a return if no one of the categories is allowed
+            if allowed and not any(c.slug in allowed for c in (section.category, category) if c):
+                if publication:
+                    return publication_section(context, article)
+                parent_allow = False
+            if parent_allow:
+                # And now, give precedence to section's (only if allow)
+                if use_parent_link:
+                    parent.append(
+                        reverse('home', kwargs={'domain_slug': (section.category or category).slug})
+                    )
+                parent.append(section.category or category)
+        elif context.get("render_hierarchy", False):
+            if use_parent_link and not (
+                not article.main_section
+                or article.main_section.edition.publication.slug
+                in getattr(settings, 'CORE_HIERARCHY_USE_PUBLICATION', ())
+            ):
+                parent.append(
+                    reverse('home', kwargs={'domain_slug': article.main_section.edition.publication.slug})
+                )
+            parent.append(article.main_section.edition.publication)
+        else:
+            return publication_section(context, article)
+        s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
+        if use_section_link:
+            child = '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
+        else:
+            child = '<span>%s</span>' % s_name
+        if parent:
+            parent_html = ('<a href="%s">%s</a>' if use_parent_link else '<span>%s</span>') % tuple(parent)
+            return '&nbsp;›&nbsp;'.join([parent_html, child])
+        else:
+            return child
+    elif category:
+        return ''
+    else:
+        return publication_section(context, article)
 
 
 @register.simple_tag(takes_context=True)
@@ -360,26 +438,6 @@ def section_name_in_publication_menu(publication, section):
     return getattr(settings, 'CORE_SECTIONS_NAME_IN_PUBLICATION_MENU', {}).get(
         (publication.slug, section.slug), section.name
     )
-
-
-@register.simple_tag(takes_context=True)
-def publication_section(context, article, pub=None):
-    """
-    Returns the anchor tag with the atricle.publication_section using the publication given by parameter or:
-    publication_obj or publication context variables as the publication argument (or default_pub if both are None).
-    TODO: why default_pub as last option instead of the article's "main_pub"?
-    """
-    section = article.publication_section(
-        pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
-    )
-    if section:
-        use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
-        if use_section_link:
-            return '<a href="%s">%s</a>' % (section.get_absolute_url(), section)
-        else:
-            return '<span>%s</span>' % section
-    else:
-        return ''
 
 
 @register.simple_tag(takes_context=True)

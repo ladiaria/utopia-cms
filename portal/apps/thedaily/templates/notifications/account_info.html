@@ -1,18 +1,23 @@
 {% extends "notifications/new_subscription.html" %}
 
-{% block body %}
-  <p>Hola, ¿cómo estás?</p>
-  <p>
-    Te recordamos que tu email para <a href="https://{{ site.domain }}/usuarios/entrar/">ingresar al sitio web</a> es {{ user_email }}.
-  </p>
-  <p>
-    Si no recordás tu contraseña (o nunca la creaste) podés crear una nueva.
-  </p>
-  <p>
-    <a href="https://{{ site.domain }}{{ validation_url }}" style="background-color: #6ef9ff; color: #262626; padding: 10px 20px 10px 20px; text-decoration: none; text-transform: uppercase; line-height: 30px; height: 30px; font-size: 14px; font-weight: bold; letter-spacing: .5px; vertical-align: middle; border-radius:100px">elegí la contraseña</a>
-  </p>
-  <p>
-    Consejo: Guardá la contraseña en algún lugar seguro para no olvidarla (por ejemplo si el navegador te pregunta para guardarla).
-  </p>
+{% block body %}{# TODO: check if URL_SCHEME can be used instead of the hardcoded 'https' #}
+  <tr>
+    <td>
+      <p>Hola, ¿cómo estás?</p>
+      <p>
+        Te recordamos que tu email para <a href="https://{{ site.domain }}/usuarios/entrar/">ingresar al sitio web</a> es {{ user_email }}.
+      </p>
+      <p>
+        Si no recordás tu contraseña (o nunca la creaste) podés crear una nueva.
+      </p>
+      <p>
+        <a href="https://{{ site.domain }}{{ validation_url }}" style="background-color: #6ef9ff; color: #262626; padding: 10px 20px 10px 20px; text-decoration: none; text-transform: uppercase; line-height: 30px; height: 30px; font-size: 14px; font-weight: bold; letter-spacing: .5px; vertical-align: middle; border-radius:100px">elegí la contraseña</a>
+      </p>
+      <p>
+        Consejo: Guardá la contraseña en algún lugar seguro para no olvidarla (por ejemplo si el navegador te pregunta para guardarla).
+      </p>
+    </td>
+  <tr>
 {% endblock %}
+
 {% block extra_body %}{% endblock %}
