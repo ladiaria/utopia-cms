@@ -10,6 +10,18 @@ body.hard-paywall {
     margin: 0;
   }
 
+  #main-header {
+    @media #{$medium-and-up} {
+      display: none;
+    }
+    .subscription_black {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+  }
+
   .container {
     width: 100%;
     display: flex;
@@ -83,6 +95,11 @@ body.hard-paywall {
     .payment-column {
       width: 100%;
       max-width: 360px;
+      position: relative;
+
+      @media #{$medium-and-down} {
+        margin: 0 auto;
+      }
 
       &__phone-subscription {
         max-width: 380px;
@@ -91,6 +108,10 @@ body.hard-paywall {
       &.anonymous {
         display: flex;
         flex-direction: column;
+
+        @media #{$medium-and-down} {
+          margin-bottom: auto;
+        }
 
         h2.create-account-title {
           text-align: center;
@@ -132,6 +153,10 @@ body.hard-paywall {
             border-top: 1px solid #f3f3f3;
             padding-top: 8px;
             padding-bottom: 40px;
+
+            @media #{$medium-and-down} {
+              padding-bottom: 0;
+            }
           }
 
           .topspaced {
@@ -156,8 +181,8 @@ body.hard-paywall {
 
       &__close-btn {
         position: absolute;
-        top: 40px;
-        right: 40px;
+        top: 0;
+        right: -140px;
         border-radius: 18px;
         background: rgba(141, 141, 141, 0.16);
         display: inline-flex;
@@ -243,11 +268,30 @@ body.hard-paywall {
             border-top-right-radius: 8px;
             border-top-left-radius: 8px;
             margin-bottom: 8px;
+            position: relative;
 
             p {
               max-width: 200px;
               margin: 0 auto;
             }
+          }
+        }
+
+        &__close-btn {
+          display: none;
+          @media #{$medium-and-down} {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            padding: 12px;
+            justify-content: center;
+            align-items: center;
+            border-radius: 35px;
+            border: 1px solid #dfdfdf;
+            background: #eee;
           }
         }
 
