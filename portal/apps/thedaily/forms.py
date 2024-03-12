@@ -51,6 +51,10 @@ terms_and_conditions_layout_tuple = (
     if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID
     else ()
 )
+terms_and_conditions_prelogin = (
+    settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID
+    and getattr(settings, "THEDAILY_TERMS_AND_CONDITIONS_PRELOGIN", True)
+)
 
 
 def check_password_strength(password):
@@ -90,7 +94,7 @@ class EmailInput(TextInput):
 
 class PreLoginForm(Form):
     email = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
-    if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
+    if terms_and_conditions_prelogin:
         terms_and_conds_accepted = terms_and_conditions_field
 
     def __init__(self, *args, **kwargs):
@@ -110,8 +114,16 @@ class PreLoginForm(Form):
     def layout_args(self):
         return (
             (Field('email', title="Ingresá tu email", template='materialize_css_forms/layout/email-login.html'),)
-            + terms_and_conditions_layout_tuple
-            + (Submit('submit', 'continuar', css_class='payment-container__anonymous__subscribe ut-btn'),)
+            + ((terms_and_conditions_layout_tuple) if terms_and_conditions_prelogin else ())
+            + (
+                Submit(
+                    'submit',
+                    'continuar',
+                    css_class='payment-container__anonymous__subscribe ut-btn' + (
+                        " topspaced" if not terms_and_conditions_prelogin else ""
+                    ),
+                ),
+            )
         )
 
     def clean_email(self):
@@ -122,8 +134,9 @@ class PreLoginForm(Form):
         else:
             return email.lower()
 
-    def clean_terms_and_conds_accepted(self):
-        return clean_terms_and_conds(self)
+    if terms_and_conditions_prelogin:
+        def clean_terms_and_conds_accepted(self):
+            return clean_terms_and_conds(self)
 
 
 class LoginForm(Form):

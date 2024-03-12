@@ -13,19 +13,23 @@ body.hard-paywall {
   .container {
     width: 100%;
     display: flex;
-    gap: 165px;
+    gap: 40px;
     justify-content: center;
-    padding: 84px;
+    padding: 84px 0;
+    max-width: 900px;
 
     @media #{$medium-and-down} {
       padding: 20px 14px 140px;
     }
 
     .article-container {
-      max-width: 366px;
       width: 100%;
       display: flex;
       flex-direction: column;
+
+      &.anonymous {
+        justify-content: center;
+      }
 
       @media #{$medium-and-down} {
         display: none;
@@ -35,7 +39,7 @@ body.hard-paywall {
         text-align: center;
         font-size: px-to-rem(24px);
         font-weight: 700;
-        padding: 8px 16px;
+        padding-bottom: 16px;
       }
       &__chevron-down-icon {
         align-self: center;
@@ -81,20 +85,80 @@ body.hard-paywall {
       }
     }
     .payment-column {
-      max-width: 400px;
       width: 100%;
-      position: relative;
+      max-width: 360px;
+
+      &__phone-subscription {
+        max-width: 380px;
+      }
 
       &.anonymous {
         display: flex;
         flex-direction: column;
         justify-content: center;
+
+        h2.create-account-title {
+          text-align: center;
+          font-family: AntennaCond, sans-serif;
+          font-size: px-to-rem(24px);
+          font-weight: 700;
+          margin: 0;
+          padding: 32px 0 10px;
+        }
+
+        p.create-account-desc {
+          color: #000;
+          text-align: center;
+          font-family: "Roboto", sans-serif;
+          padding-bottom: 8px;
+        }
+        p {
+          font-family: "Roboto", sans-serif;
+        }
+
+        form#hardpw-login,
+        form#hardpw-signup {
+          margin-top: 12px;
+          padding: 0;
+
+          #div_id_terms_and_conds_accepted {
+            margin: 16px 0;
+          }
+
+          .forgot-password-container {
+            padding-top: 8px;
+            padding-bottom: 24px;
+          }
+          .sign-in-btn-container {
+            border-top: 1px solid #f3f3f3;
+            padding-top: 8px;
+            padding-bottom: 40px;
+          }
+
+          .topspaced {
+            margin-top: 25px;
+          }
+
+          .alert-box {
+            background: none;
+            color: #b61616;
+            height: 30px;
+            font-size: 90%;
+            ul{
+              width: 100%;
+            }
+          }
+        }
+
+        form#hardpw-signup {
+          padding-bottom: 40px;
+        }
       }
 
       &__close-btn {
         position: absolute;
-        top: -50px;
-        right: -165px;
+        top: 40px;
+        right: 40px;
         border-radius: 18px;
         background: rgba(141, 141, 141, 0.16);
         display: inline-flex;
@@ -117,8 +181,25 @@ body.hard-paywall {
         padding-top: 24px;
         text-align: center;
 
+        #box-tel-div {
+          text-align: initial;
+        }
+
         &.anonymous {
           padding-top: 40px;
+
+          h2.sign-in-title,
+          h2.sign-up-title {
+            font-size: px-to-rem(24px);
+            font-family: "Roboto", sans-serif;
+            margin: 0;
+            padding-bottom: 12px;
+          }
+
+          .sign-up-title,
+          .advice-text {
+            margin-bottom: 16px;
+          }
         }
 
         @media #{$medium-and-down} {
@@ -188,11 +269,10 @@ body.hard-paywall {
         }
 
         &__form-container {
-          padding: 16px 20px;
+          padding: 16px;
 
           .form-DDIGM {
-            padding: 0 60px;
-
+            padding: 0 16px;
             @media #{$medium-and-down} {
               padding: 0 16px;
             }

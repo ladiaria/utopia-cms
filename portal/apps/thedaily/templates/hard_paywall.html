@@ -13,13 +13,15 @@
 
 {% block content %}
   {% if article %}
-    <div class="article-container">
-      {% if user.is_authenticated %}
-        <h1 class="article-container__title">Suscribite para continuar leyendo este artículo</h1>
-        <svg class="article-container__chevron-down-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M7.41 8.57996L12 13.17L16.59 8.57996L18 9.99996L12 16L6 9.99996L7.41 8.57996Z" fill="#A4A4A4"/>
-        </svg>
-      {% endif %}
+    <div class="article-container{% if not user.is_authenticated %} anonymous{% endif %}">
+      {% block article_card_header %}
+        {% if user.is_authenticated %}
+          <h1 class="article-container__title">Suscribite para continuar leyendo este artículo</h1>
+          <svg class="article-container__chevron-down-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M7.41 8.57996L12 13.17L16.59 8.57996L18 9.99996L12 16L6 9.99996L7.41 8.57996Z" fill="#A4A4A4"/>
+          </svg>
+        {% endif %}
+      {% endblock %}
       <div class="article-container__article-card">
         {% if article.photo_render_allowed %}
           <img src="{{ article.photo.get_350w_url }}" alt="{{ article.photo_caption }}">
@@ -38,35 +40,46 @@
     </div>
   {% endif %}
   {% block payment %}
-    <div class="payment-column {% if not user.is_authenticated %}anonymous{% endif %}">
+    <div class="payment-column{% if not user.is_authenticated %} anonymous{% endif %}
+                {% block payment_column_extraclass %}payment-column__phone-subscription{% endblock %}">
       <a class="payment-column__close-btn" href="{{ SITE_URL }}">Cerrar
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M13.46 12L19 17.54V19H17.54L12 13.46L6.46 19H5V17.54L10.54 12L5 6.46V5H6.46L12 10.54L17.54 5H19V6.46L13.46 12Z" fill="#262626"/>
         </svg>
       </a>
-      {% if not user.is_authenticated and not 'password' in login_form.fields and not signup_form %}
-        <p>Creá tu cuenta gratis o ingresá</p>
-        <p>
-          Si te registrás accedés a {{ signupwall_max_credits }} artículos gratuitos por mes y recibís gratis nuestras
-          newsletters
-        </p>
-      {% endif %}
-      <div class="payment-container {% if not user.is_authenticated %}anonymous{% endif %}">
+      {% block payment_header %}
+        {% if not user.is_authenticated and not 'password' in login_form.fields and not signup_form %}
+          <h2 class="create-account-title">Creá tu cuenta gratis o ingresá</h2>
+          <p class="create-account-desc">
+            Si te registrás accedés a {{ signupwall_max_credits }} artículos gratuitos por mes y recibís gratis nuestras
+            newsletters
+          </p>
+          <svg class="article-container__chevron-down-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M7.41 8.57996L12 13.17L16.59 8.57996L18 9.99996L12 16L6 9.99996L7.41 8.57996Z" fill="#A4A4A4"/>
+          </svg>
+        {% endif %}
+      {% endblock %}
+      <div class="payment-container{% if not user.is_authenticated %} anonymous{% endif %}">
         {% if user.is_authenticated %}
-          <div class="payment-container__chip-subscription">
-            <p>Suscripción digital</p>
-          </div>
-          <div class="payment-container__mobile-header">
-            <p>{% if article %}Suscribite para continuar leyendo este artículo{% else %}Suscripción digital{% endif %}</p>
-          </div>
+          {% block payment_content_header %}
+            <div class="payment-container__chip-subscription">
+              <p>Suscripción digital</p>
+            </div>
+            <div class="payment-container__mobile-header">
+              <p>{% if article %}Suscribite para continuar leyendo este artículo{% else %}Suscripción digital{% endif %}</p>
+            </div>
+          {% endblock %}
           <p class="payment-container__price">${% subscriptionprice 'DDIGM' %}/mes</p>
         {% endif %}
         {% if not user.is_authenticated %}
           {% if 'password' in login_form.fields %}
-            <p><strong>Ingresá</strong></p>
+            <h2 class="sign-in-title">Ingresá</h2>
           {% elif signup_form %}
-            <p><strong>Creá tu cuenta</strong></p>
-            <p>{{ signupwall_max_credits }} artículos gratuitos por mes y recibís gratis nuestras newsletters</p>
+            <h2 class="sign-up-title">Creá tu cuenta</h2>
+            <p class="advice-text">{{ signupwall_max_credits }} artículos gratuitos por mes y recibís gratis nuestras newsletters</p>
+            <svg class="chevron-down-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M7.41 8.57996L12 13.17L16.59 8.57996L18 9.99996L12 16L6 9.99996L7.41 8.57996Z" fill="#A4A4A4"/>
+            </svg>
           {% else %}
             <p>Ingresá tu email</p>
           {% endif %}
@@ -87,11 +100,6 @@
           {% if not user.is_authenticated and 'password' not in login_form.fields %}
             <div class="payment-container__anonymous">
               <p>o ingresá con Google</p>
-              {% comment "TODO" %}
-                do-not enable oauth until terms & conds are checked, make an ajax request to save/delete flag in
-                session when checkbox is changed, oauth pipeline can then save the subscriber flag accordingly.
-                Also made an intermediate form or use the one existing for the phone to "force" the user to accept them
-              {% endcomment %}
               <div class="google-auth align-center u-mb-60">
                 <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ article.get_absolute_url }}" class="ld-btn-google">
                   ingresar con google

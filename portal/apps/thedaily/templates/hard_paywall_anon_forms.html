@@ -5,13 +5,11 @@
   <form id="hardpw-login" method="post">
     {% crispy login_form %}
     {% if 'password' in login_form.fields %}
-      <div class="col s12 align-right">
+      <div class="forgot-password-container">
         <a href="{% url 'account-password_reset' %}" class="underlined">¿Olvidaste tu contraseña?</a>
       </div>
-      <div class="row">
-        <div class="col align-center s12">
-          <button name="prelogin" value="1" class="form-submit-login submit ut-btn ut-btn-light ut-btn-l" type="submit">Ingresar</button>
-        </div>
+      <div class="sign-in-btn-container">
+        <button name="prelogin" value="1" class="ut-btn" type="submit">Ingresar</button>
       </div>
     {% endif %}
 {% else %}
