@@ -492,7 +492,7 @@ def google_phone(request):
     except OAuthState.DoesNotExist:
         raise Http404
 
-    profile = get_or_create_user_profile(oas.user)
+    profile, ctx = get_or_create_user_profile(oas.user), {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}
     form_kwargs = {"instance": profile}
     if request.session.get("terms_and_conds_accepted"):
         form_kwargs["initial"] = {"terms_and_conds_accepted": True}
@@ -501,12 +501,7 @@ def google_phone(request):
         google_signin_form = GoogleSigninForm(request.POST, **form_kwargs)
         if google_signin_form.is_valid():
             google_signin_form.save()
-            send_notification(
-                oas.user,
-                'notifications/signup.html',
-                '¡Te damos la bienvenida!',
-                {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
-            )
+            send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!', ctx)
             oas.delete()
             request.session['welcome'] = True
             request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
@@ -520,14 +515,13 @@ def google_phone(request):
         if is_new:
             add_default_category_newsletters(profile)
 
-    return (
-        'google_signup.html',
+    ctx.update(
         {
             'google_signin_form': google_signin_form,
             "is_new": is_new,  # TODO: this should be used to render different labels in the template
-            "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
-        },
+        }
     )
+    return 'google_signup.html', ctx
 
 
 @never_cache

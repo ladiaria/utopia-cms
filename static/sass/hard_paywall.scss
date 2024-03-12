@@ -23,11 +23,12 @@ body.hard-paywall {
   }
 
   .container {
+    --container-padding-top: 44px;
     width: 100%;
     display: flex;
     gap: 40px;
     justify-content: center;
-    padding: 84px 0;
+    padding: var(--container-padding-top) 0;
     max-width: 900px;
 
     @media #{$medium-and-down} {
@@ -95,7 +96,6 @@ body.hard-paywall {
     .payment-column {
       width: 100%;
       max-width: 360px;
-      position: relative;
 
       @media #{$medium-and-down} {
         margin: 0 auto;
@@ -119,7 +119,7 @@ body.hard-paywall {
           font-size: px-to-rem(24px);
           font-weight: 700;
           margin: 0;
-          padding: 32px 0 10px;
+          padding: 0 0 10px;
         }
 
         p.create-account-desc {
@@ -181,8 +181,8 @@ body.hard-paywall {
 
       &__close-btn {
         position: absolute;
-        top: 0;
-        right: -140px;
+        top: var(--container-padding-top);
+        right: 44px;
         border-radius: 18px;
         background: rgba(141, 141, 141, 0.16);
         display: inline-flex;

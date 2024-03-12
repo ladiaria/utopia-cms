@@ -15,8 +15,8 @@
 {% block navbar %}
   <div id="main-header">
     <nav class="subscription_black">
-      {# TODO: adding class "header-logo emergentes" may fix visual bug but may break children templates, verify #}
-      <a href="{% url 'subscribe_landing' %}">{# TODO: for signup-only, link to home is better than this #}
+      {# TODO: for signup-only, link to home is better than this #}
+      <a href="{% url 'subscribe_landing' %}" {% block logoclass %}class="header-logo emergentes"{% endblock %}>
         <img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_WIDTH }}" height="42">
       </a>
     </nav>
