@@ -1,3 +1,18 @@
+# From version 0.4.7 to 0.4.8
+
+```
+git pull
+git checkout 0.4.8
+cd portal
+# activate your virtual env
+pip uninstall django4-background-tasks
+# The tables `background_task_completedtask` and `background_task` can also be droped from the database.
+pip install celery django-celery-results django-celery-beat selenium
+./manage.py migrate
+./manage.py collectstatic -c
+# TODO: write steps left (settings, perms, any other?)
+```
+
 # From version 0.4.6 to 0.4.7
 
 ```

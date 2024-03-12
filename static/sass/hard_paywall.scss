@@ -27,10 +27,6 @@ body.hard-paywall {
       display: flex;
       flex-direction: column;
 
-      &.anonymous {
-        justify-content: center;
-      }
-
       @media #{$medium-and-down} {
         display: none;
       }
@@ -95,7 +91,6 @@ body.hard-paywall {
       &.anonymous {
         display: flex;
         flex-direction: column;
-        justify-content: center;
 
         h2.create-account-title {
           text-align: center;
@@ -121,6 +116,10 @@ body.hard-paywall {
           margin-top: 12px;
           padding: 0;
 
+          @media #{$medium-and-down} {
+            padding: 0 16px;
+          }
+
           #div_id_terms_and_conds_accepted {
             margin: 16px 0;
           }
@@ -144,7 +143,7 @@ body.hard-paywall {
             color: #b61616;
             height: 30px;
             font-size: 90%;
-            ul{
+            ul {
               width: 100%;
             }
           }
@@ -186,7 +185,11 @@ body.hard-paywall {
         }
 
         &.anonymous {
-          padding-top: 40px;
+          padding: 40px 0;
+
+          @media #{$medium-and-down} {
+            padding: 16px 0;
+          }
 
           h2.sign-in-title,
           h2.sign-up-title {
@@ -204,10 +207,6 @@ body.hard-paywall {
 
         @media #{$medium-and-down} {
           padding-top: 0;
-
-          &.anonymous {
-            padding-top: 0;
-          }
         }
 
         &__chip-subscription {

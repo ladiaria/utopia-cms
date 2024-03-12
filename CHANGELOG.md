@@ -1,3 +1,11 @@
+# version 0.4.8 (2024-03-??)
+
+- paywall
+- celery
+- google oauth fixes
+- terms and conds improvements
+- ... TODO: describe each and find more
+
 # version 0.4.7 (2023-12-31)
 
 - Many improvements and fixes.
