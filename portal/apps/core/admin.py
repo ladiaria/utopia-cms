@@ -497,12 +497,12 @@ class ArticleAdmin(VersionAdmin):
 
     @admin.display(description='Creado', ordering='date_created')
     def creation_date(self, obj):
-        return obj.date_created.strftime("%d %b %Y %H:%M")
+        return timezone.template_localtime(obj.date_created).strftime("%d %b %Y %H:%M")
 
     @admin.display(description='Publicado', ordering='date_published')
     def publication_date(self, obj):
         if obj.date_published:
-            return obj.date_published.strftime("%d %b %Y %H:%M")
+            return timezone.template_localtime(obj.date_published).strftime("%d %b %Y %H:%M")
         else:
             return ''
 

@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.template import Engine, Library, Node, TemplateSyntaxError, Variable, loader
 from django.template.defaultfilters import stringfilter, slugify
 from django.template.exceptions import TemplateDoesNotExist
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 
@@ -461,7 +462,7 @@ def section_title(context):
         return custom_title
     default_title_parts = [
         "Artículos en "
-        + getattr(section, 'name', section.get('name', "sección") if type(section) is dict else "sección")
+        + getattr(section, 'name', section.get('name', "sección") if isinstance(section, dict) else "sección")
     ]
     if getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_SITENAME", True):
         default_title_parts.append(context.get('site').name)
@@ -472,7 +473,9 @@ def section_title(context):
 
 @register.simple_tag(takes_context=True)
 def category_nl_subscribe_box(context):
-    """renders the subscribe box for the article category, if proper conditions are met"""
+    """
+    Renders the subscribe box for the article category, if proper conditions are met
+    """
     # TODO: can be improved and even removed making some modifications in caller templates
     subscriber = getattr(context.get('user'), 'subscriber', None)
     subscriber_nls = subscriber.get_newsletters_slugs() if subscriber else []
@@ -504,9 +507,11 @@ def date_published_verbose(article):
         or main_section_edition
         and main_section_edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL
     ):
-        today, now = date.today(), datetime.now()
+        today, now = date.today(), timezone.now()
         publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
-        publishing = datetime(today.year, today.month, today.day, publishing_hour, publishing_minute)
+        publishing = timezone.make_aware(
+            datetime(today.year, today.month, today.day, publishing_hour, publishing_minute)
+        )
         if main_section_edition:
             hide_delta = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_DELTA', None)
             if hide_delta:

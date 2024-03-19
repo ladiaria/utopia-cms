@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 
 import sys
 from os.path import abspath, basename, dirname, join, realpath
-from datetime import datetime
 import mimetypes
 from freezegun import freeze_time
 from kombu import Queue
@@ -20,8 +19,6 @@ from django.utils.encoding import smart_str, force_str
 # this fix an error with smart_text on some apps (django-tagging)
 django.utils.encoding.smart_text = smart_str
 django.utils.encoding.force_text = force_str
-
-FIRST_DAY = datetime(2009, 8, 1)
 
 PROJECT_ABSOLUTE_DIR = dirname(abspath(__file__))
 PROJECT_NAME = basename(PROJECT_ABSOLUTE_DIR)
@@ -210,6 +207,7 @@ MIDDLEWARE = (
     "core.middleware.AMP.OnlyArticleDetail",
 )
 
+# Localization default settings
 LANGUAGES = (
     ('es', 'Español'),
 )
@@ -220,11 +218,11 @@ LANGUAGE_CODE = 'es'
 LOCAL_LANG = 'es'
 LOCAL_COUNTRY = 'UY'
 
+USE_TZ = True
 DATE_INPUT_FORMATS = (
     '%Y-%m-%d', '%d/%m/%Y', '%d/%m/%y',  # 2006-10-25, 25/10/2006, 25/10/06
 )
 DATETIME_FORMAT = 'j N, Y, P'
-
 DATETIME_INPUT_FORMATS = (
     '%d/%m/%Y %H:%M',     # '10/25/2006 14:30:59'
 )
@@ -327,11 +325,10 @@ CELERY_RESULT_BACKEND = "django-db"
 CELERY_CACHE_BACKEND = "default"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 """
-With this minimal set of queues you can start at least 3 workers to process this 3 different queues, upd_* is meant to
-be used in a worker with only one process (concurrency 1), and the concurrent_tasks queue can be used with any
-concurrency, those 3 workers can be started executing below commands, also a .ini sample conf for supervisor is
-provided inside the "docs" directory in the root of the project. In portal directory, in a different shell for each
-command, run:
+With the following set of queues, 3 workers are started to process the 3 different queues, upd_* is meant to be used in
+a worker with only one process (concurrency 1), and the concurrent_tasks queue can be used with any concurrency, those
+3 workers can be started executing the following commands, also a .ini sample conf for supervisor is provided inside
+the "docs" directory in the root of the project. In portal directory, in a different shell for each command, run:
 
 $ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp worker -Q upd_category_home -c 1 -l INFO -n utopiacms_w1@%h
 $ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp worker -Q upd_articles_url -c 1 -l INFO -n utopiacms_w2@%h
@@ -339,8 +336,12 @@ $ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp worker -Q concurrent_
 
 If you want to use/test celery-beat, you also need a worker for it which can be started this way:
 
-$ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp beat -l INFO -S django
+$ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp beat -l INFO
 
+NOTE: The provided sample supervisor conf file uses a "run" directory to store the worker's main process PIDs, needed
+      to restart them gracefully sending a TERM signal, read more about this in this two sections of the celery docs:
+      - https://docs.celeryq.dev/en/latest/userguide/workers.html#stopping-the-worker
+      - https://docs.celeryq.dev/en/latest/userguide/workers.html#restarting-the-worker
 """
 CELERY_QUEUES = {
     'upd_category_home': {'exchange': 'upd_category_home', 'binding_key': 'upd_category_home'},
@@ -348,12 +349,12 @@ CELERY_QUEUES = {
     'concurrent_tasks': {'exchange': 'concurrent_tasks', 'binding_key': 'concurrent_tasks'},
 }
 CELERY_TASK_ROUTES = {
-    'core.tasks.update_category_home_task': {'queue': 'upd_category_home'},
-    'core.tasks.update_article_urls': {'queue': 'upd_articles_url'},
-    'core.tasks.send_push_notification_task': {'queue': 'concurrent_tasks'},
+    'update-category-home': {'queue': 'upd_category_home'},
+    'update-article-urls': {'queue': 'upd_articles_url'},
+    'send-push-notification': {'queue': 'concurrent_tasks'},
 }
-CELERY_TASK_QUEUES = [Queue(k, routing_key=k) for k in CELERY_QUEUES.keys()]
-DJANGO_CELERY_BEAT_TZ_AWARE = False
+CELERY_TASK_QUEUES = []  # will be populated after local settings imports
+CELERY_RESULT_EXTENDED = True
 
 # Elasticsearch is disabled by default, to enable it you need to adjust this settings according to your Elasticsearch
 # installation, see https://django-elasticsearch-dsl.readthedocs.io/en/latest/quickstart.html#install-and-configure
@@ -548,20 +549,20 @@ PWA_SERVICE_WORKER_VERSION = 1
 TESTING_CHROME_HEADLESS = True
 TESTING_PORT = 8000
 
-try:
-    UTILS_MODULE = __import__('utils', fromlist=[PROJECT_ABSOLUTE_DIR])
-except ImportError as e:
-    print(e)
-
 FREEZE_TIME = None
 
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
 
+
 SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
 CSRF_TRUSTED_ORIGINS = ['%s://%s' % (URL_SCHEME, SITE_DOMAIN)]
 ROBOTS_SITEMAP_URLS = [SITE_URL + 'sitemap.xml']
 LOCALE_NAME = "%s_%s.%s" % (LOCAL_LANG, LOCAL_COUNTRY, DEFAULT_CHARSET)
+
+# celery task queues, if not overrided, we populate with Queue objects based on default or overrided CELERY_QUEUES dict
+if not CELERY_TASK_QUEUES and CELERY_QUEUES and isinstance(CELERY_QUEUES, dict):
+    CELERY_TASK_QUEUES = [Queue(k, routing_key=k) for k in CELERY_QUEUES.keys()]
 
 if FREEZE_TIME:
     freezer = freeze_time(FREEZE_TIME)

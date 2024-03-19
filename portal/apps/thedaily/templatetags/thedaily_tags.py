@@ -3,13 +3,14 @@ from __future__ import unicode_literals
 
 from future.utils import raise_
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 import locale
 
 from django.conf import settings
 from django.template import Library, Node, NodeList, TemplateSyntaxError, Variable
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.flatpages.models import FlatPage
+from django.utils import timezone
 
 from core.models import Article
 from thedaily.models import SubscriptionPrices
@@ -47,9 +48,9 @@ class TimeNode(Node):
     def render(self, context):
         time = self.time.resolve(context)
         if self.future:
-            in_range = self.compare(time, datetime.now() + self.delta)
+            in_range = self.compare(time, timezone.now() + self.delta)
         else:
-            in_range = self.compare(datetime.now() - self.delta, time)
+            in_range = self.compare(timezone.now() - self.delta, time)
         if in_range:
             return self.nodelist_true.render(context)
         else:

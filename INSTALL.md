@@ -12,9 +12,9 @@
 
 - System packages:
 
-  NOTES: package names can vary by OS/distribution.
+  The following list (ames can vary by OS/distribution) contains Linux/MacOS packages needed for a full functional environment, not all are 100% required because they can be replaced or dicarded depending each environment and local infrastructure:
 
-  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel rubygem-sass npm gcc libmaxminddb-devel
+  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel rubygem-sass npm gcc libmaxminddb-devel rabbitmq
 
 - npm (Node.js packages):
 
@@ -48,18 +48,23 @@
   (utopiacms) user@host:~/utopia-cms $ pip install --upgrade pip && pip install -r portal/requirements.txt
   ```
 
-  NOTE: If you get an error that saying `OSError: mysql_config not found` you need to check that mysql is in your PATH,
-  for example, you can run `PATH=$PATH:/usr/local/mysql/bin` to add the directory `/usr/local/mysql/bin` to the current
-  PATH and then retry the `pip` command. We also have seen errors regarding to "not found" MySQL libraries on MacOS
-  installations that were solved doing symlinks.
+  NOTE: If you get an error that saying `OSError: mysql_config not found` you need to check that mysql is in your PATH, for example, you can run PATH=$PATH:/usr/local/mysql/bin` to add the directory `/usr/local/mysql/bin` to the current PATH and then retry the `pip` command. We also have seen errors regarding to "not found" MySQL libraries on MacOS installations that were solved doing symlinks.
 
 #### Database setup
+
+- Preparation
+
+Before create the databse, make it timzeone-aware, this is not mandatory but if not done you'll get many warnings and probabbly also errors depending on your local settings, complaining about comparisons or database writes attempts that use datetime objects with timezone information. This can be done using one command:
+
+```
+mariadb-tzinfo-to-sql /usr/share/zoneinfo | sudo mariadb mysql
+```
 
 - Create a new database and grant user privileges to a new or existing database user:
 
 ```
-(utopiacms) user@host:~/utopia-cms $ sudo mysqladmin create utopiacms
-(utopiacms) user@host:~/utopia-cms $ sudo mysql
+(utopiacms) user@host:~/utopia-cms $ sudo mariadb-admin create utopiacms
+(utopiacms) user@host:~/utopia-cms $ sudo mariadb
 MariaDB [(none)]> CREATE USER 'utopiacms_user'@'localhost' IDENTIFIED BY 'password';
 MariaDB [(none)]> GRANT ALL PRIVILEGES ON utopiacms.* TO 'utopiacms_user'@'localhost';
 ```

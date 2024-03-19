@@ -11,7 +11,7 @@ from .management.commands.send_notification import send_notification_func
 from .management.commands.update_article_urls import update_article_urls as update_article_urls_func
 
 
-@celery_app.task
+@celery_app.task(name="update-category-home")
 def update_category_home_task():
     result = update_category_home_func()
     if settings.DEBUG:
@@ -19,12 +19,12 @@ def update_category_home_task():
         print(result)
 
 
-@celery_app.task
+@celery_app.task(name="update-article-urls")
 def update_article_urls(pub_slug):
     return update_article_urls_func([pub_slug])
 
 
-@celery_app.task
+@celery_app.task(name="send-push-notification")
 def send_push_notification_task(msg, tag, url, img_url, user_id):
     try:
         return send_notification_func(msg, tag, url, img_url, user_id)
@@ -34,15 +34,23 @@ def send_push_notification_task(msg, tag, url, img_url, user_id):
             return "ERROR: %s" % cmd_err
 
 
-@celery_app.task
-def test_sleep_task(secs=0):
-    sleep(secs)
-    print("wokeup")
-    return "test_sleep_task executed with arg: %s" % secs
+@celery_app.task(name="test-sleep-task")
+def test_sleep_task(secs=0, feedback_step=None):
+    # was used for development only
+    secs_remaining = secs
+    while secs_remaining > 0:
+        sleep_by = feedback_step if feedback_step and feedback_step < secs_remaining else secs_remaining
+        sleep(sleep_by)
+        secs_remaining -= sleep_by
+        if feedback_step and secs_remaining:
+            print("still sleeping, %s seconds remaining to wakeup." % secs_remaining)
+    print("wokeup, task finished.")
+    return "test_sleep_task executed with args: %s%s" % (secs, (", %s" % feedback_step) if feedback_step else "")
 
 
-@celery_app.task
+@celery_app.task(name="test-task")
 def test_task(test_arg=None):
+    # was used for development only
     return "test_task executed with arg: %s" % test_arg
 
 

@@ -8,7 +8,7 @@ from future import standard_library
 from builtins import str
 import requests
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from requests.exceptions import ConnectionError
 from urllib.parse import urlsplit, urlunsplit
@@ -36,6 +36,7 @@ from django.views.decorators.cache import never_cache, cache_page
 from django.views.decorators.vary import vary_on_cookie
 from django.template import Engine, TemplateDoesNotExist
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 
 from actstream.models import following
 from favit.models import Favorite
@@ -69,7 +70,7 @@ def article_list(request, type_slug):
     if not atype['slug']:
         raise Http404
     pubdate = date.today()
-    if datetime.now().hour < 8:
+    if timezone.now().hour < 8:
         pubdate -= timedelta(days=1)
     articles = get_list_or_404(Article, is_published=True, type=atype['slug'], date_published__lte=pubdate)
     paginator = Paginator(articles, 10)
@@ -168,7 +169,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
     ):
         if request.user.is_authenticated and mongo_db is not None:
             # register this view
-            set_values = {'viewed_at': datetime.now()}
+            set_values = {'viewed_at': timezone.now()}
             if getattr(request, 'article_allowed', False):
                 set_values['allowed'] = True
             mongo_db.core_articleviewedby.update_one(

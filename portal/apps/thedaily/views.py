@@ -46,10 +46,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.cache import never_cache, cache_control, cache_page
 from django.template import Engine, TemplateDoesNotExist
+from django.utils import timezone
 from django.utils.html import strip_tags
 
 from actstream import actions
@@ -94,7 +95,9 @@ from .forms import (
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
 )
-from .utils import recent_following, add_default_category_newsletters, get_profile_newsletters_ordered
+from .utils import (
+    recent_following, add_default_category_newsletters, get_profile_newsletters_ordered, google_phone_next_page
+)
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
 from .tasks import send_notification, notify_digital, notify_paper, send_notification_message
@@ -369,6 +372,8 @@ def login(request):
         login_form = login_formclass(initial=initial)
 
     if not response:
+        # update next page in session for cases when google sign-in option is used
+        request.session["next"] = next_page
         context['login_form'] = login_form
         response = render(request, template, context)
 
@@ -468,15 +473,15 @@ def welcome(request, signup=False, subscribed=False):
 
 @never_cache
 @to_response
+@require_http_methods(["GET", "POST"])
 def google_phone(request):
     """
     Ask for "phone" and terms and conditions acceptance when using google-sign-in to create an account
-    TODO: when coming form AMP, the landing "welcome" page should be different because the expected behaviour is to go
-          back to the article AMP page that originated the login, ask UX team for feedback on what to do, one option is
-          to show the welcome page (with the content information adjusted) and after some seconds redirect to the
-          "next" page (the google page that closes the window and returns to the article amp page).
-          This adjusted content may be also wanted for non-amp, perhaps a new button that says "continue browsing to
-          the article '<article-title>'" if the sign-in was originated from an article page.
+    TODO: check that for AMP the next TODO happens only in case of new accounts
+    TODO: for new accounts, when coming from AMP or hard_paywall:
+      The landing "welcome" page should be different because the expected behaviour is to go back to the article page
+      that originated the login, ask UX team for feedback on what to do, one option is to show the welcome page and
+      after some seconds redirect to the "next" page (for AMP is the google page that closes the window).
     """
     # if planslug in session this came from a new subscription attemp and we should continue it
     planslug, is_new = request.session.get('planslug'), request.GET.get('is_new') == '1'
@@ -493,21 +498,31 @@ def google_phone(request):
         raise Http404
 
     profile, ctx = get_or_create_user_profile(oas.user), {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}
-    form_kwargs = {"instance": profile}
+    next_page = google_phone_next_page(request, is_new)
+    form_kwargs, initial = {"instance": profile, "is_new": is_new}, {"next_page": next_page} if next_page else {}
+
     if request.session.get("terms_and_conds_accepted"):
-        form_kwargs["initial"] = {"terms_and_conds_accepted": True}
+        initial["terms_and_conds_accepted"] = True
+    if initial:
+        form_kwargs["initial"] = initial
 
     if request.method == 'POST':
         google_signin_form = GoogleSigninForm(request.POST, **form_kwargs)
         if google_signin_form.is_valid():
             google_signin_form.save()
-            send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!', ctx)
+            if is_new:
+                request.session['welcome'] = True
+                try:
+                    send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!', ctx)
+                except Exception as exc:
+                    # fail silently in case of error when sending the email
+                    if settings.DEBUG:
+                        print("DEBUG: welcome email message send error: %s" % exc)
             oas.delete()
-            request.session['welcome'] = True
             request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
             return HttpResponseRedirect(
-                '%s?next=%s'
-                % (reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('account-welcome'))
+                reverse('social:begin', kwargs={'backend': 'google-oauth2'})
+                + (("?next=" + next_page) if next_page else "")
             )
     else:
         google_signin_form = GoogleSigninForm(**form_kwargs)
@@ -515,12 +530,7 @@ def google_phone(request):
         if is_new:
             add_default_category_newsletters(profile)
 
-    ctx.update(
-        {
-            'google_signin_form': google_signin_form,
-            "is_new": is_new,  # TODO: this should be used to render different labels in the template
-        }
-    )
+    ctx.update({'google_signin_form': google_signin_form, "is_new": is_new})
     return 'google_signup.html', ctx
 
 
@@ -767,7 +777,7 @@ def subscribe(request, planslug, category_slug=None):
                                 'No se pudo enviar el email de verificación al crear tu cuenta, '
                                 + (
                                     '¿lo escribiste correctamente?'
-                                    if type(exc) is SMTPRecipientsRefused
+                                    if isinstance(exc, SMTPRecipientsRefused)
                                     else 'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
                                     % reverse('account-confirm_email')
                                 )
@@ -1256,7 +1266,7 @@ def update_user_from_crm(request):
     def changesubscriberfield(s, field, v):
         mfield = settings.CRM_UPDATE_SUBSCRIBER_FIELDS[field]
         # eval the value before saving if type field is bool
-        setattr(s, mfield, eval(v) if type(getattr(s, mfield)) is bool else v)
+        setattr(s, mfield, eval(v) if isinstance(getattr(s, mfield), bool) else v)
 
     if request.method == 'POST':
         try:
@@ -1471,7 +1481,7 @@ def amp_access_pingback(request):
 
                 if mongo_db is not None and not blocked:
 
-                    set_values = {'viewed_at': datetime.now()}
+                    set_values = {'viewed_at': timezone.now()}
                     if article_allowed:
                         set_values['allowed'] = True
                     mongo_db.core_articleviewedby.update_one(
@@ -2038,7 +2048,7 @@ def phone_subscription_log_get4today(request, user=None):
     if mongo_db is not None:
         user = user or (request.user if request.user.is_authenticated else None)
         find_arg = {'user': user.id} if user else {'session_key': get_session_key(request)}
-        find_arg["timestamp"] = {"$gt": datetime.now() - timedelta(1)}
+        find_arg["timestamp"] = {"$gt": timezone.now() - timedelta(1)}
         return mongo_db.phone_subscription_log.count_documents(find_arg, limit=1)
     return False
 
@@ -2047,7 +2057,7 @@ def phone_subscription_log(request, user=None):
     if mongo_db is not None:
         user = user or (request.user if request.user.is_authenticated else None)
         insert_arg = {'user': user.id} if user else {}
-        insert_arg.update({'session_key': get_session_key(request), "timestamp": datetime.now()})
+        insert_arg.update({'session_key': get_session_key(request), "timestamp": timezone.now()})
         mongo_db.phone_subscription_log.insert_one(insert_arg)
 
 

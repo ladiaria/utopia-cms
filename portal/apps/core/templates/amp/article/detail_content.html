@@ -94,7 +94,7 @@
 
 {% if article.video %}{# TODO: fix center layout #}
   <div id="video">
-    <amp-video controls width="560" height="315" poster="{{ article.photo.get_med_url }}">{# TODO: fix poster #}
+    <amp-video controls width="560" height="315" poster="{{ article.amp_video_poster_image_url }}">
       <source type="video/mp4" src="{{ article.video.file.url }}">
     </amp-video>
     <div class="caption">

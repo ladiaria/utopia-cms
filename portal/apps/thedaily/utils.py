@@ -15,6 +15,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import Value
+from django.urls import reverse
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
@@ -177,3 +178,11 @@ def get_profile_newsletters_ordered():
     nl_alpha = [nl_obj for nl_obj in nl_unsorted if nl_obj not in nl_custom_ordered]
     nl_alpha.sort(key=attrgetter("slug"))
     return [nl_obj for nl_obj in nl_custom_ordered if nl_obj] + nl_alpha
+
+
+def google_phone_next_page(request, is_new):
+    next_page = request.session.pop("next", None)  # allways pop next page from session
+    # but gives precedence to: welcome page if is_new; next entry in get/post when not is_new
+    return reverse('account-welcome') if is_new else (
+        request.GET.get("next", request.POST.get("next_page")) or next_page
+    )

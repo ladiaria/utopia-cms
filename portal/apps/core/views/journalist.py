@@ -14,11 +14,6 @@ to_response = render_response('core/templates/')
 @never_cache
 @to_response
 def journalist_detail(request, journalist_job, journalist_slug):
-    if journalist_slug.isnumeric():
-        # compatibility: some old url had the pk as slug ex: periodista/810
-        #                TODO: remove this redirection on 2021-6-10
-        return HttpResponsePermanentRedirect(get_object_or_404(Journalist, pk=journalist_slug).get_absolute_url())
-
     journalist_job = journalist_job[:2].upper()
     other_job = 'CO' if journalist_job == 'PE' else 'PE'
     try:

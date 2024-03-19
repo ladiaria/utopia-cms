@@ -799,12 +799,15 @@ class SubscriptionPromoCodeCaptchaForm(SubscriptionPromoCodeForm):
 
 class GoogleSigninForm(ModelForm):
     """
-    Ask for phone number when sign-in is made by Google social login
+    Asks for possible missing data (phone or terms and conds acceptance) when sign-in is made by Google
     """
     if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
         terms_and_conds_accepted = terms_and_conditions_field
+    next_page = CharField(required=False, widget=HiddenInput())
 
     def __init__(self, *args, **kwargs):
+        submit_label = 'crear cuenta' if kwargs.pop("is_new", None) else "continuar"
+        super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'google_signin'
         self.helper.form_class = 'form-horizontal'
@@ -813,11 +816,10 @@ class GoogleSigninForm(ModelForm):
         self.helper.help_text_inline = True
         self.helper.error_text_inline = True
         self.helper.layout = Layout(
-            *('phone',)
+            *('phone', "next_page")
             + terms_and_conditions_layout_tuple
-            + (FormActions(Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l')),)
+            + (FormActions(Submit('save', submit_label, css_class='ut-btn ut-btn-l')),)
         )
-        super().__init__(*args, **kwargs)
 
     class Meta:
         model = Subscriber

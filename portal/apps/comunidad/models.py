@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from builtins import str
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.conf import settings
 from django.db import models
@@ -10,6 +10,7 @@ from django.db.models.fields.related import ForeignKey
 from django.db.models.fields import DateTimeField
 from django.urls import reverse
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 
@@ -25,7 +26,7 @@ class SubscriberArticle(ArticleBase):
 
     @staticmethod
     def top_articles():
-        desde = datetime.now() - timedelta(days=15)
+        desde = timezone.now() - timedelta(days=15)
         return SubscriberArticle.objects.get_queryset().filter(date_published__gt=desde)[:3]
 
     def __str__(self):

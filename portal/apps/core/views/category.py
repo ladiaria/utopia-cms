@@ -21,6 +21,7 @@ from django.contrib.sites.models import Site
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.utils import timezone
 
 from libs.utils import decode_hashid, nl_serialize_multi
 from thedaily.models import Subscriber
@@ -127,7 +128,7 @@ def newsletter_preview(request, slug):
             context["preview_warn"] = "The 'has_newsletter' attribute for this area is not checked"
 
         try:
-            category_nl = CategoryNewsletter.objects.get(category=category, valid_until__gt=datetime.now())
+            category_nl = CategoryNewsletter.objects.get(category=category, valid_until__gt=timezone.now())
             cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
             context.update(
                 {
@@ -168,7 +169,7 @@ def newsletter_preview(request, slug):
             try:
                 featured_section, days_ago = settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[category.slug]
                 featured_article = category.section_set.get(slug=featured_section).latest_article()[0]
-                assert featured_article.date_published >= datetime.now() - timedelta(days_ago)
+                assert featured_article.date_published >= timezone.now() - timedelta(days_ago)
             except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
                 featured_article = None
 

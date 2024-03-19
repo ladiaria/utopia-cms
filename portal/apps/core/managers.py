@@ -2,13 +2,13 @@
 from __future__ import unicode_literals
 
 import traceback
-from datetime import datetime
 
 from django.db.models import Manager
+from django.utils import timezone
 
 
 def get_published_kwargs():
-    return {"is_published": True, "date_published__lte": datetime.now()}
+    return {"is_published": True, "date_published__lte": timezone.now()}
 
 
 class PublishedArticleManager(Manager):

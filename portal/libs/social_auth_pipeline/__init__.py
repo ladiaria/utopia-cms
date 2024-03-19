@@ -51,7 +51,6 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
             oas.save()
         except OAuthState.DoesNotExist:
             OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
-        # TODO: try to use "next" (may be in kwargs)
         is_new, query_params = kwargs.get('is_new'), ''
         if is_new:
             query_params = '?is_new=1'

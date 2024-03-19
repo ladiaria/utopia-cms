@@ -35,17 +35,21 @@
 {% block content %}
   {% block content_main_open %}<main class="ld-content">{% endblock %}
   <div class="subscribe-header center-align">
-    <h1 class="ld-title-big">Cuenta gratuita</h1>
-    <span class="ld-text-secondary">
-      Accedé a {{ signupwall_max_credits }} artículo{{ signupwall_max_credits|pluralize }} gratis por mes con la
-      cuenta gratuita.
-    </span>
+    <h1 class="ld-title-big">{% if is_new %}Cuenta gratuita{% else %}Ingreso con Google{% endif %}</h1>
+    {% if is_new %}
+      <span class="ld-text-secondary">
+        Accedé a {{ signupwall_max_credits }} artículo{{ signupwall_max_credits|pluralize }} gratis por mes con la
+        cuenta gratuita.
+      </span>
+    {% endif %}
   </div>
   <div class="subscribe-body">
     <div class="ld-content">
       <div class="row">
         <div class="col s12 m8 offset-m2">
-          <p class="ld-text-secondary align-center u-mt-50">Por último, ingresá o actualizá tu teléfono</p>
+          <p class="ld-text-secondary align-center u-mt-50">
+            {% if is_new %}Por último{% else %}Para continuar{% endif%}, ingresá{% if not is_new %} o actualizá{% endif %} tu teléfono
+          </p>
         </div>
       </div>
       <div class="row">
@@ -57,7 +61,7 @@
   {% block content_main_close %}</main>{% endblock %}
 {% endblock %}
 
-{% block footer_block %}{% include 'footer_simple.html' with disable_signup=True %}{% endblock %}
+{% block footer_block %}{% include 'footer_simple.html' with disable_first_row=True %}{% endblock %}
 
 {% block javascript %}
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>

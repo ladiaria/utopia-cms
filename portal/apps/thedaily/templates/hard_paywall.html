@@ -48,12 +48,10 @@
       </a>
       {% block payment_header %}
         {% if not user.is_authenticated and not 'password' in login_form.fields and not signup_form %}
-          <h2 class="create-account-title">Creá tu cuenta gratis o ingresá</h2>
           <p class="create-account-desc">
-            Si te registrás accedés a {{ signupwall_max_credits }} artículos gratuitos por mes y recibís gratis nuestras
-            newsletters
+            Registrate para acceder a {{ signupwall_max_credits }} artículos gratuitos por mes y recibir nuestras newsletters
           </p>
-          <svg class="article-container__chevron-down-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <svg class="create-account-chevron-down-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M7.41 8.57996L12 13.17L16.59 8.57996L18 9.99996L12 16L6 9.99996L7.41 8.57996Z" fill="#A4A4A4"/>
           </svg>
         {% endif %}
@@ -85,6 +83,14 @@
               <path d="M7.41 8.57996L12 13.17L16.59 8.57996L18 9.99996L12 16L6 9.99996L7.41 8.57996Z" fill="#A4A4A4"/>
             </svg>
           {% else %}
+            <div class="payment-container__mobile-header">
+              <p>Creá tu cuenta o ingresá</p>
+              <a class="payment-container__close-btn" href="{{ SITE_URL }}" aria-label="Volver al inicio">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M13.46 12L19 17.54V19H17.54L12 13.46L6.46 19H5V17.54L10.54 12L5 6.46V5H6.46L12 10.54L17.54 5H19V6.46L13.46 12Z" fill="#959595"/>
+                </svg>
+              </a>
+            </div>
             <p>Ingresá tu email</p>
           {% endif %}
         {% endif %}
@@ -111,7 +117,7 @@
               </div>
               <div class="payment-container__anonymous__log-in">
                 <p>¿Ya tenés cuenta?</p>
-                <a href="{% url 'account-login' %}">Ingresá</a>
+                <a href="{% url 'account-login' %}?next={{ article.get_absolute_url }}">Ingresá</a>
               </div>
             </div>
           {% endif %}

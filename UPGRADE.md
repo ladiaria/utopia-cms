@@ -1,5 +1,7 @@
 # From version 0.4.7 to 0.4.8
 
+Before start, make your database server timezone-aware using the first step described in the database section of `INSTALL.md`.
+
 ```
 git pull
 git checkout 0.4.8

@@ -4,12 +4,8 @@ from __future__ import unicode_literals
 from builtins import object
 
 import re
-from time import timezone
-from datetime import datetime, tzinfo, timedelta
-from dateutil import tz
-from math import copysign
+from datetime import datetime
 from os.path import join
-import pytz
 from pytz import country_timezones, country_names
 import requests
 
@@ -18,29 +14,19 @@ from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from django.utils.deconstruct import deconstructible
-
-
-class TZ(tzinfo):
-    def utcoffset(self, dt):
-        return timedelta(
-            seconds=int(copysign(timezone, int(datetime.now(pytz.timezone(settings.TIME_ZONE)).strftime('%z'))))
-        )
-
-
-tz_obj = TZ()
+from django.utils.timezone import is_aware, make_aware, localtime
 
 
 def datetime_isoformat(dt):
-    return datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, 0, tz_obj).isoformat()
+    dt = dt if is_aware(dt) else make_aware(dt)
+    return datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, 0, dt.tzinfo).isoformat()
 
 
 def datetime_timezone():
-    local_tz, dt = tz.gettz(settings.TIME_ZONE), datetime.now()
-    dt = datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, 0, local_tz)
     timezone_countries = {
         timezone: country for country, timezones in country_timezones.items() for timezone in timezones
     }
-    tz_name = dt.strftime('%Z')
+    tz_name = localtime().strftime('%Z')
     result = [tz_name if tz_name[0].isalpha() else 'GMT' + tz_name]
     tz_parts = settings.TIME_ZONE.split('/')
     if len(tz_parts) > 1:

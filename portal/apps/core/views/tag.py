@@ -6,6 +6,7 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnIn
 from django.http import Http404
 from django.template.defaultfilters import slugify
 from django.views.decorators.cache import never_cache
+from django.urls.exceptions import NoReverseMatch
 from django.shortcuts import render, redirect
 
 from tagging.models import Tag, TaggedItem
@@ -23,7 +24,10 @@ def tag_detail(request, tag_slug):
     """
     tag_slugified = slugify(tag_slug)
     if tag_slugified != tag_slug:
-        return redirect('tag_detail', tag_slug=tag_slugified)
+        try:
+            return redirect('tag_detail', tag_slug=tag_slugified)
+        except NoReverseMatch:
+            raise Http404
     tags = [tag for tag in Tag.objects.iterator() if slugify(tag.name) == tag_slug]
 
     if not tags:

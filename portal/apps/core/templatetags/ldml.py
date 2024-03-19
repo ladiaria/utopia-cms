@@ -23,6 +23,7 @@ EXTENSION_RE = r'%s\s*(\d*)' % EXTENSION_KW
 
 IMAGE_KW = '__imagen__'
 IMAGE_RE = r'%s\s*(\d*)' % IMAGE_KW
+MD_EXTRAS = ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra', "strike"]
 
 
 def normalize(value):
@@ -86,7 +87,7 @@ def photo_byline(article, allowed=True):
     # if allowed by setting and not disallowed by the allow arg given, it returns the article's "photo_autor" entry if
     # article arg is dict (useful in "offline" rendering), otherwise (if it is an Article object) returns the method.
     if settings.CORE_ARTICLE_ENABLE_PHOTO_BYLINE and allowed:
-        return (dict.get if type(article) is dict else getattr)(article, "photo_author", "")
+        return (dict.get if isinstance(article, dict) else getattr)(article, "photo_author", "")
     else:
         return ""
 
@@ -105,9 +106,7 @@ def ldmarkup(value, args='', amp=False):
         value = reg.sub(lambda x: get_extension(x, args), value)
         reg = re.compile(IMAGE_RE, re.UNICODE + re.MULTILINE)
         value = reg.sub(lambda x: get_image(x, args, amp), value)
-    return mark_safe(
-        force_str(markdown(value, extras=['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra']).strip())
-    )
+    return mark_safe(force_str(markdown(value, extras=MD_EXTRAS).strip()))
 
 
 @register.filter
@@ -116,7 +115,7 @@ def ldmarkup_extension(value, args='', amp=False):
     """ Usage: {% article.body|ldmarkup_extension %} """
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
     value = reg.sub(r'\n\n\1\n----', value)
-    value = markdown(value, extras=['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra']).strip()
+    value = markdown(value, extras=MD_EXTRAS).strip()
     return mark_safe(force_str(value))
 
 

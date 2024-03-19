@@ -69,7 +69,7 @@ def notify_paper(user, seller_fullname=None):
 
 
 """
-# not used, use if we want to delay a notification
+# Example to delay a notification. TODO: rewrite to be used as a celery task
 # from background_task import background
 # from django.contrib.auth.models import User
 @background(schedule=1800)

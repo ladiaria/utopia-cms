@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from datetime import datetime
 
 from django.db.models import (
     Model, FileField, DateTimeField, CharField, PositiveIntegerField, SlugField, BooleanField, TextField
 )
+from django.utils import timezone
 
 
 class Audio(Model):
@@ -20,7 +20,7 @@ class Audio(Model):
 
     def save(self):
         if not self.id:
-            self.date_uploaded = datetime.now()
+            self.date_uploaded = timezone.now()
         super(Audio, self).save()
 
     def __str__(self):

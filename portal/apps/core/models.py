@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from past.utils import old_div
-import os
+from os.path import basename, splitext, dirname, join, isfile
 import locale
 import tempfile
 import operator
@@ -322,7 +322,7 @@ class PortableDocumentFormatBaseModel(Model):
                 'year': self.date_published.year,
                 'month': '%02d' % self.date_published.month,
                 'day': '%02d' % self.date_published.day,
-                'filename': os.path.basename(self.pdf.path),
+                'filename': basename(self.pdf.path),
             },
         )
 
@@ -332,7 +332,7 @@ class PortableDocumentFormatBaseModel(Model):
         except IOError:
             raise Http404
         else:
-            response['Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(self.pdf.path)
+            response['Content-Disposition'] = 'attachment; filename=%s' % basename(self.pdf.path)
             return response
 
     def date_published_verbose(self, short=True):
@@ -920,7 +920,7 @@ class Section(Model):
         return [latest_qs[0].article] if latest_qs.exists() else []
 
     def mas_vistos(self):
-        desde = datetime.now() - timedelta(days=60)
+        desde = timezone.now() - timedelta(days=60)
         return Article.objects.filter(sections__id=self.id, date_published__gt=desde).order_by('views')[:10]
 
     def published_articles(self, **filter_kwargs):
@@ -935,7 +935,7 @@ class Section(Model):
         """
         return self.articles_core.filter(
             is_published=True,
-            date_published__gt=datetime.now() - timedelta(2 if date.today().isoweekday() < 7 else 3),
+            date_published__gt=timezone.now() - timedelta(2 if date.today().isoweekday() < 7 else 3),
         ).distinct()
 
     def articles_count(self):
@@ -1160,7 +1160,7 @@ class ArticleBase(Model, CT):
 
         self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
 
-        now = datetime.now()
+        now = timezone.now()
 
         if self.is_published:
             if not self.date_published:
@@ -1176,7 +1176,7 @@ class ArticleBase(Model, CT):
         date_value = self.date_published or self.date_created or now
         # No puede haber otro publicado con date_published en el mismo mes que date_value o no publicado con
         # date_created en el mismo mes que date_value, con el mismo slug. TODO: translate this comment to english.
-        if type(date_value) is str:
+        if isinstance(date_value, str):
             # needed if for example, assigning from a shell using strings for dates.
             # TODO: this only works if elasticsearch is off (improve this)
             date_value = datetime.strptime(date_value, "%Y-%m-%d %H:%M:%S")
@@ -1229,7 +1229,7 @@ class ArticleBase(Model, CT):
 
     def build_url_path(self):
         date_value = self.date_published or self.date_created
-        if type(date_value) is str:
+        if isinstance(date_value, str):
             # needed if for example, assigning from a shell using strings for dates.
             # TODO: this only works if elasticsearch is off (improve this)
             date_value = datetime.strptime(date_value, "%Y-%m-%d %H:%M:%S")
@@ -1317,6 +1317,19 @@ class ArticleBase(Model, CT):
     def photo_render_allowed(self):
         return self.photo_image_file_exists() and self.photo.is_public
 
+    def amp_video_poster_image_url(self):
+        """
+        TODO: This approach should be used in all site calls to "get_<size>_url", helped by a mapping setting, then
+              each "get" method knows which size should ask for (and calls the "generic" method that makes the checks
+              like this method does).
+        """
+        if self.photo_render_allowed():
+            med_url = self.photo.get_med_url()  # this call will generate the "med" image if it not exist in cache
+            # but check again (cache can be old or broken)
+            if isfile(join(settings.MEDIA_ROOT, self.photo.get_med_filename())):
+                return med_url
+        return settings.STATIC_URL + "img/amp_video_default_poster.png"  # default poster (broken or not allowed/exist)
+
     @property
     def photo_width(self):
         try:
@@ -1339,7 +1352,7 @@ class ArticleBase(Model, CT):
 
     @property
     def photo_filename_ext(self):
-        return self.photo_image_file_exists() and os.path.splitext(self.photo.image_filename())[1].lower()
+        return self.photo_image_file_exists() and splitext(self.photo.image_filename())[1].lower()
 
     @property
     def photo_type(self):
@@ -1422,7 +1435,7 @@ class ArticleBase(Model, CT):
         return datetime_isoformat(self.last_modified)
 
     def date_published_seconds_ago(self):
-        return (datetime.now() - self.date_published).total_seconds()
+        return (timezone.now() - self.date_published).total_seconds()
 
     def datetime_published_verbose(self, day_name_and_time=True):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
@@ -1434,11 +1447,11 @@ class ArticleBase(Model, CT):
             # call for cards, allow to hide year and a custom fmt by settings
             if (
                 getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_SAMEYEAR', False)
-                and date.today().year == self.date_published.year
+                and timezone.now().year == self.date_published.year
             ):
                 format_st = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_SAMEYEAR_FMT', "{dt.day} de {dt:%B}")
 
-        return format_st.format(dt=self.date_published).lower().capitalize()
+        return format_st.format(dt=timezone.template_localtime(self.date_published)).lower().capitalize()
 
     def date_published_verbose(self):
         if settings.CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO:
@@ -1793,7 +1806,7 @@ class Article(ArticleBase):
             engine = Engine.get_default()
             try:
                 extra_meta_template = engine.get_template(
-                    os.path.join(os.path.dirname(nl_email_template), "article_extra_meta/%s.json" % category.slug)
+                    join(dirname(nl_email_template), "article_extra_meta/%s.json" % category.slug)
                 )
             except TemplateDoesNotExist:
                 pass
@@ -2251,11 +2264,12 @@ class BreakingNewsModule(Model):
 def get_publishing_datetime():
     today = date.today()
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
-    return datetime(today.year, today.month, today.day, publishing_hour, publishing_minute)
+    return timezone.make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
 
 
 def get_published_date():
-    now = datetime.now()
+    # TODO: check usage, remove if not used, the same for get_publishing_datetime
+    now = timezone.now()
     publishing = get_publishing_datetime()
     publishing_date = date(publishing.year, publishing.month, publishing.day)
     if now > publishing:
@@ -2268,9 +2282,9 @@ def get_current_edition(publication=None):
     Return last edition of publication if given, or the publications using root url as their home page if the
     publication slug is not given.
     """
-    today, now, filters = date.today(), datetime.now(), {}
+    today, now, filters = date.today(), timezone.now(), {}
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
-    publishing = datetime(today.year, today.month, today.day, publishing_hour, publishing_minute)
+    publishing = timezone.make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
 
     if publication:
         filters['publication'] = publication.id

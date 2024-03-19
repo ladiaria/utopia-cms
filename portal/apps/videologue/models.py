@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from datetime import datetime
+
 import re
 
 from django.db.models import (
     BooleanField, CharField, DateTimeField, FileField, Model, PositiveIntegerField, SlugField, TextField, URLField
 )
+from django.utils import timezone
 
 
 YT_RE = re.compile(r'(?:v|embed)[=\/]([\w_-]{11})')
@@ -25,7 +26,7 @@ class Video(Model):
 
     def save(self):
         if not self.id:
-            self.date_uploaded = datetime.now()
+            self.date_uploaded = timezone.now()
         super(Video, self).save()
 
     def __str__(self):

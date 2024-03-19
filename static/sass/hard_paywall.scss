@@ -113,23 +113,18 @@ body.hard-paywall {
           margin-bottom: auto;
         }
 
-        h2.create-account-title {
-          text-align: center;
-          font-family: AntennaCond, sans-serif;
-          font-size: px-to-rem(24px);
-          font-weight: 700;
-          margin: 0;
-          padding: 0 0 10px;
-        }
-
         p.create-account-desc {
           color: #000;
           text-align: center;
           font-family: "Roboto", sans-serif;
-          padding-bottom: 8px;
+          padding: 4px 18px 8px;
         }
         p {
           font-family: "Roboto", sans-serif;
+        }
+        .create-account-chevron-down-icon {
+          margin-bottom: 8px;
+          align-self: center;
         }
 
         form#hardpw-login,
@@ -166,7 +161,7 @@ body.hard-paywall {
           .alert-box {
             background: none;
             color: #b61616;
-            height: 30px;
+            height: 50px;
             font-size: 90%;
             ul {
               width: 100%;
@@ -210,10 +205,10 @@ body.hard-paywall {
         }
 
         &.anonymous {
-          padding: 40px 0;
+          padding: 40px 0 0;
 
           @media #{$medium-and-down} {
-            padding: 16px 0;
+            padding: 0;
           }
 
           h2.sign-in-title,
@@ -222,6 +217,7 @@ body.hard-paywall {
             font-family: "Roboto", sans-serif;
             margin: 0;
             padding-bottom: 12px;
+            padding-top: 16px;
           }
 
           .sign-up-title,
@@ -258,7 +254,9 @@ body.hard-paywall {
           display: none;
 
           @media #{$medium-and-down} {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-bottom: 1px solid #e0e0e0;
             background: #f3f3f3;
             text-align: center;
@@ -267,8 +265,9 @@ body.hard-paywall {
             padding: 16px 0;
             border-top-right-radius: 8px;
             border-top-left-radius: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 16px;
             position: relative;
+            min-height: 68px;
 
             p {
               max-width: 200px;

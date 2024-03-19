@@ -2,7 +2,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from datetime import datetime
+from datetime import datetime, date
 
 from django_user_agents.utils import get_user_agent
 
@@ -14,6 +14,7 @@ from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import never_cache, cache_control
 from django.urls.exceptions import NoReverseMatch
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 
 from decorators import decorate_if_no_auth, decorate_if_auth
 
@@ -87,10 +88,6 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     else:
         publication = Publication.objects.get(slug=settings.DEFAULT_PUB)
 
-    # Primer día desde el que se muestran ediciones.
-    # TODO: explain better this setting
-    first_day = getattr(settings, 'FIRST_DAY')
-
     edition = None
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
 
@@ -110,7 +107,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         ).values_list('object_id', flat=True)
 
     for pub_item in getattr(settings, 'HOMEV3_FEATURED_PUBLICATIONS', ()):
-        pub_item_is_tuple = type(pub_item) is tuple
+        pub_item_is_tuple = isinstance(pub_item, tuple)
         try:
             pub = Publication.objects.get(slug=pub_item[0] if pub_item_is_tuple else pub_item)
         except Publication.DoesNotExist:
@@ -149,13 +146,23 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         except Topic.DoesNotExist:
             pass
 
+    if year and month and day:
+        # case when a particular edition by date is requested
+        date_published = timezone.make_aware(
+            datetime(year=int(year), month=int(month), day=int(day), hour=publishing_hour, minute=publishing_minute)
+        )
+        # Optionally a custom setting can determine whether editions older than it are available.
+        oldest_allowed = getattr(settings, "HOMEV3_EDITION_BY_DATE_OLDEST_ALLOWED", None)
+        if (
+            isinstance(oldest_allowed, date) and date_published.date() < oldest_allowed
+            or date_published >= timezone.now() and not user.is_staff  # only staff allowed to see "future" editions
+        ):
+            raise Http404
+    else:
+        date_published = None
+
     if publication.slug != settings.DEFAULT_PUB:
-        if year and month and day:
-            date_published = datetime(
-                year=int(year), month=int(month), day=int(day), hour=publishing_hour, minute=publishing_minute
-            )
-            if first_day.date() > date_published.date() or (date_published >= datetime.now() and not user.is_staff):
-                raise Http404
+        if date_published:
             edition = get_object_or_404(Edition, date_published=date_published, publication=publication)
         else:
             edition = get_current_edition(publication=publication)
@@ -171,12 +178,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         )
         template = getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_TEMPLATE', 'index_pubs.html')
     else:
-        if year and month and day:
-            date_published = datetime(
-                year=int(year), month=int(month), day=int(day), hour=publishing_hour, minute=publishing_minute
-            )
-            if first_day.date() > date_published.date() or (date_published >= datetime.now() and not user.is_staff):
-                raise Http404
+        if date_published:
             try:
                 ld_edition = get_object_or_404(
                     Edition,

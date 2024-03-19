@@ -21,7 +21,7 @@ from django.db import OperationalError
 from django.core.management.base import CommandError
 from django.template import Engine, Context
 from django.contrib.sites.models import Site
-from django.utils import translation
+from django.utils import translation, timezone
 
 from apps import blocklisted
 from core.models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
@@ -108,7 +108,7 @@ class Command(SendNLCommand):
                         dp_featured_articles.append(a)
                     context['featured_articles'] = dp_featured_articles
             elif not self.export_subscribers or self.export_context:
-                category_nl = CategoryNewsletter.objects.get(category=self.category, valid_until__gt=datetime.now())
+                category_nl = CategoryNewsletter.objects.get(category=self.category, valid_until__gt=timezone.now())
                 cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
                 if self.export_context:
                     export_ctx.update(
@@ -164,7 +164,7 @@ class Command(SendNLCommand):
                     featured_section, days_ago = \
                         settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[self.category_slug]
                     featured_article = self.category.section_set.get(slug=featured_section).latest_article()[0]
-                    assert (featured_article.date_published >= datetime.now() - timedelta(days_ago))
+                    assert (featured_article.date_published >= timezone.now() - timedelta(days_ago))
                 except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
                     featured_article = None
 

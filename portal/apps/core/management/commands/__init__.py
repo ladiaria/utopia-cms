@@ -1,11 +1,11 @@
 import sys
 import time
 import logging
-from datetime import datetime
 import smtplib
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 
 from libs.utils import smtp_server_choice, smtp_connect, smtp_quit
 from dashboard.models import NewsletterDelivery
@@ -137,7 +137,7 @@ class SendNLCommand(BaseCommand):
                 raise CommandError('--export-* options can not be used with --offline')
         if self.partitions is None and self.mod is not None or self.mod is None and self.partitions is not None:
             raise CommandError('--partitions must be used with --mod')
-        self.nl_delivery_dt = datetime.now()
+        self.nl_delivery_dt = timezone.now()
 
     def initlog(self, log, substitution_prefix):
         log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
@@ -233,7 +233,7 @@ class SendNLCommand(BaseCommand):
                 log.warning(log_message + " Will be retried using another server...")
             else:
                 log.error(log_message)
-            if type(smtp_exc) is smtplib.SMTPSenderRefused and smtp_exc.smtp_code == 552:
+            if isinstance(smtp_exc, smtplib.SMTPSenderRefused) and smtp_exc.smtp_code == 552:
                 # msg size err. (if that is the case, the server is still working but this message is too large for it)
                 # we must ignore the server in the retry attempt, if such.
                 if self.retry_last_delivery:

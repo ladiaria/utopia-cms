@@ -195,7 +195,7 @@ def nl_serialize_multi(article_many, category, for_cover=False, dates=True):
         return [
             (
                 t[0].nl_serialize(t[1], category=category, dates=dates), t[1]
-            ) if type(t) is tuple else t.nl_serialize(category=category, dates=dates) for t in article_many
+            ) if isinstance(t, tuple) else t.nl_serialize(category=category, dates=dates) for t in article_many
         ]
     elif article_many:
         return article_many.nl_serialize(for_cover, category=category, dates=dates)

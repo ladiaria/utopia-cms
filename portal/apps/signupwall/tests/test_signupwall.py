@@ -58,7 +58,7 @@ class SignupwallTestCase(TestCase):
         response = c.get(a.get_absolute_url(), **self.http_host_header_param)
         self.assertEqual(response.status_code, 302)
         response = c.get(response.headers["location"],  **self.http_host_header_param)
-        self.assertIn("Creá tu cuenta gratis o ingresá", response.content.decode())
+        self.assertIn("Registrate para acceder a", response.content.decode())
 
         # no redirection for restricted articles
         a = Article.objects.get(slug="test-restricted1")

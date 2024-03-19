@@ -2,12 +2,11 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from datetime import datetime
-
 from django.conf import settings
 from django.http import Http404, HttpResponseRedirect
 from django.urls import resolve, reverse
 from django.urls.exceptions import Resolver404
+from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
 from apps import mongo_db
@@ -65,7 +64,7 @@ def get_or_create_visitor(request):
 
     if mongo_db is not None:
         result = mongo_db.signupwall_visitor.insert_one(
-            {'session_key': session_key, 'ip_address': ip_address, 'timestamp': datetime.now()}
+            {'session_key': session_key, 'ip_address': ip_address, 'timestamp': timezone.now()}
         )
         # generation time can be obtained in the returned value .get('_id').generation_time (TODO: re-check this)
         return mongo_db.signupwall_visitor.find_one({'_id': result.inserted_id})

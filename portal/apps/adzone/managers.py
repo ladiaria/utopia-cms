@@ -1,13 +1,8 @@
 from __future__ import unicode_literals
-import datetime
 
 from django.contrib.sites.models import Site
-
 from django.db import models
-try:
-    from django.utils.timezone import now
-except ImportError:
-    now = datetime.datetime.now
+from django.utils.timezone import now
 
 
 class AdManager(models.Manager):
@@ -35,12 +30,12 @@ class AdManager(models.Manager):
         """
         Returns round robin next ad based on index parameter
         """
-        qs = self.get_queryset().filter(start_showing__lte=now(),
-                                         stop_showing__gte=now(),
-                                         zone__slug=ad_zone,
-                                         sites=Site.objects.get_current().pk
-                                         ).select_related('textad',
-                                                          'bannerad')
+        qs = self.get_queryset().filter(
+            start_showing__lte=now(),
+            stop_showing__gte=now(),
+            zone__slug=ad_zone,
+            sites=Site.objects.get_current().pk
+        ).select_related('textad', 'bannerad')
         if ad_category:
             qs = qs.filter(category__slug=ad_category)
         try:

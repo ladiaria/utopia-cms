@@ -3,7 +3,7 @@
 ; =====================================
 
 [program:utopiacms_beat]
-command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp beat -l INFO -S django
+command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp beat --pidfile=/run/celery/utopiacms_beat.pid -l INFO
 environment=DJANGO_SETTINGS_MODULE="settings"
 directory=/home/user/utopia-cms/portal/
 user=user
@@ -17,7 +17,7 @@ stopasgroup=true
 priority=999
 
 [program:utopiacms_w1]
-command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker -n utopiacms_w1@%%h -Q upd_category_home -c 1 -l INFO
+command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker -n utopiacms_w1@%%h -Q upd_category_home -c 1 --pidfile=/run/celery/utopiacms_w1.pid -l INFO
 environment=DJANGO_SETTINGS_MODULE="settings"
 directory=/home/user/utopia-cms/portal/
 user=user
@@ -31,7 +31,7 @@ stopasgroup=true
 priority=999
 
 [program:utopiacms_w2]
-command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker -n utopiacms_w2@%%h -Q upd_articles_url -c 1 -l INFO
+command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker -n utopiacms_w2@%%h -Q upd_articles_url -c 1 --pidfile=/run/celery/utopiacms_w2.pid -l INFO
 environment=DJANGO_SETTINGS_MODULE="settings"
 directory=/home/user/utopia-cms/portal/
 user=user
@@ -45,7 +45,7 @@ stopasgroup=true
 priority=999
 
 [program:utopiacms_w3]
-command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker -n utopiacms_w3@%%h -Q concurrent_tasks -c 2 -l INFO
+command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker -n utopiacms_w3@%%h -Q concurrent_tasks -c 2 --pidfile=/run/celery/utopiacms_w3.pid -l INFO
 environment=DJANGO_SETTINGS_MODULE="settings"
 directory=/home/user/utopia-cms/portal/
 user=user
@@ -59,7 +59,7 @@ stopasgroup=true
 priority=999
 
 [program:utopiacms_test]
-command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker --beat -l INFO -S django
+command=/home/user/.virtualenvs/utopiacms/bin/celery -A apps.celeryapp worker --beat --pidfile=/run/celery/utopiacms_test.pid -l INFO
 environment=DJANGO_SETTINGS_MODULE="celery_test_settings"
 directory=/home/user/utopia-cms/portal/
 user=user
