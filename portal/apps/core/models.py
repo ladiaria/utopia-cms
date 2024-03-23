@@ -1225,7 +1225,8 @@ class ArticleBase(Model, CT):
         return Tag.objects.get_for_object(self)
 
     def get_absolute_url(self):
-        return self.url_path or self.build_url_path()  # TODO: remove this "or" after url paths saved for all articles
+        # TODO: remove this "or" after proove that obj can't be saved with url_path blank or None
+        return self.url_path or self.build_url_path()
 
     def build_url_path(self):
         date_value = self.date_published or self.date_created

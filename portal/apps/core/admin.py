@@ -349,15 +349,31 @@ class ArticleAdminModelForm(ModelForm):
         return tags
 
     def clean(self):
+        # TODO: "add" errors right way (as django doc says) instead of raising them
         if self.errors:
             raise ValidationError("")
         cleaned_data = super().clean()
         if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
             raise ValidationError("La configuración necesaria para publicar en IPFS no está definida.")
         date_value = (
-            self.cleaned_data.get('date_published') if self.cleaned_data.get('is_published') else
-            self.cleaned_data.get('date_created')
-        ) or date.today()
+            cleaned_data.get('date_published') if cleaned_data.get('is_published')
+            else cleaned_data.get('date_created')
+        ) or timezone.now()
+        # conversion to UTC is needed, it's not done automatically like Article.save does.
+        # (save gets values from obj and not from the form), TODO: improve or investigate to explain better the cause.
+        date_value = timezone.localtime(
+            timezone.datetime(
+                date_value.year,
+                date_value.month,
+                date_value.day,
+                date_value.hour,
+                date_value.minute,
+                date_value.second,
+                date_value.microsecond,
+                tzinfo=timezone.get_default_timezone(),
+            ),
+            timezone.utc,
+        )
         targets = Article.objects.filter(
             Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
             | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),

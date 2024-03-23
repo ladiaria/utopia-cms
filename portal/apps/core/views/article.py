@@ -106,12 +106,13 @@ def article_detail(request, year, month, slug, domain_slug=None):
     # 1. obtener articulo
     try:
         # netloc splitted by port (to support local environment running in port)
-        netloc, first_of_month = request.headers['host'].split(':')[0], date(year, month, 1)
-        first_of_month_plus1 = first_of_month + relativedelta(months=1)
+        netloc = request.headers['host'].split(':')[0]
+        first_of_month = timezone.datetime(year, month, 1, tzinfo=timezone.utc)
+        dt_range = (first_of_month, first_of_month + relativedelta(months=1))
         # when the article is not published, it has no date_published, then date_created should be used
         article = Article.objects.select_related('main_section__edition__publication').get(
-            Q(is_published=True) & Q(date_published__gte=first_of_month) & Q(date_published__lt=first_of_month_plus1)
-            | Q(is_published=False) & Q(date_created__gte=first_of_month) & Q(date_created__lt=first_of_month_plus1),
+            Q(is_published=True) & Q(date_published__range=dt_range)
+            | Q(is_published=False) & Q(date_created__range=dt_range),
             slug=slug,
         )
         article_url = article.get_absolute_url()
@@ -138,10 +139,12 @@ def article_detail(request, year, month, slug, domain_slug=None):
                     urlunsplit((settings.URL_SCHEME, netloc, last_by_hist_url, s.query, s.fragment))
                 )
             else:
-                # show "draft" only for staff users
+                # show "draft" only for staff users (TODO: message uuser to "take action?")
                 if request.user.is_staff:
                     article = last_by_hist.article
                 else:
+                    if settings.DEBUG:
+                        print('DEBUG: core.views.article.article_detail: last_by_hist and article url are equal')
                     raise Http404
         else:
             raise Http404
