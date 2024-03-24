@@ -53,7 +53,10 @@ def render_related(context, article, amp=False):
 
     elif category and category.slug in getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', ()):
         # use the category
-        upd_dict = {'articles': section.latest4relatedbycategory(category.id, article.id), 'section': category.name}
+        upd_dict = {
+            'articles': section.latest4relatedbycategory(category.id, article.id),
+            'section': category.more_link_title or category.name,
+        }
 
     else:
         # use a category also, defined in settings and if it belongs to the article and the section is not skipped.

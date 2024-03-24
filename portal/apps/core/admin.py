@@ -1003,20 +1003,20 @@ class CategoryAdmin(ModelAdmin):
                     ('title', 'more_link_title', 'new_pill'),
                     ('description', ),
                     ('full_width_cover_image', 'full_width_cover_image_title'),
-                    ('full_width_cover_image_lead', ),
+                    ('full_width_cover_image_lead',),
                     ('has_newsletter', "newsletter_new_pill"),
                     ("newsletter_from_name", "newsletter_from_email"),
                     ('newsletter_tagline', 'newsletter_periodicity'),
-                    ('subscribe_box_question', ),
-                    ('subscribe_box_nl_subscribe_auth', ),
-                    ('subscribe_box_nl_subscribe_anon', ),
+                    ('subscribe_box_question',),
+                    ('subscribe_box_nl_subscribe_auth',),
+                    ('subscribe_box_nl_subscribe_anon',),
                 ),
             },
         ),
-        ('Asunto de newsletter', {'fields': (('newsletter_automatic_subject', ), ('newsletter_subject', ))}),
-        ('Metadatos', {'fields': (('html_title', ), ('meta_description', ))}),
+        ('Asunto de newsletter', {'fields': (('newsletter_automatic_subject',), ('newsletter_subject',))}),
+        ('Metadatos', {'fields': (('html_title',), ('meta_description',))}),
     )
-    raw_id_fields = ('full_width_cover_image', )
+    raw_id_fields = ('full_width_cover_image',)
 
 
 class CategoryHomeArticleForm(ModelForm):

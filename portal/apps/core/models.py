@@ -192,7 +192,9 @@ class Publication(Model):
         )
 
     def newsletter_preview_url(self):
-        """ Returns the url for the NL staff-allowed preview """
+        """
+        Returns the url for the NL staff-allowed preview
+        """
         try:
             # allow a custom-by-slug override url pattern defined by a third-party module
             result = reverse("publication-%s-nl-preview" % self.slug)
@@ -205,7 +207,9 @@ class Publication(Model):
         return result
 
     def profile_newsletter_name(self):
-        """ Returns the newsletter name to show in the edit profile view """
+        """
+        Returns the newsletter name to show in the edit profile view
+        """
         if self.slug in getattr(settings, "THEDAILY_EDIT_PROFILE_PUBLICATIONS_NL_USE_NAMEONLY", []):
             return self.name
         else:
@@ -710,7 +714,9 @@ class Category(Model):
         return reverse('home', kwargs={'domain_slug': self.slug})
 
     def newsletter_preview_url(self):
-        """ Returns the url for the NL staff-allowed preview """
+        """
+        Returns the url for the NL staff-allowed preview
+        """
         try:
             # allow a custom-by-slug override url pattern defined by a third-party module
             result = reverse("category-%s-nl-preview" % self.slug)
@@ -720,6 +726,18 @@ class Category(Model):
             except NoReverseMatch:
                 result = None
         return result
+
+    def profile_newsletter_name(self):
+        """
+        Returns the newsletter name to show in the edit profile view
+        TODO: instead of use a setting to customize (due an urgent req), this should be done like in Pubs, using a
+              new field "newsletter_name", this needs some time-work to propagate the impact of adding this new field,
+              because, for ex. nl subject should also use it prior to object name, etc.
+        """
+        if self.slug in getattr(settings, "THEDAILY_EDIT_PROFILE_CATEGORY_NL_USE_FROM_NAME", []):
+            return self.newsletter_from_name
+        else:
+            return self.name
 
     class Meta:
         verbose_name = 'área'
