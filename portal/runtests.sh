@@ -1,5 +1,5 @@
 #!/bin/sh
-TEST_MODULES="homev3 core signupwall"
+TEST_MODULES="homev3 core signupwall dashboard"
 SVACTIVE="systemctl is-active --quiet supervisord"
 # exit now if we are being sourced by another script or shell
 [[ "${#BASH_SOURCE[@]}" -gt "1" ]] && { return 0; }

@@ -1,9 +1,9 @@
 # coding=utf-8
 from django.db.models import Max
-
-from core.models import ArticleViewedBy
+from django.utils import timezone
 
 from apps import mongo_db
+from core.models import ArticleViewedBy
 
 
 def latest_activity(user):
@@ -21,7 +21,9 @@ def latest_activity(user):
             )
         )
         if latest_activity:
-            latest_activity = latest_activity[0]['latest_activity'].replace(microsecond=0)
+            latest_activity = timezone.localtime(
+                timezone.make_aware(latest_activity[0]['latest_activity'].replace(microsecond=0), timezone.utc)
+            )
     else:
         latest_activity = None
 
