@@ -1,5 +1,5 @@
 @import "variables";
-@import "../materialize/sass/components/variables";
+@import "utopia_materialize/variables";
 
 body.hard-paywall {
   background-color: #edf6f5;
@@ -55,7 +55,6 @@ body.hard-paywall {
       }
 
       &__article-card {
-        margin-top: 16px;
         background-color: white;
         border-radius: 24px;
         padding: 32px;

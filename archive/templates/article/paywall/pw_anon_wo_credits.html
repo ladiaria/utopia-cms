@@ -1,5 +1,11 @@
-{# DEPRECATED: this template is not used anymore #}
 {% load thedaily_tags %}
+
+{% comment "usage" %}
+  <div class="article-body article-body--faded">
+    {{ article.body|ldmarkup:article.id|truncatehtml:signupwall_truncate }}
+  </div>
+  {% include 'article/paywall/pw_anon_wo_credits.html' %}
+{% endcomment %}
 
 <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static">
   <div class="ld-snackbar__title">Para seguir leyendo ingresá o suscribite</div>

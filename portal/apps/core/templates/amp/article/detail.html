@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load bleach_tags static core_tags ldml tagging_tags crispy_forms_tags videologue_tags %}
+{% load bleach_tags static core_tags ldml tagging_tags crispy_forms_tags videologue_tags signupwall_tags %}
 
 {% autoescape on %}
   {% block page_title %}
@@ -225,7 +225,7 @@
         {# TODO: support to include a custom template name loaded in a ctx var, if given #}
         {% include 'article/pw_anon_restricted.html' %}
       </div>
-      <div amp-access="authenticated AND NOT subscriber AND access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
+      <div amp-access="authenticated AND signupwall_remaining_banner AND NOT subscriber AND access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         {% include 'article/pw_auth_with_credits.html' %}
       </div>
       <div amp-access="NOT authenticated AND access AND (article_allowed OR NOT article_restricted)" amp-access-hide>

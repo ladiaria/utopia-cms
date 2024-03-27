@@ -2,10 +2,13 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from inflect import engine
+
 from django.conf import settings
 from django.http import Http404, HttpResponseRedirect
 from django.urls import resolve, reverse
 from django.urls.exceptions import Resolver404
+from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
@@ -16,6 +19,10 @@ from thedaily.email_logic import limited_free_article_mail
 
 
 debug = getattr(settings, 'SIGNUPWALL_DEBUG', settings.DEBUG)
+
+
+def number_to_words(number):
+    return slugify(engine().number_to_words(number))
 
 
 def get_article_by_url_kwargs(kwargs):
@@ -135,7 +142,6 @@ class SignupwallMiddleware(MiddlewareMixin):
         user_is_authenticated = user.is_authenticated
 
         # ignore also signupwall if the user has subscriber_access to the article
-        restricted_article = article.is_restricted()
         if (
             article.is_public()
             or user_is_authenticated
@@ -152,9 +158,9 @@ class SignupwallMiddleware(MiddlewareMixin):
 
         # useful flag for a restricted_article, no credits should be spent because the user will not be allowed to read
         # this article.
-        request.restricted_article = restricted_article
+        request.restricted_article = restricted_article = article.is_restricted()
 
-        visitor, raise_signupwall = None, True
+        visitor = None
         # if not restricted article and log views is enabled, set the path_visited to this visitor.
         if not restricted_article and settings.CORE_LOG_ARTICLE_VIEWS and mongo_db is not None:
             visitor = get_or_create_visitor(request)
@@ -189,11 +195,11 @@ class SignupwallMiddleware(MiddlewareMixin):
             # anon users, they will face the signupwall (see note related in settings.py).
             articles_visited_count, credits = 1, settings.SIGNUPWALL_ANON_MAX_CREDITS
 
-        if raise_signupwall and user_is_authenticated:
+        if user_is_authenticated:
             if articles_visited_count == credits + 1:
                 limited_free_article_mail(user)
 
-        if raise_signupwall and (articles_visited_count > credits) or restricted_article:
+        if (articles_visited_count > credits) or restricted_article:
             if restricted_article:
                 request.signupwall = True
             else:
@@ -205,3 +211,11 @@ class SignupwallMiddleware(MiddlewareMixin):
                 return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
         else:
             request.credits = credits - articles_visited_count
+            request.signupwall_header = (
+                settings.SIGNUPWALL_HEADER_ENABLED
+                and user_is_authenticated
+                and request.credits >= 0
+                and not (settings.SIGNUPWALL_REMAINING_BANNER_ENABLED and user.subscriber.is_subscriber_any())
+            )
+            if request.signupwall_header:
+                request.remaining_articles_word = number_to_words(request.credits)

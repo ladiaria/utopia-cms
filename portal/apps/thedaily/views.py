@@ -50,6 +50,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.cache import never_cache, cache_control, cache_page
 from django.template import Engine, TemplateDoesNotExist
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
 
@@ -67,7 +68,10 @@ from utils.error_log import error_log
 from decorators import render_response
 
 from core.models import Publication, Category, Article, ArticleUrlHistory
-from signupwall.middleware import get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access
+from signupwall.middleware import (
+    get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access, number_to_words
+)
+from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
 from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState
 from .forms import (
@@ -1438,6 +1442,19 @@ def amp_access_authorization(request):
                 credits = MAX_CREDITS - articles_visited_count
                 result['access'] = article.is_public() or (credits >= 0)
                 result['credits'] = credits if credits > 0 else False
+                credits_eval = result['credits'] or 0
+                result["signupwall_header"] = settings.SIGNUPWALL_HEADER_ENABLED and credits_eval >= 0 and not (
+                    settings.SIGNUPWALL_REMAINING_BANNER_ENABLED and user.subscriber.is_subscriber_any()
+                )
+                if result["signupwall_header"]:
+                    result.update(
+                        {
+                            "remaining_articles_msg":
+                                render_to_string("remaining_articles_msg.html", {"credits": credits_eval}).strip(),
+                            "remaining_articles_content": remaining_articles_content(optional_value=credits_eval),
+                            "remaining_articles_word": number_to_words(credits_eval),
+                        }
+                    )
 
         else:
 
@@ -1447,6 +1464,9 @@ def amp_access_authorization(request):
             result['credits'] = bool(settings.SIGNUPWALL_ANON_MAX_CREDITS)
             if settings.AMP_DEBUG:
                 print('AMP DEBUG: session_key=%s, authorization_result=%s' % (get_session_key(request), result))
+
+        # NOTE: banner is rendered despite of setting for anon users
+        result["signupwall_remaining_banner"] = not authenticated or settings.SIGNUPWALL_REMAINING_BANNER_ENABLED
 
     response = HttpResponse(json.dumps(result), content_type="application/json")
     return set_amp_cors_headers(request, response)

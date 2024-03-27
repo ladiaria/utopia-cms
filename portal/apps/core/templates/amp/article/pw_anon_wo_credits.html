@@ -1,4 +1,4 @@
-{% load ldml core_tags thedaily_tags %}
+{% load thedaily_tags %}
 
 {% comment "we decided stop showing this truncated body to not give an impression of mocked content" %}
   <div class="article-body article-body--faded">{{ article.body|amp_ldmarkup:article.id|truncatehtml:signupwall_truncate }}</div>

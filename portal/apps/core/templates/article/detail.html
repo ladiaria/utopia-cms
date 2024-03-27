@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags %}
+{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags signupwall_tags %}
 
 {% block page_title %}{{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endblock %}
 
@@ -42,6 +42,12 @@
   <script type="text/javascript">
     $(function(){
       $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
+      {% if request.signupwall_header %}
+        $("#close-article-alert").on("click", function(){
+          $(this).parent().hide();
+          $("header").removeClass("with-article-counter-container");
+        });
+      {% endif %}
     });
   </script>
 {% endblock %}
@@ -63,6 +69,19 @@
 
 {% block main_open %}{% endblock %}
 
+{% block navbar %}
+  {% if request.signupwall_header %}
+    <div class="article-counter-container {{ request.remaining_articles_word }}-articles">
+      {% include "remaining_articles.html" %}
+    </div>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+
+{% block subscribe_notice %}
+  {# TODO: check when it should appear and use super #}
+{% endblock %}
+
 {% block page_header %}
   <div id="bn-module"></div>
   <div id="live_embed_event_notification"></div>
@@ -75,7 +94,7 @@
       {# TODO: apply this 'render_allowed' condition also in all places that render article's photos #}
       {% if photo_render_allowed %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 273 #}
+          <div>{# closed in line 297 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -102,7 +121,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 273 #}
+          {# missing close div here is closed correctly in line 297 #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -169,6 +188,11 @@
         {% endif %}
         {% if not article.articlecollection %}
           <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+          {% comment "conditions to show are not yet implemented" %}
+          <div class="chip-article-already-viewd">
+            <p>Artículo desbloqueado con tu cuenta gratuita. <a href="{% url 'subscribe_landing' %}">Suscribite para acceder sin límites</a></p>
+          </div>
+          {% endcomment %}
           {% if include_after_headline %}{% include include_after_headline %}{% endif %}
         {% endif %}
         {% if article.date_published %}
@@ -270,7 +294,7 @@
         {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
-        </div>{# opened in line 78 #}
+        </div>{# opened in line 97 #}
       {% endif %}
 
       {% if article.has_deck or article.has_lead %}
@@ -285,49 +309,19 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {# signupwall #}
+        {% if not request.signupwall %}{# closed in line 644 #}
 
-        {% if not user.is_authenticated %}
-          {# TODO: can be simplified regarding the comment inside next "else" branch #}
-
-          {% if not request.signupwall %}
-            {# Soft wall: Registro|Suscripción #}
-            {% if not article.public %}{% include 'article/paywall/pw_anon_with_credits.html' %}{% endif %}
-          {% else %}
-            {% comment "signupwall raised code cannot be reached anymore because now we redirect to another page" %}
-            <div class="article-body article-body--faded">
-              {{ article.body|ldmarkup:article.id|truncatehtml:signupwall_truncate }}
-            </div>
-            {% include 'article/paywall/pw_anon_wo_credits.html' %}
-            {% endcomment %}
-          {% endif %}
-
-        {% else %}
-
-          <!-- user is authenticated -->
-          {% if is_subscriber %}
-            <!-- user is subscriber -->
-          {% else %}
-            <!-- user is not subscriber -->
-            {# TODO: can be simplified regarding the comment inside next "else" branch #}
-            {% if not request.signupwall %}
+          {# signupwall banner #}
+          {% if signupwall_remaining_banner and not article.public %}
+            {% if not user.is_authenticated %}
+              {# Soft wall: Registro|Suscripción #}
+              {% include 'article/paywall/pw_anon_with_credits.html' %}
+            {% elif not is_subscriber %}
               {# Soft wall: Suscripción #}
-              {% if not article.public %}{% include 'article/paywall/pw_auth_with_credits.html' %}{% endif %}
-            {% else %}
-              {% comment "signupwall raised code cannot be reached anymore because now we redirect to another page" %}
-              <div class="article-body article-body--faded">
-                {{ article.body|ldmarkup:article.id|truncatehtml:signupwall_truncate }}
-              </div>
-              {% include 'article/paywall/pw_auth_wo_credits.html' %}
-              {% endcomment %}
+              {% include 'article/paywall/pw_auth_with_credits.html' %}
             {% endif %}
           {% endif %}
-
-        {% endif %}
-
-        {# END signupwall #}
-
-        {% if not request.signupwall %}{# closed in line 648 #}
+          {# END signupwall banner #}
 
           <div class="article-body paywalled-content">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
@@ -647,7 +641,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 328 #}
+        {% endif %}{# opened in line 312 #}
 
       {% else %}{# restricted content message #}
 
@@ -664,7 +658,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 794 #}
+    {% if not request.signupwall %}{# closed in line 790 #}
 
       {% if article.public %}
 
@@ -793,7 +787,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 665 #}
+    {% endif %}{# opened in line 661 #}
 
     {% block article_extra %}{% endblock %}
 

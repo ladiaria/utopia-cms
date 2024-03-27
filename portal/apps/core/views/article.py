@@ -43,10 +43,10 @@ from favit.models import Favorite
 
 from tagging.models import Tag
 from apps import mongo_db
+from signupwall.middleware import subscriber_access
 from decorators import decorate_if_no_auth, decorate_if_auth
 from core.forms import ReportErrorArticleForm, SendByEmailForm
 from core.models import Publication, Category, Article, ArticleUrlHistory
-from signupwall.middleware import subscriber_access
 
 
 standard_library.install_aliases()
@@ -213,22 +213,22 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'comments_count': comments_count,
         'publication': publication,
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
-        "signupwall_truncate": getattr(settings, "SIGNUPWALL_TRUNCATE_ARTICLE_CHARS", 100),
         "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
         'publication_newsletters':
             Publication.objects.filter(has_newsletter=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL),
         'date_published_use_main_publication': (
             publication
-            and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())),
+            and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())
+        ),
     }
 
-    if user_is_authenticated:
-        context.update(
-            {
-                'followed': article in following(request.user, Article),
-                'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
-            }
-        )
+    context.update(
+        {
+            'followed': article in following(request.user, Article),
+            'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
+            "signupwall_remaining_banner": settings.SIGNUPWALL_REMAINING_BANNER_ENABLED,
+        } if user_is_authenticated else {"signupwall_remaining_banner": settings.SIGNUPWALL_ENABLED}
+    )  # NOTE: banner is rendered despite of setting for anon users
 
     template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
     template = "article/detail"

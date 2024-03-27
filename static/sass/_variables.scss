@@ -1,8 +1,3 @@
-// @import "../materialize/sass/components/prefixer";
-// @import "../materialize/sass/components/mixins";
-@import "../materialize/sass/components/color";
-
-// ladiaria mixins
 @import "utopia_mixins";
 
 ///////////////////////////////////////////////////////////////////////////
@@ -42,8 +37,8 @@ $breakpoints: (
   large: 1200px
 );
 
-// Ajustes de alto y ancho de visual
-$view-full-height: calc(100vh - #{$line-height} * 2); // altura de visual menos ancho de una barra
+// Visual height and width adjustments
+$view-full-height: calc(100vh - #{$line-height} * 2); // visual height minus the width of a bar
 $view-full-width: 100vw;
-$view-image-title: calc(100vh - #{$line-height} * 4); // menos altura de barra menos alt titulo
+$view-image-title: calc(100vh - #{$line-height} * 4); // minus bar height minus title height
 $gridMinWidth: 1000px;

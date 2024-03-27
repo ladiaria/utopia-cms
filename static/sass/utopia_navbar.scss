@@ -195,7 +195,7 @@ nav ul a:hover {
 
         &:focus {
           width: calc(100% - 4rem);
-          background: color("grey", "lighten-4");
+          background: #f5f5f5;
 
           & ~ .mdi-navigation-close {
             visibility: visible;

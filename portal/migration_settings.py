@@ -405,10 +405,8 @@ CORE_ENABLE_RELATED_ARTICLES = True
 MONGODB_DATABASE = 'utopia_cms'
 MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
-# Change to false if the signupwall middleware is removed
-SIGNUPWALL_ENABLED = True
 SIGNUPWALL_MAX_CREDITS = 10
-SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: The implementation for values greater than 0 is not available yet
+SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: Implementation for values greater than 0 is not included
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = 'Nueva suscripción'
@@ -470,12 +468,14 @@ TINYMCE_DEFAULT_CONFIG = {
 AUTH_USER_EMAIL_UNIQUE = True
 AUTH_PROFILE_MODULE = 'thedaily.Subscriber'
 
-# login_required decorator redirects here
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/logged-in/'
+# TODO: use / check usage
+LOGIN_URL = '/usuarios/entrar/'  # login_required decorator redirects here
+LOGOUT_URL = '/usuarios/salir/'
+SIGNUP_URL = '/usuarios/registro/'
+LOGIN_REDIRECT_URL = '/'
 LOGIN_ERROR_URL = '/usuarios/error/login/'
 
-MESSAGETAGS = {messages.ERROR: 'danger', }
+MESSAGETAGS = {messages.ERROR: 'danger'}
 
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.google.GoogleOAuth2',
@@ -524,15 +524,28 @@ CRM_UPDATE_USER_ENABLED = False
 PWA_SERVICE_WORKER_TEMPLATE = 'core/templates/sw/serviceworker.js'
 PWA_SERVICE_WORKER_VERSION = 1
 
+# defaults that will be assigned after local settings import
+SIGNUPWALL_ENABLED = None
+SIGNUPWALL_HEADER_ENABLED = False
+SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
 
 # Override previous settings with values in local_migration_settings.py settings file
 from local_migration_settings import *  # noqa
 
+
 SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
 CSRF_TRUSTED_ORIGINS = ['%s://%s' % (URL_SCHEME, SITE_DOMAIN)]
 ROBOTS_SITEMAP_URLS = [SITE_URL + 'sitemap.xml']
 LOCALE_NAME = "%s_%s.%s" % (LOCAL_LANG, LOCAL_COUNTRY, DEFAULT_CHARSET)
+
+# signupwall overrided/defaults
+if SIGNUPWALL_ENABLED is None:
+    SIGNUPWALL_ENABLED = "signupwall.middleware.SignupwallMiddleware" in MIDDLEWARE
+# header enabled only if signupwall is enabled and header itself was set to True in local_settings
+SIGNUPWALL_HEADER_ENABLED = SIGNUPWALL_ENABLED and SIGNUPWALL_HEADER_ENABLED
+# banner enabled if signupwall is enabled and the banner itself was not set to False in local_setings
+SIGNUPWALL_REMAINING_BANNER_ENABLED = SIGNUPWALL_ENABLED and SIGNUPWALL_REMAINING_BANNER_ENABLED
 
 # celery task queues, if not overrided, we populate with Queue objects based on default or overrided CELERY_QUEUES dict
 if not CELERY_TASK_QUEUES and CELERY_QUEUES and isinstance(CELERY_QUEUES, dict):

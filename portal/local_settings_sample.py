@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from settings import INSTALLED_APPS
+from settings import INSTALLED_APPS, MIDDLEWARE
 
 
 INTERNAL_IPS = ('127.0.0.1', '0.0.0.0', '*')
@@ -13,6 +13,11 @@ RESTRICT_ACCESS = False
 RESTRICT_ACCESS_LOGIN_URL = '/acceso-beep/'
 SECRET_KEY = ''  # fill with any value as described in INSTALL.md
 
+if DEBUG:
+    MIDDLEWARE = list(MIDDLEWARE)
+    MIDDLEWARE.insert(5, "corsheaders.middleware.CorsMiddleware")
+    MIDDLEWARE = tuple(MIDDLEWARE)
+
 # Site settings
 CLOSED_SITE = False  # TODO: this feature should be reviewed (its middlewares are not ready for this Django version.
 SITE_DOMAIN = "yoogle.com"  # Don't use this domain in production, use a "real" one you own
@@ -24,7 +29,6 @@ COMPRESS_ENABLED = True
 KEY_PREFIX = SITE_DOMAIN  # see: https://docs.djangoproject.com/en/4.1/ref/settings/#key-prefix
 
 if CLOSED_SITE or RESTRICT_ACCESS:
-    from settings import MIDDLEWARE
     INSTALLED_APPS += ('closed_site', )
     MIDDLEWARE = (
         'closed_site.middleware.ClosedSiteMiddleware',
@@ -54,12 +58,7 @@ TIME_FORMAT = 'H:i:s'
 DATETIME_FORMAT = '%s %s' % (DATE_FORMAT, TIME_FORMAT)
 SHORT_DATE_FORMAT = 'd/m/Y'
 
-LOGIN_URL = '/usuarios/entrar/'
-LOGOUT_URL = '/usuarios/salir/'
-SIGNUP_URL = '/usuarios/registro/'
-LOGIN_REDIRECT_URL = '/'
-
-# EMAIL
+# email
 EMAIL_SUBJECT_PREFIX = '[cms] '
 DEFAULT_FROM_EMAIL = 'cms dev <cms@example.com>'  # change to a real mailbox for non-dev deployments
 EMAIL_HOST = 'localhost'

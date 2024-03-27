@@ -630,8 +630,9 @@ class ExteriorSubscription(Subscription):
 
 
 class PollAnswer(Model):
-    """General purpose document-answer for polls"""
-
+    """
+    General purpose document-answer for polls
+    """
     document = CharField('documento', max_length=50, unique=True)
     answer = CharField('respuesta', max_length=16)
 
@@ -643,6 +644,20 @@ class UsersApiSession(Model):
     value to allow only a certain number of requests per-user with a different
     user device id (udid), for ex. 3. No clean-session policy is defined yet.
     """
-
     user = ForeignKey(User, on_delete=CASCADE, related_name='api_sessions', verbose_name='usuario')
     udid = CharField(max_length=16)
+
+
+class RemainingContent(Model):
+    """
+    Stores the content to be rendered in signupwall HTML components depending on the user's remaining "credits"
+    """
+    remaining_articles = PositiveSmallIntegerField(unique=True)
+    template_content = TextField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "remaining content"
+        verbose_name_plural = "remaining contents"
+
+    def __str__(self):
+        return "content for %d credits remaining" % self.remaining_articles

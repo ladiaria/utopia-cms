@@ -19,9 +19,10 @@ class SignupwallAMPTestCase(LiveServerSeleniumTestCase):
     fixtures = ['test']
 
     def get_title_displayed(self):
-        return "".join(
-            [e.text for e in self.selenium.find_elements(By.CSS_SELECTOR, ".ld-snackbar__title") if e.is_displayed()]
-        )
+        result = []
+        for css_sel in (".signupwall-header p", ".ld-snackbar__title"):
+            result.extend([e.text for e in self.selenium.find_elements(By.CSS_SELECTOR, css_sel) if e.is_displayed()])
+        return "".join(result)
 
     def login(self, user, password):
         server_url = settings.SITE_URL

@@ -5,6 +5,7 @@ bleach-whitelist
 django-activity-stream==1.4.2
 django-bleach==3.0.1
 freezegun
+inflect
 social-auth-app-django
 social-auth-core
 pymemcache==4.0.0
@@ -18,6 +19,7 @@ markdownify
 martor==1.6.26
 mutagen
 crispy-forms-materialize
+django-cors-headers
 django-user-agents
 sorl-thumbnail==12.9.0
 django-extensions==3.2.1

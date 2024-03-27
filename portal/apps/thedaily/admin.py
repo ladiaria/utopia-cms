@@ -24,6 +24,7 @@ from .models import (
     EditionDownload,
     SubscriptionPrices,
     OAuthState,
+    RemainingContent,
 )
 from .utils import collector_analysis
 from .exceptions import UpdateCrmEx
@@ -188,6 +189,10 @@ class SubscriptionPricesAdmin(ModelAdmin):
     list_editable = ('subscription_type', 'price', 'order', 'auth_group', 'publication')
 
 
+class RemainingContentAdmin(ModelAdmin):
+    list_display = ("remaining_articles", "template_content")
+
+
 # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
@@ -203,3 +208,4 @@ except AlreadyRegistered:
 site.register(SubscriberEditionDownloads)
 site.register(EditionDownload)
 site.register(SubscriptionPrices, SubscriptionPricesAdmin)
+site.register(RemainingContent, RemainingContentAdmin)

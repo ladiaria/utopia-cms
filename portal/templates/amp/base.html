@@ -1,4 +1,4 @@
-{% load static core_tags homev3_tags %}
+{% load static homev3_tags %}
 
 <!doctype html>
 <html ⚡ class="ld-amp" lang="es-UY">
@@ -570,6 +570,42 @@
       .mid-article-notice .ut-btn-outline { background: transparent; border: 2px solid #262626; padding: 8px 18px; color: #262626; font-family: "Roboto",sans-serif; font-size: 15px; line-height: 20px; text-transform: uppercase; border-radius: 100px; display: inline-block; outline: none;
       cursor: pointer; text-align: center; text-decoration: none; vertical-align: middle; font-weight: bold; }
       .mid-article-notice .ut-btn.disabled { font-family: roboto,sans-serif; font-size: 15px; font-weight: 700; line-height: 20px; text-transform: uppercase; color: #fff; padding: 10px 20px; background: #262626; border-radius: 100px; display: inline-block; outline: none; text-align: center; text-decoration: none; vertical-align: middle; text-decoration: none; border: none; transition: background .35s ease,color .35s ease,box-shadow .35s ease; }
+
+      .signupwall-header {
+        display: flex;
+        padding: 16px;
+        justify-content: center;
+        background: #8ebbff;
+      }
+      .signupwall-header p {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .signupwall-header button {
+        position: absolute;
+        right: 48px;
+        background: transparent;
+        border: none;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      @media (max-width: 280px) {
+        .signupwall-header {
+          flex-direction: column;
+          align-items: center;
+        }
+      }
+      @media (max-width: 767px) {
+        .signupwall-header {
+          padding: 8px 16px;
+        }
+        .signupwall-header button {
+          display: none;
+        }
+      }
     </style>
     <!-- End CSS -->
   </head>
@@ -578,6 +614,20 @@
     {% if GTM_AMP_CONTAINER_ID %}
       <amp-analytics config="https://www.googletagmanager.com/amp.json?id={{ GTM_AMP_CONTAINER_ID }}&gtm.url=SOURCE_URL" data-credentials="include"></amp-analytics>
     {% endif %}
+
+    {% if not article.public %}
+      <header id="signupwall-header" amp-access="signupwall_header AND access">
+        <template amp-access-template type="amp-mustache">
+          <div class="signupwall-header {% templatetag openvariable %} remaining_articles_word {% templatetag closevariable %}-articles">
+            {% templatetag openvariable %}{ remaining_articles_msg }{% templatetag closevariable %}
+            {% include "../remaining_articles_separator.html" %}
+            {% templatetag openvariable %}{ remaining_articles_content }{% templatetag closevariable %}
+            {% include "../remaining_articles_close.html" with extra_args='on="tap:signupwall-header.hide"' %}
+          </div>
+        </template>
+      </header>
+    {% endif %}
+
     <header amp-access="NOT authenticated" amp-access-hide>
       {% render_header %}
       {% if extra_header_template %}{% include extra_header_template %}{% endif %}
