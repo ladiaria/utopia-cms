@@ -302,11 +302,12 @@ class Subscriber(Model):
 
 def updatecrmuser(contact_id, field, value):
     data = {"contact_id": contact_id, "field": field, "value": value}
+    # TODO: next lines can be encapsulated in a new function (DRY), then call also from this module lines ~ 402:409
     if settings.CRM_UPDATE_USER_ENABLED:
         update_url = getattr(settings, "CRM_API_UPDATE_USER_URI", None)
-        if update_url:
-            r = requests.post(update_url, data=data)
-            r.raise_for_status()
+        api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+        if update_url and api_key:
+            requests.post(update_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
 
 
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
@@ -399,9 +400,12 @@ def user_pre_save(sender, instance, **kwargs):
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
             update_url = getattr(settings, "CRM_API_UPDATE_USER_URI", None)
-            if update_url:
+            api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+            if update_url and api_key:
                 requests.post(
-                    update_url, data={'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
+                    update_url,
+                    headers={'Authorization': 'Api-Key ' + api_key},
+                    data={'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
                 ).raise_for_status()
             else:
                 raise UpdateCrmEx(err_msg)

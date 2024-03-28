@@ -116,6 +116,7 @@ INSTALLED_APPS = (
     'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
+    "rest_framework_api_key",
     'compressor',
     'favit',
     'social_django',
