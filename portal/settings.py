@@ -541,6 +541,9 @@ BLEACH_STRIP_TAGS = True
 CRM_UPDATE_SUBSCRIBER_FIELDS = {}
 # Online sync User fields with CRM disabled by default
 CRM_UPDATE_USER_ENABLED = False
+# CRM API urls will be assigned after local_settings import, if not overrided
+CRM_API_BASE_URI = None
+CRM_API_UPDATE_USER_URI = None
 
 # PWA
 PWA_SERVICE_WORKER_TEMPLATE = 'core/templates/sw/serviceworker.js'
@@ -556,6 +559,7 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+
 
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
@@ -583,3 +587,7 @@ if FREEZE_TIME:
     freezer.start()
 
 ABSOLUTE_URL_OVERRIDES = {'auth.user': SITE_URL + "usuarios/perfil/editar/"}
+
+# CRM API urls
+if CRM_API_BASE_URI:
+    CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + 'updateuserweb/')

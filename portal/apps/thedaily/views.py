@@ -26,6 +26,7 @@ from rest_framework_api_key.permissions import HasAPIKey
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import IntegrityError
+from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.core.mail import send_mail, mail_admins, mail_managers
 from django.urls import reverse
@@ -1525,47 +1526,46 @@ def amp_access_pingback(request):
 
 
 @never_cache
-@csrf_exempt
+@api_view(['POST'])
+@permission_classes([HasAPIKey])
 def users_api(request):
     max_device_msg = 'Ha superado la cantidad de dispositivos permitidos'
-    if request.method == 'POST':
-        try:
-            email = request.POST['email']
-            if not email or request.POST['ldsocial_users_api_key'] != settings.LDSOCIAL_USERS_API_KEY:
-                return HttpResponseForbidden()
-            password = request.POST['password']
-            udid = request.POST.get('UDID')
-            user = User.objects.get(email=email)
-            user = authenticate(username=user.username, password=password)
-            if user is not None:
-                if udid:
-                    sessions = UsersApiSession.objects.filter(user=user)
-                    if sessions.count() < settings.MAX_USERS_API_SESSIONS:
-                        UsersApiSession.objects.get_or_create(user=user, udid=udid)
-                    elif not sessions.filter(udid=udid):
-                        return HttpResponseBadRequest(max_device_msg)
-                try:
-                    is_subscriber = user.subscriber.is_subscriber()
-                    uuid = user.subscriber.id
-                except Subscriber.DoesNotExist:
-                    is_subscriber, uuid = False, None
-            else:
+    try:
+        email = request.POST['email']
+        if not email:
+            return HttpResponseForbidden()
+        password = request.POST['password']
+        udid = request.POST.get('UDID')
+        user = User.objects.get(email=email)
+        user = authenticate(username=user.username, password=password)
+        if user is not None:
+            if udid:
+                sessions = UsersApiSession.objects.filter(user=user)
+                if sessions.count() < settings.MAX_USERS_API_SESSIONS:
+                    UsersApiSession.objects.get_or_create(user=user, udid=udid)
+                elif not sessions.filter(udid=udid):
+                    return HttpResponseBadRequest(max_device_msg)
+            try:
+                is_subscriber = user.subscriber.is_subscriber()
+                uuid = user.subscriber.id
+            except Subscriber.DoesNotExist:
                 is_subscriber, uuid = False, None
-            return render(
-                request,
-                'users_api.xml',
-                {'response': str(is_subscriber).lower(), 'uuid': uuid},
-                content_type='text/xml',
-            )
-        except KeyError:
-            msg = 'Parameter missing'
-        except User.DoesNotExist:
-            msg = 'User does not exist'
-        except MultipleObjectsReturned:
-            msg = 'Multiple email in users'
-            mail_managers(msg, email)
-        return HttpResponseBadRequest(msg)
-    raise Http404
+        else:
+            is_subscriber, uuid = False, None
+        return render(
+            request,
+            'users_api.xml',
+            {'response': str(is_subscriber).lower(), 'uuid': uuid},
+            content_type='text/xml',
+        )
+    except KeyError:
+        msg = 'Parameter missing'
+    except User.DoesNotExist:
+        msg = 'User does not exist'
+    except MultipleObjectsReturned:
+        msg = 'Multiple email in users'
+        mail_managers(msg, email)
+    return HttpResponseBadRequest(msg)
 
 
 @never_cache
@@ -1611,30 +1611,25 @@ def email_check_api(request):
 
 
 @never_cache
-@csrf_exempt
-@require_POST
+@api_view(['POST'])
+@permission_classes([HasAPIKey])
 def most_read_api(request):
     """
-    Takes contact_id and email from POST to check if there is any other user
-    with the requested email. If it doesn't exist, it returns OK. Then, if it
-    exists, it checks if it's the same user that should have that email.
-    If it's not, it returns an error message.
+    Returns the top 5 most read articles filtered with the condition that the user with the email given, has also read
+    them.
     """
-    from django.db.models import Count
     try:
 
         email = request.POST['email']
 
-        if not email or request.POST['ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
+        if not email:
             return HttpResponseForbidden()
 
-        user = User.objects.get(email=email)
-
-        # get top five most read articles by the user
-        most_read_articles = Article.objects.filter(viewed_by=user).values(
-            'headline',
-            'url_path',
-            'date_created'
+        # returns the top five most read articles filtered by the condition that user
+        most_read_articles = Article.objects.filter(
+            viewed_by=User.objects.get(email=email)
+        ).values(
+            'headline', 'url_path', 'date_created'
         ).annotate(total_views=Count("articleviewedby")).order_by("-total_views")[:5]
 
     except KeyError:
@@ -1645,20 +1640,19 @@ def most_read_api(request):
         return Http404("Usuario no encontrado")
     except MultipleObjectsReturned:
         return Http404("Multiples usuarios encontrados con el mismo email")
-    return HttpResponse(most_read_articles, status=200)
+    return HttpResponse(most_read_articles)
 
 
 @never_cache
-@csrf_exempt
-@require_POST
+@api_view(['POST'])
+@permission_classes([HasAPIKey])
 def last_read_api(request):
     """
     Takes email from POST and get the five latest read articles for the given user
     """
     try:
-        email = request.POST.get('email')
-        api_key = request.POST.get('ldsocial_api_key')
-        if not email or api_key != settings.CRM_UPDATE_USER_API_KEY:
+        email = request.POST['email']
+        if not email:
             return HttpResponseForbidden()
 
         user = User.objects.get(email=email)
@@ -1687,17 +1681,16 @@ def last_read_api(request):
 
 
 @never_cache
-@csrf_exempt
-@require_POST
+@api_view(['POST'])
+@permission_classes([HasAPIKey])
 def read_articles_percentage_api(request):
     """
     Takes email from POST and get the five latest read articles categories expressed in percentages
     This take in consideration the articles read in the last 6 months
     """
     try:
-        email = request.POST.get('email')
-        api_key = request.POST.get('ldsocial_api_key')
-        if not email or api_key != settings.CRM_UPDATE_USER_API_KEY:
+        email = request.POST['email']
+        if not email:
             return HttpResponseForbidden()
 
         user = User.objects.get(email=email)
@@ -1752,13 +1745,13 @@ def read_articles_percentage_api(request):
 
 
 @never_cache
-@csrf_exempt
-@require_POST
+@api_view(['POST'])
+@permission_classes([HasAPIKey])
 def user_comments_api(request):
     result = {'error': None}
     try:
         email = request.POST['email']
-        if not email or request.POST['ldsocial_api_key'] != settings.CRM_UPDATE_USER_API_KEY:
+        if not email:
             return HttpResponseForbidden()
         talk_url = getattr(settings, 'TALK_URL', None)
         if talk_url:
@@ -1787,20 +1780,19 @@ def user_comments_api(request):
 
 
 @never_cache
-@csrf_exempt
+@api_view(['POST'])
+@permission_classes([HasAPIKey])
 def custom_api(request):
-    if request.method == 'POST':
-        msg = ''
-        try:
-            operation = request.POST['operation']
-            if not operation or request.POST['ldsocial_users_api_key'] != settings.LDSOCIAL_USERS_API_KEY:
-                return HttpResponseForbidden()
-            os.system(settings.LDSOCIAL_CUSTOM_API_CMD[operation])
-            return HttpResponse()
-        except KeyError:
-            msg = 'Parameter or setting missing'
-        return HttpResponseBadRequest(msg)
-    raise Http404
+    msg = ''
+    try:
+        operation = request.POST['operation']
+        if not operation:
+            return HttpResponseForbidden()
+        os.system(settings.LDSOCIAL_CUSTOM_API_CMD[operation])
+        return HttpResponse()
+    except KeyError:
+        msg = 'Parameter missing'
+    return HttpResponseBadRequest(msg)
 
 
 @never_cache

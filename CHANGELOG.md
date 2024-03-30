@@ -1,9 +1,12 @@
-# version 0.4.8 (2024-03-??)
+# version 0.4.8 (2024-04-??)
 
 - paywall
 - celery
 - google oauth fixes
 - terms and conds improvements
+- api-keys
+- crm integration
+- mkdocs
 - ... TODO: describe each and find more
 
 # version 0.4.7 (2023-12-31)

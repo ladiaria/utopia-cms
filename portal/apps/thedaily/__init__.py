@@ -5,7 +5,7 @@ from django.core.checks import Warning, register
 @register()
 def conf_check(app_configs, **kwargs):
     errors = []
-    if settings.CRM_UPDATE_USER_ENABLED and not getattr(settings, "CRM_API_UPDATE_USER_URI", None):
+    if settings.CRM_UPDATE_USER_ENABLED and not settings.CRM_API_UPDATE_USER_URI:
         errors.append(
             Warning(
                 'CRM_UPDATE_USER_ENABLED is True but no CRM_API_UPDATE_USER_URI was set.',

@@ -531,6 +531,7 @@ SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
 
+
 # Override previous settings with values in local_migration_settings.py settings file
 from local_migration_settings import *  # noqa
 

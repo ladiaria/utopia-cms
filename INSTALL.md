@@ -111,3 +111,8 @@ Then create your nginx conf file using the sample provided (edit it after copy, 
 - Login with superuser created before, edit the default site domain and create a publication with the same slug to the one configured in `settings.DEFAULT_PUB`:
 
 Point your preferred web browser to https://yoogle.com/admin/sites/site/1/ and you will be redirected to the Django's admin site login page, after login you will be redirected again to the default site change form, change its domain to `yoogle.com` and optionally also change its display name to any name you want, save the changes and then go to https://yoogle.com/admin/core/publication/add/ fill the form to create the new publication, save it and then you will be able to see the home page working at https://yoogle.com/.
+
+
+## Further reading
+
+Starting from now (just before the v0.4.8 release) there will be a documentation site, have a [look](docs/index.md), it was started with a topic covering Utopía CMS and CRM integration.
