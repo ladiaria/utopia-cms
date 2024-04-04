@@ -1,10 +1,10 @@
 from time import time
 import operator
 from copy import copy
-from datetime import date, timedelta
 
 from django.conf import settings
 from django.template.defaultfilters import slugify
+from django.utils.timezone import now, timedelta
 
 from .models import Category, ArticleRel, Section, Edition, CategoryHome, CategoryHomeArticle
 
@@ -52,7 +52,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
         if settings.DEBUG:
             result.append('DEBUG: update_category_home begin')
 
-        lowest_date, max_date = Edition.objects.last().date_published, date.today()
+        lowest_date, max_date = Edition.objects.last().date_published, now().date()
         days_step = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DAYS_STEP', 30)
         exclude_tags = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_TAGS', {})
         min_date_iter, max_date_iter, stop = max_date - timedelta(days_step), max_date, False

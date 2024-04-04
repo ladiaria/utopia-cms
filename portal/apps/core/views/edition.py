@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from datetime import date, timedelta
 
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
@@ -11,6 +10,7 @@ from django.views.decorators.cache import never_cache
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
+from django.utils.timezone import now, datetime, timedelta
 from django.utils.safestring import mark_safe
 
 from decorators import render_response
@@ -77,7 +77,7 @@ def get_download_validation_url(edition, user):
 @login_required
 def edition_download(request, publication_slug, year, month, day, filename):
     try:
-        date_published = date(int(year), int(month), int(day))
+        date_published = datetime(int(year), int(month), int(day)).date()
     except ValueError:
         raise Http404
     edition = get_object_or_404(Edition, publication__slug=publication_slug, date_published=date_published)
@@ -95,7 +95,7 @@ def edition_download(request, publication_slug, year, month, day, filename):
             and getattr(request.user.subscriber, publication_slug + '_pdf', False)
         )
     ):
-        if request.user.is_superuser or (date.today() - timedelta(70) < date_published):
+        if request.user.is_superuser or (now().date() - timedelta(70) < date_published):
             return (
                 edition
                 if edition.pdf.name.endswith(filename)

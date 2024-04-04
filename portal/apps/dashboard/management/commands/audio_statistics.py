@@ -2,12 +2,12 @@
 import os
 from os.path import join
 from csv import writer
-from datetime import date, datetime, timedelta
 
 from progress.bar import Bar
 
-from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
+from django.utils.timezone import now, datetime, timedelta
 
 from core.models import Article
 
@@ -63,7 +63,7 @@ class Command(BaseCommand):
         if (from_date or to_date) and not out_prefix:
             raise CommandError('out-prefix should be given when any filter date option is given')
 
-        this_month_first = date.today().replace(day=1)
+        this_month_first = now().date().replace(day=1)
         last_month = this_month_first - timedelta(1)
         last_month_first = datetime.combine(last_month.replace(day=1), datetime.min.time())
         month_before_last = last_month_first - timedelta(1)

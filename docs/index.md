@@ -12,13 +12,13 @@ This is an skel of steps that we will describe better on next commits, but is a 
 
 1. Install both projects, Utopía CRM and CMS, following the INSTALL.md docs in the root of each, and after having both systems up and running with admin access in front-end, and also access to modify the "local settings", continue to next step.
 2. Configure the url of each one in the other:
-    - In the `local_settings.py` of `utopia-crm` assign the CMS root url in the setting `LDSOCIAL_URL`, example:
+    - In CMS `local_settings.py` assign the CMS root url in the setting `LDSOCIAL_URL`, example:
 
         ```
         LDSOCIAL_URL = "https://yoogle.com/"
         ```
 
-    - In the `local_settings.py` of `utopia-cms` assign the CRM API base url in the setting `CRM_API_BASE_URI`, example:
+    - In CMS `local_settings.py` assign the CRM API base url in the setting `CRM_API_BASE_URI`, example:
 
         ```
         CRM_API_BASE_URI = 'http://localhost:8000/api/'
@@ -26,30 +26,31 @@ This is an skel of steps that we will describe better on next commits, but is a 
 
 3. On each django admin site, generate the API-Key to set in the local settings of the other project, the steps to follow are identically on each admin site, follow the [djangorestframework-api-key docs](https://florimondmanca.github.io/djangorestframework-api-key/guide/#creating-and-managing-api-keys) to obtain both keys and then assign each one using this mapping:
 
-    - The key generated in the CMS must be set in the `LDSOCIAL_API_KEY` variable of the CRM `local_settings.py` file, example:
+    - The key generated in the CMS must be assigned to the `LDSOCIAL_API_KEY` variable in CRM `local_settings.py`, example:
 
         ```
         LDSOCIAL_API_KEY = "aTdKvX2p.qnqGZt6DYyJ8w8o5RsS15tF3eDI6Q8W0"
         ```
 
-    - Do the same in the other admin site and assign the new second key to the setting `CRM_UPDATE_USER_API_KEY` in the CMS `local_settings.py` file, example:
+    - Do the same in the other admin site and assign the key to the `CRM_UPDATE_USER_API_KEY` variable in CMS `local_settings.py`, example:
 
         ```
         CRM_UPDATE_USER_API_KEY = "uK9DmR4s.W3ZtF6y1nA3eD5gH7jK9mP1qRW3ZtF6y"
         ```
 
 4. Enable the integration on each project assigning `True` to this local settings variables:
-   In the CMS local_settings.py file:
 
-    ```
-    CRM_UPDATE_USER_ENABLED = True
-    ```
+    - In CMS `local_settings.py`:
 
-    In the CRM local_settings.py file:
+        ```
+        CRM_UPDATE_USER_ENABLED = True
+        ```
 
-    ```
-    WEB_UPDATE_USER_ENABLED = True
-    ```
+    - In CRM `local_settings.py`:
+
+        ```
+        WEB_UPDATE_USER_ENABLED = True
+        ```
 
 5. Restart both servers and test the integration creating Users in CMS matching Contacts in CRM with the same email, then for example, when email is changed in one project, the change will be also performed in the other system, take a look also in the `contact_id` field of CMS Subscribers (`thedaily.models.Subscriber.contact_id) this is the "link" metadata with more precedence used by the apis who sync any object with its respective "pair".
 

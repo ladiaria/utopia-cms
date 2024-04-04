@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import datetime
+from star_ratings.models import Rating
 
 from django.conf import settings
 from django.db.models import CASCADE
@@ -11,12 +11,10 @@ from django.db.models.fields import DateTimeField, SlugField, PositiveSmallInteg
 from django.db.models.fields.files import ImageField
 from django.urls import reverse
 from django.template.loader import render_to_string
-from django.utils.datetime_safe import date
+from django.utils.timezone import datetime, now
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
-
-from star_ratings.models import Rating
 
 from core.models import CT
 
@@ -29,7 +27,7 @@ class CategoriaEvento(Model):
     slug = SlugField(db_index=True)
 
     def current_events(self):
-        today_min = datetime.datetime.combine(date.today(), datetime.time.min)
+        today_min = datetime.combine(now().date(), datetime.min.time())
         return self.eventobase_set.select_related().order_by('start').filter(end__gte=today_min)[:20]
 
     def __str__(self):

@@ -97,7 +97,7 @@ def search(request, token=''):
                     r = s.execute()
                     total = r.hits.total.value
                     # ES hits cannot be paginated with the same django Paginator class, we need to take the results
-                    # for the page and simulate the dajngo pagination using a simple range list.
+                    # for the page and simulate the Django pagination using a simple range list.
                     page_results, matches_query = _page_results(page, s, total), list(range(total))
             except Exception as exc:
                 if settings.DEBUG:

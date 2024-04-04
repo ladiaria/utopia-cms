@@ -1,4 +1,8 @@
+from os.path import join
+
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
 
 # keep commented according lines to use chrome or firefox:
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -75,6 +79,13 @@ class LiveServerSeleniumTestCase(LiveServerTestCase):
         current_site.domain = settings.SITE_DOMAIN
         current_site.save()
         return current_site
+
+    def take_screenshot_before_pay(self, img_name, img_dir="/tmp"):
+        try:
+            self.selenium.find_element(by=By.ID, value="main-content").screenshot(join(img_dir, img_name + ".png"))
+        except NoSuchElementException as exc:
+            if settings.DEBUG:
+                print("WARNING: Screenshot not taken (%s)" % exc)
 
     def jsclick(self, jquery_selector):
         self.selenium.execute_script('$("%s").trigger("click")' % jquery_selector)

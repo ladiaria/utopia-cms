@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from events.models import Event
 
 from django.template import Node, Library, Variable, TemplateSyntaxError
+from django.utils.timezone import now
 
-from datetime import date
+from ..models import Event
+
 
 register = Library()
 
@@ -39,7 +40,7 @@ class LatestEventsNode(Node):
         self.keyword = keyword
 
     def render(self, context):
-        events = Event.objects.filter(date__gte=date.today())[:self.how_many]
+        events = Event.objects.filter(date__gte=now().date())[:self.how_many]
         context.update({self.keyword: events})
         return ''
 

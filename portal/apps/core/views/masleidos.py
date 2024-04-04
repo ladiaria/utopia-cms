@@ -1,10 +1,9 @@
 from __future__ import unicode_literals
 
-from datetime import date, timedelta
-
 from django.conf import settings
 from django.db.models.aggregates import Sum
 from django.views.decorators.cache import never_cache
+from django.utils.timezone import now, timedelta
 
 from decorators import render_response
 
@@ -20,7 +19,7 @@ def mas_leidos(days=1, cover=False, limit=10):
     If cover is True, articles in satirical sections are excluded. (Issue4910).
     Rare but possible: exclude articles with an empty slug because they will raise exception when computing their urls.
     """
-    desde, more_exclude_kwargs = date.today() - timedelta(days), {}
+    desde, more_exclude_kwargs = now().date() - timedelta(days), {}
     if cover:
         more_exclude_kwargs['article__sections__slug__in'] = getattr(settings, 'CORE_SATIRICAL_SECTIONS', ())
     return [
@@ -35,7 +34,7 @@ def mas_leidos(days=1, cover=False, limit=10):
 
 
 def mas_leidos_daily(cover=False, limit=None):
-    days_ago = 1 if date.today().isoweekday() < 7 else 2
+    days_ago = 1 if now().date().isoweekday() < 7 else 2
     return mas_leidos(days_ago, cover, limit) if limit else mas_leidos(days_ago, cover)
 
 

@@ -3,12 +3,12 @@ from __future__ import division
 import os
 from os.path import join
 from csv import writer
-from datetime import datetime, date, timedelta
 from progress.bar import Bar
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Sum
+from django.utils.timezone import datetime, timedelta, now
 
 from core.models import Article
 
@@ -39,7 +39,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         articles_views, out_prefix = {}, options.get('out-prefix')
         subscribers_only = options.get("subscribers-only")
-        this_month_first = date.today().replace(day=1)
+        this_month_first = now().date().replace(day=1)
         last_month = this_month_first - timedelta(1)
         last_month_first = datetime.combine(last_month.replace(day=1), datetime.min.time())
         month_before_last = last_month_first - timedelta(1)

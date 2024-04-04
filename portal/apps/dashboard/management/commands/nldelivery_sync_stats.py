@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 import sys
 import time
-from datetime import date, datetime, timedelta
 import logging
 
 from google.oauth2 import service_account
@@ -12,6 +11,7 @@ from google.analytics import data_v1beta
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.utils.timezone import now, datetime, timedelta
 
 from dashboard.models import NewsletterDelivery
 
@@ -93,7 +93,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         start_date, end_date, verbosity = options.get('start_date'), options.get('end_date'), options.get('verbosity')
-        campaign_arg, today, empty_count, no_sync = options.get('campaign'), date.today(), 0, options.get('no_sync')
+        campaign_arg, empty_count, no_sync = options.get('campaign'), 0, options.get('no_sync')
+        today = now().date()
 
         # log
         log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S')

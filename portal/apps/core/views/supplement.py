@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from datetime import date
-from core.models import Supplement
-
-from decorators import render_response
 
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
 from django.shortcuts import get_object_or_404
 from django.views.decorators.cache import never_cache
+from django.utils.timezone import now
+
+from decorators import render_response
+from core.models import Supplement
+
 
 to_response = render_response('core/templates/supplement/')
 
@@ -43,5 +44,5 @@ def supplement_download(request, supplement_slug, year, month, day):
 def supplement_email(request):
     return (
         'supplement_email.html',
-        {'supplement': get_object_or_404(Supplement, date_published=date.today(), public=True)},
+        {'supplement': get_object_or_404(Supplement, date_published=now().date(), public=True)},
     )

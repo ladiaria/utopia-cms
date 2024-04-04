@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from .models import Event, Activity
-from .forms import AttendantForm, AttendantFormRender
-from thedaily.models import Subscriber
-
-from decorators import render_response
-
-from django.shortcuts import get_object_or_404, get_list_or_404
 
 from calendar import Calendar
-from datetime import date, timedelta
+
+from django.shortcuts import get_object_or_404, get_list_or_404
+from django.utils.timezone import datetime, now, timedelta
+
+from decorators import render_response
+from thedaily.models import Subscriber
+
+from .models import Event, Activity
+from .forms import AttendantForm, AttendantFormRender
 
 
 to_response = render_response('events/templates/')
@@ -18,10 +19,8 @@ DAYS = ('Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Doming
 
 @to_response
 def calendar(request, year=None, month=None):
-    if year and month:
-        date_object = date(int(year), int(month), 1)
-    else:
-        date_object = date.today()
+    today = now().date()
+    date_object = datetime(int(year), int(month), 1).date() if year and month else today
     year, month = date_object.year, date_object.month
     events = Event.objects.filter(date__year=year, date__month=month)
     prev, next = get_prev_next(date_object)
@@ -34,7 +33,7 @@ def calendar(request, year=None, month=None):
             'next': next,
             'days': DAYS,
             'cal': cal,
-            'today': date.today(),
+            'today': today,
             'events': events,
         },
     )
@@ -42,7 +41,7 @@ def calendar(request, year=None, month=None):
 
 @to_response
 def day_detail(request, year, month, day):
-    date_object = date(int(year), int(month), int(day))
+    date_object = datetime(int(year), int(month), int(day)).date()
     events = get_list_or_404(Event, date__year=year, date__month=month, date__day=day)
     return 'day.html', {'day': date_object, 'events': events}
 
@@ -54,9 +53,9 @@ def event_detail(request, year, month, day, event_slug):
 
 
 def get_prev_next(date_object):
-    this_month = date(date_object.year, date_object.month, 1)
+    this_month = datetime(date_object.year, date_object.month, 1).date()
     prev = this_month - timedelta(days=1)
-    this_month = date(date_object.year, date_object.month, 28)
+    this_month = datetime(date_object.year, date_object.month, 28).date()
     next = this_month + timedelta(days=5)
     return prev, next
 

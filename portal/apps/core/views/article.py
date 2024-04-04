@@ -8,7 +8,6 @@ from future import standard_library
 from builtins import str
 import requests
 import json
-from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from requests.exceptions import ConnectionError
 from urllib.parse import urlsplit, urlunsplit
@@ -36,7 +35,7 @@ from django.views.decorators.cache import never_cache, cache_page
 from django.views.decorators.vary import vary_on_cookie
 from django.template import Engine, TemplateDoesNotExist
 from django.template.defaultfilters import slugify
-from django.utils import timezone
+from django.utils.timezone import timedelta, now, datetime, utc
 
 from actstream.models import following
 from favit.models import Favorite
@@ -69,8 +68,9 @@ def article_list(request, type_slug):
     atype['slug'], atype['name'] = get_type(type_slug)
     if not atype['slug']:
         raise Http404
-    pubdate = date.today()
-    if timezone.now().hour < 8:
+    nowval = now()
+    pubdate = nowval.date()
+    if nowval.hour < 8:
         pubdate -= timedelta(days=1)
     articles = get_list_or_404(Article, is_published=True, type=atype['slug'], date_published__lte=pubdate)
     paginator = Paginator(articles, 10)
@@ -107,7 +107,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
     try:
         # netloc splitted by port (to support local environment running in port)
         netloc = request.headers['host'].split(':')[0]
-        first_of_month = timezone.datetime(year, month, 1, tzinfo=timezone.utc)
+        first_of_month = datetime(year, month, 1, tzinfo=utc)
         dt_range = (first_of_month, first_of_month + relativedelta(months=1))
         # when the article is not published, it has no date_published, then date_created should be used
         article = Article.objects.select_related('main_section__edition__publication').get(
@@ -172,7 +172,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
     ):
         if request.user.is_authenticated and mongo_db is not None:
             # register this view
-            set_values = {'viewed_at': timezone.now()}
+            set_values = {'viewed_at': now()}
             if getattr(request, 'article_allowed', False):
                 set_values['allowed'] = True
             mongo_db.core_articleviewedby.update_one(

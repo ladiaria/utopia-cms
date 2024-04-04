@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import random
 import string
 from builtins import str, range
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from os.path import join
 
 from hashids import Hashids
@@ -510,7 +510,8 @@ def date_published_verbose(article):
         or main_section_edition
         and main_section_edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL
     ):
-        today, now = date.today(), timezone.now()
+        now = timezone.now()
+        today = now.date()
         publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
         publishing = timezone.make_aware(
             datetime(today.year, today.month, today.day, publishing_hour, publishing_minute)

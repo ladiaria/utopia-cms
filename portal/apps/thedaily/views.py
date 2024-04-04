@@ -10,7 +10,7 @@ from pydoc import locate
 import json
 import requests
 import pymongo
-from datetime import datetime, timedelta
+from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlparse, urlencode
@@ -1696,7 +1696,7 @@ def read_articles_percentage_api(request):
         user = User.objects.get(email=email)
 
         # get six months ago date
-        six_moths_ago = datetime.today() - relativedelta(months=+6)
+        six_moths_ago = timezone.datetime.today() - relativedelta(months=+6)
         # get viewed articles
         viewed_articles = Article.objects.filter(
             viewed_by=user, articleviewedby__viewed_at__gt=six_moths_ago).select_related('main_section').distinct()
