@@ -661,3 +661,22 @@ class RemainingContent(Model):
 
     def __str__(self):
         return "content for %d credits remaining" % self.remaining_articles
+
+
+class MailtrainList(Model):
+    """
+    Exposes a Mailtrain (https://github.com/Mailtrain-org/mailtrain) list as a Newsletter, then users can subscribe or
+    unsubscribe to the list in their utopia-cms profiles, generating ajax requests to utopia-crm who acts as gateway
+    between the Mailtrain's API to perform the action needed. The delivering of this newsletters is exclusively
+    responsability of the Mailtrain deployment associated to utopia-crm, not ours.
+    WARN: You shouldn't mark "on_signup" without inform to the new user that you will do this.
+    """
+    list_cid = CharField(max_length=16, unique=True)
+    newsletter_name = CharField(max_length=64)
+    newsletter_tagline = CharField(max_length=128, blank=True, null=True)
+    newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
+    on_signup = BooleanField('Activada para nuevas cuentas', default=False)  # TODO: implement when True
+    newsletter_new_pill = BooleanField('pill de "nuevo" para la newsletter en el perfil de usuario', default=False)
+
+    def __str__(self):
+        return self.newsletter_name

@@ -395,7 +395,7 @@ class ProfileExtraDataForm(ModelForm):
     helper.error_text_inline = True
     helper.layout = Layout(
         HTML(
-            '{%% include "%s" %%}' % getattr(settings, 'THEDAILY_SUBSRIPTIONS_TEMPLATE', 'profile/suscripciones.html')
+            '{%% include "%s" %%}' % getattr(settings, 'THEDAILY_SUBSCRIPTIONS_TEMPLATE', 'profile/suscripciones.html')
         ),
         # include push notifications section if it's configured
         HTML(

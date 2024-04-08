@@ -9,16 +9,16 @@
 
 var staticCacheName = "utopia-pwa-v" + new Date().getTime();
 var filesToCache = [
-  '/static/meta/utopia-512x512.png'
+  '/static/meta/utopia-1024x1024.png',
+  '/static/meta/utopia-512x512.png',
+  '/static/meta/utopia-192x192.png'
 ];
 
 self.addEventListener('install', function(e) {
   self.skipWaiting();
   e.waitUntil(
     caches.open(staticCacheName).then(function(cache) {
-      return cache.addAll([
-        filesToCache
-      ]);
+      return cache.addAll(filesToCache);
     })
   );
 });
@@ -51,27 +51,11 @@ self.addEventListener('activate', event => {
 {% if push_notifications_keys_set %}
   self.addEventListener('push', function(e) {
     if (e.data) {
-      const splited_message = e.data.text().split('|');
-      body = splited_message[0];
-      tag = splited_message[1];
-      link = splited_message[2];
+      var options = e.data.json();
     } else {
       body = '{{ site.name }}.';
     }
 
-    var options = {
-      body: body,
-      tag: tag,
-      icon: '/static/meta/utopia-192x192.png',
-      vibrate: [100, 50, 100],
-      data: {
-        link: link
-      },
-      actions: [
-        {action: 'explore', title: 'Ir al sitio web', icon: '/static/meta/utopia-192x192.png'},
-        {action: 'close', title: 'Close', icon: '/static/meta/utopia-192x192.png'}
-      ]
-    };
     e.waitUntil(
       self.registration.showNotification('{{ site.name }}', options)
     );
