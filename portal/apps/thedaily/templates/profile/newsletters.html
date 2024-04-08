@@ -6,64 +6,105 @@
 
       <div class="edit_profile_card__header"><h2 class="title">Newsletters</h2></div>
       <p>
-        {% if newsletters %}
+        {% if newsletters or mailtrain_lists %}
           Elegí las newsletters que quieras y recibí los contenidos en tu email.
         {% else %}
           Por el momento no hay newsletters disponibles.
         {% endif %}
       </p>
 
-      {% for nlobj in newsletters %}
+      {% if newsletters %}
+        <div id="newsletter-switches">
+          {% for nlobj in newsletters %}
+            <div class="item-newsletter profile-check edit_profile_card__inner-section">
+              {% for choice in field.field.choices %}
+                {% if choice.1 == nlobj.name %}
+                  <div class="edit_profile_card__inner-section_header">
+                    <label class="title" for="id_{{ field.html_name }}_{{ forloop.counter }}">
+                      {{ nlobj.profile_newsletter_name|default:nlobj.name }}
+                      {% if nlobj.newsletter_new_pill %} <span class="new">NUEVO</span> {% endif %}
+                    </label>
+                    {% nlsubscribed user nlobj as nlchecked %}
+                    <div class="switch-container">
+                      <span class="label-text on" style="display: none;">Activada</span>
+                      <span class="label-text off{% if email_is_bouncer %} grey-text{% endif %}">Activar</span>
+                      <label class="switch">
+                        <input
+                          type="checkbox"
+                          id="id_{{ field.html_name }}_{{ forloop.counter }}"
+                          name="{{ field.html_name }}"
+                          value="{{ choice.0|unlocalize }}"
+                          data-url="{% url 'nl-auth-subscribe' nltype=nlobj.nltype nlslug=nlobj.slug %}"
+                          data-key="nl_subscribe"
+                          data-bouncer="{{ email_is_bouncer|lower }}"
+                          {% if nlchecked %}checked="checked"{% elif email_is_bouncer %}disabled="disabled"{% endif %}
+                        />
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="edit_profile_card__inner-section_body">
+                    {% if nlobj.newsletter_periodicity %}
+                      <p class="periodicity">{{ nlobj.newsletter_periodicity }}.</p>
+                    {% endif %}
+                    {% if nlobj.newsletter_tagline %}
+                      <p class="description">{{ nlobj.newsletter_tagline|safe }}.</p>
+                    {% endif %}
+                    {% if nlobj.nltype == 'c' or publication_newsletters_enable_preview %}
+                      <div class="edit_profile_card__inner-section_footer">
+                        <a class="link" href="{% url nlobj.nltype|add:'-nl-browser-authpreview' slug=nlobj.slug %}">Previsualizar
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7.33333 0V1.33333H9.72667L3.17333 7.88667L4.11333 8.82667L10.6667 2.27333V4.66667H12V0M10.6667 10.6667H1.33333V1.33333H6V0H1.33333C0.593333 0 0 0.6 0 1.33333V10.6667C0 11.0203 0.140476 11.3594 0.390524 11.6095C0.640573 11.8595 0.979711 12 1.33333 12H10.6667C11.0203 12 11.3594 11.8595 11.6095 11.6095C11.8595 11.3594 12 11.0203 12 10.6667V6H10.6667V10.6667Z" fill="#A4A4A4"/>
+                          </svg>
+                        </a>
+                      </div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
 
-        <div class="item-newsletter profile-check edit_profile_card__inner-section">
-          {% for choice in field.field.choices %}
-            {% if choice.1 == nlobj.name %}
+      {% if mailtrain_lists %}
+        {# An extra outer "observed" div to ask for user subscriptions to this lists in a one-time ajax req to CRM #}
+        <div id="mailtrain-lists"{% if newsletters %} style="margin-top:15px;"{% endif %}>
+          {% for mlist in mailtrain_lists %}
+            <div class="item-newsletter profile-check edit_profile_card__inner-section">
               <div class="edit_profile_card__inner-section_header">
-                <label class="title" for="id_{{ field.html_name }}_{{ forloop.counter }}">
-                  {{ nlobj.profile_newsletter_name|default:nlobj.name }}
-                  {% if nlobj.newsletter_new_pill %} <span class="new">NUEVO</span> {% endif %}
-                </label>
-                {% nlsubscribed user nlobj as nlchecked %}
+                <p class="title">
+                  {{ mlist.newsletter_name }}
+                  {% if mlist.newsletter_new_pill %}<span class="new">NUEVO</span>{% endif %}
+                </p>
                 <div class="switch-container">
                   <span class="label-text on" style="display: none;">Activada</span>
                   <span class="label-text off{% if email_is_bouncer %} grey-text{% endif %}">Activar</span>
                   <label class="switch">
                     <input
                       type="checkbox"
-                      id="id_{{ field.html_name }}_{{ forloop.counter }}"
-                      name="{{ field.html_name }}"
-                      value="{{ choice.0|unlocalize }}"
-                      data-url="{% url 'nl-auth-subscribe' nltype=nlobj.nltype nlslug=nlobj.slug %}"
+                      id="{{ mlist.list_cid }}"
+                      data-url="{% url 'nl-auth-subscribe' nltype='m' nlslug=mlist.list_cid %}"
                       data-key="nl_subscribe"
                       data-bouncer="{{ email_is_bouncer|lower }}"
-                      {% if nlchecked %}checked="checked"{% elif email_is_bouncer %}disabled="disabled"{% endif %}
+                      {% if email_is_bouncer %}disabled="disabled"{% endif %}
                     />
                     <span class="slider"></span>
                   </label>
                 </div>
               </div>
               <div class="edit_profile_card__inner-section_body">
-                {% if nlobj.newsletter_periodicity %}
-                  <p class="periodicity">{{ nlobj.newsletter_periodicity }}.</p>
+                {% if mlist.newsletter_periodicity %}
+                  <p class="periodicity">{{ mlist.newsletter_periodicity }}.</p>
                 {% endif %}
-                {% if nlobj.newsletter_tagline %}
-                  <p class="description">{{ nlobj.newsletter_tagline|safe }}.</p>
-                {% endif %}
-                {% if nlobj.nltype == 'c' or publication_newsletters_enable_preview %}
-                  <div class="edit_profile_card__inner-section_footer">
-                    <a class="link" href="{% url nlobj.nltype|add:'-nl-browser-authpreview' slug=nlobj.slug %}">Previsualizar
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7.33333 0V1.33333H9.72667L3.17333 7.88667L4.11333 8.82667L10.6667 2.27333V4.66667H12V0M10.6667 10.6667H1.33333V1.33333H6V0H1.33333C0.593333 0 0 0.6 0 1.33333V10.6667C0 11.0203 0.140476 11.3594 0.390524 11.6095C0.640573 11.8595 0.979711 12 1.33333 12H10.6667C11.0203 12 11.3594 11.8595 11.6095 11.6095C11.8595 11.3594 12 11.0203 12 10.6667V6H10.6667V10.6667Z" fill="#A4A4A4"/>
-                      </svg>
-                    </a>
-                  </div>
+                {% if mlist.newsletter_tagline %}
+                  <p class="description">{{ mlist.newsletter_tagline|safe }}.</p>
                 {% endif %}
               </div>
-            {% endif %}
+            </div>
           {% endfor %}
         </div>
-
-      {% endfor %}
+      {% endif %}
 
     </div>
   </div>

@@ -10,7 +10,6 @@ import locale
 import tempfile
 import operator
 import json
-from datetime import date, datetime, timedelta
 from collections import OrderedDict
 from requests.exceptions import ConnectionError
 from kombu.exceptions import OperationalError as KombuOperationalError
@@ -61,7 +60,7 @@ from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
 from django.template.exceptions import TemplateDoesNotExist
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
+from django.utils.timezone import datetime, timedelta, make_aware, now, template_localtime
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 
@@ -301,7 +300,7 @@ class PortableDocumentFormatBaseModel(Model):
     pdf_md5 = CharField('checksum', max_length=32, editable=False)
     downloads = PositiveIntegerField('descargas', default=0)
     cover = ImageField('tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
-    date_published = DateField('fecha de publicación', default=timezone.now)
+    date_published = DateField('fecha de publicación', default=now)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
@@ -342,9 +341,10 @@ class PortableDocumentFormatBaseModel(Model):
     def date_published_verbose(self, short=True):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
         result = (
-            ("{d:%a}. {d.day} {d:%b}." if date.today().year == self.date_published.year else "{d.day} {d:%b, %Y}")
-            if short
-            else "{d:%A} {d.day} de {d:%B de %Y}"
+            (
+                "{d:%a}. {d.day} {d:%b}."
+                if now().date().year == self.date_published.year else "{d.day} {d:%b, %Y}"
+            ) if short else "{d:%A} {d.day} de {d:%B de %Y}"
         ).format(d=self.date_published)
         return result.title() if short else result.capitalize()
 
@@ -478,7 +478,7 @@ class Edition(PortableDocumentFormatBaseModel):
     def next_edition(self):
         try:
             return Edition.objects.filter(
-                date_published__gt=self.date_published, date_published__lte=date.today()
+                date_published__gt=self.date_published, date_published__lte=now().date()
             ).order_by('date_published')[0]
         except Exception:
             return None
@@ -938,7 +938,7 @@ class Section(Model):
         return [latest_qs[0].article] if latest_qs.exists() else []
 
     def mas_vistos(self):
-        desde = timezone.now() - timedelta(days=60)
+        desde = now() - timedelta(days=60)
         return Article.objects.filter(sections__id=self.id, date_published__gt=desde).order_by('views')[:10]
 
     def published_articles(self, **filter_kwargs):
@@ -953,7 +953,7 @@ class Section(Model):
         """
         return self.articles_core.filter(
             is_published=True,
-            date_published__gt=timezone.now() - timedelta(2 if date.today().isoweekday() < 7 else 3),
+            date_published__gt=now() - timedelta(2 if now().date().isoweekday() < 7 else 3),
         ).distinct()
 
     def articles_count(self):
@@ -1178,11 +1178,11 @@ class ArticleBase(Model, CT):
 
         self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
 
-        now = timezone.now()
+        nowval = now()
 
         if self.is_published:
             if not self.date_published:
-                self.date_published = now
+                self.date_published = nowval
             if not settings.DEBUG:
                 try:
                     ping_google()
@@ -1191,7 +1191,7 @@ class ArticleBase(Model, CT):
         else:
             self.date_published = None
 
-        date_value = self.date_published or self.date_created or now
+        date_value = self.date_published or self.date_created or nowval
         # No puede haber otro publicado con date_published en el mismo mes que date_value o no publicado con
         # date_created en el mismo mes que date_value, con el mismo slug. TODO: translate this comment to english.
         if isinstance(date_value, str):
@@ -1454,7 +1454,7 @@ class ArticleBase(Model, CT):
         return datetime_isoformat(self.last_modified)
 
     def date_published_seconds_ago(self):
-        return (timezone.now() - self.date_published).total_seconds()
+        return (now() - self.date_published).total_seconds()
 
     def datetime_published_verbose(self, day_name_and_time=True):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
@@ -1466,11 +1466,11 @@ class ArticleBase(Model, CT):
             # call for cards, allow to hide year and a custom fmt by settings
             if (
                 getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_SAMEYEAR', False)
-                and timezone.now().year == self.date_published.year
+                and now().year == self.date_published.year
             ):
                 format_st = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_SAMEYEAR_FMT', "{dt.day} de {dt:%B}")
 
-        return format_st.format(dt=timezone.template_localtime(self.date_published)).lower().capitalize()
+        return format_st.format(dt=template_localtime(self.date_published)).lower().capitalize()
 
     def date_published_verbose(self):
         if settings.CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO:
@@ -2281,17 +2281,17 @@ class BreakingNewsModule(Model):
 
 
 def get_publishing_datetime():
-    today = date.today()
+    today = now().date()
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
-    return timezone.make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
+    return make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
 
 
 def get_published_date():
     # TODO: check usage, remove if not used, the same for get_publishing_datetime
-    now = timezone.now()
+    nowval = now()
     publishing = get_publishing_datetime()
-    publishing_date = date(publishing.year, publishing.month, publishing.day)
-    if now > publishing:
+    publishing_date = datetime(publishing.year, publishing.month, publishing.day).date()
+    if nowval > publishing:
         return publishing_date
     return publishing_date - timedelta(1)
 
@@ -2301,9 +2301,10 @@ def get_current_edition(publication=None):
     Return last edition of publication if given, or the publications using root url as their home page if the
     publication slug is not given.
     """
-    today, now, filters = date.today(), timezone.now(), {}
+    nowval = now()
+    today, filters = nowval.date(), {}
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
-    publishing = timezone.make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
+    publishing = make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
 
     if publication:
         filters['publication'] = publication.id
@@ -2312,7 +2313,7 @@ def get_current_edition(publication=None):
             slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL
         ).values_list('id', flat=True)
 
-    filters['date_published__lt' + ('e' if now > publishing else '')] = today
+    filters['date_published__lt' + ('e' if nowval > publishing else '')] = today
     try:
         results = Edition.objects.filter(**filters)
         result = results.latest()
@@ -2340,11 +2341,11 @@ def get_current_feeds():
     NOTE: if no current_edition found, next editions are taken using "today" as date contition.
     """
     # editions for "root" publications (current and "next")
-    current_edition = get_current_edition()
+    today, current_edition = now().date(), get_current_edition()
     next_editions = Edition.objects.filter(
         publication__public=True,
         publication__slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL,
-        date_published__gt=current_edition.date_published if current_edition else date.today(),
+        date_published__gt=current_edition.date_published if current_edition else today,
     ).order_by('date_published')
     editions_ids = ([str(current_edition.id)] if current_edition else []) + (
         [str(next_editions[0].id)] if next_editions else []
@@ -2354,7 +2355,7 @@ def get_current_feeds():
     for p in Publication.objects.filter(public=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL):
         current_edition = get_current_edition(p)
         next_editions = Edition.objects.filter(
-            publication=p, date_published__gt=current_edition.date_published if current_edition else date.today()
+            publication=p, date_published__gt=current_edition.date_published if current_edition else today
         ).order_by('date_published')
         editions_ids += ([str(current_edition.id)] if current_edition else []) + (
             [str(next_editions[0].id)] if next_editions else []

@@ -148,3 +148,80 @@ function subscribeUser() {
     }
   });
 }
+
+function confirmFunction () {
+  rp();
+  $('.pwa-prompt').hide();
+}
+
+function cancelFunction () {
+  $('.pwa-prompt').hide();
+  setCookie('notifyme', "false", 1);
+  deleteCookie('home_arriving', 1);
+}
+
+$(function(){
+  navigator.permissions.query({name: 'notifications'}).then(function(result) {
+
+    if (result.state == 'granted' || result.state == 'prompt') {
+
+      if (getCookie('notifyme', 1) == null) {
+
+        let now = new Date();
+        const datesAreOnSameDay = (first, second) =>
+          first.getFullYear() === second.getFullYear() &&
+          first.getMonth() === second.getMonth() &&
+          first.getDate() === second.getDate();
+
+        if (window.location.pathname == '/') {
+          if (!getCookie('home_arriving', 1)) {
+            // This is the first time in the home page, then set the moment variable to 1 and the time
+            // variable to current time.
+            setCookie('home_arriving', JSON.stringify({'moment': 1, 'time': now}), 1);
+          } else {
+            // 2nd time or more.
+            let home_arriving_value = JSON.parse(getCookie('home_arriving', 1));
+            if (
+              home_arriving_value.moment == 1 && datesAreOnSameDay(new Date(home_arriving_value.time), now)
+            ) {
+              // 2nd time in the same day, offer to allow notifications only if the NLs header wasn't rendered.
+              if($("#choose-nl-container").length == 0){
+                $('.pwa-prompt').show();
+                setCookie('home_arriving', JSON.stringify({'moment': 2, 'time': now}), 1);
+              }
+            } else {
+              // Neither first nor 2nd in the same day, so, check if last arrived date is +24h ago;
+              // to only offer allow notifications once per day.
+              if (new Date(home_arriving_value.time).getDate() + (24 * 60 * 60 * 1000) < now.getTime()) {
+                setCookie('home_arriving', JSON.stringify({'moment': 1, 'time': now}), 1);
+              }
+            }
+          }
+        }
+
+        if (
+          getCookie(userName) == 'null'
+          || getCookie('home_arriving', 1) && JSON.parse(getCookie('home_arriving', 1)).moment == 1
+        ) {
+          // TODO: check this condition with UX
+          // If current location contains 'utm_source=newsletter' I got here from NL, so I will show the push
+          // notification offer only if also the homepage was visited once.
+          if (window.location.href.search('utm_source=newsletter') > 0) {
+            let targetDiv = $('.pwa-prompt')
+            if (targetDiv.length) {
+              targetDiv.show();
+              // set home arrived to moment 2 to wait at least 24hs to offer again
+              setCookie('home_arriving', JSON.stringify({'moment': 2, 'time': now}), 1);
+            }
+          }
+        }
+
+      }
+
+    } else {
+      deleteCookie('notifyme', 1);
+      deleteCookie('home_arriving', 1);
+    }
+
+  });
+});

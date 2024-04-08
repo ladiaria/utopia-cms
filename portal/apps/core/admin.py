@@ -3,7 +3,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from datetime import date, timedelta
 from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
@@ -413,7 +412,7 @@ if 'core.attachments' in settings.INSTALLED_APPS:
 
 
 def get_editions():
-    since = date.today() - timedelta(days=5)
+    since = timezone.now().date() - timezone.timedelta(days=5)
     return Edition.objects.filter(date_published__gte=since)
 
 

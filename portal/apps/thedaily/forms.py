@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from datetime import date
 import re
 
 from django_recaptcha.fields import ReCaptchaField
@@ -10,13 +9,14 @@ from crispy_forms.layout import Layout, BaseInput, Field, Fieldset, HTML
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.utils import get_template_pack
 
-from django.template.defaultfilters import slugify
 from django.conf import settings
+from django.template.defaultfilters import slugify
 from django.http import UnreadablePostError
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 from django.core.mail import mail_managers
+from django.core.exceptions import MultipleObjectsReturned
 from django.forms import (
     Form,
     ModelForm,
@@ -30,7 +30,7 @@ from django.forms import (
     ValidationError,
 )
 from django.urls import reverse
-from django.core.exceptions import MultipleObjectsReturned
+from django.utils.timezone import now
 
 from .models import Subscription, Subscriber, email_extra_validations
 from .utils import get_all_newsletters
@@ -395,7 +395,7 @@ class ProfileExtraDataForm(ModelForm):
     helper.error_text_inline = True
     helper.layout = Layout(
         HTML(
-            '{%% include "%s" %%}' % getattr(settings, 'THEDAILY_SUBSRIPTIONS_TEMPLATE', 'profile/suscripciones.html')
+            '{%% include "%s" %%}' % getattr(settings, 'THEDAILY_SUBSCRIPTIONS_TEMPLATE', 'profile/suscripciones.html')
         ),
         # include push notifications section if it's configured
         HTML(
@@ -486,7 +486,7 @@ class SubscriberForm(ModelForm):
             # continue validation to check for repeated email and subsc. type, for "tel" subscriptions in same day:
             try:
                 s = Subscription.objects.get(
-                    email__iexact=self.cleaned_data.get('email'), date_created__date=date.today()
+                    email__iexact=self.cleaned_data.get('email'), date_created__date=now().date()
                 )
                 if subscription_type in s.subscription_type_prices.values_list('subscription_type', flat=True):
                     self._errors['email'] = self.error_class(["Su email ya posee una suscripción en proceso"])

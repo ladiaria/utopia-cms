@@ -105,17 +105,16 @@ INSTALLED_APPS = (
     'martor',
     'django_bleach',
     'comunidad',
-    'appconf',
     'star_ratings',
     'tagging_autocomplete_tagit',
     'avatar',
     'notification',
     'django.contrib.flatpages',
     'epubparser',
-    'dashboard',
     'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
+    'dashboard',  # placed after authtoken to unregister TokenAdmin and register a fixed version of it
     "rest_framework_api_key",
     'compressor',
     'favit',
@@ -469,9 +468,6 @@ HOMEV3_FOOTER_TEMPLATE = 'footer.html'
 # django reCaptcha
 NOCAPTCHA = True
 RECAPTCHA_USE_SSL = True
-
-# exchange
-EXCHANGE_UPDATE_MODULE = 'exchange.brou'
 
 # adzone
 ADZONE_LOG_AD_IMPRESSIONS = True

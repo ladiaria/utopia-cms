@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import random as rdm
 from operator import attrgetter
 from pydoc import locate
+import requests
 
 from actstream.models import Follow
 from actstream.registry import check
@@ -21,7 +22,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
-from .models import Subscriber, SentMail, OAuthState, SubscriberEvent
+from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
 
 
 non_relevant_data_max_amounts = {
@@ -99,7 +100,22 @@ def recent_following(user, *models):
     return [follow.follow_object for follow in qs.fetch_generic_relations('follow_object').order_by('-started')]
 
 
-def add_default_category_newsletters(subscriber):
+def add_default_mailtrain_lists(subscriber):
+    # Mailtrain lists. TODO: this should be done with a new API to add the email to all "signup-default" lists
+    api_uri, api_key = settings.CRM_API_BASE_URI, getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if api_uri and api_key:
+        for mlist in MailtrainList.objects.filter(on_signup=True):
+            try:
+                requests.post(
+                    api_uri + "mailtrain_list_subscription/",
+                    headers={"Authorization": "Api-Key " + api_key},
+                    data={"email": subscriber.user.email, "list_id": mlist.list_cid},
+                )
+            except Exception:
+                pass
+
+
+def add_default_newsletters(subscriber):
     default_category_nls = settings.THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS
     for default_category_slug in default_category_nls:
         try:
@@ -108,6 +124,7 @@ def add_default_category_newsletters(subscriber):
                 subscriber.category_newsletters.add(category)
         except Category.DoesNotExist:
             pass
+    add_default_mailtrain_lists(subscriber)
 
 
 def unsubscribed_newsletters(subscriber):

@@ -243,10 +243,14 @@
 {% block javascript %}
   <script defer src="{% static 'materialize/js/scrollspy.js' %}"></script>
   <script defer src="{% static 'materialize/js/pushpin.js' %}"></script>
-  {% if not CORE_PUSH_NOTIFICATIONS_OFFER and push_notifications_keys_set %}
-    <script src="{% static 'js/push_notifications.js' %}"></script>
+  {% if push_notifications_keys_set %}
+    {% if not CORE_PUSH_NOTIFICATIONS_OFFER %}
+      <script src="{% static 'js/push_notifications.js' %}"></script>
+    {% endif %}
+    <script src="{% static 'js/push_notifications_editprofile.js' %}"></script>
   {% endif %}
   <script>
+
     {% if push_notifications_keys_set %}
       {% if not CORE_PUSH_NOTIFICATIONS_OFFER %}
         var applicationServerPublicKey = "{{ CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY }}";
@@ -259,6 +263,96 @@
         }
       {% endif %}
     {% endif %}
+
+    // shows a notification text info in the page (this is not the "push notification")
+    function showNotification(notification) {
+      const isError = notification.type === "error";
+      const notificationBox = document.querySelector("#edit_profile_notification");
+      notificationBox.style.display = "flex";
+      notificationBox.classList.remove("error");
+      if (isError) notificationBox.classList.add("error");
+      notificationBox.querySelector("p").textContent = notification.text;
+      setTimeout(function() {
+        notificationBox.style.display = "none";
+      }, isError ? 3000 : 2000);
+    }
+
+    // function to revert a switch value
+    function revertSwitch(switchHTMLElement) {
+      const input = switchHTMLElement.querySelector('input[type="checkbox"]');
+      const offLabel = switchHTMLElement.querySelector('.off');
+      const onLabel = switchHTMLElement.querySelector('.on');
+      const slider = switchHTMLElement.querySelector(".slider");
+      input.checked = !input.checked;
+      slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
+      offLabel.style.display = input.checked ? "none" : "inline-block";
+      onLabel.style.display = input.checked ? "inline-block" : "none";
+    }
+
+    // handler for the switches that are not the push_notification one
+    function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement) {
+      $.ajax({
+        type: "POST",
+        data: data,
+        url: newsletterUrl,
+        cache: false,
+        success: function(html, textStatus) {
+          showNotification({
+            text: "Tus cambios fueron guardados"
+          });
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+          showNotification({
+            text: "No se pudieron guardar los cambios, intentá de nuevo más tarde",
+            type: "error",
+            duration: 3000,
+          });
+          setTimeout(function() {
+            revertSwitch(switchHTMLElement)
+          }, 250);
+        }
+      });
+    }
+
+    // open modal handler
+    function edit_profile_open_modal(){
+      document.getElementById("edit_profile_modal").style.display = "flex";
+      document.querySelector('html').style.overflow = "hidden";
+    }
+
+    // set switch change events
+    function switch_change_events(switches){
+      for (let i = 0; i < switches.length; i++) {
+        const switchElement = switches[i];
+        const input = switchElement.querySelector('input[type="checkbox"]');
+        const dataKey = input.getAttribute('data-key');
+        const dataBouncer = eval(input.getAttribute('data-bouncer'));
+        const offLabel = switchElement.querySelector('.off');
+        const onLabel = switchElement.querySelector('.on');
+        if (offLabel) offLabel.style.display = input.checked ? "none" : "inline-block";
+        if (onLabel) onLabel.style.display = input.checked ? "inline-block" : "none";
+
+        input.addEventListener("change", () => {
+          const slider = switchElement.querySelector(".slider");
+          const newsletterUrl = input.getAttribute('data-url');
+          slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
+          offLabel.style.display = input.checked ? "none" : "inline-block";
+          onLabel.style.display = input.checked ? "inline-block" : "none";
+          if (input.id == "allow_notification"){
+            {% if push_notifications_keys_set %}
+              handlePushNotificationSwitchChange(switchElement, input.id);
+            {% endif %}
+          } else {
+            handleNewsletterSwitchChange(newsletterUrl, { [dataKey]: input.checked }, switchElement);
+            // disable input after a bouncer NL or communication deactivation
+            if (["nl_subscribe", "com_subscribe"].includes(dataKey) && !input.checked && dataBouncer) {
+              input.setAttribute("disabled", "disabled");
+            }
+          }
+        });
+      }
+    }
+
     $(document).ready(function() {
       $('.scrollspy').scrollSpy();
       const mainHeight = $('#main-content').height();
@@ -278,142 +372,38 @@
         }
       }, 3000);
 
-      function showNotification(notification) {
-        const isError = notification.type === "error";
-        const notificationBox = document.querySelector("#edit_profile_notification");
-        notificationBox.style.display = "flex";
-        notificationBox.classList.remove("error");
-        if (isError) notificationBox.classList.add("error");
-        notificationBox.querySelector("p").textContent = notification.text;
-
-        setTimeout(function() {
-          notificationBox.style.display = "none";
-        }, isError ? 3000 : 2000);
-      }
-
-      function revertSwitch(switchHTMLElement) {
-        const input = switchHTMLElement.querySelector('input[type="checkbox"]');
-        const offLabel = switchHTMLElement.querySelector('.off');
-        const onLabel = switchHTMLElement.querySelector('.on');
-        const slider = switchHTMLElement.querySelector(".slider");
-
-        input.checked = !input.checked;
-
-        slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
-        offLabel.style.display = input.checked ? "none" : "inline-block";
-        onLabel.style.display = input.checked ? "inline-block" : "none";
-      }
-
       {% if push_notifications_keys_set %}
-        function setNotificationCheckStatus() {
-          navigator.serviceWorker.getRegistration()
-            .then(reg => {
-              console.log(reg);
-              return reg.pushManager.getSubscription()
-            })
-            .then(subscription => {
-              if(getCookie('notifyme', 1) == null) {
-                setCookie('notifyme', "false", 1);
-              }
-              if(subscription && getCookie('notifyme', 1) == "true") {
-                const switchElement = document.getElementById("notificaciones").querySelector(".switch-container");
-                revertSwitch(switchElement);  // Since it always load in false, we revert to true
-              }
-            })
-            .catch(err => {
-              console.log('Error initializing push notifications switch', err);
-            });
-        }
         setNotificationCheckStatus();
+        switch_change_events($('#notificaciones .switch-container'));
       {% endif %}
 
-      // switches functionality
-      function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement, inputId) {
-        const notificationBox = document.querySelector("#edit_profile_notification");
-        if (inputId === 'allow_notification') {
-          {% if push_notifications_keys_set %}
-            navigator.permissions.query({ name: 'notifications' })
-              .then(function(result) {
-                if(result.state === 'denied'){
-                  // TODO: change alert merging with UX tooltip/new-text design
-                  showNotification({
-                    type: "error",
-                    text: "Debe habilitar las notificaciones en su navegador."
-                  });
-                  revertSwitch(switchHTMLElement);
-                  return;
-                }
+      // "normal" nl/communications events
+      switch_change_events($('#newsletter-switches .switch-container,#ld-comunicaciones .switch-container'));
+
+      // mailtrain "nl" switches events
+      {% if mailtrain_lists %}
+        const target = $('#mailtrain-lists');
+        const observer = new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+            if (entry.target === target[0] && entry.isIntersecting) {
+              // Unobserve the target element to run this only once
+              observer.unobserve(entry.target);
+              $.get("{% url 'mailtrain-lists' %}", function(response){
+                $("#mailtrain-lists input").each(function(){
+                  if (response.lists.includes($(this).attr('id'))) {
+                    $(this).attr("checked", "checked");
+                  }
+                });
+                switch_change_events($('.switch-container', target));
               });
-
-            setCookie('show_msg', "true", 1);
-
-            if($("#" + inputId).prop('checked') && getCookie('notifyme', 1) == "false") {
-              rp();
-              showNotification({
-                text: "Tus cambios fueron guardados"
-              })
-            } else if(!$("#" + inputId).prop('checked') && getCookie('notifyme', 1) == "true") {
-              // TODO: DELETE can return 400 (and then a js error) if there is no DeviceSubscribed to remove.
-              unsubscribeUser();
-            }
-          {% endif %}
-        } else {
-          $.ajax({
-            type: "POST",
-            data: data,
-            url: newsletterUrl,
-            cache: false,
-            success: function(html, textStatus) {
-              showNotification({
-                text: "Tus cambios fueron guardados"
-              });
-            },
-            error: function (XMLHttpRequest, textStatus, errorThrown) {
-
-              showNotification({
-                text: "No se pudieron guardar los cambios, intentá de nuevo más tarde",
-                type: "error",
-                duration: 3000,
-              });
-
-              setTimeout(function() {
-                revertSwitch(switchHTMLElement)
-              }, 250);
             }
           });
-        }
-      }
-
-      const switches = document.querySelectorAll('.switch-container');
-      for (let i = 0; i < switches.length; i++) {
-        const switchElement = switches[i];
-        const input = switchElement.querySelector('input[type="checkbox"]');
-        const dataKey = input.getAttribute('data-key');
-        const dataBouncer = eval(input.getAttribute('data-bouncer'));
-        const offLabel = switchElement.querySelector('.off');
-        const onLabel = switchElement.querySelector('.on');
-        if (offLabel) offLabel.style.display = input.checked ? "none" : "inline-block";
-        if (onLabel) onLabel.style.display = input.checked ? "inline-block" : "none";
-
-        input.addEventListener("change", () => {
-          const slider = switchElement.querySelector(".slider");
-          const newsletterUrl = input.getAttribute('data-url');
-          slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
-          offLabel.style.display = input.checked ? "none" : "inline-block";
-          onLabel.style.display = input.checked ? "inline-block" : "none";
-          handleNewsletterSwitchChange(newsletterUrl, { [dataKey]: input.checked }, switchElement, input.id);
-          // disable input after a bouncer NL or communication deactivation
-          if (["nl_subscribe", "com_subscribe"].includes(dataKey) && !input.checked && dataBouncer) {
-            input.setAttribute("disabled", "disabled");
-          }
         });
-      }
+        // Observe the target element
+        observer.observe(target[0]);
+      {% endif %}
 
-      // Open modal
-      function edit_profile_open_modal(){
-        document.getElementById("edit_profile_modal").style.display = "flex";
-        document.querySelector('html').style.overflow = "hidden";
-      }
+      // Open modal event
       document.getElementById("edit_profile_btn").addEventListener("click", function(e){
         e.stopPropagation();
         edit_profile_open_modal();
@@ -440,18 +430,14 @@
         e.stopPropagation();
       });
 
+      // TODO: explain this last js code
       const subscriptionCancelBtns = document.getElementsByClassName("subscription-cancel-btn");
-
       for (let i = 0; i < subscriptionCancelBtns.length; i++) {
         subscriptionCancelBtns[i].style.display = "none";
       }
-
       if (document.getElementById("edit-subscriptions-btn")) {
-
         document.getElementById("edit-subscriptions-btn").addEventListener("click", function(e) {
-
           e.target.classList.contains("active") ? e.target.classList.remove("active") : e.target.classList.add("active");
-
           for (let i = 0; i < subscriptionCancelBtns.length; i++) {
             subscriptionCancelBtns[i].style.display = subscriptionCancelBtns[i].style.display === "block" ||
               !subscriptionCancelBtns[i].style.display ? "none" : "block";

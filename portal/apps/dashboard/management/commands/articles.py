@@ -5,7 +5,6 @@ from __future__ import division
 import os
 from os.path import join
 import operator
-from datetime import datetime, date, timedelta
 from csv import writer
 from progress.bar import Bar
 
@@ -13,6 +12,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.urls import resolve
+from django.utils.timezone import now, datetime, timedelta
 
 from apps import mongo_db
 from core.models import Article, ArticleRel, Section, Publication, ArticleUrlHistory, Category
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         if live and not out_prefix:
             print("ERROR: --live option should also specify a value for --out-prefix option")
             return
-        this_month_first = date.today().replace(day=1)
+        this_month_first = now().date().replace(day=1)
         last_month = this_month_first - timedelta(1)
         last_month_first = datetime.combine(last_month.replace(day=1), datetime.min.time())
         month_before_last = last_month_first - timedelta(1)

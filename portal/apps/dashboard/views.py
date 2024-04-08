@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from os.path import join
 from csv import reader, writer
-from datetime import date
 from dateutil.relativedelta import relativedelta
 
 from django.conf import settings
@@ -18,6 +17,8 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import permission_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
+from django.utils.timezone import now, datetime
+
 from django_amp_readerid.utils import get_related_user
 
 from thedaily.utils import get_profile_newsletters_ordered
@@ -58,7 +59,7 @@ def load_table(request, table_id):
 
     month = request.GET.get('month')
     year = request.GET.get('year')
-    today = date.today()
+    today = now().date()
 
     if table_id in ('activity', 'activity_only_digital'):
         # Alow only admins or member of seller group
@@ -70,7 +71,7 @@ def load_table(request, table_id):
             return HttpResponseForbidden()
 
     if month and year and table_id not in ('activity', 'activity_only_digital', 'subscribers'):
-        date_start = date(int(year), int(month), 1)
+        date_start = datetime(int(year), int(month), 1).date()
         date_end = date_start + relativedelta(months=1)
         last_month = today - relativedelta(months=1)
         if int(month) == last_month.month and int(year) == last_month.year:
@@ -78,7 +79,7 @@ def load_table(request, table_id):
         else:
             filename = '%s%s_%s.csv' % (year, month, table_id)
     else:
-        date_end = date(today.year, today.month, 1)
+        date_end = datetime(today.year, today.month, 1).date()
         date_start = date_end - relativedelta(months=1)
         filename = '%s.csv' % table_id
     try:

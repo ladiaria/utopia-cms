@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from rest_framework.authtoken.admin import TokenAdmin
+from rest_framework.authtoken.models import TokenProxy
+
+from django.contrib import admin
 from django.contrib.admin import ModelAdmin, SimpleListFilter, site
 
 from apps.admin import ReadOnlyModelAdmin
-from dashboard.models import NewsletterDelivery, AudioStatistics
+from .models import NewsletterDelivery, AudioStatistics
 
 
 class NLNameFilter(SimpleListFilter):
@@ -23,6 +27,7 @@ class NLNameFilter(SimpleListFilter):
         return queryset.filter(newsletter_name=newsletter_name) if newsletter_name else queryset
 
 
+@admin.register(NewsletterDelivery)
 class NewsletterDeliveryAdmin(ModelAdmin):
     list_display = ('delivery_date_short', 'get_newsletter_name', 'user_stats', 'subscriber_stats', 'total_stats')
     readonly_fields = (
@@ -39,6 +44,7 @@ class NewsletterDeliveryAdmin(ModelAdmin):
     date_hierarchy = 'delivery_date'
 
 
+@admin.register(AudioStatistics)
 class AudioStatisticsAdmin(ReadOnlyModelAdmin):
     # TODO: audio linked to audio asset
     list_display = ['audio', 'subscriber', 'percentage', 'amp_click']
@@ -49,5 +55,10 @@ class AudioStatisticsAdmin(ReadOnlyModelAdmin):
         return super(ReadOnlyModelAdmin, self).has_delete_permission(request, obj)
 
 
-site.register(NewsletterDelivery, NewsletterDeliveryAdmin)
-site.register(AudioStatistics, AudioStatisticsAdmin)
+class UtopiaTokenAdmin(TokenAdmin):
+    raw_id_fields = ("user",)
+
+
+# unregister broken TokenAdmin and register its fixed version
+site.unregister(TokenProxy)
+site.register(TokenProxy, UtopiaTokenAdmin)

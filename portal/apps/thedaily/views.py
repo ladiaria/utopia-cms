@@ -10,7 +10,7 @@ from pydoc import locate
 import json
 import requests
 import pymongo
-from datetime import datetime, timedelta
+from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlparse, urlencode
@@ -76,7 +76,7 @@ from signupwall.middleware import (
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
-from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState
+from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList
 from .forms import (
     __name__ as forms_module_name,
     LoginForm,
@@ -103,7 +103,7 @@ from .forms import (
     SUBSCRIPTION_PHONE_TIME_CHOICES,
 )
 from .utils import (
-    recent_following, add_default_category_newsletters, get_profile_newsletters_ordered, google_phone_next_page
+    recent_following, add_default_newsletters, get_profile_newsletters_ordered, google_phone_next_page
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -149,23 +149,60 @@ def hard_paywall_template():
 
 
 @never_cache
+@require_http_methods(["GET"])
+def mailtrain_lists(request):
+    """
+    Calls CRM api to retrieve the lists that this auth user has subscribed to.
+    """
+    user = request.user
+    try:
+        assert user.email and user.email not in bouncer_blocklisted
+        api_uri, api_key = settings.CRM_API_BASE_URI, getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+        assert api_uri and api_key, "CRM api not configured"
+        r = requests.post(
+            api_uri + "mailtrain_lists/", headers={"Authorization": "Api-Key " + api_key}, data={"email": user.email}
+        )
+        r.raise_for_status()
+    except Exception as exc:
+        if settings.DEBUG:
+            print("ERROR: mailtrain_lists exception: %s" % exc)
+        return HttpResponseBadRequest()
+    else:
+        return JsonResponse(r.json())
+
+
+@never_cache
 @csrf_exempt
 def nl_auth_subscribe(request, nltype, nlslug):
-    """ nl subscription or unsubscription for authenticated users (by ajax or POST) """
+    """
+    nl subscription or unsubscription for authenticated users (by ajax or POST)
+    """
     from_amp = request.GET.get("__amp_source_origin")
     user = get_related_user(request) if from_amp else request.user
     if not user.is_anonymous and (request.method == 'POST' or is_xhr(request)):
-        nlobj = get_object_or_404(Publication if nltype == "p" else Category, slug=nlslug, has_newsletter=True)
-        nl_field = ("" if nltype == "p" else "category_") + "newsletters"
+        nl_subscribe_activated = getattr(request, request.method, {}).get("nl_subscribe", "true") == "true"
         try:
-            nl_subscribe_activated = getattr(request, request.method, {}).get("nl_subscribe", "true") == "true"
             if nl_subscribe_activated:
                 assert user.email and user.email not in bouncer_blocklisted
-                getattr(user.subscriber, nl_field).add(nlobj)
+            if nltype in "pc":
+                # publications or categories
+                nlobj = get_object_or_404(Publication if nltype == "p" else Category, slug=nlslug, has_newsletter=True)
+                nl_field = ("" if nltype == "p" else "category_") + "newsletters"
+                getattr(getattr(user.subscriber, nl_field), "add" if nl_subscribe_activated else "remove")(nlobj)
             else:
-                getattr(user.subscriber, nl_field).remove(nlobj)
-        except Exception:
-            # TODO: check when UpdateCrmEx raised in test (Python ver?)
+                # Mailtrain list (nltype='m' the only possible value left in the url pattern deffinition)
+                api_uri, api_key = settings.CRM_API_BASE_URI, getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+                assert api_uri and api_key, "CRM api not configured"
+                r = getattr(requests, "post" if nl_subscribe_activated else "delete")(
+                    api_uri + "mailtrain_list_subscription/",
+                    headers={"Authorization": "Api-Key " + api_key},
+                    data={"email": user.email, "list_id": nlslug},
+                )
+                r.raise_for_status()
+        except Exception as exc:
+            # TODO: check (p/c cases only) when UpdateCrmEx raised in test (Python ver?)
+            if settings.DEBUG:
+                print("ERROR: nl_auth_subscribe exception: %s" % exc)
             return HttpResponseBadRequest()
         return set_amp_cors_headers(request, JsonResponse({})) if from_amp else HttpResponse()
     else:
@@ -415,7 +452,7 @@ def signup(request):
             user = None
             try:
                 user = signup_form.create_user()
-                add_default_category_newsletters(user.subscriber)
+                add_default_newsletters(user.subscriber)  # TODO: better call this after email confirmation success
                 # TODO: check if request is needed
                 # TODO: notifications/signup.html is also used for this purpose (2 templates to the same thing?)
                 was_sent = send_validation_email(
@@ -535,7 +572,7 @@ def google_phone(request):
         google_signin_form = GoogleSigninForm(**form_kwargs)
         # if is a new user add the default category newsletters (reached only from "free" subscriptions)
         if is_new:
-            add_default_category_newsletters(profile)
+            add_default_newsletters(profile)
 
     ctx.update({'google_signin_form': google_signin_form, "is_new": is_new})
     return 'google_signup.html', ctx
@@ -1034,7 +1071,6 @@ def edit_profile(request, user=None):
     if request.method == 'POST':
         user_form = UserForm(request.POST, instance=user)
         profile_form = ProfileForm(request.POST, instance=profile)
-        profile_data_form = ProfileExtraDataForm(request.POST, instance=profile)
 
         old_email = user.email
         if user_form.is_valid() and profile_form.is_valid():
@@ -1083,7 +1119,6 @@ def edit_profile(request, user=None):
     else:
         user_form = UserForm(instance=user)
         profile_form = ProfileForm(instance=profile)
-        profile_data_form = ProfileExtraDataForm(instance=profile)
 
     # Google oauth note: disconnections are discouraged when the email used is the same as the user's email because
     #                    once disconnected, if the user has no valid password, he/she would not be able to login again
@@ -1099,7 +1134,7 @@ def edit_profile(request, user=None):
     return 'edit_profile.html', {
         'user_form': user_form,
         'profile_form': profile_form,
-        'profile_data_form': profile_data_form,
+        'profile_data_form': ProfileExtraDataForm(instance=profile),
         'is_subscriber_digital': user.subscriber.is_digital_only(),
         'google_oauth2_assoc': oauth2_assoc,
         'google_oauth2_multiple': google_oauth2_multiple,
@@ -1108,6 +1143,7 @@ def edit_profile(request, user=None):
         'publication_newsletters': Publication.objects.filter(has_newsletter=True),
         'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
         'newsletters': get_profile_newsletters_ordered(),
+        "mailtrain_lists": MailtrainList.objects.all(),
         "incomplete_field_count": sum(
             not bool(value) for value in (
                 user.get_full_name(),
@@ -1696,7 +1732,7 @@ def read_articles_percentage_api(request):
         user = User.objects.get(email=email)
 
         # get six months ago date
-        six_moths_ago = datetime.today() - relativedelta(months=+6)
+        six_moths_ago = timezone.datetime.today() - relativedelta(months=+6)
         # get viewed articles
         viewed_articles = Article.objects.filter(
             viewed_by=user, articleviewedby__viewed_at__gt=six_moths_ago).select_related('main_section').distinct()

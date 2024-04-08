@@ -25,6 +25,7 @@ from .models import (
     SubscriptionPrices,
     OAuthState,
     RemainingContent,
+    MailtrainList,
 )
 from .utils import collector_analysis
 from .exceptions import UpdateCrmEx
@@ -193,6 +194,11 @@ class RemainingContentAdmin(ModelAdmin):
     list_display = ("remaining_articles", "template_content")
 
 
+class MailtrainListAdmin(ModelAdmin):
+    list_display = ("newsletter_name", "list_cid", "on_signup", "newsletter_new_pill")
+    list_editable = ("on_signup", "newsletter_new_pill")
+
+
 # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
@@ -209,3 +215,4 @@ site.register(SubscriberEditionDownloads)
 site.register(EditionDownload)
 site.register(SubscriptionPrices, SubscriptionPricesAdmin)
 site.register(RemainingContent, RemainingContentAdmin)
+site.register(MailtrainList, MailtrainListAdmin)
