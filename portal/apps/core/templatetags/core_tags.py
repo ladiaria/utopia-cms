@@ -123,14 +123,16 @@ def media_select(parser, token):
 
 @register.simple_tag(takes_context=True)
 def render_article_card(context, article, media, card_size, card_type=None, img_load_lazy=True):
+    if not article:
+        return ""
+
     if not card_size:
         card_size = article.header_display
 
     if not card_type:
         card_type = article.type
 
-    card_display = "horizontal" if article.photo and article.photo.extended.is_portrait else "vertical"
-    template_try_to_override, template_override = False, None
+    card_display, template_try_to_override, template_override = None, False, None
 
     # WARN: template value assigned here may change in next if block. TODO: fix this anti-pattern.
     if card_size == "FW":
@@ -173,6 +175,13 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
                 pass
             else:
                 template_override = template_try
+
+    # compute card_display if not already done
+    if not card_display:
+        if article.photo_render_allowed() and article.photo.extended.is_portrait:
+            card_display = "horizontal"
+        else:
+            card_display = "vertical"
 
     flatten_ctx = context.flatten()
     flatten_ctx.update(
@@ -268,7 +277,9 @@ def get_articles_by_type(parser, token):
 
 @register.simple_tag(takes_context=True)
 def render_toolbar_for(context, toolbar_object):
-    """Usage example: {% render_toolbar_for article %}"""
+    """
+    Usage example: {% render_toolbar_for article %}
+    """
     user = context.get('user')
     if user and user.is_staff and isinstance(toolbar_object, Article):
         toolbar_template = 'core/templates/article/toolbar.html'
@@ -599,7 +610,9 @@ truncatehtml_chars.is_safe = True
 
 @register.simple_tag
 def randomgen():
-    """ Returns a 16 char length random string starting with a letter """
+    """
+    Returns a 16 char length random string starting with a letter
+    """
     return (
         random.choice(string.ascii_letters)
         + ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(15))
