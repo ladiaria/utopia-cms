@@ -23,12 +23,20 @@
       <h1 class="section-detail__title">{{ category.name|capfirst }}</h1>
       <div class="section-detail__sub-cats">
         <ul class="section-detail__sub-cats-list">
-          {% for section in category.section_set.all %}
-            {# useful if a submenu should be rendered #}
-            {% if section not in inner_sections %}
-              <li><a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">{{ section.name_in_category_menu|default:section.name }}</a></li>
-            {% endif %}
-          {% endfor %}
+          {% block page_header_sections %}
+            {% with empty_list=""|make_list %}
+              {% with excluded_slugs=excluded_slugs|default:empty_list %}
+                {% for section in category.section_set.all %}
+                  {# TODO: document submenu support usage #}
+                  {% if section not in inner_sections %}
+                    {% if section.slug not in excluded_slugs %}
+                      <li><a class="section-detail__header-sub-cat" href="{{ section.get_absolute_url }}">{{ section.name_in_category_menu|default:section.name }}</a></li>
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endwith %}
+            {% endwith %}
+          {% endblock %}
         </ul>
       </div>
     </div>
