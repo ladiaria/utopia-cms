@@ -17,6 +17,32 @@ from django.utils.deconstruct import deconstructible
 from django.utils.timezone import is_aware, make_aware, localtime
 
 
+def get_section_articles_sql(section_ids, excluded=[], limit=None):
+    # pre: sections has at least 1 element
+    # TODO: "is_published" notion should be the same used in core.managers.get_published_kwargs
+    comparison = (
+        ("=%d" % section_ids[0]) if len(section_ids) == 1 else (" IN (%s)" % ",".join(str(i) for i in section_ids))
+    )
+    excluded_statement = (" WHERE id NOT IN (%s)" % ",".join(str(i) for i in excluded)) if excluded else ""
+    limit_statement = (" LIMIT %d" % limit) if limit else ""
+    return """
+    SELECT DISTINCT(id) FROM (
+        SELECT a.id,a.date_published
+        FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
+        WHERE a.is_published AND ar.section_id%s
+        UNION
+        SELECT id,date_published FROM core_article WHERE is_published AND id IN (
+            SELECT cr.article_id
+            FROM core_articlecollectionrelated cr
+                JOIN core_articlecollection c ON cr.collection_id=c.article_ptr_id
+                JOIN core_article a ON c.article_ptr_id=a.id
+                JOIN core_articlerel ar ON ar.id=a.main_section_id
+            WHERE c.traversal_categorization AND ar.section_id%s AND a.is_published
+        )
+    ) AS foo%s
+    ORDER BY date_published DESC%s""" % (comparison, comparison, excluded_statement, limit_statement)
+
+
 def datetime_isoformat(dt):
     dt = dt if is_aware(dt) else make_aware(dt)
     return datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, 0, dt.tzinfo).isoformat()

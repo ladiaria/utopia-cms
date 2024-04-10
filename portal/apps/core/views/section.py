@@ -16,7 +16,8 @@ from django.contrib.sites.models import Site
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse
 
-from core.models import Edition, Publication, Article, Section
+from ..models import Edition, Publication, Article, Section
+from ..utils import get_section_articles_sql
 
 
 @never_cache
@@ -70,27 +71,7 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
             edition = get_object_or_404(Edition, date_published=date_published, publication=publication)
             articles = edition.get_articles_in_section(section)
         else:
-            articles = list(
-                Article.objects.raw(
-                    # TODO: "is_published" notion should be the same used in core.managers.get_published_kwargs
-                    """
-                    SELECT DISTINCT(id) FROM (
-                        SELECT a.id,a.date_published
-                        FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
-                        WHERE a.is_published AND ar.section_id=%d
-                        UNION
-                        SELECT id,date_published FROM core_article WHERE is_published AND id IN (
-                            SELECT cr.article_id
-                            FROM core_articlecollectionrelated cr
-                                JOIN core_articlecollection c ON cr.collection_id=c.article_ptr_id
-                                JOIN core_article a ON c.article_ptr_id=a.id
-                                JOIN core_articlerel ar ON ar.id=a.main_section_id
-                            WHERE c.traversal_categorization AND ar.section_id=%d AND a.is_published
-                        )
-                    ) AS foo
-                    ORDER BY date_published DESC""" % (section.id, section.id)
-                )
-            )
+            articles = list(Article.objects.raw(get_section_articles_sql([section.id])))
 
         context['publication_use_headline'] = \
             publication.slug in getattr(settings, 'CORE_PUBLICATIONS_SECTION_DETAIL_USE_HEADLINE', ())

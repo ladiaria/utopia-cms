@@ -833,6 +833,7 @@ class Section(Model):
         - include articles related to any section and not only this (self) section if all_sections=True.
         NOTE: ordering by position is not applied because this method can take articles in more than one edition and
               the position is an ordering that makes sense only inside a section in one edition.
+        TODO: SQL generation shuld be according with ..utils.get_section_articles_sql
         """
         extra_where, extra_join = '', ''
 
