@@ -1561,10 +1561,8 @@ def amp_access_pingback(request):
     return set_amp_cors_headers(request, response)
 
 
-@never_cache
-@api_view(['POST'])
-@permission_classes([HasAPIKey])
-def users_api(request):
+def users_api_noauth(request):
+    # legacy support, url pattern must be defined by third party modules who want to use it. TODO: deprecation sched
     max_device_msg = 'Ha superado la cantidad de dispositivos permitidos'
     try:
         email = request.POST['email']
@@ -1602,6 +1600,13 @@ def users_api(request):
         msg = 'Multiple email in users'
         mail_managers(msg, email)
     return HttpResponseBadRequest(msg)
+
+
+@never_cache
+@api_view(['POST'])
+@permission_classes([HasAPIKey])
+def users_api(request):
+    return users_api_noauth(request)
 
 
 @never_cache

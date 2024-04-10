@@ -51,9 +51,9 @@ AMP_DEBUG = False
 RAW_SQL_DEBUG = False
 
 STATICFILES_FINDERS = (
+    "compressor.finders.CompressorFinder",
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    "compressor.finders.CompressorFinder",
 )
 
 INSTALLED_APPS = (
