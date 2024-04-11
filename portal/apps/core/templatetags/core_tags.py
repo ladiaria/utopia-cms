@@ -29,6 +29,13 @@ register = Library()
 hashids = Hashids(settings.USER_HASHID_SALT, 32)
 
 
+@register.simple_tag
+def published_articles(**kwargs):
+    limit = kwargs.pop("limit", None)
+    articles = Article.published.filter(**kwargs)
+    return articles[:limit] if limit else articles
+
+
 @register.simple_tag(takes_context=True)
 def render_related(context, article, amp=False):
 

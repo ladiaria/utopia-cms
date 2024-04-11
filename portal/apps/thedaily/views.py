@@ -1153,7 +1153,7 @@ def edit_profile(request, user=None):
                 user.subscriber.address,
             )
         ),
-        "email_is_bouncer": user.email in bouncer_blocklisted,
+        "email_is_bouncer": user.subscriber.email_is_bouncer(),
         "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
     }
 

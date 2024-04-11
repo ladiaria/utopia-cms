@@ -27,17 +27,7 @@
       <li><a href="#ayuda">Ayuda</a></li>
     </ul>
   </div>
-  <!-- Notification -->
-  <div id="edit_profile_notification" style="display: none;">
-    <!-- notification icon -->
-    <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M21 7L9 19L3.5 13.5L4.91 12.09L9 16.17L19.59 5.59L21 7Z" fill="white"/>
-    </svg>
-    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M13.46 12L19 17.54V19H17.54L12 13.46L6.46 19H5V17.54L10.54 12L5 6.46V5H6.46L12 10.54L17.54 5H19V6.46L13.46 12Z" fill="white"/>
-    </svg>
-    <p>Tus cambios fueron guardados</p>
-  </div>
+  {% include 'profile/notification_box.html' %}
   <!-- Edit profile modal -->
   <div id="edit_profile_modal" class="edit_profile_modal__background" style="display: none;">
     <div class="edit_profile_modal__container">
@@ -249,6 +239,7 @@
     {% endif %}
     <script src="{% static 'js/push_notifications_editprofile.js' %}"></script>
   {% endif %}
+  <script src="{% static 'js/switch_change_events.js' %}"></script>
   <script>
 
     {% if push_notifications_keys_set %}
@@ -264,96 +255,13 @@
       {% endif %}
     {% endif %}
 
-    // shows a notification text info in the page (this is not the "push notification")
-    function showNotification(notification) {
-      const isError = notification.type === "error";
-      const notificationBox = document.querySelector("#edit_profile_notification");
-      notificationBox.style.display = "flex";
-      notificationBox.classList.remove("error");
-      if (isError) notificationBox.classList.add("error");
-      notificationBox.querySelector("p").textContent = notification.text;
-      setTimeout(function() {
-        notificationBox.style.display = "none";
-      }, isError ? 3000 : 2000);
-    }
-
-    // function to revert a switch value
-    function revertSwitch(switchHTMLElement) {
-      const input = switchHTMLElement.querySelector('input[type="checkbox"]');
-      const offLabel = switchHTMLElement.querySelector('.off');
-      const onLabel = switchHTMLElement.querySelector('.on');
-      const slider = switchHTMLElement.querySelector(".slider");
-      input.checked = !input.checked;
-      slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
-      offLabel.style.display = input.checked ? "none" : "inline-block";
-      onLabel.style.display = input.checked ? "inline-block" : "none";
-    }
-
-    // handler for the switches that are not the push_notification one
-    function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement) {
-      $.ajax({
-        type: "POST",
-        data: data,
-        url: newsletterUrl,
-        cache: false,
-        success: function(html, textStatus) {
-          showNotification({
-            text: "Tus cambios fueron guardados"
-          });
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-          showNotification({
-            text: "No se pudieron guardar los cambios, intentá de nuevo más tarde",
-            type: "error",
-            duration: 3000,
-          });
-          setTimeout(function() {
-            revertSwitch(switchHTMLElement)
-          }, 250);
-        }
-      });
-    }
-
     // open modal handler
     function edit_profile_open_modal(){
       document.getElementById("edit_profile_modal").style.display = "flex";
       document.querySelector('html').style.overflow = "hidden";
     }
 
-    // set switch change events
-    function switch_change_events(switches){
-      for (let i = 0; i < switches.length; i++) {
-        const switchElement = switches[i];
-        const input = switchElement.querySelector('input[type="checkbox"]');
-        const dataKey = input.getAttribute('data-key');
-        const dataBouncer = eval(input.getAttribute('data-bouncer'));
-        const offLabel = switchElement.querySelector('.off');
-        const onLabel = switchElement.querySelector('.on');
-        if (offLabel) offLabel.style.display = input.checked ? "none" : "inline-block";
-        if (onLabel) onLabel.style.display = input.checked ? "inline-block" : "none";
-
-        input.addEventListener("change", () => {
-          const slider = switchElement.querySelector(".slider");
-          const newsletterUrl = input.getAttribute('data-url');
-          slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
-          offLabel.style.display = input.checked ? "none" : "inline-block";
-          onLabel.style.display = input.checked ? "inline-block" : "none";
-          if (input.id == "allow_notification"){
-            {% if push_notifications_keys_set %}
-              handlePushNotificationSwitchChange(switchElement, input.id);
-            {% endif %}
-          } else {
-            handleNewsletterSwitchChange(newsletterUrl, { [dataKey]: input.checked }, switchElement);
-            // disable input after a bouncer NL or communication deactivation
-            if (["nl_subscribe", "com_subscribe"].includes(dataKey) && !input.checked && dataBouncer) {
-              input.setAttribute("disabled", "disabled");
-            }
-          }
-        });
-      }
-    }
-
-    $(document).ready(function() {
+    $(function() {
       $('.scrollspy').scrollSpy();
       const mainHeight = $('#main-content').height();
       const tableHeight = $('.table-of-contents').height();
@@ -374,7 +282,7 @@
 
       {% if push_notifications_keys_set %}
         setNotificationCheckStatus();
-        switch_change_events($('#notificaciones .switch-container'));
+        switch_change_events($('#notificaciones .switch-container'), true);
       {% endif %}
 
       // "normal" nl/communications events

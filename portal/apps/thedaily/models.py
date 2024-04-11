@@ -289,6 +289,9 @@ class Subscriber(Model):
     def user_email(self):
         return self.user.email if self.user else None
 
+    def email_is_bouncer(self):
+        return self.user_email in bouncer_blocklisted
+
     def get_absolute_url(self):
         return reverse('admin:thedaily_subscriber_change', args=[self.id])
 

@@ -125,10 +125,11 @@ def terms_and_conditions():
 
 
 @register.simple_tag
-def nlsubscribed(user, nlobj):
+def nlsubscribed(user, nlobj, nltype=None):
+    nl_type = getattr(nlobj, "nltype", nltype)
     return (
-        (nlobj.nltype == "p" and nlobj in user.subscriber.newsletters.all())
-        or (nlobj.nltype == "c" and nlobj in user.subscriber.category_newsletters.all())
+        (nl_type == "p" and nlobj in user.subscriber.newsletters.all())
+        or (nl_type == "c" and nlobj in user.subscriber.category_newsletters.all())
     )
 
 
