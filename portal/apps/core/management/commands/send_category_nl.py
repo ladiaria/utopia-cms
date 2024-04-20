@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-# utopia-cms, 2018-2023, Aníbal Pacheco
+# utopia-cms, 2018-2024, Aníbal Pacheco
+# TODO: Alert when exporting context and exists a due already-prepared NL (abort or continue only if a new command arg
+#       "ignore-due" was passed). Find a better name for this new arg.
 from __future__ import unicode_literals
 
 from builtins import next
@@ -8,7 +10,6 @@ from os.path import basename, join
 import logging
 import locale
 import json
-from datetime import datetime, timedelta
 from csv import reader, writer
 from pydoc import locate
 from MySQLdb import ProgrammingError
@@ -21,10 +22,11 @@ from django.db import OperationalError
 from django.core.management.base import CommandError
 from django.template import Engine, Context
 from django.contrib.sites.models import Site
-from django.utils import translation, timezone
+from django.utils import translation
+from django.utils.timezone import now, datetime
 
 from apps import blocklisted
-from core.models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
+from core.models import Category, CategoryNewsletter, CategoryHome, Article, get_latest_edition
 from core.utils import get_category_template
 from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
@@ -72,6 +74,7 @@ class Command(SendNLCommand):
             'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=self.nl_delivery_dt).capitalize(),
             'hide_after_content_block': self.hide_after_content_block,
         }
+        export_ctx.update(self.newsletter_extra_context)
         context = export_ctx.copy()
         context['category'] = self.category
 
@@ -108,7 +111,7 @@ class Command(SendNLCommand):
                         dp_featured_articles.append(a)
                     context['featured_articles'] = dp_featured_articles
             elif not self.export_subscribers or self.export_context:
-                category_nl = CategoryNewsletter.objects.get(category=self.category, valid_until__gt=timezone.now())
+                category_nl = CategoryNewsletter.objects.get(category=self.category, valid_until__gt=now())
                 cover_article, featured_article = category_nl.cover(), category_nl.featured_article()
                 if self.export_context:
                     export_ctx.update(
@@ -118,9 +121,7 @@ class Command(SendNLCommand):
                                     position == 0, category=self.category
                                 ) for position, a in enumerate(category_nl.non_cover_articles())
                             ],
-                            'featured_articles': nl_serialize_multi(
-                                category_nl.non_cover_featured_articles(), self.category
-                            ),
+                            'featured_articles': nl_serialize_multi(category_nl.featured_articles(), self.category),
                         }
                     )
                 else:
@@ -130,7 +131,7 @@ class Command(SendNLCommand):
                                 [(a, False) for a in category_nl.non_cover_articles()], self.category, dates=False
                             ),
                             'featured_articles': nl_serialize_multi(
-                                category_nl.non_cover_featured_articles(), self.category, dates=False
+                                category_nl.featured_articles(), self.category, dates=False
                             ),
                         }
                     )
@@ -153,20 +154,16 @@ class Command(SendNLCommand):
                     if getattr(cover_article_section, "slug", None) != listonly_section:
                         cover_article = top_articles.pop(0)[0] if top_articles else None
 
+                # featured directly by article.id in settings/edition
                 featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
                 nl_featured = Article.objects.filter(
                     id=featured_article_id
                 ) if featured_article_id else get_latest_edition().newsletter_featured_articles()
                 opinion_article = nl_featured[0] if nl_featured else None
 
-                # featured_article (a featured section in the category)
-                try:
-                    featured_section, days_ago = \
-                        settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[self.category_slug]
-                    featured_article = self.category.section_set.get(slug=featured_section).latest_article()[0]
-                    assert (featured_article.date_published >= timezone.now() - timedelta(days_ago))
-                except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
-                    featured_article = None
+                # featured articles by featured section in the category (by settings)
+                # TODO: support to use more than one
+                featured_article = self.category.nl_featured_section_articles().first()
 
                 if self.export_context:
                     export_ctx.update(
@@ -413,7 +410,9 @@ class Command(SendNLCommand):
         self.load_options(options)
         self.hide_after_content_block = options.get('hide_after_content_block')
         try:
-            self.category = self.category_slug if self.offline else Category.objects.get(slug=self.category_slug)
+            c = Category.objects.get(slug=self.category_slug)
+            self.category = self.category_slug if self.offline else c
+            self.newsletter_extra_context = c.newsletter_extra_context
         except Category.DoesNotExist:
             raise CommandError('No category matching the given slug found')
         self.initlog(log, self.category_slug)

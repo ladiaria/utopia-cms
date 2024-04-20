@@ -49,6 +49,7 @@ from django.db.models import (
     ManyToManyField,
     PositiveSmallIntegerField,
     URLField,
+    JSONField,
     Index,
     SET_NULL,
     CASCADE,
@@ -582,6 +583,15 @@ class Category(Model):
     newsletter_from_email = EmailField("email en el 'From' del mensaje", blank=True, null=True)
     newsletter_automatic_subject = BooleanField(default=True)
     newsletter_subject = CharField('asunto', max_length=256, blank=True, null=True)
+    newsletter_extra_context = JSONField(
+        "Contexto extra para newsletter",
+        default=dict,
+        help_text=mark_safe(
+            'Diccionario Python en formato JSON que se utilizará como contexto al inicio de la construcción del '
+            'contexto predeterminado, sus entradas, si hay colisión, serían sobreescritas por el comando de envío.<br>'
+            'Ejemplo: <code>{"custom_footer_msg": "Esta newsletter fue generada utilizando utopia-cms"}</code>'
+        ),
+    )
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
     subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
@@ -738,6 +748,33 @@ class Category(Model):
             return self.newsletter_from_name
         else:
             return self.name
+
+    def nl_featured_section_articles(self):
+        """
+        Returns a list containg the articles matching the 3 values that can be defined in the related setting.
+        Examples:
+        1. if settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS == {"this_category_slug": ("some_section", 1, 2)}
+            then, this method will return the 2 most recent articles within 1 day published in "some_section" section.
+        2. The third element of the tuple can be omitted and defaulted to 1:
+            if settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS == {"this_category_slug": ("some_section", 7)}
+            then, this method will return the latest article within last 7 days published in "some_section" section.
+        """
+        settings_tuple = getattr(settings, "CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS", {}).get(self.slug, ())
+        st_len, featured_section, days_ago, take_count = len(settings_tuple), None, None, None
+        result = Article.published.none()
+        if st_len:
+            if st_len == 3:
+                featured_section, days_ago, take_count = settings_tuple
+            elif st_len == 2:
+                (featured_section, days_ago), take_count = settings_tuple, 1
+            if all((featured_section, days_ago, take_count)):
+                try:
+                    result = self.section_set.get(
+                        slug=featured_section
+                    ).published_articles(date_published__gte=now() - timedelta(days_ago))[:take_count]
+                except Section.DoesNotExist:
+                    pass
+        return result
 
     class Meta:
         verbose_name = 'área'
@@ -1009,6 +1046,13 @@ class Journalist(Model):
 
     def get_sections(self):
         return self.sections.all()
+
+    def image_file_exists(self):
+        try:
+            result = self.image and bool(self.image.file)
+        except IOError:
+            result = False
+        return result
 
     class Meta:
         ordering = ('name', )
@@ -1809,7 +1853,12 @@ class Article(ArticleBase):
             'home_lead': self.home_lead,
             'deck': self.deck,
             'has_byline': self.has_byline(),
-            'get_authors': [a.name for a in authors] if authors else None,
+            'get_authors': [
+                {
+                    "name": a.name,
+                    "image": {"url": getattr(a.image, "url", None)} if a.image_file_exists() else {},
+                } for a in authors
+            ] if authors else None,
             "section": {
                 "slug": section.slug, "name": section.name, "nl_display_name": section.nl_display_name()
             } if section else None,
@@ -2077,32 +2126,37 @@ class CategoryNewsletter(Model):
         return '%s - %s' % (self.category, self.cover())
 
     def non_featured_articles(self):
-        """Returns the non-featured articles qs"""
+        """
+        Returns the non-featured articles qs
+        """
         return self.articles.filter(newsletter_articles__featured=False)
 
     def cover(self):
-        """Returns the non-featured article in the 1st position"""
+        """
+        Returns the non-featured article in the 1st position
+        """
         non_featured = self.non_featured_articles()
         return non_featured.exists() and non_featured.order_by('newsletter_articles')[0]
 
     def non_cover_articles(self):
-        """Returns the non-featured articles from 2nd position"""
+        """
+        Returns the non-featured articles from 2nd position
+        """
         non_featured = self.non_featured_articles()
         return non_featured.order_by('newsletter_articles')[1:] if non_featured.exists() else []
 
     def featured_articles(self):
-        """Returns the featured articles qs"""
+        """
+        Returns the featured articles qs
+        """
         return self.articles.filter(newsletter_articles__featured=True)
 
     def featured_article(self):
-        """Returns the featured article in the 1st position"""
+        """
+        Returns the featured article in the 1st position
+        """
         featured = self.featured_articles()
         return featured.exists() and featured.order_by('newsletter_articles')[0]
-
-    def non_cover_featured_articles(self):
-        """Returns the featured articles from 2nd position"""
-        featured = self.featured_articles()
-        return featured.order_by('newsletter_articles')[1:] if featured.exists() else []
 
     class Meta:
         verbose_name = 'newsletter de área'

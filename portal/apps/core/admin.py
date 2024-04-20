@@ -304,7 +304,7 @@ class ArticleRelAdminModelForm(ModelForm):
 class ArticleEditionInline(TabularInline):
     verbose_name = verbose_name_plural = 'publicado en'
     model = ArticleRel
-    raw_id_fields = ('edition', )
+    raw_id_fields = ('edition',)
     form = ArticleRelAdminModelForm
     extra = 1
     classes = ["collapse"]
@@ -975,6 +975,10 @@ class PublicationAdmin(ModelAdmin):
 
 class CategoryAdminForm(CustomSubjectAdminForm):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['newsletter_extra_context'].required = False  # this was needed to avoid "field required" error
+
     class Meta:
         model = Category
         fields = "__all__"
@@ -982,6 +986,7 @@ class CategoryAdminForm(CustomSubjectAdminForm):
             'newsletter_subject': TextInput(attrs={'size': 160}),
             'html_title': TextInput(attrs={'size': 128}),
             'meta_description': Textarea(),
+            "newsletter_extra_context": Textarea(attrs={"spellcheck": "false", "style": "width:80%"}),
         }
 
 
@@ -1000,7 +1005,7 @@ class CategoryAdmin(ModelAdmin):
                     ('name', 'slug', 'order'),
                     ('exclude_from_top_menu', 'dropdown_menu'),
                     ('title', 'more_link_title', 'new_pill'),
-                    ('description', ),
+                    ('description',),
                     ('full_width_cover_image', 'full_width_cover_image_title'),
                     ('full_width_cover_image_lead',),
                     ('has_newsletter', "newsletter_new_pill"),
@@ -1013,6 +1018,7 @@ class CategoryAdmin(ModelAdmin):
             },
         ),
         ('Asunto de newsletter', {'fields': (('newsletter_automatic_subject',), ('newsletter_subject',))}),
+        ('Newsletter custom template data', {'fields': ('newsletter_extra_context',), "classes": ("monospace",)}),
         ('Metadatos', {'fields': (('html_title',), ('meta_description',))}),
     )
     raw_id_fields = ('full_width_cover_image',)

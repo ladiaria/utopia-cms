@@ -20,7 +20,7 @@ from django.contrib.sites.models import Site
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from django.utils.timezone import now, datetime, timedelta
+from django.utils.timezone import now, datetime
 
 from libs.utils import decode_hashid, nl_serialize_multi
 from thedaily.models import Subscriber
@@ -115,6 +115,7 @@ def newsletter_preview(request, slug):
         'newsletter_campaign': category.slug,
         "request_is_xhr": is_xhr(request),
     }
+    context.update(category.newsletter_extra_context)
     render_kwargs = {"context": context}
     template_name, nowval = None, now()
 
@@ -134,9 +135,7 @@ def newsletter_preview(request, slug):
                     'articles': nl_serialize_multi(
                         [(a, False) for a in category_nl.non_cover_articles()], category, dates=False
                     ),
-                    'featured_articles': nl_serialize_multi(
-                        category_nl.non_cover_featured_articles(), category, dates=False
-                    ),
+                    'featured_articles': nl_serialize_multi(category_nl.featured_articles(), category, dates=False),
                 }
             )
 
@@ -156,6 +155,7 @@ def newsletter_preview(request, slug):
                 if getattr(cover_article_section, "slug", None) != listonly_section:
                     cover_article = top_articles.pop(0)[0] if top_articles else None
 
+            # featured directly by article.id in settings
             featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
             nl_featured = (
                 Article.objects.filter(id=featured_article_id)
@@ -164,13 +164,9 @@ def newsletter_preview(request, slug):
             )
             opinion_article = nl_featured[0] if nl_featured else None
 
-            # featured_article (a featured section in the category)
-            try:
-                featured_section, days_ago = settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS[category.slug]
-                featured_article = category.section_set.get(slug=featured_section).latest_article()[0]
-                assert featured_article.date_published >= nowval - timedelta(days_ago)
-            except (KeyError, Section.DoesNotExist, Section.MultipleObjectsReturned, IndexError, AssertionError):
-                featured_article = None
+            # featured articles by featured section in the category (by settings)
+            # TODO: support to use more than one
+            featured_article = category.nl_featured_section_articles().first()
 
             context.update(
                 {

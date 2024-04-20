@@ -54,7 +54,7 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
     if custom_ctx_modname:
         custom_ctx_function = getattr(locate(custom_ctx_modname), section_slug.replace("-", "_"), custom_ctx_function)
     if custom_ctx_function:
-        custom_ctx_function(context)
+        custom_ctx_function(request, context)
         publication = None
     elif section_slug in getattr(settings, 'CORE_SECTIONS_DETAIL_USE_CATEGORY', ()):
         articles, publication = section.category.articles(), None

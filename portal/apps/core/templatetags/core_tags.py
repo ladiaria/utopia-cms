@@ -20,7 +20,7 @@ from django.utils.text import Truncator
 
 from tagging.models import Tag, TaggedItem
 
-from core.models import Article, ArticleCollection, Supplement, Category
+from core.models import Article, ArticleCollection, Supplement, Category, Section
 from core.forms import SendByEmailForm
 from core.utils import datetime_timezone
 
@@ -29,10 +29,35 @@ register = Library()
 hashids = Hashids(settings.USER_HASHID_SALT, 32)
 
 
-@register.simple_tag
-def published_articles(**kwargs):
+@register.simple_tag(takes_context=True)
+def updatectx(context, **kwargs):
+    """
+    updates the context with kwargs dict
+    """
+    context.update(kwargs)
+    return ""
+
+
+@register.simple_tag(takes_context=True)
+def published_articles(context, **kwargs):
+    """
+    Usage: {% published_articles field1=val1 field2__isnull=True ...
+              limit=10 exclude_ctx_vars='some_article_list:4 cover_article:0 another_list:1' %}
+    """
     limit = kwargs.pop("limit", None)
+    exclude_ctx_vars = kwargs.pop("exclude_ctx_vars", None)
     articles = Article.published.filter(**kwargs)
+    if exclude_ctx_vars:
+        exclude_ids = []
+        for var, head in [varhead.split(":") for varhead in exclude_ctx_vars.split()]:
+            varval, hval = context.get(var), int(head)
+            if not hval:
+                exclude_id = getattr(varval, "id", None)
+                if exclude_id:
+                    exclude_ids.append(exclude_id)
+            else:
+                exclude_ids.extend([ivar.id for ivar in varval[:hval] if hasattr(ivar, "id")])
+        articles = articles.exclude(id__in=exclude_ids)
     return articles[:limit] if limit else articles
 
 
@@ -311,6 +336,14 @@ def render_toolbar_for(context, toolbar_object):
 
 
 @register.simple_tag
+def get_section(section_slug):
+    try:
+        return Section.objects.get(slug=section_slug)
+    except Section.DoesNotExist:
+        pass
+
+
+@register.simple_tag
 def render_supplements():
     supplements = Supplement.objects.all()[:2]
     return loader.render_to_string('core/templates/supplement_list.html', {'supplements': supplements})
@@ -516,7 +549,7 @@ def timezone_verbose():
 
 
 @register.simple_tag
-def date_published_verbose(article):
+def date_published_verbose(article, flat=False):
     """
     Use settings to control when and how the date should be rendered in article cards.
     """
@@ -548,10 +581,9 @@ def date_published_verbose(article):
             # return empty string if the custom_data is not None but evaluates to False
             if custom_data is not None and not custom_data:
                 return ''
-        return '%s<div class="ld-card__date">%s</div>' % (
-            ' - ' if article.has_byline() else '',
-            custom_data or article.date_published_verbose(),
-        )
+        return (
+            "%s%s" if flat else '%s<div class="ld-card__date">%s</div>'
+        ) % (' - ' if article.has_byline() else '', custom_data or article.date_published_verbose())
     else:
         return ''
 
