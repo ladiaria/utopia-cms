@@ -63,8 +63,8 @@
 
 ### Built With
 
-* [Django 2.2](https://djangoproject.com/)
-* [Python 3.10.6-9](https://www.python.org/)
+* [Django 4.1](https://djangoproject.com/)
+* [Python 3.11.8](https://www.python.org/)
 
 <!-- GETTING STARTED -->
 ## Getting Started
