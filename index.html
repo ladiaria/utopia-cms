@@ -43,6 +43,10 @@
                 <li class="toctree-l1 current"><a class="reference internal current" href=".">Utopía CMS documentation</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#about-this-documentation-site">About this documentation site</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#how-to-build-this-documentation-site-for-this-project-mantainers">How-to build this documentation site (for this project mantainers)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#utopia-crm-integration">Utopía CRM integration</a>
     </li>
@@ -87,8 +91,12 @@
                 <h1 id="utopia-cms-documentation">Utopía CMS documentation</h1>
 <h2 id="about-this-documentation-site">About this documentation site</h2>
 <p>Starting a documentation site for this project, the main goal is to create docs here as better as possible to help anyone who wants to install or use this Django project, but also this first (an minimal) version of the documentation site was created specially to write about the next release that will support from this commit and up, the basic integration with our another main project, Utopía CRM, both using its default installations and requiering only a few steps of configuration.</p>
-<p>So, the next section, will talk about this integration and of course, with the time, this documentation home page will include all the docs that we have now and the many others that we must create.</p>
+<p>So, the following section (Utopía CRM integration), will talk about this integration and of course, with the time, this documentation home page will include all the docs that we have now and the many others that we must create.</p>
 <p>TODO: make separated md files for each next <code>##</code> and link them here.</p>
+<h3 id="how-to-build-this-documentation-site-for-this-project-mantainers">How-to build this documentation site (for this project mantainers)</h3>
+<p>Standing in a working tree, on <code>main</code> branch and in the <code>docs</code> directory (a subdirectory of the project root), with the "venv" activated, install the <code>mkdocs</code> module using <code>pip</code> (if not already installed) and run this command:</p>
+<pre><code>mkdocs gh-deploy
+</code></pre>
 <h2 id="utopia-crm-integration">Utopía CRM integration</h2>
 <p>This is an skel of steps that we will describe better on next commits, but is a good start point to have an idea on what are the things to do to obtain a deployment of Utopía CMS that can interoperate with a deployment of Utopía CRM.</p>
 <ol>
@@ -198,5 +206,5 @@
 
 <!--
 MkDocs version : 1.5.3
-Build Date UTC : 2024-04-25 01:39:22.806142+00:00
+Build Date UTC : 2024-04-25 02:58:59.827233+00:00
 -->
