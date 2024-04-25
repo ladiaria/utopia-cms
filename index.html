@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="None" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Utopía CMS documentation</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Utop\u00eda CMS documentation";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> Utopía CMS documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href=".">Utopía CMS documentation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#about-this-documentation-site">About this documentation site</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#utopia-crm-integration">Utopía CRM integration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#newsletters">Newsletters</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#intro">Intro</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#default-content">Default content</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="mkdocs_original_index/">Welcome to MkDocs</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">Utopía CMS documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Utopía CMS documentation</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="utopia-cms-documentation">Utopía CMS documentation</h1>
+<h2 id="about-this-documentation-site">About this documentation site</h2>
+<p>Starting a documentation site for this project, the main goal is to create docs here as better as possible to help anyone who wants to install or use this Django project, but also this first (an minimal) version of the documentation site was created specially to write about the next release that will support from this commit and up, the basic integration with our another main project, Utopía CRM, both using its default installations and requiering only a few steps of configuration.</p>
+<p>So, the next section, will talk about this integration and of course, with the time, this documentation home page will include all the docs that we have now and the many others that we must create.</p>
+<p>TODO: make separated md files for each next <code>##</code> and link them here.</p>
+<h2 id="utopia-crm-integration">Utopía CRM integration</h2>
+<p>This is an skel of steps that we will describe better on next commits, but is a good start point to have an idea on what are the things to do to obtain a deployment of Utopía CMS that can interoperate with a deployment of Utopía CRM.</p>
+<ol>
+<li>Install both projects, Utopía CRM and CMS, following the INSTALL.md docs in the root of each, and after having both systems up and running with admin access in front-end, and also access to modify the "local settings", continue to next step.</li>
+<li>
+<p>Configure the url of each one in the other:</p>
+<ul>
+<li>
+<p>In CRM <code>local_settings.py</code> assign the CMS root url in the setting <code>LDSOCIAL_URL</code>, example:</p>
+<p><code>LDSOCIAL_URL = "https://yoogle.com/"</code></p>
+</li>
+<li>
+<p>In CMS <code>local_settings.py</code> assign the CRM API base url in the setting <code>CRM_API_BASE_URI</code>, example:</p>
+<p><code>CRM_API_BASE_URI = 'http://localhost:8000/api/'</code></p>
+</li>
+</ul>
+</li>
+<li>
+<p>On each django admin site, generate the API-Key to set in the local settings of the other project, the steps to follow are identically on each admin site, follow the <a href="https://florimondmanca.github.io/djangorestframework-api-key/guide/#creating-and-managing-api-keys">djangorestframework-api-key docs</a> to obtain both keys and then assign each one using this mapping:</p>
+<ul>
+<li>
+<p>The key generated in the CMS must be assigned to the <code>LDSOCIAL_API_KEY</code> variable in CRM <code>local_settings.py</code>, example:</p>
+<p><code>LDSOCIAL_API_KEY = "aTdKvX2p.qnqGZt6DYyJ8w8o5RsS15tF3eDI6Q8W0"</code></p>
+</li>
+<li>
+<p>Do the same in the other admin site and assign the key to the <code>CRM_UPDATE_USER_API_KEY</code> variable in CMS <code>local_settings.py</code>, example:</p>
+<p><code>CRM_UPDATE_USER_API_KEY = "uK9DmR4s.W3ZtF6y1nA3eD5gH7jK9mP1qRW3ZtF6y"</code></p>
+</li>
+</ul>
+</li>
+<li>
+<p>Enable the integration on each project assigning <code>True</code> to this local settings variables:</p>
+<ul>
+<li>
+<p>In CMS <code>local_settings.py</code>:</p>
+<p><code>CRM_UPDATE_USER_ENABLED = True</code></p>
+</li>
+<li>
+<p>In CRM <code>local_settings.py</code>:</p>
+<p><code>WEB_UPDATE_USER_ENABLED = True</code></p>
+</li>
+</ul>
+</li>
+<li>
+<p>Restart both servers and test the integration creating Users in CMS matching Contacts in CRM with the same email, then for example, when email is changed in one project, the change will be also performed in the other system, take a look also in the <code>contact_id</code> field of CMS Subscribers (`thedaily.models.Subscriber.contact_id) this is the "link" metadata with more precedence used by the apis who sync any object with its respective "pair".</p>
+</li>
+</ol>
+<p>We hope have much more documentation in the next commits, for this topic and many others.</p>
+<h2 id="newsletters">Newsletters</h2>
+<h3 id="intro">Intro</h3>
+<p>TODO: write about what a NL is, how to preview and send</p>
+<h3 id="default-content">Default content</h3>
+<p>The default content of each newsletter can be modified by redefining the template of each newsletter. Additionally, by customizing the available settings for this functionality, many combinations of alternative content can be achieved. Over the years in production, we have made it possible to meet various requirements requested by editorial, sales, management, and other teams.</p>
+<ul>
+<li>Publications:</li>
+</ul>
+<p>Featured articles are selected, meaning those that would appear on the publication's cover.</p>
+<ul>
+<li>Areas:</li>
+</ul>
+<p>Priority is given to the "area newsletter" object that may exist with valid validity (there is a "valid until" datetime field) for the respective area. If the former is not valid or does not exist, articles from the "area cover" object associated with the respective area are then selected.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="mkdocs_original_index/" class="btn btn-neutral float-right" title="Welcome to MkDocs">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+      <span><a href="mkdocs_original_index/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.5.3
+Build Date UTC : 2024-04-25 01:39:22.806142+00:00
+-->
