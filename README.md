@@ -119,12 +119,12 @@ Distributed under the BSD 3-Clause "New" or "Revised" License. See `LICENSE` for
 
 la diaria - [@ladiaria](https://twitter.com/ladiaria)
 
-Project Link: [https://github.com/ladiaria/utopia-cms](https://github.com/ladiaria/utopia-cms)
+Project Link: [https://github.com/ladiaria/utopia-cms/](https://github.com/ladiaria/utopia-cms/)
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
 
-Utopia was developed at [La Diaria](https://ladiaria.com.uy) and it has been opened in 2020 thanks to the support of [Google News Initiative](https://newsinitiative.withgoogle.com/).
+Utopia was developed at [la diaria](https://ladiaria.com.uy/) and it has been opened in 2020 thanks to the support of [Google News Initiative](https://newsinitiative.withgoogle.com/).
 
 Utopía was one of the selected projects by Google News Initiative in Latin America to receive support from the Innovation Challenge Fund.
 
