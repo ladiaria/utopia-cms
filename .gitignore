@@ -45,5 +45,6 @@ cache
 /tests/log/
 /tests/locust/local_settings.py
 /vendor
+/docs/site
 /docs/ssl/yoogle.com.*
 /docs/ssl/myCA.*

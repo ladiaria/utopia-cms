@@ -4,9 +4,17 @@
 
 Starting a documentation site for this project, the main goal is to create docs here as better as possible to help anyone who wants to install or use this Django project, but also this first (an minimal) version of the documentation site was created specially to write about the next release that will support from this commit and up, the basic integration with our another main project, Utopía CRM, both using its default installations and requiering only a few steps of configuration.
 
-So, the next section, will talk about this integration and of course, with the time, this documentation home page will include all the docs that we have now and the many others that we must create.
+So, the following section (Utopía CRM integration), will talk about this integration and of course, with the time, this documentation home page will include all the docs that we have now and the many others that we must create.
 
 TODO: make separated md files for each next `##` and link them here.
+
+### How-to build this documentation site (for this project mantainers)
+
+Standing in a working tree, on `main` branch and in the `docs` directory (a subdirectory of the project root), with the "venv" activated, install the `mkdocs` module using `pip` (if not already installed) and run this command:
+
+```
+mkdocs gh-deploy
+```
 
 ## Utopía CRM integration
 
