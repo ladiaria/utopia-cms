@@ -112,22 +112,24 @@
       {% if HOMEV3_CUSTOM_CSS %}
         <link href="{% static HOMEV3_CUSTOM_CSS %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endif %}
-      {% block css %}{% endblock %}
-    {% endcompress %}
-    {% block extra_css %}{% endblock %}
-
-    {% compress css %}
       <link href="{% static 'sass/print.scss' %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
       {% if HOMEV3_CUSTOM_PRINT_CSS %}
         <link href="{% static HOMEV3_CUSTOM_PRINT_CSS %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
       {% endif %}
     {% endcompress %}
 
+    {# another compress tags needed (above one cannot be used) things get broken if not #}
     {% if user.is_staff %}
       {% compress css %}
         <link href="{% static 'sass/admin.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endcompress %}
     {% endif %}
+
+    {% compress css %}
+      {% block css %}{% endblock %}
+    {% endcompress %}
+
+    {% block extra_css %}{% endblock %}
     <!-- End CSS -->
 
     {% block meta_og_title %}
