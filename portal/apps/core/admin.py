@@ -116,7 +116,7 @@ class HomeTopArticleInline(TabularInline):
             'js/homev2/dynamic_edition_admin.js',
             'js/RelatedObjectLookupsCustom.js',
         )
-        css = {'all': ('css/home_admin.css', )}
+        css = {'all': ('css/home_admin.css',)}
 
 
 class SectionArticleRelForm(ModelForm):

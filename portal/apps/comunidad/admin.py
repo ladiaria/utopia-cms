@@ -4,31 +4,31 @@ from __future__ import unicode_literals
 
 from django.contrib.admin import site, ModelAdmin, TabularInline
 
-from .models import SubscriberArticle, Circuito, Socio, Beneficio, Registro, Url, Recommendation
+from .models import SubscriberArticle, Circuito, Socio, Beneficio, Registro, Url as ComunidadUrl, Recommendation
 
 
 class CircuitoAdmin(ModelAdmin):
-    list_display = ('name', )
+    list_display = ('name',)
 
 
 class SocioAdmin(ModelAdmin):
-    raw_id_fields = ('user', )
+    raw_id_fields = ('user',)
 
 
 class RegistroAdmin(ModelAdmin):
-    raw_id_fields = ('subscriber', )
+    raw_id_fields = ('subscriber',)
     list_display = ('subscriber', 'subscriber_email', 'benefit', 'used')
-    list_filter = ('benefit', )
+    list_filter = ('benefit',)
 
 
 class BeneficioAdmin(ModelAdmin):
     list_display = ('name', 'circuit', 'limit', 'quota')
-    list_filter = ('circuit', )
+    list_filter = ('circuit',)
 
 
-class UrlAdmin(ModelAdmin):
-    list_display = ('url', )
-    search_fields = ('url', )
+class ComunidadUrlAdmin(ModelAdmin):
+    list_display = ('url',)
+    search_fields = ('url',)
 
 
 class UrlInline(TabularInline):
@@ -36,7 +36,7 @@ class UrlInline(TabularInline):
 
 
 class RecommendationAdmin(ModelAdmin):
-    raw_id_fields = ('article', )
+    raw_id_fields = ('article',)
     list_display = ('name', 'comment', 'url_list', 'article')
     fields = ('name', 'comment', 'article')
     search_fields = ('name', 'comment')
@@ -48,5 +48,5 @@ site.register(Beneficio, BeneficioAdmin)
 site.register(Circuito, CircuitoAdmin)
 site.register(Socio, SocioAdmin)
 site.register(Registro, RegistroAdmin)
-site.register(Url, UrlAdmin)
+site.register(ComunidadUrl, ComunidadUrlAdmin)
 site.register(Recommendation, RecommendationAdmin)
