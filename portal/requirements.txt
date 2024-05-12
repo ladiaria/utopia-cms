@@ -1,5 +1,5 @@
 django==4.1.4
-Pillow<10
+Pillow
 bleach
 bleach-whitelist
 django-activity-stream==1.4.2
@@ -13,7 +13,7 @@ django-compressor
 djangorestframework==3.14.0
 djangorestframework-api-key
 django-filter==2.4.0
-django-avatar==7.0.1
+django-avatar
 django-classy-tags==1.0.0
 django-crispy-forms==1.14.0
 markdownify
@@ -43,7 +43,7 @@ ebooklib
 django-tagging==0.5.0
 django-elasticsearch-dsl
 django-model-utils==4.3.1
-django-photologue==3.15.1
+django-photologue
 django-robots
 django-sortedm2m
 django-star-ratings==0.9.2

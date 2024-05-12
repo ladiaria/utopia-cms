@@ -12,4 +12,5 @@ from local_settings import *  # noqa
 try:
     from local_test_settings import *  # noqa
 except ImportError:
-    pass
+    if DEBUG:  # noqa
+        print("WARNING: local_test_settings import is rising error")

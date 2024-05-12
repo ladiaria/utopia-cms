@@ -10,12 +10,25 @@ from libs.scripts.pwclear import pwclear
 from core.models import Publication, Article
 from core.factories import UserFactory
 
+from . import label_content_not_available, label_to_continue_reading, label_exclusive
+
 
 class SignupwallTestCase(TestCase):
     fixtures = ['test']
     http_host_header_param = {'HTTP_HOST': settings.SITE_DOMAIN}
 
-    def user_faces_wall(self, c, restricted_msg="Exclusivo para suscripción digital de pago"):
+    def no_redirection_for_restricted_article(self, c, restricted_msg, can_read=False, is_subscriber_any=False):
+        with self.settings(CORE_RESTRICTED_PUBLICATIONS=("restrictedpub",)):
+            a = Article.objects.get(slug="test-restricted1")
+            response = c.get(a.get_absolute_url(), **self.http_host_header_param)
+            response_content = response.content.decode()
+            self.assertEqual(response.status_code, 200)
+            assertion = self.assertNotIn if can_read else self.assertIn
+            assertion(restricted_msg, response_content)
+            if can_read or is_subscriber_any:
+                assertion(label_content_not_available, response_content)
+
+    def user_faces_wall(self, c, restricted_msg=label_exclusive, is_subscriber_any=False):
         for i in range(settings.SIGNUPWALL_MAX_CREDITS - 1):
             a = Article.objects.create(headline='test%d' % (i + 1))
             response = c.get(a.get_absolute_url(), **self.http_host_header_param)
@@ -23,7 +36,7 @@ class SignupwallTestCase(TestCase):
             response_content = response.content.decode()
             self.assertIn("Tu cuenta", response_content)
             self.assertIn("Te queda", response_content)
-            self.assertNotIn("Para seguir leyendo ingresá o suscribite", response_content)
+            self.assertNotIn(label_to_continue_reading, response_content)
 
         a = Article.objects.create(headline='test_last')
         r = c.get(a.get_absolute_url(), **self.http_host_header_param)
@@ -40,10 +53,7 @@ class SignupwallTestCase(TestCase):
         self.assertIn("Suscribite para continuar leyendo este artículo", response_content)
 
         # no redirection for restricted articles
-        a = Article.objects.get(slug="test-restricted1")
-        response = c.get(a.get_absolute_url(), **self.http_host_header_param)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(restricted_msg, response.content.decode())
+        self.no_redirection_for_restricted_article(c, restricted_msg, is_subscriber_any=is_subscriber_any)
 
     def test01_anon_faces_wall(self):
         pwclear()
@@ -52,7 +62,7 @@ class SignupwallTestCase(TestCase):
             a = Article.objects.create(headline='test%d' % (i + 1))
             response = c.get(a.get_absolute_url(), **self.http_host_header_param)
             self.assertEqual(response.status_code, 200)
-            self.assertNotIn("Para seguir leyendo ingresá o suscribite", response.content.decode())
+            self.assertNotIn(label_to_continue_reading, response.content.decode())
 
         a = Article.objects.create(headline='test_walled')
         response = c.get(a.get_absolute_url(), **self.http_host_header_param)
@@ -60,11 +70,8 @@ class SignupwallTestCase(TestCase):
         response = c.get(response.headers["location"],  **self.http_host_header_param)
         self.assertIn("Registrate para acceder a", response.content.decode())
 
-        # no redirection for restricted articles
-        a = Article.objects.get(slug="test-restricted1")
-        response = c.get(a.get_absolute_url(), **self.http_host_header_param)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Exclusivo para suscripción digital de pago", response.content.decode())
+        # no redirection for restricted articles.
+        self.no_redirection_for_restricted_article(c, label_exclusive)
 
     def test02_non_subscriber_faces_wall(self):
         pwclear()
@@ -83,7 +90,7 @@ class SignupwallTestCase(TestCase):
         Publication.objects.get(slug="spinoff").save()
         user.subscriber.is_subscriber("spinoff", operation="set")
         c.login(username=user.username, password=password)
-        self.user_faces_wall(c, "Contenido no disponible con tu suscripción actual")
+        self.user_faces_wall(c, label_content_not_available, True)
 
     def test04_subscriber_passes_wall(self):
         pwclear()
@@ -109,9 +116,4 @@ class SignupwallTestCase(TestCase):
             self.assertNotIn("Te queda", response_content)
 
         # no redirection for restricted articles and can read it
-        a = Article.objects.get(slug="test-restricted1")
-        response = c.get(a.get_absolute_url(), **self.http_host_header_param)
-        self.assertEqual(response.status_code, 200)
-        response_content = response.content.decode()
-        self.assertNotIn("Exclusivo para suscripción digital de pago", response_content)
-        self.assertNotIn("Contenido no disponible con tu suscripción actual", response_content)
+        self.no_redirection_for_restricted_article(c, label_exclusive, True)

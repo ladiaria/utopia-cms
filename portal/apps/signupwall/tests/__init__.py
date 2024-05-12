@@ -16,6 +16,11 @@ from django.contrib.staticfiles.testing import LiveServerTestCase
 from django.test.testcases import LiveServerThread, QuietWSGIRequestHandler
 
 
+label_content_not_available = "Contenido no disponible con tu suscripción actual"
+label_to_continue_reading = "Para seguir leyendo ingresá o suscribite"
+label_exclusive = "Exclusivo para suscripción digital de pago"
+
+
 class LiveServerThreadWithReuse(LiveServerThread):
     """
     This miniclass overrides _create_server to allow port reuse. This avoids creating
@@ -28,21 +33,21 @@ class LiveServerThreadWithReuse(LiveServerThread):
 
 
 class LiveServerSeleniumTestCase(LiveServerTestCase):
+    host = settings.SITE_DOMAIN
+    port = settings.TESTING_PORT
+    url_scheme = settings.URL_SCHEME
+    server_url = "%s://%s" % (url_scheme, host)
+    server_thread_class = LiveServerThreadWithReuse
+    waitsecs = getattr(settings, "SIGNUPWALL_SELENIUM_DEFAULT_WAITSECS", 30)
 
     @classmethod
     def setUpClass(cls):
-        cls.host = settings.SITE_DOMAIN
-        cls.port = settings.TESTING_PORT
-        cls.url_scheme = settings.URL_SCHEME
-        cls.server_thread_class = LiveServerThreadWithReuse
-        super(LiveServerSeleniumTestCase, cls).setUpClass()
-        implicitly_wait = 0.5
-        headless = settings.TESTING_CHROME_HEADLESS
-
         # chrome setup:
+        headless = settings.TESTING_CHROME_HEADLESS
         chrome_options = ChromeOptions()
         if headless:
             chrome_options.add_argument('--headless')
+
         """
         Uncomment next line to test in chrome-android using an android device listed in "adb".
         NOTE and TODO: Chrome in Android is very difficult because there seems to be no way to eliminate the SSL
@@ -50,13 +55,12 @@ class LiveServerSeleniumTestCase(LiveServerTestCase):
         here to launch a mobile emulation in the desktop browsers, ex: https://stackoverflow.com/a/63798638/2292933
         """
         # chrome_options.add_experimental_option('androidPackage', 'com.android.chrome')
-        driver = webdriver.Chrome(options=chrome_options)
+        driver, implicitly_wait = webdriver.Chrome(options=chrome_options), 0.5
         driver.implicitly_wait(implicitly_wait)
         driver.delete_all_cookies()
         cls.selenium = driver
-        cls.waitsecs = getattr(settings, "SIGNUPWALL_SELENIUM_DEFAULT_WAITSECS", 30)
 
-        # firefox setup:
+        # firefox setup (TODO: check):
         """
         ff_options = FirefoxOptions()
         ff_options.headless = headless
@@ -68,6 +72,7 @@ class LiveServerSeleniumTestCase(LiveServerTestCase):
         cls.selenium = webdriver.Firefox(options=ff_options, firefox_profile=profile, desired_capabilities=desired)
         cls.selenium.implicitly_wait(implicitly_wait)
         """
+        super(LiveServerSeleniumTestCase, cls).setUpClass()
 
     @classmethod
     def tearDownClass(cls):
