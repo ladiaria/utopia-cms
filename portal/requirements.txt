@@ -17,7 +17,7 @@ django-avatar
 django-classy-tags==1.0.0
 django-crispy-forms==1.14.0
 markdownify
-martor==1.6.26
+martor
 mutagen
 crispy-forms-materialize
 django-cors-headers
