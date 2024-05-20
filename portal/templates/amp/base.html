@@ -615,6 +615,8 @@
       <amp-analytics config="https://www.googletagmanager.com/amp.json?id={{ GTM_AMP_CONTAINER_ID }}&gtm.url=SOURCE_URL" data-credentials="include"></amp-analytics>
     {% endif %}
 
+    {% block body_begin %}{% endblock %}
+
     {% if not article.public %}
       <header id="signupwall-header" amp-access="signupwall_header AND access">
         <template amp-access-template type="amp-mustache">
