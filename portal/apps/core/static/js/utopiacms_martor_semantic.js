@@ -23,15 +23,18 @@ var markdownToH4 = function(editor) {
 if (window.jQuery) {
     $(function(){
         if (typeof ace !== "undefined") {
-            var editor = ace.edit('martor-body');
-            editor.commands.addCommand({
-                name: 'markdownToH4',
-                bindKey: {win: 'Ctrl-Alt-4', mac: 'Command-Option-4'},
-                exec: function(editor) {
-                    markdownToH4(editor);
-                },
-                readOnly: true
-            });
+            var field_name = $('.main-martor').data('field-name');
+            if (field_name.startsWith('body-')){
+                var editor = ace.edit('martor-' + field_name);
+                editor.commands.addCommand({
+                    name: 'markdownToH4',
+                    bindKey: {win: 'Ctrl-Alt-4', mac: 'Command-Option-4'},
+                    exec: function(editor) {
+                        markdownToH4(editor);
+                    },
+                    readOnly: true
+                });
+            }
         }
     });
 }
