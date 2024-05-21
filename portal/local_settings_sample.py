@@ -10,7 +10,6 @@ TEMPLATE_DEBUG = DEBUG
 REMOVE_WWW = not DEBUG
 AMP_SIMULATE = True  # remove this line or set to False in production
 RESTRICT_ACCESS = False
-RESTRICT_ACCESS_LOGIN_URL = '/acceso-beep/'
 SECRET_KEY = ''  # fill with any value as described in INSTALL.md
 
 if DEBUG:

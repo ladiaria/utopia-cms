@@ -1,13 +1,15 @@
 # coding:utf-8
 """
-utopia-cms, 2018-2022, Aníbal Pacheco
+utopia-cms, 2018-2024, Aníbal Pacheco, utopia-cms.
 
 Global variables definition, to avoid its definition multiple times inside the apps modules.
 
-TODO: if mongo server fails after this global vars are set, the global client instances in views will start to fail.
+TODO: 1. if mongo server fails after this global vars are set, the global client instances in views will start to fail.
       Change this "global" approach asap to a more robust approach, for example, a function that returns a new mongo
       client instance (or checks for the connectivity on the global instance and returns it if ok).
       Also some checks "if mongo_db is not None" are missing in some views (adzone.views for example).
+      2. Determine when MONGODB_CONNECT_AT_CLIENT_CREATION must be False, on newer deployments we saw that this value
+      must be set to False to avoid a "pool" error exception. (RHEL7/9-Mongod7).
 """
 from __future__ import unicode_literals
 

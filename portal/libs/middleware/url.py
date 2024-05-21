@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from builtins import object
 
 from django.conf import settings
-from django.http import HttpResponsePermanentRedirect, HttpResponseRedirect
+from django.http import HttpResponsePermanentRedirect
 from django.urls import reverse, resolve, Resolver404
 from urllib.parse import quote
 from django.utils.deprecation import MiddlewareMixin
