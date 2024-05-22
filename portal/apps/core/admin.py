@@ -441,7 +441,7 @@ class ArticleAdmin(VersionAdmin):
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
     ordering = ('-date_created', )
-    raw_id_fields = ('photo', 'gallery', 'main_section')
+    raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
     readonly_fields = ('date_published', )
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
     fieldsets = (

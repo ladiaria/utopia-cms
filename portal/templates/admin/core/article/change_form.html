@@ -11,8 +11,20 @@
 {% endblock %}
 
 {% block admin_change_form_document_ready %}
+  {% comment %}
+
+    Slow load troubleshooting
+
+    Debugging a slow page render? TL;DR: **Re-check your "non-raw_id fields"**
+
+    PLEASE: Check again your "non-raw_id fields". One of them may have unexpectedly grown due to some module upgrades.
+            This can happen. Another thing that can happen is: due to an upgrade, some of your scripts here may not
+            find elements that they used to find. As a result, a page modification that you expect to happen may not
+            happen at all or may only happen once the DOM has fully loaded.
+
+  {% endcomment %}
   {{ block.super }}
-  <script type="text/javascript" src="{% static 'js/article_formset_handlers.js' %}"></script>
+  <script src="{% static 'js/article_formset_handlers.js' %}"></script>
   <script>
     $('#object-tools-items-surl a').addClass('viewsitelink').attr('target', '_blank');
   </script>

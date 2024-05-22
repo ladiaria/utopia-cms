@@ -8,15 +8,18 @@ from django.utils import timezone
 
 
 class Audio(Model):
-    file = FileField(u'audio', upload_to='audiologue')
-    title = CharField(u'título', max_length=255)
-    slug = SlugField(u'slug', null=True, blank=True, editable=False)
-    caption = CharField(u'pie', max_length=255, null=True, blank=True)
-    byline = CharField(u'autor/es', max_length=255, null=True, blank=True)
-    description = TextField(u'descripción', null=True, blank=True)
-    date_uploaded = DateTimeField(u'fecha de subida', null=True, blank=True, auto_now_add=True, editable=False)
-    times_viewed = PositiveIntegerField(u'visto', default=0, editable=False)
-    is_public = BooleanField(u'público', default=True)
+    file = FileField('audio', upload_to='audiologue')
+    title = CharField('título', max_length=255)
+    slug = SlugField('slug', null=True, blank=True, editable=False)
+    caption = CharField('pie', max_length=255, null=True, blank=True)
+    byline = CharField('autor/es', max_length=255, null=True, blank=True)
+    description = TextField('descripción', null=True, blank=True)
+    date_uploaded = DateTimeField('fecha de subida', null=True, blank=True, auto_now_add=True, editable=False)
+    times_viewed = PositiveIntegerField('visto', default=0, editable=False)
+    is_public = BooleanField('público', default=True)
+
+    class Meta:
+        ordering = ('-date_uploaded',)
 
     def save(self):
         if not self.id:
@@ -27,4 +30,4 @@ class Audio(Model):
         if self.title:
             return self.title
         else:
-            return u'Audio #%i' % self.id
+            return 'Audio #%i' % self.id

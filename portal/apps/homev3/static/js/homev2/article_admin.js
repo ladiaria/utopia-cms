@@ -1,6 +1,6 @@
 var prepareFields = function(){
     var art_type = $('#id_type').val();
-    $('#id_body').attr('rows', '20');
+    $('.main-martor').attr('rows', '20');
     $('.form-row.field-body').show();
     if(art_type == 'HT'){
         $('.form-row.field-headline').hide();
@@ -35,7 +35,7 @@ var prepareFields = function(){
     }
     $('#homearticle_set-group').hide();
     // custom position for the "extensions" inline
-    var fset_body = $('#id_body').closest('fieldset');
+    var fset_body = $('.main-martor').closest('fieldset');
     fset_body.after($('#extensions-group'));
 }
 
