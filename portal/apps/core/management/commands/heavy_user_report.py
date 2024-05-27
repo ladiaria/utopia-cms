@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from thedaily.email_logic import SUBJ_FREE_ARTICLES_LIMIT
+from thedaily.email_logic import DESC_FREE_ARTICLES_LIMIT
 from thedaily.models import SubscriberEvent, Subscriber
 from django.utils.timezone import now
 
@@ -32,7 +32,7 @@ class Command(BaseCommand):
         start = today.replace(day=1) - relativedelta(months=3)
 
         events = SubscriberEvent.objects.filter(
-            date_occurred__gte=start, description=SUBJ_FREE_ARTICLES_LIMIT
+            date_occurred__gte=start, description=DESC_FREE_ARTICLES_LIMIT
         ).order_by('date_occurred')
 
         # by construction, if the subscribear repeats, the last is valid

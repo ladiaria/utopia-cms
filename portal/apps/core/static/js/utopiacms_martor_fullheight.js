@@ -1,7 +1,7 @@
 if (window.jQuery) {
     $(function(){
         $("span.expand-editor").on("click", function(){
-            var mbody = $("#martor-body");
+            var mbody = $(".martor-field");
             var set_height = 400;  // default
             var max_height = $("div.ace_scrollbar-v div.ace_scrollbar-inner").height();
             if (max_height > set_height && mbody.height() < max_height) {

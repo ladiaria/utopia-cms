@@ -1,34 +1,31 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from django.utils import timezone
 
 from thedaily.models import SubscriberEvent
 
 
-# WARNING: a change in this variables should be also made in database rows already inserted.
-SUBJ_FREE_ARTICLES_LIMIT = u'Usuario alcanza limite de articulos gratis'
-SUBJ_MAIL_FREE_ARTICLES_LIMIT = u'Correo por limite de articulos gratis'
+# WARNING: A change on this variable should also be made in database rows already inserted.
+DESC_FREE_ARTICLES_LIMIT = 'Usuario alcanza limite de articulos gratis'
 
 
 def limited_free_article_mail(user):
     """
-    if user is authenticated checks if it has to send the free articles limit reach.
-    See also automatic_mail module
+    Register the event of "out of free credits" if user is authenticated
     """
     if user.is_authenticated:
-        subject = SUBJ_FREE_ARTICLES_LIMIT
         send_mail = False
         try:
             event = SubscriberEvent.objects.filter(
-                subscriber=user.subscriber, description=subject
+                subscriber=user.subscriber, description=DESC_FREE_ARTICLES_LIMIT
             ).latest('date_occurred')
             if not sent_recently(event):
                 send_mail = True
         except SubscriberEvent.DoesNotExist:
             send_mail = True
         if send_mail and user.subscriber.allow_promotions:
-            SubscriberEvent.objects.create(subscriber=user.subscriber, description=subject)
-            # A management command will look at this table and send an email to the subscriber
+            SubscriberEvent.objects.create(subscriber=user.subscriber, description=DESC_FREE_ARTICLES_LIMIT)
 
 
 def sent_recently(event):
