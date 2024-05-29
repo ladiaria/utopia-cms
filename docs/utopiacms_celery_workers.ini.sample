@@ -22,8 +22,8 @@ environment=DJANGO_SETTINGS_MODULE="settings"
 directory=/home/user/utopia-cms/portal/
 user=user
 numprocs=1
-stdout_logfile=/var/log/celery/utopiacms_beat.log
-stderr_logfile=/var/log/celery/utopiacms_beat.log
+stdout_logfile=/var/log/celery/utopiacms_w1.log
+stderr_logfile=/var/log/celery/utopiacms_w1.log
 autostart=true
 autorestart=true
 startsecs=10
@@ -36,8 +36,8 @@ environment=DJANGO_SETTINGS_MODULE="settings"
 directory=/home/user/utopia-cms/portal/
 user=user
 numprocs=1
-stdout_logfile=/var/log/celery/utopiacms_w1.log
-stderr_logfile=/var/log/celery/utopiacms_w1.log
+stdout_logfile=/var/log/celery/utopiacms_w2.log
+stderr_logfile=/var/log/celery/utopiacms_w2.log
 autostart=true
 autorestart=true
 startsecs=10
@@ -50,8 +50,8 @@ environment=DJANGO_SETTINGS_MODULE="settings"
 directory=/home/user/utopia-cms/portal/
 user=user
 numprocs=1
-stdout_logfile=/var/log/celery/utopiacms_w2.log
-stderr_logfile=/var/log/celery/utopiacms_w2.log
+stdout_logfile=/var/log/celery/utopiacms_w3.log
+stderr_logfile=/var/log/celery/utopiacms_w3.log
 autostart=true
 autorestart=true
 startsecs=10

@@ -68,6 +68,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sitemaps',
     'django.contrib.sites',
+    'django.contrib.redirects',
     'audiologue',
     'tagging',
     'core.config.CoreConfig',
@@ -205,6 +206,7 @@ MIDDLEWARE = (
     'social_django.middleware.SocialAuthExceptionMiddleware',
     "amp_tools.middleware.AMPDetectionMiddleware",
     "core.middleware.AMP.OnlyArticleDetail",
+    "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
 )
 
 # Localization default settings
