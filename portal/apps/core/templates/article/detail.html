@@ -91,10 +91,11 @@
   <main>
     <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
 
-      {# TODO: apply this 'render_allowed' condition also in all places that render article's photos #}
+      {# TODO: - apply this 'render_allowed' condition also in all places that render article's photos #}
+      {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 297 #}
+          <div>{# closed in line 299 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -121,7 +122,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 297 #}
+          {# missing close div here is closed correctly in line 299 #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -295,7 +296,7 @@
         {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
-        </div>{# opened in line 97 #}
+        </div>{# opened in line 98 #}
       {% endif %}
 
       {% if article.has_deck or article.has_lead %}
@@ -310,7 +311,7 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 644 #}
+        {% if not request.signupwall %}{# closed in line 646 #}
 
           {# signupwall banner #}
           {% if signupwall_remaining_banner and not article.public %}
@@ -642,7 +643,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 312 #}
+        {% endif %}{# opened in line 314 #}
 
       {% else %}{# restricted content message #}
 
@@ -659,7 +660,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 790 #}
+    {% if not request.signupwall %}{# closed in line 792 #}
 
       {% if article.public %}
 
@@ -788,7 +789,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 661 #}
+    {% endif %}{# opened in line 663 #}
 
     {% block article_extra %}{% endblock %}
 
