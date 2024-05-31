@@ -1,1 +1,1 @@
-python -W ignore manage.py shell -c "from libs.scripts import pwclear"
+python -W ignore manage.py shell -c "from libs.scripts.pwclear import pwclear; pwclear()"

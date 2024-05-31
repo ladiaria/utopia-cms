@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.conf import settings
 from django.db.models.aggregates import Sum
-from django.views.decorators.cache import never_cache
+from django.views.decorators.cache import never_cache, cache_page
 from django.utils.timezone import now, timedelta
 
 from decorators import render_response
@@ -51,6 +51,7 @@ def index(request):
     )
 
 
+@cache_page(900)
 @to_response
 def content(request):
     return 'masleidos.html', {'masleidos_cover_daily': mas_leidos_daily(True, 5)}

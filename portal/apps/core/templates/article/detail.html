@@ -161,14 +161,15 @@
             </div>
           {% else %}
             <div class="container-photo photo BG {{ article.photo_layout }}">
-              <figure class="principal">
+              <figure class="principal" data-src="{{ article.photo.get_700w_url }}" alt="{{ article.photo_caption }}">
                 <picture class="materialboxed">
-                  <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                  <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
-                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
+                  <!--[if IE 9]><video style="display: none;"><![endif]-->
+                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+                  <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+                  <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+                  <!--[if IE 9]></video><![endif]-->
                   <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
-                       data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
-                       width="700" height="{{ article.photo.get_700w_size.1 }}">
+                       data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
                 </picture>
                 <figcaption class="article-caption container ld-caption">
                   {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
@@ -866,10 +867,12 @@
   {# js for materialbox (main photo) #}
   <script defer src="{% static 'materialize/js/materialbox.js' %}"></script>
   {# js for image gallery #}
-  <script defer src="{% static 'lightGallery/src/js/lightgallery.js' %}"></script>
-  <script defer src="{% static 'lightGallery/modules/lg-pager.js' %}"></script>
-  <script defer src="{% static 'lightGallery/modules/lg-video.js' %}"></script>
-  <script defer src="{% static 'lightGallery/modules/lg-ladiaria.js' %}"></script>
+  {% if article.gallery %}
+    <script defer src="{% static 'lightGallery/src/js/lightgallery.js' %}"></script>
+    <script defer src="{% static 'lightGallery/modules/lg-pager.js' %}"></script>
+    <script defer src="{% static 'lightGallery/modules/lg-video.js' %}"></script>
+    <script defer src="{% static 'lightGallery/modules/lg-ladiaria.js' %}"></script>
+  {% endif %}
   <script>
     $(function(){
       $("p.atitlelist a").click(function(){
