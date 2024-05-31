@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load static core_tags homev3_tags thumbnail %}
 
+{% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
+
 {% block page_title %}{% publication_title %}{% endblock %}
 
 {% block meta_og_title %}
@@ -11,7 +13,7 @@
 {% block json_ld_extra %}
   "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://ladiaria.com.uy/buscar/?q={search_term_string}",
+      "target": "{{ SITE_URL }}buscar/?q={search_term_string}",
       "query-input": "required name=search_term_string"
   },
 {% endblock %}

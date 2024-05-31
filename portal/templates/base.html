@@ -66,7 +66,7 @@
     <!-- End Meta tags base -->
 
     <!-- RSS feed -->
-    <link rel="alternate" type="application/rss+xml" href="{{ URL_SCHEME }}://{{ site.domain }}{% url 'ultimos-articulos-rss' %}" />
+    <link rel="alternate" type="application/rss+xml" href="{{ SITE_URL_SD }}{% url 'ultimos-articulos-rss' %}">
     <!-- End RSS feed -->
 
     <!-- Robots -->
@@ -142,11 +142,11 @@
       <meta property="og:description" content="{{ site_description }}">
       <meta property="og:locale" content="es_UY">
       <meta property="og:site_name" content="{{ site.name }}">
-      <meta property="og:url" content="{{ URL_SCHEME }}://{{ site.domain }}{{ request.get_full_path }}">
+      <meta property="og:url" content="{{ SITE_URL_SD }}{{ request.get_full_path }}">
       {% if publication.slug in custom_icons_publications %}
-        <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static publication.open_graph_image %}">
+        <meta property="og:image" content="{{ SITE_URL_SD }}{% static publication.open_graph_image %}">
       {% elif default_pub.open_graph_image %}
-        <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}">
+        <meta property="og:image" content="{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}">
       {% endif %}
       <!-- End Open Graph (http://ogp.me) -->
 
@@ -174,9 +174,9 @@
             "url": "{{ SITE_URL }}",
             {% block json_ld_extra %}{% endblock %}
             {% if publication.slug in custom_icons_publications %}
-              "logo": "{{ URL_SCHEME }}://{{ site.domain }}{% static publication.open_graph_image %}",
+              "logo": "{{ SITE_URL_SD }}{% static publication.open_graph_image %}",
             {% elif default_pub.open_graph_image %}
-              "logo": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}",
+              "logo": "{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}",
             {% endif %}
             "description": "{{ site_description }}"{% if HOMEV3_EXTRA_META %},
             {% autoescape off %}{{ HOMEV3_EXTRA_META }}{% endautoescape %}{% endif %}

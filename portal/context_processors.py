@@ -18,7 +18,7 @@ def urls(request):
                 url_dict[attr] = getattr(settings, attr).replace('%s', '')
             except AttributeError:
                 pass
-    url_dict['URL_SCHEME'] = settings.URL_SCHEME
+    url_dict.update({'URL_SCHEME': settings.URL_SCHEME, "SITE_URL_SD": settings.SITE_URL_SD})
     return url_dict
 
 

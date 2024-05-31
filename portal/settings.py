@@ -562,9 +562,9 @@ FREEZE_TIME = None
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
 
-
-SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
-CSRF_TRUSTED_ORIGINS = ['%s://%s' % (URL_SCHEME, SITE_DOMAIN)]
+SITE_URL_SD = '%s://%s' % (URL_SCHEME, SITE_DOMAIN)  # "SD" stands for "Schema-Domain only", no trial slash.
+SITE_URL = '%s/' % SITE_URL_SD
+CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + 'sitemap.xml']
 LOCALE_NAME = "%s_%s.%s" % (LOCAL_LANG, LOCAL_COUNTRY, DEFAULT_CHARSET)
 

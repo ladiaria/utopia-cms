@@ -1029,7 +1029,7 @@ class Journalist(Model):
     fb = CharField('facebook', max_length=255, blank=True, null=True)
     tt = CharField('twitter', max_length=255, blank=True, null=True)
     gp = CharField('google plus', max_length=255, blank=True, null=True)
-    ig = CharField('instangram', max_length=255, blank=True, null=True)
+    ig = CharField('instagram', max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.name
