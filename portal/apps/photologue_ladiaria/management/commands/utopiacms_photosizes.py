@@ -29,9 +29,12 @@ class Command(BaseCommand):
 
         for name, width in sizes_vary_width.items():
             if not PhotoSize.objects.filter(name=name).exists():
-                PhotoSize.objects.create(
+                ps = PhotoSize.objects.create(
                     name=name, width=width, height=0, crop=False, pre_cache=False, increment_count=False
                 )
+                if name in ("450w", "700w"):
+                    ps.quality = 90
+                    ps.save()
 
         # other size with special attrs
         if not PhotoSize.objects.filter(name='article_thumb').exists():

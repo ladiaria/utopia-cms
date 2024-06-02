@@ -95,7 +95,7 @@
       {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 299 #}
+          <div>{# closed in line 301 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -122,7 +122,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 299 #}
+          {# missing close div here is closed correctly in line 301 #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -162,11 +162,13 @@
             </div>
           {% else %}
             <div class="container-photo photo BG {{ article.photo_layout }}">
-              <figure class="principal" data-src="{{ article.photo.get_700w_url }}" alt="{{ article.photo_caption }}">
+              <figure class="principal" data-src="{{ article.photo.get_1200w_url }}" alt="{{ article.photo_caption }}">
                 <picture class="materialboxed">
                   <!--[if IE 9]><video style="display: none;"><![endif]-->
-                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
-                  <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+                  <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                  <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 500px)">
+                  <source srcset="{{ article.photo.get_450w_url }}" media="(min-width: 300px)">
                   <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
                   <!--[if IE 9]></video><![endif]-->
                   <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
@@ -311,7 +313,7 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 646 #}
+        {% if not request.signupwall %}{# closed in line 648 #}
 
           {# signupwall banner #}
           {% if signupwall_remaining_banner and not article.public %}
@@ -643,7 +645,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 314 #}
+        {% endif %}{# opened in line 316 #}
 
       {% else %}{# restricted content message #}
 
@@ -660,7 +662,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 792 #}
+    {% if not request.signupwall %}{# closed in line 794 #}
 
       {% if article.public %}
 
@@ -789,7 +791,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 663 #}
+    {% endif %}{# opened in line 665 #}
 
     {% block article_extra %}{% endblock %}
 
