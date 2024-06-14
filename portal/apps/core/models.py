@@ -776,6 +776,10 @@ class Category(Model):
                     pass
         return result
 
+    def save(self, *args, **kwargs):
+        if not self.slug: self.slug = slugify(self.name)
+        super(Category, self).save(*args, **kwargs)
+
     class Meta:
         verbose_name = 'área'
         ordering = ('order', 'name')

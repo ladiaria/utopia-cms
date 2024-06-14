@@ -15,7 +15,7 @@ from django.conf import settings
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
-from django.db.models import Value
+from django.db.models import Value, Q
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -188,8 +188,12 @@ def get_all_newsletters():
 
 def get_profile_newsletters_ordered():
     custom_order = getattr(settings, 'THEDAILY_EDIT_PROFILE_NEWSLETTERS_CUSTOM_ORDER', ())
-    publications = list(Publication.objects.filter(has_newsletter=True).annotate(nltype=Value('p')))
-    categories = list(Category.objects.filter(has_newsletter=True).annotate(nltype=Value('c')))
+    publications = list(Publication.objects.filter(has_newsletter=True).exclude(
+        Q(slug__isnull=True) | Q(slug__exact='')
+    ).annotate(nltype=Value('p')))
+    categories = list(Category.objects.filter(has_newsletter=True).exclude(
+        Q(slug__isnull=True) | Q(slug__exact='')    
+    ).annotate(nltype=Value('c')))
     nl_unsorted = publications + categories
     nl_custom_ordered = [next((x for x in nl_unsorted if x.slug == o), None) for o in custom_order]
     nl_alpha = [nl_obj for nl_obj in nl_unsorted if nl_obj not in nl_custom_ordered]
