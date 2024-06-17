@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load bleach_tags core_tags homev3_tags static ldml %}
 
+{% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
+
 {% block page_title %}{% category_title %}{% endblock %}
 
 {% block meta_og_title %}
