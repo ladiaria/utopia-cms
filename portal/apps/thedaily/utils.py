@@ -192,7 +192,7 @@ def get_profile_newsletters_ordered():
         Q(slug__isnull=True) | Q(slug__exact='')
     ).annotate(nltype=Value('p')))
     categories = list(Category.objects.filter(has_newsletter=True).exclude(
-        Q(slug__isnull=True) | Q(slug__exact='')    
+        Q(slug__isnull=True) | Q(slug__exact='')
     ).annotate(nltype=Value('c')))
     nl_unsorted = publications + categories
     nl_custom_ordered = [next((x for x in nl_unsorted if x.slug == o), None) for o in custom_order]
