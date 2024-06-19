@@ -108,7 +108,9 @@
 
     <!-- CSS -->
     {% compress css %}
-      <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+      {% block base_css %}
+        <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+      {% endblock %}
       {% if HOMEV3_CUSTOM_CSS %}
         <link href="{% static HOMEV3_CUSTOM_CSS %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endif %}
