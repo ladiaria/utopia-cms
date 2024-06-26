@@ -19,12 +19,7 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import (
-    Http404,
-    HttpResponseRedirect,
-    HttpResponse,
-    BadHeaderError,
-    HttpResponsePermanentRedirect,
-    HttpResponseForbidden,
+    Http404, HttpResponseRedirect, HttpResponse, BadHeaderError, HttpResponsePermanentRedirect, HttpResponseForbidden
 )
 from django.views.generic import DetailView
 from django.contrib.sites.models import Site
