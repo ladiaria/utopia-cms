@@ -303,7 +303,7 @@
 
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
-          <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+          <p class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</p>
         {% endif %}
         {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
       {% endif %}
@@ -479,6 +479,8 @@
           {% block after_content %}{% endblock %}
 
           <div class="ld-fin ld-block"></div>
+
+          {% block after_content_more %}{% endblock %}
 
           {% if followed %}
             <div class="read-later u-mb-60">

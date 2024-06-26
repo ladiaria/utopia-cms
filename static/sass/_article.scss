@@ -1086,6 +1086,69 @@ body.article {
   margin-top: -90px;
 }
 
+.send-comments-verifica {
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  @media #{$medium-and-down} {
+    padding: 0 20px;
+  }
+
+  p {
+    margin: 0;
+    font-family: Roboto, sans-serif;
+  }
+  p:first-child {
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+  }
+  form {
+    display: flex;
+    flex-direction: column;
+
+    .form-control {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input[type="text"]:not(.browser-default),
+    input[type="email"]:not(.browser-default),
+    input[type="tel"]:not(.browser-default) {
+      height: 1.875rem;
+      border: 1px solid $grey;
+      padding-left: 8px;
+      box-sizing: border-box;
+    }
+
+    input[type="text"]:not(.browser-default):focus-visible,
+    input[type="email"]:not(.browser-default):focus-visible,
+    input[type="tel"]:not(.browser-default):focus-visible {
+      outline: auto 1px rgb(0, 95, 204);
+    }
+
+    textarea {
+      height: 150px;
+    }
+
+    button {
+      border-radius: 100px;
+      background: $off-black;
+      color: var(--B8, #fff);
+      font-family: Roboto;
+      font-weight: 700;
+      line-height: normal;
+      text-transform: uppercase;
+      align-self: center;
+      padding: 10.5px 21px;
+      margin-top: 12px;
+    }
+  }
+}
+
 .lg-backdrop {
   background: $off-black;
 }
