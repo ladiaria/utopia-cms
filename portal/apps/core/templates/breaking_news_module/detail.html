@@ -12,7 +12,7 @@
     </div>
   </div>
 {% else %}
-  <section class="frontpage-section frontpage-section--padding live">
+  <section class="frontpage-section frontpage-section--padding live{% block section_extra_class %}{% endblock %}">
     <div class="container">
       {% block headline %}
         <div class="ld-card breaking">
