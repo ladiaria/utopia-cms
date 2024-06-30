@@ -11,12 +11,12 @@ from django.urls import reverse
 from django.http import Http404, HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.vary import vary_on_cookie
-from django.views.decorators.cache import never_cache, cache_control
+from django.views.decorators.cache import cache_control
 from django.urls.exceptions import NoReverseMatch
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
-from decorators import decorate_if_no_auth, decorate_if_auth
+from decorators import decorate_if_no_auth
 
 from apps import bouncer_blocklisted
 from core.models import Edition, get_current_edition, Publication, Category, CategoryHome, Article
@@ -43,7 +43,6 @@ def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set,
                 context['follows'].append(a_id)
 
 
-@decorate_if_auth(decorator=never_cache)
 @decorate_if_no_auth(decorator=vary_on_cookie)
 @decorate_if_no_auth(
     decorator=cache_control(
