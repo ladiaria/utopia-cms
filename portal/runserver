@@ -5,8 +5,11 @@
 # Example: ./runserver yoogle.com:8000
 set -e
 python -W ignore manage.py clear_cache
-SVACTIVE="systemctl is-active --quiet supervisord"
-# TODO: a --workers option to restart only the workers given, or none if blank
-# TODO: try to redefine the restart in supervisor to send the TERM signal only to the main process of each worker
-`$SVACTIVE` && supervisorctl restart utopiacms_w1 utopiacms_w2 utopiacms_w3 utopiacms_beat
+# Check if systemctl exists
+if command -v systemctl > /dev/null 2>&1; then
+    SVACTIVE="systemctl is-active --quiet supervisord"
+    # TODO: a --workers option to restart only the workers given, or none if blank
+    # TODO: try to redefine the restart in supervisor to send the TERM signal only to the main process of each worker
+    `$SVACTIVE` && supervisorctl restart utopiacms_w1 utopiacms_w2 utopiacms_w3 utopiacms_beat
+fi
 python -W ignore manage.py runserver $1
