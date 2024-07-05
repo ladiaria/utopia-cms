@@ -1,4 +1,6 @@
 {% extends "admin/base.html" %}
 {% load static %}
 
+{% block dark-mode-vars %}{% include admin_dark_mode_vars_template %}{% endblock %}
+
 {% block extrastyle %}<link rel="stylesheet" type="text/css" href="{% static 'admin/css/roboto.css' %}">{% endblock %}
