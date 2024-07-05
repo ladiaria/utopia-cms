@@ -1,0 +1,18 @@
+## TODO
+
+This app should be removed from this project.
+
+## Explanation
+
+In the past, an attempt to create articles from RTF files was made and it was working.
+(it was an app that defined the Article's grammar using pyparsing)
+... after a couple of hours of research in old emails, we can conclude this history:
+
+2014: The app to create artciles from RTF's was declined by the newsroom, because the most recent information to
+      create an article in the CMS was the final PDF and not the individual RTF set.
+
+2015: We started to turn the "rtfparser" app into this "epubparser" app, to export generated epub files from PDF to
+      articles.
+
+Import from PDF/RTF is not under the scope of this project, maybe can be under a custom app, but not in the opensource
+utopia-cms repo because we can't handle all the article structure variants that can be present in the source files.

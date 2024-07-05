@@ -126,6 +126,8 @@ def main_menus(request):
         'MENU_PUBLICATIONS_MORE_EXTRA': Publication.objects.filter(
             public=True, is_emergente=False
         ).exclude(slug__in=getattr(settings, 'HOMEV3_EXCLUDE_MENU_PUBLICATIONS', (settings.DEFAULT_PUB, ))),
+        "article_card_read_later_enabled": getattr(settings, 'CORE_ENABLE_ARTICLE_CARD_READ_LATER', True),
+        "article_card_lock_tooltip_enabled": getattr(settings, 'CORE_ENABLE_ARTICLE_CARD_LOCK_TOOLTIP', True),
     }
 
     mobile_nav_search = getattr(settings, 'HOMEV3_MOBILE_NAV_SEARCH', 1)
