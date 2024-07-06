@@ -442,36 +442,37 @@ class ArticleAdmin(VersionAdmin):
     date_hierarchy = 'date_published'
     ordering = ('-date_created', )
     raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
-    readonly_fields = ('date_published', )
+    readonly_fields = ('date_published',)
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
     fieldsets = (
-        (None, {'fields': ('type', 'headline', 'slug', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide', )}),
+        (None, {'fields': ('type', 'headline', 'slug', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide',)}),
         (
             'Portada',
             {
                 'fields': ('home_lead', 'home_top_deck', 'home_display', 'home_header_display', 'header_display'),
-                'classes': ('wide', ),
-            }
+                'classes': ('wide',),
+            },
         ),
         ('Metadatos', {'fields': ('date_published', 'tags', 'main_section')}),
         ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse', )}),
-        ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse', )}),
+        ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse',)}),
         (
             'Avanzado',
             {
                 'fields': (
-                    (
-                        'allow_comments',
-                        'is_published',
-                        'public',
-                        'allow_related',
-                        'show_related_articles',
-                        'newsletter_featured',
-                    ),
+                    'allow_comments',
+                    'is_published',
+                    'public',
+                    "full_restricted",
+                    'allow_related',
+                    'show_related_articles',
+                    'newsletter_featured',
                     'additional_access',
-                    ('latitude', 'longitude', 'ipfs_upload'),
+                    'latitude',
+                    'longitude',
+                    'ipfs_upload',
                 ),
-                'classes': ('collapse', ),
+                'classes': ('collapse',),
             },
         ),
     )

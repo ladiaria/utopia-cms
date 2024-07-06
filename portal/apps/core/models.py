@@ -1204,6 +1204,11 @@ class ArticleBase(Model, CT):
         'mostrar artículos relacionados dentro de este artículo', default=True, blank=False, null=False
     )
     public = BooleanField('Artículo libre', default=False)
+    full_restricted = BooleanField(
+        'Disponible sólo para suscriptores',
+        default=False,
+        help_text="Acceso solamente a usuarios que tengan alguna suscripción activa."
+    )
 
     published = PublishedArticleManager()
 
@@ -1222,6 +1227,16 @@ class ArticleBase(Model, CT):
                 setattr(self, attr, add_punctuation(getattr(self, attr, '')))
 
         self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
+
+        # full restricted / open consistency checks
+        # 1. If open => full_restricted == False
+        # 2. If full_restricted => open == False
+        if self.is_published and self.is_public() and self.full_restricted:
+            raise Exception(
+                "Un artículo publicado no puede ser libre y además estar disponible sólo para suscriptores."
+            )
+
+        # other checks
 
         nowval = now()
 
@@ -1828,16 +1843,35 @@ class Article(ArticleBase):
             if section_imgs:
                 return PhotoExtended(image=section_imgs[0])
 
-    def is_restricted(self):
+    def is_restricted(self, consider_full=False):
         """
-        When the article's main pub is a restricted publication (by settings), also if no public and has no extra-perms
+        If the article is pulished:
+          If consider_full is True, the result will be True if this article is full_restricted.
+          If consider_full is False or the previous result was False, then, the result will be True when the article's
+            main pub is a restricted publication (by settings), plus the article is no public and has no extra-perms.
         """
         return (
-            not self.is_public()
-            and self.main_section
-            and self.main_section.edition.publication.slug in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
-            and not self.additional_access.exists()
+            self.is_published
+            and (
+                consider_full
+                and self.full_restricted
+                or (
+                    not self.is_public()
+                    and self.main_section
+                    and (
+                        self.main_section.edition.publication.slug
+                        in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
+                    )
+                    and not self.additional_access.exists()
+                )
+            )
         )
+
+    def is_restricted_consider_full(self):
+        """
+        Wrapper for previous method
+        """
+        return self.is_restricted(True)
 
     def published_collections(self):
         return self.linked_collections.filter(**get_published_kwargs())
