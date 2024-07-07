@@ -78,7 +78,7 @@
         {% for section in featured_sections.2 %}{% render_section section %}{% endfor %}
       {% endwith %}
 
-      {% if not hide_news_wall %}
+      {% if news_wall_enabled %}
         {% include 'news_wall.html' %}
       {% endif %}
 
