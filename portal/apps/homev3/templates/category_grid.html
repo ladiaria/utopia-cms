@@ -1,6 +1,6 @@
 {% load static bleach_tags core_tags homev3_tags adzone_tags ldml %}
 
-<section class="frontpage-section" data-template="category_grid">
+<section class="frontpage-section" data-template="category_grid" id="home-category-{{ fcategory.name|lower }}">
   <div class="container">
 
     <div class="section-detail__head"><h2 class="section-detail__title">{{ fcategory.name|capfirst }}</h2></div>

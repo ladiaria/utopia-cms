@@ -1,8 +1,7 @@
 {% load bleach_tags core_tags ldml %}
 
 <div class="container">
-  <section class="ld-grid-main">
-
+  <section id="main-articles" class="ld-grid-main">
     <div class="ld-grid-area area-main">
       <div class="ld-card ld-card--big ld-card--{{ article.type }}{% block cover_article_extra_class %}{% endblock %}">
         {% render_toolbar_for article %}
