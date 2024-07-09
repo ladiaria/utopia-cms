@@ -97,6 +97,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         'publication': publication,
         'featured_publications': [],
         'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ()),
+        'news_wall_enabled': getattr(settings, 'HOMEV3_NEWS_WALL_ENABLED', True),
         'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
     }
 

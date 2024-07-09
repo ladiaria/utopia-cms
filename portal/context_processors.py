@@ -31,7 +31,12 @@ def gtm(request):
 
 
 def site(request):
-    result = {'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name}
+    result = {
+        'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
+        "admin_dark_mode_vars_template": getattr(
+            settings, "PORTAL_ADMIN_DARK_MODE_VARS_TEMPLATE", "admin/admin_dark_mode_vars_template.html",
+        )
+    }
     try:
         site = Site.objects.get_current()
         result.update(
