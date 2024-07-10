@@ -93,11 +93,13 @@ def send_feedback(request, article):
     return HttpResponseRedirect(reverse('article_report_sent'))
 
 
-feedback_module_path = getattr(settings, "CORE_ARTICLE_DETAIL_FEEDBACK_MODULE", None)
-feedback_module = locate(feedback_module_path) if feedback_module_path else feedback_module_path
+def get_feedback_module():
+    feedback_module_path = getattr(settings, "CORE_ARTICLE_DETAIL_FEEDBACK_MODULE", None)
+    return locate(feedback_module_path) if feedback_module_path else feedback_module_path
 
 
 def feedback_allowed(request, article):
+    feedback_module = get_feedback_module()
     if feedback_module is False:
         return False
     custom_allowed = getattr(feedback_module, "custom_feedback_allowed", None)
@@ -108,12 +110,12 @@ def feedback_allowed(request, article):
 
 
 def feedback_form(data=None, article=None, request=None):
-    custom_form = getattr(feedback_module, "custom_feedback_form", None)
+    custom_form = getattr(get_feedback_module(), "custom_feedback_form", None)
     return custom_form(data, article, request) if custom_form else ArticleFeedbackForm(data, article=article)
 
 
 def feedback_view(request, article):
-    custom_view = getattr(feedback_module, "custom_feedback_view", None)
+    custom_view = getattr(get_feedback_module(), "custom_feedback_view", None)
     return custom_view(request, article) if custom_view else send_feedback(request, article)
 
 
