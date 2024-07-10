@@ -100,18 +100,21 @@ feedback_module = locate(feedback_module_path) if feedback_module_path else feed
 def feedback_allowed(request, article):
     if feedback_module is False:
         return False
-    custom_method = getattr(feedback_module, "feedback_allowed", None)
-    return custom_method(request, article) if custom_method else article.is_published and request.user.is_authenticated
+    custom_allowed = getattr(feedback_module, "custom_feedback_allowed", None)
+    if custom_allowed:
+        return custom_allowed(request, article)
+    else:
+        return article.is_published and request.user.is_authenticated
 
 
 def feedback_form(data=None, article=None, request=None):
-    custom_method = getattr(feedback_module, "feedback_form", None)
-    return custom_method(data, article, request) if custom_method else ArticleFeedbackForm(data, article=article)
+    custom_form = getattr(feedback_module, "custom_feedback_form", None)
+    return custom_form(data, article, request) if custom_form else ArticleFeedbackForm(data, article=article)
 
 
 def feedback_view(request, article):
-    custom_method = getattr(feedback_module, "feedback_view", None)
-    return custom_method(request, article) if custom_method else send_feedback(request, article)
+    custom_view = getattr(feedback_module, "custom_feedback_view", None)
+    return custom_view(request, article) if custom_view else send_feedback(request, article)
 
 
 class SendByEmailForm(Form):
