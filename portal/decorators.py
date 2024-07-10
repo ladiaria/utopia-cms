@@ -133,3 +133,24 @@ def decorate_if_auth(decorator):
         return _view
 
     return _decorator
+
+
+def decorate_if_staff(decorator):
+    """
+    Returns decorated view if user is staff. Un-decorated otherwise
+    """
+
+    def _decorator(view):
+
+        decorated_view = decorator(view)  # This holds the view with decorator
+
+        def _view(request, *args, **kwargs):
+
+            if request.user.is_staff:     # If user is staff
+                return decorated_view(request, *args, **kwargs)  # view with decorator
+            else:
+                return view(request, *args, **kwargs)  # view without decorator
+
+        return _view
+
+    return _decorator

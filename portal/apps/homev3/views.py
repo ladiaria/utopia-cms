@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.http import Http404, HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.vary import vary_on_cookie
-from django.views.decorators.cache import never_cache, cache_control
+from django.views.decorators.cache import cache_control, never_cache
 from django.urls.exceptions import NoReverseMatch
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
@@ -24,6 +24,10 @@ from core.views.category import category_detail
 from faq.models import Topic
 from cartelera.models import LiveEmbedEvent
 from thedaily.utils import unsubscribed_newsletters
+
+
+cache_maxage = getattr(settings, 'HOMEV3_INDEX_CACHE_MAXAGE', 120)
+decorate_auth = getattr(settings, 'HOMEV3_INDEX_AUTH_DECORATOR', decorate_if_auth)
 
 
 def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set, articles):
@@ -43,13 +47,9 @@ def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set,
                 context['follows'].append(a_id)
 
 
-@decorate_if_auth(decorator=never_cache)
+@decorate_auth(decorator=never_cache)
 @decorate_if_no_auth(decorator=vary_on_cookie)
-@decorate_if_no_auth(
-    decorator=cache_control(
-        no_cache=True, no_store=True, must_revalidate=True, max_age=getattr(settings, 'HOMEV3_INDEX_CACHE_MAXAGE', 120)
-    )
-)
+@decorate_if_no_auth(decorator=cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=cache_maxage))
 def index(request, year=None, month=None, day=None, domain_slug=None):
     """
     View to display the current edition page. Or the edition in the date and publication matching domain_slug.
@@ -93,9 +93,11 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
 
     # Context variables for publication, featured publications, sections "grids" and "big photo".
     context = {
+        "cache_maxage": cache_maxage,
         'publication': publication,
         'featured_publications': [],
         'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ()),
+        'news_wall_enabled': getattr(settings, 'HOMEV3_NEWS_WALL_ENABLED', True),
         'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
     }
 

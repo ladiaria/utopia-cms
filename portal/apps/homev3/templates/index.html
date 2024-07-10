@@ -43,9 +43,9 @@
   {{ block.super }}
 {% endblock %}
 
-{% block content %}
+{% block content_pre %}{% render_cover %}{% endblock %}
 
-  {% render_cover %}
+{% block content %}
 
   {# next include can changes this variables, so we backup them, and restore them later using the backed values #}
   {% with publication_bak=publication category_bak=category %}
@@ -78,13 +78,11 @@
         {% for section in featured_sections.2 %}{% render_section section %}{% endfor %}
       {% endwith %}
 
-      {# news wall commented out due to performance issues #}
-      {# include 'news_wall.html' #}
+      {% if news_wall_enabled %}
+        {% include 'news_wall.html' %}
+      {% endif %}
 
       {% include bigphoto_template %}
-
-      {# other custom components can be included also like this commented includes: #}
-      {# include 'components.html' #}
 
       {% block extra_homepage %}{% endblock %}
 

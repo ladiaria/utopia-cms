@@ -379,22 +379,23 @@
       </footer>
     {% endblock footer_block %}
 
-    <!-- Modal Structure -->
-    <div id="nav-mobile" class="nav-mobile navbar-fixed">
-      <nav>
-        <div class="nav-wrapper">
-          <ul class="center row">
-            {% if is_detail %}
-              {% with mobile_nav_ths=mobile_nav_ths|add:mobile_nav_detail_more %}
-                {% include 'mobile_nav_items.html' %}
-              {% endwith %}
-            {% else %}
-              {% block mobile_nav_not_is_detail%}{% include 'mobile_nav_items.html' %}{% endblock %}
-            {% endif %}
-          </ul>
-        </div>
-      </nav>
-    </div>
+    {% block nav_mobile %}
+      <div id="nav-mobile" class="nav-mobile navbar-fixed">
+        <nav>
+          <div class="nav-wrapper">
+            <ul class="center row">
+              {% if is_detail %}
+                {% with mobile_nav_ths=mobile_nav_ths|add:mobile_nav_detail_more %}
+                  {% include 'mobile_nav_items.html' %}
+                {% endwith %}
+              {% else %}
+                {% block mobile_nav_not_is_detail%}{% include 'mobile_nav_items.html' %}{% endblock %}
+              {% endif %}
+            </ul>
+          </div>
+        </nav>
+      </div>
+    {% endblock %}
 
     <div id="alert_placeholder"></div>
 

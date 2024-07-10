@@ -31,7 +31,12 @@ def gtm(request):
 
 
 def site(request):
-    result = {'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name}
+    result = {
+        'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
+        "admin_dark_mode_vars_template": getattr(
+            settings, "PORTAL_ADMIN_DARK_MODE_VARS_TEMPLATE", "admin/admin_dark_mode_vars_template.html",
+        )
+    }
     try:
         site = Site.objects.get_current()
         result.update(
@@ -126,6 +131,8 @@ def main_menus(request):
         'MENU_PUBLICATIONS_MORE_EXTRA': Publication.objects.filter(
             public=True, is_emergente=False
         ).exclude(slug__in=getattr(settings, 'HOMEV3_EXCLUDE_MENU_PUBLICATIONS', (settings.DEFAULT_PUB, ))),
+        "article_card_read_later_enabled": getattr(settings, 'CORE_ENABLE_ARTICLE_CARD_READ_LATER', True),
+        "article_card_lock_tooltip_enabled": getattr(settings, 'CORE_ENABLE_ARTICLE_CARD_LOCK_TOOLTIP', True),
     }
 
     mobile_nav_search = getattr(settings, 'HOMEV3_MOBILE_NAV_SEARCH', 1)
