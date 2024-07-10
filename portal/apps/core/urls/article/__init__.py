@@ -11,7 +11,7 @@ from core.views.article import article_detail_walled, article_detail_free, send_
 urlpatterns = [
     path(
         'reportar/',
-        TemplateView.as_view(template_name='core/templates/article/reported.html'),
+        TemplateView.as_view(template_name='core/templates/article/reported.html'),  # TODO: use smth w/post only
         name='article_report_sent',
     ),
     path("enviar/", send_by_email, name="send_by_email"),
