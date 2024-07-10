@@ -480,7 +480,32 @@
 
           <div class="ld-fin ld-block"></div>
 
-          {% block after_content_more %}{% endblock %}
+          {% comment %}
+            status: awaiting feedback to check implementation (anon, no-susc, susc)
+          {% endcomment %}
+          {% if report_form %}
+            <div class="send-comments-verifica">
+              <p>¿Tenés algún aporte para hacer?</p>
+              <p>Valoramos cualquier aporte aclaratorio que quieras realizar sobre la nota que acabás de leer.</p>
+              <form method="post">
+                {% csrf_token %}
+                {{ report_form.article_token }}
+                {{ report_form.non_field_errors }}
+                {% for field in report_form reversed %}
+                  <div class="form-control">
+                    {{ field.errors }}
+                    {% if not field.is_hidden %}
+                      <label for="id_{{ field.name }}">
+                        {{ field.label }} {% if field.field.required %}<span>*</span>{% endif %}
+                      </label>
+                    {% endif %}
+                    {{ field }}
+                  </div>
+                {% endfor %}
+                <button type="submit">Enviar</button>
+              </form>
+            </div>
+          {% endif %}
 
           {% if followed %}
             <div class="read-later u-mb-60">
