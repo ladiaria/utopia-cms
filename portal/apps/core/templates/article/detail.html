@@ -313,7 +313,7 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 648 #}
+        {% if not request.signupwall %}{# closed in line 672 #}
 
           {# signupwall banner #}
           {% if signupwall_remaining_banner and not article.public %}
@@ -480,11 +480,8 @@
 
           <div class="ld-fin ld-block"></div>
 
-          {% comment %}
-            status: awaiting feedback to check implementation (anon, no-susc, susc)
-          {% endcomment %}
           {% if report_form %}
-            <div class="send-comments-verifica">
+            <div class="send-feedback">
               <p>¿Tenés algún aporte para hacer?</p>
               <p>Valoramos cualquier aporte aclaratorio que quieras realizar sobre la nota que acabás de leer.</p>
               <form method="post">
@@ -689,7 +686,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 794 #}
+    {% if not request.signupwall %}{# closed in line 818 #}
 
       {% if article.public %}
 
@@ -818,7 +815,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 665 #}
+    {% endif %}{# opened in line 689 #}
 
     {% block article_extra %}{% endblock %}
 
