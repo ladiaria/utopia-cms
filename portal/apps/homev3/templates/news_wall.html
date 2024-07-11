@@ -4,6 +4,7 @@
   <div class="container">
     <div class="row">
 
+      {# TODO: this loops must be improved for performance, at least exclude those without articles #}
       {% if publication and publication != default_pub %}
 
         {% for section in publication.section_set.all|slice:":8" %}
