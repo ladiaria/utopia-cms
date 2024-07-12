@@ -303,7 +303,7 @@
 
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
-          <p class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</p>
+          <h2class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
         {% endif %}
         {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
       {% endif %}
