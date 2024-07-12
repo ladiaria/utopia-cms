@@ -501,6 +501,20 @@
                 {% endfor %}
                 <button type="submit">Enviar</button>
               </form>
+              <div class="feedback-error">
+                {% comment %}
+                Mostrar sólo el que corresponda
+                {% endcomment %}
+                <p class="success-message">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.3325 2.33337L8.33242 14.3307L3.66775 9.66754L0 13.3352L8.33249 21.6665L24 6.00112L20.3325 2.33337Z" fill="black"/>
+                  </svg>
+                  Muchas gracias. Se envió el mensaje correctamente. 
+                </p>
+                <p class="error-message">
+                  <span>Se ha producido un error. Por asistencia comunicarse al <a href="https://wa.me/+59899128821" target="_blank" rel="noopener noreferrer">WhatsApp</a></span>
+                </p>
+              </div>
             </div>
           {% endif %}
 

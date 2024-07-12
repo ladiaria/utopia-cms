@@ -1144,7 +1144,24 @@ body.article {
       text-transform: uppercase;
       align-self: center;
       padding: 10.5px 21px;
-      margin-top: 12px;
+      margin-top: 24px;
+    }
+  }
+  .feedback-error p {
+    font-size: 1rem;
+    font-weight: normal;
+    line-height: normal;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+
+    &.error-message,
+    & a {
+      color: #b61616;
+      a {
+        font-weight: bold;
+      }
     }
   }
 }
