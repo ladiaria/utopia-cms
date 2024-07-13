@@ -34,23 +34,34 @@ def mkdir_p(path):
 
 
 class Command(BaseCommand):
-    help = 'Dumps the Articles given by id or filter expression to a JSON file.'
+    help = """
+        Dumps the Articles given by id or filter expression to a JSON file, the generated file can then be loaded
+        using `loaddata` command.
+        The command will also copy all images related to the articles beeing dumped to the `photos` subdirectory under
+        the dump directory that was given to the command by argument.
+    """
 
     def add_arguments(self, parser):
-        parser.add_argument('article_ids', nargs='*', type=int, help="takes precedence over --filter-kwargs")
+        parser.add_argument(
+            'article_ids',
+            nargs='*',
+            type=int,
+            help="Article IDs separated by space, takes precedence over `--filter-kwargs`.",
+        )
         parser.add_argument(
             '--filter-kwargs',
             action="store",
             dest="filter_kwargs",
             type=str,
-            help="json of dict to be used as kwargs in the filtered dump",
+            help="A dict in JSON format, it will be passed as `**kwargs` to `Article.filter()` to obtain the set to "
+                 "be dumped.",
         )
         parser.add_argument(
             '--dump-dir',
             action='store',
             type=str,
             dest='dump_dir',
-            help='Save generated files in this directory (must exist).',
+            help='Save generated dump.json file and copy images to this directory.',
             default=getattr(settings, 'GENERAL_MANAGEMENT_COMMAND_EXPORT_PATH', '/tmp'),
         )
 
