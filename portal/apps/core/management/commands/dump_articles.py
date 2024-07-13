@@ -130,11 +130,17 @@ class Command(BaseCommand):
         if verbose:
             print("Dumping all objects in the following set to a single dump file:")
             pprint(todump)
-        serialized_data = serializers.serialize(
-            "json", todump, indent=2, use_natural_foreign_keys=True, use_natural_primary_keys=True
+        serialized_data = json.loads(
+            serializers.serialize("json", todump, use_natural_foreign_keys=True, use_natural_primary_keys=True)
         )
-        dump_file = join(dump_dir, 'dump.json')
-        open(dump_file, 'w').write(serialized_data)
+        # drop site info from photos (will probably never match in load environment) and write result file dump
+        for entry in serialized_data:
+            if entry["model"] == "photologue.photo":
+                entry["fields"].pop("sites")
+        dump_file_path = join(dump_dir, 'dump.json')
+        dump_file_obj = open(dump_file_path, 'w')
+        dump_file_obj.write(json.dumps(serialized_data))
+        dump_file_obj.close()
         if verbose:
-            print('wrote ' + dump_file)
+            print('wrote ' + dump_file_path)
             print('Done. Use loaddata command to import the generated files, if any.')
