@@ -83,3 +83,40 @@ Featured articles are selected, meaning those that would appear on the publicati
 * Areas:
 
 Priority is given to the "area newsletter" object that may exist with valid validity (there is a "valid until" datetime field) for the respective area. If the former is not valid or does not exist, articles from the "area cover" object associated with the respective area are then selected.
+
+## Management commands
+
+Like any other Django management command, these commands must be executed calling `manage.py` using the Python executable of the utopia-cms installation virtual environment.
+
+### core.dump_articles
+
+Dumps the Articles given by id or filter expression to a JSON file, the generated file can then be loaded using `loaddata` command.
+The command will also copy all images related to the articles beeing dumped to the `photos` subdirectory under the dump directory that was given to the command by argument.
+
+* positional arguments:
+
+    * **article_ids**: Article IDs separated by space, takes precedence over `--filter-kwargs`.
+
+* customization options:
+
+    * **--filter-kwargs**: A dict in JSON format, it will be passed as `**kwargs` to `Article.filter()` to obtain the set to be dumped.<br>
+    * **--dump-dir**: Save generated `dump.json` file and copy images to this directory.
+
+* run `./manage.py help dump_articles` to get the complete set of options available.
+
+#### Dump & load usage example:
+
+1. Go to the host/environment that you want to export from and execue the command, for example, to dump all articles with an ID greater than 1000 to the directory `article_dumps` under the user's home directory, run<br>
+  ```
+  ./manage.py dump-articles --filter-kwargs '{"id__gt": 1000}' --dump-dir ~/article_dumps
+  ```
+
+2. Go to the environment you want to load the dump, download it and run the `loaddata` command. (the same location path will be used for this example)<br>
+  ```
+  ./manage.py loaddata -i ~/article_dumps/dump.json
+  ```
+
+3. If the dump directory was downloaded recursively (with the `photos` subdirectoy), you can copy the images to the target media location:<br>
+  ```
+  cp ~/article_dumps/photos/* media/photologue/photos
+  ```
