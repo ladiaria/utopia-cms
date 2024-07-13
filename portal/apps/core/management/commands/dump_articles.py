@@ -101,7 +101,7 @@ class Command(BaseCommand):
         collector.collect(to_collect)
         todump = set()
         for key in collector.data.keys():
-            if key in (PushNotification, ArticleViewedBy, ArticleViews, Action):
+            if key in (PushNotification, ArticleViewedBy, ArticleViews, Action, Article.byline.through):
                 continue
             for obj in collector.data[key]:
                 if key is CategoryHomeArticle:
