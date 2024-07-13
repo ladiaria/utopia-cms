@@ -74,9 +74,7 @@ from tagging.models import Tag
 import thedaily
 from videologue.models import Video, YouTubeVideo
 
-from .managers import (
-    get_published_kwargs, PublishedArticleManager, SectionManager, PublicationManager, EditionManager, CategoryManager
-)
+from .managers import get_published_kwargs, PublishedArticleManager, EditionManager, SlugNaturalManager
 from .templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from .utils import (
     datetime_isoformat,
@@ -94,7 +92,7 @@ def remove_media_root(path):
 
 
 class Publication(Model):
-    objects = PublicationManager()
+    objects = SlugNaturalManager()
     name = CharField('nombre', max_length=100)
     twitter_username = CharField(
         'Nombre de usuario de Twitter',
@@ -585,7 +583,7 @@ class Supplement(PortableDocumentFormatBaseModel):
 
 
 class Category(Model):
-    objects = CategoryManager()
+    objects = SlugNaturalManager()
     name = CharField('nombre', max_length=50, unique=True)
     slug = SlugField('slug', blank=True, null=True)
     description = TextField('descripción', blank=True, null=True)
@@ -800,7 +798,7 @@ class Category(Model):
 
 
 class Section(Model):
-    objects = SectionManager()
+    objects = SlugNaturalManager()
 
     SECTION_1 = '1'
     SECTION_2 = '2'
@@ -1030,6 +1028,7 @@ class Section(Model):
 
 
 class Journalist(Model):
+    objects = SlugNaturalManager()
 
     JOB_CHOICES = (
         ('PE', 'Periodista'),
@@ -1056,6 +1055,9 @@ class Journalist(Model):
 
     def __str__(self):
         return self.name
+
+    def natural_key(self):
+        return (self.slug,)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)

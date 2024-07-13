@@ -16,17 +16,7 @@ class EditionManager(Manager):
         return self.get(date_published=date_published, publication__slug=publication)
 
 
-class PublicationManager(Manager):
-    def get_by_natural_key(self, slug):
-        return self.get(slug=slug)
-
-
-class SectionManager(Manager):
-    def get_by_natural_key(self, slug):
-        return self.get(slug=slug)
-
-
-class CategoryManager(Manager):
+class SlugNaturalManager(Manager):
     def get_by_natural_key(self, slug):
         return self.get(slug=slug)
 
