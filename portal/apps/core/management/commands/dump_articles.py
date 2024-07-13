@@ -12,6 +12,7 @@ from django.core.management import BaseCommand, CommandError
 from django.db.models.deletion import Collector
 
 from core.models import (
+    Publication,
     Article,
     ArticleRel,
     CategoryHome,
@@ -20,6 +21,7 @@ from core.models import (
     PushNotification,
     ArticleViewedBy,
     ArticleViews,
+    Edition,
 )
 
 
@@ -110,7 +112,7 @@ class Command(BaseCommand):
 
         collector = Collector(using='default')
         collector.collect(to_collect)
-        todump = set()
+        todump, publications, editions = set(), set(collector.data.pop(Publication)), set(collector.data.pop(Edition))
         for key in collector.data.keys():
             if key in (PushNotification, ArticleViewedBy, ArticleViews, Action, Article.byline.through):
                 continue
@@ -131,17 +133,21 @@ class Command(BaseCommand):
                     ):
                         todump = todump.union(subset)
                 elif key is ArticleRel:
-                    for subset in (
-                        set([obj.edition, obj.edition.publication, obj.section]), obj.section.publications.all()
-                    ):
+                    publications.add(obj.edition.puiblication)
+                    editions.add(obj.edition)
+                    for subset in (set([obj.section]), obj.section.publications.all()):
                         todump = todump.union(subset)
                     if obj.section.category:
                         todump.add(obj.section.category)
                 todump.add(obj)
         if verbose:
-            print("Dumping all objects in the following set to a single dump file:")
-            pprint(todump)
+            print("Dumping all objects in the following sets to a single dump file:")
+            pprint((editions, todump))
         serialized_data = json.loads(
+            serializers.serialize("json", publications, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+        ) + json.loads(
+            serializers.serialize("json", editions, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+        ) + json.loads(
             serializers.serialize("json", todump, use_natural_foreign_keys=True, use_natural_primary_keys=True)
         )
         # drop site info from photos (will probably never match in load environment) and write result file dump
