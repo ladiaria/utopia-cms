@@ -113,7 +113,7 @@ class Command(BaseCommand):
         collector = Collector(using='default')
         collector.collect(to_collect)
         todump, publications = set(), set(collector.data.pop(Publication, []))
-        editions = set(collector.data.pop(Edition))
+        editions = set(collector.data.pop(Edition, []))
         for key in collector.data.keys():
             if key in (PushNotification, ArticleViewedBy, ArticleViews, Action, Article.byline.through):
                 continue
