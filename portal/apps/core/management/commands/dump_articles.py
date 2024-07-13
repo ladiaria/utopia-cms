@@ -134,10 +134,10 @@ class Command(BaseCommand):
                     ):
                         todump = todump.union(subset)
                 elif key is ArticleRel:
-                    publications.add(obj.edition.puiblication)
+                    publications.add(obj.edition.publication)
+                    publications = publications.union(obj.section.publications.all())
                     editions.add(obj.edition)
-                    for subset in (set([obj.section]), obj.section.publications.all()):
-                        todump = todump.union(subset)
+                    todump.add(obj.section)
                     if obj.section.category:
                         todump.add(obj.section.category)
                 todump.add(obj)
