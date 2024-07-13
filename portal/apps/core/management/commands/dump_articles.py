@@ -4,13 +4,23 @@ from os.path import isdir, join, exists
 import shutil
 import json
 from pprint import pprint
+from actstream.models import Action
 
 from django.conf import settings
 from django.core import serializers
 from django.core.management import BaseCommand, CommandError
 from django.db.models.deletion import Collector
 
-from core.models import Article, ArticleRel, CategoryHome, ArticleBodyImage, CategoryHomeArticle, PushNotification
+from core.models import (
+    Article,
+    ArticleRel,
+    CategoryHome,
+    ArticleBodyImage,
+    CategoryHomeArticle,
+    PushNotification,
+    ArticleViewedBy,
+    ArticleViews,
+)
 
 
 def mkdir_p(path):
@@ -91,7 +101,7 @@ class Command(BaseCommand):
         collector.collect(to_collect)
         todump = set()
         for key in collector.data.keys():
-            if key == PushNotification:
+            if key in (PushNotification, ArticleViewedBy, ArticleViews, Action):
                 continue
             for obj in collector.data[key]:
                 if key is CategoryHomeArticle:
