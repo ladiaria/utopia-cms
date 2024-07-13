@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0038_alter_journalist_ig"),
+        ("core", "0039_alter_edition_unique_together"),
     ]
 
     operations = [
