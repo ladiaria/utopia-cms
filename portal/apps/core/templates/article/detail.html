@@ -481,40 +481,41 @@
           <div class="ld-fin ld-block"></div>
 
           {% if report_form %}
-            <div class="send-feedback">
-              <p>¿Tenés algún aporte para hacer?</p>
-              <p>Valoramos cualquier aporte aclaratorio que quieras realizar sobre la nota que acabás de leer.</p>
-              <form method="post">
-                {% csrf_token %}
-                {{ report_form.article_token }}
-                {{ report_form.non_field_errors }}
-                {% for field in report_form reversed %}
-                  <div class="form-control">
-                    {{ field.errors }}
-                    {% if not field.is_hidden %}
-                      <label for="id_{{ field.name }}">
-                        {{ field.label }} {% if field.field.required %}<span>*</span>{% endif %}
-                      </label>
-                    {% endif %}
-                    {{ field }}
-                  </div>
-                {% endfor %}
-                <button type="submit">Enviar</button>
-              </form>
-              <div class="feedback-error">
-                {% comment %}
-                Mostrar sólo el que corresponda
-                {% endcomment %}
+            <div id="send-feedback" class="send-feedback">
+              {% if report_form_sent %}
                 <p class="success-message">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20.3325 2.33337L8.33242 14.3307L3.66775 9.66754L0 13.3352L8.33249 21.6665L24 6.00112L20.3325 2.33337Z" fill="black"/>
                   </svg>
-                  Muchas gracias. Se envió el mensaje correctamente. 
+                  Muchas gracias. Se envió el mensaje correctamente.
                 </p>
-                <p class="error-message">
-                  <span>Se ha producido un error. Por asistencia comunicarse al <a href="https://wa.me/+59899128821" target="_blank" rel="noopener noreferrer">WhatsApp</a></span>
-                </p>
-              </div>
+              {% else %}
+                <p>¿Tenés algún aporte para hacer?</p>
+                <p>Valoramos cualquier aporte aclaratorio que quieras realizar sobre la nota que acabás de leer.</p>
+                <form method="post" action="#send-feedback">
+                  {% csrf_token %}
+                  {{ report_form.article_token }}
+                  {% if report_form.non_field_errors %}
+                    <div class="feedback-error">
+                      <p class="error-message">
+                        {{ report_form.render_non_field_errors }}
+                      </p>
+                    </div>
+                  {% endif %}
+                  {% for field in report_form reversed %}
+                    <div class="form-control">
+                      {{ field.errors }}
+                      {% if not field.is_hidden %}
+                        <label for="id_{{ field.name }}">
+                          {{ field.label }} {% if field.field.required %}<span>*</span>{% endif %}
+                        </label>
+                      {% endif %}
+                      {{ field }}
+                    </div>
+                  {% endfor %}
+                  <button type="submit">Enviar</button>
+                </form>
+              {% endif %}
             </div>
           {% endif %}
 
