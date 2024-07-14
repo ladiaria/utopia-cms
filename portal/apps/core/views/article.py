@@ -36,7 +36,7 @@ from tagging.models import Tag
 from apps import mongo_db
 from signupwall.middleware import subscriber_access
 from decorators import decorate_if_no_auth, decorate_if_auth
-from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_view
+from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
 from core.models import Publication, Category, Article, ArticleUrlHistory
 
 
@@ -145,19 +145,20 @@ def article_detail(request, year, month, slug, domain_slug=None):
     if not article.is_published and not request.user.is_staff:
         raise Http404
 
-    # render/handle feedback, if any
+    # render/handle feedback/feedback_sent, if any
+    report_form, report_form_sent = None, False
     if feedback_allowed(request, article):
         if request.method == 'POST':
             report_form = feedback_form(request.POST, article=article)
             if report_form.is_valid(article):
                 try:
-                    return feedback_view(request, article)
+                    feedback_handler(request, article)
                 except ValidationError as ve:
                     report_form.add_error(None, ve)
+                else:
+                    report_form_sent = True
         else:
             report_form = feedback_form(article=article, request=request)
-    else:
-        report_form = None
 
     signupwall_exclude_request_condition = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
     # If the call to the condition with the request as argument returns True, the visit is not logged to mongodb.
@@ -199,6 +200,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         "photo_render_allowed": article.photo_render_allowed(),
         'is_detail': True,
         'report_form': report_form,
+        'report_form_sent': report_form_sent,
         'domain': domain,
         'category': category,
         'category_signup':

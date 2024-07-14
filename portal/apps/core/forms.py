@@ -11,8 +11,7 @@ from crispy_forms.layout import Layout, Submit, Field
 from crispy_forms.bootstrap import FormActions
 
 from django.conf import settings
-from django.http import HttpResponseRedirect
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.forms import Form, CharField, HiddenInput, ValidationError, EmailField, Textarea
 from django.utils.crypto import salted_hmac
 
@@ -42,6 +41,9 @@ class ArticleFeedbackForm(Form):
         if not result:
             self.add_error(None, ValidationError("los datos enviados no son correctos"))
         return result
+
+    def render_non_field_errors(self):
+        return self.non_field_errors
 
 
 def send_feedback(request, article):
@@ -83,14 +85,12 @@ def send_feedback(request, article):
     try:
         smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [to_name_addr[1]], message.as_string())
         if settings.DEBUG:
-            print('DEBUG: an email was sent from send_confirmation_link function')
+            print('DEBUG: an email was sent from send_feedback function')
         smtp.quit()
     except Exception:
         if settings.DEBUG:
             print(traceback.format_exc())
         raise ValidationError('Error al enviar el mensaje')
-
-    return HttpResponseRedirect(reverse('article_report_sent'))
 
 
 def get_feedback_module():
@@ -114,9 +114,8 @@ def feedback_form(data=None, article=None, request=None):
     return custom_form(data, article, request) if custom_form else ArticleFeedbackForm(data, article=article)
 
 
-def feedback_view(request, article):
-    custom_view = getattr(get_feedback_module(), "custom_feedback_view", None)
-    return custom_view(request, article) if custom_view else send_feedback(request, article)
+def feedback_handler(request, article):
+    return getattr(get_feedback_module(), "custom_feedback_handler", send_feedback)(request, article)
 
 
 class SendByEmailForm(Form):

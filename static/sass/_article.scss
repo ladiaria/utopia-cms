@@ -1147,7 +1147,7 @@ body.article {
       margin-top: 24px;
     }
   }
-  .feedback-error p {
+  .feedback-error p, p.success-message {
     font-size: 1rem;
     font-weight: normal;
     line-height: normal;
