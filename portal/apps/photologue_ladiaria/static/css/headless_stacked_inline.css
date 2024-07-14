@@ -1,0 +1,3 @@
+#extended-group > fieldset:first-child > h2:first-child, #extended-0 h3 {
+    display: none;
+}

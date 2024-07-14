@@ -11,47 +11,47 @@
             <a href="{{ app.app_url }}" class="section" title="{% blocktranslate with name=app.name %}Models in the {{ name }} application{% endblocktranslate %}">{{ app.name }}</a>
           </caption>
         {% endif %}
+        {% if app.name == 'Photologue' and request.path != "/admin/photologue/" %}
+          <tr>{# tr child without content to alter bgcolor cycling #}</tr>
+        {% endif %}
         {% for model in app.models %}
-          {% if model.name != 'Configuraciones extra' %}
-            <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
-              {% if model.admin_url %}
-                <th scope="row">
-                  <a href="{{ model.admin_url }}"{% if model.admin_url in request.path|urlencode %} aria-current="page"{% endif %}>
-                    {% if model.name == 'Efectos de foto' %}
-                      Efectos
-                    {% elif model.name == 'Configuraciones extra' %}
-                    {% else %}
-                      {{ model.name }}
-                    {% endif %}
-                  </a>
-                </th>
-              {% else %}
-                <th scope="row">
+          <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
+            {% if model.admin_url %}
+              <th scope="row">
+                <a href="{{ model.admin_url }}"{% if model.admin_url in request.path|urlencode %} aria-current="page"{% endif %}>
                   {% if model.name == 'Efectos de foto' %}
                     Efectos
                   {% else %}
                     {{ model.name }}
                   {% endif %}
-                </th>
-              {% endif %}
-
-              {% if model.add_url %}
-                <td><a href="{{ model.add_url }}" class="addlink">{% translate 'Add' %}</a></td>
-              {% else %}
-                <td></td>
-              {% endif %}
-
-              {% if model.admin_url and show_changelinks %}
-                {% if model.view_only %}
-                  <td><a href="{{ model.admin_url }}" class="viewlink">{% translate 'View' %}</a></td>
+                </a>
+              </th>
+            {% else %}
+              <th scope="row">
+                {% if model.name == 'Efectos de foto' %}
+                  Efectos
                 {% else %}
-                  <td><a href="{{ model.admin_url }}" class="changelink">{% translate 'Change' %}</a></td>
+                  {{ model.name }}
                 {% endif %}
-              {% elif show_changelinks %}
-                <td></td>
+              </th>
+            {% endif %}
+
+            {% if model.add_url %}
+              <td><a href="{{ model.add_url }}" class="addlink">{% translate 'Add' %}</a></td>
+            {% else %}
+              <td></td>
+            {% endif %}
+
+            {% if model.admin_url and show_changelinks %}
+              {% if model.view_only %}
+                <td><a href="{{ model.admin_url }}" class="viewlink">{% translate 'View' %}</a></td>
+              {% else %}
+                <td><a href="{{ model.admin_url }}" class="changelink">{% translate 'Change' %}</a></td>
               {% endif %}
-            </tr>
-          {% endif %}
+            {% elif show_changelinks %}
+              <td></td>
+            {% endif %}
+          </tr>
         {% endfor %}
         {% if request.path == "/admin/photologue/" %}
           <tr>
