@@ -55,6 +55,11 @@ TIME_FORMAT = "H:i:s"
 DATETIME_FORMAT = f"{DATE_FORMAT} {TIME_FORMAT}"
 SHORT_DATE_FORMAT = "d/m/Y"
 
+# Uncomment this next 2 settings to "force-off" the dark mode UI in django admin (even if your browser is dark-moded).
+# TODO: document this problem/solution
+# PORTAL_ADMIN_DARK_MODE_VARS_TEMPLATE = "admin/admin_dark_mode_vars_template_empty.html"
+# PORTAL_ADMIN_CHANGE_FORM_MARTOR_CUSTOM_CSS = "css/admin_dark_mode_revert_martor.css"
+
 # email
 EMAIL_SUBJECT_PREFIX = "[cms] "
 DEFAULT_FROM_EMAIL = "cms dev <cms@example.com>"  # change to a real mailbox for non-dev deployments
