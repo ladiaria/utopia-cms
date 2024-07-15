@@ -26,7 +26,7 @@
   {% include meta_include_template|default:'article/detail_meta.html' %}
 
   <!-- Canonical -->
-  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
+  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}{% if report_form %}#send-feedback{% endif%}">
   <!-- End Canonical -->
 
   <!-- Schema (https://schema.org) -->
