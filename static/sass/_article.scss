@@ -1132,6 +1132,7 @@ body.article {
 
     textarea {
       height: 150px;
+      padding: 5px;
     }
 
     button {
@@ -1147,7 +1148,11 @@ body.article {
       margin-top: 24px;
     }
   }
-  .feedback-error p, p.success-message {
+  .feedback-error {
+    margin-top: 16px;
+  }
+  .feedback-error p,
+  p.success-message {
     font-size: 1rem;
     font-weight: normal;
     line-height: normal;

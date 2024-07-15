@@ -487,7 +487,7 @@
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20.3325 2.33337L8.33242 14.3307L3.66775 9.66754L0 13.3352L8.33249 21.6665L24 6.00112L20.3325 2.33337Z" fill="black"/>
                   </svg>
-                  Muchas gracias. Se envió el mensaje correctamente.
+                  Muchas gracias. El mensaje fue enviado correctamente.
                 </p>
               {% else %}
                 <p>¿Tenés algún aporte para hacer?</p>
@@ -495,13 +495,6 @@
                 <form method="post" action="#send-feedback">
                   {% csrf_token %}
                   {{ report_form.article_token }}
-                  {% if report_form.non_field_errors %}
-                    <div class="feedback-error">
-                      <p class="error-message">
-                        {{ report_form.render_non_field_errors }}
-                      </p>
-                    </div>
-                  {% endif %}
                   {% for field in report_form reversed %}
                     <div class="form-control">
                       {{ field.errors }}
@@ -514,6 +507,13 @@
                     </div>
                   {% endfor %}
                   <button type="submit">Enviar</button>
+                  {% if report_form.non_field_errors %}
+                    <div class="feedback-error">
+                      <p class="error-message">
+                        {{ report_form.render_non_field_errors }}
+                      </p>
+                    </div>
+                  {% endif %}
                 </form>
               {% endif %}
             </div>
