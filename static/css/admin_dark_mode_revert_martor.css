@@ -1,0 +1,38 @@
+@media (prefers-color-scheme: dark) {
+  body {
+  color: revert;
+  background: revert !important;
+  }
+
+  h1,
+  h3,
+  h5 {
+  color: revert !important;
+  }
+
+  /* bootstrap */
+  .modal-help-guide .modal-content {
+  background: revert !important;
+  }
+
+  .modal-help-guide .modal-title {
+  color: revert !important;
+  font-size: unset !important;
+  margin: revert !important;
+  }
+
+  .modal-help-guide .table.markdown-reference {
+  background: revert;
+  color: revert;
+  }
+
+  /* semantic-ui */
+  .modal-help-guide .content {
+  background: revert !important;
+  }
+
+  .tab-martor-menu .item,
+  .martor-toolbar .ui.basic.buttons .button {
+  color: revert !important;
+  }
+}
