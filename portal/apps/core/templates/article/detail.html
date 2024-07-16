@@ -315,7 +315,7 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 689 #}
+        {% if not request.signupwall %}{# closed in line 688 #}
 
           {# signupwall banner #}
           {% if signupwall_remaining_banner and not article.public %}
@@ -702,7 +702,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 835 #}
+    {% if not request.signupwall %}{# closed in line 834 #}
 
       {% if article.public %}
 
@@ -831,7 +831,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 706 #}
+    {% endif %}{# opened in line 705 #}
 
     {% block article_extra %}{% endblock %}
 
