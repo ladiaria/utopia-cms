@@ -1097,6 +1097,7 @@ body.article {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding-bottom: 30px;
 
   @media #{$medium-and-down} {
     padding: 0 20px;
@@ -1118,21 +1119,6 @@ body.article {
     .form-control {
       display: flex;
       flex-direction: column;
-    }
-
-    input[type="text"]:not(.browser-default),
-    input[type="email"]:not(.browser-default),
-    input[type="tel"]:not(.browser-default) {
-      height: 1.875rem;
-      border: 1px solid $grey;
-      padding-left: 8px;
-      box-sizing: border-box;
-    }
-
-    input[type="text"]:not(.browser-default):focus-visible,
-    input[type="email"]:not(.browser-default):focus-visible,
-    input[type="tel"]:not(.browser-default):focus-visible {
-      outline: auto 1px rgb(0, 95, 204);
     }
 
     textarea {

@@ -26,7 +26,7 @@
   {% include meta_include_template|default:'article/detail_meta.html' %}
 
   <!-- Canonical -->
-  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}{% if report_form %}#send-feedback{% endif%}">
+  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
   <!-- End Canonical -->
 
   <!-- Schema (https://schema.org) -->
@@ -252,6 +252,9 @@
 
     <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       <div class="ld-fin ld-block"></div>
+      <div amp-access="feedback_allowed" class="send-feedback" amp-access-hide>
+        {% include "article/feedback_form_header.html" %}
+      </div>
     </div>
 
     {% block subscribe_box %}

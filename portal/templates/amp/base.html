@@ -106,7 +106,6 @@
       .header-pill--coronavirus {}
       .mobile-header { width: 100%; background-color: #262626; color: #fff; text-align: center; display: flex; align-items: center; justify-content: center; height: 60px; z-index: 100; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2); }
       .section-subheader { text-align: center; box-shadow: 0px 3px 6px #00000029; padding:10px 0 7px; z-index:1; position:relative;}
-      {% block css %}{% endblock %}
       .section-subheader .header-logo img { position:relative; overflow:visible;}
       .subscribe, #subscribe { background-color: #39f; color: #fff; }
       .subscribe { line-height: 30px; height: 30px; padding: 0 24px; margin: 0 auto; border-radius: 100px; }.amp-selector-custom div.tabButton { outline: none; }
@@ -607,6 +606,26 @@
           display: none;
         }
       }
+      /* feedback form link */
+      .send-feedback {
+        max-width: 500px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding-bottom: 30px;
+      }
+      .send-feedback p {
+        margin: 0;
+        font-family: Roboto, sans-serif;
+        font-size: 12px;
+      }
+      .send-feedback p:first-child {
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-align: center;
+      }
+      {% block css %}{% endblock %}
     </style>
     <!-- End CSS -->
   </head>

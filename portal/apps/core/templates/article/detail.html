@@ -492,8 +492,7 @@
                   Muchas gracias. El mensaje fue enviado correctamente.
                 </p>
               {% else %}
-                <p>¿Tenés algún aporte para hacer?</p>
-                <p>Valoramos cualquier aporte aclaratorio que quieras realizar sobre la nota que acabás de leer.</p>
+                {% include "article/feedback_form_header.html" %}
                 <form method="post" action="#send-feedback">
                   {% csrf_token %}
                   {{ report_form.article_token }}
