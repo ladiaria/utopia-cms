@@ -98,15 +98,16 @@ def get_feedback_module():
     return locate(feedback_module_path) if feedback_module_path else feedback_module_path
 
 
-def feedback_allowed(request, article):
+def feedback_allowed(request, article, is_amp_authenticated=False):
     feedback_module = get_feedback_module()
     if feedback_module is False:
         return False
     custom_allowed = getattr(feedback_module, "custom_feedback_allowed", None)
     if custom_allowed:
-        return custom_allowed(request, article)
+        return custom_allowed(request, article, is_amp_authenticated)
     else:
-        return article.is_published and request.user.is_authenticated
+        is_auth = is_amp_authenticated if request.is_amp_detect else request.user.is_authenticated
+        return article.is_published and is_auth
 
 
 def feedback_form(data=None, article=None, request=None):

@@ -252,6 +252,9 @@
 
     <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       <div class="ld-fin ld-block"></div>
+      <div amp-access="feedback_allowed" class="send-feedback" amp-access-hide>
+        {% include "article/feedback_form_header.html" %}
+      </div>
     </div>
 
     {% block subscribe_box %}

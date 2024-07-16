@@ -71,6 +71,7 @@ from utils.error_log import error_log
 from decorators import render_response
 
 from core.models import Publication, Category, Article, ArticleUrlHistory
+from core.forms import feedback_allowed
 from signupwall.middleware import (
     get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access, number_to_words
 )
@@ -1502,6 +1503,9 @@ def amp_access_authorization(request):
 
         # NOTE: banner is rendered despite of setting for anon users
         result["signupwall_remaining_banner"] = not authenticated or settings.SIGNUPWALL_REMAINING_BANNER_ENABLED
+
+        # feedback form link
+        result["feedback_allowed"] = feedback_allowed(request, article, authenticated)
 
     response = HttpResponse(json.dumps(result), content_type="application/json")
     return set_amp_cors_headers(request, response)
