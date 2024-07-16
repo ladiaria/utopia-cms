@@ -209,7 +209,9 @@
 
     {% if article.has_deck or article.has_lead %}
       {% if article.has_deck %}
-        <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+        {% block article_deck %}
+          <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+        {% endblock %}
       {% endif %}
       {% if article.has_lead %}
         <p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>
@@ -250,6 +252,9 @@
 
     <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       <div class="ld-fin ld-block"></div>
+      <div amp-access="feedback_allowed" class="send-feedback" amp-access-hide>
+        {% include "article/feedback_form_header.html" %}
+      </div>
     </div>
 
     {% block subscribe_box %}

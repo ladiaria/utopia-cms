@@ -106,7 +106,6 @@
       .header-pill--coronavirus {}
       .mobile-header { width: 100%; background-color: #262626; color: #fff; text-align: center; display: flex; align-items: center; justify-content: center; height: 60px; z-index: 100; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2); }
       .section-subheader { text-align: center; box-shadow: 0px 3px 6px #00000029; padding:10px 0 7px; z-index:1; position:relative;}
-      {% block css %}{% endblock %}
       .section-subheader .header-logo img { position:relative; overflow:visible;}
       .subscribe, #subscribe { background-color: #39f; color: #fff; }
       .subscribe { line-height: 30px; height: 30px; padding: 0 24px; margin: 0 auto; border-radius: 100px; }.amp-selector-custom div.tabButton { outline: none; }
@@ -147,6 +146,7 @@
       @media (min-width: 769px) { .article-body { font-size: 22px; } }
       .article-body p { margin-bottom: 50px; }
       .article-body h1, .article-body h2, .article-body h3, .article-body hr { max-width: 700px; margin: 20px auto; }.article-body h3, .article-body h4, .article-body h5, .article-body h6 { line-height: 1.5; }.article-body ul, .article-body ol { font-size: 18px; line-height: 34px; max-width: 700px; margin: 20px auto 50px auto; padding-left: 22px; }@media (min-width: 769px) { .article-body ul, .article-body ol { font-size: 20px; } }.article-body ul li { list-style-type: disc; }
+      div.article-body h2 { font-size: 1.75rem; @media only screen and (max-width: 767px) { font-size: 1.5rem; } } div.article-body h3 {font-size: 1.375rem; @media only screen and (max-width: 767px) { font-size: 1.25rem; } } div.article-body h4 { font-size: 1.25rem; line-height: 1.5; @media only screen and (max-width: 767px) { font-size: 1rem } }
       .article-body hr { margin:100px 0; background:#595959;}
       .article-body li { line-height: 1.5; }
       .article-body ul, .article-body ol { margin: 10px 0; }
@@ -606,6 +606,26 @@
           display: none;
         }
       }
+      /* feedback form link */
+      .send-feedback {
+        max-width: 500px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding-bottom: 30px;
+      }
+      .send-feedback p {
+        margin: 0;
+        font-family: Roboto, sans-serif;
+        font-size: 12px;
+      }
+      .send-feedback p:first-child {
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-align: center;
+      }
+      {% block css %}{% endblock %}
     </style>
     <!-- End CSS -->
   </head>
