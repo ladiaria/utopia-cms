@@ -303,7 +303,9 @@
 
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
-          <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+          {% block article_deck %}
+            <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+          {% endblock %}
         {% endif %}
         {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
       {% endif %}
@@ -313,7 +315,7 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 672 #}
+        {% if not request.signupwall %}{# closed in line 689 #}
 
           {# signupwall banner #}
           {% if signupwall_remaining_banner and not article.public %}
@@ -327,7 +329,7 @@
           {% endif %}
           {# END signupwall banner #}
 
-          <div class="article-body paywalled-content">
+          <div class="article-body paywalled-content{% block article_body_extra_class %}{% endblock %}">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
 
             {# colection articles #}
@@ -684,7 +686,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 316 #}
+        {% endif %}{# opened in line 318 #}
 
       {% else %}{# restricted content message #}
 
@@ -701,7 +703,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 818 #}
+    {% if not request.signupwall %}{# closed in line 835 #}
 
       {% if article.public %}
 
@@ -830,7 +832,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 689 #}
+    {% endif %}{# opened in line 706 #}
 
     {% block article_extra %}{% endblock %}
 

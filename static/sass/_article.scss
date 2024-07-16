@@ -153,20 +153,25 @@ article {
       font-family: "Meta Serif", serif;
       font-weight: 500;
     }
+    h2 {
+      font-size: px-to-rem(28px);
+      @media #{$medium-and-down} {
+        font-size: px-to-rem(24px);
+      }
+    }
 
     h3 {
-      font-size: 24px;
-
-      @media (min-width: 769px) {
-        font-size: 28px;
+      font-size: px-to-rem(22px);
+      @media #{$medium-and-down} {
+        font-size: px-to-rem(20px);
       }
     }
 
     h4 {
-      font-size: 20px;
+      font-size: px-to-rem(20px);
       line-height: 1.5;
-      @media (min-width: 769px) {
-        font-size: 22px;
+      @media #{$medium-and-down} {
+        font-size: px-to-rem(16px);
       }
     }
 
