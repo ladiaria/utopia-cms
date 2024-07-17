@@ -103,13 +103,6 @@ class Command(BaseCommand):
             if article.body_image.exists():
                 photos.extend(body_img.image.image.path for body_img in article.body_image.all())
 
-        if photos:
-            photos_dump_dir = join(dump_dir, 'photos')
-            mkdir_p(photos_dump_dir)
-            for photo_path in photos:
-                if exists(photo_path):
-                    shutil.copy(photo_path, photos_dump_dir)
-
         collector = Collector(using='default')
         collector.collect(to_collect)
         todump, publications = set(), set(collector.data.pop(Publication, []))
@@ -141,10 +134,28 @@ class Command(BaseCommand):
                     if obj.section.category:
                         todump.add(obj.section.category)
                 todump.add(obj)
+
+        full_width_covers = set()
+        for obj in publications:
+            if obj.full_width_cover_image:
+                full_width_covers.add(obj.full_width_cover_image)
+                photos.append(obj.full_width_cover_image.image.path)
+
+        if photos:
+            photos_dump_dir = join(dump_dir, 'photos')
+            mkdir_p(photos_dump_dir)
+            for photo_path in photos:
+                if exists(photo_path):
+                    shutil.copy(photo_path, photos_dump_dir)
+
         if verbose:
             print("Dumping all objects in the following sets to a single dump file:")
             pprint((editions, todump))
         serialized_data = json.loads(
+            serializers.serialize(
+                "json", full_width_covers, use_natural_foreign_keys=True, use_natural_primary_keys=True
+            )
+        ) + json.loads(
             serializers.serialize("json", publications, use_natural_foreign_keys=True, use_natural_primary_keys=True)
         ) + json.loads(
             serializers.serialize("json", editions, use_natural_foreign_keys=True, use_natural_primary_keys=True)
