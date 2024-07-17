@@ -163,15 +163,15 @@ class Command(BaseCommand):
 
         serialized_data = json.loads(
             serializers.serialize("json", photos, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+        ) + json.loads(
+            serializers.serialize("json", galleries, use_natural_foreign_keys=True, use_natural_primary_keys=True)
         )
 
-        # drop site info from photos (will probably never match in load environment) and write result file dump
+        # drop site info from photos and galleries (probably never match in load environment)
         for entry in serialized_data:
             entry["fields"].pop("sites")
 
         serialized_data += json.loads(
-            serializers.serialize("json", galleries, use_natural_foreign_keys=True, use_natural_primary_keys=True)
-        ) + json.loads(
             serializers.serialize("json", publications, use_natural_foreign_keys=True, use_natural_primary_keys=True)
         ) + json.loads(
             serializers.serialize("json", editions, use_natural_foreign_keys=True, use_natural_primary_keys=True)
@@ -179,6 +179,7 @@ class Command(BaseCommand):
             serializers.serialize("json", todump, use_natural_foreign_keys=True, use_natural_primary_keys=True)
         )
 
+        # and write result file dump
         dump_file_path = join(dump_dir, 'dump.json')
         dump_file_obj = open(dump_file_path, 'w')
         dump_file_obj.write(json.dumps(serialized_data))
