@@ -5,6 +5,7 @@ import shutil
 import json
 from pprint import pprint
 from actstream.models import Action
+from photologue.models import Photo, Gallery
 
 from django.conf import settings
 from django.core import serializers
@@ -55,6 +56,7 @@ class Command(BaseCommand):
             action="store",
             dest="filter_kwargs",
             type=str,
+            default="{}",
             help="A dict in JSON format, it will be passed as `**kwargs` to `Article.filter()` to obtain the set to "
                  "be dumped.",
         )
@@ -69,12 +71,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # TODO: dump also audio media files (not only photos)
-        verbose, dump_dir, photos = options.get('verbosity') > 1, options.get('dump_dir'), []
+        #       filter may also be used to filter the ids given
+        verbose, dump_dir = options.get('verbosity') > 1, options.get('dump_dir')
         try:
-            article_ids, filter_kwargs = options.get('article_ids'), json.loads(options.get('filter_kwargs') or "{}")
-            assert article_ids or filter_kwargs, "At least one Article id or the filter json must be given"
-        except (ValueError, AssertionError) as va_err:
-            raise CommandError(va_err)
+            filter_kwargs = json.loads(options.get('filter_kwargs'))
+        except ValueError as v_err:
+            raise CommandError(v_err)
 
         to_collect = []
         article_ids = options.get('article_ids')
@@ -98,15 +100,15 @@ class Command(BaseCommand):
             article = article_qs[0]
             to_collect.append(article)
 
-            if article.photo:
-                photos.append(article.photo.image.path)
-            if article.body_image.exists():
-                photos.extend(body_img.image.image.path for body_img in article.body_image.all())
-
         collector = Collector(using='default')
         collector.collect(to_collect)
-        todump, publications = set(), set(collector.data.pop(Publication, []))
+
+        todump = set()
+        publications = set(collector.data.pop(Publication, []))
         editions = set(collector.data.pop(Edition, []))
+        galleries = set(collector.data.pop(Gallery, []))
+        photos = set(collector.data.pop(Photo, []))
+
         for key in collector.data.keys():
             if key in (PushNotification, ArticleViewedBy, ArticleViews, Action, Article.byline.through):
                 continue
@@ -117,15 +119,21 @@ class Command(BaseCommand):
                 elif key is CategoryHome:
                     todump.add(obj.category)
                 elif key is ArticleBodyImage:
-                    todump.add(obj.image)
+                    photos.add(obj.image)
                 elif key is Article:
                     for subset in (
                         obj.get_authors(),
                         obj.extensions.all(),
                         obj.body_image.all(),
-                        set([x for x in (obj.photo, obj.audio, obj.location) if x]),
+                        set([x for x in (obj.audio, obj.location) if x]),
                     ):
                         todump = todump.union(subset)
+                    if obj.photo:
+                        photos.add(obj.photo)
+                    if obj.body_image.exists():
+                        photos = photos.union(set([body_img.image for body_img in article.body_image.all()]))
+                    if obj.gallery:
+                        galleries.add(obj.gallery)
                 elif key is ArticleRel:
                     publications.add(obj.edition.publication)
                     publications = publications.union(obj.section.publications.all())
@@ -135,26 +143,34 @@ class Command(BaseCommand):
                         todump.add(obj.section.category)
                 todump.add(obj)
 
-        full_width_covers = set()
         for obj in publications:
             if obj.full_width_cover_image:
-                full_width_covers.add(obj.full_width_cover_image)
-                photos.append(obj.full_width_cover_image.image.path)
+                photos.add(obj.full_width_cover_image)
+
+        for obj in galleries:
+            photos = photos.union(obj.photos.all())
 
         if photos:
             photos_dump_dir = join(dump_dir, 'photos')
             mkdir_p(photos_dump_dir)
-            for photo_path in photos:
-                if exists(photo_path):
-                    shutil.copy(photo_path, photos_dump_dir)
+            for photo in photos:
+                if exists(photo.image.path):
+                    shutil.copy(photo.image.path, photos_dump_dir)
 
         if verbose:
             print("Dumping all objects in the following sets to a single dump file:")
-            pprint((editions, todump))
+            pprint((photos, galleries, publications, editions, todump))
+
         serialized_data = json.loads(
-            serializers.serialize(
-                "json", full_width_covers, use_natural_foreign_keys=True, use_natural_primary_keys=True
-            )
+            serializers.serialize("json", photos, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+        )
+
+        # drop site info from photos (will probably never match in load environment) and write result file dump
+        for entry in serialized_data:
+            entry["fields"].pop("sites")
+
+        serialized_data += json.loads(
+            serializers.serialize("json", galleries, use_natural_foreign_keys=True, use_natural_primary_keys=True)
         ) + json.loads(
             serializers.serialize("json", publications, use_natural_foreign_keys=True, use_natural_primary_keys=True)
         ) + json.loads(
@@ -162,10 +178,7 @@ class Command(BaseCommand):
         ) + json.loads(
             serializers.serialize("json", todump, use_natural_foreign_keys=True, use_natural_primary_keys=True)
         )
-        # drop site info from photos (will probably never match in load environment) and write result file dump
-        for entry in serialized_data:
-            if entry["model"] == "photologue.photo":
-                entry["fields"].pop("sites")
+
         dump_file_path = join(dump_dir, 'dump.json')
         dump_file_obj = open(dump_file_path, 'w')
         dump_file_obj.write(json.dumps(serialized_data))
