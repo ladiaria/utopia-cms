@@ -332,7 +332,20 @@ class ArticleAdminModelForm(ModelForm):
         widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
         help_text='Se genera automáticamente en base al título.',
     )
+    # alt_title_metadata = CharField(label='Título alternativo para metadatos', widget=TextInput(attrs={'style': 'width:600px'}))
+
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(ArticleAdminModelForm, self).__init__(*args, **kwargs)
+        # self.alt_title_metadata = CharField(widget=TextInput(attrs={'class': 'article-field-stacked'}))
+        for k, v in self.fields.items():
+            if k in ('alt_title_metadata', 'alt_title_newsletters',):
+                current_classes = self.fields[k].widget.attrs['class']
+                self.fields[k].widget.attrs['class'] = current_classes + ' article-input-stacked'
+            if k in ('alt_desc_metadata', 'alt_desc_newsletters',):
+                current_classes = self.fields[k].widget.attrs['class']
+                self.fields[k].widget.attrs['class'] = current_classes + ' article-textarea-stacked'
 
     def clean_tags(self):
         """
@@ -445,7 +458,11 @@ class ArticleAdmin(VersionAdmin):
     readonly_fields = ('date_published', )
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
     fieldsets = (
-        (None, {'fields': ('type', 'headline', 'slug', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide', )}),
+        (None, {'fields': (
+            'type',
+            ('headline', 'alt_title_metadata', 'alt_title_newsletters',),
+            'slug', 'keywords',
+            ('deck', 'alt_desc_metadata', 'alt_desc_newsletters'), 'lead', 'body'), 'classes': ('wide', )}),
         (
             'Portada',
             {
