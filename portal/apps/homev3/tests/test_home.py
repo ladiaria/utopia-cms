@@ -30,6 +30,9 @@ class HomeTestCase(TestCase):
         {'url': '/test/articulo/2020/11/test-article3/', 'amp': True, 'headers': http_host_header_param},
     )
 
+    def check_amp_response_status(self, response, assertion_val):
+        pass
+
     def test1_home(self):
         # a way to make this test fail by settings (may be useful to know if you get noticed when tests are failing)
         self.assertFalse(getattr(settings, "HOMEV3_FIRST_TEST_SHOULD_FAIL", False))
@@ -69,3 +72,12 @@ class HomeTestCase(TestCase):
             for item in self.urls_to_test + ({'url': '/admin/'}, ):
                 response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))
                 self.assertEqual(response.status_code, 200)
+
+    def test4_article_with_iframe_in_extension(self):
+        article_url = '/articulo/2024/7/test-article9/'
+        c = Client()
+        response = c.get(article_url, **self.http_host_header_param)
+        self.assertEqual(response.status_code, 200)
+        response = c.get(article_url, {'display': 'amp'}, **self.http_host_header_param)
+        self.assertEqual(response.status_code, 301)  # TODO: use method to check amp 200/310 depending on new setting
+        # TODO: continue here (assert rediredted url is the cannonical one)
