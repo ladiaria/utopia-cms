@@ -332,20 +332,22 @@ class ArticleAdminModelForm(ModelForm):
         widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
         help_text='Se genera automáticamente en base al título.',
     )
-    # alt_title_metadata = CharField(label='Título alternativo para metadatos', widget=TextInput(attrs={'style': 'width:600px'}))
 
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
 
     def __init__(self, *args, **kwargs):
         super(ArticleAdminModelForm, self).__init__(*args, **kwargs)
-        # self.alt_title_metadata = CharField(widget=TextInput(attrs={'class': 'article-field-stacked'}))
+        # update for deck field
+        self.fields['deck'].label = "Descripcion"
         for k, v in self.fields.items():
-            if k in ('alt_title_metadata', 'alt_title_newsletters',):
-                current_classes = self.fields[k].widget.attrs['class']
-                self.fields[k].widget.attrs['class'] = current_classes + ' article-input-stacked'
+            if k in ('keywords'): # adding styles for outside inputs widgets
+                self.add_field_class(k, 'article-input')
+            if k in ('deck', 'lead', 'home_lead', 'home_top_deck'): # adding styles for outside textareas widgets
+                self.add_field_class(k, 'article-textarea')
+            if k in ('alt_title_metadata', 'alt_title_newsletters'):
+                self.add_field_class(k, 'article-input-stacked')
             if k in ('alt_desc_metadata', 'alt_desc_newsletters',):
-                current_classes = self.fields[k].widget.attrs['class']
-                self.fields[k].widget.attrs['class'] = current_classes + ' article-textarea-stacked'
+                self.add_field_class(k, 'article-textarea-stacked')
 
     def clean_tags(self):
         """
@@ -396,6 +398,13 @@ class ArticleAdminModelForm(ModelForm):
         if targets:
             raise ValidationError('Ya existe un artículo en ese mes con el mismo título.')
         return cleaned_data
+
+    def add_field_class(self, field_name, class_name):
+        """
+        Add css class to a form field classes.
+        """
+        current_classes = self.fields[field_name].widget.attrs['class']
+        self.fields[field_name].widget.attrs['class'] = '{} {}'.format(current_classes, class_name)
 
     class Meta:
         model = Article

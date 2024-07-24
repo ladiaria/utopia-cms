@@ -10,6 +10,12 @@ fieldset.collapse,fieldset.collapsed{display: block !important;}
 .change-form .object-tools{margin-top: -100px;}
 .dynamic-extensions td.field-body{width:50%;}
 .dynamic-extensions td.field-body textarea{width:100%;}
+.article-input {
+    width: 600px;
+}
+.article-textarea {
+    height: 120px;
+}
 .article-input-stacked {
     margin-left: 200px;
     width: 600px;
@@ -17,7 +23,7 @@ fieldset.collapse,fieldset.collapsed{display: block !important;}
 .article-textarea-stacked {
     margin-left: 200px;
     width: 600px;
-    height: 100px;
+    height: 120px;
 }
 .field-alt_title_metadata, .field-alt_title_newsletters,
 .field-alt_desc_metadata, .field-alt_desc_newsletters {
