@@ -1187,7 +1187,7 @@ class ArticleBase(Model, CT):
         blank=True,
         null=True,
     )
-    is_published = BooleanField('publicado', default=True)
+    is_published = BooleanField('publicado', default=True, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField('última actualización', auto_now=True)
