@@ -31,12 +31,15 @@ def gtm(request):
 
 
 def site(request):
+    # Add this to the aproppriate place
+    isPhotologue = request.path.startswith("/photologue") or request.path.startswith("/fotos")
     result = {
         'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
         "admin_dark_mode_vars_template": getattr(
             settings, "PORTAL_ADMIN_DARK_MODE_VARS_TEMPLATE", "admin/admin_dark_mode_vars_template.html",
         ),
         "admin_martor_change_form_custom_css": getattr(settings, "PORTAL_ADMIN_CHANGE_FORM_MARTOR_CUSTOM_CSS", None),
+        "isPhotologue": isPhotologue,
     }
     try:
         site = Site.objects.get_current()
