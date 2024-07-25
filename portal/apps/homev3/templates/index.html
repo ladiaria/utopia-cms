@@ -23,7 +23,7 @@
 {% endblock %}
 
 {% block header_scripts %}
-  <link rel="preload" href="{% static 'js/most_read.js' %}" as="script" />
+  {% if allow_mas_leidos %}<link rel="preload" href="{% static 'js/most_read.js' %}" as="script" />{% endif %}
   <script type="text/javascript">
     $(function(){
       $('#header-pub').load("{% url 'adzone_ad_content' %}");
