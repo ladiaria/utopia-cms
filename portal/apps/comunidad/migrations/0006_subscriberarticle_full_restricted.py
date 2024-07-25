@@ -6,12 +6,12 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0039_alter_edition_unique_together"),
+        ("comunidad", "0005_alter_subscriberarticle_is_published"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="article",
+            model_name="subscriberarticle",
             name="full_restricted",
             field=models.BooleanField(
                 default=False,

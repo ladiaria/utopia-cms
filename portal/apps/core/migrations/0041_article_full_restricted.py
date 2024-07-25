@@ -6,12 +6,12 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("comunidad", "0004_alter_subscriberarticle_audio_and_more"),
+        ("core", "0040_alter_article_is_published"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="subscriberarticle",
+            model_name="article",
             name="full_restricted",
             field=models.BooleanField(
                 default=False,
