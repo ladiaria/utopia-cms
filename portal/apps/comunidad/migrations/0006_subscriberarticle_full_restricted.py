@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("comunidad", "0004_alter_subscriberarticle_audio_and_more"),
+        ("comunidad", "0005_alter_subscriberarticle_is_published"),
     ]
 
     operations = [

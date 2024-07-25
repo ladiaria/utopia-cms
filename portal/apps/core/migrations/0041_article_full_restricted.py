@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0039_alter_edition_unique_together"),
+        ("core", "0040_alter_article_is_published"),
     ]
 
     operations = [
