@@ -82,6 +82,7 @@ def publications(request):
         )
 
     # use this context processor to load also some other useful variables configured in settings
+    result['PWA_ENABLED'] = getattr(settings, 'PWA_ENABLED', True)
     result.update(
         (
             (var, getattr(settings, var, None)) for var in (
