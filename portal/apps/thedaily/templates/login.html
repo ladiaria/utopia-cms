@@ -4,6 +4,8 @@
 {% block page_title %}Ingreso de usuarios | {{ site.name }} | {{ country_name }}{% endblock %}
 {% block body_class %}login no-footer{% endblock %}
 
+{% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
+
 {% block content %}
   <main class="ld-content">
     <div class="row">
