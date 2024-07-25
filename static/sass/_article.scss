@@ -153,20 +153,25 @@ article {
       font-family: "Meta Serif", serif;
       font-weight: 500;
     }
+    h2 {
+      font-size: px-to-rem(28px);
+      @media #{$medium-and-down} {
+        font-size: px-to-rem(24px);
+      }
+    }
 
     h3 {
-      font-size: 24px;
-
-      @media (min-width: 769px) {
-        font-size: 28px;
+      font-size: px-to-rem(22px);
+      @media #{$medium-and-down} {
+        font-size: px-to-rem(20px);
       }
     }
 
     h4 {
-      font-size: 20px;
+      font-size: px-to-rem(20px);
       line-height: 1.5;
-      @media (min-width: 769px) {
-        font-size: 22px;
+      @media #{$medium-and-down} {
+        font-size: px-to-rem(16px);
       }
     }
 
@@ -1084,6 +1089,77 @@ body.article {
 #comentarios {
   padding-top: 90px;
   margin-top: -90px;
+}
+
+.send-feedback {
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 30px;
+
+  @media #{$medium-and-down} {
+    padding: 0 20px;
+  }
+
+  p {
+    margin: 0;
+    font-family: Roboto, sans-serif;
+  }
+  p:first-child {
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+  }
+  form {
+    display: flex;
+    flex-direction: column;
+
+    .form-control {
+      display: flex;
+      flex-direction: column;
+    }
+
+    textarea {
+      height: 150px;
+      padding: 5px;
+    }
+
+    button {
+      border-radius: 100px;
+      background: $off-black;
+      color: var(--B8, #fff);
+      font-family: Roboto;
+      font-weight: 700;
+      line-height: normal;
+      text-transform: uppercase;
+      align-self: center;
+      padding: 10.5px 21px;
+      margin-top: 24px;
+    }
+  }
+  .feedback-error {
+    margin-top: 16px;
+  }
+  .feedback-error p,
+  p.success-message {
+    font-size: 1rem;
+    font-weight: normal;
+    line-height: normal;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+
+    &.error-message,
+    & a {
+      color: #b61616;
+      a {
+        font-weight: bold;
+      }
+    }
+  }
 }
 
 .lg-backdrop {

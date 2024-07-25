@@ -1,0 +1,9 @@
+{% extends "admin/change_form.html" %}
+{% load static%}
+
+{% block extrahead %}
+  {{ block.super }}
+  {% if admin_martor_change_form_custom_css %}
+    <link rel="stylesheet" type="text/css" href="{% static admin_martor_change_form_custom_css %}">
+  {% endif %}
+{% endblock %}

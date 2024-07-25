@@ -14,15 +14,12 @@ from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
-from django.urls import reverse
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.mail import send_mail
 from django.db.models import Q
-from django.http import (
-    Http404, HttpResponseRedirect, HttpResponse, BadHeaderError, HttpResponsePermanentRedirect, HttpResponseForbidden
-)
+from django.http import Http404, HttpResponse, BadHeaderError, HttpResponsePermanentRedirect, HttpResponseForbidden
 from django.views.generic import DetailView
-from django.contrib.sites.models import Site
+from django.forms import ValidationError
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.views.decorators.http import require_http_methods
@@ -39,7 +36,7 @@ from tagging.models import Tag
 from apps import mongo_db
 from signupwall.middleware import subscriber_access
 from decorators import decorate_if_no_auth, decorate_if_auth
-from core.forms import ReportErrorArticleForm, SendByEmailForm
+from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
 from core.models import Publication, Category, Article, ArticleUrlHistory
 
 
@@ -148,20 +145,25 @@ def article_detail(request, year, month, slug, domain_slug=None):
     if not article.is_published and not request.user.is_staff:
         raise Http404
 
-    report_form = ReportErrorArticleForm(article=article)
-    user_is_authenticated = request.user.is_authenticated
-
-    if request.method == 'POST':
-        post = request.POST.copy()
-        if 'error' in post and user_is_authenticated:
-            report_form = ReportErrorArticleForm(post, article=article)
-            if report_form.is_valid():
-                return report_error(request, article)
+    # render/handle feedback/feedback_sent, if any
+    report_form, report_form_sent = None, False
+    if feedback_allowed(request, article):
+        if request.method == 'POST':
+            report_form = feedback_form(request.POST, article=article)
+            if report_form.is_valid(article):
+                try:
+                    feedback_handler(request, article)
+                except ValidationError as ve:
+                    report_form.add_error(None, ve)
+                else:
+                    report_form_sent = True
+        else:
+            report_form = feedback_form(article=article, request=request)
 
     signupwall_exclude_request_condition = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
     # If the call to the condition with the request as argument returns True, the visit is not logged to mongodb.
 
-    is_amp_detect = getattr(request, "is_amp_detect", False)
+    is_amp_detect, user_is_authenticated = getattr(request, "is_amp_detect", False), request.user.is_authenticated
     if settings.CORE_LOG_ARTICLE_VIEWS and not (
         signupwall_exclude_request_condition(request) or getattr(request, 'restricted_article', False) or is_amp_detect
     ):
@@ -198,6 +200,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         "photo_render_allowed": article.photo_render_allowed(),
         'is_detail': True,
         'report_form': report_form,
+        'report_form_sent': report_form_sent,
         'domain': domain,
         'category': category,
         'category_signup':
@@ -320,25 +323,6 @@ def reorder_tag_list(article, tags):
 
 def get_article_tags(article):
     return Tag.objects.get_for_object(article)
-
-
-def report_error(request, article):
-    from django.core.mail import mail_managers
-
-    body = """Reporte enviado por %(name)s sobre el artículo "%(article)s":
-    %(message)s
-
-Puede editar el artículo en:
-    https://%(site)s/admin/core/article/%(id)i/
-    """ % {
-        'name': request.user.get_full_name(),
-        'article': article.headline,
-        'message': request.POST.get('error'),
-        'id': article.id,
-        'site': Site.objects.get_current().domain,
-    }
-    mail_managers(subject='Error en artículo', message=body)
-    return HttpResponseRedirect(reverse('article_report_sent'))
 
 
 @require_http_methods(["POST"])

@@ -74,7 +74,7 @@ from tagging.models import Tag
 import thedaily
 from videologue.models import Video, YouTubeVideo
 
-from .managers import get_published_kwargs, PublishedArticleManager
+from .managers import get_published_kwargs, PublishedArticleManager, EditionManager, SlugNaturalManager
 from .templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from .utils import (
     datetime_isoformat,
@@ -92,6 +92,7 @@ def remove_media_root(path):
 
 
 class Publication(Model):
+    objects = SlugNaturalManager()
     name = CharField('nombre', max_length=100)
     twitter_username = CharField(
         'Nombre de usuario de Twitter',
@@ -283,6 +284,9 @@ class Publication(Model):
 
     get_full_width_cover_image_tag.short_description = 'foto full de portada'
 
+    def natural_key(self):
+        return (self.slug,)
+
     class Meta:
         ordering = ['weight']
         verbose_name = 'publicación'
@@ -350,7 +354,7 @@ class PortableDocumentFormatBaseModel(Model):
         return result.title() if short else result.capitalize()
 
 
-""" TODO: better enable this after new structure works well (**)
+""" TODO: better enable this after new structure works well (**) (why? what does it improve?)
 class EditionSection(models.Model):
     edition = ForeignKey(Edition)
     section = ForeignKey(Section)
@@ -361,7 +365,10 @@ class EditionSection(models.Model):
 
 
 class Edition(PortableDocumentFormatBaseModel):
-    """ A publication's edition. """
+    """
+    A publication's edition.
+    """
+    objects = EditionManager()
     title = TextField('título', null=True)
     publication = ForeignKey(
         Publication, on_delete=CASCADE, verbose_name='publicación', related_name="%(app_label)s_%(class)s"
@@ -371,6 +378,7 @@ class Edition(PortableDocumentFormatBaseModel):
     class Meta(PortableDocumentFormatBaseModel.Meta):
         verbose_name = 'edición'
         verbose_name_plural = 'ediciones'
+        unique_together = [["date_published", "publication"]]  # TODO: is this the right way? why not a single tuple?
 
     def __str__(self):
         try:
@@ -381,6 +389,10 @@ class Edition(PortableDocumentFormatBaseModel):
 
     def edition_pub(self):
         return str(self)
+
+    def natural_key(self):
+        return (self.date_published,) + self.publication.natural_key()
+    natural_key.dependencies = ['core.publication']
 
     edition_pub.short_description = 'Fecha publicada'
 
@@ -571,6 +583,7 @@ class Supplement(PortableDocumentFormatBaseModel):
 
 
 class Category(Model):
+    objects = SlugNaturalManager()
     name = CharField('nombre', max_length=50, unique=True)
     slug = SlugField('slug', blank=True, null=True)
     description = TextField('descripción', blank=True, null=True)
@@ -776,12 +789,17 @@ class Category(Model):
                     pass
         return result
 
+    def natural_key(self):
+        return (self.slug,)
+
     class Meta:
         verbose_name = 'área'
         ordering = ('order', 'name')
 
 
 class Section(Model):
+    objects = SlugNaturalManager()
+
     SECTION_1 = '1'
     SECTION_2 = '2'
     SECTION_3 = '3'
@@ -999,6 +1017,9 @@ class Section(Model):
 
     articles_count.short_description = '# Artículos'
 
+    def natural_key(self):
+        return (self.slug,)
+
     class Meta:
         get_latest_by = 'date_created'
         ordering = ('home_order', 'name', 'date_created')
@@ -1007,6 +1028,7 @@ class Section(Model):
 
 
 class Journalist(Model):
+    objects = SlugNaturalManager()
 
     JOB_CHOICES = (
         ('PE', 'Periodista'),
@@ -1033,6 +1055,9 @@ class Journalist(Model):
 
     def __str__(self):
         return self.name
+
+    def natural_key(self):
+        return (self.slug,)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
@@ -1162,7 +1187,7 @@ class ArticleBase(Model, CT):
         blank=True,
         null=True,
     )
-    is_published = BooleanField('publicado', default=True)
+    is_published = BooleanField('publicado', default=True, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField('última actualización', auto_now=True)
