@@ -384,6 +384,33 @@ class ArticleAdminModelForm(ModelForm):
             raise ValidationError('Ya existe un artículo en ese mes con el mismo título.')
         return cleaned_data
 
+    def add_field_class(self, field_name, class_name):
+        """
+        Add css class to a form field classes.
+        """
+        current_classes = self.fields[field_name].widget.attrs['class']
+        self.fields[field_name].widget.attrs['class'] = '{} {}'.format(current_classes, class_name)
+
+    def handle_extra_field_values(self, article):
+        """
+        Adjustments on title extra fields default values
+        """
+        if not article.alt_title_metadata:
+            article.alt_title_metadata = article.headline
+        if not article.alt_title_newsletters:
+            article.alt_title_newsletters = article.headline
+        if not article.alt_desc_metadata:
+            article.alt_desc_metadata = article.deck
+        if not article.alt_desc_newsletters:
+            article.alt_desc_newsletters = article.deck
+
+    def save(self, commit=True):
+        art = super(ArticleAdminModelForm, self).save(commit=False)
+        self.handle_extra_field_values(art)
+        if commit:
+            art.save()
+        return art
+
     class Meta:
         model = Article
         fields = "__all__"

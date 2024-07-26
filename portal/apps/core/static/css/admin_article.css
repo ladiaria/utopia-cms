@@ -10,3 +10,38 @@ fieldset.collapse,fieldset.collapsed{display: block !important;}
 .change-form .object-tools{margin-top: -100px;}
 .dynamic-extensions td.field-body{width:50%;}
 .dynamic-extensions td.field-body textarea{width:100%;}
+.article-input {
+    width: 600px;
+}
+.article-textarea {
+    height: 120px;
+}
+.article-input-stacked {
+    margin-left: 200px;
+    width: 600px;
+}
+.article-textarea-stacked {
+    margin-left: 200px;
+    width: 600px;
+    height: 120px;
+}
+.field-alt_title_metadata, .field-alt_title_newsletters,
+.field-alt_desc_metadata, .field-alt_desc_newsletters {
+    margin-top: 20px;
+}
+#id_alt_desc_metadata_helptext,
+#id_alt_desc_newsletters_helptext {
+    margin-left: 165px;
+}
+#id_alt_title_metadata_helptext,
+#id_alt_title_newsletters_helptext {
+    padding-right: 10px;
+}
+label[for="id_alt_title_metadata"],
+label[for="id_alt_title_newsletters"],
+label[for="id_alt_desc_metadata"],
+label[for="id_alt_desc_newsletters"] {
+    float: initial;
+    margin-left: 200px;
+    width: 20em;
+}
