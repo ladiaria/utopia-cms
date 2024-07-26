@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags signupwall_tags %}
 
+{% block head_first_content %}
+  <!-- AMP -->
+  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
+  <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
+  <!-- End AMP -->
+{% endblock %}
+
 {% block page_title %}{{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endblock %}
 
 {% block page_description %}
@@ -25,10 +32,6 @@
 
 {% block meta %}
   {% include meta_include_template|default:'article/detail_meta.html' %}
-  <!-- AMP -->
-  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
-  <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
-  <!-- End AMP -->
 {% endblock %}
 
 {% block json_ld %}{% include 'article/detail_json_ld.html' %}{% endblock %}
@@ -95,7 +98,7 @@
       {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 301 #}
+          <div>{# closed in line 304 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -122,7 +125,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 301 #}
+          {# missing close div here is closed correctly in line 304 #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -298,7 +301,7 @@
         {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
-        </div>{# opened in line 98 #}
+        </div>{# opened in line 101 #}
       {% endif %}
 
       {% if article.has_deck or article.has_lead %}
@@ -315,7 +318,7 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 688 #}
+        {% if not request.signupwall %}{# closed in line 691 #}
 
           {# signupwall banner #}
           {% if signupwall_remaining_banner and not article.public %}
@@ -685,7 +688,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 318 #}
+        {% endif %}{# opened in line 321 #}
 
       {% else %}{# restricted content message #}
 
@@ -702,7 +705,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 834 #}
+    {% if not request.signupwall %}{# closed in line 837 #}
 
       {% if article.public %}
 
@@ -831,7 +834,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 705 #}
+    {% endif %}{# opened in line 708 #}
 
     {% block article_extra %}{% endblock %}
 
