@@ -117,10 +117,10 @@ def main_menus(request):
     Fills context variables to be shown or needed in the main menus and other features.
     Also fill another context variables using to the visualization of many UX "modules".
     """
+    categories_with_order = Category.objects.filter(order__isnull=False)
     result = {
-        'MENU_CATEGORIES': dict(
-            (c, c.section_set.all() if c.dropdown_menu else None) for c in Category.objects.filter(order__isnull=False)
-        ),
+        'MENU_CATEGORIES': dict((c, c.section_set.all() if c.dropdown_menu else None) for c in categories_with_order),
+        "categories_with_order": [c.slug for c in categories_with_order],
         'CORE_PUSH_NOTIFICATIONS_OFFER': settings.CORE_PUSH_NOTIFICATIONS_OFFER,
         'CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY': settings.CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY,
         'push_notifications_keys_set': bool(
