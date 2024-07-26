@@ -2,4 +2,21 @@ div.form-row div.charcounter {
     padding-left:8em;
     margin-left:16px;
     font-size: 0.6875rem;
+    clear: left;
+    margin-top: 1px;
+    margin-left: 160px;
+    padding-left: 38px;
+    width: 490px;
+    text-align: end;
+    line-height: 16.5px;
+}
+
+@media screen and (min-width: 1400px){
+    div.form-row div.charcounter {
+        position: absolute;
+    }
+    div.form-row div.help {
+        width: 490px;
+        padding-right: 120px;
+    }
 }
