@@ -305,7 +305,7 @@ class PortableDocumentFormatBaseModel(Model):
     pdf_md5 = CharField('checksum', max_length=32, editable=False)
     downloads = PositiveIntegerField('descargas', default=0)
     cover = ImageField('tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
-    date_published = DateField('fecha de publicación', default=now)
+    date_published = DateField('fecha de publicación', default=now, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
@@ -1187,7 +1187,7 @@ class ArticleBase(Model, CT):
         blank=True,
         null=True,
     )
-    is_published = BooleanField('publicado', default=True)
+    is_published = BooleanField('publicado', default=True, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField('última actualización', auto_now=True)

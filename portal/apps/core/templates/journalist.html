@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% load core_tags %}
 
-{% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
-
 {% block page_title %}{{ journalist.name }} | {{ journalist.get_job_display }} en {{ site.name }} | {{ country_name }}{% endblock %}
 
 {% block meta_og_title %}
