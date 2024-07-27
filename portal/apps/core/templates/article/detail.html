@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags signupwall_tags %}
 
+{% block head_first_content %}
+  <!-- AMP -->
+  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
+  <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
+  <!-- End AMP -->
+{% endblock %}
+
 {% block page_title %}{{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endblock %}
 
 {% block page_description %}
@@ -25,10 +32,6 @@
 
 {% block meta %}
   {% include meta_include_template|default:'article/detail_meta.html' %}
-  <!-- AMP -->
-  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
-  <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
-  <!-- End AMP -->
 {% endblock %}
 
 {% block json_ld %}{% include 'article/detail_json_ld.html' %}{% endblock %}
@@ -95,7 +98,7 @@
       {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 301 #}
+          <div>{# closed in line 304 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -122,7 +125,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 301 #}
+          {# missing close div here is closed correctly in line 304 #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -298,12 +301,14 @@
         {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
-        </div>{# opened in line 98 #}
+        </div>{# opened in line 101 #}
       {% endif %}
 
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
-          <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+          {% block article_deck %}
+            <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+          {% endblock %}
         {% endif %}
         {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
       {% endif %}
@@ -313,7 +318,7 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 648 #}
+        {% if not request.signupwall %}{# closed in line 691 #}
 
           {# signupwall banner #}
           {% if signupwall_remaining_banner and not article.public %}
@@ -327,7 +332,7 @@
           {% endif %}
           {# END signupwall banner #}
 
-          <div class="article-body paywalled-content">
+          <div class="article-body paywalled-content{% block article_body_extra_class %}{% endblock %}">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
 
             {# colection articles #}
@@ -479,6 +484,44 @@
           {% block after_content %}{% endblock %}
 
           <div class="ld-fin ld-block"></div>
+
+          {% if report_form %}
+            <div id="send-feedback" class="send-feedback">
+              {% if report_form_sent %}
+                <p class="success-message">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.3325 2.33337L8.33242 14.3307L3.66775 9.66754L0 13.3352L8.33249 21.6665L24 6.00112L20.3325 2.33337Z" fill="black"/>
+                  </svg>
+                  Muchas gracias. El mensaje fue enviado correctamente.
+                </p>
+              {% else %}
+                {% include "article/feedback_form_header.html" %}
+                <form method="post" action="#send-feedback">
+                  {% csrf_token %}
+                  {{ report_form.article_token }}
+                  {% for field in report_form reversed %}
+                    <div class="form-control">
+                      {{ field.errors }}
+                      {% if not field.is_hidden %}
+                        <label for="id_{{ field.name }}">
+                          {{ field.label }} {% if field.field.required %}<span>*</span>{% endif %}
+                        </label>
+                      {% endif %}
+                      {{ field }}
+                    </div>
+                  {% endfor %}
+                  <button type="submit">Enviar</button>
+                  {% if report_form.non_field_errors %}
+                    <div class="feedback-error">
+                      <p class="error-message">
+                        {{ report_form.render_non_field_errors }}
+                      </p>
+                    </div>
+                  {% endif %}
+                </form>
+              {% endif %}
+            </div>
+          {% endif %}
 
           {% if followed %}
             <div class="read-later u-mb-60">
@@ -645,7 +688,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 316 #}
+        {% endif %}{# opened in line 321 #}
 
       {% else %}{# restricted content message #}
 
@@ -662,7 +705,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 794 #}
+    {% if not request.signupwall %}{# closed in line 837 #}
 
       {% if article.public %}
 
@@ -791,7 +834,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 665 #}
+    {% endif %}{# opened in line 708 #}
 
     {% block article_extra %}{% endblock %}
 

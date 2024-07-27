@@ -1,54 +1,122 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import re
+import traceback
+from pydoc import locate
+from email.utils import make_msgid
+from emails.django import DjangoMessage as Message
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Field
 from crispy_forms.bootstrap import FormActions
 
+from django.conf import settings
 from django.urls import reverse_lazy
 from django.forms import Form, CharField, HiddenInput, ValidationError, EmailField, Textarea
+from django.utils.crypto import salted_hmac
 
-from libs.utils import do_gonzo
-
-
-def gen_gonzo(form, aslug='', aid=''):
-    if not aslug:
-        aslug = form.article.slug
-    if not aid:
-        aid = form.article.id
-    return do_gonzo(aslug, aid)
+from libs.utils import smtp_connect
 
 
-class ArticleForm(Form):
-    # TODO: check if this class is needed
-    article = CharField(widget=HiddenInput)
-    gonzo = CharField(widget=HiddenInput)
+class ArticleFeedbackForm(Form):
+    article_token = CharField(widget=HiddenInput)  # prevents cross-entity posting
+    message = CharField(label='Mensaje', widget=Textarea())
 
     def __init__(self, *args, **kwargs):
-        initial = {}
-        if 'article' in kwargs:
-            self.article = kwargs.get('article')
-            initial['article'] = self.article.slug
-            del kwargs['article']
-        else:
+        article = kwargs.pop('article', None)
+        if not article:
             raise ValidationError('Missing article')
-        initial['gonzo'] = gen_gonzo(self)
+        initial = {"article_token": self.gen_article_token(article)}
         if 'initial' in kwargs:
             kwargs['initial'].update(initial)
         else:
             kwargs['initial'] = initial
         super().__init__(*args, **kwargs)
 
-    def clean(self):
-        data = self.cleaned_data
-        gonzo = data.get('gonzo', '')
-        if gonzo != gen_gonzo(self, data.get('article', ''), self.article.id):
-            raise ValidationError('Ha ocurrido un error interno.')
-        return data
+    def gen_article_token(self, article):
+        return salted_hmac(settings.SECRET_KEY, f"{article.id}:{article.slug}").hexdigest()
+
+    def is_valid(self, article):
+        result = super().is_valid() and self.cleaned_data.get("article_token") == self.gen_article_token(article)
+        if not result:
+            self.add_error(None, ValidationError("los datos enviados no son correctos"))
+        return result
+
+    def render_non_field_errors(self):
+        return self.non_field_errors
 
 
-class ReportErrorArticleForm(ArticleForm):
-    error = CharField(label='Reportá un error')
+def send_feedback(request, article):
+    body = """
+    Mensaje enviado desde el artículo "%(article)s":
+
+    %(message)s
+
+    URL del artículo: %(url)s
+    """ % {
+        'article': article.headline,
+        'message': request.POST.get('message'),
+        'url': settings.SITE_URL_SD + article.get_absolute_url(),
+    }
+    if request.user.is_authenticated:
+        body += "\nUsuario: %s (ID %d)" % (request.user.email, request.user.id)
+
+    prefix = "feedback_"
+    re_prefix = re.compile(r"^%s" % prefix)
+    if any(k.startswith(prefix) for k in request.POST.keys()):
+        body += (
+            "\n"
+            + "\n".join(f"{re.sub(re_prefix, '', k)}: {v}" for k, v in request.POST.items() if k.startswith(prefix))
+        )
+
+    to_name_addr = getattr(
+        settings,
+        "CORE_ARTICLE_DETAIL_FEEDBACK_MAILTO",
+        (settings.NOTIFICATIONS_TO_NAME, settings.NOTIFICATIONS_TO_ADDR),
+    )
+    message = Message(
+        text=body,
+        mail_to=to_name_addr,
+        mail_from=getattr(settings, "CORE_ARTICLE_DETAIL_FEEDBACK_MAILFROM", settings.NOTIFICATIONS_FROM_ADDR1),
+        subject='Feedback en artículo',
+        headers={'Message-Id': make_msgid("feedbak." + str(article.id)), "Return-Path": settings.NOTIFICATIONS_FROM_MX}
+    )
+    smtp = smtp_connect()
+    try:
+        smtp.sendmail(settings.NOTIFICATIONS_FROM_MX, [to_name_addr[1]], message.as_string())
+        if settings.DEBUG:
+            print('DEBUG: an email was sent from send_feedback function')
+        smtp.quit()
+    except Exception:
+        if settings.DEBUG:
+            print(traceback.format_exc())
+        raise ValidationError('Error al enviar el mensaje')
+
+
+def get_feedback_module():
+    feedback_module_path = getattr(settings, "CORE_ARTICLE_DETAIL_FEEDBACK_MODULE", None)
+    return locate(feedback_module_path) if feedback_module_path else feedback_module_path
+
+
+def feedback_allowed(request, article, is_amp_authenticated=False):
+    feedback_module = get_feedback_module()
+    if feedback_module is False:
+        return False
+    custom_allowed = getattr(feedback_module, "custom_feedback_allowed", None)
+    if custom_allowed:
+        return custom_allowed(request, article, is_amp_authenticated)
+    else:
+        is_auth = is_amp_authenticated if request.is_amp_detect else request.user.is_authenticated
+        return article.is_published and is_auth
+
+
+def feedback_form(data=None, article=None, request=None):
+    custom_form = getattr(get_feedback_module(), "custom_feedback_form", None)
+    return custom_form(data, article, request) if custom_form else ArticleFeedbackForm(data, article=article)
+
+
+def feedback_handler(request, article):
+    return getattr(get_feedback_module(), "custom_feedback_handler", send_feedback)(request, article)
 
 
 class SendByEmailForm(Form):
