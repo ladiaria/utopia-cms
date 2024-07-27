@@ -1628,6 +1628,23 @@ class Article(ArticleBase):
     newsletter_featured = BooleanField('destacado en newsletter', default=False)
     ipfs_upload = BooleanField('Publicar en IPFS', default=False)
     ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
+    # alternative fields
+    alt_title_metadata = CharField('título alternativo para metadatos', blank=True, null=True, max_length=200, help_text=mark_safe(
+        'Aplica a metadatos: meta title, Open Graph y Schema en el <head> de la página del artículo.<br>Si se deja vacío aplica Título principal.'
+    ))
+    alt_desc_metadata = TextField(
+        'descripción alternativo para metadatos', blank=True, null=True, help_text=mark_safe(
+            'Aplica a metadatos: meta description, Open Graph y Schema en el <head> de la página del artículo.<br>Si se deja vacío aplica Descripción principal.'
+        )
+    )
+    alt_title_newsletters = CharField('título alternativo para newsletters', blank=True, null=True, max_length=200, help_text=mark_safe(
+        'Aplica en todos los newsletters que aparezca el artículo.<br>Si se deja vacío aplica Título principal.'
+    ))
+    alt_desc_newsletters = TextField(
+        'descripción alternativo para newsletters', blank=True, null=True, help_text=mark_safe(
+            'Aplica en todos los newsletters que aparezca el artículo.<br>Si se deja vacío aplica Descripción principal'
+        )
+    )
     # SuperDesk article ID
     sp_id = CharField(max_length=100, null=True, blank=True)
 
