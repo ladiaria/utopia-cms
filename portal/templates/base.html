@@ -11,9 +11,11 @@
 {% endblock %}
   <head>
     {% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
-    <!-- Progressive Web App (PWA) -->
-    <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
-    <!-- End Progressive Web App (PWA) -->
+    {% if PWA_ENABLED %}
+      <!-- Progressive Web App (PWA) -->
+      <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
+      <!-- End Progressive Web App (PWA) -->
+    {% endif %}
     {% if not debug %}
       {# The preferred way to load GA is using GTM #}
       {% if GTM_CONTAINER_ID %}
@@ -212,7 +214,9 @@
     {% endif %}
 
     <!-- JavaScript -->
-    <script src="{% static 'js/index.js' %}"></script>
+    <script src="{% static 'js/index_functions.js' %}"></script>
+    {% if PWA_ENABLED %}<script src="{% static 'js/index_pwa_function.js' %}"></script>{% endif %}
+    <script src="{% static 'js/index_sw_call.js' %}"></script>
     <script src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
     {% if user.is_authenticated %}
       <script type="text/javascript">var userName = '{{ user.id|user_hashid }}';</script>
@@ -308,23 +312,25 @@
       <header{% if request.signupwall_header %} class="with-article-counter-container {{ request.remaining_articles_word }}-articles"{% endif %}>
         {% render_header %}
       </header>
-      <div class="pwa-prompt" style="display:none;">
-        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <g clip-path="url(#clip0_722_4218)">
-            <path d="M34.8333 31.1667V21.6333C33.9167 21.8167 33 22 32.0833 22H31.1667V33H12.8333V20.1667C12.8333 15.0333 16.8667 11 22 11C22.1833 8.61666 23.2833 6.59999 24.75 4.94999C24.2 4.21666 23.1 3.66666 22 3.66666C19.9833 3.66666 18.3333 5.31666 18.3333 7.33332V7.88332C12.8333 9.53332 9.16667 14.4833 9.16667 20.1667V31.1667L5.5 34.8333V36.6667H38.5V34.8333L34.8333 31.1667ZM18.3333 38.5C18.3333 40.5167 19.9833 42.1667 22 42.1667C24.0167 42.1667 25.6667 40.5167 25.6667 38.5H18.3333Z" fill="#262626"/>
-            <path d="M38.5 11.9167C38.5 15.4 35.5667 18.3333 32.0834 18.3333C28.6 18.3333 25.6667 15.4 25.6667 11.9167C25.6667 8.43333 28.6 5.5 32.0834 5.5C35.5667 5.5 38.5 8.43333 38.5 11.9167Z" fill="#FE5B4C"/>
-          </g>
-          <defs><clipPath id="clip0_722_4218"><rect width="44" height="44" fill="white"/></clipPath></defs>
-          <title>Ícono campana</title>
-        </svg>
-        <span class="title">Activá nuestras notificaciones y<br>enterate antes</span>
-        <div class="actions">
-          <span class="ut-btn" onclick="return confirmFunction();">Activar</span>
-          <span class="ut-btn ut-btn-outline" style="cursor:pointer;" onclick="return cancelFunction();">No, gracias</span>
+      {% if PWA_ENABLED %}
+        <div class="pwa-prompt" style="display:none;">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g clip-path="url(#clip0_722_4218)">
+              <path d="M34.8333 31.1667V21.6333C33.9167 21.8167 33 22 32.0833 22H31.1667V33H12.8333V20.1667C12.8333 15.0333 16.8667 11 22 11C22.1833 8.61666 23.2833 6.59999 24.75 4.94999C24.2 4.21666 23.1 3.66666 22 3.66666C19.9833 3.66666 18.3333 5.31666 18.3333 7.33332V7.88332C12.8333 9.53332 9.16667 14.4833 9.16667 20.1667V31.1667L5.5 34.8333V36.6667H38.5V34.8333L34.8333 31.1667ZM18.3333 38.5C18.3333 40.5167 19.9833 42.1667 22 42.1667C24.0167 42.1667 25.6667 40.5167 25.6667 38.5H18.3333Z" fill="#262626"/>
+              <path d="M38.5 11.9167C38.5 15.4 35.5667 18.3333 32.0834 18.3333C28.6 18.3333 25.6667 15.4 25.6667 11.9167C25.6667 8.43333 28.6 5.5 32.0834 5.5C35.5667 5.5 38.5 8.43333 38.5 11.9167Z" fill="#FE5B4C"/>
+            </g>
+            <defs><clipPath id="clip0_722_4218"><rect width="44" height="44" fill="white"/></clipPath></defs>
+            <title>Ícono campana</title>
+          </svg>
+          <span class="title">Activá nuestras notificaciones y<br>enterate antes</span>
+          <div class="actions">
+            <span class="ut-btn" onclick="return confirmFunction();">Activar</span>
+            <span class="ut-btn ut-btn-outline" style="cursor:pointer;" onclick="return cancelFunction();">No, gracias</span>
+          </div>
+          {# TODO: validate this message with UX because this div can appear again "tomorrow". #}
+          {# <span class="notice">Ésta es la única vez que vas a ver este mensaje</span> #}
         </div>
-        {# TODO: validate this message with UX because this div can appear again "tomorrow". #}
-        {# <span class="notice">Ésta es la única vez que vas a ver este mensaje</span> #}
-      </div>
+      {% endif %}
     {% endblock %}
 
     {% block subscribe_notice %}

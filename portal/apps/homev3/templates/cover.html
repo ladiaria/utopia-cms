@@ -29,7 +29,7 @@
   {% endif %}
 {% endblock %}
 
-{% if user.is_authenticated %}
+{% if PWA_ENABLED and user.is_authenticated %}
   {% include 'pwa-module.html' %}
 {% endif %}
 
@@ -41,7 +41,7 @@
   </div>
 {% endif %}
 
-{% if mas_leidos %}
+{% if allow_mas_leidos %}
   <section id="mas-leidos" class="frontpage-section frontpage-section--white">
     <div class="container">
       <div class="row">
