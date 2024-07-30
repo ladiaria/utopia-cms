@@ -106,10 +106,11 @@ def subscriptionprice(subscription_type):
     try:
         price = SubscriptionPrices.objects.get(subscription_type=subscription_type).price
     except SubscriptionPrices.DoesNotExist:
-        return ''
-    else:
+        price = getattr(settings, 'THEDAILY_SUBSCRIPTIONPRICES_OTHER', {}).get(subscription_type, "")
+    if price:
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
-        return f'{int(price):n}'
+        price = f'{int(price):n}'
+    return price
 
 
 @register.simple_tag
