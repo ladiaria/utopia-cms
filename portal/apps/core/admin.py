@@ -410,11 +410,14 @@ class ArticleAdminModelForm(ModelForm):
         """
         Adjustments on title extra fields default values
         """
-        if not article.alt_title_metadata: article.alt_title_metadata = article.headline
-        if not article.alt_title_newsletters: article.alt_title_newsletters = article.headline
-        if not article.alt_desc_metadata: article.alt_desc_metadata = article.deck
-        if not article.alt_desc_newsletters: article.alt_desc_newsletters = article.deck
-
+        if not article.alt_title_metadata:
+            article.alt_title_metadata = article.headline
+        if not article.alt_title_newsletters:
+            article.alt_title_newsletters = article.headline
+        if not article.alt_desc_metadata:
+            article.alt_desc_metadata = article.deck
+        if not article.alt_desc_newsletters:
+            article.alt_desc_newsletters = article.deck
 
     def save(self, commit=True):
         art = super(ArticleAdminModelForm, self).save(commit=False)
