@@ -132,7 +132,7 @@ class PreLoginForm(Form):
         if error_msg:
             self.add_error("email", EmailValidationError(error_msg, code=error_code))
         else:
-            return email.lower()
+            return email
 
     if terms_and_conditions_prelogin:
         def clean_terms_and_conds_accepted(self):
