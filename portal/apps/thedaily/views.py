@@ -76,7 +76,7 @@ from signupwall.middleware import (
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
-from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList
+from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList, deletecrmuser
 from .forms import (
     __name__ as forms_module_name,
     LoginForm,
@@ -103,7 +103,7 @@ from .forms import (
     SUBSCRIPTION_PHONE_TIME_CHOICES,
 )
 from .utils import (
-    recent_following, add_default_newsletters, get_profile_newsletters_ordered, google_phone_next_page
+    recent_following, add_default_newsletters, get_profile_newsletters_ordered, google_phone_next_page,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -452,7 +452,7 @@ def signup(request):
             user = None
             try:
                 user = signup_form.create_user()
-                add_default_newsletters(user.subscriber)  # TODO: better call this after email confirmation success
+                # add_default_newsletters(user.subscriber)  # TODO: better call this after email confirmation success
                 # TODO: check if request is needed
                 # TODO: notifications/signup.html is also used for this purpose (2 templates to the same thing?)
                 was_sent = send_validation_email(
@@ -474,7 +474,10 @@ def signup(request):
                 msg = "Error al enviar email de verificación para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 if user:
+                    email_to_delete = user.email
                     user.delete()
+                    deletecrmuser(email_to_delete)
+
                 signup_form.add_error(None, msg)
     else:
         initial = {}
@@ -889,7 +892,7 @@ def hash_validate(user_id, hash):
 def get_or_create_user_profile(user):
     try:
         profile = user.subscriber
-    except Subscriber.DoesNotExist:
+    except Subscriber.DoesNotExist: # TODO: maybe RelatedObjectDoesNotExist
         profile = Subscriber.objects.create(user=user)
     return profile
 
