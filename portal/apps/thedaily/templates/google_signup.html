@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load static thedaily_tags crispy_forms_tags %}
+{% load core_tags static thedaily_tags crispy_forms_tags %}
 
-{% block page_title %}Registrate con tu cuenta de Google{% endblock %}
+{% block page_title %}{% title_joinparts 'Registrate con tu cuenta de Google' %}{% endblock %}
 
 {% block css %}
   {% block css_super %}{{ block.super }}{% endblock %}

@@ -8,7 +8,7 @@
   <!-- End AMP -->
 {% endblock %}
 
-{% block page_title %}{{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block page_title %}{% title_joinparts article.headline|remove_markup %}{% endblock %}
 
 {% block page_description %}
   {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}

@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% load core_tags thumbnail %}
 
-{% block page_title %}Eventos para {{ date|date:"F Y"|capfirst }}{% endblock %}
+{% block page_title %}Eventos para {{ date|date:"F Y"|capfirst }}{% title_joinparts '' %}{% endblock %}
+
 {% block body_class %}events{% endblock %}
 
 {% block content %}
