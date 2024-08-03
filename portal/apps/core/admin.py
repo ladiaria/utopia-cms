@@ -498,7 +498,7 @@ class ArticleAdmin(VersionAdmin):
                     'additional_access',
                     ('latitude', 'longitude', 'ipfs_upload'),
                 ),
-                'classes': ('collapse', ),
+                'classes': ('collapse',),
             },
         ),
     )
