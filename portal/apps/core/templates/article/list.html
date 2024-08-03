@@ -1,26 +1,23 @@
 {% extends "base.html" %}
 {% load static core_tags %}
 
-{% block page_title %}{% spaceless %}
-  Artículos sobre {% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %}
-   | {{ site.name }} {% if append_country %}| {{ country_name }}{% endif %}
-{% endspaceless %}{% endblock %}
+{% block page_title %}Artículos sobre {% tags_joined %}{% title_joinparts '' %}{% endblock %}
 
 {% block page_description %}{% spaceless %}
-  Todos los artículos, noticias y entrevistas en relación al tema {% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %} publicados por {{ site.name }}.
+  Todos los artículos, noticias y entrevistas en relación al tema {% tags_joined %} publicados por {{ site.name }}.
 {% endspaceless %}{% endblock %}
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:title" content="Noticias de {% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %} | {{ site.name }} | {{ country_name }}">
+  <meta property="og:title" content="Artículos sobre {% tags_joined %}{% title_joinparts '' %}">
 {% endblock %}
 
 {% block meta %}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ site.name }}">
-  <meta property="og:url" content="{{ SITE_URL }}tags/{{ tags.0|slugify }}">
+  <meta property="og:url" content="{{ SITE_URL_SD }}tags/{{ tags.0|slugify }}">
   {% if default_pub.open_graph_image %}
-    <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}">
+    <meta property="og:image" content="{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}">
   {% endif %}
   <!-- End Open Graph (http://ogp.me) -->
 {% endblock %}
@@ -39,9 +36,9 @@
         },
         {
           "@type": "CollectionPage",
-          "@id": "{{ SITE_URL }}tags/{{ tags.0|slugify }}",
-          "url": "{{ SITE_URL }}tags/{{ tags.0|slugify }}",
-          "name": "Noticias de {{ tags.0 }}",
+          "@id": "{{ SITE_URL_SD }}tags/{{ tags.0|slugify }}",
+          "url": "{{ SITE_URL_SD }}tags/{{ tags.0|slugify }}",
+          "name": "Artículos sobre {{ tags.0 }}",
           "isPartOf": {
             "@id": "{{ SITE_URL }}"
           },
@@ -56,8 +53,8 @@
   <div class="section_background">
     <div class="container container--narrow">
       <div class="section-detail__head">
-        <h1 class="section-detail__title">{% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 0 and not forloop.last %}, {% endif %}{% endfor %}</h1>
-        <p class="section-detail__description">Listado cronológico de artículos con el tema "{% for tag in tags %}{{ tag|capfirst }}{% if forloop.counter != 1 %}, {% endif %}{% endfor %}".</p>
+        <h1 class="section-detail__title">{% tags_joined %}</h1>
+        <p class="section-detail__description">Listado cronológico de artículos con el tema "{% tags_joined %}".</p>
       </div>
       </div>
     </div>

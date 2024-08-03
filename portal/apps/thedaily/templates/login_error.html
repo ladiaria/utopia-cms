@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load core_tags %}
 
-{% block page_title %}Login error{% endblock %}
+{% block page_title %}{% title_joinparts 'Login error' %}{% endblock %}
 {% block body_class %}thedaily{% endblock %}
 
 {% block content %}

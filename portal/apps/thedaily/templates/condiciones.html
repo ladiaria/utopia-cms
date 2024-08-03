@@ -1,13 +1,11 @@
 {% extends "base.html" %}
+{% load core_tags %}
 
+{% block page_title %}{% title_joinparts 'Condiciones de uso' %}{% endblock %}
 
-{% block page_title %}Condiciones de uso{% endblock %}
 {% block body_class %}thedaily{% endblock %}
 
 {% block content %}
-<h1>{{ flatpage.title }}</h1>
-
-{{ flatpage.content }}
-
+  <h1>{{ flatpage.title }}</h1>
+  {{ flatpage.content }}
 {% endblock %}
-

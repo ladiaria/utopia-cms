@@ -9,8 +9,11 @@
 {% endblock %}
 
 {% block page_title %}{% spaceless %}
-  {% if article.alt_title_metadata %}{{ article.alt_title_metadata }}{% else %}
-  {{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endif %}
+  {% if article.alt_title_metadata %}
+    {{ article.alt_title_metadata }}
+  {% else %}
+    {% title_joinparts article.headline|remove_markup %}
+  {% endif %}
 {% endspaceless %}{% endblock %}
 
 {% block page_description %}
