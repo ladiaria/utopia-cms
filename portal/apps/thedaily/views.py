@@ -452,6 +452,7 @@ def signup(request):
             user = None
             try:
                 user = signup_form.create_user()
+                # This line was commented because user.subscriber cause an error at this point
                 # add_default_newsletters(user.subscriber)  # TODO: better call this after email confirmation success
                 # TODO: check if request is needed
                 # TODO: notifications/signup.html is also used for this purpose (2 templates to the same thing?)
@@ -476,7 +477,7 @@ def signup(request):
                 if user:
                     email_to_delete = user.email
                     user.delete()
-                    deletecrmuser(email_to_delete)
+                    deletecrmuser(email_to_delete)  # delete user from the CRM if was created here in CRM
 
                 signup_form.add_error(None, msg)
     else:

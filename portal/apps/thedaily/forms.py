@@ -311,6 +311,10 @@ class SignupForm(BaseUserForm):
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
         user = User.objects.create_user(email, email, password)
+        # TODO: This conditional was added because at this point user.subscriber raise an error
+        # We need to check if all this logic related with the subscriber need to be set in this place
+        # Is correct to reate the related subscriber at this point?
+        # The actual solution by pass the subscriber creation and performs the sync process at the end
         if hasattr(user, 'subscriber'):
             if not user.subscriber.phone:
                 user.subscriber.phone = ''.join(DIGIT_RE.findall(self.cleaned_data.get('phone', '')))
@@ -320,7 +324,7 @@ class SignupForm(BaseUserForm):
         user.first_name = self.cleaned_data.get('first_name')
         user.last_name = self.cleaned_data.get('last_name', '')
         user.is_active = False
-        user.save()
+        user.save() # This call the sync process to the CRM. It is correct ?
         return user
 
     class Meta(BaseUserForm.Meta):
