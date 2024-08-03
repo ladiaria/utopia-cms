@@ -1,7 +1,7 @@
 {% extends "subscribe.html" %}
 {% load static core_tags thedaily_tags ldml bleach_tags crispy_forms_tags %}
 
-{% block page_title %}Muro de pago{% endblock %}
+{% block page_title %}{% title_joinparts 'Muro de pago' %}{% endblock %}
 
 {% block css %}
   <link href="{% static 'sass/hard_paywall.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">

@@ -34,6 +34,7 @@ def site(request):
     result = {
         'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
         "base_template": getattr(settings, "PORTAL_BASE_TEMPLATE", "base.html"),
+        "title_append_country": settings.PORTAL_TITLE_APPEND_COUNTRY,
         "admin_dark_mode_vars_template": getattr(
             settings, "PORTAL_ADMIN_DARK_MODE_VARS_TEMPLATE", "admin/admin_dark_mode_vars_template.html",
         ),

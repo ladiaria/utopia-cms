@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load events_tags %}
+{% load events_tags core_tags %}
 
-{% block page_title %}Eventos para el {{ day|date:"l j \de F \de Y"|capfirst }}{% endblock %}
+{% block page_title %}Eventos para el {{ day|date:"l j \de F \de Y"|capfirst }}{% title_joinparts '' %}{% endblock %}
 {% block body_class %}events{% endblock %}
 
 {% block content %}
