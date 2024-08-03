@@ -5,10 +5,10 @@
     "@context": "http://schema.org",
     "@type": "{% if section.is_satirical %}SatiricalArticle{% else %}NewsArticle{% endif %}",
     "mainEntityOfPage": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}",
-    "headline": "{% firstof article.alt_title_metadata|remove_markup|truncatewords:25 article.headline|remove_markup|truncatewords:25 %}",
+    "headline": "{% firstof article.alt_title_metadata article.headline|remove_markup|truncatewords:25 %}",
     {% if article.date_published %}"datePublished": "{{ article.date_published_isoformat }}",{% endif %}
     "dateModified": "{{ article.last_modified_isoformat }}",
-    "description": "{% firstof article.alt_desc_metadata|remove_markup article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
+    "description": "{% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
     "isAccessibleForFree": "{{ article.public }}",
     "hasPart": {
       "@type": "WebPageElement",
