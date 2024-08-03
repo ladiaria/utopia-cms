@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load core_tags crispy_forms_tags %}
 
-{% block page_title %}Confirmación de asistencia{% endblock %}
+{% block page_title %}{% title_joinparts 'Confirmación de asistencia' %}{% endblock %}
 
 {% block content %}
 
