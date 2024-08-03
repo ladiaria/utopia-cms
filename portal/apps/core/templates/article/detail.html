@@ -29,7 +29,7 @@
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:title" content="{% firstof article.alt_desc_metadata|remove_markup article.headline|remove_markup %}">
+  <meta property="og:title" content="{% firstof article.alt_title_metadata|remove_markup article.headline|remove_markup %}">
 {% endblock %}
 
 {% block meta %}
