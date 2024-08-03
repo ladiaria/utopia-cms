@@ -405,12 +405,14 @@
 
     <div id="alert_placeholder"></div>
 
-    {# js needed for the "dropdown" and "modal" menu items #}
-    <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
-    <script defer src="{% static 'materialize/js/global.js' %}"></script>
-    <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
-    <script defer src="{% static 'materialize/js/modal.js' %}"></script>
-    <script defer src="{% static 'materialize/js/forms.js' %}"></script>
+    {% block materialize_scripts %}
+      {# js needed for the "dropdown" and "modal" menu items #}
+      <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
+      <script defer src="{% static 'materialize/js/global.js' %}"></script>
+      <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
+      <script defer src="{% static 'materialize/js/modal.js' %}"></script>
+      <script defer src="{% static 'materialize/js/forms.js' %}"></script>
+    {% endblock %}
 
     {% if user.is_authenticated %}
       {# used only in pages that show article cards #}
