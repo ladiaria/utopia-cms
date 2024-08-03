@@ -2,7 +2,7 @@
 
 <meta property="og:type" content="article">
 <meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ URL_SCHEME }}://{{ site.domain }}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ site.name }}{% endif %}">
-<meta property="og:description" content="{% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}">
+<meta property="og:description" content="{% firstof article.alt_desc_metadata|remove_markup article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}">
 <meta property="og:locale" content="es_UY">
 <meta property="og:site_name" content="{{ site.name }}">
 <meta property="og:url" content="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
