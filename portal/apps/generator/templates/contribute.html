@@ -1,19 +1,17 @@
 {% extends "base.html" %}
-{% block page_title %}Generá la noticia{% endblock %}
+{% load core_tags %}
+
+{% block page_title %}{% title_joinparts 'Generá la noticia' %}{% endblock %}
+
 {% block body_class %}generator{% endblock %}
+
 {% block content %}
-    <div class="titlebar">
-        <h2>
-           Tu noticia
-        </h2>
-    </div>
-    <h1>
-        Generá la noticia
-    </h1>
-    <form action="" method="post">
-        {{ form.as_p }}
-        <p>
-            <button type="submit" name="enviar">Enviar mi noticia</button>
-        </p>
-    </form>
+  <div class="titlebar">
+    <h2>Tu noticia</h2>
+  </div>
+  <h1>Generá la noticia</h1>
+  <form action="" method="post">
+    {{ form.as_p }}
+    <p><button type="submit" name="enviar">Enviar mi noticia</button></p>
+  </form>
 {% endblock %}
