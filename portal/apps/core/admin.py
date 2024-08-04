@@ -326,6 +326,11 @@ class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
 
 
 class ArticleAdminModelForm(ModelForm):
+    PW_OPTIONS = (
+        ('none', 'Metered (por defecto)'),
+        ('full_restricted_true', 'Hard (solamente para suscriptores)'),
+        ('public_true', 'Sin paywall (libre acceso)'),
+    )
     headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
     slug = CharField(
         label='Slug',
@@ -333,6 +338,18 @@ class ArticleAdminModelForm(ModelForm):
         help_text='Se genera automáticamente en base al título.',
     )
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
+    pw_radio_choice = ChoiceField(
+        label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.full_restricted and not self.instance.public:
+            self.initial['pw_radio_choice'] = 'full_restricted_true'
+        elif not self.instance.full_restricted and self.instance.public:
+            self.initial['pw_radio_choice'] = 'public_true'
+        else:
+            self.initial['pw_radio_choice'] = 'none'
 
     def clean_tags(self):
         """
@@ -382,11 +399,25 @@ class ArticleAdminModelForm(ModelForm):
             targets = targets.exclude(id=self.instance.id)
         if targets:
             raise ValidationError('Ya existe un artículo en ese mes con el mismo título.')
+
+        # pw options:
+        pw_choice = cleaned_data.get('pw_radio_choice')
+        if pw_choice == 'none':
+            cleaned_data['full_restricted'] = False
+            cleaned_data['public'] = False
+        elif pw_choice == 'full_restricted_true':
+            cleaned_data['full_restricted'] = True
+            cleaned_data['public'] = False
+        elif pw_choice == 'public_true':
+            cleaned_data['full_restricted'] = False
+            cleaned_data['public'] = True
+
         return cleaned_data
 
     class Meta:
         model = Article
         fields = "__all__"
+        widgets = {"full_restricted": HiddenInput(), "public": HiddenInput()}
 
 
 @admin.display(description='Foto', boolean=True)
@@ -462,11 +493,12 @@ class ArticleAdmin(VersionAdmin):
                 'fields': (
                     'allow_comments',
                     'is_published',
-                    'public',
-                    "full_restricted",
                     'allow_related',
                     'show_related_articles',
                     'newsletter_featured',
+                    "pw_radio_choice",
+                    "full_restricted",
+                    "public",
                     'additional_access',
                     'latitude',
                     'longitude',

@@ -38,12 +38,6 @@ var prepareFields = function(){
   var fset_body = $('.main-martor').closest('fieldset');
   fset_body.after($('#extensions-group'));
 };
-var consistency_checks = function(){
-  var c1 = $("#id_public");
-  var c2 = $("#id_full_restricted");
-  c2.attr("disabled", c1.prop("checked") && !c2.prop("checked"));
-  c1.attr("disabled", c2.prop("checked") && !c1.prop("checked"));
-};
 var main_section_row_selected = function(radio_field){
   radio_field.parents("tr").addClass('row-articlerel-selected');
   $("[name=main_section_radio]:not(:checked)").parents("tr").removeClass('row-articlerel-selected');
@@ -68,7 +62,5 @@ if (window.jQuery) {
         main_section_row_selected($(this));
       });
     });
-    consistency_checks();
-    $("#id_public,#id_full_restricted").on("change", consistency_checks);
   });
 }

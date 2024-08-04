@@ -10,3 +10,13 @@ fieldset.collapse,fieldset.collapsed{display: block !important;}
 .change-form .object-tools{margin-top: -100px;}
 .dynamic-extensions td.field-body{width:50%;}
 .dynamic-extensions td.field-body textarea{width:100%;}
+.form-row.field-pw_radio_choice div {
+    display: block !important;
+    float: none !important;
+}
+.form-row.field-pw_radio_choice input { display: inline-block !important; }
+.form-row.field-pw_radio_choice label {
+    display: block !important;
+    float: none !important;
+    width: auto;
+}
