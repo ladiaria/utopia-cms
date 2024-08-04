@@ -10,7 +10,7 @@
 <html class="no-js" lang="es-UY">
 {% endblock %}
   <head>
-    {% block head_first_content %}{% endblock %}
+    {% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
     <!-- Progressive Web App (PWA) -->
     <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
     <!-- End Progressive Web App (PWA) -->

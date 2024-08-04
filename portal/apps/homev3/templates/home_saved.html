@@ -1,7 +1,8 @@
 {% extends "base.html" %}
-{% block page_title %}Home guardada{% endblock %}
+{% load core_tags %}
+
+{% block page_title %}{% title_joinparts 'Home guardada' %}{% endblock %}
+
 {% block content %}
-    <p>
-        La home fue guardada con éxito.
-    </p>
+  <p>La home fue guardada con éxito.</p>
 {% endblock %}
