@@ -495,13 +495,22 @@ def section_name_in_publication_menu(publication, section):
 
 
 @register.simple_tag(takes_context=True)
+def tags_joined(context):
+    return ", ".join(str(tag).title() for tag in context.get("tags"))
+
+
+@register.simple_tag(takes_context=True)
+def title_joinparts(context, first_part, first_separator=" | ", append_sitename=True):
+    result = first_separator.join([first_part, context.get('site').name]) if append_sitename else first_part
+    if context.get("title_append_country"):
+        result = " | ".join([result, context.get('country_name')])
+    return result
+
+
+@register.simple_tag(takes_context=True)
 def category_title(context):
     category = context.get('category')
-    return category.html_title or "%s: noticias y artículos periodísticos | %s | %s" % (
-        category,
-        context.get('site').name,
-        context.get('country_name'),
-    )
+    return category.html_title or title_joinparts(context, "%s: noticias y artículos periodísticos" % category)
 
 
 @register.simple_tag(takes_context=True)
@@ -513,15 +522,12 @@ def section_title(context):
     custom_title = getattr(section, 'html_title', None)
     if custom_title:
         return custom_title
-    default_title_parts = [
-        "Artículos en "
-        + getattr(section, 'name', section.get('name', "sección") if isinstance(section, dict) else "sección")
-    ]
-    if getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_SITENAME", True):
-        default_title_parts.append(context.get('site').name)
-    if getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_COUNTRY", True):
-        default_title_parts.append(context.get('country_name'))
-    return " | ".join(default_title_parts)
+    first_part = "Artículos en " + getattr(
+        section, 'name', section.get('name', "sección") if isinstance(section, dict) else "sección"
+    )
+    return title_joinparts(
+        context, first_part, append_sitename=getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_SITENAME", True)
+    )
 
 
 @register.simple_tag(takes_context=True)

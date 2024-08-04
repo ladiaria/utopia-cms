@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load static crispy_forms_tags thedaily_tags %}
+{% load static crispy_forms_tags thedaily_tags core_tags %}
 
-{% block page_title %}Suscripción a {{ product }}{% endblock %}
+{% block page_title %}Suscripción a {{ product }}{% title_joinparts '' %}{% endblock %}
 
 {% block body_class %}subscribe hide-mobile-nav{% endblock %}
 

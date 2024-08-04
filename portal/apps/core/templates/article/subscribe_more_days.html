@@ -1,11 +1,14 @@
 {% extends "base.html" %}
-{% block page_title %}Extendé tu plan{% endblock %}
+{% load core_tags %}
+
+{% block page_title %}{% title_joinparts 'Extendé tu plan' %}{% endblock %}
+
 {% block body_class %}article{% endblock %}
+
 {% block content %}
-    <h1>
-        Extendé tu plan
-    </h1>
-    <p>
-        Este artículo corresponde a un día que no está en tu plan de suscripción. Para extender tu plan y recibir la diaria los 5 días de la semana, <a href="{% url 'contact-form' %}">contactate</a> con nosotros.
-    </p>
+  <h1>Extendé tu plan</h1>
+  <p>
+    Este artículo corresponde a un día que no está en tu plan de suscripción. Para extender tu plan y recibir
+    {{ site.name }} los 5 días de la semana, <a href="{% url 'contact-form' %}">contactate</a> con nosotros.
+  </p>
 {% endblock %}

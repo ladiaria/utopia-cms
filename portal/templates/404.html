@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load core_tags %}
 
-{% block page_title %}Página no encontrada{% endblock %}
+{% block page_title %}{% title_joinparts 'Página no encontrada' %}{% endblock %}
 {% block body_class %}error{% endblock %}
 
 {% block content %}

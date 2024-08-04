@@ -53,6 +53,7 @@ def tag_detail(request, tag_slug):
         {
             'tags': tags,
             'articles': articles,
-            "title_append_country": getattr(settings, "CORE_TAG_DETAIL_TITLE_APPEND_COUNTRY", True),
+            "title_append_country":
+                getattr(settings, "CORE_TAG_DETAIL_TITLE_APPEND_COUNTRY", settings.PORTAL_TITLE_APPEND_COUNTRY),
         },
     )

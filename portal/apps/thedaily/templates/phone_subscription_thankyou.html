@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load static %}
+{% load core_tags static %}
 
-{% block page_title %}Suscribite por teléfono{% endblock %}
+{% block page_title %}{% title_joinparts 'Suscribite por teléfono' %}{% endblock %}
 {% block body_class %}thedaily subscribe hide-mobile-nav{% endblock %}
 
 {% block meta %}<meta name="robots" content="noindex">{% endblock %}
