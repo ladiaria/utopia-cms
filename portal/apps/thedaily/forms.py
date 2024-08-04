@@ -310,7 +310,8 @@ class SignupForm(BaseUserForm):
         DIGIT_RE = re.compile(r'\d')
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
-        user = User.objects.create_user(email, email, password)
+        first_name = self.cleaned_data.get('first_name')
+        user = User.objects.create_user(email, email, password, first_name=first_name)
         # TODO: This conditional was added because at this point user.subscriber raise an error
         # We need to check if all this logic related with the subscriber need to be set in this place
         # Is correct to reate the related subscriber at this point?
