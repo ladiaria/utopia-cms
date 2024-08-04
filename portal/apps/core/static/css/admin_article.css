@@ -45,3 +45,13 @@ label[for="id_alt_desc_newsletters"] {
     margin-left: 200px;
     width: 20em;
 }
+.form-row.field-pw_radio_choice div {
+    display: block !important;
+    float: none !important;
+}
+.form-row.field-pw_radio_choice input { display: inline-block !important; }
+.form-row.field-pw_radio_choice label {
+    display: block !important;
+    float: none !important;
+    width: auto;
+}
