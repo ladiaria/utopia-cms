@@ -64,6 +64,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.timezone import datetime, timedelta, make_aware, now, template_localtime
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
+from django.utils.html import escape
 
 from apps import blocklisted
 from photologue_ladiaria.models import PhotoExtended
@@ -1130,17 +1131,17 @@ class ArticleBase(Model, CT):
         related_name='articles_%(app_label)s',
     )
     type = CharField('tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True, db_index=True)
-    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en la nota.')
+    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en el artículo.')
     keywords = CharField(
         'titulín', max_length=45, blank=True, null=True, help_text='Se muestra encima del título en portada.'
     )
     slug = SlugField('slug', max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
-        'bajada', blank=True, null=True, help_text='Se muestra en la página de la nota debajo del título.'
+        'descripción', blank=True, null=True, help_text='Se muestra en la página del artículo debajo del título.'
     )
     lead = TextField(
-        'copete', blank=True, null=True, help_text='Se muestra en la página de la nota debajo de la bajada.'
+        'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
     body = MartorField("cuerpo")
     header_display = CharField(
@@ -1154,14 +1155,14 @@ class ArticleBase(Model, CT):
         null=True,
         default='SM',
     )
-    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada de la nota en portada.')
+    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada del artículo en portada.')
     home_display = CharField('mostrar en portada', max_length=2, choices=DISPLAY_CHOICES, blank=True, null=True)
     home_top_deck = TextField(
         'bajada en destacados',
         blank=True,
         null=True,
         help_text=(
-            'Se muestra en los destacados de la portada, en el caso de estar vació se muestra la bajada de la nota.'
+            'Se muestra en los destacados de la portada, en el caso de estar vacío se muestra la bajada del artículo.'
         ),
     )
     byline = ManyToManyField(
@@ -1627,22 +1628,41 @@ class Article(ArticleBase):
     )
     newsletter_featured = BooleanField('destacado en newsletter', default=False)
     ipfs_upload = BooleanField('Publicar en IPFS', default=False)
-    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
+    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID del artículo en IPFS')
     # alternative fields
-    alt_title_metadata = CharField('título alternativo para metadatos', blank=True, null=True, max_length=200, help_text=mark_safe(
-        'Aplica a metadatos: meta title, Open Graph y Schema en el <head> de la página del artículo.<br>Si se deja vacío aplica Título principal.'
-    ))
+    alt_title_metadata = CharField(
+        'título alternativo para metadatos',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica a metadatos: meta title, Open Graph y Schema en el '
+        ) + escape("<head>") + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Título principal.')
+    )
     alt_desc_metadata = TextField(
-        'descripción alternativo para metadatos', blank=True, null=True, help_text=mark_safe(
-            'Aplica a metadatos: meta description, Open Graph y Schema en el <head> de la página del artículo.<br>Si se deja vacío aplica Descripción principal.'
+        'descripción alternativa para metadatos',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica a metadatos: meta description, Open Graph y Schema en el '
+        ) + escape("<head>")
+        + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Descripción principal.')
+    )
+    alt_title_newsletters = CharField(
+        'título alternativo para newsletters',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Título principal.'
         )
     )
-    alt_title_newsletters = CharField('título alternativo para newsletters', blank=True, null=True, max_length=200, help_text=mark_safe(
-        'Aplica en todos los newsletters que aparezca el artículo.<br>Si se deja vacío aplica Título principal.'
-    ))
     alt_desc_newsletters = TextField(
-        'descripción alternativo para newsletters', blank=True, null=True, help_text=mark_safe(
-            'Aplica en todos los newsletters que aparezca el artículo.<br>Si se deja vacío aplica Descripción principal'
+        'descripción alternativa para newsletters',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Descripción principal'
         )
     )
     # SuperDesk article ID

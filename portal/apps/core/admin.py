@@ -331,7 +331,6 @@ class ArticleAdminModelForm(ModelForm):
         ('full_restricted_true', 'Hard (solamente para suscriptores)'),
         ('public_true', 'Sin paywall (libre acceso)'),
     )
-    headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
     slug = CharField(
         label='Slug',
         widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
@@ -351,20 +350,6 @@ class ArticleAdminModelForm(ModelForm):
             self.initial['pw_radio_choice'] = 'public_true'
         else:
             self.initial['pw_radio_choice'] = 'none'
-
-    def __init__(self, *args, **kwargs):
-        super(ArticleAdminModelForm, self).__init__(*args, **kwargs)
-        # update for deck field
-        self.fields['deck'].label = "Descripcion"
-        for k, v in self.fields.items():
-            if k in ('keywords'): # adding styles for outside inputs widgets
-                self.add_field_class(k, 'article-input')
-            if k in ('deck', 'lead', 'home_lead', 'home_top_deck'): # adding styles for outside textareas widgets
-                self.add_field_class(k, 'article-textarea')
-            if k in ('alt_title_metadata', 'alt_title_newsletters'):
-                self.add_field_class(k, 'article-input-stacked')
-            if k in ('alt_desc_metadata', 'alt_desc_newsletters',):
-                self.add_field_class(k, 'article-textarea-stacked')
 
     def clean_tags(self):
         """
@@ -429,13 +414,6 @@ class ArticleAdminModelForm(ModelForm):
 
         return cleaned_data
 
-    def add_field_class(self, field_name, class_name):
-        """
-        Add css class to a form field classes.
-        """
-        current_classes = self.fields[field_name].widget.attrs['class']
-        self.fields[field_name].widget.attrs['class'] = '{} {}'.format(current_classes, class_name)
-
     class Meta:
         model = Article
         fields = "__all__"
@@ -475,8 +453,8 @@ class ArticleAdmin(VersionAdmin):
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
     formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
-    prepopulated_fields = {'slug': ('headline', )}
-    filter_horizontal = ('byline', )
+    prepopulated_fields = {'slug': ('headline',)}
+    filter_horizontal = ('byline',)
     list_display = (
         'id',
         'headline',
@@ -493,16 +471,26 @@ class ArticleAdmin(VersionAdmin):
     list_filter = ('type', 'date_created', 'is_published', 'date_published', 'newsletter_featured', 'byline')
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
-    ordering = ('-date_created', )
+    ordering = ('-date_created',)
     raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
     readonly_fields = ('date_published',)
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
     fieldsets = (
-        (None, {'fields': (
-            'type',
-            ('headline', 'alt_title_metadata', 'alt_title_newsletters',),
-            'slug', 'keywords',
-            ('deck', 'alt_desc_metadata', 'alt_desc_newsletters'), 'lead', 'body'), 'classes': ('wide', )}),
+        (
+            None,
+            {
+                'fields': (
+                    'type',
+                    ('headline', 'alt_title_metadata', 'alt_title_newsletters'),
+                    'slug',
+                    'keywords',
+                    ('deck', "alt_desc_metadata", "alt_desc_newsletters"),
+                    'lead',
+                    'body',
+                ),
+                'classes': ('wide',)
+            },
+        ),
         (
             'Portada',
             {
@@ -525,11 +513,9 @@ class ArticleAdmin(VersionAdmin):
                     "pw_radio_choice",
                     "full_restricted",
                     "public",
-                    'additional_access',
-                    'latitude',
-                    'longitude',
-                    'ipfs_upload',
-                ),
+                )
+                + (('additional_access',) if Publication.objects.count() > 1 else ())
+                + ('latitude', 'longitude', 'ipfs_upload'),
                 'classes': ('collapse',),
             },
         ),
@@ -1240,12 +1226,12 @@ class BreakingNewsModuleAdmin(ModelAdmin):
 
 class TagAdmin(admin.ModelAdmin):
     model = Tag
-    search_fields = ('name', )
+    search_fields = ('name',)
 
 
 class TaggedItemAdmin(admin.ModelAdmin):
     model = TaggedItem
-    search_fields = ('name', )
+    search_fields = ('name',)
 
 
 @admin.register(DeviceSubscribed, site=site)
@@ -1272,7 +1258,7 @@ class PushNotificationAdmin(admin.ModelAdmin):
     # TODO: adjust change_list columns width
     model = PushNotification
     list_display = ('message', 'article', 'sent', 'tag')
-    raw_id_fields = ('article', )
+    raw_id_fields = ('article',)
     actions = ['send_me_push_notification', 'send_push_notification_to_all']
     readonly_fields = ('sent', 'tag')
 

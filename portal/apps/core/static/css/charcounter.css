@@ -1,4 +1,4 @@
-div.form-row div.charcounter {
+div.form-row > div > div.charcounter {
     padding-left:8em;
     margin-left:16px;
     font-size: 0.6875rem;
@@ -12,11 +12,13 @@ div.form-row div.charcounter {
 }
 
 @media screen and (min-width: 1400px){
-    div.form-row div.charcounter {
+    div.form-row > div > div.charcounter {
         position: absolute;
     }
     div.form-row div.help {
         width: 490px;
+    }
+    #id_alt_desc_metadata_helptext, #id_home_top_deck_helptext {
         padding-right: 120px;
     }
 }
