@@ -453,8 +453,8 @@ class ArticleAdmin(VersionAdmin):
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
     formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
-    prepopulated_fields = {'slug': ('headline', )}
-    filter_horizontal = ('byline', )
+    prepopulated_fields = {'slug': ('headline',)}
+    filter_horizontal = ('byline',)
     list_display = (
         'id',
         'headline',
