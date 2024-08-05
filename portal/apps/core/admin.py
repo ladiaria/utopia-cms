@@ -499,11 +499,9 @@ class ArticleAdmin(VersionAdmin):
                     "pw_radio_choice",
                     "full_restricted",
                     "public",
-                    'additional_access',
-                    'latitude',
-                    'longitude',
-                    'ipfs_upload',
-                ),
+                )
+                + (('additional_access',) if Publication.objects.count() > 1 else ())
+                + ('latitude', 'longitude', 'ipfs_upload'),
                 'classes': ('collapse',),
             },
         ),
