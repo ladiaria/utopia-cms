@@ -8,10 +8,16 @@
   <!-- End AMP -->
 {% endblock %}
 
-{% block page_title %}{% title_joinparts article.headline|remove_markup %}{% endblock %}
+{% block page_title %}{% spaceless %}
+  {% if article.alt_title_metadata %}
+    {{ article.alt_title_metadata }}
+  {% else %}
+    {% title_joinparts article.headline|remove_markup %}
+  {% endif %}
+{% endspaceless %}{% endblock %}
 
 {% block page_description %}
-  {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
+  {% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
 {% endblock %}
 
 {% block page_keywords %}{{ article.tags }}{% endblock %}
@@ -27,7 +33,7 @@
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:title" content="{{ article.headline|remove_markup }}">
+  <meta property="og:title" content="{% firstof article.alt_title_metadata article.headline|remove_markup %}">
 {% endblock %}
 
 {% block meta %}

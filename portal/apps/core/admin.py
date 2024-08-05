@@ -331,7 +331,6 @@ class ArticleAdminModelForm(ModelForm):
         ('full_restricted_true', 'Hard (solamente para suscriptores)'),
         ('public_true', 'Sin paywall (libre acceso)'),
     )
-    headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
     slug = CharField(
         label='Slug',
         widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
@@ -471,12 +470,28 @@ class ArticleAdmin(VersionAdmin):
     list_filter = ('type', 'date_created', 'is_published', 'date_published', 'newsletter_featured', 'byline')
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
-    ordering = ('-date_created', )
+    ordering = ('-date_created',)
     raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
     readonly_fields = ('date_published',)
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
     fieldsets = (
-        (None, {'fields': ('type', 'headline', 'slug', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide',)}),
+        (
+            None,
+            {
+                'fields': (
+                    'type',
+                    ('headline', 'alt_title_metadata', 'alt_title_newsletters'),
+                    'slug',
+                    'keywords',
+                    'deck',
+                    "alt_desc_metadata",
+                    "alt_desc_newsletters",
+                    'lead',
+                    'body',
+                ),
+                'classes': ('wide',)
+            },
+        ),
         (
             'Portada',
             {
@@ -1212,12 +1227,12 @@ class BreakingNewsModuleAdmin(ModelAdmin):
 
 class TagAdmin(admin.ModelAdmin):
     model = Tag
-    search_fields = ('name', )
+    search_fields = ('name',)
 
 
 class TaggedItemAdmin(admin.ModelAdmin):
     model = TaggedItem
-    search_fields = ('name', )
+    search_fields = ('name',)
 
 
 @admin.register(DeviceSubscribed, site=site)
@@ -1244,7 +1259,7 @@ class PushNotificationAdmin(admin.ModelAdmin):
     # TODO: adjust change_list columns width
     model = PushNotification
     list_display = ('message', 'article', 'sent', 'tag')
-    raw_id_fields = ('article', )
+    raw_id_fields = ('article',)
     actions = ['send_me_push_notification', 'send_push_notification_to_all']
     readonly_fields = ('sent', 'tag')
 
