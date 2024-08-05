@@ -13,12 +13,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='article',
             name='alt_desc_metadata',
-            field=models.TextField(blank=True, help_text='Aplica a metadatos: meta description, Open Graph y Schema en el <head> de la página del artículo.<br>Si se deja vacío aplica Descripción principal.', null=True, verbose_name='descripción alternativo para metadatos'),
+            field=models.TextField(blank=True, help_text='Aplica a metadatos: meta description, Open Graph y Schema en el <head> de la página del artículo.<br>Si se deja vacío aplica Descripción principal.', null=True, verbose_name='descripción alternativa para metadatos'),
         ),
         migrations.AddField(
             model_name='article',
             name='alt_desc_newsletters',
-            field=models.TextField(blank=True, help_text='Aplica en todos los newsletters que aparezca el artículo.<br>Si se deja vacío aplica Descripción principal', null=True, verbose_name='descripción alternativo para newsletters'),
+            field=models.TextField(blank=True, help_text='Aplica en todos los newsletters que aparezca el artículo.<br>Si se deja vacío aplica Descripción principal', null=True, verbose_name='descripción alternativa para newsletters'),
         ),
         migrations.AddField(
             model_name='article',

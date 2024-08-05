@@ -1640,7 +1640,7 @@ class Article(ArticleBase):
         ) + escape("<head>") + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Título principal.')
     )
     alt_desc_metadata = TextField(
-        'descripción alternativo para metadatos',
+        'descripción alternativa para metadatos',
         blank=True,
         null=True,
         help_text=mark_safe(
@@ -1658,7 +1658,7 @@ class Article(ArticleBase):
         )
     )
     alt_desc_newsletters = TextField(
-        'descripción alternativo para newsletters',
+        'descripción alternativa para newsletters',
         blank=True,
         null=True,
         help_text=mark_safe(

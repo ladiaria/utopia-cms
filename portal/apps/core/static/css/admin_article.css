@@ -34,8 +34,10 @@ fieldset.collapse,fieldset.collapsed{display: block !important;}
     margin-left: 200px;
     width: 600px;
 }
-.field-alt_desc_metadata textarea, .field-alt_desc_newsletters textarea {
+#id_alt_desc_metadata, #id_alt_desc_newsletters{
     margin-left: 200px;
+}
+.field-alt_desc_metadata textarea, .field-alt_desc_newsletters textarea {
     width: 600px;
     height: 120px;
 }

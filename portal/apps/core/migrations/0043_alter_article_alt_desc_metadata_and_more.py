@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 help_text="Aplica a metadatos: meta description, Open Graph y Schema en el &lt;head&gt; de la página del artículo.<br>Si se deja vacío aplica Descripción principal.",
                 null=True,
-                verbose_name="descripción alternativo para metadatos",
+                verbose_name="descripción alternativa para metadatos",
             ),
         ),
         migrations.AlterField(
@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 help_text="Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Descripción principal",
                 null=True,
-                verbose_name="descripción alternativo para newsletters",
+                verbose_name="descripción alternativa para newsletters",
             ),
         ),
         migrations.AlterField(
