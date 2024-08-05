@@ -1648,12 +1648,21 @@ class Article(ArticleBase):
         ) + escape("<head>")
         + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Descripción principal.')
     )
-    alt_title_newsletters = CharField('título alternativo para newsletters', blank=True, null=True, max_length=200, help_text=mark_safe(
-        'Aplica en todos los newsletters que aparezca el artículo.<br>Si se deja vacío aplica Título principal.'
-    ))
+    alt_title_newsletters = CharField(
+        'título alternativo para newsletters',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Título principal.'
+        )
+    )
     alt_desc_newsletters = TextField(
-        'descripción alternativo para newsletters', blank=True, null=True, help_text=mark_safe(
-            'Aplica en todos los newsletters que aparezca el artículo.<br>Si se deja vacío aplica Descripción principal'
+        'descripción alternativo para newsletters',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Descripción principal'
         )
     )
     # SuperDesk article ID
