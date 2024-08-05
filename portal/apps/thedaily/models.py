@@ -478,17 +478,15 @@ def createUserProfile(sender, instance, created, **kwargs):
     Create a UserProfile object each time a User is saved ; and link it.
     Also keep sync the email field on Subscriptions
     """
-    if created:
-        # call the logic for connect to the CRM for sync
-        createcrmuser(instance.get_full_name(), instance.email)
-
-    # Subscriber.objects.get_or_create(user=instance)
+    Subscriber.objects.get_or_create(user=instance)
     if instance.email:
         try:
             instance.suscripciones.exclude(email=instance.email).update(email=instance.email)
         except Exception:
             pass
-
+    if created:
+        # call the logic for connect to the CRM for sync
+        createcrmuser(instance.get_full_name(), instance.email)
 
 class OAuthState(Model):
     """

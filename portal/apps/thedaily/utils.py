@@ -225,7 +225,6 @@ def post_data_to_crm(api_url, data):
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        print("datos enviados al crm", data)
         requests.post(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
 
 

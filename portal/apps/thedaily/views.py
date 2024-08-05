@@ -452,8 +452,7 @@ def signup(request):
             user = None
             try:
                 user = signup_form.create_user()
-                # This line was commented because user.subscriber cause an error at this point
-                # add_default_newsletters(user.subscriber)  # TODO: better call this after email confirmation success
+                add_default_newsletters(user.subscriber)  # TODO: better call this after email confirmation success
                 # TODO: check if request is needed
                 # TODO: notifications/signup.html is also used for this purpose (2 templates to the same thing?)
                 was_sent = send_validation_email(
