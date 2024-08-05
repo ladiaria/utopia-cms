@@ -47,9 +47,9 @@ fieldset.collapse,fieldset.collapsed{display: block !important;}
 #id_alt_desc_newsletters_helptext {
     margin-left: 165px;
 }
-#id_alt_title_metadata_helptext,
-#id_alt_title_newsletters_helptext {
-    padding-right: 10px;
+#id_headline_helptext, #id_alt_title_metadata_helptext, #id_alt_title_newsletters_helptext,
+#id_slug_helptext, #id_keywords_helptext {
+    padding-left: 0px;
 }
 label[for="id_headline"] { float: left; }
 label[for="id_alt_title_metadata"],
