@@ -211,10 +211,13 @@ def put_data_to_crm(api_url, data):
     Performs an PUT request to the CRM app
     api_url is the request url and data is the request body data
     If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request body data
     """
-    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        requests.put(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
+    if getattr(settings, "CRM_SYNC_ENABLED", False):
+        api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+        if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+            requests.put(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
 
 
 def post_data_to_crm(api_url, data):
@@ -222,10 +225,13 @@ def post_data_to_crm(api_url, data):
     Performs an POST request to the CRM app
     api_url is the request url and data is the request body data
     If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request body data
     """
-    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        requests.post(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
+    if getattr(settings, "CRM_SYNC_ENABLED", False):
+        api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+        if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+            requests.post(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
 
 
 def delete_data_from_crm(api_url, data):
@@ -233,12 +239,15 @@ def delete_data_from_crm(api_url, data):
     Performs an DELETE request to the CRM app
     api_url is the request url and data is the request body data
     If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request body data
     """
-    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        payload = json.dumps(data)
-        headers = {
-            'Authorization': 'Api-Key ' + api_key,
-            'Content-Type': 'application/json'
-        }
-        requests.delete(api_url, headers=headers, data=payload).raise_for_status()
+    if getattr(settings, "CRM_SYNC_ENABLED", False):
+        api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+        if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+            payload = json.dumps(data)
+            headers = {
+                'Authorization': 'Api-Key ' + api_key,
+                'Content-Type': 'application/json'
+            }
+            requests.delete(api_url, headers=headers, data=payload).raise_for_status()
