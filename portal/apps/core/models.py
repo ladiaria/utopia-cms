@@ -2128,13 +2128,17 @@ class CategoryHomeArticle(Model):
 
     def __str__(self):
         # also a custom text version to be useful in the CategoryHome admin change form
-        return (
-            date_format(
-                self.article.last_published_by_category(self.home.category),
-                format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
-                use_l10n=True,
-            ) if self.article.is_published else "No publicado! "
-        ) + ('-F' if self.article.photo else '')
+        try:
+            result = (
+                date_format(
+                    self.article.last_published_by_category(self.home.category),
+                    format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
+                    use_l10n=True,
+                ) if self.article.is_published else "No publicado! "
+            ) + ('-F' if self.article.photo_render_allowed() else '')
+        except Exception:
+            result = super().__str__()
+        return result
 
     class Meta:
         ordering = ('position',)
