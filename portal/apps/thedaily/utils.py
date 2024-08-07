@@ -41,10 +41,9 @@ non_relevant_data_max_amounts = {
     Favorite: 10,
     User.user_permissions.through: 3,
 }
-for key, val in getattr(settings, "THEDAILY_COLLECTOR_ANALYSIS_EXTRA_AMOUNTS", {}).items():
-    keyclass = locate(key) or eval(key)
-    if keyclass:
-        non_relevant_data_max_amounts[keyclass] = val
+extra_func = locate(getattr(settings, "THEDAILY_COLLECTOR_ANALYSIS_EXTRA_LIMITS", "None"))
+if extra_func:
+    non_relevant_data_max_amounts.update(extra_func())
 
 movable = (
     SubscriberEvent,
