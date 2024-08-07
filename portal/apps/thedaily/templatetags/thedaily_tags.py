@@ -64,8 +64,17 @@ def count_following(user):
 
 @register.filter(name='has_restricted_access')
 def has_restricted_access(user, article):
-    """ @pre: The article is restricted """
-    return hasattr(user, 'subscriber') and user.subscriber.is_subscriber(article.main_section.edition.publication.slug)
+    """
+    @pre: The article is restricted or is full restricted
+    """
+    return (
+        hasattr(user, 'subscriber')
+        and (
+            user.subscriber.is_subscriber(article.main_section.edition.publication.slug)
+            or article.full_restricted
+            and user.subscriber.is_subscriber_any()
+        )
+    )
 
 
 def if_time(parser, token):

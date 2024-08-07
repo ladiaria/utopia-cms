@@ -342,6 +342,29 @@
   }
 },
 {
+  "pk": 8,
+  "model": "core.article",
+  "fields": {
+    "newsletter_featured": false,
+    "allow_related": true,
+    "only_initials": false,
+    "byline": [],
+    "headline": "test full restricted1",
+    "show_related_articles": true,
+    "body": "test.",
+    "views": 0,
+    "date_published": "2020-11-20T04:20:02",
+    "last_modified": "2020-11-20T04:25:57",
+    "url_path": "/articulo/2020/11/test-full-restricted1/",
+    "slug": "test-full-restricted1",
+    "main_section": 9,
+    "allow_comments": false,
+    "date_created": "2020-11-19T04:24:28",
+    "is_published": true,
+    "full_restricted": true
+  }
+},
+{
   "pk": 1,
   "model": "core.articlerel",
   "fields": {
@@ -434,6 +457,18 @@
     "section": 1,
     "edition": 2,
     "article": 7,
+    "top_position": 2
+  }
+},
+{
+  "pk": 9,
+  "model": "core.articlerel",
+  "fields": {
+    "position": 2,
+    "home_top": true,
+    "section": 1,
+    "edition": 1,
+    "article": 8,
     "top_position": 2
   }
 },
