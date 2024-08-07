@@ -42,7 +42,7 @@ non_relevant_data_max_amounts = {
     User.user_permissions.through: 3,
 }
 for key, val in getattr(settings, "THEDAILY_COLLECTOR_ANALYSIS_EXTRA_AMOUNTS", {}).items():
-    keyclass = locate(key)
+    keyclass = locate(key) or eval(key)
     if keyclass:
         non_relevant_data_max_amounts[keyclass] = val
 
