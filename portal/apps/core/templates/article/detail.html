@@ -1,10 +1,23 @@
 {% extends "base.html" %}
 {% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags signupwall_tags %}
 
-{% block page_title %}{{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block head_first_content %}
+  <!-- AMP -->
+  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
+  <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
+  <!-- End AMP -->
+{% endblock %}
+
+{% block page_title %}{% spaceless %}
+  {% if article.alt_title_metadata %}
+    {{ article.alt_title_metadata }}
+  {% else %}
+    {% title_joinparts article.headline|remove_markup %}
+  {% endif %}
+{% endspaceless %}{% endblock %}
 
 {% block page_description %}
-  {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
+  {% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
 {% endblock %}
 
 {% block page_keywords %}{{ article.tags }}{% endblock %}
@@ -20,15 +33,11 @@
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:title" content="{{ article.headline|remove_markup }}">
+  <meta property="og:title" content="{% firstof article.alt_title_metadata article.headline|remove_markup %}">
 {% endblock %}
 
 {% block meta %}
   {% include meta_include_template|default:'article/detail_meta.html' %}
-  <!-- AMP -->
-  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
-  <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
-  <!-- End AMP -->
 {% endblock %}
 
 {% block json_ld %}{% include 'article/detail_json_ld.html' %}{% endblock %}
@@ -95,7 +104,7 @@
       {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 301 #}
+          <div>{# closed in line 304 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -122,7 +131,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 301 #}
+          {# missing close div here is closed correctly in line 304 #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -232,14 +241,14 @@
             </span>
           {% endif %}
         </div>
-        {% if not article.is_restricted or user|has_restricted_access:article %}
+        {% if not article.is_restricted_consider_full or user|has_restricted_access:article %}
           <div class="reading-time">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
               <path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/>
             </svg> <span class="eta">{{ article.reading_time }}</span> de lectura
           </div>
         {% endif %}
-        {% if article.is_restricted and user|has_restricted_access:article %}
+        {% if article.is_restricted_consider_full and user|has_restricted_access:article %}
           <div class="premium">
             <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12.1296 7.33325H4.87037C4.29763 7.33325 3.83333 7.93021 3.83333 8.66659V13.3333C3.83333 14.0696 4.29763 14.6666 4.87037 14.6666H12.1296C12.7024 14.6666 13.1667 14.0696 13.1667 13.3333V8.66659C13.1667 7.93021 12.7024 7.33325 12.1296 7.33325Z" fill="#262626" stroke="#262626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -248,7 +257,7 @@
             Contenido exclusivo con tu suscripción de pago
           </div>
         {% endif %}
-        {% if not article.is_restricted or user|has_restricted_access:article %}
+        {% if not article.is_restricted_consider_full or user|has_restricted_access:article %}
           {% if user.is_authenticated and not followed %}
             <div class="read-later top">
               <a class="read-later__btn read-later__add">
@@ -298,7 +307,7 @@
         {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
-        </div>{# opened in line 98 #}
+        </div>{# opened in line 101 #}
       {% endif %}
 
       {% if article.has_deck or article.has_lead %}
@@ -311,11 +320,11 @@
       {% endif %}
 
       {# begin restricted content #}
-      {% if not request.signupwall or not article.is_restricted or user|has_restricted_access:article %}
+      {% if not request.signupwall or not article.is_restricted_consider_full or user|has_restricted_access:article %}
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 688 #}
+        {% if not request.signupwall %}{# closed in line 691 #}
 
           {# signupwall banner #}
           {% if signupwall_remaining_banner and not article.public %}
@@ -685,7 +694,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 318 #}
+        {% endif %}{# opened in line 321 #}
 
       {% else %}{# restricted content message #}
 
@@ -702,7 +711,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 834 #}
+    {% if not request.signupwall %}{# closed in line 837 #}
 
       {% if article.public %}
 
@@ -718,7 +727,7 @@
 
       {% endif %}
 
-      {% if not article.is_restricted or user|has_restricted_access:article %}{# begin restricted content2 #}
+      {% if not article.is_restricted_consider_full or user|has_restricted_access:article %}{# begin restricted content2 #}
 
         {% if TALK_URL and article.allow_comments %}
           <div id="comentarios">
@@ -831,11 +840,11 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 705 #}
+    {% endif %}{# opened in line 708 #}
 
     {% block article_extra %}{% endblock %}
 
-    {% if not request.signupwall or article.is_restricted and not user|has_restricted_access:article %}
+    {% if not request.signupwall or article.is_restricted_consider_full and not user|has_restricted_access:article %}
       <div class="align-center u-mb-50 footer-section">
         <a href="{% url 'home' %}" class="ut-btn ut-btn-outline">Ir a la portada</a>
       </div>

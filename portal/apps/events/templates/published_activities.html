@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load attendant_tags %}
+{% load core_tags attendant_tags %}
 
-{% block page_title %}Eventos{% endblock %}
+{% block page_title %}{% title_joinparts 'Eventos' %}{% endblock %}
 {% block body_class %}thedaily{% endblock %}
 {% block sidebar %}{% endblock %}
 

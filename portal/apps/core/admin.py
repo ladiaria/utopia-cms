@@ -326,13 +326,29 @@ class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
 
 
 class ArticleAdminModelForm(ModelForm):
-    headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
+    PW_OPTIONS = (
+        ('none', 'Metered (por defecto)'),
+        ('full_restricted_true', 'Hard (solamente para suscriptores)'),
+        ('public_true', 'Sin paywall (libre acceso)'),
+    )
     slug = CharField(
         label='Slug',
         widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
         help_text='Se genera automáticamente en base al título.',
     )
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
+    pw_radio_choice = ChoiceField(
+        label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.full_restricted and not self.instance.public:
+            self.initial['pw_radio_choice'] = 'full_restricted_true'
+        elif not self.instance.full_restricted and self.instance.public:
+            self.initial['pw_radio_choice'] = 'public_true'
+        else:
+            self.initial['pw_radio_choice'] = 'none'
 
     def clean_tags(self):
         """
@@ -382,11 +398,25 @@ class ArticleAdminModelForm(ModelForm):
             targets = targets.exclude(id=self.instance.id)
         if targets:
             raise ValidationError('Ya existe un artículo en ese mes con el mismo título.')
+
+        # pw options:
+        pw_choice = cleaned_data.get('pw_radio_choice')
+        if pw_choice == 'none':
+            cleaned_data['full_restricted'] = False
+            cleaned_data['public'] = False
+        elif pw_choice == 'full_restricted_true':
+            cleaned_data['full_restricted'] = True
+            cleaned_data['public'] = False
+        elif pw_choice == 'public_true':
+            cleaned_data['full_restricted'] = False
+            cleaned_data['public'] = True
+
         return cleaned_data
 
     class Meta:
         model = Article
         fields = "__all__"
+        widgets = {"full_restricted": HiddenInput(), "public": HiddenInput()}
 
 
 @admin.display(description='Foto', boolean=True)
@@ -422,8 +452,8 @@ class ArticleAdmin(VersionAdmin):
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
     formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
-    prepopulated_fields = {'slug': ('headline', )}
-    filter_horizontal = ('byline', )
+    prepopulated_fields = {'slug': ('headline',)}
+    filter_horizontal = ('byline',)
     list_display = (
         'id',
         'headline',
@@ -440,38 +470,52 @@ class ArticleAdmin(VersionAdmin):
     list_filter = ('type', 'date_created', 'is_published', 'date_published', 'newsletter_featured', 'byline')
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
-    ordering = ('-date_created', )
+    ordering = ('-date_created',)
     raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
-    readonly_fields = ('date_published', )
+    readonly_fields = ('date_published',)
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
     fieldsets = (
-        (None, {'fields': ('type', 'headline', 'slug', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide', )}),
+        (
+            None,
+            {
+                'fields': (
+                    'type',
+                    ('headline', 'alt_title_metadata', 'alt_title_newsletters'),
+                    'slug',
+                    'keywords',
+                    ('deck', "alt_desc_metadata", "alt_desc_newsletters"),
+                    'lead',
+                    'body',
+                ),
+                'classes': ('wide',)
+            },
+        ),
         (
             'Portada',
             {
                 'fields': ('home_lead', 'home_top_deck', 'home_display', 'home_header_display', 'header_display'),
-                'classes': ('wide', ),
-            }
+                'classes': ('wide',),
+            },
         ),
         ('Metadatos', {'fields': ('date_published', 'tags', 'main_section')}),
         ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse', )}),
-        ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse', )}),
+        ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse',)}),
         (
             'Avanzado',
             {
                 'fields': (
-                    (
-                        'allow_comments',
-                        'is_published',
-                        'public',
-                        'allow_related',
-                        'show_related_articles',
-                        'newsletter_featured',
-                    ),
-                    'additional_access',
-                    ('latitude', 'longitude', 'ipfs_upload'),
-                ),
-                'classes': ('collapse', ),
+                    'allow_comments',
+                    'is_published',
+                    'allow_related',
+                    'show_related_articles',
+                    'newsletter_featured',
+                    "pw_radio_choice",
+                    "full_restricted",
+                    "public",
+                )
+                + (('additional_access',) if Publication.objects.count() > 1 else ())
+                + ('latitude', 'longitude', 'ipfs_upload'),
+                'classes': ('collapse',),
             },
         ),
     )
@@ -1181,12 +1225,12 @@ class BreakingNewsModuleAdmin(ModelAdmin):
 
 class TagAdmin(admin.ModelAdmin):
     model = Tag
-    search_fields = ('name', )
+    search_fields = ('name',)
 
 
 class TaggedItemAdmin(admin.ModelAdmin):
     model = TaggedItem
-    search_fields = ('name', )
+    search_fields = ('name',)
 
 
 @admin.register(DeviceSubscribed, site=site)
@@ -1213,7 +1257,7 @@ class PushNotificationAdmin(admin.ModelAdmin):
     # TODO: adjust change_list columns width
     model = PushNotification
     list_display = ('message', 'article', 'sent', 'tag')
-    raw_id_fields = ('article', )
+    raw_id_fields = ('article',)
     actions = ['send_me_push_notification', 'send_push_notification_to_all']
     readonly_fields = ('sent', 'tag')
 

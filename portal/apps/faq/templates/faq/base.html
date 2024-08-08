@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load core_tags %}
 
-{% block page_title %}Preguntas frecuentes{% endblock %}
+{% block page_title %}{% title_joinparts 'Preguntas frecuentes' %}{% endblock %}
 
 {% block content %}
   <h1>Preguntas frecuentes</h1>

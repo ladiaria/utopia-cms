@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load thumbnail %}
+{% load core_tags thumbnail %}
 
-{% block page_title %}Ediciones anteriores{% endblock %}
+{% block page_title %}{% title_joinparts 'Ediciones anteriores' %}{% endblock %}
 {% block body_class %}edition{% endblock %}
 
 {% block content %}
