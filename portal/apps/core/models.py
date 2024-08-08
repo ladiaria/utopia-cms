@@ -15,6 +15,7 @@ from requests.exceptions import ConnectionError
 from kombu.exceptions import OperationalError as KombuOperationalError
 from sorl.thumbnail import get_thumbnail
 from PIL import Image
+from bs4 import BeautifulSoup
 import readtime
 import mutagen
 import w3storage
@@ -1937,6 +1938,20 @@ class Article(ArticleBase):
 
     def published_collections(self):
         return self.linked_collections.filter(**get_published_kwargs())
+
+    def extensions_have_invalid_amp_tags(self):
+        """
+        When this happen, we should not announce that an AMP version o the page is availabke
+        """
+        invalid_tags = "base img picture video audio iframe frame frameset object param applet embed".split()
+        for e in self.extensions.iterator():
+            try:
+                soup = BeautifulSoup(e.body, 'html.parser')
+                for tag in invalid_tags:
+                    if soup.find_all(tag):
+                        return True
+            except Exception:
+                pass
 
     def nl_serialize(self, for_cover=False, publication=None, category=None, dates=True):
         authors = self.get_authors()
