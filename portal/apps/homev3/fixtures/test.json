@@ -118,7 +118,8 @@
     "in_home": false,
     "background_color": "#ffffff",
     "slug": "news",
-    "name": "news"
+    "name": "news",
+    "included_in_category_menu": true
   }
 },
 {
@@ -137,7 +138,8 @@
     "in_home": false,
     "background_color": "#ffffff",
     "slug": "areasection",
-    "name": "areasection"
+    "name": "areasection",
+    "included_in_category_menu": true
   }
 },
 {
@@ -155,7 +157,8 @@
     "in_home": false,
     "background_color": "#ffffff",
     "slug": "humor",
-    "name": "humor"
+    "name": "humor",
+    "included_in_category_menu": true
   }
 },
 {
@@ -512,6 +515,26 @@
     "new_pill": false,
     "slug": "test",
     "name": "test"
+  }
+},
+{
+  "pk": 4,
+  "model": "core.section",
+  "fields": {
+    "home_block_all_pubs": true,
+    "home_order": 1,
+    "show_description": false,
+    "white_text": false,
+    "home_block_show_featured": true,
+    "publications": [1],
+    "category": 1,
+    "show_image": false,
+    "date_created": "2024-01-19T07:19:20",
+    "in_home": false,
+    "background_color": "#ffffff",
+    "slug": "section-four",
+    "name": "section four",
+    "included_in_category_menu": true
   }
 },
 {

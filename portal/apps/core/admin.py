@@ -225,10 +225,11 @@ class SectionAdmin(ModelAdmin):
     list_filter = ('category', 'in_home', 'home_block_all_pubs', 'home_block_show_featured', "publications")
     list_display = (
         'id',
+        'home_order',
         'name',
         'category',
+        "included_in_category_menu_short",
         'in_home',
-        'home_order',
         'get_publications',
         'articles_count',
     )
@@ -238,19 +239,25 @@ class SectionAdmin(ModelAdmin):
             None,
             {
                 'fields': (
-                    ('name', 'category', 'name_in_category_menu'),
+                    ('name', 'category'),
+                    ('name_in_category_menu', "included_in_category_menu"),
                     ('description', 'show_description'),
                     ('home_order', 'white_text', 'background_color'),
-                    ('publications', ),
-                    ('in_home', ),
-                    ('home_block_all_pubs', ),
-                    ('home_block_show_featured', ),
-                    ('imagen', 'show_image', 'contact'),
+                    ('publications',),
+                    ('in_home', 'home_block_all_pubs'),
+                    ('home_block_show_featured',),
+                    ('imagen', 'show_image'),
+                    ('contact',),
                 ),
             },
         ),
-        ('Metadatos', {'fields': (('html_title', ), ('meta_description', ))}),
+        ('Metadatos', {'fields': (('html_title',), ('meta_description',))}),
     )
+
+    def included_in_category_menu_short(self, instance):
+        return instance.included_in_category_menu
+    included_in_category_menu_short.short_description = "en menú de área"
+    included_in_category_menu_short.boolean = True
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
@@ -498,7 +505,7 @@ class ArticleAdmin(VersionAdmin):
             },
         ),
         ('Metadatos', {'fields': ('date_published', 'tags', 'main_section')}),
-        ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse', )}),
+        ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse',)}),
         ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse',)}),
         (
             'Avanzado',
@@ -513,7 +520,7 @@ class ArticleAdmin(VersionAdmin):
                     "full_restricted",
                     "public",
                 )
-                + (('additional_access',) if Publication.objects.count() > 1 else ())
+                + (('additional_access',) if Publication.multi() else ())
                 + ('latitude', 'longitude', 'ipfs_upload'),
                 'classes': ('collapse',),
             },
