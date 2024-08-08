@@ -27,8 +27,8 @@
             {% with empty_list=""|make_list %}
               {% with excluded_slugs=excluded_slugs|default:empty_list %}
                 {% for section in category.section_set.all %}
-                  {# TODO: document submenu support usage #}
-                  {% if section not in inner_sections %}
+                  {% if section.included_in_category_menu and section not in inner_sections %}
+                    {# TODO: document submenu support usage #}
                     {% if section.slug not in excluded_slugs %}
                       <li><a class="section-detail__header-sub-cat" href="{{ section.get_absolute_url }}">{{ section.name_in_category_menu|default:section.name }}</a></li>
                     {% endif %}

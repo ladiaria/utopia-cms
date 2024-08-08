@@ -193,6 +193,10 @@ class Publication(Model):
             'home', kwargs={} if self.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL else {'domain_slug': self.slug}
         )
 
+    @staticmethod
+    def multi():
+        return Publication.objects.count() > 1
+
     def newsletter_preview_url(self):
         """
         Returns the url for the NL staff-allowed preview
@@ -807,12 +811,13 @@ class Section(Model):
 
     category = ForeignKey(Category, on_delete=CASCADE, verbose_name='área', blank=True, null=True)
     name = CharField('nombre', max_length=50, unique=True)
+    included_in_category_menu = BooleanField("incluída en el menú del área", default=True)
     name_in_category_menu = CharField('nombre en el menú del área', max_length=50, blank=True, null=True)
     slug = SlugField('slug', unique=True)
     description = TextField('descripción', blank=True, null=True)
-    contact = EmailField('correo electrónico', blank=True, null=True)
+    contact = EmailField("email", blank=True, null=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
-    home_order = PositiveSmallIntegerField('orden en portada', default=0)
+    home_order = PositiveSmallIntegerField('orden', default=0)
     in_home = BooleanField(
         'en portada',
         default=False,
@@ -1037,7 +1042,7 @@ class Journalist(Model):
     )
 
     name = CharField('nombre', max_length=50, unique=True)
-    email = EmailField('correo electrónico', blank=True, null=True)
+    email = EmailField(blank=True, null=True)
     slug = SlugField('slug', unique=True)
     image = ImageField('imagen', upload_to='journalist', blank=True, null=True)
     job = CharField(
