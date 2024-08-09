@@ -118,7 +118,14 @@ def render_related(context, article, amp=False):
         try:
             engine.get_template(template_try)
         except TemplateDoesNotExist:
-            pass
+            # try to fallback to a possible custom "related.html"
+            template_try = join(template_dir, "article/related.html")
+            try:
+                engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template = template_try
         else:
             template = template_try
     return loader.render_to_string(template, flatten_ctx)

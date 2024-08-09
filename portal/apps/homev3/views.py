@@ -99,6 +99,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ()),
         'news_wall_enabled': getattr(settings, 'HOMEV3_NEWS_WALL_ENABLED', True),
         'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
+        'allow_mas_leidos': getattr(settings, 'HOMEV3_ALLOW_MAS_LEIDOS', True),
     }
 
     is_authenticated, user_has_subscriber = user.is_authenticated, hasattr(user, 'subscriber')
@@ -168,16 +169,8 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             edition = get_object_or_404(Edition, date_published=date_published, publication=publication)
         else:
             edition = get_current_edition(publication=publication)
-
         top_articles = edition.top_articles if edition else []
-
-        context.update(
-            {
-                'edition': edition,
-                'mas_leidos': False,
-                'allow_ads': getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_ALLOW_ADS', True),
-            }
-        )
+        context.update({'edition': edition, 'allow_ads': getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_ALLOW_ADS', True)})
         template = getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_TEMPLATE', 'index_pubs.html')
     else:
         if date_published:
@@ -220,7 +213,6 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         context.update(
             {
                 'edition': ld_edition,
-                'mas_leidos': True,
                 'allow_ads': True,
                 'publications': Publication.objects.filter(public=True),
                 'home_publications': settings.HOME_PUBLICATIONS,
