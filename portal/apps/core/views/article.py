@@ -218,7 +218,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
             publication
             and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())
         ),
-        "publish_amp_url": (
+        "enable_amp": (
             getattr(settings, "CORE_ARTICLE_DETAIL_ENABLE_AMP", True)
             and not article.extensions_have_invalid_amp_tags()
         ),

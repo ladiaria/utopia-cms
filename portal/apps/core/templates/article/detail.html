@@ -2,10 +2,11 @@
 {% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags signupwall_tags %}
 
 {% block head_first_content %}
-  <!-- AMP -->
+  <!-- Canonical and AMP (if allowed) urls -->
   <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
-  <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
-  <!-- End AMP -->
+  {% if enable_amp %}
+    <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
+  {% endif %}
 {% endblock %}
 
 {% block page_title %}{% spaceless %}
