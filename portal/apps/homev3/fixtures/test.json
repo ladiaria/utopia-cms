@@ -376,13 +376,13 @@
     "show_related_articles": true,
     "body": "test.",
     "views": 0,
-    "date_published": "2020-11-20T04:20:02",
-    "last_modified": "2020-11-20T04:25:57",
-    "url_path": "/articulo/2020/11/test-article9/",
+    "date_published": "2024-07-20T04:20:04",
+    "last_modified": "2020-07-20T04:26:00",
+    "url_path": "/articulo/2024/7/test-article9/",
     "slug": "test-article9",
     "main_section": 10,
     "allow_comments": false,
-    "date_created": "2020-11-19T04:24:28",
+    "date_created": "2024-07-19T04:14:28",
     "is_published": true
   }
 },
