@@ -325,19 +325,9 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 691 #}
+        {% if not request.signupwall %}{# closed in line 691 TODO: update #}
 
-          {# signupwall banner #}
-          {% if signupwall_remaining_banner and not article.public %}
-            {% if not user.is_authenticated %}
-              {# Soft wall: Registro|Suscripción #}
-              {% include 'article/paywall/pw_anon_with_credits.html' %}
-            {% elif not is_subscriber %}
-              {# Soft wall: Suscripción #}
-              {% include 'article/paywall/pw_auth_with_credits.html' %}
-            {% endif %}
-          {% endif %}
-          {# END signupwall banner #}
+          {% include 'article/paywall/pw_not_in_request.html' %}
 
           <div class="article-body paywalled-content{% block article_body_extra_class %}{% endblock %}">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}

@@ -206,15 +206,18 @@ class SignupwallMiddleware(MiddlewareMixin):
                 limited_free_article_mail(user)
 
         if (articles_visited_count > credits) or restricted_article:
-            if restricted_article:
-                request.signupwall = True
-            else:
-                if user_is_authenticated:
-                    urlname, reverse_kwargs = "subscribe", {"planslug": "DDIGM"}
+            if settings.SIGNUPWALL_RISE_REDIRECT:
+                if restricted_article:
+                    request.signupwall = True
                 else:
-                    urlname, reverse_kwargs = "account-login", {}
-                # TODO: check redirect status code for the next line
-                return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
+                    if user_is_authenticated:
+                        urlname, reverse_kwargs = "subscribe", {"planslug": "DDIGM"}
+                    else:
+                        urlname, reverse_kwargs = "account-login", {}
+                    # TODO: check redirect status code for the next line
+                    return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
+            else:
+                request.signupwall = True
         else:
             request.credits = credits - articles_visited_count
             request.signupwall_header = (

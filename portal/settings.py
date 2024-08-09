@@ -430,6 +430,7 @@ CORE_PUSH_NOTIFICATIONS_OPTIONS = {
 # signupwall (other settings will be populated after local settings import)
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: Implementation for values greater than 0 is not included
+SIGNUPWALL_RISE_REDIRECT = True
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
