@@ -79,8 +79,7 @@ class HomeTestCase(TestCase):
                     response = c.get(item['url'], {'display': 'amp'}, **item.get('headers', {}))
                     self.assertEqual(response.status_code, 200)
 
-    def test4_article_with_iframe_in_extension(self):
-        c = Client()
+        # article_with_iframe_in_extension
         response = c.get('/articulo/2024/07/test-article9/', **self.http_host_header_param)
         self.assertEqual(response.status_code, 200)
         self.assrtNotIn(self.amp_detection, response.content.decode())
