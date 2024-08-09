@@ -41,7 +41,7 @@ class ArticleTestCase(TestCase):
                 context_article = response.context['article']
 
                 # test the image caption render
-                self.assertIn('<p>{}</p>'.format(str(context_article.photo.caption)), content)
+                self.assertRegex(content, r'<p.*>{}</p>'.format(str(context_article.photo.caption)))
                 # test image src values for render, at least 3 sizes count in template
                 self.assertGreater(content.count('/media/fixtures/cache/test_pou_img_'), 3)
                 # test meta noindex for not humor articles
