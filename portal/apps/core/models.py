@@ -64,6 +64,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.timezone import datetime, timedelta, make_aware, now, template_localtime
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
+from django.utils.html import escape
 
 from apps import blocklisted
 from photologue_ladiaria.models import PhotoExtended
@@ -1130,17 +1131,17 @@ class ArticleBase(Model, CT):
         related_name='articles_%(app_label)s',
     )
     type = CharField('tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True, db_index=True)
-    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en la nota.')
+    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en el artículo.')
     keywords = CharField(
         'titulín', max_length=45, blank=True, null=True, help_text='Se muestra encima del título en portada.'
     )
     slug = SlugField('slug', max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
-        'bajada', blank=True, null=True, help_text='Se muestra en la página de la nota debajo del título.'
+        'descripción', blank=True, null=True, help_text='Se muestra en la página del artículo debajo del título.'
     )
     lead = TextField(
-        'copete', blank=True, null=True, help_text='Se muestra en la página de la nota debajo de la bajada.'
+        'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
     body = MartorField("cuerpo")
     header_display = CharField(
@@ -1154,14 +1155,14 @@ class ArticleBase(Model, CT):
         null=True,
         default='SM',
     )
-    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada de la nota en portada.')
+    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada del artículo en portada.')
     home_display = CharField('mostrar en portada', max_length=2, choices=DISPLAY_CHOICES, blank=True, null=True)
     home_top_deck = TextField(
         'bajada en destacados',
         blank=True,
         null=True,
         help_text=(
-            'Se muestra en los destacados de la portada, en el caso de estar vació se muestra la bajada de la nota.'
+            'Se muestra en los destacados de la portada, en el caso de estar vacío se muestra la bajada del artículo.'
         ),
     )
     byline = ManyToManyField(
@@ -1229,6 +1230,11 @@ class ArticleBase(Model, CT):
         'mostrar artículos relacionados dentro de este artículo', default=True, blank=False, null=False
     )
     public = BooleanField('Artículo libre', default=False)
+    full_restricted = BooleanField(
+        'Disponible sólo para suscriptores',
+        default=False,
+        help_text="Acceso solamente a usuarios que tengan alguna suscripción activa."
+    )
 
     published = PublishedArticleManager()
 
@@ -1247,6 +1253,16 @@ class ArticleBase(Model, CT):
                 setattr(self, attr, add_punctuation(getattr(self, attr, '')))
 
         self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
+
+        # full restricted / open consistency checks
+        # 1. If open => full_restricted == False
+        # 2. If full_restricted => open == False
+        if self.is_published and self.is_public() and self.full_restricted:
+            raise Exception(
+                "Un artículo publicado no puede ser libre y además estar disponible sólo para suscriptores."
+            )
+
+        # other checks
 
         nowval = now()
 
@@ -1612,7 +1628,43 @@ class Article(ArticleBase):
     )
     newsletter_featured = BooleanField('destacado en newsletter', default=False)
     ipfs_upload = BooleanField('Publicar en IPFS', default=False)
-    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
+    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID del artículo en IPFS')
+    # alternative fields
+    alt_title_metadata = CharField(
+        'título alternativo para metadatos',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica a metadatos: meta title, Open Graph y Schema en el '
+        ) + escape("<head>") + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Título principal.')
+    )
+    alt_desc_metadata = TextField(
+        'descripción alternativa para metadatos',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica a metadatos: meta description, Open Graph y Schema en el '
+        ) + escape("<head>")
+        + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Descripción principal.')
+    )
+    alt_title_newsletters = CharField(
+        'título alternativo para newsletters',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Título principal.'
+        )
+    )
+    alt_desc_newsletters = TextField(
+        'descripción alternativa para newsletters',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Descripción principal'
+        )
+    )
     # SuperDesk article ID
     sp_id = CharField(max_length=100, null=True, blank=True)
 
@@ -1853,16 +1905,35 @@ class Article(ArticleBase):
             if section_imgs:
                 return PhotoExtended(image=section_imgs[0])
 
-    def is_restricted(self):
+    def is_restricted(self, consider_full=False):
         """
-        When the article's main pub is a restricted publication (by settings), also if no public and has no extra-perms
+        If the article is pulished:
+          If consider_full is True, the result will be True if this article is full_restricted.
+          If consider_full is False or the previous result was False, then, the result will be True when the article's
+            main pub is a restricted publication (by settings), plus the article is no public and has no extra-perms.
         """
         return (
-            not self.is_public()
-            and self.main_section
-            and self.main_section.edition.publication.slug in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
-            and not self.additional_access.exists()
+            self.is_published
+            and (
+                consider_full
+                and self.full_restricted
+                or (
+                    not self.is_public()
+                    and self.main_section
+                    and (
+                        self.main_section.edition.publication.slug
+                        in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
+                    )
+                    and not self.additional_access.exists()
+                )
+            )
         )
+
+    def is_restricted_consider_full(self):
+        """
+        Wrapper for previous method
+        """
+        return self.is_restricted(True)
 
     def published_collections(self):
         return self.linked_collections.filter(**get_published_kwargs())
@@ -2057,13 +2128,17 @@ class CategoryHomeArticle(Model):
 
     def __str__(self):
         # also a custom text version to be useful in the CategoryHome admin change form
-        return (
-            date_format(
-                self.article.last_published_by_category(self.home.category),
-                format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
-                use_l10n=True,
-            ) if self.article.is_published else "No publicado! "
-        ) + ('-F' if self.article.photo else '')
+        try:
+            result = (
+                date_format(
+                    self.article.last_published_by_category(self.home.category),
+                    format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
+                    use_l10n=True,
+                ) if self.article.is_published else "No publicado! "
+            ) + ('-F' if self.article.photo_render_allowed() else '')
+        except Exception:
+            result = super().__str__()
+        return result
 
     class Meta:
         ordering = ('position',)

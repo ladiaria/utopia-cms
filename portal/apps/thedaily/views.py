@@ -1430,7 +1430,7 @@ def amp_access_authorization(request):
             # search in url history
             article = get_object_or_404(ArticleUrlHistory, absolute_url=path).article
 
-        restricted_article = article.is_restricted()
+        restricted_article = article.is_restricted() or article.full_restricted
         result.update({'signupwall_enabled': True, 'article_restricted': restricted_article})
 
         if authenticated:
