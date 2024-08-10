@@ -430,6 +430,7 @@ CORE_PUSH_NOTIFICATIONS_OPTIONS = {
 # signupwall (other settings will be populated after local settings import)
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: Implementation for values greater than 0 is not included
+SIGNUPWALL_RISE_REDIRECT = True
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
@@ -557,6 +558,8 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+# inserts the meta url for the AMP version article page
+CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # TODO: recalculation after local settings import
 
 
 # Override previous settings with values in local_settings.py settings file

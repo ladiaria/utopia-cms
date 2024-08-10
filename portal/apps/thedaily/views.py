@@ -329,7 +329,7 @@ def login(request):
 
     article_id, login_formclass, response, login_error = request.GET.get('article'), LoginForm, None, None
     template, context = getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html'), {}
-    if article_id:
+    if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
             article = Article.objects.get(id=article_id)
         except (ValueError, Article.DoesNotExist):
@@ -430,7 +430,7 @@ def login(request):
 def signup(request):
     template, article_id, context = "signup.html", request.GET.get("article"), {}
 
-    if article_id:
+    if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
             article = Article.objects.get(id=article_id)
         except (ValueError, Article.DoesNotExist):
@@ -588,7 +588,7 @@ def subscribe(request, planslug, category_slug=None):
     custom_module, article_id = getattr(settings, 'THEDAILY_VIEWS_CUSTOM_MODULE', None), request.GET.get("article")
 
     context, template, article = {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}, "subscribe.html", None
-    if article_id:
+    if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
             article = Article.objects.get(id=article_id)
         except (ValueError, Article.DoesNotExist):

@@ -303,6 +303,7 @@
   "pk": 6,
   "model": "core.article",
   "fields": {
+    "type": "NE",
     "newsletter_featured": false,
     "allow_related": true,
     "only_initials": false,
@@ -348,6 +349,7 @@
   "pk": 8,
   "model": "core.article",
   "fields": {
+    "type": "NE",
     "newsletter_featured": false,
     "allow_related": true,
     "only_initials": false,
@@ -365,6 +367,28 @@
     "date_created": "2020-11-19T04:24:28",
     "is_published": true,
     "full_restricted": true
+  }
+},
+{
+  "pk": 9,
+  "model": "core.article",
+  "fields": {
+    "newsletter_featured": false,
+    "allow_related": true,
+    "only_initials": false,
+    "byline": [],
+    "headline": "test article9",
+    "show_related_articles": true,
+    "body": "test.",
+    "views": 0,
+    "date_published": "2024-07-20T04:20:04",
+    "last_modified": "2024-07-20T04:26:00",
+    "url_path": "/articulo/2024/07/test-article9/",
+    "slug": "test-article9",
+    "main_section": 10,
+    "allow_comments": false,
+    "date_created": "2024-07-19T04:14:28",
+    "is_published": true
   }
 },
 {
@@ -476,6 +500,18 @@
   }
 },
 {
+  "pk": 10,
+  "model": "core.articlerel",
+  "fields": {
+    "position": 2,
+    "home_top": true,
+    "section": 1,
+    "edition": 1,
+    "article": 9,
+    "top_position": 2
+  }
+},
+{
   "pk": 1,
   "model": "core.articleurlhistory",
   "fields": {
@@ -565,6 +601,16 @@
     "date_added": "2020-11-19T04:24:28",
     "is_public": true,
     "caption": "Lacalle Pou Debate"
+  }
+},
+{
+  "model": "core.articleextension",
+  "pk": 1,
+  "fields": {
+      "article": 9,
+      "body": "<iframe width=\"100%\" height=\"380\" src=\"https://www.youtube.com/embed/RhwYtU8EERs\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>",
+      "size": "R",
+      "background_color": "#eaeaea"
   }
 }
 ]

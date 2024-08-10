@@ -164,7 +164,7 @@ class SignupwallMiddleware(MiddlewareMixin):
 
         # useful flag for a restricted_article, no credits should be spent because the user will not be allowed to read
         # this article.
-        request.restricted_article = restricted_article = article.is_restricted() or article.full_restricted
+        request.restricted_article = restricted_article = article.is_restricted_consider_full()
 
         visitor = None
         # if not restricted article and log views is enabled, set the path_visited to this visitor.
@@ -206,15 +206,18 @@ class SignupwallMiddleware(MiddlewareMixin):
                 limited_free_article_mail(user)
 
         if (articles_visited_count > credits) or restricted_article:
-            if restricted_article:
-                request.signupwall = True
-            else:
-                if user_is_authenticated:
-                    urlname, reverse_kwargs = "subscribe", {"planslug": "DDIGM"}
+            if settings.SIGNUPWALL_RISE_REDIRECT:
+                if restricted_article:
+                    request.signupwall = True
                 else:
-                    urlname, reverse_kwargs = "account-login", {}
-                # TODO: check redirect status code for the next line
-                return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
+                    if user_is_authenticated:
+                        urlname, reverse_kwargs = "subscribe", {"planslug": "DDIGM"}
+                    else:
+                        urlname, reverse_kwargs = "account-login", {}
+                    # TODO: check redirect status code for the next line
+                    return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
+            else:
+                request.signupwall = True
         else:
             request.credits = credits - articles_visited_count
             request.signupwall_header = (
