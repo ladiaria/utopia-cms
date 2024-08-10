@@ -164,7 +164,7 @@ class SignupwallMiddleware(MiddlewareMixin):
 
         # useful flag for a restricted_article, no credits should be spent because the user will not be allowed to read
         # this article.
-        request.restricted_article = restricted_article = article.is_restricted() or article.full_restricted
+        request.restricted_article = restricted_article = article.is_restricted_consider_full()
 
         visitor = None
         # if not restricted article and log views is enabled, set the path_visited to this visitor.

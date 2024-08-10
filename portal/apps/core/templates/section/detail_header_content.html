@@ -1,0 +1,34 @@
+{% with a_class=a_class|default:'section-detail__toplink' svg_path=svg_path|default:'core/templates/section/detail_header_content_svg.html' %}
+  {% if section.category and not backlink_skip_category %}
+    <a class="{{ a_class }}" href="{% url 'home' domain_slug=section.category.slug %}">
+      {% include svg_path %}
+      {% if span_class %}<span class="{{ span_class }}">{% endif %}
+        {{ section.category }}
+      {% if span_class %}</span>{% endif %}
+    </a>
+  {% elif publication and publication != default_pub %}
+    <a class="{{ a_class }}" href="{% url 'home' domain_slug=publication.slug %}">
+      {% block publication_back %}
+        {% include svg_path %}
+        {% if span_class %}<span class="{{ span_class }}">{% endif %}
+          {% if publication_use_headline %}{{ publication.headline }}{% else %}{{ publication }}{% endif %}
+        {% if span_class %}</span>{% endif %}
+      {% endblock %}
+    </a>
+  {% else %}
+    <a class="{{ a_class }}" href="{% url 'home' %}">
+      {% include svg_path %}
+      {% if span_class %}<span class="{{ span_class }}">{% endif %}
+        {{ site.name }}
+      {% if span_class %}</span>{% endif %}
+    </a>
+  {% endif %}
+{% endwith %}
+<h1 class="{% block h1_class %}section-detail__title{% endblock %}">{{ section.name }}</h1>
+{% if section.show_description %}
+  <p class="section-detail__description">{{ section.description }}</p>
+{% endif %}
+{% if section.show_image %}
+  <img class="responsive-img" src="{{ MEDIA_URL }}{{ section.imagen }}" width="500px" alt="{{ section.name }}" loading="lazy"><br><br>
+{% endif %}
+{% block extra %}{% endblock %}

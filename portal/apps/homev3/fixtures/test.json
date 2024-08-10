@@ -300,6 +300,7 @@
   "pk": 6,
   "model": "core.article",
   "fields": {
+    "type": "NE",
     "newsletter_featured": false,
     "allow_related": true,
     "only_initials": false,
@@ -345,6 +346,7 @@
   "pk": 8,
   "model": "core.article",
   "fields": {
+    "type": "NE",
     "newsletter_featured": false,
     "allow_related": true,
     "only_initials": false,

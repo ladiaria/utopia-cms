@@ -64,6 +64,9 @@ def published_articles(context, **kwargs):
 @register.simple_tag(takes_context=True)
 def render_related(context, article, amp=False):
 
+    if not getattr(settings, "CORE_ARTICLE_DETAIL_ENABLE_RELATED", True):
+        return ""
+
     article, section = context.get('article'), context.get('section')
     if not section:
         return ''
