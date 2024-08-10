@@ -554,11 +554,12 @@ TESTING_CHROME_HEADLESS = True
 TESTING_PORT = 8000
 
 # defaults that will be assigned after local settings import
-# TODO: CORE_ARTICLE_DETAIL_ENABLE_AMP is a new candidate to be migrated to this approach
 SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+# inserts the meta url for the AMP version article page
+CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # TODO: recalculation after local settings import
 
 
 # Override previous settings with values in local_settings.py settings file

@@ -1,9 +1,9 @@
 {% if signupwall_remaining_banner and not article.public %}
   {% if not user.is_authenticated %}
     {# Soft wall: Registro|Suscripción #}
-    {% include 'article/paywall/pw_anon_with_credits.html' %}
+    {% include anon_template|default:'article/paywall/pw_anon_with_credits.html' %}
   {% elif not is_subscriber %}
     {# Soft wall: Suscripción #}
-    {% include 'article/paywall/pw_auth_with_credits.html' %}
+    {% include auth_template|default:'article/paywall/pw_auth_with_credits.html' %}
   {% endif %}
 {% endif %}

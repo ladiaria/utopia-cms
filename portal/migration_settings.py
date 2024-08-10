@@ -409,6 +409,7 @@ MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: Implementation for values greater than 0 is not included
+SIGNUPWALL_RISE_REDIRECT = True
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
@@ -531,6 +532,7 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # TODO: recalculation after local settings import
 
 
 # Override previous settings with values in local_migration_settings.py settings file

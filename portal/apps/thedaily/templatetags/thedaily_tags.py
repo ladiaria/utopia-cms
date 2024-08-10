@@ -67,14 +67,11 @@ def has_restricted_access(user, article):
     """
     @pre: The article is restricted or is full restricted
     """
-    return (
-        hasattr(user, 'subscriber')
-        and (
-            user.subscriber.is_subscriber(article.main_section.edition.publication.slug)
-            or article.full_restricted
-            and user.subscriber.is_subscriber_any()
-        )
-    )
+    if hasattr(user, 'subscriber'):
+        edition, subscribed = getattr(article.main_section, "edition", None), False
+        if edition:
+            subscribed = user.subscriber.is_subscriber(edition.publication.slug)
+        return subscribed or article.full_restricted and user.subscriber.is_subscriber_any()
 
 
 def if_time(parser, token):

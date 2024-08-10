@@ -2,18 +2,7 @@
 
 <div class="ld-snackbar ld-snackbar--active ld-snackbar--narrow js-ld-snackbar softwall">
   <div class="ld-snackbar__title">
-    {# show credits popup only if signupwall is enabled #}
-    {% if signupwall_enabled %}
-      {% if request.credits %}
-        {% if request.credits > 1 %}
-          Te quedan {{ request.credits }} artículos gratuitos
-        {% else %}
-          Te queda {{ request.credits }} artículo gratuito
-        {% endif %}
-      {% else %}
-        Este es tu último artículo gratuito
-      {% endif %}
-    {% endif %}
+    {% include 'article/paywall/pw_auth_with_credits_title.html' %}
     <button class="js-close-ld-snackbar ld-snackbar__close ld-snackbar__close-top" type="button" aria-pressed="false" aria-label="Cerrar">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
         <path fill="none" d="M0 0h24v24H0V0z"/>
