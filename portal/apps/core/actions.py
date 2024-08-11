@@ -13,14 +13,22 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
     """
     Updates categories homes based on articles publishing dates
     """
+    all_with_home = Category.objects.filter(home__isnull=False)
+    # override empty list to "all" if "all" is configured by settings
+    if not categories and getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ALL_HOMES', False):
+        categories = all_with_home
+    else:
+        categories = all_with_home.filter(slug__in=categories)
     # fill each category bucket with latest articles.
     # @dry_run: Do not change anything. It forces a debug message when a change would be made.
     # TODO: calculate not fixed count before and better stop algorithm.
     buckets, category_sections, cat_needed_defaults, cat_needed, start_time, result = {}, {}, {}, {}, time(), []
-    categories, categories_to_fill = Category.objects.filter(slug__in=categories), []
+    categories_to_fill = []
 
     for cat in categories:
-        needed = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_NEEDED', {}).get(cat.slug, 10)
+        needed = getattr(
+            settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_NEEDED', {}
+        ).get(cat.slug, getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_NEEDED_DEFAULT', 10))
         cat_needed_defaults[cat.slug] = needed
         exclude_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_SECTIONS', {}).get(cat.slug, [])
         articles_count = cat.articles_count(needed, exclude_sections, sql_debug)

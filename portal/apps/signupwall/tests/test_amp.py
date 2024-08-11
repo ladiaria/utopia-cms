@@ -37,32 +37,34 @@ class SignupwallAMPTestCase(LiveServerSeleniumTestCase):
 
     def restricted_article(self, restricted_title):
         with self.settings(CORE_RESTRICTED_PUBLICATIONS=("restrictedpub",)):
-            a = Article.objects.get(slug="test-restricted1")
-            self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
-            time.sleep(2)
-            self.assertEqual(restricted_title, self.get_title_displayed())
+            if settings.CORE_ARTICLE_DETAIL_ENABLE_AMP:
+                a = Article.objects.get(slug="test-restricted1")
+                self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
+                time.sleep(2)
+                self.assertEqual(restricted_title, self.get_title_displayed())
 
     def user_faces_wall(self, restricted_title=label_exclusive):
-        for i in range(settings.SIGNUPWALL_MAX_CREDITS - 1):
-            a = Article.objects.create(headline='test%d' % (i + 1))
+        if settings.CORE_ARTICLE_DETAIL_ENABLE_AMP:
+            for i in range(settings.SIGNUPWALL_MAX_CREDITS - 1):
+                a = Article.objects.create(headline='test%d' % (i + 1))
+                self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
+                time.sleep(2)
+                title_displayed = self.get_title_displayed()
+                self.assertIn("Te queda", title_displayed)
+                self.assertNotEqual(label_to_continue_reading, title_displayed)
+
+            a = Article.objects.create(headline='test_last')
             self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
             time.sleep(2)
-            title_displayed = self.get_title_displayed()
-            self.assertIn("Te queda", title_displayed)
-            self.assertNotEqual(label_to_continue_reading, title_displayed)
+            self.assertIn("Este es tu último", self.get_title_displayed())
 
-        a = Article.objects.create(headline='test_last')
-        self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
-        time.sleep(2)
-        self.assertIn("Este es tu último", self.get_title_displayed())
+            a = Article.objects.create(headline='test_walled')
+            self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
+            time.sleep(2)
+            self.assertIn("Llegaste al límite", self.get_title_displayed())
 
-        a = Article.objects.create(headline='test_walled')
-        self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
-        time.sleep(2)
-        self.assertIn("Llegaste al límite", self.get_title_displayed())
-
-        # restricted articles
-        self.restricted_article(restricted_title)
+            # restricted articles
+            self.restricted_article(restricted_title)
 
     def test01_anon_faces_wall(self):
         self.set_current_site_domain()
@@ -73,21 +75,22 @@ class SignupwallAMPTestCase(LiveServerSeleniumTestCase):
         with Browser() as browser:
             browser.open.url(...)
         """
-        self.selenium.get(f"{self.server_url}{settings.LOGOUT_URL}")
+        if settings.CORE_ARTICLE_DETAIL_ENABLE_AMP:
+            self.selenium.get(f"{self.server_url}{settings.LOGOUT_URL}")
 
-        for i in range(settings.SIGNUPWALL_ANON_MAX_CREDITS):
-            a = Article.objects.create(headline='test%d' % (i + 1))
+            for i in range(settings.SIGNUPWALL_ANON_MAX_CREDITS):
+                a = Article.objects.create(headline='test%d' % (i + 1))
+                self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
+                time.sleep(2)
+                self.assertNotEqual(label_to_continue_reading, self.get_title_displayed())
+
+            a = Article.objects.create(headline='test_walled')
             self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
             time.sleep(2)
-            self.assertNotEqual(label_to_continue_reading, self.get_title_displayed())
+            self.assertEqual(label_to_continue_reading, self.get_title_displayed())
 
-        a = Article.objects.create(headline='test_walled')
-        self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
-        time.sleep(2)
-        self.assertEqual(label_to_continue_reading, self.get_title_displayed())
-
-        # restricted articles
-        self.restricted_article(label_exclusive)
+            # restricted articles
+            self.restricted_article(label_exclusive)
 
     def test02_non_subscriber_faces_wall(self):
         self.set_current_site_domain()
@@ -129,13 +132,14 @@ class SignupwallAMPTestCase(LiveServerSeleniumTestCase):
         user.subscriber.is_subscriber(operation="set")
         self.login(user, password)
 
-        for i in range(settings.SIGNUPWALL_MAX_CREDITS + 1):
-            a = Article.objects.create(headline='test%d' % (i + 1))
-            self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
-            time.sleep(2)
-            title_displayed = self.get_title_displayed()
-            self.assertNotIn("Te queda", title_displayed)
-            self.assertNotIn(label_to_continue_reading, title_displayed)
+        if settings.CORE_ARTICLE_DETAIL_ENABLE_AMP:
+            for i in range(settings.SIGNUPWALL_MAX_CREDITS + 1):
+                a = Article.objects.create(headline='test%d' % (i + 1))
+                self.selenium.get(f"{self.server_url}{a.get_absolute_url()}?display=amp")
+                time.sleep(2)
+                title_displayed = self.get_title_displayed()
+                self.assertNotIn("Te queda", title_displayed)
+                self.assertNotIn(label_to_continue_reading, title_displayed)
 
-        # restricted articles allowed
-        self.restricted_article("")
+            # restricted articles allowed
+            self.restricted_article("")

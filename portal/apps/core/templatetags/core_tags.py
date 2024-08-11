@@ -64,6 +64,9 @@ def published_articles(context, **kwargs):
 @register.simple_tag(takes_context=True)
 def render_related(context, article, amp=False):
 
+    if not getattr(settings, "CORE_ARTICLE_DETAIL_ENABLE_RELATED", True):
+        return ""
+
     article, section = context.get('article'), context.get('section')
     if not section:
         return ''
@@ -118,7 +121,14 @@ def render_related(context, article, amp=False):
         try:
             engine.get_template(template_try)
         except TemplateDoesNotExist:
-            pass
+            # try to fallback to a possible custom "related.html"
+            template_try = join(template_dir, "article/related.html")
+            try:
+                engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template = template_try
         else:
             template = template_try
     return loader.render_to_string(template, flatten_ctx)

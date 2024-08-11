@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='article',
             name='ipfs_cid',
-            field=models.TextField(blank=True, help_text='CID de la nota en IPFS', null=True, verbose_name='id de IPFS'),
+            field=models.TextField(blank=True, help_text='CID del artículo en IPFS', null=True, verbose_name='id de IPFS'),
         ),
         migrations.AddField(
             model_name='article',

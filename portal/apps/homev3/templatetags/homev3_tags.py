@@ -144,8 +144,9 @@ def render_publication_row(context, publication_slug):
 
 
 class RenderCategoryRowNode(Node):
-    def __init__(self, category_slug):
+    def __init__(self, category_slug, limit):
         self.category_slug = category_slug
+        self.limit = limit
 
     def render(self, context):
         try:
@@ -153,7 +154,7 @@ class RenderCategoryRowNode(Node):
         except Category.DoesNotExist:
             return ''
         else:
-            latest_articles = category.latest_articles()[:4]
+            latest_articles = category.latest_articles()[:self.limit]
             if latest_articles:
                 flatten_ctx = context.flatten()
                 flatten_ctx.update(
@@ -192,8 +193,8 @@ def render_publication_grid(context, data):
 
 
 @register.simple_tag(takes_context=True)
-def render_category_row(context, category_slug):
-    return RenderCategoryRowNode(category_slug).render(context)
+def render_category_row(context, category_slug, limit=getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT', 4)):
+    return RenderCategoryRowNode(category_slug, limit).render(context)
 
 
 @register.simple_tag(takes_context=True)

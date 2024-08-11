@@ -19,6 +19,7 @@ from django.test.testcases import LiveServerThread, QuietWSGIRequestHandler
 label_content_not_available = "Contenido no disponible con tu suscripción actual"
 label_to_continue_reading = "Para seguir leyendo ingresá o suscribite"
 label_exclusive = "Exclusivo para suscripción digital de pago"
+label_exclusive4u = "Contenido exclusivo con tu suscripción de pago"
 
 
 class LiveServerThreadWithReuse(LiveServerThread):
