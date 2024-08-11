@@ -358,7 +358,10 @@
 
     <!-- /container -->
     {% block page_header %}
-      {% block page_header_sections %}{% endblock %}
+      {% block bn_module %}{% endblock %}
+      {% block page_header_content %}
+        {% block page_header_content_inner %}{% endblock %}
+      {% endblock %}
     {% endblock %}
 
     {% if user_form %}
