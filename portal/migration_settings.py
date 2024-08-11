@@ -35,6 +35,11 @@ URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
+# default filename for the bse_template used to extend by variable
+PORTAL_BASE_TEMPLATE = "base.html"
+# country name in page titles
+PORTAL_TITLE_APPEND_COUNTRY = True
+
 # disable template settings warning until fixed migrating django-mobile to django-amp-tools
 SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
 
@@ -359,9 +364,6 @@ ELASTICSEARCH_DSL = {}
 ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
 SEARCH_ELASTIC_USE_FUZZY = False  # Ignored when previous setting is True (not allowed by Elasticsearch).
-
-# country name in page titles
-PORTAL_TITLE_APPEND_COUNTRY = True
 
 # apps
 
