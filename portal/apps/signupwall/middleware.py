@@ -80,21 +80,27 @@ def get_or_create_visitor(request):
 def subscriber_access(subscriber, article):
     """
     Returns True if the subscriber has subscriber access to the article, otherwise returns False
-    The logic applied is to give access if the subscriber is subscribed to the default pub or to any pub that the
-    article is published in (if it's not a restricted article, otherwise the subscriber must be subscribed to the main
-    pub of the article), or to any pub in article's additional_access field.
+    The logic applied is to give access if the subscriber is subscribed to the default pub or when the article is not
+    full restricted, to any pub that the article is published in (if it's not a restricted article, otherwise the
+    subscriber must be subscribed to the main pub of the article), or to any pub in article's additional_access field.
     """
     restricted_article = article.is_restricted()
     return (
         subscriber.is_subscriber()
 
-        or not restricted_article
-        and any(subscriber.is_subscriber(p.slug) for p in article.publications())
+        or
 
-        or restricted_article
-        and subscriber.is_subscriber(article.main_section.edition.publication.slug)
+        not article.full_restricted and (
 
-        or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+            not restricted_article
+            and any(subscriber.is_subscriber(p.slug) for p in article.publications())
+
+            or restricted_article
+            and subscriber.is_subscriber(article.main_section.edition.publication.slug)
+
+            or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+
+        )
     )
 
 
@@ -158,7 +164,7 @@ class SignupwallMiddleware(MiddlewareMixin):
 
         # useful flag for a restricted_article, no credits should be spent because the user will not be allowed to read
         # this article.
-        request.restricted_article = restricted_article = article.is_restricted()
+        request.restricted_article = restricted_article = article.is_restricted_consider_full()
 
         visitor = None
         # if not restricted article and log views is enabled, set the path_visited to this visitor.
@@ -200,15 +206,18 @@ class SignupwallMiddleware(MiddlewareMixin):
                 limited_free_article_mail(user)
 
         if (articles_visited_count > credits) or restricted_article:
-            if restricted_article:
-                request.signupwall = True
-            else:
-                if user_is_authenticated:
-                    urlname, reverse_kwargs = "subscribe", {"planslug": "DDIGM"}
+            if settings.SIGNUPWALL_RISE_REDIRECT:
+                if restricted_article:
+                    request.signupwall = True
                 else:
-                    urlname, reverse_kwargs = "account-login", {}
-                # TODO: check redirect status code for the next line
-                return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
+                    if user_is_authenticated:
+                        urlname, reverse_kwargs = "subscribe", {"planslug": "DDIGM"}
+                    else:
+                        urlname, reverse_kwargs = "account-login", {}
+                    # TODO: check redirect status code for the next line
+                    return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
+            else:
+                request.signupwall = True
         else:
             request.credits = credits - articles_visited_count
             request.signupwall_header = (

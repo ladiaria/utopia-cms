@@ -35,6 +35,11 @@ URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
+# default filename for the bse_template used to extend by variable
+PORTAL_BASE_TEMPLATE = "base.html"
+# country name in page titles
+PORTAL_TITLE_APPEND_COUNTRY = True
+
 # disable template settings warning until fixed migrating django-mobile to django-amp-tools
 SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
 
@@ -360,9 +365,6 @@ ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
 SEARCH_ELASTIC_USE_FUZZY = False  # Ignored when previous setting is True (not allowed by Elasticsearch).
 
-# country name in page titles
-PORTAL_TITLE_APPEND_COUNTRY = True
-
 # apps
 
 # core
@@ -409,6 +411,7 @@ MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: Implementation for values greater than 0 is not included
+SIGNUPWALL_RISE_REDIRECT = True
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
@@ -527,10 +530,12 @@ PWA_SERVICE_WORKER_TEMPLATE = "core/templates/sw/serviceworker.js"
 PWA_SERVICE_WORKER_VERSION = 1
 
 # defaults that will be assigned after local settings import
+COMPRESS_OFFLINE_CONTEXT = {}
 SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # TODO: recalculation after local settings import
 
 
 # Override previous settings with values in local_migration_settings.py settings file
@@ -542,6 +547,7 @@ SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
 LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
+COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
 
 # signupwall overrided/defaults
 if SIGNUPWALL_ENABLED is None:

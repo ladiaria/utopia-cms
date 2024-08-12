@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends base_template %}
 {% load bleach_tags core_tags homev3_tags static ldml %}
 
 {% block page_title %}{% category_title %}{% endblock %}
@@ -15,33 +15,21 @@
 {% block body_class %}section-detail{% endblock %}
 
 {% block page_header %}
-
-  <div id="bn-module"></div>
-
-  <div class="container container--wide">
-    <div class="section-detail__head">
-      <h1 class="section-detail__title">{{ category.name|capfirst }}</h1>
-      <div class="section-detail__sub-cats">
-        <ul class="section-detail__sub-cats-list">
-          {% block page_header_sections %}
-            {% with empty_list=""|make_list %}
-              {% with excluded_slugs=excluded_slugs|default:empty_list %}
-                {% for section in category.section_set.all %}
-                  {# TODO: document submenu support usage #}
-                  {% if section not in inner_sections %}
-                    {% if section.slug not in excluded_slugs %}
-                      <li><a class="section-detail__header-sub-cat" href="{{ section.get_absolute_url }}">{{ section.name_in_category_menu|default:section.name }}</a></li>
-                    {% endif %}
-                  {% endif %}
-                {% endfor %}
-              {% endwith %}
-            {% endwith %}
-          {% endblock %}
-        </ul>
+  {% block bn_module %}<div id="bn-module"></div>{% endblock %}
+  {% block page_header_content %}
+    <div class="container container--wide">
+      <div class="section-detail__head">
+        <h1 class="section-detail__title">{{ category.name|capfirst }}</h1>
+        <div class="section-detail__sub-cats">
+          <ul class="section-detail__sub-cats-list">
+            {% block page_header_content_inner %}
+              {% include 'core/templates/category/detail_header_sections.html' %}
+            {% endblock %}
+          </ul>
+        </div>
       </div>
     </div>
-  </div>
-
+  {% endblock %}
 {% endblock %}
 
 {% block content %}
