@@ -104,7 +104,11 @@ from .forms import (
     SUBSCRIPTION_PHONE_TIME_CHOICES,
 )
 from .utils import (
-    recent_following, add_default_newsletters, get_profile_newsletters_ordered, google_phone_next_page
+    recent_following,
+    add_default_newsletters,
+    get_profile_newsletters_ordered,
+    google_phone_next_page,
+    product_checkout_template,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -313,7 +317,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 @csrf_protect
 @ensure_csrf_cookie
 @readerid_assoc
-def login(request):
+def login(request, product_slug=None):
     # next_page value got here will be available in session (TODO: explain how this happen)
     return_param = amp_login_param(request, 'return')
     if return_param:
@@ -327,8 +331,18 @@ def login(request):
         request.session.modified = True
         return HttpResponseRedirect(next_page)
 
-    article_id, login_formclass, response, login_error = request.GET.get('article'), LoginForm, None, None
-    template, context = getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html'), {}
+    article_id, login_formclass, response, login_error, context = None, LoginForm, None, None, {}
+
+    if product_slug:
+        template = product_checkout_template(product_slug)
+        next_page = reverse("product-checkout", kwargs={"product_slug": product_slug})
+        if "prelogin" not in request.POST:
+            login_formclass = get_formclass(request, "PreLogin")
+        context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "product_slug": product_slug})
+    else:
+        article_id = request.GET.get('article')
+        template = getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html')
+
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
             article = Article.objects.get(id=article_id)
@@ -385,7 +399,10 @@ def login(request):
                 request.session["terms_and_conds_accepted"] = True
                 request.session.modified = True
                 response = HttpResponseRedirect(
-                    reverse('account-signup') + ("?article=%s&email=%s" % (article_id, login_form.data.get("email")))
+                    (
+                        (next_page + "?")
+                        if product_slug else (reverse('account-signup') + "?article=%s&" % article_id)
+                    ) + "email=" + login_form.data.get("email")
                 )
         else:
             email = login_form.data.get('name_or_mail')
@@ -393,7 +410,7 @@ def login(request):
                 # alert admins if is a user with duplicated email. TODO: can be improved using error_code
                 if User.objects.filter(email=email).count() > 1:
                     mail_managers("Multiple email in users", email)
-            elif article_id:
+            elif product_slug or article_id:
                 # applies only to "pre-login"
                 # return a normal login form only if the error is in email field and has INVALID code
                 # if more errors, remove the error in email field only if it has INVALID code

@@ -1,6 +1,6 @@
 {% load crispy_forms_tags %}
 
-{# NOTE: form tag is closed in hard_paywall.html #}
+{# NOTE: form tag is closed in hard_paywall.html or descendnts #}
 {% if login_form %}
   <form id="hardpw-login" method="post">
     {% crispy login_form %}
