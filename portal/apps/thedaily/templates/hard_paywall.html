@@ -1,7 +1,7 @@
 {% extends "subscribe.html" %}
 {% load static core_tags thedaily_tags ldml bleach_tags crispy_forms_tags %}
 
-{% block page_title %}{% title_joinparts 'Muro de pago' %}{% endblock %}
+{% block page_title %}{% title_joinparts joinparts_first|default:'Muro de pago' %}{% endblock %}
 
 {% block css %}
   <link href="{% static 'sass/hard_paywall.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
@@ -10,6 +10,7 @@
 {% block body_class %}{{ block.super }} hard-paywall{% endblock %}
 
 {% block content %}
+
   {% block article_column %}
     {% if article %}
       <div class="article-container{% if not user.is_authenticated %} anonymous{% endif %}">
@@ -39,14 +40,15 @@
       </div>
     {% endif %}
   {% endblock %}
+
   {% block payment %}
     <div class="payment-column{% if not user.is_authenticated %} anonymous{% endif %}
                 {% block payment_column_extraclass %}payment-column__phone-subscription{% endblock %}">
-        <a class="payment-column__close-btn" href="{% block close_btn_url %}{{ SITE_URL }}{% endblock %}">Cerrar
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M13.46 12L19 17.54V19H17.54L12 13.46L6.46 19H5V17.54L10.54 12L5 6.46V5H6.46L12 10.54L17.54 5H19V6.46L13.46 12Z" fill="#262626"/>
-          </svg>
-        </a>
+      <a class="payment-column__close-btn" href="{% block close_btn_url %}{% url 'home' %}{% endblock %}">Cerrar
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M13.46 12L19 17.54V19H17.54L12 13.46L6.46 19H5V17.54L10.54 12L5 6.46V5H6.46L12 10.54L17.54 5H19V6.46L13.46 12Z" fill="#262626"/>
+        </svg>
+      </a>
       {% block payment_header %}
         {% if not user.is_authenticated and not 'password' in login_form.fields and not signup_form %}
           <p class="create-account-desc">
@@ -109,24 +111,14 @@
             </form>{# tag opened in the if or else(included file) in this div #}
           </div>
           {% if not user.is_authenticated and 'password' not in login_form.fields %}
-            <div class="payment-container__anonymous">
-              <p>o ingresá con Google</p>
-              <div class="google-auth align-center">
-                <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ article.get_absolute_url }}" class="ld-btn-google">
-                  ingresar con google
-                </a>
-              </div>
-              <div class="payment-container__anonymous__log-in">
-                <p>¿Ya tenés cuenta?</p>
-                <a href="{% url 'account-login' %}?next={{ article.get_absolute_url }}">Ingresá</a>
-              </div>
-            </div>
+            {% include 'hard_paywall_anon_login_alternatives.html' %}
           {% endif %}
         {% endblock %}
       </div>
       {% block payment_footer %}{% endblock %}
     </div>
   {% endblock %}
+
 {% endblock %}
 
 {% block footer_block %}{% endblock %}
