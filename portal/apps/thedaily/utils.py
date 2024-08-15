@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from os.path import join
 import random as rdm
 from operator import attrgetter
+from urllib.parse import urlencode
 from pydoc import locate
 import requests
 
@@ -91,6 +92,11 @@ def move_data(s0, s1):
         s1.newsletters.add(p)
     for c in s0.category_newsletters.all():
         s1.category_newsletters.add(c)
+
+
+def qparamstr(qparams):
+    qparams_str = urlencode(qparams)
+    return ('?%s' % qparams_str) if qparams_str else ''
 
 
 def recent_following(user, *models):
