@@ -338,6 +338,7 @@ def login(request, product_slug=None, product_variant=None):
     if product_slug:
         template = product_checkout_template(product_slug)
         if product_variant:
+            context["product_variant"] = True
             market_next_qparams["variant"] = 1
         market_next_page = reverse("product-checkout", kwargs={"product_slug": product_slug})
         next_page = market_next_page + qparamstr(market_next_qparams)
