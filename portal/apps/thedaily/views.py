@@ -109,6 +109,7 @@ from .utils import (
     get_profile_newsletters_ordered,
     google_phone_next_page,
     product_checkout_template,
+    qparamstr,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -317,7 +318,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 @csrf_protect
 @ensure_csrf_cookie
 @readerid_assoc
-def login(request, product_slug=None):
+def login(request, product_slug=None, product_variant=None):
     # next_page value got here will be available in session (TODO: explain how this happen)
     return_param = amp_login_param(request, 'return')
     if return_param:
@@ -333,9 +334,13 @@ def login(request, product_slug=None):
 
     article_id, login_formclass, response, login_error, context = None, LoginForm, None, None, {}
 
+    market_next_page, market_next_qparams = None, {}
     if product_slug:
         template = product_checkout_template(product_slug)
-        next_page = reverse("product-checkout", kwargs={"product_slug": product_slug})
+        if product_variant:
+            market_next_qparams["variant"] = 1
+        market_next_page = reverse("product-checkout", kwargs={"product_slug": product_slug})
+        next_page = market_next_page + qparamstr(market_next_qparams)
         if "prelogin" not in request.POST:
             login_formclass = get_formclass(request, "PreLogin")
         context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "product_slug": product_slug})
@@ -398,11 +403,10 @@ def login(request, product_slug=None):
             else:
                 request.session["terms_and_conds_accepted"] = True
                 request.session.modified = True
+                qparams = market_next_qparams if product_slug else {"article": article_id}
+                qparams["email"] = login_form.data.get("email")
                 response = HttpResponseRedirect(
-                    (
-                        (next_page + "?")
-                        if product_slug else (reverse('account-signup') + "?article=%s&" % article_id)
-                    ) + "email=" + login_form.data.get("email")
+                    (market_next_page if product_slug else reverse('account-signup')) + qparamstr(qparams)
                 )
         else:
             email = login_form.data.get('name_or_mail')
