@@ -1746,7 +1746,7 @@ class Article(ArticleBase):
                             render_to_string(
                                 "article/detail_ipfs_upload.html",
                                 {
-                                    "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+                                    "site_url": settings.SITE_URL_SD,
                                     "ipfs_cid": self.ipfs_cid,
                                     "headline": self.headline,
                                     "date_published": self.date_published,

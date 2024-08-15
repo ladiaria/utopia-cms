@@ -73,6 +73,7 @@ def send_confirmation_link(*args, **kwargs):
 def send_validation_email(subject, user, msg_template, url_generator, extra_context={}):
     extra_context.update(
         {
+            'SITE_URL': settings.SITE_URL,
             'SITE_URL_SD': settings.SITE_URL_SD,
             'site': Site.objects.get_current(),
             'logo_url': settings.HOMEV3_SECONDARY_LOGO,

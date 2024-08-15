@@ -226,7 +226,7 @@ class Command(SendNLCommand):
             else:
                 subscribers_iter = r
         elif not self.export_subscribers or self.export_context:
-            site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
+            site_url = settings.SITE_URL_SD
             if self.as_news:
                 list_id = 'novedades <%s>' % settings.SITE_DOMAIN
             else:

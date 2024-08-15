@@ -84,7 +84,7 @@ class ArchivedEvent(Model):
         return reverse('cartelera-archive', kwargs={'archived_event_id': self.id})
 
     def link(self):
-        href = '%s://%s%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN, self.get_absolute_url()) if self.id else None
+        href = (settings.SITE_URL_SD + self.get_absolute_url()) if self.id else None
         return mark_safe('<a href="%s">%s</a>' % (href, href)) if href else None
 
     def __str__(self):

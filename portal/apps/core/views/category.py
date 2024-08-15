@@ -200,7 +200,7 @@ def newsletter_preview(request, slug):
 
         headers = {'From': email_from, 'Subject': email_subject}
 
-        site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
+        site_url = settings.SITE_URL_SD
         as_news = request.GET.get("as_news", "0").lower() in ("true", "1")
         if as_news:
             unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
