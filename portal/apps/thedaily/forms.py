@@ -310,7 +310,8 @@ class SignupForm(BaseUserForm):
         DIGIT_RE = re.compile(r'\d')
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
-        user = User.objects.create_user(email, email, password)
+        first_name = self.cleaned_data.get('first_name')
+        user = User.objects.create_user(email, email, password, first_name=first_name)
         if not user.subscriber.phone:
             user.subscriber.phone = ''.join(DIGIT_RE.findall(self.cleaned_data.get('phone', '')))
         if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
