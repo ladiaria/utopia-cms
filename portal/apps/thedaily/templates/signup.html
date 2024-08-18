@@ -1,8 +1,7 @@
 {% extends "base.html" %}
+{% load static crispy_forms_tags core_tags thedaily_tags %}
 
-{% load crispy_forms_tags static thedaily_tags %}
-
-{% block page_title %}Cuenta gratuita{% endblock %}
+{% block page_title %}{% title_joinparts 'Cuenta gratuita' %}{% endblock %}
 
 {% block page_description %}{% spaceless %}
 {% with credits_pl=signupwall_max_credits|pluralize %}

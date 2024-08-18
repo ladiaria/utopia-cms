@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 from django import forms
 from django.contrib import admin
@@ -36,7 +34,7 @@ class PhotoExtendedModelForm(forms.ModelForm):
 
     class Meta:
         model = PhotoExtended
-        fields = ('date_taken', )
+        fields = ('date_taken',)
 
 
 class PhotoExtendedInline(admin.StackedInline):
@@ -45,16 +43,20 @@ class PhotoExtendedInline(admin.StackedInline):
     can_delete = False
     fieldsets = (
         ('Metadatos', {'fields': ('date_taken', 'type', 'photographer', 'agency')}),
-        ('Recorte para versión cuadrada', {
-            'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse', )}))
+        (
+            'Recorte para versión cuadrada',
+            {'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse',)}
+        ),
+    )
 
     class Media:
-        js = ('js/jquery.cropbox.js', )
+        js = ('js/jquery.cropbox.js',)
+        css = {"all": ("css/headless_stacked_inline.css",)}
 
 
 class PhotoGalleryInline(admin.TabularInline):
     model = Gallery.photos.through
-    raw_id_fields = ('photo', )
+    raw_id_fields = ('photo',)
     extra = 0
     verbose_name = 'foto'
     verbose_name_plural = 'fotos'
@@ -86,12 +88,12 @@ class GalleryAdmin(GalleryAdminDefault):
     prepopulated_fields = {'slug': ('title',)}
     filter_horizontal = ('photos',)
     inlines = [PhotoGalleryInline]
-    exclude = ('photos', )
+    exclude = ('photos',)
 
 
 @admin.register(Photographer)
 class PhotographerAdmin(admin.ModelAdmin):
-    search_fields = ('name', )
+    search_fields = ('name',)
 
 
 class PhotoEffectAdmin(admin.ModelAdmin):
@@ -172,7 +174,7 @@ class PhotoAdmin(PhotoAdminDefault):
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
     fieldsets = (
         (None, {'fields': ('title', 'image', 'caption')}),
-        ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse', )}))
+        ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}))
     inlines = [PhotoExtendedInline]
 
 

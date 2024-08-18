@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from inflect import engine
 
@@ -10,6 +8,7 @@ from django.urls import resolve, reverse
 from django.urls.exceptions import Resolver404
 from django.template.defaultfilters import slugify
 from django.utils import timezone
+from django.utils.timezone import now, timedelta
 from django.utils.deprecation import MiddlewareMixin
 
 from apps import mongo_db
@@ -80,21 +79,27 @@ def get_or_create_visitor(request):
 def subscriber_access(subscriber, article):
     """
     Returns True if the subscriber has subscriber access to the article, otherwise returns False
-    The logic applied is to give access if the subscriber is subscribed to the default pub or to any pub that the
-    article is published in (if it's not a restricted article, otherwise the subscriber must be subscribed to the main
-    pub of the article), or to any pub in article's additional_access field.
+    The logic applied is to give access if the subscriber is subscribed to the default pub or when the article is not
+    full restricted, to any pub that the article is published in (if it's not a restricted article, otherwise the
+    subscriber must be subscribed to the main pub of the article), or to any pub in article's additional_access field.
     """
     restricted_article = article.is_restricted()
     return (
         subscriber.is_subscriber()
 
-        or not restricted_article
-        and any(subscriber.is_subscriber(p.slug) for p in article.publications())
+        or
 
-        or restricted_article
-        and subscriber.is_subscriber(article.main_section.edition.publication.slug)
+        not article.full_restricted and (
 
-        or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+            not restricted_article
+            and any(subscriber.is_subscriber(p.slug) for p in article.publications())
+
+            or restricted_article
+            and subscriber.is_subscriber(article.main_section.edition.publication.slug)
+
+            or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+
+        )
     )
 
 
@@ -104,6 +109,51 @@ def is_google_amp(request):
 
 
 class SignupwallMiddleware(MiddlewareMixin):
+
+    def anon_articles_visited_count(self, nowval, visitor, credits, debug=False):
+        """
+        anon users, count paths visited by session, we save at least 7-day back log.
+        No need to count more paths than credits + 1 in the last 7 days.
+        TODO: "credits" seems to be kindof reserved word (try to use a better var name for it)
+        """
+        paths_visited, articles_visited_count, dt = set(), 0, nowval - timedelta(7)
+        for v in mongo_db.signupwall_visitor.find(
+            {'session_key': visitor.get('session_key'), 'timestamp': {'$gt': dt}}
+        ):
+            paths_visited.add(v.get('path_visited'))
+            articles_visited_count = len(paths_visited)
+            if articles_visited_count > credits:
+                break
+
+        if debug:
+            print(
+                'DEBUG: signupwall.middleware.process_request - articles_visited_count (session): %d' % (
+                    articles_visited_count
+                )
+            )
+
+        if articles_visited_count <= credits:
+            # also search visits made with the session ips using other sessions
+            for v in mongo_db.signupwall_visitor.find(
+                {
+                    'session_key': {'$ne': visitor.get('session_key')},
+                    'timestamp': {'$gt': dt},
+                }
+            ):
+                paths_visited.add(v.get('path_visited'))
+                articles_visited_count = len(paths_visited)
+                if articles_visited_count > credits:
+                    break
+
+        if debug:
+            print(
+                'DEBUG: signupwall.middleware.process_request - articles_visited_count (session+ips): %d' % (
+                    articles_visited_count
+                )
+            )
+
+        return articles_visited_count
+
     def process_request(self, request):
 
         # try to resolve path and get the target article
@@ -111,6 +161,7 @@ class SignupwallMiddleware(MiddlewareMixin):
             path_resolved = resolve(request.path)
         except Resolver404:
             return
+
         if path_resolved.url_name == 'article_detail':
             try:
                 article = get_article_by_url_path(request.path)
@@ -158,7 +209,7 @@ class SignupwallMiddleware(MiddlewareMixin):
 
         # useful flag for a restricted_article, no credits should be spent because the user will not be allowed to read
         # this article.
-        request.restricted_article = restricted_article = article.is_restricted()
+        request.restricted_article = restricted_article = article.is_restricted_consider_full()
 
         visitor = None
         # if not restricted article and log views is enabled, set the path_visited to this visitor.
@@ -192,23 +243,31 @@ class SignupwallMiddleware(MiddlewareMixin):
 
         else:
 
-            # anon users, they will face the signupwall (see note related in settings.py).
-            articles_visited_count, credits = 1, settings.SIGNUPWALL_ANON_MAX_CREDITS
+            # anon users
+            credits = settings.SIGNUPWALL_ANON_MAX_CREDITS
+            if credits and visitor and mongo_db is not None:
+                nowval = now()
+                articles_visited_count = self.anon_articles_visited_count(nowval, visitor, credits, debug)
+            else:
+                articles_visited_count = 1
 
         if user_is_authenticated:
             if articles_visited_count == credits + 1:
                 limited_free_article_mail(user)
 
         if (articles_visited_count > credits) or restricted_article:
-            if restricted_article:
-                request.signupwall = True
-            else:
-                if user_is_authenticated:
-                    urlname, reverse_kwargs = "subscribe", {"planslug": "DDIGM"}
+            if settings.SIGNUPWALL_RISE_REDIRECT:
+                if restricted_article:
+                    request.signupwall = True
                 else:
-                    urlname, reverse_kwargs = "account-login", {}
-                # TODO: check redirect status code for the next line
-                return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
+                    if user_is_authenticated:
+                        urlname, reverse_kwargs = "subscribe", {"planslug": "DDIGM"}
+                    else:
+                        urlname, reverse_kwargs = "account-login", {}
+                    # TODO: check redirect status code for the next line
+                    return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
+            else:
+                request.signupwall = True
         else:
             request.credits = credits - articles_visited_count
             request.signupwall_header = (

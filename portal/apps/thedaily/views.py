@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 from future import standard_library
 from builtins import str
@@ -71,12 +68,15 @@ from utils.error_log import error_log
 from decorators import render_response
 
 from core.models import Publication, Category, Article, ArticleUrlHistory
+from core.forms import feedback_allowed
 from signupwall.middleware import (
     get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access, number_to_words
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
-from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList, deletecrmuser
+from .models import (
+    Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList, deletecrmuser
+)
 from .forms import (
     __name__ as forms_module_name,
     LoginForm,
@@ -103,7 +103,12 @@ from .forms import (
     SUBSCRIPTION_PHONE_TIME_CHOICES,
 )
 from .utils import (
-    recent_following, add_default_newsletters, get_profile_newsletters_ordered, google_phone_next_page,
+    recent_following,
+    add_default_newsletters,
+    get_profile_newsletters_ordered,
+    google_phone_next_page,
+    product_checkout_template,
+    qparamstr,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -312,7 +317,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 @csrf_protect
 @ensure_csrf_cookie
 @readerid_assoc
-def login(request):
+def login(request, product_slug=None, product_variant=None):
     # next_page value got here will be available in session (TODO: explain how this happen)
     return_param = amp_login_param(request, 'return')
     if return_param:
@@ -326,9 +331,24 @@ def login(request):
         request.session.modified = True
         return HttpResponseRedirect(next_page)
 
-    article_id, login_formclass, response, login_error = request.GET.get('article'), LoginForm, None, None
-    template, context = getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html'), {}
-    if article_id:
+    article_id, login_formclass, response, login_error, context = None, LoginForm, None, None, {}
+
+    market_next_page, market_next_qparams = None, {}
+    if product_slug:
+        template = product_checkout_template(product_slug)
+        if product_variant:
+            context["product_variant"] = True
+            market_next_qparams["variant"] = 1
+        market_next_page = reverse("product-checkout", kwargs={"product_slug": product_slug})
+        next_page = market_next_page + qparamstr(market_next_qparams)
+        if "prelogin" not in request.POST:
+            login_formclass = get_formclass(request, "PreLogin")
+        context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "product_slug": product_slug})
+    else:
+        article_id = request.GET.get('article')
+        template = getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html')
+
+    if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
             article = Article.objects.get(id=article_id)
         except (ValueError, Article.DoesNotExist):
@@ -383,8 +403,10 @@ def login(request):
             else:
                 request.session["terms_and_conds_accepted"] = True
                 request.session.modified = True
+                qparams = market_next_qparams if product_slug else {"article": article_id}
+                qparams["email"] = login_form.data.get("email")
                 response = HttpResponseRedirect(
-                    reverse('account-signup') + ("?article=%s&email=%s" % (article_id, login_form.data.get("email")))
+                    (market_next_page if product_slug else reverse('account-signup')) + qparamstr(qparams)
                 )
         else:
             email = login_form.data.get('name_or_mail')
@@ -392,7 +414,7 @@ def login(request):
                 # alert admins if is a user with duplicated email. TODO: can be improved using error_code
                 if User.objects.filter(email=email).count() > 1:
                     mail_managers("Multiple email in users", email)
-            elif article_id:
+            elif product_slug or article_id:
                 # applies only to "pre-login"
                 # return a normal login form only if the error is in email field and has INVALID code
                 # if more errors, remove the error in email field only if it has INVALID code
@@ -429,7 +451,7 @@ def login(request):
 def signup(request):
     template, article_id, context = "signup.html", request.GET.get("article"), {}
 
-    if article_id:
+    if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
             article = Article.objects.get(id=article_id)
         except (ValueError, Article.DoesNotExist):
@@ -590,7 +612,7 @@ def subscribe(request, planslug, category_slug=None):
     custom_module, article_id = getattr(settings, 'THEDAILY_VIEWS_CUSTOM_MODULE', None), request.GET.get("article")
 
     context, template, article = {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}, "subscribe.html", None
-    if article_id:
+    if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
             article = Article.objects.get(id=article_id)
         except (ValueError, Article.DoesNotExist):
@@ -892,7 +914,7 @@ def hash_validate(user_id, hash):
 def get_or_create_user_profile(user):
     try:
         profile = user.subscriber
-    except Subscriber.DoesNotExist: # TODO: maybe RelatedObjectDoesNotExist
+    except Subscriber.DoesNotExist:   # TODO: check if handle RelatedObjectDoesNotExist can be better or not
         profile = Subscriber.objects.create(user=user)
     return profile
 
@@ -1346,7 +1368,6 @@ def update_user_from_crm(request):
             s.user.updatefromcrm = True
             s.user.save()
 
-
     def updatesubscriberfields(s, fields):
         """
         Update subscriber fields.
@@ -1355,8 +1376,8 @@ def update_user_from_crm(request):
         """
         for field, value in fields.items():
             if field == 'newsletters':
-                # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add all
-                # the ones in the value JSON list that are missing.
+                # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add
+                # all the ones in the value JSON list that are missing.
                 s.updatefromcrm, pub_names = True, json.loads(value)
                 for pub in s.newsletters.filter(has_newsletter=True):
                     if pub.name in pub_names:
@@ -1475,7 +1496,7 @@ def amp_access_authorization(request):
             # search in url history
             article = get_object_or_404(ArticleUrlHistory, absolute_url=path).article
 
-        restricted_article = article.is_restricted()
+        restricted_article = article.is_restricted() or article.full_restricted
         result.update({'signupwall_enabled': True, 'article_restricted': restricted_article})
 
         if authenticated:
@@ -1548,6 +1569,9 @@ def amp_access_authorization(request):
 
         # NOTE: banner is rendered despite of setting for anon users
         result["signupwall_remaining_banner"] = not authenticated or settings.SIGNUPWALL_REMAINING_BANNER_ENABLED
+
+        # feedback form link
+        result["feedback_allowed"] = feedback_allowed(request, article, authenticated)
 
     response = HttpResponse(json.dumps(result), content_type="application/json")
     return set_amp_cors_headers(request, response)

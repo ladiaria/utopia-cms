@@ -72,7 +72,7 @@ class Command(BaseCommand):
         # new_subscription.html <- (validation_email.html, new_subscription_PAPYDIM.html, sccount_info.html[x])
         html_message = render_to_string(
             'notifications/validation_email.html',
-            {"site": site, "URL_SCHEME": settings.URL_SCHEME, 'logo_url': settings.HOMEV3_SECONDARY_LOGO},
+            {"site": site, "SITE_URL_SD": settings.SITE_URL_SD, 'logo_url': settings.HOMEV3_SECONDARY_LOGO},
         )
         # # validation_email.html
         u.email_user(

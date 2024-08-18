@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 import random
 import string
@@ -64,6 +63,9 @@ def published_articles(context, **kwargs):
 @register.simple_tag(takes_context=True)
 def render_related(context, article, amp=False):
 
+    if not getattr(settings, "CORE_ARTICLE_DETAIL_ENABLE_RELATED", True):
+        return ""
+
     article, section = context.get('article'), context.get('section')
     if not section:
         return ''
@@ -118,7 +120,14 @@ def render_related(context, article, amp=False):
         try:
             engine.get_template(template_try)
         except TemplateDoesNotExist:
-            pass
+            # try to fallback to a possible custom "related.html"
+            template_try = join(template_dir, "article/related.html")
+            try:
+                engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template = template_try
         else:
             template = template_try
     return loader.render_to_string(template, flatten_ctx)
@@ -312,27 +321,26 @@ def render_toolbar_for(context, toolbar_object):
     """
     Usage example: {% render_toolbar_for article %}
     """
-    user = context.get('user')
-    if user and user.is_staff and isinstance(toolbar_object, Article):
-        toolbar_template = 'core/templates/article/toolbar.html'
-        params = {'article': toolbar_object, 'is_detail': False}
-        if context.get('is_cover'):
-            edition = context.get('edition')
-            if edition:
-                params.update(
-                    {
-                        'featured_order': ', '.join(
-                            str(tp)
-                            for tp in toolbar_object.articlerel_set.filter(edition=edition, home_top=True).values_list(
-                                'top_position', flat=True
-                            )
-                        ),
-                    }
-                )
-        context.update(params)
-        return loader.render_to_string(toolbar_template, context.flatten())
-    else:
-        return ''
+    if getattr(settings, "CORE_ENABLE_ARTICLE_TOOLBAR", True):
+        user = context.get('user')
+        if user and user.is_staff and isinstance(toolbar_object, Article):
+            toolbar_template = 'core/templates/article/toolbar.html'
+            params = {'article': toolbar_object, 'is_detail': False}
+            if context.get('is_cover'):
+                edition = context.get('edition')
+                if edition:
+                    params.update(
+                        {
+                            'featured_order': ', '.join(
+                                str(tp) for tp in toolbar_object.articlerel_set.filter(
+                                    edition=edition, home_top=True
+                                ).values_list('top_position', flat=True)
+                            ),
+                        }
+                    )
+            context.update(params)
+            return loader.render_to_string(toolbar_template, context.flatten())
+    return ''
 
 
 @register.simple_tag
@@ -496,13 +504,22 @@ def section_name_in_publication_menu(publication, section):
 
 
 @register.simple_tag(takes_context=True)
+def tags_joined(context):
+    return ", ".join(str(tag).title() for tag in context.get("tags"))
+
+
+@register.simple_tag(takes_context=True)
+def title_joinparts(context, first_part, first_separator=" | ", append_sitename=True):
+    result = first_separator.join([first_part, context.get('site').name]) if append_sitename else first_part
+    if context.get("title_append_country"):
+        result = " | ".join([result, context.get('country_name')])
+    return result
+
+
+@register.simple_tag(takes_context=True)
 def category_title(context):
     category = context.get('category')
-    return category.html_title or "%s: noticias y artículos periodísticos | %s | %s" % (
-        category,
-        context.get('site').name,
-        context.get('country_name'),
-    )
+    return category.html_title or title_joinparts(context, "%s: noticias y artículos periodísticos" % category)
 
 
 @register.simple_tag(takes_context=True)
@@ -514,15 +531,12 @@ def section_title(context):
     custom_title = getattr(section, 'html_title', None)
     if custom_title:
         return custom_title
-    default_title_parts = [
-        "Artículos en "
-        + getattr(section, 'name', section.get('name', "sección") if isinstance(section, dict) else "sección")
-    ]
-    if getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_SITENAME", True):
-        default_title_parts.append(context.get('site').name)
-    if getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_COUNTRY", True):
-        default_title_parts.append(context.get('country_name'))
-    return " | ".join(default_title_parts)
+    first_part = "Artículos en " + getattr(
+        section, 'name', section.get('name', "sección") if isinstance(section, dict) else "sección"
+    )
+    return title_joinparts(
+        context, first_part, append_sitename=getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_SITENAME", True)
+    )
 
 
 @register.simple_tag(takes_context=True)

@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
-
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
 import locale
@@ -15,6 +10,7 @@ from requests.exceptions import ConnectionError
 from kombu.exceptions import OperationalError as KombuOperationalError
 from sorl.thumbnail import get_thumbnail
 from PIL import Image
+from bs4 import BeautifulSoup
 import readtime
 import mutagen
 import w3storage
@@ -64,6 +60,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.timezone import datetime, timedelta, make_aware, now, template_localtime
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
+from django.utils.html import escape
 
 from apps import blocklisted
 from photologue_ladiaria.models import PhotoExtended
@@ -74,7 +71,7 @@ from tagging.models import Tag
 import thedaily
 from videologue.models import Video, YouTubeVideo
 
-from .managers import get_published_kwargs, PublishedArticleManager
+from .managers import get_published_kwargs, PublishedArticleManager, EditionManager, SlugNaturalManager
 from .templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from .utils import (
     datetime_isoformat,
@@ -92,6 +89,7 @@ def remove_media_root(path):
 
 
 class Publication(Model):
+    objects = SlugNaturalManager()
     name = CharField('nombre', max_length=100)
     twitter_username = CharField(
         'Nombre de usuario de Twitter',
@@ -191,6 +189,10 @@ class Publication(Model):
             'home', kwargs={} if self.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL else {'domain_slug': self.slug}
         )
 
+    @staticmethod
+    def multi():
+        return Publication.objects.count() > 1
+
     def newsletter_preview_url(self):
         """
         Returns the url for the NL staff-allowed preview
@@ -283,6 +285,9 @@ class Publication(Model):
 
     get_full_width_cover_image_tag.short_description = 'foto full de portada'
 
+    def natural_key(self):
+        return (self.slug,)
+
     class Meta:
         ordering = ['weight']
         verbose_name = 'publicación'
@@ -301,7 +306,7 @@ class PortableDocumentFormatBaseModel(Model):
     pdf_md5 = CharField('checksum', max_length=32, editable=False)
     downloads = PositiveIntegerField('descargas', default=0)
     cover = ImageField('tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
-    date_published = DateField('fecha de publicación', default=now)
+    date_published = DateField('fecha de publicación', default=now, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
@@ -350,7 +355,7 @@ class PortableDocumentFormatBaseModel(Model):
         return result.title() if short else result.capitalize()
 
 
-""" TODO: better enable this after new structure works well (**)
+""" TODO: better enable this after new structure works well (**) (why? what does it improve?)
 class EditionSection(models.Model):
     edition = ForeignKey(Edition)
     section = ForeignKey(Section)
@@ -361,7 +366,10 @@ class EditionSection(models.Model):
 
 
 class Edition(PortableDocumentFormatBaseModel):
-    """ A publication's edition. """
+    """
+    A publication's edition.
+    """
+    objects = EditionManager()
     title = TextField('título', null=True)
     publication = ForeignKey(
         Publication, on_delete=CASCADE, verbose_name='publicación', related_name="%(app_label)s_%(class)s"
@@ -371,6 +379,7 @@ class Edition(PortableDocumentFormatBaseModel):
     class Meta(PortableDocumentFormatBaseModel.Meta):
         verbose_name = 'edición'
         verbose_name_plural = 'ediciones'
+        unique_together = [["date_published", "publication"]]  # TODO: is this the right way? why not a single tuple?
 
     def __str__(self):
         try:
@@ -381,6 +390,10 @@ class Edition(PortableDocumentFormatBaseModel):
 
     def edition_pub(self):
         return str(self)
+
+    def natural_key(self):
+        return (self.date_published,) + self.publication.natural_key()
+    natural_key.dependencies = ['core.publication']
 
     edition_pub.short_description = 'Fecha publicada'
 
@@ -571,6 +584,7 @@ class Supplement(PortableDocumentFormatBaseModel):
 
 
 class Category(Model):
+    objects = SlugNaturalManager()
     name = CharField('nombre', max_length=50, unique=True)
     slug = SlugField('slug', blank=True, null=True)
     description = TextField('descripción', blank=True, null=True)
@@ -776,24 +790,30 @@ class Category(Model):
                     pass
         return result
 
+    def natural_key(self):
+        return (self.slug,)
+
     class Meta:
         verbose_name = 'área'
         ordering = ('order', 'name')
 
 
 class Section(Model):
+    objects = SlugNaturalManager()
+
     SECTION_1 = '1'
     SECTION_2 = '2'
     SECTION_3 = '3'
 
     category = ForeignKey(Category, on_delete=CASCADE, verbose_name='área', blank=True, null=True)
     name = CharField('nombre', max_length=50, unique=True)
+    included_in_category_menu = BooleanField("incluída en el menú del área", default=True)
     name_in_category_menu = CharField('nombre en el menú del área', max_length=50, blank=True, null=True)
     slug = SlugField('slug', unique=True)
     description = TextField('descripción', blank=True, null=True)
-    contact = EmailField('correo electrónico', blank=True, null=True)
+    contact = EmailField("email", blank=True, null=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
-    home_order = PositiveSmallIntegerField('orden en portada', default=0)
+    home_order = PositiveSmallIntegerField('orden', default=0)
     in_home = BooleanField(
         'en portada',
         default=False,
@@ -999,6 +1019,9 @@ class Section(Model):
 
     articles_count.short_description = '# Artículos'
 
+    def natural_key(self):
+        return (self.slug,)
+
     class Meta:
         get_latest_by = 'date_created'
         ordering = ('home_order', 'name', 'date_created')
@@ -1007,6 +1030,7 @@ class Section(Model):
 
 
 class Journalist(Model):
+    objects = SlugNaturalManager()
 
     JOB_CHOICES = (
         ('PE', 'Periodista'),
@@ -1014,7 +1038,7 @@ class Journalist(Model):
     )
 
     name = CharField('nombre', max_length=50, unique=True)
-    email = EmailField('correo electrónico', blank=True, null=True)
+    email = EmailField(blank=True, null=True)
     slug = SlugField('slug', unique=True)
     image = ImageField('imagen', upload_to='journalist', blank=True, null=True)
     job = CharField(
@@ -1033,6 +1057,9 @@ class Journalist(Model):
 
     def __str__(self):
         return self.name
+
+    def natural_key(self):
+        return (self.slug,)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
@@ -1105,17 +1132,17 @@ class ArticleBase(Model, CT):
         related_name='articles_%(app_label)s',
     )
     type = CharField('tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True, db_index=True)
-    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en la nota.')
+    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en el artículo.')
     keywords = CharField(
         'titulín', max_length=45, blank=True, null=True, help_text='Se muestra encima del título en portada.'
     )
     slug = SlugField('slug', max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
-        'bajada', blank=True, null=True, help_text='Se muestra en la página de la nota debajo del título.'
+        'descripción', blank=True, null=True, help_text='Se muestra en la página del artículo debajo del título.'
     )
     lead = TextField(
-        'copete', blank=True, null=True, help_text='Se muestra en la página de la nota debajo de la bajada.'
+        'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
     body = MartorField("cuerpo")
     header_display = CharField(
@@ -1129,14 +1156,14 @@ class ArticleBase(Model, CT):
         null=True,
         default='SM',
     )
-    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada de la nota en portada.')
+    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada del artículo en portada.')
     home_display = CharField('mostrar en portada', max_length=2, choices=DISPLAY_CHOICES, blank=True, null=True)
     home_top_deck = TextField(
         'bajada en destacados',
         blank=True,
         null=True,
         help_text=(
-            'Se muestra en los destacados de la portada, en el caso de estar vació se muestra la bajada de la nota.'
+            'Se muestra en los destacados de la portada, en el caso de estar vacío se muestra la bajada del artículo.'
         ),
     )
     byline = ManyToManyField(
@@ -1162,7 +1189,7 @@ class ArticleBase(Model, CT):
         blank=True,
         null=True,
     )
-    is_published = BooleanField('publicado', default=True)
+    is_published = BooleanField('publicado', default=True, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField('última actualización', auto_now=True)
@@ -1204,6 +1231,11 @@ class ArticleBase(Model, CT):
         'mostrar artículos relacionados dentro de este artículo', default=True, blank=False, null=False
     )
     public = BooleanField('Artículo libre', default=False)
+    full_restricted = BooleanField(
+        'Disponible sólo para suscriptores',
+        default=False,
+        help_text="Acceso solamente a usuarios que tengan alguna suscripción activa."
+    )
 
     published = PublishedArticleManager()
 
@@ -1222,6 +1254,16 @@ class ArticleBase(Model, CT):
                 setattr(self, attr, add_punctuation(getattr(self, attr, '')))
 
         self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
+
+        # full restricted / open consistency checks
+        # 1. If open => full_restricted == False
+        # 2. If full_restricted => open == False
+        if self.is_published and self.is_public() and self.full_restricted:
+            raise Exception(
+                "Un artículo publicado no puede ser libre y además estar disponible sólo para suscriptores."
+            )
+
+        # other checks
 
         nowval = now()
 
@@ -1587,7 +1629,43 @@ class Article(ArticleBase):
     )
     newsletter_featured = BooleanField('destacado en newsletter', default=False)
     ipfs_upload = BooleanField('Publicar en IPFS', default=False)
-    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
+    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID del artículo en IPFS')
+    # alternative fields
+    alt_title_metadata = CharField(
+        'título alternativo para metadatos',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica a metadatos: meta title, Open Graph y Schema en el '
+        ) + escape("<head>") + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Título principal.')
+    )
+    alt_desc_metadata = TextField(
+        'descripción alternativa para metadatos',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica a metadatos: meta description, Open Graph y Schema en el '
+        ) + escape("<head>")
+        + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Descripción principal.')
+    )
+    alt_title_newsletters = CharField(
+        'título alternativo para newsletters',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Título principal.'
+        )
+    )
+    alt_desc_newsletters = TextField(
+        'descripción alternativa para newsletters',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Descripción principal'
+        )
+    )
     # SuperDesk article ID
     sp_id = CharField(max_length=100, null=True, blank=True)
 
@@ -1663,7 +1741,7 @@ class Article(ArticleBase):
                             render_to_string(
                                 "article/detail_ipfs_upload.html",
                                 {
-                                    "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+                                    "site_url": settings.SITE_URL_SD,
                                     "ipfs_cid": self.ipfs_cid,
                                     "headline": self.headline,
                                     "date_published": self.date_published,
@@ -1828,19 +1906,52 @@ class Article(ArticleBase):
             if section_imgs:
                 return PhotoExtended(image=section_imgs[0])
 
-    def is_restricted(self):
+    def is_restricted(self, consider_full=False):
         """
-        When the article's main pub is a restricted publication (by settings), also if no public and has no extra-perms
+        If the article is pulished:
+          If consider_full is True, the result will be True if this article is full_restricted.
+          If consider_full is False or the previous result was False, then, the result will be True when the article's
+            main pub is a restricted publication (by settings), plus the article is no public and has no extra-perms.
         """
         return (
-            not self.is_public()
-            and self.main_section
-            and self.main_section.edition.publication.slug in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
-            and not self.additional_access.exists()
+            self.is_published
+            and (
+                consider_full
+                and self.full_restricted
+                or (
+                    not self.is_public()
+                    and self.main_section
+                    and (
+                        self.main_section.edition.publication.slug
+                        in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
+                    )
+                    and not self.additional_access.exists()
+                )
+            )
         )
+
+    def is_restricted_consider_full(self):
+        """
+        Wrapper for previous method
+        """
+        return self.is_restricted(True)
 
     def published_collections(self):
         return self.linked_collections.filter(**get_published_kwargs())
+
+    def extensions_have_invalid_amp_tags(self):
+        """
+        When this happen, we should not announce that an AMP version o the page is availabke
+        """
+        invalid_tags = "base img picture video audio iframe frame frameset object param applet embed".split()
+        for e in self.extensions.iterator():
+            try:
+                soup = BeautifulSoup(e.body, 'html.parser')
+                for tag in invalid_tags:
+                    if soup.find_all(tag):
+                        return True
+            except Exception:
+                pass
 
     def nl_serialize(self, for_cover=False, publication=None, category=None, dates=True):
         authors = self.get_authors()
@@ -2032,13 +2143,17 @@ class CategoryHomeArticle(Model):
 
     def __str__(self):
         # also a custom text version to be useful in the CategoryHome admin change form
-        return (
-            date_format(
-                self.article.last_published_by_category(self.home.category),
-                format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
-                use_l10n=True,
-            ) if self.article.is_published else "No publicado! "
-        ) + ('-F' if self.article.photo else '')
+        try:
+            result = (
+                date_format(
+                    self.article.last_published_by_category(self.home.category),
+                    format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
+                    use_l10n=True,
+                ) if self.article.is_published else "No publicado! "
+            ) + ('-F' if self.article.photo_render_allowed() else '')
+        except Exception:
+            result = super().__str__()
+        return result
 
     class Meta:
         ordering = ('position',)

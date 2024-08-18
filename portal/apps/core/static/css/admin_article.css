@@ -10,3 +10,55 @@ fieldset.collapse,fieldset.collapsed{display: block !important;}
 .change-form .object-tools{margin-top: -100px;}
 .dynamic-extensions td.field-body{width:50%;}
 .dynamic-extensions td.field-body textarea{width:100%;}
+
+/* paywall radio */
+.form-row.field-pw_radio_choice div {
+    display: block !important;
+    float: none !important;
+}
+.form-row.field-pw_radio_choice input { display: inline-block !important; }
+.form-row.field-pw_radio_choice label {
+    display: block !important;
+    float: none !important;
+    width: auto;
+}
+
+/* alternative title and description fields */
+#id_keywords, #id_headline {
+    width: 600px;
+}
+.field-deck textarea, .field-lead textarea, .field-home_lead textarea, .field-home_top_deck textarea {
+    height: 120px;
+}
+.fieldBox.field-alt_title_metadata input, .fieldBox.field-alt_title_newsletters input {
+    margin-left: 200px;
+    width: 600px;
+}
+#id_alt_desc_metadata, #id_alt_desc_newsletters{
+    margin-left: 200px;
+}
+.field-alt_desc_metadata textarea, .field-alt_desc_newsletters textarea {
+    width: 600px;
+    height: 120px;
+}
+.field-alt_title_metadata, .field-alt_title_newsletters,
+.field-alt_desc_metadata, .field-alt_desc_newsletters {
+    margin-top: 20px;
+}
+#id_alt_desc_metadata_helptext,
+#id_alt_desc_newsletters_helptext {
+    margin-left: 165px;
+}
+#id_headline_helptext, #id_alt_title_metadata_helptext, #id_alt_title_newsletters_helptext,
+#id_slug_helptext, #id_keywords_helptext {
+    padding-left: 0px;
+}
+label[for="id_headline"] { float: left; }
+label[for="id_alt_title_metadata"],
+label[for="id_alt_title_newsletters"],
+label[for="id_alt_desc_metadata"],
+label[for="id_alt_desc_newsletters"] {
+    float: initial;
+    margin-left: 200px;
+    width: 20em;
+}

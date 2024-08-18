@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% load static core_tags homev3_tags %}
 
-{% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
-
 {% block page_title %}{% publication_title %}{% endblock %}
 
 {% block meta_og_title %}
@@ -25,21 +23,28 @@
         <div class="section-detail__sub-cats">
           <ul class="section-detail__sub-cats-list">
             {% for section in publication.primary_sections %}
-              <li><a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">{% section_name_in_publication_menu publication section %}</a></li>
+              <li>
+                <a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">
+                  {% section_name_in_publication_menu publication section %}
+                </a>
+              </li>
             {% endfor %}
           </ul>
         </div>
       </div>
     </div>
   {% endif %}
+
   {% render_cover %}
 
   {% for section in featured_sections %}
     {% render_section section %}
   {% endfor %}
 
-  {# news wall commented out due to performance issues #}
-  {# include 'news_wall.html' #}
+  {% if news_wall_enabled %}
+    {% include 'news_wall.html' %}
+  {% endif %}
+
   {% include bigphoto_template %}
 
 {% endblock %}

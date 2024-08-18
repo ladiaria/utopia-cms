@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-from core.models import Journalist
-from decorators import render_response
+
+from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
 from django.http import HttpResponsePermanentRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
 
-
-to_response = render_response('core/templates/')
+from core.models import Journalist
 
 
 @never_cache
-@to_response
 def journalist_detail(request, journalist_job, journalist_slug):
     journalist_job = journalist_job[:2].upper()
     other_job = 'CO' if journalist_job == 'PE' else 'PE'
@@ -31,4 +28,8 @@ def journalist_detail(request, journalist_job, journalist_slug):
         articles = paginator.page(1)
     except (EmptyPage, InvalidPage):
         articles = paginator.page(paginator.num_pages)
-    return 'journalist.html', {'journalist': journalist, 'articles': articles}
+    return render(
+        request,
+        getattr(settings, "CORE_JOURNALIST_DETAIL_TEMPLATE", 'core/templates/journalist.html'),
+        {'journalist': journalist, 'articles': articles},
+    )

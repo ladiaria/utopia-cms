@@ -1,16 +1,29 @@
 import errno
 from os import makedirs
-from os.path import isdir, join
+from os.path import isdir, join, exists
 import shutil
+import json
+from pprint import pprint
+from actstream.models import Action
+from photologue.models import Photo, Gallery
 
-from django.core.management import BaseCommand
-from django.core import serializers
 from django.conf import settings
+from django.core import serializers
+from django.core.management import BaseCommand, CommandError
+from django.db.models.deletion import Collector
 
-from photologue.models import Photo
-from audiologue.models import Audio
-
-from core.models import Article, ArticleRel, Edition, Location, Section
+from core.models import (
+    Publication,
+    Article,
+    ArticleRel,
+    CategoryHome,
+    ArticleBodyImage,
+    CategoryHomeArticle,
+    PushNotification,
+    ArticleViewedBy,
+    ArticleViews,
+    Edition,
+)
 
 
 def mkdir_p(path):
@@ -24,118 +37,153 @@ def mkdir_p(path):
 
 
 class Command(BaseCommand):
-    help = 'Dumps the Articles given by id to a JSON set of files.'
+    help = """
+        Dumps the Articles given by id or filter expression to a JSON file, the generated file can then be loaded
+        using `loaddata` command.
+        The command will also copy all images related to the articles beeing dumped to the `photos` subdirectory under
+        the dump directory that was given to the command by argument.
+    """
 
     def add_arguments(self, parser):
-        parser.add_argument('article_ids', nargs='+', type=int)
+        parser.add_argument(
+            'article_ids',
+            nargs='*',
+            type=int,
+            help="Article IDs separated by space, takes precedence over `--filter-kwargs`.",
+        )
+        parser.add_argument(
+            '--filter-kwargs',
+            action="store",
+            dest="filter_kwargs",
+            type=str,
+            default="{}",
+            help="A dict in JSON format, it will be passed as `**kwargs` to `Article.filter()` to obtain the set to "
+                 "be dumped.",
+        )
         parser.add_argument(
             '--dump-dir',
             action='store',
             type=str,
             dest='dump_dir',
-            help='Save generated files in this directory (must exist).',
+            help='Save generated dump.json file and copy images to this directory.',
             default=getattr(settings, 'GENERAL_MANAGEMENT_COMMAND_EXPORT_PATH', '/tmp'),
         )
 
     def handle(self, *args, **options):
-        # TODO: can be optimized writing as many objects as possible of the same type in only one json.
-        #       dump also audio media files (not only photos)
-        #       try to use "natural" FKs at least for the sections and also dump all "publicado en" (not only the main)
-        verbose, dump_dir, photos = options.get('verbosity') > 1, options.get('dump_dir'), []
+        # TODO: dump also audio media files (not only photos)
+        #       filter may also be used to filter the ids given
+        verbose, dump_dir = options.get('verbosity') > 1, options.get('dump_dir')
+        try:
+            filter_kwargs = json.loads(options.get('filter_kwargs'))
+        except ValueError as v_err:
+            raise CommandError(v_err)
 
-        for article_id in options.get('article_ids'):
-            try:
-                article_qs = Article.objects.filter(id=article_id)
-            except (IndexError, ValueError):
-                if verbose:
-                    print("%s - Wrong parameter" % article_id)
-                continue
-            if not article_qs.exists():
-                if verbose:
-                    print("%s - Article not found" % article_id)
-                continue
-
-            article_dump_file = join(dump_dir, '5article%d.json' % article_id)
-            open(article_dump_file, 'w').write(serializers.serialize("json", article_qs))
-            if verbose:
-                print('wrote ' + article_dump_file)
+        to_collect = []
+        article_ids = options.get('article_ids')
+        dump_source = article_ids if article_ids else Article.objects.filter(**filter_kwargs)
+        for article_ref in dump_source:
+            if type(article_ref) is int:
+                article_id = article_ref
+                try:
+                    article_qs = Article.objects.filter(id=article_id)
+                except (IndexError, ValueError):
+                    if verbose:
+                        print("%s - Wrong parameter" % article_id)
+                    continue
+                if not article_qs.exists():
+                    if verbose:
+                        print("%s - Article not found" % article_id)
+                    continue
+            else:
+                article_qs = [article_ref]
 
             article = article_qs[0]
-            if article.main_section:
-                main_section_edition_dump_file = join(dump_dir, '0article%d_main_section_edition.json' % article_id)
-                open(
-                    main_section_edition_dump_file, 'w'
-                ).write(serializers.serialize("json", Edition.objects.filter(id=article.main_section.edition.id)))
-                if verbose:
-                    print('wrote ' + main_section_edition_dump_file)
+            to_collect.append(article)
 
-                main_section_section_dump_file = join(dump_dir, '0article%d_main_section_section.json' % article_id)
-                open(
-                    main_section_section_dump_file, 'w'
-                ).write(serializers.serialize("json", Section.objects.filter(id=article.main_section.section.id)))
-                if verbose:
-                    print('wrote ' + main_section_section_dump_file)
+        collector = Collector(using='default')
+        collector.collect(to_collect)
 
-                main_section_dump_file = join(dump_dir, '1article%d_main_section.json' % article_id)
-                open(
-                    main_section_dump_file, 'w'
-                ).write(serializers.serialize("json", ArticleRel.objects.filter(id=article.main_section.id)))
-                if verbose:
-                    print('wrote ' + main_section_dump_file)
+        todump = set()
+        publications = set(collector.data.pop(Publication, []))
+        editions = set(collector.data.pop(Edition, []))
+        galleries = set(collector.data.pop(Gallery, []))
+        photos = set(collector.data.pop(Photo, []))
 
-            if article.extensions.exists():
-                extensions_dump_file = join(dump_dir, 'article%d_extensions.json' % article_id)
-                open(extensions_dump_file, 'w').write(serializers.serialize("json", article.extensions.all()))
-                if verbose:
-                    print('wrote ' + extensions_dump_file)
+        for key in collector.data.keys():
+            if key in (PushNotification, ArticleViewedBy, ArticleViews, Action, Article.byline.through):
+                continue
+            for obj in collector.data[key]:
+                if key is CategoryHomeArticle:
+                    if obj.home:
+                        todump.add(obj.home)
+                elif key is CategoryHome:
+                    todump.add(obj.category)
+                elif key is ArticleBodyImage:
+                    photos.add(obj.image)
+                elif key is Article:
+                    for subset in (
+                        obj.get_authors(),
+                        obj.extensions.all(),
+                        obj.body_image.all(),
+                        set([x for x in (obj.audio, obj.location) if x]),
+                    ):
+                        todump = todump.union(subset)
+                    if obj.photo:
+                        photos.add(obj.photo)
+                    if obj.body_image.exists():
+                        photos = photos.union(set([body_img.image for body_img in article.body_image.all()]))
+                    if obj.gallery:
+                        galleries.add(obj.gallery)
+                elif key is ArticleRel:
+                    publications.add(obj.edition.publication)
+                    publications = publications.union(obj.section.publications.all())
+                    editions.add(obj.edition)
+                    todump.add(obj.section)
+                    if obj.section.category:
+                        todump.add(obj.section.category)
+                todump.add(obj)
 
-            if article.photo:
-                photo_dump_file = join(dump_dir, '4article%d_photo.json' % article_id)
-                open(
-                    photo_dump_file, 'w'
-                ).write(serializers.serialize("json", Photo.objects.filter(id=article.photo.id)))
-                photos.append(article.photo.image.path)
-                if verbose:
-                    print('wrote ' + photo_dump_file)
+        for obj in publications:
+            if obj.full_width_cover_image:
+                photos.add(obj.full_width_cover_image)
 
-            if article.audio:
-                audio_dump_file = join(dump_dir, '4article%d_audio.json' % article_id)
-                open(
-                    audio_dump_file, 'w'
-                ).write(serializers.serialize("json", Audio.objects.filter(id=article.audio.id)))
-                if verbose:
-                    print('wrote ' + audio_dump_file)
-
-            if article.location:
-                location_dump_file = join(dump_dir, '4article%d_location.json' % article_id)
-                open(
-                    location_dump_file, 'w'
-                ).write(serializers.serialize("json", Location.objects.filter(id=article.location.id)))
-                if verbose:
-                    print('wrote ' + location_dump_file)
-
-            if article.body_image.exists():
-                bodyimages_photos_dump_file = join(dump_dir, '2article%d_bodyimages_photos.json' % article_id)
-                open(
-                    bodyimages_photos_dump_file, 'w'
-                ).write(
-                    serializers.serialize(
-                        "json", Photo.objects.filter(id__in=article.body_image.values_list('image', flat=True))
-                    )
-                )
-                photos.extend(body_img.image.image.path for body_img in article.body_image.all())
-                if verbose:
-                    print('wrote ' + bodyimages_photos_dump_file)
-                bodyimages_dump_file = join(dump_dir, '3article%d_bodyimages.json' % article_id)
-                open(bodyimages_dump_file, 'w').write(serializers.serialize("json", article.body_image.all()))
-                if verbose:
-                    print('wrote ' + bodyimages_dump_file)
+        for obj in galleries:
+            photos = photos.union(obj.photos.all())
 
         if photos:
             photos_dump_dir = join(dump_dir, 'photos')
             mkdir_p(photos_dump_dir)
-            for photo_path in photos:
-                shutil.copy(photo_path, photos_dump_dir)
+            for photo in photos:
+                if exists(photo.image.path):
+                    shutil.copy(photo.image.path, photos_dump_dir)
 
         if verbose:
+            print("Dumping all objects in the following sets to a single dump file:")
+            pprint((photos, galleries, publications, editions, todump))
+
+        serialized_data = json.loads(
+            serializers.serialize("json", photos, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+        ) + json.loads(
+            serializers.serialize("json", galleries, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+        )
+
+        # drop site info from photos and galleries (probably never match in load environment)
+        for entry in serialized_data:
+            entry["fields"].pop("sites")
+
+        serialized_data += json.loads(
+            serializers.serialize("json", publications, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+        ) + json.loads(
+            serializers.serialize("json", editions, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+        ) + json.loads(
+            serializers.serialize("json", todump, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+        )
+
+        # and write result file dump
+        dump_file_path = join(dump_dir, 'dump.json')
+        dump_file_obj = open(dump_file_path, 'w')
+        dump_file_obj.write(json.dumps(serialized_data))
+        dump_file_obj.close()
+        if verbose:
+            print('wrote ' + dump_file_path)
             print('Done. Use loaddata command to import the generated files, if any.')

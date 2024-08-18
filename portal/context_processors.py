@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 import pycountry
 
@@ -25,13 +24,21 @@ def urls(request):
 def gtm(request):
     return {
         'GTM_CONTAINER_ID': settings.GTM_CONTAINER_ID,
-        'GTM_AMP_CONTAINER_ID': settings.GTM_AMP_CONTAINER_ID,
+        'GTM_AMP_CONTAINER_ID': getattr(settings, "GTM_AMP_CONTAINER_ID", None),
         'GA_MEASUREMENT_ID': settings.GA_MEASUREMENT_ID,
     }
 
 
 def site(request):
-    result = {'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name}
+    result = {
+        'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
+        "base_template": getattr(settings, "PORTAL_BASE_TEMPLATE", "base.html"),
+        "title_append_country": settings.PORTAL_TITLE_APPEND_COUNTRY,
+        "admin_dark_mode_vars_template": getattr(
+            settings, "PORTAL_ADMIN_DARK_MODE_VARS_TEMPLATE", "admin/admin_dark_mode_vars_template.html",
+        ),
+        "admin_martor_change_form_custom_css": getattr(settings, "PORTAL_ADMIN_CHANGE_FORM_MARTOR_CUSTOM_CSS", None),
+    }
     try:
         site = Site.objects.get_current()
         result.update(
@@ -76,6 +83,7 @@ def publications(request):
         )
 
     # use this context processor to load also some other useful variables configured in settings
+    result['PWA_ENABLED'] = getattr(settings, 'PWA_ENABLED', True)
     result.update(
         (
             (var, getattr(settings, var, None)) for var in (
@@ -110,10 +118,10 @@ def main_menus(request):
     Fills context variables to be shown or needed in the main menus and other features.
     Also fill another context variables using to the visualization of many UX "modules".
     """
+    categories_with_order = Category.objects.filter(order__isnull=False)
     result = {
-        'MENU_CATEGORIES': dict(
-            (c, c.section_set.all() if c.dropdown_menu else None) for c in Category.objects.filter(order__isnull=False)
-        ),
+        'MENU_CATEGORIES': dict((c, c.section_set.all() if c.dropdown_menu else None) for c in categories_with_order),
+        "categories_with_order": [c.slug for c in categories_with_order],
         'CORE_PUSH_NOTIFICATIONS_OFFER': settings.CORE_PUSH_NOTIFICATIONS_OFFER,
         'CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY': settings.CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY,
         'push_notifications_keys_set': bool(
@@ -126,6 +134,8 @@ def main_menus(request):
         'MENU_PUBLICATIONS_MORE_EXTRA': Publication.objects.filter(
             public=True, is_emergente=False
         ).exclude(slug__in=getattr(settings, 'HOMEV3_EXCLUDE_MENU_PUBLICATIONS', (settings.DEFAULT_PUB, ))),
+        "article_card_read_later_enabled": getattr(settings, 'CORE_ENABLE_ARTICLE_CARD_READ_LATER', True),
+        "article_card_lock_tooltip_enabled": getattr(settings, 'CORE_ENABLE_ARTICLE_CARD_LOCK_TOOLTIP', True),
     }
 
     mobile_nav_search = getattr(settings, 'HOMEV3_MOBILE_NAV_SEARCH', 1)

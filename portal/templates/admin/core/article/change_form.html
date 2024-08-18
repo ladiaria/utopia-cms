@@ -1,14 +1,5 @@
-{% extends 'admin/change_form.html' %}
-{% load static i18n admin_urls %}
-
-{% block object-tools-items %}
-  <li id="object-tools-items-surl">{{ original.surl|safe }}</li>
-  <li>
-    {% url opts|admin_urlname:'history_adminlog' original.pk|admin_urlquote as history_url %}
-    <a href="{% add_preserved_filters history_url %}" class="historylink">{% translate "History" %} (adminlog)</a>
-  </li>
-  {{ block.super }}
-{% endblock %}
+{% extends "admin/change_form_martor_field_used.html" %}
+{% load static %}
 
 {% block admin_change_form_document_ready %}
   {% comment %}

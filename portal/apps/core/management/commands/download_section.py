@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import os
 from pygit2 import Repository
 from pygit2 import discover_repository

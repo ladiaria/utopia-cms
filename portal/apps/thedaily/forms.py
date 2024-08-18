@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 import re
 
@@ -132,7 +131,7 @@ class PreLoginForm(Form):
         if error_msg:
             self.add_error("email", EmailValidationError(error_msg, code=error_code))
         else:
-            return email.lower()
+            return email
 
     if terms_and_conditions_prelogin:
         def clean_terms_and_conds_accepted(self):
@@ -289,7 +288,7 @@ class SignupForm(BaseUserForm):
             + (
                 'next_page',
                 HTML('<div class="align-center">'),
-                Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l'),
+                Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
                 HTML('</div">'),
             )
         )

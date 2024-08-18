@@ -1,5 +1,5 @@
 # coding:utf-8
-from __future__ import unicode_literals
+from html2text import html2text
 
 from django.conf import settings
 from django.test import TestCase
@@ -10,7 +10,7 @@ from libs.scripts.pwclear import pwclear
 from core.models import Publication, Article
 from core.factories import UserFactory
 
-from . import label_content_not_available, label_to_continue_reading, label_exclusive
+from . import label_content_not_available, label_to_continue_reading, label_exclusive, label_exclusive4u
 
 
 class SignupwallTestCase(TestCase):
@@ -28,9 +28,29 @@ class SignupwallTestCase(TestCase):
             if can_read or is_subscriber_any:
                 assertion(label_content_not_available, response_content)
 
+    def no_redirection_for_full_restricted_article(self, c, restricted_msg, can_read=False, is_subscriber_any=False):
+        a = Article.objects.get(slug="test-full-restricted1")
+        response = c.get(a.get_absolute_url(), **self.http_host_header_param)
+        response_content = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        assertion = self.assertNotIn if can_read else self.assertIn
+        assertion(
+            label_exclusive4u if is_subscriber_any else restricted_msg,
+            response_content,
+            html2text(response_content).rstrip(),
+        )
+        if can_read or is_subscriber_any:
+            assertion(
+                (
+                    label_exclusive if can_read else label_exclusive4u
+                ) if is_subscriber_any else label_content_not_available,
+                response_content,
+                html2text(response_content).rstrip(),
+            )
+
     def user_faces_wall(self, c, restricted_msg=label_exclusive, is_subscriber_any=False):
         for i in range(settings.SIGNUPWALL_MAX_CREDITS - 1):
-            a = Article.objects.create(headline='test%d' % (i + 1))
+            a = Article.objects.create(type="NE", headline='test%d' % (i + 1))
             response = c.get(a.get_absolute_url(), **self.http_host_header_param)
             self.assertEqual(response.status_code, 200)
             response_content = response.content.decode()
@@ -38,7 +58,7 @@ class SignupwallTestCase(TestCase):
             self.assertIn("Te queda", response_content)
             self.assertNotIn(label_to_continue_reading, response_content)
 
-        a = Article.objects.create(headline='test_last')
+        a = Article.objects.create(type="NE", headline='test_last')
         r = c.get(a.get_absolute_url(), **self.http_host_header_param)
         self.assertEqual(r.status_code, 200)
         response_content = r.content.decode()
@@ -47,13 +67,15 @@ class SignupwallTestCase(TestCase):
 
         a = Article.objects.create(headline='test_walled')
         r = c.get(a.get_absolute_url(), **self.http_host_header_param)
-        self.assertEqual(r.status_code, 302)
-        r = c.get(r.headers["location"],  **self.http_host_header_param)
-        response_content = r.content.decode()
-        self.assertIn("Suscribite para continuar leyendo este artículo", response_content)
+        if settings.SIGNUPWALL_RISE_REDIRECT:
+            self.assertEqual(r.status_code, 302)
+            r = c.get(r.headers["location"],  **self.http_host_header_param)
+            response_content = r.content.decode()
+            self.assertIn("Suscribite para continuar leyendo este artículo", response_content)
 
-        # no redirection for restricted articles
+        # no redirection for restricted / full restricted articles
         self.no_redirection_for_restricted_article(c, restricted_msg, is_subscriber_any=is_subscriber_any)
+        self.no_redirection_for_full_restricted_article(c, restricted_msg, is_subscriber_any=is_subscriber_any)
 
     def test01_anon_faces_wall(self):
         pwclear()
@@ -66,12 +88,14 @@ class SignupwallTestCase(TestCase):
 
         a = Article.objects.create(headline='test_walled')
         response = c.get(a.get_absolute_url(), **self.http_host_header_param)
-        self.assertEqual(response.status_code, 302)
-        response = c.get(response.headers["location"],  **self.http_host_header_param)
-        self.assertIn("Registrate para acceder a", response.content.decode())
+        if settings.SIGNUPWALL_RISE_REDIRECT:
+            self.assertEqual(response.status_code, 302)
+            response = c.get(response.headers["location"],  **self.http_host_header_param)
+            self.assertIn("Registrate para acceder a", response.content.decode())
 
-        # no redirection for restricted articles.
+        # no redirection for restricted / full restricted articles.
         self.no_redirection_for_restricted_article(c, label_exclusive)
+        self.no_redirection_for_full_restricted_article(c, label_exclusive)
 
     def test02_non_subscriber_faces_wall(self):
         pwclear()
@@ -115,5 +139,6 @@ class SignupwallTestCase(TestCase):
             self.assertIn("Tu cuenta", response_content)
             self.assertNotIn("Te queda", response_content)
 
-        # no redirection for restricted articles and can read it
+        # no redirection for restricted /full restricted articles and can read it
         self.no_redirection_for_restricted_article(c, label_exclusive, True)
+        self.no_redirection_for_full_restricted_article(c, label_exclusive, True)

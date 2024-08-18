@@ -1,4 +1,4 @@
-import time
+import time # noqa
 
 from locust import HttpUser, task, between
 
@@ -21,7 +21,7 @@ class QuickstartUser(HttpUser):
         # another page example
         # self.client.get("/world")
 
-    """
+    """ TODO: update/uncomment
     @task(3)
     def view_item(self):
         for item_id in range(10):
