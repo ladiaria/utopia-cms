@@ -1413,19 +1413,19 @@ def update_user_from_crm(request):
         email = request.POST.get('email')
         newemail = request.POST.get('newemail')
         fields = request.POST.get('fields')
-        # field = request.POST.get('field')
-        # value = request.POST.get('value')
+        # field = request.POST.get('field')  # TODO: explain or remove this commented line
+        # value = request.POST.get('value')  # TODO: explain or remove this commented line
     except KeyError:
         return HttpResponseBadRequest()
     try:
         s = Subscriber.objects.get(contact_id=contact_id)
-        # updatesubscriberfields(s, field, value)
-        # TODO: call update subscriber email it must change the email
-        # if meet the integrity validation and if new email exists
+        # updatesubscriberfields(s, field, value)  # TODO: explain or remove this commented line
+        # TODO: call update subscriber email it must change the email if meet the integrity validation and if new email
+        # exists (explain better what thing needs to be done, is related to the next commented line?)
         # updatesubscriberemail(s, newemail)
         updatesubscriberfields(s, fields)
     except Subscriber.DoesNotExist:
-        # if email and field == 'email':
+        # if email and field == 'email':  # TODO: explain or remove this commented line
         if email:
             try:
                 u = User.objects.get(email__exact=email)
