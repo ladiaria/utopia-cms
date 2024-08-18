@@ -2,7 +2,6 @@
 # utopia-cms, 2018-2024, Aníbal Pacheco
 # TODO: Alert when exporting context and exists a due already-prepared NL (abort or continue only if a new command arg
 #       "ignore-due" was passed). Find a better name for this new arg.
-from __future__ import unicode_literals
 
 from builtins import next
 
@@ -226,7 +225,7 @@ class Command(SendNLCommand):
             else:
                 subscribers_iter = r
         elif not self.export_subscribers or self.export_context:
-            site_url = '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN)
+            site_url = settings.SITE_URL_SD
             if self.as_news:
                 list_id = 'novedades <%s>' % settings.SITE_DOMAIN
             else:

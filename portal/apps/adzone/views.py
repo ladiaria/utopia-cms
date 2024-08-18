@@ -7,7 +7,6 @@
 #
 # Modifications made in utopia-cms (TODO: include them and the BSD Licence that the original author ask for)
 
-from __future__ import unicode_literals
 
 from time import time
 

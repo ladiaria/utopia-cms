@@ -59,7 +59,7 @@
       tooltip = document.getElementById("copied");
       copy.onclick = function() {
         _i.hash = window.decodeURIComponent(window.location.hash.substr(1));
-        _i.value = "{{ URL_SCHEME }}://{{ site.domain }}" + _i.hash;
+        _i.value = "{{ SITE_URL_SD }}" + _i.hash;
         _i.hidden = false;
         _i.select();
         _i.focus();

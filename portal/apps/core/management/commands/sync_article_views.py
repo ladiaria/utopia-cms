@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 # utopia-cms 2020-2023. Aníbal Pacheco.
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from builtins import str
 

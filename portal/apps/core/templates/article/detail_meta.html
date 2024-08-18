@@ -1,11 +1,11 @@
 {% load static core_tags ldml %}
 
 <meta property="og:type" content="article">
-<meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ URL_SCHEME }}://{{ site.domain }}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ site.name }}{% endif %}">
+<meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ SITE_URL_SD }}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ site.name }}{% endif %}">
 <meta property="og:description" content="{% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}">
 <meta property="og:locale" content="es_UY">
 <meta property="og:site_name" content="{{ site.name }}">
-<meta property="og:url" content="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
+<meta property="og:url" content="{{ SITE_URL_SD }}{{ article.get_absolute_url }}">
 <meta property="article:section" content="{{ section }}">
 <meta property="article:publisher" content="{{ CORE_ARTICLE_DETAIL_PUBLISHER_META }}">
 {% if article.date_published %}
@@ -13,17 +13,17 @@
 {% endif %}
 <meta property="article:modified_time" content="{{ article.last_modified_isoformat }}">
 {% if publication.slug in custom_icons_publications %}
-  <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static publication.open_graph_image %}{% endif %}">
+  <meta property="og:image" content="{{ SITE_URL_SD }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static publication.open_graph_image %}{% endif %}">
 {% elif section.is_satirical %}
   {% with satirical_social_img='img/'|add:section.slug|add:'-social.png' %}
-    <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static satirical_social_img %}">
+    <meta property="og:image" content="{{ SITE_URL_SD }}{% static satirical_social_img %}">
   {% endwith %}
 {% elif default_pub.open_graph_image %}
   {% block article_photo_and_pub_og %}
-    <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% if photo_render_allowed %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static default_pub.open_graph_image %}{% endif %}">
+    <meta property="og:image" content="{{ SITE_URL_SD }}{% if photo_render_allowed %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static default_pub.open_graph_image %}{% endif %}">
   {% endblock %}
 {% elif photo_render_allowed %}
-  <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_article_main_url }}?r={% randomgen %}">
+  <meta property="og:image" content="{{ SITE_URL_SD }}{{ article.photo.get_article_main_url }}?r={% randomgen %}">
 {% endif %}
 {% if photo_render_allowed %}
   <meta property="og:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">

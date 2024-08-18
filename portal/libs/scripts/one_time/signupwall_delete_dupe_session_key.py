@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from signupwall.models import Visitor
 
 # delete duplicate session_key rows in signupwall_visitor

@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from django.conf.global_settings import *
 import os
 

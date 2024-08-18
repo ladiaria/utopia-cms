@@ -4,7 +4,7 @@
   {
     "@context": "http://schema.org",
     "@type": "{% if section.is_satirical %}SatiricalArticle{% else %}NewsArticle{% endif %}",
-    "mainEntityOfPage": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}",
+    "mainEntityOfPage": "{{ SITE_URL_SD }}{{ article.get_absolute_url }}",
     "headline": "{% firstof article.alt_title_metadata article.headline|remove_markup|truncatewords:25 %}",
     {% if article.date_published %}"datePublished": "{{ article.date_published_isoformat }}",{% endif %}
     "dateModified": "{{ article.last_modified_isoformat }}",
@@ -34,27 +34,27 @@
       "name": "{{ site.name }}"{% if publication.publisher_logo or default_pub.publisher_logo %},
       "logo": {
         "@type": "ImageObject",{% if publication.publisher_logo %}
-        "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static publication.publisher_logo %}",
+        "url": "{{ SITE_URL_SD }}{% static publication.publisher_logo %}",
         "width": "{{ publication.publisher_logo_width }}",
         "height": "{{ publication.publisher_logo_height }}"{% else %}
-        "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.publisher_logo %}",
+        "url": "{{ SITE_URL_SD }}{% static default_pub.publisher_logo %}",
         "width": "{{ default_pub.publisher_logo_width }}",
         "height": "{{ default_pub.publisher_logo_height }}"{% endif %}
       }{% endif %}
     }{% if article.photo %},
     "image": {
       "@type": "ImageObject",
-      "url": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_1200w_url }}",
+      "url": "{{ SITE_URL_SD }}{{ article.photo.get_1200w_url }}",
       "width": "1200"
     },
-    "thumbnailUrl": "{{ URL_SCHEME }}://{{ site.domain }}{{ article.photo.get_1200w_url }}"
+    "thumbnailUrl": "{{ SITE_URL_SD }}{{ article.photo.get_1200w_url }}"
     {% elif default_pub.open_graph_image %},
     "image": {
       "@type": "ImageObject",
-      "url": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}",
+      "url": "{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}",
       "width": "{{ default_pub.open_graph_image_width }}",
       "height" : "{{ default_pub.open_graph_image_height }}"
     },
-    "thumbnailUrl": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}"{% endif %}
+    "thumbnailUrl": "{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}"{% endif %}
   }
 </script>

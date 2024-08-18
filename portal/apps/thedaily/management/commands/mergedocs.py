@@ -8,8 +8,6 @@ Test cases:
 * 2 subscribers, no email for the user at the end
 * 2 subscribers, 2 users (one with things)
 """
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from collections import Iterable
 

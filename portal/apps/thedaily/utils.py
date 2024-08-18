@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from os.path import join
 import random as rdm
@@ -12,6 +11,7 @@ from actstream.models import Follow
 from actstream.registry import check
 from favit.models import Favorite
 from social_django.models import UserSocialAuth
+from django_amp_readerid.models import UserReaderId
 
 from django.conf import settings
 from django.core.validators import validate_email
@@ -44,6 +44,7 @@ non_relevant_data_max_amounts = {
     Follow: 10,
     Favorite: 10,
     User.user_permissions.through: 3,
+    UserReaderId: 1,
 }
 extra_func = locate(getattr(settings, "THEDAILY_COLLECTOR_ANALYSIS_EXTRA_LIMITS", "None"))
 if extra_func:

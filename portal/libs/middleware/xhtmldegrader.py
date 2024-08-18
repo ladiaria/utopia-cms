@@ -7,7 +7,6 @@ rendering it.  If not, it changes the media type to text/html and makes the
 contents more "HTML-friendly" (as per the XHTML 1.0 HTML Compatibility
 Guidelines).
 """
-from __future__ import unicode_literals
 
 from builtins import object
 import re

@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import division
-from __future__ import unicode_literals
 from past.utils import old_div
 from exchange.models import Exchange, Currency
 

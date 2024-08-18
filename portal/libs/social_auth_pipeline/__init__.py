@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 
 from social_core.exceptions import AuthException
 
