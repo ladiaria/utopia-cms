@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # utopia-cms 2024. Aníbal Pacheco.
 
-from __future__ import unicode_literals
 
 from tqdm import tqdm
 

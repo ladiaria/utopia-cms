@@ -1,5 +1,4 @@
 # -*- coding: UTF-8 -*-
-from __future__ import unicode_literals
 
 from django.db.models import Model, URLField
 from django.utils.safestring import mark_safe

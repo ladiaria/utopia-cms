@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
+from os.path import join
 import random as rdm
 import json
 from operator import attrgetter
+from urllib.parse import urlencode
 from pydoc import locate
 import requests
 
@@ -11,6 +12,7 @@ from actstream.models import Follow
 from actstream.registry import check
 from favit.models import Favorite
 from social_django.models import UserSocialAuth
+from django_amp_readerid.models import UserReaderId
 
 from django.conf import settings
 from django.core.validators import validate_email
@@ -20,6 +22,8 @@ from django.db.models import Value
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.template import Engine
+from django.template.exceptions import TemplateDoesNotExist
 
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
@@ -41,6 +45,7 @@ non_relevant_data_max_amounts = {
     Follow: 10,
     Favorite: 10,
     User.user_permissions.through: 3,
+    UserReaderId: 1,
 }
 extra_func = locate(getattr(settings, "THEDAILY_COLLECTOR_ANALYSIS_EXTRA_LIMITS", "None"))
 if extra_func:
@@ -89,6 +94,11 @@ def move_data(s0, s1):
         s1.newsletters.add(p)
     for c in s0.category_newsletters.all():
         s1.category_newsletters.add(c)
+
+
+def qparamstr(qparams):
+    qparams_str = urlencode(qparams)
+    return ('?%s' % qparams_str) if qparams_str else ''
 
 
 def recent_following(user, *models):
@@ -250,3 +260,18 @@ def delete_data_from_crm(api_url, data):
                 'Content-Type': 'application/json'
             }
             requests.delete(api_url, headers=headers, data=payload).raise_for_status()
+
+
+def product_checkout_template(product_slug, steps=False):
+    steps_suffix = "_steps" if steps else ""
+    template, engine = f"thedaily/templates/market/product{steps_suffix}.html", Engine.get_default()
+    custom_dir = getattr(settings, "THEDAILY_MARKET_PRODUCTS_TEMPLATE_DIR", None)
+    if custom_dir:
+        template_try = join(custom_dir, f"{product_slug}{steps_suffix}.html")
+        try:
+            engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            pass
+        else:
+            template = template_try
+    return template

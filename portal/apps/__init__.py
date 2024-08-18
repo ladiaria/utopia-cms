@@ -11,7 +11,6 @@ TODO: 1. if mongo server fails after this global vars are set, the global client
       2. Determine when MONGODB_CONNECT_AT_CLIENT_CREATION must be False, on newer deployments we saw that this value
       must be set to False to avoid a "pool" error exception. (RHEL7/9-Mongod7).
 """
-from __future__ import unicode_literals
 
 import csv
 import json

@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
 
 # TODO: check if the 2 imports above are needed
 
@@ -208,8 +206,6 @@ MIDDLEWARE = (
     "core.middleware.cache.AnonymousRequest",  # hacks cookie header for anon users (req phase)
     "django.middleware.cache.FetchFromCacheMiddleware",  # runs during the request phase (top -> first)
     "social_django.middleware.SocialAuthExceptionMiddleware",
-    "amp_tools.middleware.AMPDetectionMiddleware",
-    "core.middleware.AMP.OnlyArticleDetail",
     "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
 )
 
@@ -410,7 +406,7 @@ MONGODB_DATABASE = "utopia_cms"
 MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
 SIGNUPWALL_MAX_CREDITS = 10
-SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: Implementation for values greater than 0 is not included
+SIGNUPWALL_ANON_MAX_CREDITS = 0
 SIGNUPWALL_RISE_REDIRECT = True
 
 # thedaily

@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 import re
 import json
@@ -43,6 +40,7 @@ from social_django.models import UserSocialAuth
 
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
+
 from .exceptions import UpdateCrmEx, EmailValidationError
 
 
@@ -303,7 +301,7 @@ class Subscriber(Model):
 
 
 def updatecrmuser(contact_id, field, value):
-    from .utils import put_data_to_crm # TODO: Using this import on the top cause reduntant import error
+    from .utils import put_data_to_crm  # TODO: Using this import on the top cause reduntant import error
     api_url = settings.CRM_API_UPDATE_USER_URI
     data = {"contact_id": contact_id, "field": field, "value": value}
     put_data_to_crm(api_url, data)
@@ -316,14 +314,16 @@ def updatecrmuser(contact_id, field, value):
 
 
 def createcrmuser(name, email):
-    from .utils import post_data_to_crm # TODO: Using this import on the top cause reduntant import error
+    from .utils import post_data_to_crm  # TODO: Using this import on the top cause reduntant import error
     api_url = settings.CRM_API_UPDATE_USER_URI
-    return  post_data_to_crm(api_url=api_url, data={"name": name, "email": email})
+    return post_data_to_crm(api_url=api_url, data={"name": name, "email": email})
+
 
 def deletecrmuser(email):
-    from .utils import delete_data_from_crm # TODO: Using this import on the top cause reduntant import error
+    from .utils import delete_data_from_crm  # TODO: Using this import on the top cause reduntant import error
     api_url = settings.CRM_API_UPDATE_USER_URI
     return delete_data_from_crm(api_url, {"email": email})
+
 
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
     msg, error_msg_prefix, error_code = None, "El email ingresado ", None
@@ -487,6 +487,7 @@ def createUserProfile(sender, instance, created, **kwargs):
     if created:
         # call the logic for connect to the CRM for sync
         createcrmuser(instance.get_full_name(), instance.email)
+
 
 class OAuthState(Model):
     """

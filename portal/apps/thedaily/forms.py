@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 import re
 
@@ -289,7 +288,7 @@ class SignupForm(BaseUserForm):
             + (
                 'next_page',
                 HTML('<div class="align-center">'),
-                Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l'),
+                Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
                 HTML('</div">'),
             )
         )
@@ -310,8 +309,13 @@ class SignupForm(BaseUserForm):
         DIGIT_RE = re.compile(r'\d')
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
-        first_name = self.cleaned_data.get('first_name')
-        user = User.objects.create_user(email, email, password, first_name=first_name)
+        # TODO: next commented lines are proposed but it should come with an explanation because:
+        #       an exception can be handled somewhere in the save(L323) and the result now is a user object without
+        #       first_name, if the same thing happens with this new lines, we have to explain why a resultant user with
+        #       first_name is better or needed instead of the one without this field.
+        # first_name = self.cleaned_data.get('first_name')
+        # user = User.objects.create_user(email, email, password, first_name=first_name)
+        user = User.objects.create_user(email, email, password)
         if not user.subscriber.phone:
             user.subscriber.phone = ''.join(DIGIT_RE.findall(self.cleaned_data.get('phone', '')))
         if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:

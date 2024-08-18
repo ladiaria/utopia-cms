@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from django.db.models import CASCADE
 from django.db.models import Model, ForeignKey, FileField, CharField, TextField, BooleanField, DateTimeField
