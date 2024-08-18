@@ -1,6 +1,4 @@
 """ Adapted from: A simple example of how to access the Google Analytics API. """
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import sys
 import time

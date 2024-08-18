@@ -1,4 +1,3 @@
-from __future__ import division
 
 import os
 from os.path import join

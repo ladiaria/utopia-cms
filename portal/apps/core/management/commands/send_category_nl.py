@@ -2,7 +2,6 @@
 # utopia-cms, 2018-2024, Aníbal Pacheco
 # TODO: Alert when exporting context and exists a due already-prepared NL (abort or continue only if a new command arg
 #       "ignore-due" was passed). Find a better name for this new arg.
-from __future__ import unicode_literals
 
 from builtins import next
 

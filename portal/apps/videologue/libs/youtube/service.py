@@ -19,7 +19,6 @@
   YouTubeService: Provides methods to perform CRUD operations on YouTube feeds.
   Extends GDataService.
 """
-from __future__ import unicode_literals
 
 from future import standard_library
 standard_library.install_aliases()
