@@ -1105,7 +1105,6 @@ def password_change(request, user_id=None, hash=None):
 
 
 @never_cache
-@to_response
 @login_required
 def edit_profile(request, user=None):
     user = user or request.user
