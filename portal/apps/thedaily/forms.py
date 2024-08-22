@@ -261,12 +261,12 @@ class SignupForm(BaseUserForm):
 
     first_name = CharField(
         label='Nombre',
-        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
+        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false', 'placeholder': 'Nombre'}),
     )
     email = EmailField(
         label='Email',
         widget=EmailInput(
-            attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
+            attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false', 'placeholder': 'ejemplo@gmail.com'}
         ),
     )
     phone = CharField(
@@ -283,7 +283,7 @@ class SignupForm(BaseUserForm):
         self.helper.render_unmentioned_fields = False
         self.helper.form_tag = True
         self.helper.layout = Layout(
-            *('first_name', 'email', 'phone', Field('password', template='materialize_css_forms/layout/password.html'))
+            *('first_name', 'email', 'phone', Field('password', placeholder="Crear contraseña", template='materialize_css_forms/layout/password.html'))
             + terms_and_conditions_layout_tuple
             + (
                 'next_page',
@@ -431,12 +431,12 @@ def phone_is_blocklisted(phone):
 class SubscriberForm(ModelForm):
     first_name = CharField(
         label='Nombre',
-        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
+        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false', "placeholder": "Nombre"}),
     )
     email = EmailField(
         label='Email',
         widget=EmailInput(
-            attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
+            attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false', "placeholder": "nombre@gmail.com"}
         ),
     )
     phone = CharField(
@@ -468,7 +468,7 @@ class SubscriberForm(ModelForm):
         return first_name
 
     def clean_phone(self):
-        phone = self.cleaned_data.get('phone')
+        phone = self.cleaned_data.get('phone').replace(" ", "")
         if not phone.isdigit():
             raise ValidationError("Ingresá sólo números en el teléfono.")
         elif phone_is_blocklisted(phone):
@@ -563,6 +563,7 @@ class SubscriberSignupForm(SubscriberForm):
                 'autocomplete': 'new-password',
                 'autocapitalize': 'none',
                 'spellcheck': 'false',
+                'placeholder': 'Crear contraseña',
             }
         ),
     )
