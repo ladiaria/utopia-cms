@@ -62,7 +62,7 @@ def random_zone_ad(context, ad_zone):
         context.update({'ad': ad})
         return template.loader.render_to_string('adzone/ad_tag.html', context=context.flatten())
     else:
-        return u''
+        return ''
 
 
 @register.inclusion_tag('adzone/ad_tag.html', takes_context=True)

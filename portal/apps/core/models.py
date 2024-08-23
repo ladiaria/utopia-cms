@@ -114,6 +114,16 @@ class Publication(Model):
     newsletter_automatic_subject = BooleanField(default=True)
     newsletter_subject = CharField('asunto', max_length=256, blank=True, null=True)
     newsletter_logo = ImageField('logo para NL', upload_to='publications', blank=True, null=True)
+    extra_context = JSONField(
+        "Contexto extra para portadas y newsletter",
+        default=dict,
+        help_text=mark_safe(
+            'Diccionario Python en formato JSON que se utilizará como contexto al inicio de la construcción del '
+            'contexto predeterminado, sus entradas, si hay colisión, serían sobreescritas por la vista de portada en '
+            'backend o comando de envío de newsletter.<br>'
+            'Ejemplo: <code>{"custom_footer_msg": "Esta newsletter fue generada utilizando utopia-cms"}</code>'
+        ),
+    )
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
     subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)

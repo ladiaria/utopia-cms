@@ -44,7 +44,7 @@ non_relevant_data_max_amounts = {
     Follow: 10,
     Favorite: 10,
     User.user_permissions.through: 3,
-    UserReaderId: 1,
+    UserReaderId: 2,
 }
 extra_func = locate(getattr(settings, "THEDAILY_COLLECTOR_ANALYSIS_EXTRA_LIMITS", "None"))
 if extra_func:
