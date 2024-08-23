@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-
-# TODO: check if the 2 imports above are needed
-
 import sys
 from os.path import abspath, basename, dirname, join, realpath
 import mimetypes
@@ -531,7 +528,7 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
-CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # TODO: recalculation after local settings import
+CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 
 
 # Override previous settings with values in local_migration_settings.py settings file
@@ -562,6 +559,15 @@ if FREEZE_TIME:
     freezer.start()
 
 ABSOLUTE_URL_OVERRIDES = {"auth.user": SITE_URL + "usuarios/perfil/editar/"}
+
+# AMP
+CORE_ARTICLE_DETAIL_ENABLE_AMP = "amp_tools" in INSTALLED_APPS
+if CORE_ARTICLE_DETAIL_ENABLE_AMP:
+    MIDDLEWARE = (
+        MIDDLEWARE[:-1]
+        + ("amp_tools.middleware.AMPDetectionMiddleware", "core.middleware.AMP.OnlyArticleDetail")
+        + (MIDDLEWARE[-1],)
+    )
 
 # CRM API urls
 if CRM_API_BASE_URI:
