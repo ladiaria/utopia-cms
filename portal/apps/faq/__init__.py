@@ -2,7 +2,6 @@
 A Frequently Asked Question (FAQ) management application for Django apps.
 
 """
-from __future__ import unicode_literals
 
 from django.utils.translation import gettext_lazy as _
 

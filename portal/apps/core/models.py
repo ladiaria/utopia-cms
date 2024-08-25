@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
-
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
 import locale
@@ -1041,6 +1036,8 @@ class Journalist(Model):
         ('PE', 'Periodista'),
         ('CO', 'Columnista'),
     )
+    DEFAULT_SOCIAL_ORDER = ['facebook', 'twitter', 'google plus', 'instagram',
+                            'mastodon', 'threads', 'youtube', 'linkedin', 'tiktok']
 
     name = CharField('nombre', max_length=50, unique=True)
     email = EmailField(blank=True, null=True)
@@ -1059,6 +1056,12 @@ class Journalist(Model):
     tt = CharField('twitter', max_length=255, blank=True, null=True)
     gp = CharField('google plus', max_length=255, blank=True, null=True)
     ig = CharField('instagram', max_length=255, blank=True, null=True)
+    # extra socials
+    mtdn = CharField('mastodon', max_length=255, blank=True, null=True)
+    thds = CharField('threads', max_length=255, blank=True, null=True)
+    ytb = CharField('youtube', max_length=255, blank=True, null=True)
+    lnkin = CharField('linkedin', max_length=255, blank=True, null=True)
+    tktk = CharField('tiktok', max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -1085,6 +1088,32 @@ class Journalist(Model):
         except IOError:
             result = False
         return result
+
+    def get_socials(self):
+        """
+        Get all socials that has value
+        @return field_value: social fields with values in dict format
+        {"field_verbose_name": "field_value"}
+        """
+        custom_order = getattr(settings, "CORE_JOURNALIST_SOCIAL_ORDER", None)
+        if custom_order:
+            verbose_names_of_interest = custom_order
+        else:
+            verbose_names_of_interest = self.DEFAULT_SOCIAL_ORDER
+
+        # Create a mapping from verbose_name to field_name
+        verbose_name_to_field = {
+            field.verbose_name: field.name for field in self._meta.fields
+        }
+
+        field_values = {}
+        for verbose_name in verbose_names_of_interest:
+            field_name = verbose_name_to_field.get(verbose_name)
+            if field_name and hasattr(self, field_name) and getattr(self, field_name):
+                field_value = getattr(self, field_name)
+                field_values[verbose_name] = field_value
+
+        return field_values
 
     class Meta:
         ordering = ('name', )
@@ -1746,7 +1775,7 @@ class Article(ArticleBase):
                             render_to_string(
                                 "article/detail_ipfs_upload.html",
                                 {
-                                    "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+                                    "site_url": settings.SITE_URL_SD,
                                     "ipfs_cid": self.ipfs_cid,
                                     "headline": self.headline,
                                     "date_published": self.date_published,

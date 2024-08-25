@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # TODO: this module should be merged into __init__.py
-from __future__ import unicode_literals
 
 from django.urls import re_path
 

@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from builtins import str
 import traceback
@@ -74,7 +72,7 @@ def send_validation_email(subject, user, msg_template, url_generator, extra_cont
     extra_context.update(
         {
             'SITE_URL': settings.SITE_URL,
-            'URL_SCHEME': settings.URL_SCHEME,
+            'SITE_URL_SD': settings.SITE_URL_SD,
             'site': Site.objects.get_current(),
             'logo_url': settings.HOMEV3_SECONDARY_LOGO,
         },

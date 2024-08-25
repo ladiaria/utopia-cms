@@ -1,5 +1,3 @@
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from django.conf import settings
 from django.urls import resolve, Resolver404

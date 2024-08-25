@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from notification.models import NOTICE_MEDIA
 
 
