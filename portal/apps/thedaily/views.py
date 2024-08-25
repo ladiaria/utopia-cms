@@ -74,7 +74,10 @@ from signupwall.middleware import (
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
-from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList, deletecrmuser
+
+from .models import (Subscriber, Subscription, SubscriptionPrices, UsersApiSession,
+                     OAuthState, MailtrainList, deletecrmuser,)
+
 from .forms import (
     __name__ as forms_module_name,
     LoginForm,
@@ -912,7 +915,7 @@ def hash_validate(user_id, hash):
 def get_or_create_user_profile(user):
     try:
         profile = user.subscriber
-    except Subscriber.DoesNotExist: # TODO: maybe RelatedObjectDoesNotExist
+    except Subscriber.DoesNotExist:
         profile = Subscriber.objects.create(user=user)
     return profile
 
@@ -1366,7 +1369,6 @@ def update_user_from_crm(request):
             s.user.updatefromcrm = True
             s.user.save()
 
-
     def updatesubscriberfields(s, fields):
         """
         Update subscriber fields.
@@ -1375,7 +1377,8 @@ def update_user_from_crm(request):
         """
         for field, value in fields.items():
             if field == 'newsletters':
-                # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add all
+                # we remove the Subscriber's newsletters (whose pub has_newsletter)
+                # and name not in json, and then add all
                 # the ones in the value JSON list that are missing.
                 s.updatefromcrm, pub_names = True, json.loads(value)
                 for pub in s.newsletters.filter(has_newsletter=True):
