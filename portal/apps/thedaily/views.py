@@ -915,7 +915,7 @@ def hash_validate(user_id, hash):
 def get_or_create_user_profile(user):
     try:
         profile = user.subscriber
-    except Subscriber.DoesNotExist:
+    except Subscriber.DoesNotExist:  # TODO: maybe RelatedObjectDoesNotExist
         profile = Subscriber.objects.create(user=user)
     return profile
 
@@ -1088,7 +1088,6 @@ def password_change(request, user_id=None, hash=None):
 
 
 @never_cache
-@to_response
 @login_required
 def edit_profile(request, user=None):
     user = user or request.user
@@ -1157,31 +1156,35 @@ def edit_profile(request, user=None):
     except UserSocialAuth.MultipleObjectsReturned:
         oauth2_assoc, google_oauth2_multiple = True, True
 
-    return 'edit_profile.html', {
-        'user_form': user_form,
-        'profile_form': profile_form,
-        'profile_data_form': ProfileExtraDataForm(instance=profile),
-        'is_subscriber_digital': user.subscriber.is_digital_only(),
-        'google_oauth2_assoc': oauth2_assoc,
-        'google_oauth2_multiple': google_oauth2_multiple,
-        'google_oauth2_allow_disconnect':
-            not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
-        'publication_newsletters': Publication.objects.filter(has_newsletter=True),
-        'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
-        'newsletters': get_profile_newsletters_ordered(),
-        "mailtrain_lists": MailtrainList.objects.all(),
-        "incomplete_field_count": sum(
-            not bool(value) for value in (
-                user.get_full_name(),
-                user.subscriber.document,
-                user.email,
-                user.subscriber.phone,
-                user.subscriber.address,
-            )
-        ),
-        "email_is_bouncer": user.subscriber.email_is_bouncer(),
-        "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
-    }
+    return render(
+        request,
+        getattr(settings, "THEDAILY_EDIT_PROFILE_TEMPLATE", "thedaily/templates/edit_profile.html"),
+        {
+            'user_form': user_form,
+            'profile_form': profile_form,
+            'profile_data_form': ProfileExtraDataForm(instance=profile),
+            'is_subscriber_digital': user.subscriber.is_digital_only(),
+            'google_oauth2_assoc': oauth2_assoc,
+            'google_oauth2_multiple': google_oauth2_multiple,
+            'google_oauth2_allow_disconnect':
+                not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
+            'publication_newsletters': Publication.objects.filter(has_newsletter=True),
+            'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
+            'newsletters': get_profile_newsletters_ordered(),
+            "mailtrain_lists": MailtrainList.objects.all(),
+            "incomplete_field_count": sum(
+                not bool(value) for value in (
+                    user.get_full_name(),
+                    user.subscriber.document,
+                    user.email,
+                    user.subscriber.phone,
+                    user.subscriber.address,
+                )
+            ),
+            "email_is_bouncer": user.subscriber.email_is_bouncer(),
+            "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+        },
+    )
 
 
 @never_cache
@@ -1415,19 +1418,19 @@ def update_user_from_crm(request):
         email = request.POST.get('email')
         newemail = request.POST.get('newemail')
         fields = request.POST.get('fields')
-        # field = request.POST.get('field')
-        # value = request.POST.get('value')
+        # field = request.POST.get('field')  # TODO: explain or remove this commented line
+        # value = request.POST.get('value')  # TODO: explain or remove this commented line
     except KeyError:
         return HttpResponseBadRequest()
     try:
         s = Subscriber.objects.get(contact_id=contact_id)
-        # updatesubscriberfields(s, field, value)
-        # TODO: call update subscriber email it must change the email
-        # if meet the integrity validation and if new email exists
+        # updatesubscriberfields(s, field, value)  # TODO: explain or remove this commented line
+        # TODO: call update subscriber email it must change the email if meet the integrity validation and if new email
+        # exists (explain better what thing needs to be done, is related to the next commented line?)
         # updatesubscriberemail(s, newemail)
         updatesubscriberfields(s, fields)
     except Subscriber.DoesNotExist:
-        # if email and field == 'email':
+        # if email and field == 'email':  # TODO: explain or remove this commented line
         if email:
             try:
                 u = User.objects.get(email__exact=email)
