@@ -74,7 +74,12 @@ from signupwall.middleware import (
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
+<<<<<<< Updated upstream
 from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList
+=======
+from .models import (Subscriber, Subscription, SubscriptionPrices, UsersApiSession,
+                     OAuthState, MailtrainList, deletecrmuser,)
+>>>>>>> Stashed changes
 from .forms import (
     __name__ as forms_module_name,
     LoginForm,
@@ -909,7 +914,11 @@ def hash_validate(user_id, hash):
 def get_or_create_user_profile(user):
     try:
         profile = user.subscriber
+<<<<<<< Updated upstream
     except Subscriber.DoesNotExist:
+=======
+    except Subscriber.DoesNotExist:  # TODO: maybe RelatedObjectDoesNotExist
+>>>>>>> Stashed changes
         profile = Subscriber.objects.create(user=user)
     return profile
 
@@ -1354,6 +1363,7 @@ def update_user_from_crm(request):
             changeuseremail(s.user, email, newemail)
             s.user.updatefromcrm = True
             s.user.save()
+<<<<<<< Updated upstream
         elif field == 'newsletters':
             # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add all
             # the ones in the value JSON list that are missing.
@@ -1385,6 +1395,66 @@ def update_user_from_crm(request):
             changesubscriberfield(s, field, value)
             s.updatefromcrm = True
             s.save()
+=======
+
+    def updatesubscriberfields(s, fields):
+        """
+        Update subscriber fields.
+        @param s: Subscriber object
+        @param fields: fields and values in dictionary format
+        """
+        for field, value in fields.items():
+            if field == 'newsletters':
+                # we remove the Subscriber's newsletters (whose pub has_newsletter)
+                # and name not in json, and then add all
+                # the ones in the value JSON list that are missing.
+                s.updatefromcrm, pub_names = True, json.loads(value)
+                for pub in s.newsletters.filter(has_newsletter=True):
+                    if pub.name in pub_names:
+                        pub_names.remove(pub.name)
+                    else:
+                        s.newsletters.remove(pub)
+                for pub_name in pub_names:
+                    try:
+                        s.newsletters.add(Publication.objects.get(name=pub_name))
+                    except Publication.DoesNotExist:
+                        pass
+            elif field == 'area_newsletters':
+                # the same as above but for category newsletters
+                s.updatefromcrm, cat_names = True, json.loads(value)
+                for cat in s.category_newsletters.filter(has_newsletter=True):
+                    if cat.name in cat_names:
+                        cat_names.remove(cat.name)
+                    else:
+                        s.category_newsletters.remove(cat)
+                for category_name in cat_names:
+                    try:
+                        s.category_newsletters.add(Category.objects.get(name=category_name))
+                    except Category.DoesNotExist:
+                        pass
+            else:
+                changesubscriberfield(s, field, value)
+        s.updatefromcrm = True
+        s.save()
+
+    try:
+        contact_id = request.POST['contact_id']
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        newemail = request.POST.get('newemail')
+        fields = request.POST.get('fields')
+        # field = request.POST.get('field')
+        # value = request.POST.get('value')
+    except KeyError:
+        return HttpResponseBadRequest()
+    try:
+        s = Subscriber.objects.get(contact_id=contact_id)
+        # updatesubscriberfields(s, field, value)
+        # TODO: call update subscriber email it must change the email
+        # if meet the integrity validation and if new email exists
+        # updatesubscriberemail(s, newemail)
+        updatesubscriberfields(s, fields)
+>>>>>>> Stashed changes
     except Subscriber.DoesNotExist:
         if email and field == 'email':
             try:
