@@ -100,6 +100,14 @@ def qparamstr(qparams):
     return ('?%s' % qparams_str) if qparams_str else ''
 
 
+def get_or_create_user_profile(user):
+    try:
+        profile = user.subscriber
+    except Subscriber.DoesNotExist:
+        profile = Subscriber.objects.create(user=user)
+    return profile
+
+
 def recent_following(user, *models):
     """ The same as actstream.managers.FollowManager.following but sorted by '-started' """
     qs = Follow.objects.filter(user=user)

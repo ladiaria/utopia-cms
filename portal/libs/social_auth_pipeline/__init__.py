@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User
 
 from thedaily.models import OAuthState
-from thedaily.views import get_or_create_user_profile
+from thedaily.utils import get_or_create_user_profile
 
 
 class AuthIntegrityError(AuthException):
