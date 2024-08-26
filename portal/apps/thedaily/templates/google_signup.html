@@ -3,6 +3,11 @@
 
 {% block page_title %}{% title_joinparts 'Registrate con tu cuenta de Google' %}{% endblock %}
 
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/css/intlTelInput.css">
+{% endblock %}
+
 {% block css %}
   {% block css_super %}{{ block.super }}{% endblock %}
   <style>
@@ -54,6 +59,16 @@
       </div>
       <div class="row">
         <div class="col s12 m8 offset-m2"><div class="align-center">{% crispy google_signin_form %}</div></div>
+
+        <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/js/intlTelInput.min.js"></script>
+        <script>
+          const input = document.querySelector("#id_phone");
+          window.intlTelInput(input, {
+            initialCountry: "uy",
+            utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/js/utils.js",
+          });
+        </script>
+
       </div>
     </div>
     {% block subscribe_body_footer %}{% endblock %}

@@ -36,13 +36,23 @@
               <h3 class="small">Tus datos</h3>
               <div class="row">
                 <div id="div_id_full_name" class="validate input-field col s12 ">
-                  <label for="id_full_name" class="required">Nombre completo<span class="asterisk"> (requerido)</span></label>
+                  <label for="id_full_name" class="required active">Nombre completo<span class="asterisk"> (requerido)</span></label>
                   <input id="id_full_name" type="text" class="textinput textInput" name="full_name" required>
                 </div>
                 <div id="div_id_phone" class="validate input-field col s12 ">
-                  <label for="id_phone" class="required">Teléfono<span class="asterisk"> (requerido)</span></label>
+                  <label for="id_phone" class="required active">Teléfono<span class="asterisk"> (requerido)</span></label>
                   <input id="id_phone" type="tel" class="textinput textInput" name="phone" required>
                 </div>
+
+                <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/js/intlTelInput.min.js"></script>
+                <script>
+                  const input = document.querySelector("#id_phone");
+                  window.intlTelInput(input, {
+                    initialCountry: "uy",
+                    utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/js/utils.js",
+                  });
+                </script>
+
               </div>
               <div class="row">
                 <div id="div_id_time" class="validate  col s12 ">
@@ -84,3 +94,8 @@
 {% block footer_block %}
   {% include 'footer_simple.html' %}
 {% endblock footer_block %}
+
+{% block materialize_scripts %}
+  <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
+  <script defer src="{% static 'materialize/js/modal.js' %}"></script>
+{% endblock %}
