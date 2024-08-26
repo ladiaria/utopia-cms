@@ -41,6 +41,7 @@ from django.forms.utils import ErrorList
 from django.contrib import messages
 from django.contrib.auth import authenticate, logout, login as do_login
 from django.contrib.auth.models import User
+from django.contrib.auth.views import LogoutView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
@@ -101,6 +102,7 @@ from .forms import (
     SUBSCRIPTION_PHONE_TIME_CHOICES,
 )
 from .utils import (
+    get_or_create_user_profile,
     recent_following,
     add_default_newsletters,
     get_profile_newsletters_ordered,
@@ -906,14 +908,6 @@ def hash_validate(user_id, hash):
     return user
 
 
-def get_or_create_user_profile(user):
-    try:
-        profile = user.subscriber
-    except Subscriber.DoesNotExist:
-        profile = Subscriber.objects.create(user=user)
-    return profile
-
-
 def get_password_validation_url(user):
     return reverse(
         'account-password_change-hash',
@@ -1042,7 +1036,7 @@ def confirm_email(request):
 
 
 @never_cache
-def session_refresh(request):
+def session_refresh(request, next_page=None):
     """
     This view was created with the only purpose to delete subscription and
     subscription_type session variables for an in-process subscription.
@@ -1051,8 +1045,17 @@ def session_refresh(request):
     subscription_type = request.session.pop('subscription_type', None)
     if subscription and subscription_type:
         subscription.subscription_type_prices.remove(subscription_type)
-    referer = request.headers.get('referer')
+    referer = next_page or request.headers.get('referer')
     return HttpResponseRedirect(referer if referer and referer != request.path else '/')
+
+
+@never_cache
+def logout_view(request, next_page='/usuarios/sesion-cerrada/'):
+    next_page = request.GET.get("next") or next_page
+    if request.user.is_authenticated:
+        return LogoutView.as_view(next_page=next_page)(request)
+    else:
+        return session_refresh(request, next_page)
 
 
 @never_cache

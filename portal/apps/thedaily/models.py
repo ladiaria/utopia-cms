@@ -457,9 +457,9 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
 
 
 @receiver(post_save, sender=User, dispatch_uid="createUserProfile")
-def createUserProfile(sender, instance, **kwargs):
+def createUserProfile(sender, instance, created, **kwargs):
     """
-    Create a UserProfile object each time a User is created ; and link it.
+    Create a UserProfile object each time a User is created; and link it.
     Also keep sync the email field on Subscriptions
     """
     Subscriber.objects.get_or_create(user=instance)
