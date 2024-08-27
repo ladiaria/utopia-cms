@@ -500,22 +500,13 @@ class ArticleAdmin(VersionAdmin):
         (
             'Portada',
             {
-                'fields': ('home_lead',
-                           'home_top_deck',
-                           'home_display',
-                           'home_header_display',
-                           'header_display'),
+                'fields': ('home_lead', 'home_top_deck', 'home_display', 'home_header_display', 'header_display'),
                 'classes': ('wide',),
             },
         ),
         ('Metadatos', {'fields': ('date_published', 'tags', 'main_section')}),
-        ('Autor', {'fields': ('byline', 'only_initials', 'location'), # 'only_initials', 'location'
-                              'classes': ('collapse',)}),
-        ('Multimedia', {'fields': ('photo',
-                                   'gallery',
-                                   'video',
-                                   'youtube_video',
-                                   'audio'), 'classes': ('collapse',)}),
+        ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse',)}),
+        ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse',)}),
         (
             'Avanzado',
             {
