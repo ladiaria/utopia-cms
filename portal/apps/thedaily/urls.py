@@ -103,7 +103,7 @@ urlpatterns = [
     path('registrate/', signup, name="account-signup"),
     path('registrate/google/', google_phone, name="account-google"),
     path('salir/', auth_views.LogoutView.as_view(next_page='/usuarios/sesion-cerrada/'), name="account-logout"),
-    path('sesion-cerrada/', never_cache(TemplateView.as_view(template_name='registration/logged_out.html'))),
+    path('sesion-cerrada/', never_cache(TemplateView.as_view(template_name=getattr(settings, 'REGISTRATION_LOGGED_OUT_TEMPLATE', 'registration/logged_out.html')))),
     path(
         'salir-invalid/',
         auth_views.LogoutView.as_view(next_page='/usuarios/sesion-finalizada/'),
@@ -116,7 +116,7 @@ urlpatterns = [
     path('cambiar-password/', password_change, name="account-password_change"),
     path(
         'cambiar-password/hecho/',
-        never_cache(TemplateView.as_view(template_name='thedaily/templates/password_change_done.html')),
+        never_cache(TemplateView.as_view(template_name=getattr(settings, 'THEDAILY_PASSWORD_CHANGE_DONE_TEMPLATE', 'thedaily/templates/password_change_done.html'))),
         name="account-password_change-done",
     ),
     re_path(
@@ -137,7 +137,7 @@ urlpatterns = [
     path('restablecer/', password_reset, name="account-password_reset"),
     path(
         'restablecer/correo-enviado/',
-        never_cache(TemplateView.as_view(template_name='thedaily/templates/password_reset_mail_sent.html')),
+        never_cache(TemplateView.as_view(template_name=getattr(settings, 'THEDAILY_PASSWORD_RESET_MAIL_SENT_TEMPLATE', 'thedaily/templates/password_reset_mail_sent.html'))),
         name="account-password_reset-mail_sent",
     ),
     path('confirm_email/', confirm_email, name='account-confirm_email'),
