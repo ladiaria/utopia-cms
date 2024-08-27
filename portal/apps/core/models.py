@@ -1047,7 +1047,8 @@ class Journalist(Model):
         ('CO', 'Columnista'),
     )
     DEFAULT_SOCIAL_ORDER = ['facebook', 'twitter', 'google plus', 'instagram',
-                            'mastodon', 'threads', 'youtube', 'linkedin', 'tiktok']
+                            'mastodon', 'threads', 'youtube', 'linkedin', 'tiktok'
+                            'bluesky', 'trumblr', 'twitch', 'otro 1', 'otro 2', 'otro 3']
 
     name = CharField('nombre', max_length=50, unique=True)
     email = EmailField(blank=True, null=True)
@@ -1072,6 +1073,12 @@ class Journalist(Model):
     ytb = CharField('youtube', max_length=255, blank=True, null=True)
     lnkin = CharField('linkedin', max_length=255, blank=True, null=True)
     tktk = CharField('tiktok', max_length=255, blank=True, null=True)
+    bs = CharField('bluesky', max_length=255, blank=True, null=True)
+    tr = CharField('trumblr', max_length=255, blank=True, null=True)
+    tw = CharField('twitch', max_length=255, blank=True, null=True)
+    other_one = CharField('otro 1', max_length=255, blank=True, null=True)
+    other_two = CharField('otro 2', max_length=255, blank=True, null=True)
+    other_three = CharField('otro 3', max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.name

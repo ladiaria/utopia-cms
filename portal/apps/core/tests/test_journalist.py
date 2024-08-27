@@ -17,7 +17,6 @@ class JournalistTestCase(TestCase):
 
     def test_social_instagram_info(self):
         c = Client()
-        # journalist_url = f"/PE/{self.journalist.slug}"  # to be redirected to the non-accent version (í->i)
         journalist_url = reverse("journalist_detail", kwargs={
             "journalist_job": "periodista", "journalist_slug": self.journalist.slug})
         response = c.get(journalist_url, HTTP_HOST=settings.SITE_DOMAIN)

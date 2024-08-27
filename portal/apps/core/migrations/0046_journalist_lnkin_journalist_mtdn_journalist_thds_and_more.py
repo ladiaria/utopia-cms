@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0044_section_included_in_category_menu'),
+        ('core', '0045_publication_extra_context'),
     ]
 
     operations = [
