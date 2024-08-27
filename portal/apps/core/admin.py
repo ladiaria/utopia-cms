@@ -1119,17 +1119,17 @@ class CategoryHomeArticleInline(TabularInline):
     max_num = 20
     form = CategoryHomeArticleForm
     formset = CategoryHomeArticleFormSet
-    raw_id_fields = ('article', )
+    raw_id_fields = ('article',)
     verbose_name_plural = 'Artículos en portada'
 
     class Media:
-        css = {'all': ('css/category_home.css', )}
+        css = {'all': ('css/category_home.css',)}
 
 
 @admin.register(CategoryHome, site=site)
 class CategoryHomeAdmin(admin.ModelAdmin):
     list_display = ('category', 'cover')
-    exclude = ('articles', )
+    exclude = ('articles',)
     inlines = [CategoryHomeArticleInline]
 
     def save_related(self, request, form, formsets, change):
