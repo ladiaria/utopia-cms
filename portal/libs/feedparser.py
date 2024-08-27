@@ -10,9 +10,6 @@ Required: Python 2.1 or later
 Recommended: Python 2.3 or later
 Recommended: CJKCodecs and iconv_codec <http://cjkpython.i18n.org/>
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
 
 from future import standard_library
 standard_library.install_aliases()

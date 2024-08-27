@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
-
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
 import locale
@@ -119,6 +114,16 @@ class Publication(Model):
     newsletter_automatic_subject = BooleanField(default=True)
     newsletter_subject = CharField('asunto', max_length=256, blank=True, null=True)
     newsletter_logo = ImageField('logo para NL', upload_to='publications', blank=True, null=True)
+    extra_context = JSONField(
+        "Contexto extra para portadas y newsletter",
+        default=dict,
+        help_text=mark_safe(
+            'Diccionario Python en formato JSON que se utilizará como contexto al inicio de la construcción del '
+            'contexto predeterminado, sus entradas, si hay colisión, serían sobreescritas por la vista de portada en '
+            'backend o comando de envío de newsletter.<br>'
+            'Ejemplo: <code>{"custom_footer_msg": "Esta newsletter fue generada utilizando utopia-cms"}</code>'
+        ),
+    )
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
     subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
@@ -1746,7 +1751,7 @@ class Article(ArticleBase):
                             render_to_string(
                                 "article/detail_ipfs_upload.html",
                                 {
-                                    "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+                                    "site_url": settings.SITE_URL_SD,
                                     "ipfs_cid": self.ipfs_cid,
                                     "headline": self.headline,
                                     "date_published": self.date_published,

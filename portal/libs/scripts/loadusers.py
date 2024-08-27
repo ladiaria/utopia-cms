@@ -1,7 +1,5 @@
 #!/usr/bin/python2.5
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
 from builtins import str
 from os.path import abspath, dirname
 import sys

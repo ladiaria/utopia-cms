@@ -1,5 +1,4 @@
 # coding:utf-8
-from __future__ import unicode_literals
 
 from django.conf import settings
 from django.test import TestCase
@@ -46,9 +45,9 @@ class HomeTestCase(TestCase):
             item = self.urls_to_test[0]
             response = c.get(item['url'], {'display': 'x'}, **item.get('headers', {}))
             self.assertEqual(response.status_code, 200)
-            # and with display=amp should return Forbidden
+            # and if AMP is enabled, with display=amp should return Forbidden
             response = c.get(item['url'], {'display': 'amp'}, **item.get('headers', {}))
-            self.assertEqual(response.status_code, 403)
+            self.assertEqual(response.status_code, 403 if settings.CORE_ARTICLE_DETAIL_ENABLE_AMP else 200)
 
     def test2_home_logged_in(self):
         password, user = User.objects.make_random_password(), UserFactory()

@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-# TODO: check if the 3 imports above are needed
-
 import sys
 from os.path import abspath, basename, dirname, join, realpath
 import mimetypes
@@ -210,8 +204,6 @@ MIDDLEWARE = (
     "core.middleware.cache.AnonymousRequest",  # hacks cookie header for anon users (req phase)
     "django.middleware.cache.FetchFromCacheMiddleware",  # runs during the request phase (top -> first)
     "social_django.middleware.SocialAuthExceptionMiddleware",
-    "amp_tools.middleware.AMPDetectionMiddleware",
-    "core.middleware.AMP.OnlyArticleDetail",
     "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
 )
 
@@ -431,7 +423,7 @@ CORE_PUSH_NOTIFICATIONS_OPTIONS = {
 
 # signupwall (other settings will be populated after local settings import)
 SIGNUPWALL_MAX_CREDITS = 10
-SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: Implementation for values greater than 0 is not included
+SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: values greater than 0 is not fully supported (only AMP endpoints need updates)
 SIGNUPWALL_RISE_REDIRECT = True
 
 # thedaily
@@ -562,7 +554,7 @@ SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
 # inserts the meta url for the AMP version article page
-CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # TODO: recalculation after local settings import
+CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 
 
 # Override previous settings with values in local_settings.py settings file
@@ -593,6 +585,15 @@ if FREEZE_TIME:
     freezer.start()
 
 ABSOLUTE_URL_OVERRIDES = {"auth.user": SITE_URL + "usuarios/perfil/editar/"}
+
+# AMP
+CORE_ARTICLE_DETAIL_ENABLE_AMP = "amp_tools" in INSTALLED_APPS
+if CORE_ARTICLE_DETAIL_ENABLE_AMP:
+    MIDDLEWARE = (
+        MIDDLEWARE[:-1]
+        + ("amp_tools.middleware.AMPDetectionMiddleware", "core.middleware.AMP.OnlyArticleDetail")
+        + (MIDDLEWARE[-1],)
+    )
 
 # CRM API urls
 if CRM_API_BASE_URI:
