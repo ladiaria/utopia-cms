@@ -428,7 +428,8 @@ def login(request):
 
 @never_cache
 def signup(request):
-    template, article_id, context = "signup.html", request.GET.get("article"), {}
+    template = getattr(settings, 'THEDAILY_SIGNUP_TEMPLATE', 'signup.html')
+    article_id, context = request.GET.get("article"), {}
 
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
@@ -992,7 +993,9 @@ def password_reset(request, user_id=None, hash=None):
                 msg = "Error al enviar email de recuperación de contraseña para el usuario: %s." % reset_form.user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 reset_form.add_error(None, msg)
-    return 'password_reset.html', {'form': reset_form}
+
+    reset_password_template = getattr(settings, 'THEDAILY_RESET_PASSWORD_TEMPLATE', 'password_reset.html')
+    return reset_password_template, {'form': reset_form}
 
 
 @never_cache
@@ -1059,7 +1062,9 @@ def password_change(request, user_id=None, hash=None):
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
-    return 'password_change.html', {'form': password_change_form, 'user_id': user_id, 'hash': hash}
+
+    password_change_template = getattr(settings, 'THEDAILY_PASSWORD_CHANGE_TEMPLATE', 'password_change.html')
+    return password_change_template, {'form': password_change_form, 'user_id': user_id, 'hash': hash}
 
 
 @never_cache
