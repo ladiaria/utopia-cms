@@ -928,6 +928,10 @@ class CustomSubjectAdminForm(ModelForm):
 
 class PublicationAdminForm(CustomSubjectAdminForm):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['extra_context'].required = False  # this was needed to avoid "field required" error
+
     class Meta:
         model = Publication
         fields = "__all__"
@@ -936,6 +940,7 @@ class PublicationAdminForm(CustomSubjectAdminForm):
             'newsletter_subject': TextInput(attrs={'size': 160}),
             'html_title': TextInput(attrs={'size': 128}),
             'meta_description': Textarea(),
+            "extra_context": Textarea(attrs={"spellcheck": "false", "style": "width:80%"}),
         }
 
 
@@ -955,42 +960,43 @@ class PublicationAdmin(ModelAdmin):
         'get_full_width_cover_image_tag',
     )
     list_editable = ('name', 'headline', 'weight', 'public', 'has_newsletter')
-    raw_id_fields = ('full_width_cover_image', )
+    raw_id_fields = ('full_width_cover_image',)
     fieldsets = (
         (
             None,
             {
                 'fields': (
                     ('name', 'image'),
-                    ('twitter_username', ),
-                    ('description', ),
+                    ('twitter_username',),
+                    ('description',),
                     ('slug', 'headline', 'weight'),
                     ('public', 'has_newsletter', "newsletter_new_pill"),
                     ('newsletter_name', 'newsletter_logo'),
-                    ('newsletter_tagline', ),
+                    ('newsletter_tagline',),
                     ('newsletter_periodicity', 'newsletter_header_color'),
                     ('newsletter_campaign', 'subscribe_box_question'),
                     ('subscribe_box_nl_subscribe_auth', 'subscribe_box_nl_subscribe_anon'),
-                    ('full_width_cover_image', ),
+                    ('full_width_cover_image',),
                     ('is_emergente', 'new_pill'),
                 ),
             },
         ),
-        ('Asunto de newsletter', {'fields': (('newsletter_automatic_subject', ), ('newsletter_subject', ))}),
+        ('Custom template data', {'fields': ('extra_context',), "classes": ("monospace",)}),
+        ('Asunto de newsletter', {'fields': (('newsletter_automatic_subject', ), ('newsletter_subject',))}),
         (
             'Metadatos',
             {
                 'fields': (
-                    ('html_title', ),
-                    ('meta_description', ),
+                    ('html_title',),
+                    ('meta_description',),
                     ('icon', 'icon_png'),
                     ('icon_png_16', 'icon_png_32'),
-                    ('apple_touch_icon_180', ),
-                    ('apple_touch_icon_192', ),
-                    ('apple_touch_icon_512', ),
-                    ('open_graph_image', ),
+                    ('apple_touch_icon_180',),
+                    ('apple_touch_icon_192',),
+                    ('apple_touch_icon_512',),
+                    ('open_graph_image',),
                     ('open_graph_image_width', 'open_graph_image_height'),
-                    ('publisher_logo', ),
+                    ('publisher_logo',),
                     ('publisher_logo_width', 'publisher_logo_height'),
                 ),
             },

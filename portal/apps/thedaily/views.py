@@ -74,10 +74,15 @@ from signupwall.middleware import (
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
-
-from .models import (Subscriber, Subscription, SubscriptionPrices, UsersApiSession,
-                     OAuthState, MailtrainList, deletecrmuser,)
-
+from .models import (
+    Subscriber,
+    Subscription,
+    SubscriptionPrices,
+    UsersApiSession,
+    OAuthState,
+    MailtrainList,
+    deletecrmuser,
+)
 from .forms import (
     __name__ as forms_module_name,
     LoginForm,
@@ -1330,11 +1335,11 @@ def update_user_from_crm(request):
     Subscriber is updated when the field is other (a field mapping between CRM
     fields and Subscriber's field should be provided somewhere)
     """
-    def changeuseremail(user, email, newemail):
+    def changeuseremail(user, newemail):
         """
         Change linked user email
         @param user: User object
-        @param emaul: email (Don't understand this param)
+        @param email: email (Don't understand this param)
         @param newemail: new email to update the user
         """
         if user.email == user.username:
@@ -1352,10 +1357,10 @@ def update_user_from_crm(request):
         # eval the value before saving if type field is bool
         setattr(s, mfield, eval(v) if isinstance(getattr(s, mfield), bool) else v)
 
-    def updatesubscriberemail(s, newemail):
+    def updatesubscriberemail(user, newemail):
         """
         Update subscriber email and peforms integrity validations
-        @param s: Subscriber object
+        @param u: User object
         @param newemail: new email to update the subscriber
         """
         if newemail:
@@ -1364,13 +1369,16 @@ def update_user_from_crm(request):
                 if check_user.count() == 1:
                     check_user = check_user[0]
                 else:
-                    mail_managers('Multiple email in users', email)
+                    msg = 'Multiple email in users'
+                    mail_managers(msg, msg)
                     return HttpResponseBadRequest()
-            if check_user and check_user != s.user:
+            if check_user and check_user != user:
                 return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-            changeuseremail(s.user, email, newemail)
-            s.user.updatefromcrm = True
-            s.user.save()
+            # change the web user email just if it's different
+            if user.email != newemail:
+                changeuseremail(user, newemail)
+                user.updatefromcrm = True
+                user.save()
 
     def updatesubscriberfields(s, fields):
         """
@@ -1418,29 +1426,21 @@ def update_user_from_crm(request):
         email = request.POST.get('email')
         newemail = request.POST.get('newemail')
         fields = request.POST.get('fields')
-        # field = request.POST.get('field')  # TODO: explain or remove this commented line
-        # value = request.POST.get('value')  # TODO: explain or remove this commented line
     except KeyError:
         return HttpResponseBadRequest()
     try:
-        s = Subscriber.objects.get(contact_id=contact_id)
-        # updatesubscriberfields(s, field, value)  # TODO: explain or remove this commented line
+        subscriber = Subscriber.objects.select_related('user').get(contact_id=contact_id)
         # TODO: call update subscriber email it must change the email if meet the integrity validation and if new email
         # exists (explain better what thing needs to be done, is related to the next commented line?)
-        # updatesubscriberemail(s, newemail)
-        updatesubscriberfields(s, fields)
+        updatesubscriberemail(subscriber.user, newemail)  # TODO: We will allow to update user email from CRM ?
+        updatesubscriberfields(subscriber, fields)
     except Subscriber.DoesNotExist:
-        # if email and field == 'email':  # TODO: explain or remove this commented line
         if email:
             try:
                 u = User.objects.get(email__exact=email)
                 # TODO: Is updating the user.first_name with name, mandatory ?
-                if newemail and newemail != email:
-                    if User.objects.filter(email__exact=newemail).exists():
-                        return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-                    changeuseremail(u, email, newemail)
-                    u.updatefromcrm = True
-                    u.save()
+                if newemail:
+                    updatesubscriberemail(u, newemail)
                 # Try to update the fields from CRM if subscriber exists
                 if hasattr(u, 'subscriber'):
                     updatesubscriberfields(u.subscriber, fields)
