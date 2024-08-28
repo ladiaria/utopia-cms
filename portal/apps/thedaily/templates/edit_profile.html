@@ -5,6 +5,10 @@
 
 {% block body_class %}thedaily ld-profile-edit{% endblock %}
 
+{% block extra_css %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/css/intlTelInput.css">
+{% endblock %}
+
 {% block page_header %}
   <div class="main nav-extended">
     <h1 class="nav-extended__title">Perfil</h1>
@@ -45,6 +49,16 @@
           {% csrf_token %}
           {% crispy user_form %}
           {% crispy profile_form %}
+
+          <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/js/intlTelInput.min.js"></script>
+          <script>
+            const input = document.querySelector("#id_phone");
+            window.intlTelInput(input, {
+              initialCountry: "uy",
+              utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/js/utils.js",
+            });
+          </script>
+
         </div>
         <div class="edit_profile_modal__container__footer">
           <p class="required-fields">* Datos obligatorios</p>
@@ -355,4 +369,10 @@
       }
     });
   </script>
+{% endblock %}
+
+{% block materialize_scripts %}
+  <script defer src="{% static 'materialize/js/global.js' %}"></script>
+  <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
+  <script defer src="{% static 'materialize/js/modal.js' %}"></script>
 {% endblock %}
