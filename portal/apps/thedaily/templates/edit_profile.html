@@ -54,7 +54,6 @@
           <script>
             const input = document.querySelector("#id_phone");
             const iti = window.intlTelInput(input, {
-              initialCountry: "uy",
               utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/js/utils.js",
             });
             input.addEventListener("countrychange", function(e) {
@@ -378,6 +377,7 @@
 {% endblock %}
 
 {% block materialize_scripts %}
+  <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
   <script defer src="{% static 'materialize/js/global.js' %}"></script>
   <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
   <script defer src="{% static 'materialize/js/modal.js' %}"></script>
