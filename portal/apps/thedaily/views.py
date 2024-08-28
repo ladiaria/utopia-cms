@@ -75,7 +75,13 @@ from signupwall.middleware import (
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
 from .models import (
-    Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList, deletecrmuser
+    Subscriber,
+    Subscription,
+    SubscriptionPrices,
+    UsersApiSession,
+    OAuthState,
+    MailtrainList,
+    deletecrmuser,
 )
 from .forms import (
     __name__ as forms_module_name,
