@@ -308,10 +308,9 @@ def put_data_to_crm(api_url, data):
     @param api_url: target url in str format
     @param data: request body data
     """
-    if getattr(settings, "CRM_SYNC_ENABLED", False):
-        api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-        if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-            requests.put(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        requests.put(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
 
 
 def post_data_to_crm(api_url, data):
@@ -322,10 +321,9 @@ def post_data_to_crm(api_url, data):
     @param api_url: target url in str format
     @param data: request body data
     """
-    if getattr(settings, "CRM_SYNC_ENABLED", False):
-        api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-        if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-            requests.post(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        requests.post(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
 
 
 def delete_data_from_crm(api_url, data):
@@ -336,15 +334,14 @@ def delete_data_from_crm(api_url, data):
     @param api_url: target url in str format
     @param data: request body data
     """
-    if getattr(settings, "CRM_SYNC_ENABLED", False):
-        api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-        if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-            payload = json.dumps(data)
-            headers = {
-                'Authorization': 'Api-Key ' + api_key,
-                'Content-Type': 'application/json'
-            }
-            requests.delete(api_url, headers=headers, data=payload).raise_for_status()
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        payload = json.dumps(data)
+        headers = {
+            'Authorization': 'Api-Key ' + api_key,
+            'Content-Type': 'application/json'
+        }
+        requests.delete(api_url, headers=headers, data=payload).raise_for_status()
 
 
 def updatecrmuser(contact_id, field, value):
