@@ -504,7 +504,7 @@ def signup(request):
                 if user:
                     email_to_delete = user.email
                     user.delete()
-                    deletecrmuser(email_to_delete)  # delete user from the CRM if was created here in CRM
+                    deletecrmuser(email_to_delete)
 
                 signup_form.add_error(None, msg)
     else:
@@ -1336,7 +1336,6 @@ def update_user_from_crm(request):
         """
         Change linked user email
         @param user: User object
-        @param email: email (Don't understand this param)
         @param newemail: new email to update the user
         """
         if user.email == user.username:
@@ -1472,7 +1471,7 @@ def update_user_from_crm(request):
         return HttpResponseBadRequest()
     except KeyError:
         pass
-    return HttpResponse(json.dumps({"message": "OK"}), content_type="application/json")
+    return JsonResponse({"message": "OK"})
 
 
 @never_cache
