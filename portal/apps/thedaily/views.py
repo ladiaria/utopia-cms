@@ -504,7 +504,7 @@ def signup(request):
                 if user:
                     email_to_delete = user.email
                     user.delete()
-                    deletecrmuser(email_to_delete)  # delete user from the CRM if was created here in CRM
+                    deletecrmuser(email_to_delete)
 
                 signup_form.add_error(None, msg)
     else:
@@ -1339,7 +1339,6 @@ def update_user_from_crm(request):
         """
         Change linked user email
         @param user: User object
-        @param email: email (Don't understand this param)
         @param newemail: new email to update the user
         """
         if user.email == user.username:
@@ -1379,6 +1378,17 @@ def update_user_from_crm(request):
                 changeuseremail(user, newemail)
                 user.updatefromcrm = True
                 user.save()
+
+    def updateuserfields(user, first_name="", last_name=""):
+        updated = False
+        if first_name and user.first_name != first_name:
+            user.first_name = first_name
+            updated = True
+        if last_name and user.last_name != last_name:
+            user.last_name = last_name
+            updated = True
+        if updated:
+            user.save()
 
     def updatesubscriberfields(s, fields):
         """
@@ -1423,6 +1433,7 @@ def update_user_from_crm(request):
     try:
         contact_id = request.POST['contact_id']
         name = request.POST.get('name')
+        last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         newemail = request.POST.get('newemail')
         fields = request.POST.get('fields')
@@ -1434,6 +1445,7 @@ def update_user_from_crm(request):
         # exists (explain better what thing needs to be done, is related to the next commented line?)
         updatesubscriberemail(subscriber.user, newemail)  # TODO: We will allow to update user email from CRM ?
         updatesubscriberfields(subscriber, fields)
+        updateuserfields(subscriber.user, name, last_name)
     except Subscriber.DoesNotExist:
         if email:
             try:
@@ -1444,9 +1456,10 @@ def update_user_from_crm(request):
                 # Try to update the fields from CRM if subscriber exists
                 if hasattr(u, 'subscriber'):
                     updatesubscriberfields(u.subscriber, fields)
+                updateuserfields(u, name, last_name)
             except User.DoesNotExist:
                 # create new user
-                new_user = User.objects.create_user(email, email, first_name=name)
+                new_user = User.objects.create_user(email, email, first_name=name, last_name=last_name)
                 new_user.subscriber.contact_id = contact_id
                 new_user.subscriber.save()
             except MultipleObjectsReturned:
@@ -1462,7 +1475,7 @@ def update_user_from_crm(request):
         return HttpResponseBadRequest()
     except KeyError:
         pass
-    return HttpResponse(json.dumps({"message": "OK"}), content_type="application/json")
+    return JsonResponse({"message": "OK"})
 
 
 @never_cache
