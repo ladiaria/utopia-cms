@@ -1046,9 +1046,9 @@ class Journalist(Model):
         ('PE', 'Periodista'),
         ('CO', 'Columnista'),
     )
-    DEFAULT_SOCIAL_ORDER = ['facebook', 'X', 'google plus', 'instagram',
-                            'mastodon', 'threads', 'youtube', 'linkedin', 'tiktok'
-                            'bluesky', 'trumblr', 'twitch', 'otro 1', 'otro 2', 'otro 3']
+    DEFAULT_SOCIAL_ORDER = ['bluesky', 'facebook', 'instagram', 'linkedin',
+                            'mastodon', 'threads', 'tiktok', 'trumblr',
+                            'twitch', 'X', 'youtube', 'otro 1', 'otro 2', 'otro 3']
 
     name = CharField('nombre', max_length=50, unique=True)
     email = EmailField(blank=True, null=True)
