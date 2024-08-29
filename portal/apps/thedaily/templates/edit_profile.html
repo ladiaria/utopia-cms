@@ -54,6 +54,12 @@
           <script>
             const input = document.querySelector("#id_phone");
             const iti = window.intlTelInput(input, {
+              initialCountry: 'uy',
+              hiddenInput: function(phone) {
+                return {
+                  phone: "phone"
+                };
+              },
               utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/js/utils.js",
             });
             input.addEventListener("countrychange", function(e) {
