@@ -1,0 +1,2 @@
+{% load core_tags ldml %}{% spaceless %}{% if article.alt_title_metadata %}{{ article.alt_title_metadata }}
+{% else %}{% title_joinparts article.headline|remove_markup %}{% endif %}{% endspaceless %}

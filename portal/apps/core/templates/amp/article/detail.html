@@ -2,12 +2,10 @@
 {% load bleach_tags static core_tags ldml tagging_tags crispy_forms_tags videologue_tags signupwall_tags %}
 
 {% autoescape on %}
-  {% block page_title %}
-    {% if article.keywords %}{{ article.keywords }} - {% else %}{{ article.headline|remove_markup }} | {% endif %}{{ site.name }} | {{ country_name }}
-  {% endblock %}
+  {% block page_title %}{% include 'article/page_title.html' %}{% endblock %}
 
   {% block page_description %}
-    {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
+    {% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
   {% endblock %}
 {% endautoescape %}
 
