@@ -1046,7 +1046,7 @@ class Journalist(Model):
         ('PE', 'Periodista'),
         ('CO', 'Columnista'),
     )
-    DEFAULT_SOCIAL_ORDER = ['facebook', 'twitter', 'google plus', 'instagram',
+    DEFAULT_SOCIAL_ORDER = ['facebook', 'X', 'google plus', 'instagram',
                             'mastodon', 'threads', 'youtube', 'linkedin', 'tiktok'
                             'bluesky', 'trumblr', 'twitch', 'otro 1', 'otro 2', 'otro 3']
 
