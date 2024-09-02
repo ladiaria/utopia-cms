@@ -326,6 +326,7 @@ def post_data_to_crm(api_url, data):
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        print(api_url)
         res = requests.post(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data)
         res.raise_for_status()
         return res.json()
@@ -351,8 +352,26 @@ def delete_data_from_crm(api_url, data):
         res.json()
 
 
+def get_data_from_crm(api_url, data):
+    """
+    Performs an GET request to the CRM app
+    api_url is the request url and data is the request param data
+    If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request query params data
+    """
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        headers = {
+            'Authorization': 'Api-Key ' + api_key,
+            'Content-Type': 'application/json'
+        }
+        res = requests.get(api_url, headers=headers, params=data)
+        res.raise_for_status()
+        res.json()
+
+
 def updatecrmuser(contact_id, field, value):
-    # TODO: next lines can be encapsulated in a new function (DRY), then call also from this module lines ~ 451
     api_url = settings.CRM_API_UPDATE_USER_URI
     data = {"contact_id": contact_id, "field": field, "value": value}
     put_data_to_crm(api_url, data)
@@ -366,6 +385,14 @@ def createcrmuser(name, email):
 def deletecrmuser(email):
     api_url = settings.CRM_API_UPDATE_USER_URI
     return delete_data_from_crm(api_url, {"email": email})
+
+
+def existscrmuser(email, contact_id=None):
+    api_url = settings.CRM_API_GET_USER_URI
+    data = {"email": email}
+    if contact_id:
+        data.update({"contact_id": contact_id})
+    return get_data_from_crm(api_url, data)
 
 
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
