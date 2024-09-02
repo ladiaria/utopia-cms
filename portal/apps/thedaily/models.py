@@ -310,7 +310,9 @@ def put_data_to_crm(api_url, data):
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        requests.put(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
+        res = requests.put(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data)
+        res.raise_for_status()
+        res.json()
 
 
 def post_data_to_crm(api_url, data):
@@ -320,10 +322,13 @@ def post_data_to_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
+    return request response
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        requests.post(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
+        res = requests.post(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data)
+        res.raise_for_status()
+        return res.json()
 
 
 def delete_data_from_crm(api_url, data):
@@ -341,7 +346,9 @@ def delete_data_from_crm(api_url, data):
             'Authorization': 'Api-Key ' + api_key,
             'Content-Type': 'application/json'
         }
-        requests.delete(api_url, headers=headers, data=payload).raise_for_status()
+        res = requests.delete(api_url, headers=headers, data=payload)
+        res.raise_for_status()
+        res.json()
 
 
 def updatecrmuser(contact_id, field, value):
@@ -514,11 +521,16 @@ def createUserProfile(sender, instance, created, **kwargs):
     Creates a UserProfile object each time a User is created.
     Also keep sync the email field on Subscriptions.
     """
-    Subscriber.objects.get_or_create(user=instance)
+    subscriber, created = Subscriber.objects.get_or_create(user=instance)
     if instance.email:
         if created and settings.CRM_UPDATE_USER_CREATE_CONTACT:
             # TODO: handle exception or error return code
-            createcrmuser(instance.get_full_name(), instance.email)
+            res = createcrmuser(instance.get_full_name(), instance.email)
+            contact_id = res.get('contact_id') if res else None
+            print(contact_id)
+            if not subscriber.contact_id:
+                subscriber.contact_id = contact_id
+                subscriber.save()
         try:
             instance.suscripciones.exclude(email=instance.email).update(email=instance.email)
         except Exception:
