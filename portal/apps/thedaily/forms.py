@@ -323,7 +323,7 @@ class SignupForm(BaseUserForm):
         return clean_terms_and_conds(self)
 
     def create_user(self):
-        DIGIT_RE = re.compile(r'\d')
+        DIGIT_RE = re.compile(r'^\+|\d')
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
         user = User.objects.create_user(email, email, password)
@@ -496,7 +496,7 @@ class SubscriberForm(ModelForm):
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone', "").replace(" ", "")
-        if not phone.isdigit():
+        if not re.match(r'^\+?\d+$', phone):
             raise ValidationError("Ingresá sólo números en el teléfono.")
         elif phone_is_blocklisted(phone):
             # Raise error to minimize the info given to possible bot
@@ -508,6 +508,10 @@ class SubscriberForm(ModelForm):
 
     def is_valid(self, subscription_type, payment_type='tel'):
         result = super().is_valid()
+        print('result')
+        print(result)
+        print(self.cleaned_data.get('phone'))
+        
         if result and payment_type == 'tel':
             # continue validation to check for repeated email and subsc. type, for "tel" subscriptions in same day:
             try:
@@ -857,7 +861,7 @@ class GoogleSigninForm(ModelForm):
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone', "").replace(" ", "")
-        if not phone.isdigit():
+        if not re.match(r'^\+?\d+$', phone):
             raise ValidationError("Ingresá sólo números en el teléfono.")
         elif phone_is_blocklisted(phone):
             # Raise error to minimize the info given to possible bot

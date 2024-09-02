@@ -47,10 +47,21 @@
                 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/js/intlTelInput.min.js"></script>
                 <script>
                   const input = document.querySelector("#id_phone");
-                  window.intlTelInput(input, {
-                    initialCountry: "uy",
+                  const iti = window.intlTelInput(input, {
+                    initialCountry: 'uy',
+                    hiddenInput: function(phone) {
+                      return {
+                        phone: "phone"
+                      };
+                    },
                     utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.0.1/build/js/utils.js",
                   });
+                  input.addEventListener("countrychange", function(e) {
+                    e.target.value = "";
+                  });
+                  input.addEventListener("change", function(e) {
+                    input.setCustomValidity(iti.isValidNumber() ? "" : "Formato incorrecto");  
+                  })
                 </script>
 
               </div>
