@@ -2313,14 +2313,15 @@ class CategoryNewsletter(Model):
         """
         Returns the featured articles qs
         """
-        return self.articles.filter(newsletter_articles__featured=True)
+        return self.articles.filter(newsletter_articles__featured=True).order_by('newsletter_articles')
 
     def featured_article(self):
         """
         Returns the featured article in the 1st position
         """
-        featured = self.featured_articles()
-        return featured.exists() and featured.order_by('newsletter_articles')[0]
+        return getattr(
+            CategoryNewsletterArticle.objects.filter(newsletter=self, featured=True).first(), "article", None
+        )
 
     class Meta:
         verbose_name = 'newsletter de área'
