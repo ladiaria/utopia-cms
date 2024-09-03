@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="journalist",
             name="tr",
-            field=models.URLField(blank=True, null=True, verbose_name="trumblr"),
+            field=models.URLField(blank=True, null=True, verbose_name="tumblr"),
         ),
         migrations.AddField(
             model_name="journalist",

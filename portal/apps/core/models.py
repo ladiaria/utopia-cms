@@ -1047,7 +1047,7 @@ class Journalist(Model):
         ('CO', 'Columnista'),
     )
     DEFAULT_SOCIAL_ORDER = ['bluesky', 'facebook', 'instagram', 'linkedin',
-                            'mastodon', 'threads', 'tiktok', 'trumblr',
+                            'mastodon', 'threads', 'tiktok', 'tumblr',
                             'twitch', 'X', 'youtube', 'otro 1', 'otro 2', 'otro 3']
 
     name = CharField('nombre', max_length=50, unique=True)
@@ -1072,7 +1072,7 @@ class Journalist(Model):
     lnkin = URLField('linkedin', blank=True, null=True)
     tktk = URLField('tiktok', blank=True, null=True)
     bs = URLField('bluesky', blank=True, null=True)
-    tr = URLField('trumblr', blank=True, null=True)
+    tr = URLField('tumblr', blank=True, null=True)
     tw = URLField('twitch', blank=True, null=True)
     other_one = URLField('otro 1', blank=True, null=True)
     other_two = URLField('otro 2', blank=True, null=True)
@@ -2313,14 +2313,15 @@ class CategoryNewsletter(Model):
         """
         Returns the featured articles qs
         """
-        return self.articles.filter(newsletter_articles__featured=True)
+        return self.articles.filter(newsletter_articles__featured=True).order_by('newsletter_articles')
 
     def featured_article(self):
         """
         Returns the featured article in the 1st position
         """
-        featured = self.featured_articles()
-        return featured.exists() and featured.order_by('newsletter_articles')[0]
+        return getattr(
+            CategoryNewsletterArticle.objects.filter(newsletter=self, featured=True).first(), "article", None
+        )
 
     class Meta:
         verbose_name = 'newsletter de área'
