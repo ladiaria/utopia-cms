@@ -1455,14 +1455,48 @@ def update_user_from_crm(request):
                 updateuserfields(u, name, last_name)
             except User.DoesNotExist:
                 # create new user
-                new_user = User.objects.create_user(email, email, first_name=name, last_name=last_name)
-                new_user.subscriber.contact_id = contact_id
+                user_args = {
+                    "email": newemail,
+                    "username": newemail,
+                    "first_name": name if name is not None else "",
+                    "last_name": last_name if last_name is not None else "",
+                }
+                new_user = User(**user_args)
+                new_user.updatefromcrm = True
+                subscriber = Subscriber(contact_id)
+                new_user.subscriber = subscriber
+                new_user.save()
                 new_user.subscriber.save()
             except MultipleObjectsReturned:
                 mail_managers('Multiple email in users', email)
                 return HttpResponseBadRequest()
             except IntegrityError as ie:
                 mail_managers('IntegrityError saving user', "%s: %s" % (email, strip_tags(str(ie))))
+                return HttpResponseBadRequest()
+        elif newemail:
+            try:
+                u = User.objects.get(email__exact=newemail)
+                mail_managers('The user already exists', newemail)
+                return HttpResponseBadRequest()
+            except User.DoesNotExist:
+                # create new user
+                user_args = {
+                    "email": newemail,
+                    "username": newemail,
+                    "first_name": name if name is not None else "",
+                    "last_name": last_name if last_name is not None else "",
+                }
+                new_user = User(**user_args)
+                new_user.updatefromcrm = True
+                subscriber = Subscriber(contact_id)
+                new_user.subscriber = subscriber
+                new_user.save()
+                new_user.subscriber.save()
+            except MultipleObjectsReturned:
+                mail_managers('Multiple email in users', newemail)
+                return HttpResponseBadRequest()
+            except IntegrityError as ie:
+                mail_managers('IntegrityError saving user', "%s: %s" % (newemail, strip_tags(str(ie))))
                 return HttpResponseBadRequest()
     except IntegrityError as ie:
         mail_managers(
