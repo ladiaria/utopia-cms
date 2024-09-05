@@ -1951,15 +1951,20 @@ class Article(ArticleBase):
 
     def extensions_have_invalid_amp_tags(self):
         """
-        When this happen, we should not announce that an AMP version o the page is availabke
+        When this happen, we should not announce that an AMP version of the page is available
         """
         invalid_tags = "base img picture video audio iframe frame frameset object param applet embed".split()
+        invalid_filters = {"script": lambda node: "instagram.com/embed.js" in node.get("src", "")}
         for e in self.extensions.iterator():
             try:
                 soup = BeautifulSoup(e.body, 'html.parser')
                 for tag in invalid_tags:
                     if soup.find_all(tag):
                         return True
+                for tag, call in invalid_filters.items():
+                    for node in soup.find_all(tag):
+                        if call(node):
+                            return True
             except Exception:
                 pass
 
