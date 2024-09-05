@@ -298,7 +298,7 @@ class SignupForm(BaseUserForm):
                 'email',
                 'phone',
                 Field(
-                    'password', placeholder="Crear contraseña", template='materialize_css_forms/layout/password.html'
+                    'password', placeholder="Crear contraseña", minlength="6", template='materialize_css_forms/layout/password.html'
                 )
             )
             + terms_and_conditions_layout_tuple
@@ -595,6 +595,7 @@ class SubscriberSignupForm(SubscriberForm):
                 'autocapitalize': 'none',
                 'spellcheck': 'false',
                 'placeholder': 'Crear contraseña',
+                'minlength': 6
             }
         ),
     )
