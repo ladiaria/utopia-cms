@@ -82,3 +82,11 @@ class HomeTestCase(TestCase):
         response = c.get('/articulo/2024/07/test-article9/', **self.http_host_header_param)
         self.assertEqual(response.status_code, 200)
         self.assertNotIn(self.amp_detection, response.content.decode())
+        # article_with_valid_script_in_extension
+        response = c.get("/articulo/2020/11/test-full-restricted1/", **self.http_host_header_param)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(self.amp_detection, response.content.decode())
+        # article_with_invalid_script_in_extension
+        response = c.get("/spinoff/articulo/2020/11/test-article7/", **self.http_host_header_param)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(self.amp_detection, response.content.decode())
