@@ -283,7 +283,7 @@ class SignupForm(BaseUserForm):
         self.helper.render_unmentioned_fields = False
         self.helper.form_tag = True
         self.helper.layout = Layout(
-            *('first_name', 'email', 'phone', Field('password', template='materialize_css_forms/layout/password.html'))
+            *('first_name', 'email', 'phone', Field('password', minlength="6", template='materialize_css_forms/layout/password.html'))
             + terms_and_conditions_layout_tuple
             + (
                 'next_page',
@@ -563,6 +563,7 @@ class SubscriberSignupForm(SubscriberForm):
                 'autocomplete': 'new-password',
                 'autocapitalize': 'none',
                 'spellcheck': 'false',
+                'minlength': 6
             }
         ),
     )
