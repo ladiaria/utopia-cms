@@ -549,19 +549,19 @@ def createUserProfile(sender, instance, created, **kwargs):
     Also keep sync the email field on Subscriptions.
     """
     subscriber, created = Subscriber.objects.get_or_create(user=instance)
-    try:
-        instance.suscripciones.exclude(email=instance.email).update(email=instance.email)
-    except Exception:
-        pass
-    if not settings.CRM_UPDATE_USER_CREATE_CONTACT or getattr(instance, "updatefromcrm", False):
-        return True
-    if created and instance.email:
-        res = createcrmuser(instance.get_full_name(), instance.email)
-        contact_id = res.get('contact_id') if res else None
-        if not subscriber.contact_id:
-            subscriber.contact_id = contact_id
-            subscriber.save()
-
+    if instance.email:
+        try:
+            instance.suscripciones.exclude(email=instance.email).update(email=instance.email)
+        except Exception:
+            pass
+        if not settings.CRM_UPDATE_USER_CREATE_CONTACT or getattr(instance, "updatefromcrm", False):
+            return True
+        if created:
+            res = createcrmuser(instance.get_full_name(), instance.email)
+            contact_id = res.get('contact_id') if res else None
+            if not subscriber.contact_id:
+                subscriber.contact_id = contact_id
+                subscriber.save()
 
 
 class OAuthState(Model):
