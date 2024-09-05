@@ -141,9 +141,12 @@
       <meta property="og:title" content="{{ site.name }}">
     {% endblock %}
 
+    {% block meta_og_description %}
+      <meta property="og:description" content="{{ site_description }}">
+    {% endblock %}
+
     {% block meta %}
       <meta property="og:type" content="website">
-      <meta property="og:description" content="{{ site_description }}">
       <meta property="og:locale" content="es_UY">
       <meta property="og:site_name" content="{{ site.name }}">
       <meta property="og:url" content="{{ SITE_URL_SD }}{{ request.get_full_path }}">
