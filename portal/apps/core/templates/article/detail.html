@@ -28,10 +28,11 @@
   {% endif %}
 {% endspaceless %}{% endblock %}
 
+{% block meta_og_description %}{% endblock %}
+
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
   <meta property="og:title" content="{% firstof article.alt_title_metadata article.headline|remove_markup %}">
-  <meta property="og:description" content="{% firstof article.alt_desc_metadata article.description|remove_markup %}">
 {% endblock %}
 
 {% block meta %}
