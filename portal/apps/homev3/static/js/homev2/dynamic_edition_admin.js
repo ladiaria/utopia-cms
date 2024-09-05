@@ -1,6 +1,7 @@
 var InlineOrdering = {
 
     init: function () {
+        /**///return;
         $("th:contains('Orden')").hide();
         $('td[class$=-top_position]').hide();
         $('td[class$=-position]:not(:has(.errorlist))').hide();
@@ -265,7 +266,7 @@ function dismissRelatedLookupPopup(win, article_id){
 }
 
 $(function () {
-    $(document).on("load", InlineOrdering.init());
+    /**//*$(document).on("load", InlineOrdering.init());
     $(document).on("load", SectionIds.init());
-    $(document).on("load", PopUpAdd.init());
+    $(document).on("load", PopUpAdd.init());*/
 });
