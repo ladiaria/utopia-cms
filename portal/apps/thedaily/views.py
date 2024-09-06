@@ -1360,17 +1360,20 @@ def update_user_from_crm(request):
         @param newemail: new email to update the subscriber
         """
         if newemail:
-            check_user = User.objects.filter(email=newemail)
-            if check_user.exists():
-                if check_user.count() == 1:
-                    check_user = check_user[0]
+            check_user_email = User.objects.filter(email=newemail)
+            check_user_username = User.objects.filter(username=newemail)
+            if check_user_email.exists() or check_user_username.exists():
+                if check_user_email.count() == 1:
+                    check_user = check_user_email[0]
+                elif check_user_username.count() == 1:
+                    check_user = check_user_username[0]
                 else:
                     msg = 'Multiple email in users'
                     mail_managers(msg, msg)
                     return HttpResponseBadRequest()
-            if check_user and check_user != user:
-                return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-            # change the web user email just if it's different
+                if check_user and check_user != user:
+                    return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
+            # change the web user email just if it's different maybe redundant validation
             if user.email != newemail:
                 changeuseremail(user, newemail)
                 user.updatefromcrm = True
@@ -1387,12 +1390,25 @@ def update_user_from_crm(request):
         if updated:
             user.save()
 
-    def updatesubscriberfields(s, fields):
+    def updatesubscriberfields(s, fields, contact_id=None):
         """
         Update subscriber fields.
         @param s: Subscriber object
+        @param contact_id: Contact ID from crm
         @param fields: fields and values in dictionary format
         """
+        if not s.contact_id and contact_id:
+            found_subscriber = Subscriber.objects.filter(contact_id=contact_id)
+            if found_subscriber.exists():
+                if found_subscriber.count() == 1:
+                    checked_subscriber = found_subscriber[0]
+                else:
+                    msg = f"Multiple contacts id: {str(contact_id)} in subcribers"
+                    mail_managers(msg, msg)
+                    return HttpResponseBadRequest()
+                if s != checked_subscriber:
+                    return HttpResponseBadRequest(f"El contact id: {contact_id} ya existe en otro usuario de la web")
+            s.contact_id = contact_id
         for field, value in fields.items():
             if field == 'newsletters':
                 # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add
@@ -1423,6 +1439,7 @@ def update_user_from_crm(request):
                         pass
             else:
                 changesubscriberfield(s, field, value)
+
         s.updatefromcrm = True
         s.save()
 
@@ -1432,7 +1449,7 @@ def update_user_from_crm(request):
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         newemail = request.POST.get('newemail')
-        fields = request.POST.get('fields')
+        fields = request.POST.get('fields', {})
     except KeyError:
         return HttpResponseBadRequest()
     try:
@@ -1443,7 +1460,7 @@ def update_user_from_crm(request):
         updatesubscriberfields(subscriber, fields)
         updateuserfields(subscriber.user, name, last_name)
     except Subscriber.DoesNotExist:
-        if email:
+        if email or fields.get('email', None):
             try:
                 u = User.objects.get(email__exact=email)
                 # TODO: Is updating the user.first_name with name, mandatory ?
@@ -1451,7 +1468,7 @@ def update_user_from_crm(request):
                     updatesubscriberemail(u, newemail)
                 # Try to update the fields from CRM if subscriber exists
                 if hasattr(u, 'subscriber'):
-                    updatesubscriberfields(u.subscriber, fields)
+                    updatesubscriberfields(u.subscriber, fields, contact_id)
                 updateuserfields(u, name, last_name)
             except User.DoesNotExist:
                 # create new user
