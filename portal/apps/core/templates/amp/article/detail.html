@@ -5,7 +5,7 @@
   {% block page_title %}{% include 'article/page_title.html' %}{% endblock %}
 
   {% block page_description %}
-    {% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
+    {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
   {% endblock %}
 {% endautoescape %}
 
@@ -20,7 +20,7 @@
 
 {% block meta %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:title" content="{% autoescape on %}{{ article.headline|remove_markup }}{% endautoescape %}">
+  <meta property="og:title" content="{% autoescape on %}{% firstof article.alt_title_metadata article.headline|remove_markup %}{% endautoescape %}">
   {% include meta_include_template|default:'article/detail_meta.html' %}
 
   <!-- Canonical -->
