@@ -9,16 +9,10 @@
   {% endif %}
 {% endblock %}
 
-{% block page_title %}{% spaceless %}
-  {% if article.alt_title_metadata %}
-    {{ article.alt_title_metadata }}
-  {% else %}
-    {% title_joinparts article.headline|remove_markup %}
-  {% endif %}
-{% endspaceless %}{% endblock %}
+{% block page_title %}{% include 'article/page_title.html' %}{% endblock %}
 
 {% block page_description %}
-  {% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
+  {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
 {% endblock %}
 
 {% block page_keywords %}{{ article.tags }}{% endblock %}
@@ -48,7 +42,6 @@
 {% endblock %}
 
 {% block header_scripts %}
-  <link rel="preload" href="{% static 'js/most_read.js' %}" as="script" />
   <script type="text/javascript">
     $(function(){
       $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
@@ -105,7 +98,7 @@
       {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 305 #}
+          <div>{# closed in line 299 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -132,7 +125,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 305 #}
+          {# missing close div here is closed correctly in line 299 #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -302,7 +295,7 @@
         {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
-        </div>{# opened in line 108 #}
+        </div>{# opened in line 102 #}
       {% endif %}
 
       {% if article.has_deck or article.has_lead %}
@@ -319,7 +312,7 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 682 #}
+        {% if not request.signupwall %}{# closed in line 676 #}
 
           {% include 'article/paywall/pw_not_in_request.html' %}
 
@@ -679,7 +672,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 322 #}
+        {% endif %}{# opened in line 316 #}
 
       {% else %}{# restricted content message #}
 
@@ -696,7 +689,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 828 #}
+    {% if not request.signupwall %}{# closed in line 822 #}
 
       {% if article.public %}
 
@@ -825,7 +818,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 699 #}
+    {% endif %}{# opened in line 693 #}
 
     {% block article_extra %}{% endblock %}
 
