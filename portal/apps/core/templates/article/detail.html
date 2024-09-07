@@ -12,7 +12,7 @@
 {% block page_title %}{% include 'article/page_title.html' %}{% endblock %}
 
 {% block page_description %}
-  {% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
+  {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
 {% endblock %}
 
 {% block page_keywords %}{{ article.tags }}{% endblock %}
