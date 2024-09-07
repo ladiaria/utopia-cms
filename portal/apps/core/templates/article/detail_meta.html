@@ -1,8 +1,13 @@
 {% load static core_tags ldml %}
 
+
+{% block meta_og_description %}
+  <meta property="og:description" content="{% firstof article.alt_desc_metadata article.description|remove_markup article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}">
+{% endblock %}
+
+
 <meta property="og:type" content="article">
 <meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ SITE_URL_SD }}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ site.name }}{% endif %}">
-<meta property="og:description" content="{% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}">
 <meta property="og:locale" content="es_UY">
 <meta property="og:site_name" content="{{ site.name }}">
 <meta property="og:url" content="{{ SITE_URL_SD }}{{ article.get_absolute_url }}">
