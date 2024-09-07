@@ -42,7 +42,6 @@
 {% endblock %}
 
 {% block header_scripts %}
-  <link rel="preload" href="{% static 'js/most_read.js' %}" as="script" />
   <script type="text/javascript">
     $(function(){
       $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");

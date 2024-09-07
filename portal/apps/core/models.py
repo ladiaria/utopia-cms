@@ -1951,15 +1951,20 @@ class Article(ArticleBase):
 
     def extensions_have_invalid_amp_tags(self):
         """
-        When this happen, we should not announce that an AMP version o the page is availabke
+        When this happen, we should not announce that an AMP version of the page is available
         """
         invalid_tags = "base img picture video audio iframe frame frameset object param applet embed".split()
+        invalid_filters = {"script": lambda node: "instagram.com/embed.js" in node.get("src", "")}
         for e in self.extensions.iterator():
             try:
                 soup = BeautifulSoup(e.body, 'html.parser')
                 for tag in invalid_tags:
                     if soup.find_all(tag):
                         return True
+                for tag, call in invalid_filters.items():
+                    for node in soup.find_all(tag):
+                        if call(node):
+                            return True
             except Exception:
                 pass
 
@@ -2274,14 +2279,15 @@ class CategoryNewsletter(Model):
         """
         Returns the featured articles qs
         """
-        return self.articles.filter(newsletter_articles__featured=True)
+        return self.articles.filter(newsletter_articles__featured=True).order_by('newsletter_articles')
 
     def featured_article(self):
         """
         Returns the featured article in the 1st position
         """
-        featured = self.featured_articles()
-        return featured.exists() and featured.order_by('newsletter_articles')[0]
+        return getattr(
+            CategoryNewsletterArticle.objects.filter(newsletter=self, featured=True).first(), "article", None
+        )
 
     class Meta:
         verbose_name = 'newsletter de área'
