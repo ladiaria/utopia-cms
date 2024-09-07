@@ -1,4 +1,3 @@
-{% load core_tags ldml %}{% spaceless %}
-{% block page_title_content %}
-  {% title_joinparts article.headline|remove_markup %}
-{% endblock %}{% endspaceless %}
+{% load core_tags ldml %}
+
+{% block page_title_content %}{% title_joinparts article.headline|remove_markup %}{% endblock %}

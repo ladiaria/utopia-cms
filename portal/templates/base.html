@@ -56,8 +56,10 @@
     {% endif %}
 
     <!-- Title and description -->
-    <title>{% block page_title %}{% endblock %}</title>
-    <meta name="description" content="{% block page_description %}{{ site_description }}{% endblock %}">
+    <title>{% spaceless %}{% block page_title %}{% endblock %}{% endspaceless %}</title>
+    <meta name="description" content="{% spaceless %}
+      {% block page_description %}{{ site_description }}{% endblock %}
+    {% endspaceless %}">
     <!-- End Title and description -->
 
     <!-- Meta tags base -->
