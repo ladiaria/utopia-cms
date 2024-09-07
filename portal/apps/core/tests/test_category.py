@@ -6,6 +6,7 @@ from django.urls import reverse
 from core.models import Section, Category
 
 
+# TODO: (say if next TODO happens here or for a custom installation of our customers)
 @tag("skippable")  # TODO: we still have unsolved scenarios where line 20 fails with 404 (very hard to know why)
 class CategoryTestCase(TestCase):
 

@@ -14,7 +14,9 @@ class ArticleTestCase(TestCase):
         {'url': '/spinoff/articulo/2020/11/test-article4/', 'headers': http_host_header_param},
         {'url': '/spinoff/articulo/2020/11/test-article4/', 'amp': True, 'headers': http_host_header_param},
         {'url': '/test/articulo/2020/11/test-humor1/', 'headers': http_host_header_param},
-        {'url': '/test/articulo/2020/11/test-humor1/', 'amp': True, 'headers': http_host_header_param}
+        {'url': '/test/articulo/2020/11/test-humor1/', 'amp': True, 'headers': http_host_header_param},
+        {'url': '/articulo/2020/11/test-article/', 'headers': http_host_header_param},
+        {'url': '/articulo/2020/11/test-article/', 'amp': True, 'headers': http_host_header_param},
     ]
 
     def setUp(self):
@@ -28,7 +30,7 @@ class ArticleTestCase(TestCase):
     def test01_article_response(self):
         c = Client()
         with self.settings(DEBUG=True):
-            for item in self.urls_to_test[:2]:  # TODO: fix for all urls
+            for item in self.urls_to_test[:2]:
                 response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))
                 # test success response
                 self.assertEqual(response.status_code, 200, (response.status_code, response))
@@ -55,9 +57,25 @@ class ArticleTestCase(TestCase):
     def test02_humor_article_noindex(self):
         c = Client()
         with self.settings(DEBUG=True, CORE_SATIRICAL_SECTIONS=('humor', )):
-            for item in self.urls_to_test[2:]:  # TODO: fix for all urls
+            for item in self.urls_to_test[2:4]:
                 response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))
-
                 content = response.content.decode()
                 # test meta noindex for humor articles
                 self.assertIn('<meta name="robots" content="noindex">', content)
+
+    def test03_alt_content_fields_unset(self):
+        # Tests the render result of 4 html tags for an article (without the "alt" fields set) and also the same in AMP
+        c = Client()
+        with self.settings(DEBUG=True):
+            for item in self.urls_to_test[4:]:
+                response = c.get(item['url'], {'display': 'amp'} if item.get('amp') else {}, **item.get('headers', {}))
+                content = response.content.decode()
+                self.assertIn("<title>test article</title>", content)
+                self.assertIn('<meta name="description" content="test.">', content)
+                self.assertIn('<meta property="og:title" content="test article">', content)
+                self.assertIn('<meta property="og:description" content="test.">', content)
+
+    def test04_alt_content_fields_set(self):
+        # Tests the render result of 4 html tags for an article (without the "alt" fields set) and also the same in AMP
+        # TODO: write this test
+        pass

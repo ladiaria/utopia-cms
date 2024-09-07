@@ -214,6 +214,8 @@
     "only_initials": false,
     "byline": [2],
     "headline": "test article2",
+    "alt_title_metadata": "article2 alternative title",
+    "alt_desc_metadata": "article2 alternative desc",
     "show_related_articles": true,
     "public": true,
     "body": "test.",
