@@ -170,23 +170,27 @@ class LoginForm(Form):
         )
 
     def clean(self):
-        data = self.data
-        USER_PASS_ERROR = 'Email y/o contraseña incorrectos.'
-        nom = data.get('name_or_mail', '').strip()
+        data, result = self.data, None
+        USER_PASS_ERROR, nom = 'Email y/o contraseña incorrectos.', data.get('name_or_mail', '').strip()
         if '@' in nom:
             try:
                 self.username = User.objects.get(email__iexact=nom).username
             except Exception:
-                raise ValidationError(USER_PASS_ERROR)
+                self.add_error(error=ValidationError(USER_PASS_ERROR))
+            else:
+                result = data
         else:
             try:
                 self.username = Subscriber.objects.get(name__iexact=nom).user.username
             except Exception:
                 if User.objects.filter(username__iexact=nom).count():
                     self.username = nom
+                    result = data
                 else:
-                    raise ValidationError(USER_PASS_ERROR)
-        return data
+                    self.add_eror(error=ValidationError(USER_PASS_ERROR))
+            else:
+                result = data
+        return result
 
 
 class BaseUserForm(ModelForm):
@@ -209,8 +213,7 @@ class BaseUserForm(ModelForm):
             error_use_next and (cleaned_data.get('next_page', '/') or "/"),
         )
         if error_msg:
-            self._errors['email'] = self.error_class([error_msg])
-            raise ValidationError(error_msg)
+            self.add_error('email', self.error_class([error_msg]))
         else:
             self.instance.email_extra_validations_done = True  # useful flag for the pre_save signal
             return cleaned_data
@@ -221,10 +224,14 @@ class BaseUserForm(ModelForm):
     def clean_first_name(self):
         first_name = self.cleaned_data.get('first_name')
         if not RE_ALPHANUM.match(first_name):
-            self._errors['first_name'] = self.error_class(
-                ['El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.']
+            self.add_error(
+                'first_name',
+                self.error_class(
+                    ['El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.']
+                ),
             )
-        return first_name
+        else:
+            return first_name
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -298,8 +305,11 @@ class SignupForm(BaseUserForm):
                 'email',
                 'phone',
                 Field(
-                    'password', placeholder="Crear contraseña", template='materialize_css_forms/layout/password.html'
-                )
+                    'password',
+                    minlength="6",
+                    placeholder="Crear contraseña",
+                    template='materialize_css_forms/layout/password.html',
+                ),
             )
             + terms_and_conditions_layout_tuple
             + (
@@ -316,8 +326,7 @@ class SignupForm(BaseUserForm):
         if check_password_strength(password):
             return password
         else:
-            self._errors['password'] = self.error_class(['La contraseña debe tener 6 o más caracteres.'])
-            return password
+            self.add_error('password', self.error_class(['La contraseña debe tener 6 o más caracteres.']))
 
     def clean_terms_and_conds_accepted(self):
         return clean_terms_and_conds(self)
@@ -489,19 +498,24 @@ class SubscriberForm(ModelForm):
     def clean_first_name(self):
         first_name = self.cleaned_data.get('first_name')
         if not RE_ALPHANUM.match(first_name):
-            raise ValidationError(
-                'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
+            self.add_error(
+                "first_name",
+                ValidationError(
+                    'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
+                ),
             )
-        return first_name
+        else:
+            return first_name
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone', "").replace(" ", "")
         if not re.match(r'^\+?\d+$', phone):
-            raise ValidationError("Ingresá sólo números en el teléfono.")
+            self.add_error("phone", ValidationError("Ingresá sólo números en el teléfono."))
         elif phone_is_blocklisted(phone):
             # Raise error to minimize the info given to possible bot
             raise UnreadablePostError
-        return phone
+        else:
+            return phone
 
     def clean_email(self):
         return self.cleaned_data.get('email').lower()
@@ -511,7 +525,7 @@ class SubscriberForm(ModelForm):
         print('result')
         print(result)
         print(self.cleaned_data.get('phone'))
-        
+
         if result and payment_type == 'tel':
             # continue validation to check for repeated email and subsc. type, for "tel" subscriptions in same day:
             try:
@@ -519,12 +533,12 @@ class SubscriberForm(ModelForm):
                     email__iexact=self.cleaned_data.get('email'), date_created__date=now().date()
                 )
                 if subscription_type in s.subscription_type_prices.values_list('subscription_type', flat=True):
-                    self._errors['email'] = self.error_class(["Su email ya posee una suscripción en proceso"])
+                    self.add_error('email', self.error_class(["Su email ya posee una suscripción en proceso"]))
                     result = False
             except Subscription.MultipleObjectsReturned:
                 # TODO: this can be relaxed using the same "if" above and only invalidate when all objects found
                 #       evaluates the "if" to True, and also the view should be changed to be aware of this.
-                self._errors['email'] = self.error_class(["Su email ya posee más de una suscripción en proceso"])
+                self.add_error('email', self.error_class(["Su email ya posee más de una suscripción en proceso"]))
                 result = False
             except Subscription.DoesNotExist:
                 pass
@@ -570,7 +584,9 @@ class SubscriberAddressForm(SubscriberForm):
 
 
 class SubscriberSubmitForm(SubscriberForm):
-    """ Adds a submit button to the SubscriberForm """
+    """
+    Adds a submit button to the SubscriberForm
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -584,7 +600,9 @@ class SubscriberSubmitForm(SubscriberForm):
 
 
 class SubscriberSignupForm(SubscriberForm):
-    """ Adds a password to the SubscriberForm to also signup """
+    """
+    Adds a password to the SubscriberForm to also signup
+    """
 
     password = CharField(
         label='Contraseña',
@@ -594,6 +612,7 @@ class SubscriberSignupForm(SubscriberForm):
                 'autocomplete': 'new-password',
                 'autocapitalize': 'none',
                 'spellcheck': 'false',
+                'minlength': 6,
                 'placeholder': 'Crear contraseña',
             }
         ),
@@ -644,7 +663,9 @@ class SubscriberSignupForm(SubscriberForm):
 
 
 class SubscriberSignupAddressForm(SubscriberAddressForm):
-    """ Adds password (like SubscriberSignupForm) and address """
+    """
+    Adds password (like SubscriberSignupForm) and address
+    """
 
     password = CharField(
         label='Contraseña',
@@ -776,8 +797,9 @@ class SubscriptionPromoCodeForm(SubscriptionForm):
         # see 2bz2cT4R to disable the promo code
         promo_code = self.cleaned_data.get('promo_code')
         if promo_code and promo_code != getattr(settings, 'PROMO_CODE'):
-            raise ValidationError('Código promocional incorrecto.')
-        return promo_code
+            self.add_error("promo_code", ValidationError('Código promocional incorrecto.'))
+        else:
+            return promo_code
 
 
 class SubscriptionCaptchaForm(SubscriptionForm):
@@ -862,11 +884,12 @@ class GoogleSigninForm(ModelForm):
     def clean_phone(self):
         phone = self.cleaned_data.get('phone', "").replace(" ", "")
         if not re.match(r'^\+?\d+$', phone):
-            raise ValidationError("Ingresá sólo números en el teléfono.")
+            self.add_error("phone", ValidationError("Ingresá sólo números en el teléfono."))
         elif phone_is_blocklisted(phone):
             # Raise error to minimize the info given to possible bot
             raise UnreadablePostError
-        return phone
+        else:
+            return phone
 
     def clean_terms_and_conds_accepted(self):
         return clean_terms_and_conds(self)
@@ -948,22 +971,26 @@ class PasswordResetRequestForm(Form):
         super().__init__(*args, **kwargs)
 
     def clean(self):
-        nom = self.data.get('name_or_mail', '').strip()
+        nom, result = self.data.get('name_or_mail', '').strip(), None
         if '@' in nom:
             try:
                 user = User.objects.get(email__iexact=nom)
             except MultipleObjectsReturned:
                 mail_managers("Multiple email in users", nom)
-                raise ValidationError('Error, comunicate con nosotros.')
+                self.add_error(error=ValidationError('Error, comunicate con nosotros.'))
             except User.DoesNotExist:
-                raise ValidationError('No hay usuarios registrados con ese email.')
+                self.add_error(error=ValidationError('No hay usuarios registrados con ese email.'))
             if user.email is None:
-                raise ValidationError(
-                    'Tu usuario no está activado, si crees que esto es un error, comunicate con nosotros.'
+                self.add_error(
+                    error=ValidationError(
+                        'Tu usuario no está activado, si crees que esto es un error, comunicate con nosotros.'
+                    )
                 )
             else:
                 if not user.is_active:
-                    raise ValidationError('El suscriptor no está registrado en el sitio.')
+                    self.add_error(error=ValidationError('El suscriptor no está registrado en el sitio.'))
+                else:
+                    result = self.data
         else:
             try:
                 user = Subscriber.objects.get(name__iexact=nom).user
@@ -972,10 +999,12 @@ class PasswordResetRequestForm(Form):
                     nom = slugify(nom).replace("-", "_")
                     user = User.objects.get(username__iexact=nom)
                 except Exception:
-                    raise ValidationError('No hay usuarios registrados con ese nombre.')
+                    self.add_error(error=ValidationError('No hay usuarios registrados con ese nombre.'))
             if not user.is_active:
-                raise ValidationError('El suscriptor no está registrado en el sitio.')
-        return self.data
+                self.add_error(error=ValidationError('El suscriptor no está registrado en el sitio.'))
+            else:
+                result = self.data
+        return result
 
     @property
     def user(self):
@@ -1020,20 +1049,22 @@ class ConfirmEmailRequestForm(Form):
     )
 
     def clean(self):
-        email = self.data.get('email').strip()
+        email, result = self.data.get('email').strip(), None
         if email:
             try:
                 user = User.objects.get(email__iexact=email)
             except MultipleObjectsReturned:
                 mail_managers("Multiple email in users", email)
-                raise ValidationError('Error, comunicate con nosotros.')
+                self.add_error(error=ValidationError('Error, comunicate con nosotros.'))
             except User.DoesNotExist:
-                raise ValidationError('No hay usuarios registrados con ese email.')
+                self.add_error(error=ValidationError('No hay usuarios registrados con ese email.'))
             if user.is_active:
-                raise ValidationError('El usuario correspondiente a ese email ya está activo.')
+                self.add_error(error=ValidationError('El usuario correspondiente a ese email ya está activo.'))
+            else:
+                result = self.data
         else:
-            raise ValidationError('Tenés que ingresar un email válido')
-        return self.data
+            self.add_error(error=ValidationError('Tenés que ingresar un email válido'))
+        return result
 
     @property
     def user(self):
@@ -1075,10 +1106,9 @@ class PasswordChangeBaseForm(Form):
         p1, p2 = self.data.get('new_password_1', ''), self.data.get('new_password_2', '')
         if p1 and p2:
             if p1 != p2:
-                raise ValidationError('Las contraseñas no coinciden.')
-            if check_password_strength(p1):
+                self.add_error('new_password_1', ValidationError('Las contraseñas no coinciden.'))
+            elif check_password_strength(p1):
                 return self.data
-        return self.data
 
     def get_password(self):
         return self.data.get('new_password_1')
@@ -1110,10 +1140,10 @@ class PasswordChangeForm(PasswordChangeBaseForm):
         from django.contrib.auth import authenticate
 
         password = self.cleaned_data.get('old_password', '')
-        user = authenticate(username=self.user.username, password=password)
-        if not user:
-            raise ValidationError('Contraseña incorrecta.')
-        return password
+        if authenticate(username=self.user.username, password=password):
+            return password
+        else:
+            self.add_error("old_password", ValidationError('Contraseña incorrecta.'))
 
 
 class PasswordResetForm(PasswordChangeBaseForm):
@@ -1154,11 +1184,13 @@ class PasswordResetForm(PasswordChangeBaseForm):
 
     def clean(self, *args, **kwargs):
         super().clean(*args, **kwargs)
-        password = self.get_password()
+        password, err_msg = self.get_password(), "Ocurrió un error interno."
         if password:
             if self.data.get('gonzo') != self.gen_gonzo():
-                raise ValidationError('Ocurrió un error interno.')
-            user = get_object_or_404(User, id=self.user)
-            if not default_token_generator.check_token(user, self.hash):
-                raise ValidationError('Ocurrió un error interno.')
-        return self.data
+                self.add_error(error=ValidationError(err_msg))
+            else:
+                user = get_object_or_404(User, id=self.user)
+                if not default_token_generator.check_token(user, self.hash):
+                    self.add_error(error=ValidationError(err_msg))
+                else:
+                    return self.data
