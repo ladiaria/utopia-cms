@@ -1411,32 +1411,41 @@ def update_user_from_crm(request):
             s.contact_id = contact_id
         for field, value in fields.items():
             if field == 'newsletters':
+                pubs_slugs = json.loads(value)
+                given_publications = Publication.objects.filter(slug__in=pubs_slugs)
+                given_categories = Category.object.filter(slug__in=pubs_slugs)
+                set_newsletters = set(given_publications.values_list("slug", flat=True))
+                set_cat_newsletters = set(given_categories.values_list("slug", flat=True))
+                # This code set duplicates slugs in both relationships. This could be a bug in the future
+                # TODO: Pending of full review for remove the commented code
+                s.newsletters.set(Publication.objects.filter(slug__in=set_newsletters))
+                s.category_newsletters.set(Category.objects.filter(slug__in=set_cat_newsletters))
                 # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add
                 # all the ones in the value JSON list that are missing.
-                s.updatefromcrm, pub_names = True, json.loads(value)
-                for pub in s.newsletters.filter(has_newsletter=True):
-                    if pub.name in pub_names:
-                        pub_names.remove(pub.name)
-                    else:
-                        s.newsletters.remove(pub)
-                for pub_name in pub_names:
-                    try:
-                        s.newsletters.add(Publication.objects.get(name=pub_name))
-                    except Publication.DoesNotExist:
-                        pass
-            elif field == 'area_newsletters':
-                # the same as above but for category newsletters
-                s.updatefromcrm, cat_names = True, json.loads(value)
-                for cat in s.category_newsletters.filter(has_newsletter=True):
-                    if cat.name in cat_names:
-                        cat_names.remove(cat.name)
-                    else:
-                        s.category_newsletters.remove(cat)
-                for category_name in cat_names:
-                    try:
-                        s.category_newsletters.add(Category.objects.get(name=category_name))
-                    except Category.DoesNotExist:
-                        pass
+                # s.updatefromcrm, pub_names = True, json.loads(value)
+                # for pub in s.newsletters.filter(has_newsletter=True):
+                #     if pub.name in pub_names:
+                #         pub_names.remove(pub.name)
+                #     else:
+                #         s.newsletters.remove(pub)
+                # for pub_name in pub_names:
+                #     try:
+                #         s.newsletters.add(Publication.objects.get(name=pub_name))
+                #     except Publication.DoesNotExist:
+                #         pass
+            # elif field == 'area_newsletters':
+            #     # the same as above but for category newsletters
+            #     s.updatefromcrm, cat_names = True, json.loads(value)
+            #     for cat in s.category_newsletters.filter(has_newsletter=True):
+            #         if cat.name in cat_names:
+            #             cat_names.remove(cat.name)
+            #         else:
+            #             s.category_newsletters.remove(cat)
+            #     for category_name in cat_names:
+            #         try:
+            #             s.category_newsletters.add(Category.objects.get(name=category_name))
+            #         except Category.DoesNotExist:
+            #             pass
             else:
                 changesubscriberfield(s, field, value)
 
