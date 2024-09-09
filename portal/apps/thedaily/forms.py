@@ -304,13 +304,9 @@ class SignupForm(BaseUserForm):
                 'first_name',
                 'email',
                 'phone',
-<<<<<<< HEAD
                 Field(
                     'password', placeholder="Crear contraseña", minlength="6", template='materialize_css_forms/layout/password.html'
                 )
-=======
-                Field('password', minlength="6", template='materialize_css_forms/layout/password.html'),
->>>>>>> trello3726
             )
             + terms_and_conditions_layout_tuple
             + (
@@ -613,12 +609,8 @@ class SubscriberSignupForm(SubscriberForm):
                 'autocomplete': 'new-password',
                 'autocapitalize': 'none',
                 'spellcheck': 'false',
-<<<<<<< HEAD
                 'placeholder': 'Crear contraseña',
                 'minlength': 6
-=======
-                'minlength': 6,
->>>>>>> trello3726
             }
         ),
     )
@@ -887,15 +879,9 @@ class GoogleSigninForm(ModelForm):
         widgets = {'phone': PhoneInput(attrs={'autocomplete': 'tel', 'spellcheck': 'false'})}
 
     def clean_phone(self):
-<<<<<<< HEAD
-        phone = self.cleaned_data.get('phone', "").replace(" ", "")
-        if not re.match(r'^\+?\d+$', phone):
-            raise ValidationError("Ingresá sólo números en el teléfono.")
-=======
         phone = self.cleaned_data.get('phone')
         if not phone.isdigit():
             self.add_error("phone", ValidationError("Ingresá sólo números en el teléfono."))
->>>>>>> trello3726
         elif phone_is_blocklisted(phone):
             # Raise error to minimize the info given to possible bot
             raise UnreadablePostError
