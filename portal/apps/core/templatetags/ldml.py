@@ -100,7 +100,8 @@ def ldmarkup(value, args='', amp=False):
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
     value = reg.sub(r'\n\n\1\n----', value)
     if args:
-        # TODO: Si hay un recuadro al final le aplica full width a todos los recuadros del artículo. (translate2english)
+        # TODO: Si hay un recuadro al final le aplica full width a todos los recuadros del artículo.
+        #       translate2english this comment asap or make it at all
         reg = re.compile(EXTENSION_RE, re.UNICODE + re.MULTILINE)
         value = reg.sub(lambda x: get_extension(x, args), value)
         reg = re.compile(IMAGE_RE, re.UNICODE + re.MULTILINE)

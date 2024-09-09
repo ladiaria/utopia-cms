@@ -271,6 +271,9 @@ article {
         }
       }
     }
+    .footnotes ol li a {
+      word-break: break-all;
+    }
   }
 
   figure.principal {
