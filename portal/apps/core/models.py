@@ -1112,7 +1112,13 @@ class Journalist(Model):
         """
         custom_order = getattr(settings, "CORE_JOURNALIST_SOCIAL_ORDER", None)
         if custom_order:
-            verbose_names_of_interest = custom_order
+            if len(custom_order) < len(self.DEFAULT_SOCIAL_ORDER):
+                # prevent incomplete order in custom settings.
+                # This complete the full order based in the default oreder.
+                missing_in_custom = set(self.DEFAULT_SOCIAL_ORDER) - set(custom_order)
+                verbose_names_of_interest = [custom_order.append(e) for e in missing_in_custom]
+            else:
+                verbose_names_of_interest = custom_order
         else:
             verbose_names_of_interest = self.DEFAULT_SOCIAL_ORDER
 
