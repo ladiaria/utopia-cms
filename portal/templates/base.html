@@ -346,14 +346,16 @@
     <!-- Main -->
     {% block main_open %}<main class="main" id="main-content">{% endblock %}
     {% if messages %}
-      <ul class="messages unstyled ld-messages">
-        {% for message in messages %}
-          <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
-            {{ message }}
-            <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
-          </li>
-        {% endfor %}
-      </ul>
+      {% block messages %}
+        <ul class="messages unstyled ld-messages">
+          {% for message in messages %}
+            <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
+              {{ message }}
+              <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endblock %}
     {% endif %}
 
     <!-- /container -->
