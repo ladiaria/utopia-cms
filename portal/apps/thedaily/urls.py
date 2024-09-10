@@ -130,11 +130,6 @@ urlpatterns = [
         name="account-error-toomuch",
     ),
     path('restablecer/', password_reset, name="account-password_reset"),
-    path(
-        'restablecer/correo-enviado/',
-        never_cache(TemplateView.as_view(template_name='thedaily/templates/password_reset_mail_sent.html')),
-        name="account-password_reset-mail_sent",
-    ),
     path('confirm_email/', confirm_email, name='account-confirm_email'),
     path('session_refresh/', session_refresh, name='session-refresh'),
 

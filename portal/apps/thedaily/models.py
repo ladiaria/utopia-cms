@@ -37,6 +37,7 @@ from django.dispatch import receiver
 from django.urls import reverse
 
 from social_django.models import UserSocialAuth
+from phonenumber_field.modelfields import PhoneNumberField
 
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
@@ -103,7 +104,7 @@ class Subscriber(Model):
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
     document = CharField('documento de identidad', max_length=50, blank=True, null=True)
-    phone = CharField('teléfono', max_length=20)
+    phone = PhoneNumberField('teléfono', blank=True)
 
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
     downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
@@ -480,6 +481,7 @@ class OAuthState(Model):
     user = OneToOneField(User, on_delete=CASCADE)
     state = CharField(max_length=32, unique=True)
     fullname = CharField(max_length=255, blank=True, null=True)
+    phone_submitted_blank = BooleanField(default=False)
 
 
 class WebSubscriber(Subscriber):

@@ -1,17 +1,10 @@
 # -*- coding: utf-8 -*-
-
 from os.path import join
 import random as rdm
 from operator import attrgetter
 from urllib.parse import urlencode
 from pydoc import locate
 import requests
-
-from actstream.models import Follow
-from actstream.registry import check
-from favit.models import Favorite
-from social_django.models import UserSocialAuth
-from django_amp_readerid.models import UserReaderId
 
 from django.conf import settings
 from django.core.validators import validate_email
@@ -23,6 +16,13 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
+
+from actstream.models import Follow
+from actstream.registry import check
+from favit.models import Favorite
+from social_django.models import UserSocialAuth
+from django_amp_readerid.models import UserReaderId
+from phonenumber_field.phonenumber import PhoneNumber
 
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
@@ -235,3 +235,7 @@ def product_checkout_template(product_slug, steps=False):
         else:
             template = template_try
     return template
+
+
+def national_phone_as_e164(national_number):
+    return PhoneNumber.from_string(national_number, region=settings.LOCAL_COUNTRY).as_e164
