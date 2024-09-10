@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import pycountry
 
 from django.conf import settings
@@ -31,6 +30,8 @@ def gtm(request):
 
 def site(request):
     result = {
+        "local_country": settings.LOCAL_COUNTRY,
+        "local_lang": settings.LOCAL_LANG,
         'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
         "base_template": getattr(settings, "PORTAL_BASE_TEMPLATE", "base.html"),
         "title_append_country": settings.PORTAL_TITLE_APPEND_COUNTRY,
@@ -38,6 +39,7 @@ def site(request):
             settings, "PORTAL_ADMIN_DARK_MODE_VARS_TEMPLATE", "admin/admin_dark_mode_vars_template.html",
         ),
         "admin_martor_change_form_custom_css": getattr(settings, "PORTAL_ADMIN_CHANGE_FORM_MARTOR_CUSTOM_CSS", None),
+        "intl_tel_input_cdn": "https://cdn.jsdelivr.net/npm/intl-tel-input@24.4.0/build/",
     }
     try:
         site = Site.objects.get_current()

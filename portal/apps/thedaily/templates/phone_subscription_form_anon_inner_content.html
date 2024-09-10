@@ -1,0 +1,23 @@
+{% load crispy_forms_tags %}
+
+<div class="subscribe-header center-align">
+  <h1 class="ld-title-big">Suscribite por teléfono</h1>
+  <div class="ld-text-secondary">Completá el formulario y te llamaremos en las próximas 48 horas para realizar la suscripción.</div>
+</div>
+<div class="{% block form_outer_container_class %}col s12 m8 offset-m2{% endblock %}">
+  {% if form.non_field_errors %}
+    <div class="error-header">
+      {% for errors in form.non_field_errors %}
+        <p>{{ errors|safe }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+  <div class="{% block form_inner_container_class %}col s12{% endblock %}{% if form.non_field_errors %} with-errors{% endif %}">
+    <form id="subscribe" method="post">
+      {% csrf_token %}
+      {% crispy form %}
+    </form>
+    <p class="ld-text-secondary align-center"><a href="/suscribite/">O suscribite online</a></p>
+  </div>
+  {% block form_footer %}{% endblock %}
+</div>

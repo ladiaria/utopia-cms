@@ -1,12 +1,13 @@
-  <div id="div_id_time" class="validate s12" style="display: none;margin-left: 40px;margin-bottom: 20px;">
-      <strong>{{ field.label }}</strong>
-      <div id="id_time_wrapper">
-        {% for choice in field.field.choices %}
-          <div class="radio">
-            <input type="radio" name="{{ field.html_name }}" id="id_time_{{ choice.0 }}" value="{{ choice.0 }}"{% if field.value == choice.0 %} checked="checked"{% endif %}>
-            <label for="id_time_{{ choice.0 }}">{{ choice.1 }}</label>
-          </div>
-        {% endfor %}
-      </div>
+  <div id="div_id_time" class="{% block time_div_class_content %}validate s12{% endblock %}"
+       style="{% block time_div_style_content %}display:none;margin-left:40px;margin-bottom:20px;{% endblock %}">
+    <strong>{{ field.label }}</strong>
+    <div id="id_time_wrapper">
+      {% for choice in field.field.choices %}
+        <div class="radio">
+          <input type="radio" name="{{ field.html_name }}" id="id_time_{{ choice.0 }}" value="{{ choice.0 }}"{% if field.value == choice.0 %} checked="checked"{% endif %}>
+          <label for="id_time_{{ choice.0 }}">{{ choice.1 }}</label>
+        </div>
+      {% endfor %}
+    </div>
   </div>
-</div>  <!-- closes payment_type.html template div-->
+</div>{# closes payment_type.html template div #}

@@ -1,14 +1,7 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags core_tags %}
 
-{% block page_title %}
-  {% if form %}
-    Activación pendiente
-  {% endif %}
-  {% if sent %}
-    Mensaje de activación enviado
-  {% endif %}
-{% endblock %}
+{% block page_title %}{% title_joinparts 'Activación de cuenta' %}{% endblock %}
 
 {% block meta %}
   <!-- Robots -->
@@ -33,23 +26,18 @@
   <main class="ld-content">
     <div class="row">
       <div class="col s12 m10 offset-m1">
-        {% if form %}
-          <h1 class="ld-title-huge align-center">Activación pendiente</h1>
-          <p>Tu suscripción a <i>{{ site.name }}</i> ya fue creada, pero es necesario que la actives.</p>
-          <p>Para activarla, con el siguiente formulario enviá el mensaje de activación al email con el que creaste la cuenta.</p>
+        <h1 class="ld-title-huge align-center">Activación de cuenta</h1>
+        {% if error %}
+          {{ error }}
+        {% elif form %}
+          <p>Si tu cuenta en <i>{{ site.name }}</i> ya fue creada, usando el siguiente formulario enviá el mensaje de activación al email con el que creaste la cuenta:</p>
           {% crispy form %}
-        {% endif %}
-        {% if sent %}
-          <h1 class="ld-title-huge">Revisá tu email</h1>
-          <p>El mensaje de activación fue enviado con éxito a tu email {{ email }}.</p>
-          <p>En los próximos minutos revisá tu bandeja de entrada y carpeta spam, encontrá el mensaje de activación y seguí los pasos.</p>
-          <p>Si tenés algún problema <a href="{% url 'contact-form' %}">contactanos</a>.</p>
+        {% else %}
+          {% include action_content_template %}
         {% endif %}
       </div>
     </div>
   </main>
 {% endblock %}
 
-{% block footer_block %}
-  {% include 'footer_simple.html' %}
-{% endblock footer_block %}
+{% block footer_block %}{% include 'footer_simple.html' %}{% endblock footer_block %}

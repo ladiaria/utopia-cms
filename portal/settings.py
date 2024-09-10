@@ -124,6 +124,7 @@ INSTALLED_APPS = (
     "reversion",
     "django_celery_results",
     "django_celery_beat",
+    "phonenumber_field",
 )
 
 SITE_ID = 1
