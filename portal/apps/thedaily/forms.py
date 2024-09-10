@@ -242,6 +242,9 @@ class UserForm(BaseUserForm):
         super().__init__(*args, **kwargs)
         self.helper.form_tag = False
         self.helper.layout = Layout(Fieldset('Datos personales', 'first_name', 'last_name', 'email'))
+        template_from_settings = getattr(settings, 'USER_FORM_TEMPLATE', False)
+        if template_from_settings:
+            self.helper.template = template_from_settings
 
     def clean(self):
         return self.custom_clean(True, False)
@@ -384,6 +387,9 @@ class ProfileForm(ModelForm):
         Fieldset('Datos de suscriptor', 'document', 'phone'),
         Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
     )
+    template_from_settings = getattr(settings, 'PROFILE_FORM_TEMPLATE', False)
+    if template_from_settings:
+        helper.template = template_from_settings
 
     class Meta:
         model = Subscriber
@@ -408,16 +414,11 @@ class ProfileExtraDataForm(ModelForm):
                 "profile/push_notifications.html"
             )
         ),
-        Field('newsletters', template='profile/newsletters.html'),
-        HTML(
-            '''
-            <section id="ld-comunicaciones" class="scrollspy edit_profile_card">
-              <div class="edit_profile_card__header"><h2 class="title">Comunicaciones</h2></div>
-            '''
-        ),
+        Field('newsletters', template=getattr(settings, 'THEDAILY_NEWSLETTERS_TEMPLATE', 'profile/newsletters.html')),
+        HTML('{% include "' + getattr(settings, 'THEDAILY_COMMUNICATIONS_START_TEMPLATE', 'profile/communications_start_section.html') + '" %}'),  # TODO: Improve this
         Field('allow_news', template=getattr(settings, 'THEDAILY_ALLOW_NEWS_TEMPLATE', 'profile/allow_news.html')),
-        Field('allow_promotions', template='profile/allow_promotions.html'),
-        Field('allow_polls', template='profile/allow_polls.html'),
+        Field('allow_promotions', template=getattr(settings, 'THEDAILY_ALLOW_PROMOTIONS_TEMPLATE', 'profile/allow_promotions.html')),
+        Field('allow_polls', template=getattr(settings, 'THEDAILY_ALLOW_POLLS_TEMPLATE', 'profile/allow_polls.html')),
         HTML('</section>'),
     )
 
