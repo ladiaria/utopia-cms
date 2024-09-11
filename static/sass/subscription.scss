@@ -78,6 +78,15 @@
   }
 }
 
+.subscribe-body .close-window-container {
+  text-align: right;
+  button {
+    padding: 16px 16px 0 0;
+    background-color: transparent;
+    border: none;
+  }
+}
+
 body.subscribe.activation {
   background-color: white !important;
 
