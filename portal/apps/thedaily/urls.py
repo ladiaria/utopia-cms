@@ -6,7 +6,6 @@ from django.conf import settings
 from django.urls import path, re_path
 from django.views.generic import TemplateView, RedirectView
 from django.views.decorators.cache import never_cache
-from django.contrib.auth import views as auth_views
 
 from .views import (
     subscribe,
@@ -22,6 +21,7 @@ from .views import (
     password_reset,
     complete_signup,
     login,
+    logout_view,
     amp_access_authorization,
     amp_access_pingback,
     session_refresh,
@@ -102,7 +102,7 @@ urlpatterns = [
 
     path('registrate/', signup, name="account-signup"),
     path('registrate/google/', google_phone, name="account-google"),
-    path('salir/', auth_views.LogoutView.as_view(next_page='/usuarios/sesion-cerrada/'), name="account-logout"),
+    path('salir/', logout_view, name="account-logout"),
     path(
         'sesion-cerrada/',
         never_cache(
@@ -111,11 +111,7 @@ urlpatterns = [
             )
         )
     ),
-    path(
-        'salir-invalid/',
-        auth_views.LogoutView.as_view(next_page='/usuarios/sesion-finalizada/'),
-        name="account-invalid",
-    ),
+    path('salir-invalid/', logout_view, {"next_page": '/usuarios/sesion-finalizada/'}, name="account-invalid"),
     path('sesion-finalizada/', never_cache(TemplateView.as_view(template_name='registration/session_invalid.html'))),
     path('bienvenida/', welcome, {'signup': True}, name="account-welcome"),
     path('bienvenido/', welcome, {'subscribed': True}, name="account-welcome-s"),

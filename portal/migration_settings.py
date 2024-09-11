@@ -123,6 +123,7 @@ INSTALLED_APPS = (
     "reversion",
     "django_celery_results",
     "django_celery_beat",
+    "phonenumber_field",
 )
 
 SITE_ID = 1
@@ -528,6 +529,7 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+PHONENUMBER_DEFAULT_REGION = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 
 
@@ -541,6 +543,10 @@ CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
 LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
 COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
+
+# phonenumbers default region (if not set) will default to LOCAL_COUNTRY
+if PHONENUMBER_DEFAULT_REGION is None:
+    PHONENUMBER_DEFAULT_REGION = LOCAL_COUNTRY
 
 # signupwall overrided/defaults
 if SIGNUPWALL_ENABLED is None:
