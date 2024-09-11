@@ -30,7 +30,7 @@ def gtm(request):
 
 def site(request):
     result = {
-        "local_country": settings.LOCAL_COUNTRY,
+        "phonenumber_default_region": settings.PHONENUMBER_DEFAULT_REGION,
         "local_lang": settings.LOCAL_LANG,
         'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
         "base_template": getattr(settings, "PORTAL_BASE_TEMPLATE", "base.html"),
