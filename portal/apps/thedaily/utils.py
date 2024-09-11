@@ -238,4 +238,4 @@ def product_checkout_template(product_slug, steps=False):
 
 
 def national_phone_as_e164(national_number):
-    return PhoneNumber.from_string(national_number, region=settings.LOCAL_COUNTRY).as_e164
+    return PhoneNumber.from_string(national_number).as_e164
