@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 
 from apps import mongo_db
 from core.models import Article

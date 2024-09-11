@@ -24,7 +24,7 @@ fieldset.collapse,fieldset.collapsed{display: block !important;}
 }
 
 /* alternative title and description fields */
-.field-keywords input, .field-headline input {
+#id_keywords, #id_headline {
     width: 600px;
 }
 .field-deck textarea, .field-lead textarea, .field-home_lead textarea, .field-home_top_deck textarea {

@@ -56,8 +56,10 @@
     {% endif %}
 
     <!-- Title and description -->
-    <title>{% block page_title %}{% endblock %}</title>
-    <meta name="description" content="{% block page_description %}{{ site_description }}{% endblock %}">
+    <title>{% spaceless %}{% block page_title %}{% endblock %}{% endspaceless %}</title>
+    <meta name="description" content="{% spaceless %}
+      {% block page_description %}{{ site_description }}{% endblock %}
+    {% endspaceless %}">
     <!-- End Title and description -->
 
     <!-- Meta tags base -->
@@ -357,12 +359,7 @@
     {% endif %}
 
     <!-- /container -->
-    {% block page_header %}
-      {% block bn_module %}{% endblock %}
-      {% block page_header_content %}
-        {% block page_header_content_inner %}{% endblock %}
-      {% endblock %}
-    {% endblock %}
+    {% block page_header %}{% endblock %}
 
     {% if user_form %}
       <div class="profile-container">

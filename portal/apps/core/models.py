@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
-
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
 import locale
@@ -119,6 +114,16 @@ class Publication(Model):
     newsletter_automatic_subject = BooleanField(default=True)
     newsletter_subject = CharField('asunto', max_length=256, blank=True, null=True)
     newsletter_logo = ImageField('logo para NL', upload_to='publications', blank=True, null=True)
+    extra_context = JSONField(
+        "Contexto extra para portadas y newsletter",
+        default=dict,
+        help_text=mark_safe(
+            'Diccionario Python en formato JSON que se utilizará como contexto al inicio de la construcción del '
+            'contexto predeterminado, sus entradas, si hay colisión, serían sobreescritas por la vista de portada en '
+            'backend o comando de envío de newsletter.<br>'
+            'Ejemplo: <code>{"custom_footer_msg": "Esta newsletter fue generada utilizando utopia-cms"}</code>'
+        ),
+    )
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
     subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
@@ -1746,7 +1751,7 @@ class Article(ArticleBase):
                             render_to_string(
                                 "article/detail_ipfs_upload.html",
                                 {
-                                    "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+                                    "site_url": settings.SITE_URL_SD,
                                     "ipfs_cid": self.ipfs_cid,
                                     "headline": self.headline,
                                     "date_published": self.date_published,
@@ -1946,15 +1951,20 @@ class Article(ArticleBase):
 
     def extensions_have_invalid_amp_tags(self):
         """
-        When this happen, we should not announce that an AMP version o the page is availabke
+        When this happen, we should not announce that an AMP version of the page is available
         """
         invalid_tags = "base img picture video audio iframe frame frameset object param applet embed".split()
+        invalid_filters = {"script": lambda node: "instagram.com/embed.js" in node.get("src", "")}
         for e in self.extensions.iterator():
             try:
                 soup = BeautifulSoup(e.body, 'html.parser')
                 for tag in invalid_tags:
                     if soup.find_all(tag):
                         return True
+                for tag, call in invalid_filters.items():
+                    for node in soup.find_all(tag):
+                        if call(node):
+                            return True
             except Exception:
                 pass
 
@@ -2269,14 +2279,15 @@ class CategoryNewsletter(Model):
         """
         Returns the featured articles qs
         """
-        return self.articles.filter(newsletter_articles__featured=True)
+        return self.articles.filter(newsletter_articles__featured=True).order_by('newsletter_articles')
 
     def featured_article(self):
         """
         Returns the featured article in the 1st position
         """
-        featured = self.featured_articles()
-        return featured.exists() and featured.order_by('newsletter_articles')[0]
+        return getattr(
+            CategoryNewsletterArticle.objects.filter(newsletter=self, featured=True).first(), "article", None
+        )
 
     class Meta:
         verbose_name = 'newsletter de área'

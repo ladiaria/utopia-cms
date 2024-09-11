@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from datetime import datetime, date
 
@@ -92,15 +90,18 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
 
     # Context variables for publication, featured publications, sections "grids" and "big photo".
-    context = {
-        "cache_maxage": cache_maxage,
-        'publication': publication,
-        'featured_publications': [],
-        'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ()),
-        'news_wall_enabled': getattr(settings, 'HOMEV3_NEWS_WALL_ENABLED', True),
-        'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
-        'allow_mas_leidos': getattr(settings, 'HOMEV3_ALLOW_MAS_LEIDOS', True),
-    }
+    context = publication.extra_context.copy()
+    context.update(
+        {
+            "cache_maxage": cache_maxage,
+            'publication': publication,
+            'featured_publications': [],
+            'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ()),
+            'news_wall_enabled': getattr(settings, 'HOMEV3_NEWS_WALL_ENABLED', True),
+            'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
+            'allow_mas_leidos': getattr(settings, 'HOMEV3_ALLOW_MAS_LEIDOS', True),
+        }
+    )
 
     is_authenticated, user_has_subscriber = user.is_authenticated, hasattr(user, 'subscriber')
     if is_authenticated:

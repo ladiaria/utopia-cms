@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from future.utils import raise_
 
 from slimmer import guessSyntax, css_slimmer, html_slimmer, js_slimmer
