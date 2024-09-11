@@ -1212,7 +1212,8 @@ def lista_lectura_leer_despues(request):
         followings = paginator_leer_despues.page(paginator_leer_despues.num_pages)
     # end paginator for leer_despues
 
-    return 'lista-lectura.html', {'leer_despues': followings, 'leer_despues_count': followings_count}
+    lista_lectura_template = getattr(settings, "THEDAILY_LISTA_LECTURA_TEMPLATE", "lista-lectura.html")
+    return lista_lectura_template, {'leer_despues': followings, 'leer_despues_count': followings_count}
 
 
 @never_cache
@@ -1276,7 +1277,8 @@ def lista_lectura_historial(request):
     except EmptyPage:
         historial = paginator_historial.page(paginator_historial.num_pages)
 
-    return 'lista-lectura.html', {'historial': historial, 'historial_count': historial_count}
+    lista_lectura_template = getattr(settings, "THEDAILY_LISTA_LECTURA_TEMPLATE", "lista-lectura.html")
+    return lista_lectura_template, {'historial': historial, 'historial_count': historial_count}
 
 
 @never_cache
