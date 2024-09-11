@@ -1533,6 +1533,35 @@ def update_user_from_crm(request):
         pass
     return JsonResponse({"message": "OK"})
 
+    @never_cache
+    @api_view(['DELETE'])
+    @permission_classes([HasAPIKey])
+    def delete_user_from_crm(request):
+        """
+        Delete user and subscriber based on the CRM information
+        """
+        if request.method == "DELETE":
+            try:
+                contact_id = request.POST["contact_id"]
+                email = request.POST.get('email', "")
+            except KeyError:
+                return HttpResponseBadRequest()
+            try:
+                subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
+                # do validations over subscriber before delete
+                subscriber.delete()
+            except Subscriber.DoesNotExists:
+                # look for email
+                if email:
+                    try:
+                        user = User.objects.get(email__exact=email)
+                        # do validations over user before delete
+                        user.delete()
+                    except User.DoesNotExists:
+                        return Http404
+        else:
+            return HttpResponseBadRequest()
+
 
 @never_cache
 def amp_access_authorization(request):
