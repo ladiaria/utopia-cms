@@ -11,6 +11,9 @@ body.subscribe:not(.signup) form#subscribe {
     }
     div.iti {
       width: calc(100%);
+      button.iti__selected-country:focus {
+        background-color: transparent;
+      }
     }
     input[type="tel"] {
       box-sizing: border-box;
