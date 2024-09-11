@@ -107,6 +107,7 @@ from .utils import (
     google_phone_next_page,
     product_checkout_template,
     qparamstr,
+    view_template,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -447,8 +448,7 @@ def login(request, product_slug=None, product_variant=None):
 
 @never_cache
 def signup(request):
-    template = getattr(settings, 'THEDAILY_SIGNUP_TEMPLATE', 'signup.html')
-    article_id, context = request.GET.get("article"), {}
+    template, article_id, context = view_template('signup.html'), request.GET.get("article"), {}
 
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
@@ -984,7 +984,6 @@ def complete_signup(request, user_id, hash):
 
 
 @never_cache
-@to_response
 def password_reset(request, user_id=None, hash=None):
     if user_id and hash:
         return password_change(request, user_id, hash)
@@ -1012,9 +1011,7 @@ def password_reset(request, user_id=None, hash=None):
                 msg = "Error al enviar email de recuperación de contraseña para el usuario: %s." % reset_form.user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 reset_form.add_error(None, msg)
-
-    reset_password_template = getattr(settings, 'THEDAILY_RESET_PASSWORD_TEMPLATE', 'password_reset.html')
-    return reset_password_template, {'form': reset_form}
+    return render(request, view_template('password_reset.html'), {'form': reset_form})
 
 
 @never_cache
@@ -1059,7 +1056,6 @@ def session_refresh(request):
 
 
 @never_cache
-@to_response
 def password_change(request, user_id=None, hash=None):
     is_post = request.method == 'POST'
     post = request.POST.copy() if is_post else None
@@ -1081,9 +1077,11 @@ def password_change(request, user_id=None, hash=None):
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
-
-    password_change_template = getattr(settings, 'THEDAILY_PASSWORD_CHANGE_TEMPLATE', 'password_change.html')
-    return password_change_template, {'form': password_change_form, 'user_id': user_id, 'hash': hash}
+    return render(
+        request,
+        view_template('password_change.html'),
+        {'form': password_change_form, 'user_id': user_id, 'hash': hash},
+    )
 
 
 @never_cache

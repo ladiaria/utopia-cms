@@ -8,7 +8,7 @@ from django.views.generic import TemplateView, RedirectView
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import views as auth_views
 
-from thedaily.views import (
+from .views import (
     subscribe,
     referrals,
     google_phone,
@@ -49,6 +49,7 @@ from thedaily.views import (
     nl_track_open_event,
     mailtrain_lists,
 )
+from .utils import view_template
 
 
 # override views
@@ -102,7 +103,14 @@ urlpatterns = [
     path('registrate/', signup, name="account-signup"),
     path('registrate/google/', google_phone, name="account-google"),
     path('salir/', auth_views.LogoutView.as_view(next_page='/usuarios/sesion-cerrada/'), name="account-logout"),
-    path('sesion-cerrada/', never_cache(TemplateView.as_view(template_name=getattr(settings, 'REGISTRATION_LOGGED_OUT_TEMPLATE', 'registration/logged_out.html')))),
+    path(
+        'sesion-cerrada/',
+        never_cache(
+            TemplateView.as_view(
+                template_name=getattr(settings, 'REGISTRATION_LOGGED_OUT_TEMPLATE', 'registration/logged_out.html')
+            )
+        )
+    ),
     path(
         'salir-invalid/',
         auth_views.LogoutView.as_view(next_page='/usuarios/sesion-finalizada/'),
@@ -115,7 +123,7 @@ urlpatterns = [
     path('cambiar-password/', password_change, name="account-password_change"),
     path(
         'cambiar-password/hecho/',
-        never_cache(TemplateView.as_view(template_name=getattr(settings, 'THEDAILY_PASSWORD_CHANGE_DONE_TEMPLATE', 'thedaily/templates/password_change_done.html'))),
+        never_cache(TemplateView.as_view(template_name=view_template('password_change_done.html'))),
         name="account-password_change-done",
     ),
     re_path(
@@ -134,11 +142,6 @@ urlpatterns = [
         name="account-error-toomuch",
     ),
     path('restablecer/', password_reset, name="account-password_reset"),
-    path(
-        'restablecer/correo-enviado/',
-        never_cache(TemplateView.as_view(template_name=getattr(settings, 'THEDAILY_PASSWORD_RESET_MAIL_SENT_TEMPLATE', 'thedaily/templates/password_reset_mail_sent.html'))),
-        name="account-password_reset-mail_sent",
-    ),
     path('confirm_email/', confirm_email, name='account-confirm_email'),
     path('session_refresh/', session_refresh, name='session-refresh'),
 

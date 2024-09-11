@@ -214,6 +214,23 @@ def google_phone_next_page(request, is_new):
     )
 
 
+def view_template(relative_path):
+    default_dir, custom_dir = "thedaily/templates/", getattr(settings, "THEDAILY_ROOT_TEMPLATE_DIR", None)
+    template = join(default_dir, relative_path)  # fallback to the default
+    if custom_dir:
+        engine = Engine.get_default()
+        # search under custom and take it if found
+        template_try = join(custom_dir, relative_path)
+        try:
+            engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            pass
+        else:
+            template = template_try
+    # if custom dir is not defined, no search is needed
+    return template
+
+
 def product_checkout_template(product_slug, steps=False):
     steps_suffix = "_steps" if steps else ""
     template, engine = f"thedaily/templates/market/product{steps_suffix}.html", Engine.get_default()
