@@ -28,16 +28,10 @@
   </div>
   <div class="subscribe-body">
     <div class="ld-content">
-      <div class="row">
-        <div class="col s12 m8 offset-m2">
-          <p class="ld-text-secondary align-center u-mt-50">
-            {% if is_new %}Por último{% else %}Para continuar{% endif%}, ingresá{% if not is_new %} o actualizá{% endif %} tu teléfono
-          </p>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col s12 m8 offset-m2"><div class="align-center">{% crispy google_signin_form %}</div></div>
-      </div>
+      <p class="ld-text-secondary align-center u-mt-50">
+        {% if is_new %}Por último{% else %}Para continuar{% endif%}, ingresá{% if not is_new %} o actualizá{% endif %} tu teléfono
+      </p>
+      <div class="align-center">{% crispy google_signin_form %}</div>
     </div>
     {% block subscribe_body_footer %}{% endblock %}
   </div>
