@@ -125,7 +125,11 @@ class Subscriber(Model):
     subscription_mode = CharField(max_length=1, null=True, blank=True, default=None)
     last_paid_subscription = DateTimeField('Ultima subscripcion comienzo', null=True, blank=True)
 
+    def __str__(self):
+        return self.name or self.get_full_name()
+
     def save(self, *args, **kwargs):
+        # TODO: this should be reviewed ASAP (a new field 'doc type' may be added resulting incompatibilities)
         if self.document:
             non_decimal = re.compile(r'[^\d]+')
             self.document = non_decimal.sub('', self.document)
@@ -256,9 +260,6 @@ class Subscriber(Model):
                 return 0
             else:
                 return qs[0].downloads
-
-    def __str__(self):
-        return self.name or self.get_full_name()
 
     def get_full_name(self):
         if not self.user.first_name and not self.user.last_name:
