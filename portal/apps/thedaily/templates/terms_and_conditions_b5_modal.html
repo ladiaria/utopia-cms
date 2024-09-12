@@ -1,0 +1,8 @@
+{% load thedaily_tags %}
+
+<div class="modal-dialog modal-lg" id="terms-conditions-modal">
+  <div class="content">
+    {% autoescape off %}{% terms_and_conditions %}{% endautoescape %}
+    <div class="align-center"><a class="ut-btn" onclick="accept_terms_and_conds();">aceptar</a></div>
+  </div>
+</div>

@@ -49,7 +49,7 @@ from .views import (
     nl_track_open_event,
     mailtrain_lists,
 )
-from .utils import view_template
+from .utils import get_app_template
 
 
 # override views
@@ -119,7 +119,7 @@ urlpatterns = [
     path('cambiar-password/', password_change, name="account-password_change"),
     path(
         'cambiar-password/hecho/',
-        never_cache(TemplateView.as_view(template_name=view_template('password_change_done.html'))),
+        never_cache(TemplateView.as_view(template_name=get_app_template('password_change_done.html'))),
         name="account-password_change-done",
     ),
     re_path(
@@ -144,11 +144,7 @@ urlpatterns = [
     # TODO: enter "bienvenido/" directly should not be allowed
     path(
         'bienvenido/tel/',
-        never_cache(
-            TemplateView.as_view(
-                template_name=settings.THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR + '/phone_subscription_thankyou.html'
-            )
-        ),
+        never_cache(TemplateView.as_view(template_name=get_app_template('phone_subscription_thankyou.html'))),
         name="telsubscribe_success",
     ),
 

@@ -110,7 +110,7 @@ from .utils import (
     google_phone_next_page,
     product_checkout_template,
     qparamstr,
-    view_template,
+    get_app_template,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -120,7 +120,6 @@ from .tasks import send_notification, notify_digital, notify_paper, send_notific
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
-notif_templates_dir_prefix = getattr(settings, 'THEDAILY_NOTIFICATIONS_TEMPLATE_PREFIX', '')
 site_name = Site.objects.get_current().name
 
 
@@ -351,7 +350,7 @@ def login(request, product_slug=None, product_variant=None):
         context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "product_slug": product_slug})
     else:
         article_id = request.GET.get('article')
-        template = getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html')
+        template = get_app_template('login.html')
 
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
@@ -454,7 +453,7 @@ def login(request, product_slug=None, product_variant=None):
 
 @never_cache
 def signup(request):
-    template, article_id, context = view_template('signup.html'), request.GET.get("article"), {}
+    template, article_id, context = get_app_template('signup.html'), request.GET.get("article"), {}
 
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
@@ -496,7 +495,7 @@ def signup(request):
                     return HttpResponseRedirect(next_page)
                 else:
                     context['signup_mail'] = user.email
-                    return render(request, settings.THEDAILY_WELCOME_TEMPLATE, context)
+                    return render(request, get_app_template("welcome.html"), context)
             except Exception as exc:
                 msg = "Error al enviar email de verificación para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
@@ -535,7 +534,7 @@ def welcome(request, signup=False, subscribed=False):
         request.session.pop('welcome')
         return render(
             request,
-            settings.THEDAILY_WELCOME_TEMPLATE,
+            get_app_template("welcome.html"),
             {'signup': signup, 'subscribed': subscribed, "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
     else:
@@ -996,7 +995,6 @@ def password_reset(request, user_id=None, hash=None):
         # TODO: we should also check for telephone number as google_auth
         post = request.POST.copy()
         reset_form = PasswordResetRequestForm(post)
-        notif_templates_basepath = notif_templates_dir_prefix or "thedaily/templates/"
         if reset_form.is_valid():
             try:
                 user = reset_form.cleaned_data["user"]
@@ -1004,12 +1002,13 @@ def password_reset(request, user_id=None, hash=None):
                     send_validation_email(
                         'Recuperación de contraseña',
                         user,
-                        notif_templates_basepath + 'notifications/password_reset_body.html',
+                        get_app_template('notifications/password_reset_body.html'),
                         get_password_validation_url,
                     )
                 else:
-                    notification_template = 'notifications/account_signup%s.html' % (
-                        '_subscribed' if hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any() else ''
+                    is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
+                    notification_template = get_app_template(
+                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
                     )
                     send_validation_email(
                         f'Verificá tu cuenta de {site_name}', user, notification_template, get_signup_validation_url
@@ -1017,39 +1016,38 @@ def password_reset(request, user_id=None, hash=None):
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
-        ctx["action_content_template"] = notif_templates_basepath + "password_reset_action_content.html"
+        ctx["action_content_template"] = get_app_template("password_reset_action_content.html")
     else:
         ctx['form'] = PasswordResetRequestForm()
-    return render(request, view_template('password_reset.html'), ctx)
+    return render(request, get_app_template('password_reset.html'), ctx)
 
 
 @never_cache
-@to_response
 def confirm_email(request):
     if request.user.is_authenticated:
         raise Http404
     ctx = {}
     if request.method == 'POST':
         confirm_email_form = ConfirmEmailRequestForm(request.POST)
-        default_basepath = "thedaily/templates/"
-        notif_templates_basepath = notif_templates_dir_prefix or default_basepath
         if confirm_email_form.is_valid():
             try:
                 user = confirm_email_form.cleaned_data["user"]
+                is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
                 send_validation_email(
                     f'Verificá tu cuenta de {site_name}',
                     user,
-                    notif_templates_basepath + 'notifications/account_signup%s.html'
-                    % ('_subscribed' if hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any() else ''),
+                    get_app_template(
+                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                    ),
                     get_signup_validation_url,
                 )
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
-        ctx["action_content_template"] = default_basepath + "confirm_email_action_content.html"
+        ctx["action_content_template"] = get_app_template("confirm_email_action_content.html")
     else:
         ctx["form"] = ConfirmEmailRequestForm()
-    return 'confirm_email.html', ctx
+    return render(request, get_app_template('confirm_email.html'), ctx)
 
 
 @never_cache
@@ -1101,7 +1099,7 @@ def password_change(request, user_id=None, hash=None):
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
     return render(
         request,
-        view_template('password_change.html'),
+        get_app_template('password_change.html'),
         {'form': password_change_form, 'user_id': user_id, 'hash': hash},
     )
 
@@ -2057,15 +2055,9 @@ def notification_preview(request, template, days=False):
             'days': days,
             'seller_fullname': 'Seller Fullname' if seller_fullname is None else seller_fullname,
         }
-        result = render(request, notif_templates_dir_prefix + ('notifications/%s.html' % template), ctx)
+        result = render(request, get_app_template('notifications/%s.html' % template), ctx)
     except TemplateDoesNotExist:
-        if notif_templates_dir_prefix:
-            try:
-                result = render(request, 'notifications/%s.html' % template, ctx)
-            except TemplateDoesNotExist:
-                raise Http404
-        else:
-            raise Http404
+        raise Http404
     return result
 
 
@@ -2162,7 +2154,7 @@ def phone_subscription(request):
 
     if "form" not in ctx:
         ctx["form"] = PhoneSubscriptionForm()
-    return render(request, settings.THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR + "/" + template, ctx)
+    return render(request, get_app_template(template), ctx)
 
 
 def phone_subscription_log_get4today(request, user=None):

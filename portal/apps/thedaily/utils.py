@@ -222,8 +222,14 @@ def google_phone_next_page(request, is_new):
     )
 
 
-def view_template(relative_path):
-    default_dir, custom_dir = "thedaily/templates/", getattr(settings, "THEDAILY_ROOT_TEMPLATE_DIR", None)
+def get_app_template(relative_path):
+    """
+    This simplifies the use of one custom setting per file, but cannot map a known template to any file, if one day
+    this became a requirement, we can add a map setting to map the relative_path received here to whatever the custom
+    map says; for ex: relative_path = getattr(settings, "NEW_CUSTOM_SETTING", {}).get(relative_path, relative_path)
+    where NEW_CUSTOM_SETTING can be for ex: {"welcome.html": "goodbye.html"}
+    """
+    default_dir, custom_dir = "thedaily/templates", getattr(settings, "THEDAILY_ROOT_TEMPLATE_DIR", None)
     template = join(default_dir, relative_path)  # fallback to the default
     if custom_dir:
         engine = Engine.get_default()
@@ -241,16 +247,14 @@ def view_template(relative_path):
 
 def product_checkout_template(product_slug, steps=False):
     steps_suffix = "_steps" if steps else ""
-    template, engine = f"thedaily/templates/market/product{steps_suffix}.html", Engine.get_default()
-    custom_dir = getattr(settings, "THEDAILY_MARKET_PRODUCTS_TEMPLATE_DIR", None)
-    if custom_dir:
-        template_try = join(custom_dir, f"{product_slug}{steps_suffix}.html")
-        try:
-            engine.get_template(template_try)
-        except TemplateDoesNotExist:
-            pass
-        else:
-            template = template_try
+    template = get_app_template(f"market/product{steps_suffix}.html")  # fallback
+    template_try = get_app_template(f"market/products/{product_slug}{steps_suffix}.html")
+    try:
+        Engine.get_default().get_template(template_try)
+    except TemplateDoesNotExist:
+        pass
+    else:
+        template = template_try
     return template
 
 
