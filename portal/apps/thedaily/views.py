@@ -929,14 +929,6 @@ def hash_validate(user_id, hash):
     return user
 
 
-def get_or_create_user_profile(user):
-    try:
-        profile = user.subscriber
-    except Subscriber.DoesNotExist:  # TODO: maybe RelatedObjectDoesNotExist
-        profile = Subscriber.objects.create(user=user)
-    return profile
-
-
 def get_password_validation_url(user):
     return reverse(
         'account-password_change-hash',
@@ -1194,7 +1186,7 @@ def edit_profile(request, user=None):
 
     return render(
         request,
-        getattr(settings, "THEDAILY_EDIT_PROFILE_TEMPLATE", "thedaily/templates/edit_profile.html"),
+        get_app_template("edit_profile.html"),
         {
             'user_form': user_form,
             'profile_form': profile_form,
@@ -1224,7 +1216,6 @@ def edit_profile(request, user=None):
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_leer_despues(request):
     followings = recent_following(request.user, Article)
@@ -1243,12 +1234,14 @@ def lista_lectura_leer_despues(request):
         followings = paginator_leer_despues.page(paginator_leer_despues.num_pages)
     # end paginator for leer_despues
 
-    lista_lectura_template = getattr(settings, "THEDAILY_LISTA_LECTURA_TEMPLATE", "lista-lectura.html")
-    return lista_lectura_template, {'leer_despues': followings, 'leer_despues_count': followings_count}
+    return render(
+        request,
+        get_app_template("lista-lectura.html"),
+        {'leer_despues': followings, 'leer_despues_count': followings_count},
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_favoritos(request):
     user = request.user
@@ -1268,11 +1261,12 @@ def lista_lectura_favoritos(request):
         favoritos = paginator_favoritos.page(paginator_favoritos.num_pages)
     # end paginator for favoritos
 
-    return 'lista-lectura.html', {'favoritos': favoritos, 'favoritos_count': favoritos_count}
+    return render(
+        request, get_app_template("lista-lectura.html"), {'favoritos': favoritos, 'favoritos_count': favoritos_count}
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_historial(request):
     """
@@ -1308,8 +1302,9 @@ def lista_lectura_historial(request):
     except EmptyPage:
         historial = paginator_historial.page(paginator_historial.num_pages)
 
-    lista_lectura_template = getattr(settings, "THEDAILY_LISTA_LECTURA_TEMPLATE", "lista-lectura.html")
-    return lista_lectura_template, {'historial': historial, 'historial_count': historial_count}
+    return render(
+        request, get_app_template("lista-lectura.html"), {'historial': historial, 'historial_count': historial_count}
+    )
 
 
 @never_cache
