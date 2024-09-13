@@ -25,6 +25,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import IntegrityError
 from django.db.models import Count
 from django.db.models.query_utils import Q
+from django.db.models.deletion import Collector
 from django.core.mail import send_mail, mail_admins, mail_managers
 from django.urls import reverse
 from django.core.exceptions import MultipleObjectsReturned
@@ -115,6 +116,7 @@ from .utils import (
     google_phone_next_page,
     product_checkout_template,
     qparamstr,
+    collector_analysis,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -1533,34 +1535,64 @@ def update_user_from_crm(request):
         pass
     return JsonResponse({"message": "OK"})
 
-    @never_cache
-    @api_view(['DELETE'])
-    @permission_classes([HasAPIKey])
-    def delete_user_from_crm(request):
-        """
-        Delete user and subscriber based on the CRM information
-        """
-        if request.method == "DELETE":
-            try:
-                contact_id = request.POST["contact_id"]
-                email = request.POST.get('email', "")
-            except KeyError:
-                return HttpResponseBadRequest()
-            try:
-                subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
-                # do validations over subscriber before delete
-                subscriber.delete()
-            except Subscriber.DoesNotExists:
-                # look for email
-                if email:
-                    try:
-                        user = User.objects.get(email__exact=email)
-                        # do validations over user before delete
-                        user.delete()
-                    except User.DoesNotExists:
-                        return Http404
+
+@never_cache
+@api_view(['DELETE'])
+@permission_classes([HasAPIKey])
+def delete_user_from_crm(request):
+    """
+    Delete user and subscriber based on the CRM information
+    """
+    def validation_on_delete(user):
+        is_valid = True
+        if subscriber.plan_id or u.is_active or u.is_staff or u.is_superuser:
+            msg = "No se permite eliminar usuarios 'staff' o usuarios activos"
+            is_valid = False
         else:
+            collector = Collector(using='default')
+            collector.collect([u])
+            safe_to_delete, msg_err = collector_analysis(collector.data)
+            if safe_to_delete:
+                msg = "El suscriptor seleccionado y su usuario fueron eliminados correctamente"
+            else:
+                msg = "El conjunto de datos relacionados al usuario que se pretende eliminar se considera " \
+                            "importante o demasiado grande: %s" % msg_err
+                is_valid = False
+        return is_valid, msg
+
+    if request.method == "DELETE":
+        try:
+            contact_id = request.POST["contact_id"]
+            email = request.POST.get('email', "")
+        except KeyError:
             return HttpResponseBadRequest()
+
+        try:
+            subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
+            u = subscriber.user
+            if validation_on_delete(u):
+                try:
+                    u.delete()
+                except Exception as ex:
+                    print(f"Error al eliminar el usuario: {str(ex)}")
+                    raise Exception(f"Error al eliminar el usuario: {str(ex)}")
+            raise Exception("No es seguro remover este usuario/suscriptor")
+        except Subscriber.DoesNotExists:
+            # look for email
+            if email:
+                try:
+                    user = User.objects.get(email__exact=email)
+                    if validation_on_delete(u):
+                        try:
+                            user.delete()
+                        except Exception as ex:
+                            print(f"Error al eliminar el usuario: {str(ex)}")
+                            raise Exception(f"Error al eliminar el usuario: {str(ex)}")
+                    raise Exception("No es seguro remover este usuario/suscriptor")
+                except User.DoesNotExists:
+                    return Http404
+    else:
+        return HttpResponseBadRequest()
 
 
 @never_cache
