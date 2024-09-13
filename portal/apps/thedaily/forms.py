@@ -145,7 +145,7 @@ class CrispyModelForm(ModelForm):
 
 
 class PreLoginForm(CrispyForm):
-    email = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
+    email = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS, "placeholder": "ejemplo@gmail.com"}))
     if terms_and_conditions_prelogin:
         terms_and_conds_accepted = terms_and_conditions_field()
 
@@ -184,10 +184,10 @@ class PreLoginForm(CrispyForm):
 
 
 class LoginForm(CrispyForm):
-    name_or_mail = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
+    name_or_mail = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS, "placeholder": "ejemplo@gmail.com"}))
     password = CharField(
         label='Contraseña',
-        widget=PasswordInput(attrs={'class': CSS_CLASS, 'autocomplete': 'current-password', 'autocapitalize': 'none'}),
+        widget=PasswordInput(attrs={'class': CSS_CLASS, 'placeholder': 'Ingresá tu contraseña', 'autocomplete': 'current-password', 'autocapitalize': 'none'}),
     )
 
     def __init__(self, *args, **kwargs):
@@ -915,7 +915,7 @@ class GoogleSignupForm(GoogleSigninForm):
         super().__init__(*args, **kwargs)
         self.helper.form_tag = False
         self.helper.layout = Layout(
-            HTML('<div class="ld-block--sm align-center">Para continuar completá los siguientes datos</div>'), 'phone'
+            HTML('<div class="align-center">Para continuar completá los siguientes datos</div>'), 'phone'
         )
 
     def is_valid(self, *args):
