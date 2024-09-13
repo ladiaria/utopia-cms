@@ -527,9 +527,9 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
-PHONENUMBER_DEFAULT_REGION = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
-
+CRM_UPDATE_USER_CREATE_CONTACT = None
+PHONENUMBER_DEFAULT_REGION = None
 
 # Override previous settings with values in local_migration_settings.py settings file
 from local_migration_settings import *  # noqa
@@ -573,6 +573,9 @@ if CORE_ARTICLE_DETAIL_ENABLE_AMP:
         + (MIDDLEWARE[-1],)
     )
 
-# CRM API urls
+# CRM API
 if CRM_API_BASE_URI:
     CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + "updateuserweb/")
+if CRM_UPDATE_USER_CREATE_CONTACT is None:
+    # defaults to the same value of the "base sync"
+    CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED

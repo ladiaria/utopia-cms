@@ -276,6 +276,9 @@ class UserForm(BaseUserForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(Fieldset('Datos personales', 'first_name', 'last_name', 'email'))
+        template_from_settings = getattr(settings, 'USER_FORM_TEMPLATE', False)
+        if template_from_settings:
+            self.helper.template = template_from_settings
 
     def clean(self):
         return self.custom_clean(True, False)
@@ -382,6 +385,12 @@ class SignupForm(BaseUserForm):
     def create_user(self):
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
+        # TODO: next commented lines are proposed but it should come with an explanation because:
+        #       an exception can be handled somewhere in the save(L323) and the result now is a user object without
+        #       first_name, if the same thing happens with this new lines, we have to explain why a resultant user with
+        #       first_name is better or needed instead of the one without this field.
+        # first_name = self.cleaned_data.get('first_name')
+        # user = User.objects.create_user(email, email, password, first_name=first_name)
         user = User.objects.create_user(email, email, password)
         if not user.subscriber.phone:
             user.subscriber.phone = self.cleaned_data.get('phone', '')
@@ -446,6 +455,9 @@ class ProfileForm(CrispyModelForm):
             Fieldset('Datos de suscriptor', 'document', 'phone'),
             Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
         )
+        template_from_settings = getattr(settings, 'PROFILE_FORM_TEMPLATE', False)
+        if template_from_settings:
+            self.helper.template = template_from_settings
 
     class Meta:
         model = Subscriber
@@ -466,15 +478,10 @@ class ProfileExtraDataForm(CrispyModelForm):
                 )
             ),
             Field('newsletters', template='profile/newsletters.html'),
-            HTML(
-                '''
-                <section id="ld-comunicaciones" class="scrollspy edit_profile_card">
-                <div class="edit_profile_card__header"><h2 class="title">Comunicaciones</h2></div>
-                '''
-            ),
+            HTML('{%% include "%s" %%}' % get_app_template('profile/communications_start_section.html')),
             Field('allow_news', template=get_app_template('profile/allow_news.html')),
-            Field('allow_promotions', template='profile/allow_promotions.html'),
-            Field('allow_polls', template='profile/allow_polls.html'),
+            Field('allow_promotions', template=get_app_template('profile/allow_promotions.html')),
+            Field('allow_polls', template=get_app_template('profile/allow_polls.html')),
             HTML('</section>'),
         )
 

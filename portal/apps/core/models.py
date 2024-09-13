@@ -1046,6 +1046,9 @@ class Journalist(Model):
         ('PE', 'Periodista'),
         ('CO', 'Columnista'),
     )
+    DEFAULT_SOCIAL_ORDER = ['bluesky', 'facebook', 'instagram', 'linkedin',
+                            'mastodon', 'threads', 'tiktok', 'tumblr',
+                            'twitch', 'X', 'youtube', 'otro 1', 'otro 2', 'otro 3']
 
     name = CharField('nombre', max_length=50, unique=True)
     email = EmailField(blank=True, null=True)
@@ -1060,10 +1063,20 @@ class Journalist(Model):
     )
     bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
     sections = ManyToManyField(Section, verbose_name='secciones', blank=True)
-    fb = CharField('facebook', max_length=255, blank=True, null=True)
-    tt = CharField('twitter', max_length=255, blank=True, null=True)
-    gp = CharField('google plus', max_length=255, blank=True, null=True)
-    ig = CharField('instagram', max_length=255, blank=True, null=True)
+    fb = URLField('facebook', blank=True, null=True)
+    tt = URLField('X', blank=True, null=True)
+    ig = URLField('instagram', blank=True, null=True)
+    mtdn = URLField('mastodon', blank=True, null=True)
+    thds = URLField('threads', blank=True, null=True)
+    ytb = URLField('youtube', blank=True, null=True)
+    lnkin = URLField('linkedin', blank=True, null=True)
+    tktk = URLField('tiktok', blank=True, null=True)
+    bs = URLField('bluesky', blank=True, null=True)
+    tr = URLField('tumblr', blank=True, null=True)
+    tw = URLField('twitch', blank=True, null=True)
+    other_one = URLField('otro 1', blank=True, null=True)
+    other_two = URLField('otro 2', blank=True, null=True)
+    other_three = URLField('otro 3', blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -1090,6 +1103,32 @@ class Journalist(Model):
         except IOError:
             result = False
         return result
+
+    def get_socials(self):
+        """
+        Get all socials that has value
+        @return field_value: social fields with values in dict format
+        {"field_verbose_name": "field_value"}
+        """
+        custom_order = getattr(settings, "CORE_JOURNALIST_SOCIAL_ORDER", None)
+        if custom_order:
+            verbose_names_of_interest = custom_order
+        else:
+            verbose_names_of_interest = self.DEFAULT_SOCIAL_ORDER
+
+        # Create a mapping from verbose_name to field_name
+        verbose_name_to_field = {
+            field.verbose_name: field.name for field in self._meta.fields
+        }
+
+        field_values = {}
+        for verbose_name in verbose_names_of_interest:
+            field_name = verbose_name_to_field.get(verbose_name)
+            if field_name and hasattr(self, field_name) and getattr(self, field_name):
+                field_value = getattr(self, field_name)
+                field_values[verbose_name] = field_value
+
+        return field_values
 
     class Meta:
         ordering = ('name', )

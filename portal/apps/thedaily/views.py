@@ -75,7 +75,15 @@ from signupwall.middleware import (
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
-from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList
+from .models import (
+    Subscriber,
+    Subscription,
+    SubscriptionPrices,
+    UsersApiSession,
+    OAuthState,
+    MailtrainList,
+    deletecrmuser,
+)
 from .forms import (
     __name__ as forms_module_name,
     LoginForm,
@@ -500,7 +508,10 @@ def signup(request):
                 msg = "Error al enviar email de verificación para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 if user:
+                    email_to_delete = user.email
                     user.delete()
+                    deletecrmuser(email_to_delete)
+
                 signup_form.add_error(None, msg)
     else:
         initial = {}
@@ -918,6 +929,14 @@ def hash_validate(user_id, hash):
     return user
 
 
+def get_or_create_user_profile(user):
+    try:
+        profile = user.subscriber
+    except Subscriber.DoesNotExist:  # TODO: maybe RelatedObjectDoesNotExist
+        profile = Subscriber.objects.create(user=user)
+    return profile
+
+
 def get_password_validation_url(user):
     return reverse(
         'account-password_change-hash',
@@ -1105,7 +1124,6 @@ def password_change(request, user_id=None, hash=None):
 
 
 @never_cache
-@to_response
 @login_required
 def edit_profile(request, user=None):
     user = user or request.user
@@ -1174,31 +1192,35 @@ def edit_profile(request, user=None):
     except UserSocialAuth.MultipleObjectsReturned:
         oauth2_assoc, google_oauth2_multiple = True, True
 
-    return 'edit_profile.html', {
-        'user_form': user_form,
-        'profile_form': profile_form,
-        'profile_data_form': ProfileExtraDataForm(instance=profile),
-        'is_subscriber_digital': user.subscriber.is_digital_only(),
-        'google_oauth2_assoc': oauth2_assoc,
-        'google_oauth2_multiple': google_oauth2_multiple,
-        'google_oauth2_allow_disconnect':
-            not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
-        'publication_newsletters': Publication.objects.filter(has_newsletter=True),
-        'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
-        'newsletters': get_profile_newsletters_ordered(),
-        "mailtrain_lists": MailtrainList.objects.all(),
-        "incomplete_field_count": sum(
-            not bool(value) for value in (
-                user.get_full_name(),
-                user.subscriber.document,
-                user.email,
-                user.subscriber.phone,
-                user.subscriber.address,
-            )
-        ),
-        "email_is_bouncer": user.subscriber.email_is_bouncer(),
-        "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
-    }
+    return render(
+        request,
+        getattr(settings, "THEDAILY_EDIT_PROFILE_TEMPLATE", "thedaily/templates/edit_profile.html"),
+        {
+            'user_form': user_form,
+            'profile_form': profile_form,
+            'profile_data_form': ProfileExtraDataForm(instance=profile),
+            'is_subscriber_digital': user.subscriber.is_digital_only(),
+            'google_oauth2_assoc': oauth2_assoc,
+            'google_oauth2_multiple': google_oauth2_multiple,
+            'google_oauth2_allow_disconnect':
+                not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
+            'publication_newsletters': Publication.objects.filter(has_newsletter=True),
+            'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
+            'newsletters': get_profile_newsletters_ordered(),
+            "mailtrain_lists": MailtrainList.objects.all(),
+            "incomplete_field_count": sum(
+                not bool(value) for value in (
+                    user.get_full_name(),
+                    user.subscriber.document,
+                    user.email,
+                    user.subscriber.phone,
+                    user.subscriber.address,
+                )
+            ),
+            "email_is_bouncer": user.subscriber.email_is_bouncer(),
+            "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+        },
+    )
 
 
 @never_cache
@@ -1221,7 +1243,8 @@ def lista_lectura_leer_despues(request):
         followings = paginator_leer_despues.page(paginator_leer_despues.num_pages)
     # end paginator for leer_despues
 
-    return 'lista-lectura.html', {'leer_despues': followings, 'leer_despues_count': followings_count}
+    lista_lectura_template = getattr(settings, "THEDAILY_LISTA_LECTURA_TEMPLATE", "lista-lectura.html")
+    return lista_lectura_template, {'leer_despues': followings, 'leer_despues_count': followings_count}
 
 
 @never_cache
@@ -1285,7 +1308,8 @@ def lista_lectura_historial(request):
     except EmptyPage:
         historial = paginator_historial.page(paginator_historial.num_pages)
 
-    return 'lista-lectura.html', {'historial': historial, 'historial_count': historial_count}
+    lista_lectura_template = getattr(settings, "THEDAILY_LISTA_LECTURA_TEMPLATE", "lista-lectura.html")
+    return lista_lectura_template, {'historial': historial, 'historial_count': historial_count}
 
 
 @never_cache
@@ -1344,82 +1368,133 @@ def update_user_from_crm(request):
     Subscriber is updated when the field is other (a field mapping between CRM
     fields and Subscriber's field should be provided somewhere)
     """
-    def changeuseremail(user, email, newemail):
+    def changeuseremail(user, newemail):
+        """
+        Change linked user email
+        @param user: User object
+        @param newemail: new email to update the user
+        """
         if user.email == user.username:
             user.username = newemail
         user.email = newemail
 
     def changesubscriberfield(s, field, v):
+        """
+        Change subscriber field value
+        @param s: Subscriber object
+        @param field: Subscriber field
+        @param value: Subscriber field value
+        """
         mfield = settings.CRM_UPDATE_SUBSCRIBER_FIELDS[field]
         # eval the value before saving if type field is bool
         setattr(s, mfield, eval(v) if isinstance(getattr(s, mfield), bool) else v)
 
-    try:
-        contact_id = request.POST['contact_id']
-        email = request.POST.get('email')
-        newemail = request.POST.get('newemail')
-        field = request.POST.get('field')
-        value = request.POST.get('value')
-    except KeyError:
-        return HttpResponseBadRequest()
-    try:
-        s = Subscriber.objects.get(contact_id=contact_id)
-        if field == 'email':
+    def updatesubscriberemail(user, newemail):
+        """
+        Update subscriber email and peforms integrity validations
+        @param u: User object
+        @param newemail: new email to update the subscriber
+        """
+        if newemail:
             check_user = User.objects.filter(email=newemail)
             if check_user.exists():
                 if check_user.count() == 1:
                     check_user = check_user[0]
                 else:
-                    mail_managers('Multiple email in users', email)
+                    msg = 'Multiple email in users'
+                    mail_managers(msg, msg)
                     return HttpResponseBadRequest()
-            if check_user and check_user != s.user:
+            if check_user and check_user != user:
                 return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-            changeuseremail(s.user, email, newemail)
-            s.user.updatefromcrm = True
-            s.user.save()
-        elif field == 'newsletters':
-            # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add all
-            # the ones in the value JSON list that are missing.
-            s.updatefromcrm, pub_names = True, json.loads(value)
-            for pub in s.newsletters.filter(has_newsletter=True):
-                if pub.name in pub_names:
-                    pub_names.remove(pub.name)
-                else:
-                    s.newsletters.remove(pub)
-            for pub_name in pub_names:
-                try:
-                    s.newsletters.add(Publication.objects.get(name=pub_name))
-                except Publication.DoesNotExist:
-                    pass
-        elif field == 'area_newsletters':
-            # the same as above but for category newsletters
-            s.updatefromcrm, cat_names = True, json.loads(value)
-            for cat in s.category_newsletters.filter(has_newsletter=True):
-                if cat.name in cat_names:
-                    cat_names.remove(cat.name)
-                else:
-                    s.category_newsletters.remove(cat)
-            for category_name in cat_names:
-                try:
-                    s.category_newsletters.add(Category.objects.get(name=category_name))
-                except Category.DoesNotExist:
-                    pass
-        else:
-            changesubscriberfield(s, field, value)
-            s.updatefromcrm = True
-            s.save()
+            # change the web user email just if it's different
+            if user.email != newemail:
+                changeuseremail(user, newemail)
+                user.updatefromcrm = True
+                user.save()
+
+    def updateuserfields(user, first_name="", last_name=""):
+        updated = False
+        if first_name and user.first_name != first_name:
+            user.first_name = first_name
+            updated = True
+        if last_name and user.last_name != last_name:
+            user.last_name = last_name
+            updated = True
+        if updated:
+            user.save()
+
+    def updatesubscriberfields(s, fields):
+        """
+        Update subscriber fields.
+        @param s: Subscriber object
+        @param fields: fields and values in dictionary format
+        """
+        for field, value in fields.items():
+            if field == 'newsletters':
+                # we remove the Subscriber's newsletters (whose pub has_newsletter)
+                # and name not in json, and then add all
+                # the ones in the value JSON list that are missing.
+                s.updatefromcrm, pub_names = True, json.loads(value)
+                for pub in s.newsletters.filter(has_newsletter=True):
+                    if pub.name in pub_names:
+                        pub_names.remove(pub.name)
+                    else:
+                        s.newsletters.remove(pub)
+                for pub_name in pub_names:
+                    try:
+                        s.newsletters.add(Publication.objects.get(name=pub_name))
+                    except Publication.DoesNotExist:
+                        pass
+            elif field == 'area_newsletters':
+                # the same as above but for category newsletters
+                s.updatefromcrm, cat_names = True, json.loads(value)
+                for cat in s.category_newsletters.filter(has_newsletter=True):
+                    if cat.name in cat_names:
+                        cat_names.remove(cat.name)
+                    else:
+                        s.category_newsletters.remove(cat)
+                for category_name in cat_names:
+                    try:
+                        s.category_newsletters.add(Category.objects.get(name=category_name))
+                    except Category.DoesNotExist:
+                        pass
+            else:
+                changesubscriberfield(s, field, value)
+        s.updatefromcrm = True
+        s.save()
+
+    try:
+        contact_id = request.POST['contact_id']
+        name = request.POST.get('name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        newemail = request.POST.get('newemail')
+        fields = request.POST.get('fields')
+    except KeyError:
+        return HttpResponseBadRequest()
+    try:
+        subscriber = Subscriber.objects.select_related('user').get(contact_id=contact_id)
+        # TODO: call update subscriber email it must change the email if meet the integrity validation and if new email
+        # exists (explain better what thing needs to be done, is related to the next commented line?)
+        updatesubscriberemail(subscriber.user, newemail)  # TODO: We will allow to update user email from CRM ?
+        updatesubscriberfields(subscriber, fields)
+        updateuserfields(subscriber.user, name, last_name)
     except Subscriber.DoesNotExist:
-        if email and field == 'email':
+        if email:
             try:
                 u = User.objects.get(email__exact=email)
-                if User.objects.filter(email__exact=newemail).exists():
-                    return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-                changeuseremail(u, email, newemail)
-                u.updatefromcrm = True
-                u.save()
+                # TODO: Is updating the user.first_name with name, mandatory ?
+                if newemail:
+                    updatesubscriberemail(u, newemail)
+                # Try to update the fields from CRM if subscriber exists
+                if hasattr(u, 'subscriber'):
+                    updatesubscriberfields(u.subscriber, fields)
+                updateuserfields(u, name, last_name)
             except User.DoesNotExist:
-                # No problem, tipically this scenario is achieved using offline sync tools.
-                pass
+                # create new user
+                new_user = User.objects.create_user(email, email, first_name=name, last_name=last_name)
+                new_user.subscriber.contact_id = contact_id
+                new_user.subscriber.save()
             except MultipleObjectsReturned:
                 mail_managers('Multiple email in users', email)
                 return HttpResponseBadRequest()
@@ -1433,7 +1508,7 @@ def update_user_from_crm(request):
         return HttpResponseBadRequest()
     except KeyError:
         pass
-    return HttpResponse("OK", content_type="application/json")
+    return JsonResponse({"message": "OK"})
 
 
 @never_cache

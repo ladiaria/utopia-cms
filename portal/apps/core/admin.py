@@ -339,6 +339,7 @@ class ArticleAdminModelForm(ModelForm):
         widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
         help_text='Se genera automáticamente en base al título.',
     )
+
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
     pw_radio_choice = ChoiceField(
         label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
@@ -1109,17 +1110,17 @@ class CategoryHomeArticleInline(TabularInline):
     max_num = 20
     form = CategoryHomeArticleForm
     formset = CategoryHomeArticleFormSet
-    raw_id_fields = ('article', )
+    raw_id_fields = ('article',)
     verbose_name_plural = 'Artículos en portada'
 
     class Media:
-        css = {'all': ('css/category_home.css', )}
+        css = {'all': ('css/category_home.css',)}
 
 
 @admin.register(CategoryHome, site=site)
 class CategoryHomeAdmin(admin.ModelAdmin):
     list_display = ('category', 'cover')
-    exclude = ('articles', )
+    exclude = ('articles',)
     inlines = [CategoryHomeArticleInline]
 
     def save_related(self, request, form, formsets, change):
