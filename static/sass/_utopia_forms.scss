@@ -1,4 +1,5 @@
 body.subscribe:not(.signup) form#signup_form,
+body.subscribe:not(.signup) form#google_signin,
 body.subscribe:not(.signup) form#subscribe {
   div.input-field input {
     box-sizing: border-box;
@@ -10,11 +11,22 @@ body.subscribe:not(.signup) form#subscribe {
     }
     div.iti {
       width: calc(100%);
+      button.iti__selected-country:focus {
+        background-color: transparent;
+      }
     }
     input[type="tel"] {
       box-sizing: border-box;
       width: 100%;
       padding-left: 50px;
     }
+    input.iti__search-input {
+      padding: 0 8px;
+    }
   }
+}
+
+body.subscribe:not(.signup) form#google_signin #div_id_phone {
+  max-width: 300px;
+  margin: 35px auto;
 }
