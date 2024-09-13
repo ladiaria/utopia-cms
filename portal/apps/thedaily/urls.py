@@ -6,9 +6,8 @@ from django.conf import settings
 from django.urls import path, re_path
 from django.views.generic import TemplateView, RedirectView
 from django.views.decorators.cache import never_cache
-from django.contrib.auth import views as auth_views
 
-from thedaily.views import (
+from .views import (
     subscribe,
     referrals,
     google_phone,
@@ -22,6 +21,7 @@ from thedaily.views import (
     password_reset,
     complete_signup,
     login,
+    logout_view,
     amp_access_authorization,
     amp_access_pingback,
     session_refresh,
@@ -49,6 +49,7 @@ from thedaily.views import (
     nl_track_open_event,
     mailtrain_lists,
 )
+from .utils import get_app_template
 
 
 # override views
@@ -101,13 +102,16 @@ urlpatterns = [
 
     path('registrate/', signup, name="account-signup"),
     path('registrate/google/', google_phone, name="account-google"),
-    path('salir/', auth_views.LogoutView.as_view(next_page='/usuarios/sesion-cerrada/'), name="account-logout"),
-    path('sesion-cerrada/', never_cache(TemplateView.as_view(template_name='registration/logged_out.html'))),
+    path('salir/', logout_view, name="account-logout"),
     path(
-        'salir-invalid/',
-        auth_views.LogoutView.as_view(next_page='/usuarios/sesion-finalizada/'),
-        name="account-invalid",
+        'sesion-cerrada/',
+        never_cache(
+            TemplateView.as_view(
+                template_name=getattr(settings, 'REGISTRATION_LOGGED_OUT_TEMPLATE', 'registration/logged_out.html')
+            )
+        )
     ),
+    path('salir-invalid/', logout_view, {"next_page": '/usuarios/sesion-finalizada/'}, name="account-invalid"),
     path('sesion-finalizada/', never_cache(TemplateView.as_view(template_name='registration/session_invalid.html'))),
     path('bienvenida/', welcome, {'signup': True}, name="account-welcome"),
     path('bienvenido/', welcome, {'subscribed': True}, name="account-welcome-s"),
@@ -115,7 +119,7 @@ urlpatterns = [
     path('cambiar-password/', password_change, name="account-password_change"),
     path(
         'cambiar-password/hecho/',
-        never_cache(TemplateView.as_view(template_name='thedaily/templates/password_change_done.html')),
+        never_cache(TemplateView.as_view(template_name=get_app_template('password_change_done.html'))),
         name="account-password_change-done",
     ),
     re_path(
@@ -134,22 +138,13 @@ urlpatterns = [
         name="account-error-toomuch",
     ),
     path('restablecer/', password_reset, name="account-password_reset"),
-    path(
-        'restablecer/correo-enviado/',
-        never_cache(TemplateView.as_view(template_name='thedaily/templates/password_reset_mail_sent.html')),
-        name="account-password_reset-mail_sent",
-    ),
     path('confirm_email/', confirm_email, name='account-confirm_email'),
     path('session_refresh/', session_refresh, name='session-refresh'),
 
     # TODO: enter "bienvenido/" directly should not be allowed
     path(
         'bienvenido/tel/',
-        never_cache(
-            TemplateView.as_view(
-                template_name=settings.THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR + '/phone_subscription_thankyou.html'
-            )
-        ),
+        never_cache(TemplateView.as_view(template_name=get_app_template('phone_subscription_thankyou.html'))),
         name="telsubscribe_success",
     ),
 

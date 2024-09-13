@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from future import standard_library
 from builtins import str
 import os
@@ -37,10 +36,12 @@ from django.http import (
     HttpResponseServerError,
     JsonResponse,
 )
+from django.forms import ValidationError
 from django.forms.utils import ErrorList
 from django.contrib import messages
 from django.contrib.auth import authenticate, logout, login as do_login
 from django.contrib.auth.models import User
+from django.contrib.auth.views import LogoutView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
@@ -105,16 +106,19 @@ from .forms import (
     ProfileForm,
     ProfileExtraDataForm,
     UserForm,
+    PhoneSubscriptionForm,
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
 )
 from .utils import (
+    get_or_create_user_profile,
     recent_following,
     add_default_newsletters,
     get_profile_newsletters_ordered,
     google_phone_next_page,
     product_checkout_template,
     qparamstr,
+    get_app_template,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -123,6 +127,8 @@ from .tasks import send_notification, notify_digital, notify_paper, send_notific
 
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
+delivery_err = "Error interno, intentá de nuevo más tarde."
+site_name = Site.objects.get_current().name
 
 
 def notify_new_subscription(subscription_url, extra_subject=''):
@@ -352,7 +358,7 @@ def login(request, product_slug=None, product_variant=None):
         context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "product_slug": product_slug})
     else:
         article_id = request.GET.get('article')
-        template = getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html')
+        template = get_app_template('login.html')
 
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
@@ -455,7 +461,7 @@ def login(request, product_slug=None, product_variant=None):
 
 @never_cache
 def signup(request):
-    template, article_id, context = "signup.html", request.GET.get("article"), {}
+    template, article_id, context = get_app_template('signup.html'), request.GET.get("article"), {}
 
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
@@ -497,7 +503,7 @@ def signup(request):
                     return HttpResponseRedirect(next_page)
                 else:
                     context['signup_mail'] = user.email
-                    return render(request, settings.THEDAILY_WELCOME_TEMPLATE, context)
+                    return render(request, get_app_template("welcome.html"), context)
             except Exception as exc:
                 msg = "Error al enviar email de verificación para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
@@ -539,7 +545,7 @@ def welcome(request, signup=False, subscribed=False):
         request.session.pop('welcome')
         return render(
             request,
-            settings.THEDAILY_WELCOME_TEMPLATE,
+            get_app_template("welcome.html"),
             {'signup': signup, 'subscribed': subscribed, "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
     else:
@@ -595,9 +601,15 @@ def google_phone(request):
                         print("DEBUG: welcome email message send error: %s" % exc)
             oas.delete()
             request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
+            redirect_kwargs = {'backend': 'google-oauth2'}
+            # if the user didn't complete the phone, we tell pipeline to not redirect here again through oas obj
+            if google_signin_form.instance.phone:
+                oas.delete()
+            else:
+                oas.phone_submitted_blank = True
+                oas.save()
             return HttpResponseRedirect(
-                reverse('social:begin', kwargs={'backend': 'google-oauth2'})
-                + (("?next=" + next_page) if next_page else "")
+                reverse('social:begin', kwargs=redirect_kwargs) + (("?next=" + next_page) if next_page else "")
             )
     else:
         google_signin_form = GoogleSigninForm(**form_kwargs)
@@ -833,14 +845,14 @@ def subscribe(request, planslug, category_slug=None):
                         user = subscriber_form_v.signup_form.create_user()
                         try:
                             was_sent = send_validation_email(
-                                'Verificá tu cuenta de ' + Site.objects.get_current().name,
+                                f'Verificá tu cuenta de {site_name}',
                                 user,
                                 'notifications/account_signup_subscribed.html',
                                 get_signup_validation_url,
                             )
                             if not was_sent:
                                 raise Exception(
-                                    "No se pudo enviar el email de verificación de suscripción para el usuario: %s"
+                                    "No se pudo enviar el email de verificación de suscripción para el usuario: %s."
                                     % (user)
                                 )
                         except Exception as exc:
@@ -917,14 +929,6 @@ def hash_validate(user_id, hash):
     return user
 
 
-def get_or_create_user_profile(user):
-    try:
-        profile = user.subscriber
-    except Subscriber.DoesNotExist:  # TODO: maybe RelatedObjectDoesNotExist
-        profile = Subscriber.objects.create(user=user)
-    return profile
-
-
 def get_password_validation_url(user):
     return reverse(
         'account-password_change-hash',
@@ -994,76 +998,91 @@ def complete_signup(request, user_id, hash):
 
 
 @never_cache
-@to_response
 def password_reset(request, user_id=None, hash=None):
     if user_id and hash:
         return password_change(request, user_id, hash)
-    reset_form = PasswordResetRequestForm()
+    ctx = {}
     if request.method == 'POST':
         # TODO: we should also check for telephone number as google_auth
         post = request.POST.copy()
         reset_form = PasswordResetRequestForm(post)
         if reset_form.is_valid():
             try:
-                if reset_form.user:
-                    was_sent = send_validation_email(
+                user = reset_form.cleaned_data["user"]
+                if user.is_active:
+                    send_validation_email(
                         'Recuperación de contraseña',
-                        reset_form.user,
-                        'notifications/password_reset_body.html',
+                        user,
+                        get_app_template('notifications/password_reset_body.html'),
                         get_password_validation_url,
                     )
-                    if not was_sent:
-                        raise Exception(
-                            "No se pudo enviar el email de recuperación de contraseña para el usuario: %s"
-                            % (reset_form.user)
-                        )
-                return HttpResponseRedirect(reverse('account-password_reset-mail_sent'))
+                else:
+                    is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
+                    notification_template = get_app_template(
+                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                    )
+                    send_validation_email(
+                        f'Verificá tu cuenta de {site_name}', user, notification_template, get_signup_validation_url
+                    )
             except Exception as exc:
-                msg = "Error al enviar email de recuperación de contraseña para el usuario: %s." % reset_form.user
-                error_log(msg + " Detalle: {}".format(str(exc)))
-                reset_form.add_error(None, msg)
-    return 'password_reset.html', {'form': reset_form}
+                error_log(delivery_err + " Detalle: {}".format(str(exc)))
+                ctx['error'] = delivery_err
+        ctx["action_content_template"] = get_app_template("password_reset_action_content.html")
+    else:
+        ctx['form'] = PasswordResetRequestForm()
+    return render(request, get_app_template('password_reset.html'), ctx)
 
 
 @never_cache
-@to_response
 def confirm_email(request):
-    confirm_email_form = ConfirmEmailRequestForm()
+    if request.user.is_authenticated:
+        raise Http404
+    ctx = {}
     if request.method == 'POST':
         confirm_email_form = ConfirmEmailRequestForm(request.POST)
         if confirm_email_form.is_valid():
-            user = None
             try:
-                user = confirm_email_form.user
-                was_sent = send_validation_email(
-                    'Verificá tu cuenta',
+                user = confirm_email_form.cleaned_data["user"]
+                is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
+                send_validation_email(
+                    f'Verificá tu cuenta de {site_name}',
                     user,
-                    'notifications/account_signup%s.html'
-                    % ('_subscribed' if hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any() else ''),
+                    get_app_template(
+                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                    ),
                     get_signup_validation_url,
                 )
-                if not was_sent:
-                    raise Exception("No se pudo enviar el email de verifición de cuenta para el usuario: %s" % user)
-                return 'confirm_email.html', {'sent': True, 'email': confirm_email_form.cleaned_data['email']}
             except Exception as exc:
-                msg = "Error al enviar email de verificacion para el usuario: %s." % user
-                error_log(msg + " Detalle: {}".format(str(exc)))
-                confirm_email_form.add_error(None, msg)
-    return 'confirm_email.html', {'form': confirm_email_form}
+                error_log(delivery_err + " Detalle: {}".format(str(exc)))
+                ctx['error'] = delivery_err
+        ctx["action_content_template"] = get_app_template("confirm_email_action_content.html")
+    else:
+        ctx["form"] = ConfirmEmailRequestForm()
+    return render(request, get_app_template('confirm_email.html'), ctx)
 
 
 @never_cache
-def session_refresh(request):
+def session_refresh(request, next_page=None):
     """
-    This view was created with the only purpose to delete subscription and
-    subscription_type session variables for an in-process subscription.
+    This view was created with the only purpose to delete subscription and subscription_type session variables for an
+    in-process subscription. Then another session variables that can impact in a "new session" were also removed.
     """
     subscription = request.session.pop('subscription', None)
     subscription_type = request.session.pop('subscription_type', None)
+    request.session.pop("google-oauth2_state", None)
     if subscription and subscription_type:
         subscription.subscription_type_prices.remove(subscription_type)
-    referer = request.headers.get('referer')
+    referer = next_page or request.headers.get('referer')
     return HttpResponseRedirect(referer if referer and referer != request.path else '/')
+
+
+@never_cache
+def logout_view(request, next_page='/usuarios/sesion-cerrada/'):
+    next_page = request.GET.get("next") or next_page
+    if request.user.is_authenticated:
+        return LogoutView.as_view(next_page=next_page)(request)
+    else:
+        return session_refresh(request, next_page)
 
 
 @never_cache
@@ -1089,7 +1108,11 @@ def password_change(request, user_id=None, hash=None):
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
-    return 'password_change.html', {'form': password_change_form, 'user_id': user_id, 'hash': hash}
+    return render(
+        request,
+        get_app_template('password_change.html'),
+        {'form': password_change_form, 'user_id': user_id, 'hash': hash},
+    )
 
 
 @never_cache
@@ -1163,7 +1186,7 @@ def edit_profile(request, user=None):
 
     return render(
         request,
-        getattr(settings, "THEDAILY_EDIT_PROFILE_TEMPLATE", "thedaily/templates/edit_profile.html"),
+        get_app_template("edit_profile.html"),
         {
             'user_form': user_form,
             'profile_form': profile_form,
@@ -1193,7 +1216,6 @@ def edit_profile(request, user=None):
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_leer_despues(request):
     followings = recent_following(request.user, Article)
@@ -1212,11 +1234,14 @@ def lista_lectura_leer_despues(request):
         followings = paginator_leer_despues.page(paginator_leer_despues.num_pages)
     # end paginator for leer_despues
 
-    return 'lista-lectura.html', {'leer_despues': followings, 'leer_despues_count': followings_count}
+    return render(
+        request,
+        get_app_template("lista-lectura.html"),
+        {'leer_despues': followings, 'leer_despues_count': followings_count},
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_favoritos(request):
     user = request.user
@@ -1236,11 +1261,12 @@ def lista_lectura_favoritos(request):
         favoritos = paginator_favoritos.page(paginator_favoritos.num_pages)
     # end paginator for favoritos
 
-    return 'lista-lectura.html', {'favoritos': favoritos, 'favoritos_count': favoritos_count}
+    return render(
+        request, get_app_template("lista-lectura.html"), {'favoritos': favoritos, 'favoritos_count': favoritos_count}
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_historial(request):
     """
@@ -1276,7 +1302,9 @@ def lista_lectura_historial(request):
     except EmptyPage:
         historial = paginator_historial.page(paginator_historial.num_pages)
 
-    return 'lista-lectura.html', {'historial': historial, 'historial_count': historial_count}
+    return render(
+        request, get_app_template("lista-lectura.html"), {'historial': historial, 'historial_count': historial_count}
+    )
 
 
 @never_cache
@@ -2131,16 +2159,9 @@ def notification_preview(request, template, days=False):
             'days': days,
             'seller_fullname': 'Seller Fullname' if seller_fullname is None else seller_fullname,
         }
-        dir_prefix = getattr(settings, 'THEDAILY_NOTIFICATIONS_TEMPLATE_PREFIX', '')
-        result = render(request, dir_prefix + ('notifications/%s.html' % template), ctx)
+        result = render(request, get_app_template('notifications/%s.html' % template), ctx)
     except TemplateDoesNotExist:
-        if dir_prefix:
-            try:
-                result = render(request, 'notifications/%s.html' % template, ctx)
-            except TemplateDoesNotExist:
-                raise Http404
-        else:
-            raise Http404
+        raise Http404
     return result
 
 
@@ -2156,25 +2177,43 @@ def subscribe_notice_closed(request, key="subscribe"):
 
 @never_cache
 def phone_subscription(request):
-    """ Sends an email notification to a configured receipt with the information submitted in this view """
+    """
+    Sends an email notification to a configured receipt with the information submitted in this view.
+    But also can send too, if there is enough information collected in the session using other views when the user
+    selects the "subscription by phone" method, these views process the POST themselves and redirect here.
+
+    Note: this is the default subscription method in utopia-cms because no payment gateways are ready to include yet.
+    """
     template, thankyou_template, ctx = 'phone_subscription_form.html', "phone_subscription_thankyou.html", {}
     subject, mail_to = "Solicitud de suscripción", settings.SUBSCRIPTION_BY_PHONE_EMAIL_TO
 
     if request.POST:
-        form = request.POST
-        phone = form.get('phone')
-        text = "Nombre: %s\nTeléfono: %s\nContactar: %s" % (form.get('full_name'), phone, form.get('time'))
-
-        ctx["phone_blocklisted"] = phone_blisted = phone_is_blocklisted(phone)
-        if not phone_blisted:
-            ctx["already_done"] = phone_subscription_log_get4today(request)
-        if not any(ctx.values()):
-            message = Message(subject=subject, text=text, mail_from=settings.DEFAULT_FROM_EMAIL, mail_to=mail_to)
-            send_notification_message(subject, message, mail_to)
-            # TODO: handle send possible errors?
-            phone_subscription_log(request)
-
-        template = thankyou_template
+        form = PhoneSubscriptionForm(request.POST)
+        if form.is_valid():
+            phone_blisted = phone_is_blocklisted(request.POST.get("phone"))
+            if phone_blisted:
+                template, ctx["phone_blocklisted"] = thankyou_template, phone_blisted
+            else:
+                already_done = phone_subscription_log_get4today(request)
+                if already_done:
+                    template, ctx["already_done"] = thankyou_template, already_done
+                else:
+                    text = "Nombre: %s\nTeléfono: %s\nContactar: %s" % (
+                        form.cleaned_data.get('full_name'),
+                        form.cleaned_data.get('phone'),
+                        dict(form.fields['preferred_time'].choices)[form.cleaned_data.get('preferred_time')]
+                    )
+                    message = Message(
+                        subject=subject, text=text, mail_from=settings.DEFAULT_FROM_EMAIL, mail_to=mail_to
+                    )
+                    try:
+                        send_notification_message(subject, message, mail_to)
+                    except Exception:
+                        form.add_error(None, ValidationError(delivery_err))
+                    else:
+                        phone_subscription_log(request)
+                        template = thankyou_template
+        ctx["form"] = form
 
     elif request.session.get('notify_phone_subscription'):
         is_authenticated = request.user.is_authenticated
@@ -2188,30 +2227,38 @@ def phone_subscription(request):
         user.subscriber.province = subscription.province
         preferred_time = request.session.get('preferred_time')
 
-        ctx["phone_blocklisted"] = phone_blisted = phone_is_blocklisted(user.subscriber.phone)
-        if not phone_blisted:
-            ctx["already_done"] = phone_subscription_log_get4today(request, user)
-        if not any(ctx.values()):
-            user.subscriber.save()
-            message = Message(
-                subject=subject,
-                text=telephone_subscription_msg(user, preferred_time),
-                mail_from=settings.DEFAULT_FROM_EMAIL,
-                mail_to=mail_to,
-            )
-            send_notification_message(subject, message, mail_to)
-            # TODO: handle send possible errors?
-            phone_subscription_log(request, user)
+        phone_blisted = phone_is_blocklisted(user.subscriber.phone.as_e164)
+        if phone_blisted:
+            template, ctx["phone_blocklisted"] = thankyou_template, phone_blisted
+        else:
+            already_done = phone_subscription_log_get4today(request, user)
+            if already_done:
+                template, ctx["already_done"] = thankyou_template, already_done
+            else:
+                user.subscriber.save()
+                message = Message(
+                    subject=subject,
+                    text=telephone_subscription_msg(user, preferred_time),
+                    mail_from=settings.DEFAULT_FROM_EMAIL,
+                    mail_to=mail_to,
+                )
+                try:
+                    send_notification_message(subject, message, mail_to)
+                except Exception:
+                    ctx["form"] = {"non_field_errors": [delivery_err]}
+                else:
+                    phone_subscription_log(request, user)
+                    request.session.pop('notify_phone_subscription')
+                    # delete this subscription successful attemp in session
+                    request.session.pop('subscription', None)
+                    is_google = request.session.get('google-oauth2_state')
+                    display = not is_google and not is_authenticated
+                    template = thankyou_template
+                    ctx.update({'display': display, 'email': user.email})
 
-        request.session.pop('notify_phone_subscription')
-        # delete this subscription successful attemp in session
-        request.session.pop('subscription', None)
-        is_google = request.session.get('google-oauth2_state')
-        display = not is_google and not is_authenticated
-        template = thankyou_template
-        ctx.update({'display': display, 'email': user.email})
-
-    return render(request, settings.THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR + "/" + template, ctx)
+    if "form" not in ctx:
+        ctx["form"] = PhoneSubscriptionForm()
+    return render(request, get_app_template(template), ctx)
 
 
 def phone_subscription_log_get4today(request, user=None):

@@ -123,6 +123,7 @@ INSTALLED_APPS = (
     "reversion",
     "django_celery_results",
     "django_celery_beat",
+    "phonenumber_field",
 )
 
 SITE_ID = 1
@@ -418,8 +419,6 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
     ("PAPYDIM", "Suscripción papel"),
 )
 THEDAILY_PROVINCE_CHOICES = []
-THEDAILY_WELCOME_TEMPLATE = "welcome.html"
-THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR = "thedaily/templates"
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
 
 # photologue
@@ -529,9 +528,9 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
-CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
-
+CRM_UPDATE_USER_CREATE_CONTACT = None
+PHONENUMBER_DEFAULT_REGION = None
 
 # Override previous settings with values in local_migration_settings.py settings file
 from local_migration_settings import *  # noqa
@@ -543,6 +542,10 @@ CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
 LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
 COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
+
+# phonenumbers default region (if not set) will default to LOCAL_COUNTRY
+if PHONENUMBER_DEFAULT_REGION is None:
+    PHONENUMBER_DEFAULT_REGION = LOCAL_COUNTRY
 
 # signupwall overrided/defaults
 if SIGNUPWALL_ENABLED is None:

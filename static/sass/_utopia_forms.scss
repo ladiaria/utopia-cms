@@ -1,0 +1,20 @@
+body.subscribe:not(.signup) form#signup_form,
+body.subscribe:not(.signup) form#subscribe {
+  div.input-field input {
+    box-sizing: border-box;
+    width: 100%;
+  }
+  #div_id_phone {
+    label {
+      z-index: 1;
+    }
+    div.iti {
+      width: calc(100%);
+    }
+    input[type="tel"] {
+      box-sizing: border-box;
+      width: 100%;
+      padding-left: 50px;
+    }
+  }
+}

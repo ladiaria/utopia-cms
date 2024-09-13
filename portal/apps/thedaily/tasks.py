@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from email.utils import make_msgid
 from emails.django import DjangoMessage as Message
 
@@ -33,8 +32,7 @@ def send_notification_message(subject, message, mailto):
 def send_notification(user, email_template, email_subject, extra_context={}):
     extra_context.update(
         {
-            'SITE_URL': settings.SITE_URL,
-            'URL_SCHEME': settings.URL_SCHEME,
+            'SITE_URL_SD': settings.SITE_URL_SD,
             'site': Site.objects.get_current(),
             'logo_url': settings.HOMEV3_SECONDARY_LOGO,
         }

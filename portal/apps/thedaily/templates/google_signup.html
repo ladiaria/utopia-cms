@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "thedaily/templates/subscribe.html" %}
 {% load core_tags static thedaily_tags crispy_forms_tags %}
 
 {% block page_title %}{% title_joinparts 'Registrate con tu cuenta de Google' %}{% endblock %}
@@ -10,27 +10,10 @@
   </style>
 {% endblock %}
 
-{% block body_class %}subscribe hide-mobile-nav{% endblock %}
-
-{% block navbar %}
-  <div id="main-header">
-    <nav class="subscription_black">
-      {# TODO: for signup-only, link to home is better than this #}
-      <a href="{% url 'subscribe_landing' %}" {% block logoclass %}class="header-logo emergentes"{% endblock %}>
-        <img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_WIDTH }}" height="42">
-      </a>
-    </nav>
-  </div>
-{% endblock %}
-
-{% block content_pre %}
-  <div class="modal" id="terms-conditions-modal">
-    <div class="content">
-      {% autoescape off %}{% terms_and_conditions %}{% endautoescape %}
-      <div class="align-center"><a class="ut-btn" onclick="accept_terms_and_conds();">aceptar</a></div>
-    </div>
-  </div>
-{% endblock %}
+{% block navbar_a_attrs %}{% spaceless %}
+  {# TODO: for signup-only, link to home is better than this (doing) #}
+  href="{% url 'subscribe_landing' %}" class="header-logo emergentes"
+{% endspaceless %}{% endblock %}
 
 {% block content %}
   {% block content_main_open %}<main class="ld-content">{% endblock %}
@@ -62,19 +45,3 @@
 {% endblock %}
 
 {% block footer_block %}{% include 'footer_simple.html' with disable_first_row=True %}{% endblock %}
-
-{% block javascript %}
-  <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
-  <script>
-    $(function(){
-      $('label[for="id_terms_and_conds_accepted"] a').on("click", function(event){
-        event.preventDefault();
-        $('.modal').modal('open');
-      });
-    });
-    function accept_terms_and_conds(){
-      $('.modal').modal('close');
-      $('#id_terms_and_conds_accepted').prop('checked', true);
-    }
-  </script>
-{% endblock %}

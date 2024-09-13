@@ -37,6 +37,7 @@ from django.dispatch import receiver
 from django.urls import reverse
 
 from social_django.models import UserSocialAuth
+from phonenumber_field.modelfields import PhoneNumberField
 
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
@@ -103,7 +104,7 @@ class Subscriber(Model):
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
     document = CharField('documento de identidad', max_length=50, blank=True, null=True)
-    phone = CharField('teléfono', max_length=20)
+    phone = PhoneNumberField('teléfono', blank=True)
 
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
     downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
@@ -124,7 +125,11 @@ class Subscriber(Model):
     subscription_mode = CharField(max_length=1, null=True, blank=True, default=None)
     last_paid_subscription = DateTimeField('Ultima subscripcion comienzo', null=True, blank=True)
 
+    def __str__(self):
+        return self.name or self.get_full_name()
+
     def save(self, *args, **kwargs):
+        # TODO: this should be reviewed ASAP (a new field 'doc type' may be added resulting incompatibilities)
         if self.document:
             non_decimal = re.compile(r'[^\d]+')
             self.document = non_decimal.sub('', self.document)
@@ -255,9 +260,6 @@ class Subscriber(Model):
                 return 0
             else:
                 return qs[0].downloads
-
-    def __str__(self):
-        return self.name or self.get_full_name()
 
     def get_full_name(self):
         if not self.user.first_name and not self.user.last_name:
@@ -574,6 +576,7 @@ class OAuthState(Model):
     user = OneToOneField(User, on_delete=CASCADE)
     state = CharField(max_length=32, unique=True)
     fullname = CharField(max_length=255, blank=True, null=True)
+    phone_submitted_blank = BooleanField(default=False)
 
 
 class WebSubscriber(Subscriber):
