@@ -439,8 +439,6 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
     ("PAPYDIM", "Suscripción papel"),
 )
 THEDAILY_PROVINCE_CHOICES = []
-THEDAILY_WELCOME_TEMPLATE = "welcome.html"
-THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR = "thedaily/templates"
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
 
 # photologue

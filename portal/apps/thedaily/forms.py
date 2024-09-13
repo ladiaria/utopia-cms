@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-
-from django_recaptcha.fields import ReCaptchaField
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, BaseInput, Field, Fieldset, HTML
-from crispy_forms.bootstrap import FormActions
-from crispy_forms.utils import get_template_pack
+from pydoc import locate
 
 from django.conf import settings
 from django.http import UnreadablePostError
@@ -27,12 +22,18 @@ from django.forms import (
 )
 from django.urls import reverse
 from django.utils.timezone import now
+from django.utils.safestring import mark_safe
 
+from django_recaptcha.fields import ReCaptchaField
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, BaseInput, Field, Fieldset, HTML
+from crispy_forms.bootstrap import FormActions
+from crispy_forms.utils import get_template_pack
 from phonenumber_field.formfields import PhoneNumberField
 from phonenumber_field.widgets import RegionalPhoneNumberWidget
 
 from .models import Subscription, Subscriber, email_extra_validations
-from .utils import get_all_newsletters
+from .utils import get_all_newsletters, get_app_template
 from .exceptions import EmailValidationError
 
 
@@ -44,18 +45,27 @@ SUBSCRIPTION_PHONE_TIME_CHOICES = (
     ('3', 'En la tarde (12:00 a 18:00)'),
     ('4', 'En la tarde-noche (18:00 a 20:00)'),
 )
+TEMPLATE_PACK = get_template_pack()
+
+
+def custom_layout(form_id):
+    custom_layout_module = getattr(settings, "THEDAILY_CRISPY_CUSTOM_LAYOUTS_MODULE", None)
+    if custom_layout_module:
+        return locate(f"{custom_layout_module}.layouts").get(form_id)
 
 
 def terms_and_conditions_field():
-    return BooleanField(label='Leí y acepto los <a>términos y condiciones</a>', required=False)
+    return BooleanField(label=mark_safe('Leí y acepto los <a>términos y condiciones</a>'), required=False)
 
 
-def terms_and_conds_accepted_field():
-    return Field('terms_and_conds_accepted', css_class='filled-in')
+def terms_and_conds_accepted_field(**extra_kwargs):
+    return Field('terms_and_conds_accepted', css_class='filled-in', **extra_kwargs)
 
 
-def terms_and_conditions_layout_tuple():
-    return (terms_and_conds_accepted_field(),) if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID else ()
+def terms_and_conditions_layout_tuple(**extra_kwargs):
+    return (
+        terms_and_conds_accepted_field(**extra_kwargs),
+    ) if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID else ()
 
 
 terms_and_conditions_prelogin = (
@@ -96,11 +106,10 @@ class Submit(BaseInput):
     """
     Use a custom submit because crispy's adds btn and btn-primary in the class attribute
     """
-
     input_type = 'submit'
 
     def __init__(self, *args, **kwargs):
-        self.field_classes = 'submit submitButton' if get_template_pack() == 'uni_form' else ''
+        self.field_classes = 'submit submitButton' if TEMPLATE_PACK == 'uni_form' else ''
         super().__init__(*args, **kwargs)
 
 
@@ -131,7 +140,8 @@ class CrispyModelForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = CrispyModelFormHelper()
+        custom_helper_class = getattr(settings, "THEDAILY_CRISPY_CUSTOM_MODEL_FORM_HELPER_CLASS", None)
+        self.helper = (locate(custom_helper_class) if custom_helper_class else CrispyModelFormHelper)()
 
 
 class PreLoginForm(CrispyForm):
@@ -329,7 +339,7 @@ class SignupForm(BaseUserForm):
         super().__init__(*args, **kwargs)
         self.helper.form_id = 'signup_form'
         self.helper.form_tag = True
-        self.helper.layout = Layout(
+        self.helper.layout = custom_layout(self.helper.form_id) or Layout(
             *(
                 'first_name',
                 'email',
@@ -349,6 +359,14 @@ class SignupForm(BaseUserForm):
                 HTML('</div">'),
             )
         )
+        # uncomment next lines to test error rendering without interaction
+        # self.cleaned_data = {}
+        # self.add_error(None, ValidationError(mark_safe("this is a global error <em>test</em> one")))
+        # self.add_error(None, ValidationError(mark_safe("this is a global error <em>test</em> two")))
+        # self.add_error("first_name", ValidationError(mark_safe("this is a <em>test</em> error for field")))
+        # self.add_error("email", ValidationError(mark_safe("this is a <em>test</em> error for field")))
+        # self.add_error("password", ValidationError(mark_safe("this is a <em>test</em> error for field")))
+        # self.add_error("terms_and_conds_accepted", ValidationError(mark_safe("im a <em>test</em> error for field")))
 
     def clean_password(self):
         data = self.cleaned_data
@@ -440,11 +458,7 @@ class ProfileExtraDataForm(CrispyModelForm):
         super().__init__(*args, **kwargs)
         self.fields["newsletters"].choices = [(item.slug, item.name) for item in get_all_newsletters()]
         self.helper.layout = Layout(
-            HTML(
-                '{%% include "%s" %%}' % (
-                    getattr(settings, 'THEDAILY_SUBSCRIPTIONS_TEMPLATE', 'profile/suscripciones.html')
-                )
-            ),
+            HTML('{%% include "%s" %%}' % get_app_template('profile/suscripciones.html')),
             # include push notifications section if it's configured
             HTML(
                 '{%% if push_notifications_keys_set %%}{%% include "%s" %%}{%% endif %%}' % (
@@ -458,7 +472,7 @@ class ProfileExtraDataForm(CrispyModelForm):
                 <div class="edit_profile_card__header"><h2 class="title">Comunicaciones</h2></div>
                 '''
             ),
-            Field('allow_news', template=getattr(settings, 'THEDAILY_ALLOW_NEWS_TEMPLATE', 'profile/allow_news.html')),
+            Field('allow_news', template=get_app_template('profile/allow_news.html')),
             Field('allow_promotions', template='profile/allow_promotions.html'),
             Field('allow_polls', template='profile/allow_polls.html'),
             HTML('</section>'),
