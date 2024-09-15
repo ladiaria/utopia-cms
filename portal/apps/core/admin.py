@@ -339,7 +339,6 @@ class ArticleAdminModelForm(ModelForm):
         widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
         help_text='Se genera automáticamente en base al título.',
     )
-
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
     pw_radio_choice = ChoiceField(
         label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
