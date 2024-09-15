@@ -18,18 +18,6 @@ class CRMSyncTestCase(TestCase):
 
     test_user = None
 
-    def tearDown(self):
-        # Clean up test data in the CRM
-        if self.test_user:
-            api_url = settings.CRM_API_UPDATE_USER_URI
-            api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-            if api_url and api_key:
-                requests.delete(
-                    api_url,
-                    headers={'Authorization': 'Api-Key ' + api_key},
-                    data={"email": self.test_user.email},
-                )
-
     def test_create_user_sync(self):
         with override_settings(CRM_UPDATE_USER_ENABLED=True):
             name, email_pre_prefix, password = "Jane Doe", "cms_test_crmsync_", User.objects.make_random_password()
@@ -50,6 +38,29 @@ class CRMSyncTestCase(TestCase):
                     data={"name": name, "email": email},
                 )
                 self.assertEqual(res.json()["contact_id"], self.test_user.subscriber.contact_id)
+
+    def test_delete_user_sync(self):
+        # Clean up test data in the CRM
+        if self.test_user:
+            api_url = settings.CRM_API_UPDATE_USER_URI
+            api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+            if api_url and api_key:
+                res = requests.delete(
+                    api_url,
+                    headers={'Authorization': 'Api-Key ' + api_key},
+                    data={"email": self.test_user.email},
+                )
+
+                # check if user exists in the CRM
+                api_url = settings.CRM_API_GET_USER_URI
+                api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+                if api_url and api_key:
+                    res = requests.get(
+                        api_url,
+                        headers={'Authorization': 'Api-Key ' + api_key},
+                        params={"email": self.test_user.email},
+                    )
+                self.assertFalse(res.json()["exists"])
 
     def test_not_create_user_without_sync(self):
         with override_settings(CRM_UPDATE_USER_ENABLED=False):

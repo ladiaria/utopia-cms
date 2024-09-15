@@ -1474,10 +1474,8 @@ def update_user_from_crm(request):
         if email or fields.get('email', None):
             try:
                 u = User.objects.get(email__exact=email)
-                # TODO: Is updating the user.first_name with name, mandatory ?
                 if newemail:
                     updatesubscriberemail(u, newemail)
-                # Try to update the fields from CRM if subscriber exists
                 if hasattr(u, 'subscriber'):
                     updatesubscriberfields(u.subscriber, fields, contact_id)
                 updateuserfields(u, name, last_name)
@@ -1545,12 +1543,15 @@ def delete_user_from_crm(request):
     """
     def validation_on_delete(user):
         is_valid = True
-        if subscriber.plan_id or u.is_active or u.is_staff or u.is_superuser:
+        if user.subscriber and user.subscriber.plan_id:
+            msg = "No se permite eliminar suscriptor con un plan asignado"
+            is_valid = False
+        elif user.is_active or user.is_staff or user.is_superuser:
             msg = "No se permite eliminar usuarios 'staff' o usuarios activos"
             is_valid = False
         else:
             collector = Collector(using='default')
-            collector.collect([u])
+            collector.collect([user])
             safe_to_delete, msg_err = collector_analysis(collector.data)
             if safe_to_delete:
                 msg = "El suscriptor seleccionado y su usuario fueron eliminados correctamente"
@@ -1563,36 +1564,45 @@ def delete_user_from_crm(request):
     if request.method == "DELETE":
         try:
             contact_id = request.POST["contact_id"]
-            email = request.POST.get('email', "")
+            email = request.POST.get("email", "")
         except KeyError:
             return HttpResponseBadRequest()
 
         try:
             subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
-            u = subscriber.user
-            if validation_on_delete(u):
+            user_to_delete = subscriber.user
+            is_valid, msg = validation_on_delete(user_to_delete)
+            if is_valid:
                 try:
-                    u.delete()
+                    user_to_delete.delete()
                 except Exception as ex:
                     print(f"Error al eliminar el usuario: {str(ex)}")
                     raise Exception(f"Error al eliminar el usuario: {str(ex)}")
-            raise Exception("No es seguro remover este usuario/suscriptor")
-        except Subscriber.DoesNotExists:
-            # look for email
+            else:
+                raise Exception(f"No es seguro remover este usuario/suscriptor {contact_id}. {msg}")
+        except Subscriber.DoesNotExist:
             if email:
                 try:
-                    user = User.objects.get(email__exact=email)
-                    if validation_on_delete(u):
+                    user_to_delete = User.objects.get(email__exact=email)
+                    is_valid, msg = validation_on_delete(user_to_delete)
+                    if is_valid:
                         try:
-                            user.delete()
+                            user_to_delete.delete()
                         except Exception as ex:
                             print(f"Error al eliminar el usuario: {str(ex)}")
                             raise Exception(f"Error al eliminar el usuario: {str(ex)}")
-                    raise Exception("No es seguro remover este usuario/suscriptor")
-                except User.DoesNotExists:
+                    else:
+                        raise Exception(f"No es seguro remover este usuario/suscriptor {email}. {msg}")
+                except User.DoesNotExist:
                     return Http404
+                except Exception as ex:
+                    return HttpResponseServerError(str(ex))
+        except Exception as ex:
+            return HttpResponseServerError(str(ex))
     else:
         return HttpResponseBadRequest()
+
+    return JsonResponse({"message": "OK"})
 
 
 @never_cache
