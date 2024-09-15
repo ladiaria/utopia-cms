@@ -184,16 +184,25 @@ class PreLoginForm(CrispyForm):
 
 
 class LoginForm(CrispyForm):
-    name_or_mail = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS, "placeholder": "ejemplo@gmail.com"}))
+    name_or_mail = CharField(
+        label='Email', widget=TextInput(attrs={'class': CSS_CLASS, "placeholder": "ejemplo@gmail.com"})
+    )
     password = CharField(
         label='Contraseña',
-        widget=PasswordInput(attrs={'class': CSS_CLASS, 'placeholder': 'Ingresá tu contraseña', 'autocomplete': 'current-password', 'autocapitalize': 'none'}),
+        widget=PasswordInput(
+            attrs={
+                'class': CSS_CLASS,
+                'placeholder': 'Ingresá tu contraseña',
+                'autocomplete': 'current-password',
+                'autocapitalize': 'none',
+            }
+        ),
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.form_id = 'account_login'
-        self.helper.layout = Layout(
+        self.helper.layout = custom_layout(self.helper.form_id) or Layout(
             Field(
                 'name_or_mail',
                 title="Ingresá tu nombre de usuario o email",
