@@ -1174,35 +1174,38 @@ def edit_profile(request, user=None):
     except UserSocialAuth.MultipleObjectsReturned:
         oauth2_assoc, google_oauth2_multiple = True, True
 
-    return 'edit_profile.html', {
-        'user_form': user_form,
-        'profile_form': profile_form,
-        'profile_data_form': ProfileExtraDataForm(instance=profile),
-        'is_subscriber_digital': user.subscriber.is_digital_only(),
-        'google_oauth2_assoc': oauth2_assoc,
-        'google_oauth2_multiple': google_oauth2_multiple,
-        'google_oauth2_allow_disconnect':
-            not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
-        'publication_newsletters': Publication.objects.filter(has_newsletter=True),
-        'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
-        'newsletters': get_profile_newsletters_ordered(),
-        "mailtrain_lists": MailtrainList.objects.all(),
-        "incomplete_field_count": sum(
-            not bool(value) for value in (
-                user.get_full_name(),
-                user.subscriber.document,
-                user.email,
-                user.subscriber.phone,
-                user.subscriber.address,
-            )
-        ),
-        "email_is_bouncer": user.subscriber.email_is_bouncer(),
-        "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
-    }
+    return render(
+        request,
+        get_app_template("edit_profile.html"),
+        {
+            'user_form': user_form,
+            'profile_form': profile_form,
+            'profile_data_form': ProfileExtraDataForm(instance=profile),
+            'is_subscriber_digital': user.subscriber.is_digital_only(),
+            'google_oauth2_assoc': oauth2_assoc,
+            'google_oauth2_multiple': google_oauth2_multiple,
+            'google_oauth2_allow_disconnect':
+                not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
+            'publication_newsletters': Publication.objects.filter(has_newsletter=True),
+            'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
+            'newsletters': get_profile_newsletters_ordered(),
+            "mailtrain_lists": MailtrainList.objects.all(),
+            "incomplete_field_count": sum(
+                not bool(value) for value in (
+                    user.get_full_name(),
+                    user.subscriber.document,
+                    user.email,
+                    user.subscriber.phone,
+                    user.subscriber.address,
+                )
+            ),
+            "email_is_bouncer": user.subscriber.email_is_bouncer(),
+            "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+        },
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_leer_despues(request):
     followings = recent_following(request.user, Article)
@@ -1221,11 +1224,14 @@ def lista_lectura_leer_despues(request):
         followings = paginator_leer_despues.page(paginator_leer_despues.num_pages)
     # end paginator for leer_despues
 
-    return 'lista-lectura.html', {'leer_despues': followings, 'leer_despues_count': followings_count}
+    return render(
+        request,
+        get_app_template("lista-lectura.html"),
+        {'leer_despues': followings, 'leer_despues_count': followings_count},
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_favoritos(request):
     user = request.user
@@ -1245,11 +1251,12 @@ def lista_lectura_favoritos(request):
         favoritos = paginator_favoritos.page(paginator_favoritos.num_pages)
     # end paginator for favoritos
 
-    return 'lista-lectura.html', {'favoritos': favoritos, 'favoritos_count': favoritos_count}
+    return render(
+        request, get_app_template("lista-lectura.html"), {'favoritos': favoritos, 'favoritos_count': favoritos_count}
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_historial(request):
     """
@@ -1285,7 +1292,9 @@ def lista_lectura_historial(request):
     except EmptyPage:
         historial = paginator_historial.page(paginator_historial.num_pages)
 
-    return 'lista-lectura.html', {'historial': historial, 'historial_count': historial_count}
+    return render(
+        request, get_app_template("lista-lectura.html"), {'historial': historial, 'historial_count': historial_count}
+    )
 
 
 @never_cache
