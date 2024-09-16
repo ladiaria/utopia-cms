@@ -461,9 +461,13 @@ class ProfileForm(CrispyModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Fieldset('Datos de suscriptor', 'document', 'phone'),
-            Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
+        self.helper.form_id = "profile_form"
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                Fieldset('Datos de suscriptor', 'document', 'phone'),
+                Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
+            )
         )
 
     class Meta:
