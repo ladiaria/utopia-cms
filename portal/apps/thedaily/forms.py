@@ -401,6 +401,12 @@ class SignupForm(BaseUserForm):
     def create_user(self):
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
+        # TODO: next commented lines are proposed but it should come with an explanation because:
+        #       an exception can be handled somewhere in the save(L323) and the result now is a user object without
+        #       first_name, if the same thing happens with this new lines, we have to explain why a resultant user with
+        #       first_name is better or needed instead of the one without this field.
+        # first_name = self.cleaned_data.get('first_name')
+        # user = User.objects.create_user(email, email, password, first_name=first_name)
         user = User.objects.create_user(email, email, password)
         if not user.subscriber.phone:
             user.subscriber.phone = self.cleaned_data.get('phone', '')

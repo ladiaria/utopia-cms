@@ -24,6 +24,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import IntegrityError
 from django.db.models import Count
 from django.db.models.query_utils import Q
+from django.db.models.deletion import Collector
 from django.core.mail import send_mail, mail_admins, mail_managers
 from django.urls import reverse
 from django.core.exceptions import MultipleObjectsReturned
@@ -75,7 +76,15 @@ from signupwall.middleware import (
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
-from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList
+from .models import (
+    Subscriber,
+    Subscription,
+    SubscriptionPrices,
+    UsersApiSession,
+    OAuthState,
+    MailtrainList,
+    deletecrmuser,
+)
 from .forms import (
     __name__ as forms_module_name,
     LoginForm,
@@ -110,6 +119,7 @@ from .utils import (
     google_phone_next_page,
     product_checkout_template,
     qparamstr,
+    collector_analysis,
     get_app_template,
 )
 from .email_logic import limited_free_article_mail
@@ -500,7 +510,10 @@ def signup(request):
                 msg = "Error al enviar email de verificación para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 if user:
+                    email_to_delete = user.email
                     user.delete()
+                    deletecrmuser(email_to_delete)
+
                 signup_form.add_error(None, msg)
     else:
         initial = {}
@@ -1352,87 +1365,195 @@ def update_user_from_crm(request):
     Subscriber is updated when the field is other (a field mapping between CRM
     fields and Subscriber's field should be provided somewhere)
     """
-    def changeuseremail(user, email, newemail):
+    def changeuseremail(user, newemail):
+        """
+        Change linked user email
+        @param user: User object
+        @param newemail: new email to update the user
+        """
         if user.email == user.username:
             user.username = newemail
         user.email = newemail
 
     def changesubscriberfield(s, field, v):
+        """
+        Change subscriber field value
+        @param s: Subscriber object
+        @param field: Subscriber field
+        @param value: Subscriber field value
+        """
         mfield = settings.CRM_UPDATE_SUBSCRIBER_FIELDS[field]
         # eval the value before saving if type field is bool
         setattr(s, mfield, eval(v) if isinstance(getattr(s, mfield), bool) else v)
 
+    def updatesubscriberemail(user, newemail):
+        """
+        Update subscriber email and peforms integrity validations
+        @param u: User object
+        @param newemail: new email to update the subscriber
+        """
+        if newemail:
+            check_user_email = User.objects.filter(email=newemail)
+            check_user_username = User.objects.filter(username=newemail)
+            if check_user_email.exists() or check_user_username.exists():
+                if check_user_email.count() == 1:
+                    check_user = check_user_email[0]
+                elif check_user_username.count() == 1:
+                    check_user = check_user_username[0]
+                else:
+                    msg = 'Multiple email in users'
+                    mail_managers(msg, msg)
+                    return HttpResponseBadRequest()
+                if check_user and check_user != user:
+                    return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
+            # change the web user email just if it's different maybe redundant validation
+            if user.email != newemail:
+                changeuseremail(user, newemail)
+                user.updatefromcrm = True
+                user.save()
+
+    def updateuserfields(user, first_name="", last_name=""):
+        updated = False
+        if first_name and user.first_name != first_name:
+            user.first_name = first_name
+            updated = True
+        if last_name and user.last_name != last_name:
+            user.last_name = last_name
+            updated = True
+        if updated:
+            user.save()
+
+    def updatesubscriberfields(s, fields, contact_id=None):
+        """
+        Update subscriber fields.
+        @param s: Subscriber object
+        @param contact_id: Contact ID from crm
+        @param fields: fields and values in dictionary format
+        """
+        if not s.contact_id and contact_id:
+            found_subscriber = Subscriber.objects.filter(contact_id=contact_id)
+            if found_subscriber.exists():
+                if found_subscriber.count() == 1:
+                    checked_subscriber = found_subscriber[0]
+                else:
+                    msg = f"Multiple contacts id: {str(contact_id)} in subcribers"
+                    mail_managers(msg, msg)
+                    return HttpResponseBadRequest()
+                if s != checked_subscriber:
+                    return HttpResponseBadRequest(f"El contact id: {contact_id} ya existe en otro usuario de la web")
+            s.contact_id = contact_id
+        for field, value in fields.items():
+            if field == 'newsletters':
+                pubs_slugs = json.loads(value)
+                given_publications = Publication.objects.filter(slug__in=pubs_slugs)
+                given_categories = Category.object.filter(slug__in=pubs_slugs)
+                set_newsletters = set(given_publications.values_list("slug", flat=True))
+                set_cat_newsletters = set(given_categories.values_list("slug", flat=True))
+                # This code set duplicates slugs in both relationships. This could be a bug in the future
+                # TODO: Pending of full review for remove the commented code
+                s.newsletters.set(Publication.objects.filter(slug__in=set_newsletters))
+                s.category_newsletters.set(Category.objects.filter(slug__in=set_cat_newsletters))
+                # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add
+                # all the ones in the value JSON list that are missing.
+                # s.updatefromcrm, pub_names = True, json.loads(value)
+                # for pub in s.newsletters.filter(has_newsletter=True):
+                #     if pub.name in pub_names:
+                #         pub_names.remove(pub.name)
+                #     else:
+                #         s.newsletters.remove(pub)
+                # for pub_name in pub_names:
+                #     try:
+                #         s.newsletters.add(Publication.objects.get(name=pub_name))
+                #     except Publication.DoesNotExist:
+                #         pass
+            # elif field == 'area_newsletters':
+            #     # the same as above but for category newsletters
+            #     s.updatefromcrm, cat_names = True, json.loads(value)
+            #     for cat in s.category_newsletters.filter(has_newsletter=True):
+            #         if cat.name in cat_names:
+            #             cat_names.remove(cat.name)
+            #         else:
+            #             s.category_newsletters.remove(cat)
+            #     for category_name in cat_names:
+            #         try:
+            #             s.category_newsletters.add(Category.objects.get(name=category_name))
+            #         except Category.DoesNotExist:
+            #             pass
+            else:
+                changesubscriberfield(s, field, value)
+
+        s.updatefromcrm = True
+        s.save()
+
     try:
         contact_id = request.POST['contact_id']
+        name = request.POST.get('name')
+        last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         newemail = request.POST.get('newemail')
-        field = request.POST.get('field')
-        value = request.POST.get('value')
+        fields = request.POST.get('fields', {})
     except KeyError:
         return HttpResponseBadRequest()
     try:
-        s = Subscriber.objects.get(contact_id=contact_id)
-        if field == 'email':
-            check_user = User.objects.filter(email=newemail)
-            if check_user.exists():
-                if check_user.count() == 1:
-                    check_user = check_user[0]
-                else:
-                    mail_managers('Multiple email in users', email)
-                    return HttpResponseBadRequest()
-            if check_user and check_user != s.user:
-                return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-            changeuseremail(s.user, email, newemail)
-            s.user.updatefromcrm = True
-            s.user.save()
-        elif field == 'newsletters':
-            # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add all
-            # the ones in the value JSON list that are missing.
-            s.updatefromcrm, pub_names = True, json.loads(value)
-            for pub in s.newsletters.filter(has_newsletter=True):
-                if pub.name in pub_names:
-                    pub_names.remove(pub.name)
-                else:
-                    s.newsletters.remove(pub)
-            for pub_name in pub_names:
-                try:
-                    s.newsletters.add(Publication.objects.get(name=pub_name))
-                except Publication.DoesNotExist:
-                    pass
-        elif field == 'area_newsletters':
-            # the same as above but for category newsletters
-            s.updatefromcrm, cat_names = True, json.loads(value)
-            for cat in s.category_newsletters.filter(has_newsletter=True):
-                if cat.name in cat_names:
-                    cat_names.remove(cat.name)
-                else:
-                    s.category_newsletters.remove(cat)
-            for category_name in cat_names:
-                try:
-                    s.category_newsletters.add(Category.objects.get(name=category_name))
-                except Category.DoesNotExist:
-                    pass
-        else:
-            changesubscriberfield(s, field, value)
-            s.updatefromcrm = True
-            s.save()
+        subscriber = Subscriber.objects.select_related('user').get(contact_id=contact_id)
+        # TODO: call update subscriber email it must change the email if meet the integrity validation and if new email
+        # exists (explain better what thing needs to be done, is related to the next commented line?)
+        updatesubscriberemail(subscriber.user, newemail)  # TODO: We will allow to update user email from CRM ?
+        updatesubscriberfields(subscriber, fields)
+        updateuserfields(subscriber.user, name, last_name)
     except Subscriber.DoesNotExist:
-        if email and field == 'email':
+        if email or fields.get('email', None):
             try:
                 u = User.objects.get(email__exact=email)
-                if User.objects.filter(email__exact=newemail).exists():
-                    return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-                changeuseremail(u, email, newemail)
-                u.updatefromcrm = True
-                u.save()
+                if newemail:
+                    updatesubscriberemail(u, newemail)
+                if hasattr(u, 'subscriber'):
+                    updatesubscriberfields(u.subscriber, fields, contact_id)
+                updateuserfields(u, name, last_name)
             except User.DoesNotExist:
-                # No problem, tipically this scenario is achieved using offline sync tools.
-                pass
+                # create new user
+                user_args = {
+                    "email": newemail,
+                    "username": newemail,
+                    "first_name": name if name is not None else "",
+                    "last_name": last_name if last_name is not None else "",
+                }
+                new_user = User(**user_args)
+                new_user.updatefromcrm = True
+                subscriber = Subscriber(contact_id)
+                new_user.subscriber = subscriber
+                new_user.save()
+                new_user.subscriber.save()
             except MultipleObjectsReturned:
                 mail_managers('Multiple email in users', email)
                 return HttpResponseBadRequest()
             except IntegrityError as ie:
                 mail_managers('IntegrityError saving user', "%s: %s" % (email, strip_tags(str(ie))))
+                return HttpResponseBadRequest()
+        elif newemail:
+            try:
+                u = User.objects.get(email__exact=newemail)
+                mail_managers('The user already exists', newemail)
+                return HttpResponseBadRequest()
+            except User.DoesNotExist:
+                # create new user
+                user_args = {
+                    "email": newemail,
+                    "username": newemail,
+                    "first_name": name if name is not None else "",
+                    "last_name": last_name if last_name is not None else "",
+                }
+                new_user = User(**user_args)
+                new_user.updatefromcrm = True
+                subscriber = Subscriber(contact_id)
+                new_user.subscriber = subscriber
+                new_user.save()
+                new_user.subscriber.save()
+            except MultipleObjectsReturned:
+                mail_managers('Multiple email in users', newemail)
+                return HttpResponseBadRequest()
+            except IntegrityError as ie:
+                mail_managers('IntegrityError saving user', "%s: %s" % (newemail, strip_tags(str(ie))))
                 return HttpResponseBadRequest()
     except IntegrityError as ie:
         mail_managers(
@@ -1441,7 +1562,78 @@ def update_user_from_crm(request):
         return HttpResponseBadRequest()
     except KeyError:
         pass
-    return HttpResponse("OK", content_type="application/json")
+    return JsonResponse({"message": "OK"})
+
+
+@never_cache
+@api_view(['DELETE'])
+@permission_classes([HasAPIKey])
+def delete_user_from_crm(request):
+    """
+    Delete user and subscriber based on the CRM information
+    """
+    def validation_on_delete(user):
+        is_valid = True
+        if user.subscriber and user.subscriber.plan_id:
+            msg = "No se permite eliminar suscriptor con un plan asignado"
+            is_valid = False
+        elif user.is_active or user.is_staff or user.is_superuser:
+            msg = "No se permite eliminar usuarios 'staff' o usuarios activos"
+            is_valid = False
+        else:
+            collector = Collector(using='default')
+            collector.collect([user])
+            safe_to_delete, msg_err = collector_analysis(collector.data)
+            if safe_to_delete:
+                msg = "El suscriptor seleccionado y su usuario fueron eliminados correctamente"
+            else:
+                msg = "El conjunto de datos relacionados al usuario que se pretende eliminar se considera " \
+                            "importante o demasiado grande: %s" % msg_err
+                is_valid = False
+        return is_valid, msg
+
+    if request.method == "DELETE":
+        try:
+            contact_id = request.POST["contact_id"]
+            email = request.POST.get("email", "")
+        except KeyError:
+            return HttpResponseBadRequest()
+
+        try:
+            subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
+            user_to_delete = subscriber.user
+            is_valid, msg = validation_on_delete(user_to_delete)
+            if is_valid:
+                try:
+                    user_to_delete.delete()
+                except Exception as ex:
+                    print(f"Error al eliminar el usuario: {str(ex)}")
+                    raise Exception(f"Error al eliminar el usuario: {str(ex)}")
+            else:
+                raise Exception(f"No es seguro remover este usuario/suscriptor {contact_id}. {msg}")
+        except Subscriber.DoesNotExist:
+            if email:
+                try:
+                    user_to_delete = User.objects.get(email__exact=email)
+                    is_valid, msg = validation_on_delete(user_to_delete)
+                    if is_valid:
+                        try:
+                            user_to_delete.delete()
+                        except Exception as ex:
+                            print(f"Error al eliminar el usuario: {str(ex)}")
+                            raise Exception(f"Error al eliminar el usuario: {str(ex)}")
+                    else:
+                        raise Exception(f"No es seguro remover este usuario/suscriptor {email}. {msg}")
+                except User.DoesNotExist:
+                    return Http404
+                except Exception as ex:
+                    return HttpResponseServerError(str(ex))
+        except Exception as ex:
+            return HttpResponseServerError(str(ex))
+    else:
+        return HttpResponseBadRequest()
+
+    return JsonResponse({"message": "OK"})
 
 
 @never_cache

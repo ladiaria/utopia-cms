@@ -103,7 +103,7 @@ def qparamstr(qparams):
 def get_or_create_user_profile(user):
     try:
         profile = user.subscriber
-    except Subscriber.DoesNotExist:
+    except Subscriber.DoesNotExist:   # TODO: check if handle RelatedObjectDoesNotExist can be better or not
         profile = Subscriber.objects.create(user=user)
     return profile
 
