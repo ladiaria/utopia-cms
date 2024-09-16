@@ -18,6 +18,46 @@ class CRMSyncTestCase(TestCase):
 
     test_user = None
 
+    def test_sync(self):
+        name, email_pre_prefix, password = "John Doe", "cms_test_crmsync_", User.objects.make_random_password()
+        email = "%s%s@%s" % (email_pre_prefix, rand_chars(), settings.SITE_DOMAIN)
+        # create a user with very low collission probability on email field
+        user = User.objects.create_user(email, email, password)
+        user.name, user.is_active = name, True
+        user.save()
+        self.assertIsNotNone(user.subscriber)
+        user.subscriber.save()
+        # insert a contact in CRM with the same data
+        api_url = settings.CRM_API_UPDATE_USER_URI
+        api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+        if api_url and api_key:
+            requests.post(
+                api_url,
+                headers={'Authorization': 'Api-Key ' + api_key},
+                data={"name": name, "email": email},
+            )
+        # change email
+        new_email_prefix = "%s%s@" % (email_pre_prefix, rand_chars())
+        user.email = new_email_prefix + settings.SITE_DOMAIN
+        user.save()
+        # check changed also in CRM
+        api_url = getattr(settings, "CRM_CONTACT_BY_EMAILPREFIX_API_URI", None)
+        api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+        if api_url and api_key:
+            try:
+                self.assertEqual(
+                    requests.post(
+                        api_url,
+                        headers={'Authorization': 'Api-Key ' + api_key},
+                        data={"email_prefix": new_email_prefix},
+                    ).json().get("email"),
+                    user.email,
+                )
+            except Exception as exc:
+                self.fail(exc)
+        else:
+            print("WARNING: 'CRM Contact by emailprefix' API uri not set, test full validity can't be determined")
+
     def test_create_user_sync(self):
         with override_settings(CRM_UPDATE_USER_ENABLED=True):
             name, email_pre_prefix, password = "Jane Doe", "cms_test_crmsync_", User.objects.make_random_password()
