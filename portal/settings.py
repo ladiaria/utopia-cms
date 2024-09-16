@@ -557,6 +557,7 @@ CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP versio
 CRM_UPDATE_USER_CREATE_CONTACT = None
 PHONENUMBER_DEFAULT_REGION = None
 
+
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
 
