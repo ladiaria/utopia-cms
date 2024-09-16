@@ -552,10 +552,8 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP version article page
 PHONENUMBER_DEFAULT_REGION = None
-# inserts the meta url for the AMP version article page
-CORE_ARTICLE_DETAIL_ENABLE_AMP = True
-
 
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
@@ -599,6 +597,6 @@ if CORE_ARTICLE_DETAIL_ENABLE_AMP:
         + (MIDDLEWARE[-1],)
     )
 
-# CRM API urls
+# CRM API
 if CRM_API_BASE_URI:
     CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + "updateuserweb/")

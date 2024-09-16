@@ -1,3 +1,4 @@
+import locale
 from pycountry import countries
 
 from django.conf import settings
@@ -18,6 +19,17 @@ def conf_check(app_configs, **kwargs):
                 obj=settings,
             )
         )
+    else:
+        try:
+            locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
+        except locale.Error as lerr:
+            errors.append(
+                Error(
+                    f"{lerr}: {settings.LOCALE_NAME}",
+                    hint="Check your local_settings.py file, the LOCALE_NAME locale must be available in your system",
+                    obj=settings,
+                )
+            )
 
     api_uri, api_key = getattr(settings, api_uri_varname), getattr(settings, api_key_varname, None)
     if settings.CRM_UPDATE_USER_ENABLED and not (api_uri and api_key):

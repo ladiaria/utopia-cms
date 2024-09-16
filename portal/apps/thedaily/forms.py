@@ -202,17 +202,20 @@ class LoginForm(CrispyForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.form_id = 'account_login'
-        self.helper.layout = Layout(
-            Field(
-                'name_or_mail',
-                title="Ingresá tu nombre de usuario o email",
-                template='materialize_css_forms/layout/email-login.html',
-            ),
-            Field(
-                'password',
-                title="Contraseña. Si no la recordás la podés restablecer.",
-                template='materialize_css_forms/layout/password-login.html',
-            ),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                Field(
+                    'name_or_mail',
+                    title="Ingresá tu nombre de usuario o email",
+                    template='materialize_css_forms/layout/email-login.html',
+                ),
+                Field(
+                    'password',
+                    title="Contraseña. Si no la recordás la podés restablecer.",
+                    template='materialize_css_forms/layout/password-login.html',
+                ),
+            )
         )
 
     def clean(self):
@@ -284,7 +287,11 @@ class UserForm(BaseUserForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(Fieldset('Datos personales', 'first_name', 'last_name', 'email'))
+        self.helper.form_id = 'user_form'
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(Fieldset('Datos personales', 'first_name', 'last_name', 'email'))
+        )
 
     def clean(self):
         return self.custom_clean(True, False)
@@ -348,24 +355,27 @@ class SignupForm(BaseUserForm):
         super().__init__(*args, **kwargs)
         self.helper.form_id = 'signup_form'
         self.helper.form_tag = True
-        self.helper.layout = custom_layout(self.helper.form_id) or Layout(
-            *(
-                'first_name',
-                'email',
-                'phone',
-                Field(
-                    'password',
-                    minlength="6",
-                    placeholder="Crear contraseña",
-                    template='materialize_css_forms/layout/password.html',
-                ),
-            )
-            + terms_and_conditions_layout_tuple()
-            + (
-                'next_page',
-                HTML('<div class="align-center">'),
-                Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
-                HTML('</div">'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                *(
+                    'first_name',
+                    'email',
+                    'phone',
+                    Field(
+                        'password',
+                        minlength="6",
+                        placeholder="Crear contraseña",
+                        template='materialize_css_forms/layout/password.html',
+                    ),
+                )
+                + terms_and_conditions_layout_tuple()
+                + (
+                    'next_page',
+                    HTML('<div class="align-center">'),
+                    Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
+                    HTML('</div">'),
+                )
             )
         )
         # uncomment next lines to test error rendering without interaction
@@ -451,9 +461,13 @@ class ProfileForm(CrispyModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Fieldset('Datos de suscriptor', 'document', 'phone'),
-            Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
+        self.helper.form_id = "profile_form"
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                Fieldset('Datos de suscriptor', 'document', 'phone'),
+                Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
+            )
         )
 
     class Meta:
@@ -475,15 +489,10 @@ class ProfileExtraDataForm(CrispyModelForm):
                 )
             ),
             Field('newsletters', template='profile/newsletters.html'),
-            HTML(
-                '''
-                <section id="ld-comunicaciones" class="scrollspy edit_profile_card">
-                <div class="edit_profile_card__header"><h2 class="title">Comunicaciones</h2></div>
-                '''
-            ),
+            HTML('{%% include "%s" %%}' % get_app_template('profile/communications_start_section.html')),
             Field('allow_news', template=get_app_template('profile/allow_news.html')),
-            Field('allow_promotions', template='profile/allow_promotions.html'),
-            Field('allow_polls', template='profile/allow_polls.html'),
+            Field('allow_promotions', template=get_app_template('profile/allow_promotions.html')),
+            Field('allow_polls', template=get_app_template('profile/allow_polls.html')),
             HTML('</section>'),
         )
 
@@ -966,16 +975,19 @@ class PasswordResetRequestForm(CrispyForm):
         self.helper.form_tag = True
         self.helper.form_id = 'reset_password'
         self.helper.form_action = reverse('account-password_reset')
-        self.helper.layout = Layout(
-            Field(
-                'username_or_email',
-                id="username_or_email",
-                title="Nombre de usuario o email.",
-                template='materialize_css_forms/layout/email-login.html',
-            ),
-            HTML('<div class="align-center form-group">'),
-            FormActions(Submit('save', 'Restablecer contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                Field(
+                    'username_or_email',
+                    id="username_or_email",
+                    title="Nombre de usuario o email.",
+                    template='materialize_css_forms/layout/email-login.html',
+                ),
+                HTML('<div class="align-center form-group">'),
+                FormActions(Submit('save', 'Restablecer contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def clean_username_or_email(self):

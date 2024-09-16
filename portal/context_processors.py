@@ -108,6 +108,7 @@ def publications(request):
                 'CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP',
                 'CORE_ARTICLE_ENABLE_PHOTO_BYLINE',
                 'PWA_MANIFEST_STATIC_PATH',
+                'LOCAL_COUNTRY',
             )
         )
     )

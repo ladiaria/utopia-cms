@@ -96,8 +96,8 @@ class Subscriber(Model):
 
     # agregamos estos campos para unificar la info de User y Subscriber
     address = CharField('dirección', max_length=255, blank=True, null=True)
-    country = CharField('país', max_length=50, blank=True, null=True)
-    city = CharField('ciudad', max_length=64, blank=True, null=True)
+    country = CharField('país de residencia', max_length=50, blank=True, null=True)
+    city = CharField('ciudad de residencia', max_length=64, blank=True, null=True)
     province = CharField(
         'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
     )
