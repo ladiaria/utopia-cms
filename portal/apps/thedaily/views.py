@@ -22,7 +22,7 @@ from rest_framework_api_key.permissions import HasAPIKey
 
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.db.models.deletion import Collector
@@ -1337,16 +1337,23 @@ def update_user_from_crm(request):
             user.username = newemail
         user.email = newemail
 
-    def changesubscriberfield(s, field, v):
+    def changesubscriberfield(s, field, value):
         """
         Change subscriber field value
         @param s: Subscriber object
         @param field: Subscriber field
         @param value: Subscriber field value
         """
-        mfield = settings.CRM_UPDATE_SUBSCRIBER_FIELDS[field]
-        # eval the value before saving if type field is bool
-        setattr(s, mfield, eval(v) if isinstance(getattr(s, mfield), bool) else v)
+        mapped_field = settings.CRM_UPDATE_SUBSCRIBER_FIELDS.get(field)
+        if not mapped_field:
+            return  # Skip if no field mapping found
+
+        # Conversion for boolean fields
+        field_value = value
+        if isinstance(getattr(subscriber, mapped_field), bool):
+            field_value = value.lower() in ['true', '1', 'yes']
+
+        setattr(subscriber, mapped_field, field_value)
 
     def updatesubscriberemail(user, newemail):
         """
@@ -1393,16 +1400,19 @@ def update_user_from_crm(request):
         @param fields: fields and values in dictionary format
         """
         if not s.contact_id and contact_id:
-            found_subscriber = Subscriber.objects.filter(contact_id=contact_id)
-            if found_subscriber.exists():
-                if found_subscriber.count() == 1:
-                    checked_subscriber = found_subscriber[0]
-                else:
-                    msg = f"Multiple contacts id: {str(contact_id)} in subcribers"
-                    mail_managers(msg, msg)
-                    return HttpResponseBadRequest()
+            try:
+                # Fetch subscriber with the given contact_id
+                checked_subscriber = Subscriber.objects.get(contact_id=contact_id)
                 if s != checked_subscriber:
-                    return HttpResponseBadRequest(f"El contact id: {contact_id} ya existe en otro usuario de la web")
+                    return HttpResponseBadRequest(f"Contact ID: {contact_id} is already associated with another user.")
+            except Subscriber.DoesNotExist:
+                # No action needed if the contact_id does not exist
+                pass
+            except Subscriber.MultipleObjectsReturned:
+                msg = f"Multiple contacts with ID: {contact_id} found in subscribers."
+                mail_managers(msg, msg)
+                return HttpResponseBadRequest("Multiple subscribers found with the same contact ID.")
+
             s.contact_id = contact_id
         for field, value in fields.items():
             if field == 'newsletters':
@@ -1533,46 +1543,43 @@ def delete_user_from_crm(request):
                 is_valid = False
         return is_valid, msg
 
+    def delete_user(user):
+        try:
+            user.delete()
+        except Exception as ex:
+            raise Exception(f"Error al eliminar el usuario: {str(ex)}")
+
     if request.method == "DELETE":
         try:
             contact_id = request.POST["contact_id"]
             email = request.POST.get("email", "")
         except KeyError:
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest("Missing argument contact_id")
 
-        try:
-            subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
-            user_to_delete = subscriber.user
-            is_valid, msg = validation_on_delete(user_to_delete)
-            if is_valid:
-                try:
-                    user_to_delete.delete()
-                except Exception as ex:
-                    print(f"Error al eliminar el usuario: {str(ex)}")
-                    raise Exception(f"Error al eliminar el usuario: {str(ex)}")
-            else:
-                raise Exception(f"No es seguro remover este usuario/suscriptor {contact_id}. {msg}")
-        except Subscriber.DoesNotExist:
-            if email:
-                try:
-                    user_to_delete = User.objects.get(email__exact=email)
-                    is_valid, msg = validation_on_delete(user_to_delete)
-                    if is_valid:
-                        try:
-                            user_to_delete.delete()
-                        except Exception as ex:
-                            print(f"Error al eliminar el usuario: {str(ex)}")
-                            raise Exception(f"Error al eliminar el usuario: {str(ex)}")
-                    else:
-                        raise Exception(f"No es seguro remover este usuario/suscriptor {email}. {msg}")
-                except User.DoesNotExist:
-                    return Http404
-                except Exception as ex:
-                    return HttpResponseServerError(str(ex))
-        except Exception as ex:
-            return HttpResponseServerError(str(ex))
+        with transaction.atomic():
+            try:
+                subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
+                user_to_delete = subscriber.user
+            except Subscriber.DoesNotExist:
+                if email:
+                    try:
+                        user_to_delete = User.objects.get(email=email)
+                    except User.DoesNotExist:
+                        return Http404("Usuario no encontrado")
+                    except Exception as ex:
+                        return HttpResponseServerError(str(ex))
+                else:
+                    return HttpResponseBadRequest("No se proporcionó un email válido")
+            except Exception as ex:
+                return HttpResponseServerError(str(ex))
     else:
         return HttpResponseBadRequest()
+
+    is_valid, msg = validation_on_delete(user_to_delete)
+    if is_valid:
+        delete_user(user_to_delete)
+    else:
+        return HttpResponseBadRequest(f"No es seguro remover este usuario/suscriptor: {msg}")
 
     return JsonResponse({"message": "OK"})
 
