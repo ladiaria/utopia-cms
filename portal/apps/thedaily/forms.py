@@ -489,15 +489,10 @@ class ProfileExtraDataForm(CrispyModelForm):
                 )
             ),
             Field('newsletters', template='profile/newsletters.html'),
-            HTML(
-                '''
-                <section id="ld-comunicaciones" class="scrollspy edit_profile_card">
-                <div class="edit_profile_card__header"><h2 class="title">Comunicaciones</h2></div>
-                '''
-            ),
+            HTML('{%% include "%s" %%}' % get_app_template('profile/communications_start_section.html')),
             Field('allow_news', template=get_app_template('profile/allow_news.html')),
-            Field('allow_promotions', template='profile/allow_promotions.html'),
-            Field('allow_polls', template='profile/allow_polls.html'),
+            Field('allow_promotions', template=get_app_template('profile/allow_promotions.html')),
+            Field('allow_polls', template=get_app_template('profile/allow_polls.html')),
             HTML('</section>'),
         )
 
