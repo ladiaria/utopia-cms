@@ -292,10 +292,6 @@ class UserForm(BaseUserForm):
             custom_layout(self.helper.form_id)
             or Layout(Fieldset('Datos personales', 'first_name', 'last_name', 'email'))
         )
-        # TODO: (doing) migrating this to the overrided custom layout
-        # template_from_settings = getattr(settings, 'USER_FORM_TEMPLATE', False)
-        # if template_from_settings:
-        #    self.helper.template = template_from_settings
 
     def clean(self):
         return self.custom_clean(True, False)
@@ -471,13 +467,14 @@ class ProfileForm(CrispyModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Fieldset('Datos de suscriptor', 'document', 'phone'),
-            Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
+        self.helper.form_id = "profile_form"
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                Fieldset('Datos de suscriptor', 'document', 'phone'),
+                Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
+            )
         )
-        template_from_settings = getattr(settings, 'PROFILE_FORM_TEMPLATE', False)
-        if template_from_settings:
-            self.helper.template = template_from_settings
 
     class Meta:
         model = Subscriber
