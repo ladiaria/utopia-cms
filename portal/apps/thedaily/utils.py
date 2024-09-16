@@ -1,17 +1,10 @@
 # -*- coding: utf-8 -*-
-
 from os.path import join
 import random as rdm
 from operator import attrgetter
 from urllib.parse import urlencode
 from pydoc import locate
 import requests
-
-from actstream.models import Follow
-from actstream.registry import check
-from favit.models import Favorite
-from social_django.models import UserSocialAuth
-from django_amp_readerid.models import UserReaderId
 
 from django.conf import settings
 from django.core.validators import validate_email
@@ -23,6 +16,12 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
+
+from actstream.models import Follow
+from actstream.registry import check
+from favit.models import Favorite
+from social_django.models import UserSocialAuth
+from django_amp_readerid.models import UserReaderId
 
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
@@ -98,6 +97,14 @@ def move_data(s0, s1):
 def qparamstr(qparams):
     qparams_str = urlencode(qparams)
     return ('?%s' % qparams_str) if qparams_str else ''
+
+
+def get_or_create_user_profile(user):
+    try:
+        profile = user.subscriber
+    except Subscriber.DoesNotExist:  # TODO: check if handle RelatedObjectDoesNotExist can be better or not
+        profile = Subscriber.objects.create(user=user)
+    return profile
 
 
 def recent_following(user, *models):

@@ -117,6 +117,7 @@ from .utils import (
     product_checkout_template,
     qparamstr,
     collector_analysis,
+    get_or_create_user_profile,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -917,14 +918,6 @@ def hash_validate(user_id, hash):
     if not default_token_generator.check_token(user, hash):
         raise Http404('Invalid token.')
     return user
-
-
-def get_or_create_user_profile(user):
-    try:
-        profile = user.subscriber
-    except Subscriber.DoesNotExist:   # TODO: check if handle RelatedObjectDoesNotExist can be better or not
-        profile = Subscriber.objects.create(user=user)
-    return profile
 
 
 def get_password_validation_url(user):
