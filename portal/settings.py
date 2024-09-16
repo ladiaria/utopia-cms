@@ -555,6 +555,7 @@ FREEZE_TIME = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP version article page
 PHONENUMBER_DEFAULT_REGION = None
 
+
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
 
