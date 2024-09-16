@@ -202,17 +202,20 @@ class LoginForm(CrispyForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.form_id = 'account_login'
-        self.helper.layout = custom_layout(self.helper.form_id) or Layout(
-            Field(
-                'name_or_mail',
-                title="Ingresá tu nombre de usuario o email",
-                template='materialize_css_forms/layout/email-login.html',
-            ),
-            Field(
-                'password',
-                title="Contraseña. Si no la recordás la podés restablecer.",
-                template='materialize_css_forms/layout/password-login.html',
-            ),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                Field(
+                    'name_or_mail',
+                    title="Ingresá tu nombre de usuario o email",
+                    template='materialize_css_forms/layout/email-login.html',
+                ),
+                Field(
+                    'password',
+                    title="Contraseña. Si no la recordás la podés restablecer.",
+                    template='materialize_css_forms/layout/password-login.html',
+                ),
+            )
         )
 
     def clean(self):
@@ -284,7 +287,11 @@ class UserForm(BaseUserForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(Fieldset('Datos personales', 'first_name', 'last_name', 'email'))
+        self.helper.form_id = 'user_form'
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(Fieldset('Datos personales', 'first_name', 'last_name', 'email'))
+        )
 
     def clean(self):
         return self.custom_clean(True, False)
@@ -348,24 +355,27 @@ class SignupForm(BaseUserForm):
         super().__init__(*args, **kwargs)
         self.helper.form_id = 'signup_form'
         self.helper.form_tag = True
-        self.helper.layout = custom_layout(self.helper.form_id) or Layout(
-            *(
-                'first_name',
-                'email',
-                'phone',
-                Field(
-                    'password',
-                    minlength="6",
-                    placeholder="Crear contraseña",
-                    template='materialize_css_forms/layout/password.html',
-                ),
-            )
-            + terms_and_conditions_layout_tuple()
-            + (
-                'next_page',
-                HTML('<div class="align-center">'),
-                Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
-                HTML('</div">'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                *(
+                    'first_name',
+                    'email',
+                    'phone',
+                    Field(
+                        'password',
+                        minlength="6",
+                        placeholder="Crear contraseña",
+                        template='materialize_css_forms/layout/password.html',
+                    ),
+                )
+                + terms_and_conditions_layout_tuple()
+                + (
+                    'next_page',
+                    HTML('<div class="align-center">'),
+                    Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
+                    HTML('</div">'),
+                )
             )
         )
         # uncomment next lines to test error rendering without interaction
