@@ -110,6 +110,7 @@ from .forms import (
     SUBSCRIPTION_PHONE_TIME_CHOICES,
 )
 from .utils import (
+    get_or_create_user_profile,
     recent_following,
     add_default_newsletters,
     get_profile_newsletters_ordered,
@@ -117,7 +118,6 @@ from .utils import (
     product_checkout_template,
     qparamstr,
     collector_analysis,
-    get_or_create_user_profile,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
