@@ -563,6 +563,7 @@ CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 
 >>>>>>> 86a3x1b72
 
+
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
 

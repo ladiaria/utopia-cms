@@ -532,6 +532,7 @@ CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 PHONENUMBER_DEFAULT_REGION = None
 
+
 # Override previous settings with values in local_migration_settings.py settings file
 from local_migration_settings import *  # noqa
 
