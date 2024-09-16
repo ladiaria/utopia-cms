@@ -981,16 +981,19 @@ class PasswordResetRequestForm(CrispyForm):
         self.helper.form_tag = True
         self.helper.form_id = 'reset_password'
         self.helper.form_action = reverse('account-password_reset')
-        self.helper.layout = Layout(
-            Field(
-                'username_or_email',
-                id="username_or_email",
-                title="Nombre de usuario o email.",
-                template='materialize_css_forms/layout/email-login.html',
-            ),
-            HTML('<div class="align-center form-group">'),
-            FormActions(Submit('save', 'Restablecer contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                Field(
+                    'username_or_email',
+                    id="username_or_email",
+                    title="Nombre de usuario o email.",
+                    template='materialize_css_forms/layout/email-login.html',
+                ),
+                HTML('<div class="align-center form-group">'),
+                FormActions(Submit('save', 'Restablecer contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def clean_username_or_email(self):
