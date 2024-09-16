@@ -3,11 +3,11 @@
 {% endspaceless %}<!doctype html>
 {% block html %}
 <!-- Legacy browsers support  -->
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="es-{{ LOCAL_COUNTRY }}"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="es-{{ LOCAL_COUNTRY }}"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9" lang="es-{{ LOCAL_COUNTRY }}"> <![endif]-->
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
 <!-- End legacy browsers support  -->
-<html class="no-js" lang="es-{{ LOCAL_COUNTRY }}">
+<html class="no-js" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}">
 {% endblock %}
   <head>
     {% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
@@ -148,7 +148,7 @@
     {% block meta %}
       <meta property="og:type" content="website">
       <meta property="og:description" content="{{ site_description }}">
-      <meta property="og:locale" content="es_{{ LOCAL_COUNTRY }}">
+      <meta property="og:locale" content="{{ local_lang }}_{{ LOCAL_COUNTRY }}">
       <meta property="og:site_name" content="{{ site.name }}">
       <meta property="og:url" content="{{ SITE_URL_SD }}{{ request.get_full_path }}">
       {% if publication.slug in custom_icons_publications %}
@@ -423,9 +423,10 @@
         {# used only in pages that show article cards #}
         <script defer src="{% static 'js/read_later_events.js' %}"></script>
       {% endif %}
+
       {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
       <script defer src="{% static 'js/ld.js' %}"></script>
-      <script defer src="{% static 'js/resizeSubnav.js' %}" ></script>
+      <script defer src="{% static 'js/resizeSubnav.js' %}"></script>
 
       {# Modernizr - Detect CSS Grid #}
       <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
