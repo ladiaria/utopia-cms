@@ -553,15 +553,9 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
-<<<<<<< HEAD
+CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP version article page
 PHONENUMBER_DEFAULT_REGION = None
-=======
-CRM_UPDATE_USER_CREATE_CONTACT = None
-# inserts the meta url for the AMP version article page
-CORE_ARTICLE_DETAIL_ENABLE_AMP = True
-
->>>>>>> 86a3x1b72
 
 
 # Override previous settings with values in local_settings.py settings file
