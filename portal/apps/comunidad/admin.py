@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from django.contrib.admin import site, ModelAdmin, TabularInline
-
 from .models import SubscriberArticle, Circuito, Socio, Beneficio, Registro, Url as ComunidadUrl, Recommendation
 
 
@@ -15,8 +14,17 @@ class SocioAdmin(ModelAdmin):
 
 class RegistroAdmin(ModelAdmin):
     raw_id_fields = ('subscriber',)
-    list_display = ('subscriber', 'subscriber_email', 'benefit', 'used')
+    list_display = ('subscriber', 'subscriber_email', 'benefit', 'issued', 'used', 'qr_code_small')
+    readonly_fields = ('qr_code_image', 'issued', 'used')
     list_filter = ('benefit',)
+
+    def qr_code_small(self, obj):
+        return obj.qr_code_image(size=60)  # Adjust the size as needed
+    qr_code_small.short_description = 'QR'
+
+    def qr_code_image(self, obj):
+        return obj.qr_code_image(size=150)  # Larger size for detail view
+    qr_code_image.short_description = 'QR Code'
 
 
 class BeneficioAdmin(ModelAdmin):

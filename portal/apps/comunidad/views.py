@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+from hashids import Hashids
 
 from crispy_forms.layout import Layout, Submit, HTML
 from crispy_forms.bootstrap import FormActions
 
-from django.http import Http404
+from django.conf import settings
+from django.http import Http404, HttpResponse
 from django.contrib import messages
 from django.urls import reverse
 from django.shortcuts import redirect, get_object_or_404, render
@@ -159,3 +161,13 @@ def add_registro(request, beneficio_id, hashed_subscriber_id):
     except IndexError:
         raise Http404
     return 'comunidad/add_registro.html', {'error': error}
+
+
+def verify_registro(request, hashed_id):
+    hashids = Hashids(salt=settings.SECRET_KEY, min_length=8)
+    original_id = hashids.decode(hashed_id)
+    if original_id:
+        registro = get_object_or_404(Registro, id=original_id[0])
+        # Here you can implement your verification logic
+        return HttpResponse(f"Registro verified: {registro}")
+    return HttpResponse("Invalid QR code", status=400)
