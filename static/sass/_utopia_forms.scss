@@ -1,5 +1,6 @@
 body.subscribe:not(.signup) form#signup_form,
 body.subscribe:not(.signup) form#google_signin,
+body.subscribe:not(.signup) form#hardpw-signup,
 body.subscribe:not(.signup) form#subscribe {
   div.input-field input {
     box-sizing: border-box;
