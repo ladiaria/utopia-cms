@@ -31,13 +31,13 @@ else:
 class Advertiser(models.Model):
     """ A Model for our Advertiser.  """
     company_name = models.CharField(
-        verbose_name=_(u'Company Name'), max_length=255)
-    website = models.URLField(verbose_name=_(u'Company Site'))
+        verbose_name=_('Company Name'), max_length=255)
+    website = models.URLField(verbose_name=_('Company Site'))
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name = _(u'Ad Provider')
-        verbose_name_plural = _(u'Advertisers')
+        verbose_name = _('Ad Provider')
+        verbose_name_plural = _('Advertisers')
         ordering = ('company_name',)
 
     def __str__(self):
@@ -49,9 +49,9 @@ class Advertiser(models.Model):
 
 class AdCategory(models.Model):
     """ a Model to hold the different Categories for adverts """
-    title = models.CharField(verbose_name=_(u'Title'), max_length=255)
-    slug = models.SlugField(verbose_name=_(u'Slug'), unique=True)
-    description = models.TextField(verbose_name=_(u'Description'))
+    title = models.CharField(verbose_name=_('Title'), max_length=255)
+    slug = models.SlugField(verbose_name=_('Slug'), unique=True)
+    description = models.TextField(verbose_name=_('Description'))
 
     class Meta:
         verbose_name = 'Category'
@@ -64,9 +64,9 @@ class AdCategory(models.Model):
 
 class AdZone(models.Model):
     """ a Model that describes the attributes and behaviours of ad zones """
-    title = models.CharField(verbose_name=_(u'Title'), max_length=255)
-    slug = models.SlugField(verbose_name=_(u'Slug'))
-    description = models.TextField(verbose_name=_(u'Description'))
+    title = models.CharField(verbose_name=_('Title'), max_length=255)
+    slug = models.SlugField(verbose_name=_('Slug'))
+    description = models.TextField(verbose_name=_('Description'))
 
     class Meta:
         verbose_name = 'Zone'
@@ -83,23 +83,23 @@ class AdBase(models.Model):
     The manager methods for this model will determine which ads to
     display return etc.
     """
-    title = models.CharField(verbose_name=_(u'Title'), max_length=255)
+    title = models.CharField(verbose_name=_('Title'), max_length=255)
     url = models.URLField(
-        verbose_name=_(u'Advertised URL'), help_text=_(
-            u'Siempre debe comenzar con http:// o https:// y si se '
+        verbose_name=_('Advertised URL'), help_text=_(
+            'Siempre debe comenzar con http:// o https:// y si se '
             'necesita un timestamp usar %(timestamp)d'))
     mobile_url = models.URLField(
         blank=True, null=True,
-        verbose_name=_(u'Alternative Advertised URL for mobile.'),
-        help_text=_(u'Ídem anterior. Si es la misma dejar en blanco.'))
+        verbose_name=_('Alternative Advertised URL for mobile.'),
+        help_text=_('Ídem anterior. Si es la misma dejar en blanco.'))
     analytics_tracking = models.CharField(
-        verbose_name=u'Trackeo analytics', max_length=255, blank=True)
-    since = models.DateTimeField(verbose_name=_(u'Since'), auto_now_add=True)
-    updated = models.DateTimeField(verbose_name=_(u'Updated'), auto_now=True)
+        verbose_name='Trackeo analytics', max_length=255, blank=True)
+    since = models.DateTimeField(verbose_name=_('Since'), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
 
-    start_showing = models.DateTimeField(verbose_name=_(u'Start showing'),
+    start_showing = models.DateTimeField(verbose_name=_('Start showing'),
                                          default=now)
-    stop_showing = models.DateTimeField(verbose_name=_(u'Stop showing'),
+    stop_showing = models.DateTimeField(verbose_name=_('Stop showing'),
                                         default=MAX_DATETIME)
 
     # Relations
@@ -131,9 +131,9 @@ class AdImpression(models.Model):
     The AdImpression Model will record every time the ad is loaded on a page
     """
     impression_date = models.DateTimeField(
-        verbose_name=_(u'When'), auto_now_add=True)
+        verbose_name=_('When'), auto_now_add=True)
     source_ip = models.GenericIPAddressField(
-        verbose_name=_(u'Who'), null=True, blank=True)
+        verbose_name=_('Who'), null=True, blank=True)
     ad = models.ForeignKey(AdBase, on_delete=models.CASCADE)
 
     class Meta:
@@ -146,9 +146,9 @@ class AdClick(models.Model):
     The AdClick model will record every click that a add gets
     """
     click_date = models.DateTimeField(
-        verbose_name=_(u'When'), auto_now_add=True)
+        verbose_name=_('When'), auto_now_add=True)
     source_ip = models.GenericIPAddressField(
-        verbose_name=_(u'Who'), null=True, blank=True)
+        verbose_name=_('Who'), null=True, blank=True)
     ad = models.ForeignKey(AdBase, on_delete=models.CASCADE)
 
     class Meta:
@@ -159,16 +159,16 @@ class AdClick(models.Model):
 # Example Ad Types
 class TextAd(AdBase):
     """ A most basic, text based advert """
-    content = models.TextField(verbose_name=_(u'Content'))
+    content = models.TextField(verbose_name=_('Content'))
 
 
 class BannerAd(AdBase):
     """ A standard banner Ad """
     content = models.ImageField(
-        verbose_name=_(u'Banner escritorio'), upload_to="adzone/bannerads/",
+        verbose_name=_('Banner escritorio'), upload_to="adzone/bannerads/",
         help_text='Dimensiones: 970×250px</br>Tamaño máximo permitido: 150kb</br>Formato: JPG, GIF, PNG')
     mobile_content = models.ImageField(
-        verbose_name=_(u'Banner móvil'), upload_to="adzone/bannerads/",
+        verbose_name=_('Banner móvil'), upload_to="adzone/bannerads/",
         help_text='Dimensiones: 300×250px</br>Tamaño máximo permitido: 150kb</br>Formato: JPG, GIF, PNG',
         null=True, blank=True)
 
