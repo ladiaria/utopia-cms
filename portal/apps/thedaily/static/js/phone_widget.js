@@ -1,8 +1,9 @@
-function phone_widget(local_country, util_script, required=false, no_placeholder=false) {
+function phone_widget(local_country, util_script, required=false, no_placeholder=false, translations) {
 
   const input = document.querySelector("#id_phone");
   let options = {
     initialCountry: local_country,
+    i18n: translations,
     hiddenInput: function(phone) {
       return {
         phone: "phone"
