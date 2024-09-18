@@ -38,7 +38,7 @@ class CRMSyncTestCase(TestCase):
         new_email_prefix = "%s%s@" % (email_pre_prefix, rand_chars())
         user.email = new_email_prefix + settings.SITE_DOMAIN
         user.save()
-        # check changed also in CRM (TODO: API used here is not yet opensourced in CRM, it will be ASAP)
+        # check changed also in CRM
         api_url = getattr(settings, "CRM_CONTACT_BY_EMAILPREFIX_API_URI", None)
         api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
         if api_url and api_key:
