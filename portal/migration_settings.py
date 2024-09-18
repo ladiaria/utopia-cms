@@ -530,7 +530,6 @@ SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 
-
 # Override previous settings with values in local_migration_settings.py settings file
 from local_migration_settings import *  # noqa
 
