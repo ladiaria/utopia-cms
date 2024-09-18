@@ -491,6 +491,13 @@ fieldset {
   .content {
     padding: 20px;
   }
+  h1 {
+    font-size: px-to-rem(26px);
+
+    @media #{$medium-and-down} {
+      font-size: px-to-rem(22px);
+    }
+  }
 }
 
 /* Checked checkboxes bg color */
