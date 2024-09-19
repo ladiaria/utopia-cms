@@ -21,6 +21,13 @@ from core.models import Article
 
 
 def crm_rest_api_kwargs(api_key, data=None):
+    """
+    Get the CRM API standard args.
+    @param api_key: CRM API key.
+    @param data: request body data to be send.
+    @return result: dictionary with all params.
+    """
+    # TODO: We could get the api_key inside this scope, instead of injecting it like params ?
     http_basic_auth = settings.CRM_API_HTTP_BASIC_AUTH
     result = {"headers": {"X-Api-Key": api_key} if http_basic_auth else {'Authorization': 'Api-Key ' + api_key}}
     if not getattr(settings, "CRM_API_VERIFY_SSL", True):
