@@ -1,8 +1,8 @@
 # coding:utf-8
-
 from builtins import range
 import string
 import random
+import unittest
 import requests
 
 from django.conf import settings
@@ -18,7 +18,26 @@ class CRMSyncTestCase(TestCase):
 
     test_user = None
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if not cls.are_tests_enabled():
+            print("WARNING: CRM sync tests are disabled due to missing configuration.")
+            raise unittest.SkipTest("CRM sync tests are disabled.")
+
+    @staticmethod
+    def are_tests_enabled():
+        # Check if the necessary settings are available
+        return (
+            hasattr(settings, 'CRM_API_UPDATE_USER_URI') and
+            hasattr(settings, 'CRM_UPDATE_USER_API_KEY') and
+            settings.CRM_API_UPDATE_USER_URI and
+            settings.CRM_UPDATE_USER_API_KEY
+        )
+
     def test_sync(self):
+        # (commented next line before a big merge, may reduce conflict ammount) TODO: enable after merge
+        # with override_settings(CRM_UPDATE_USER_ENABLED=True, CRM_UPDATE_SUBSCRIBER_FIELDS={"allow_promotions": "allow_promotions"}):  # noqa
         name, email_pre_prefix, password = "John Doe", "cms_test_crmsync_", User.objects.make_random_password()
         email = "%s%s@%s" % (email_pre_prefix, rand_chars(), settings.SITE_DOMAIN)
         # create a user with very low collission probability on email field
@@ -58,8 +77,30 @@ class CRMSyncTestCase(TestCase):
         else:
             print("WARNING: 'CRM Contact by emailprefix' API uri not set, test full validity can't be determined")
 
+        # Test changing allow_promotions field
+        user.subscriber.refresh_from_db()
+        user.subscriber.allow_promotions = not user.subscriber.allow_promotions
+        user.subscriber.save()
+
+        # TODO: Check if the change is reflected in CRM (uncomment when endpoint is ready)
+        #       (endpoint can return something to alert if the field is not configured to be synced)
+        """
+        response = requests.get(
+            api_url,
+            headers={'Authorization': 'Api-Key ' + api_key},
+            params={"email": user.email},
+        )
+        crm_data = response.json()
+
+        self.assertEqual(
+            crm_data.get("allow_promotions"),
+            user.subscriber.allow_promotions,
+            "allow_promotions field in CRM does not match the updated value"
+        )
+        """
+
     def test_create_user_sync(self):
-        with override_settings(CRM_UPDATE_USER_ENABLED=True):
+        with override_settings(CRM_UPDATE_USER_ENABLED=True, CRM_UPDATE_USER_CREATE_CONTACT=True):
             name, email_pre_prefix, password = "Jane Doe", "cms_test_crmsync_", User.objects.make_random_password()
             email = "%s%s@%s" % (email_pre_prefix, rand_chars(), settings.SITE_DOMAIN)
             # create a user with very low collission probability on email field
@@ -81,6 +122,7 @@ class CRMSyncTestCase(TestCase):
 
     def test_delete_user_sync(self):
         # Clean up test data in the CRM
+        # TODO: this does not tests any "sync" feature, only tests that the api call works ok (rename or fix)
         if self.test_user:
             api_url = settings.CRM_API_UPDATE_USER_URI
             api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
