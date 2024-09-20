@@ -374,7 +374,7 @@ class SignupForm(BaseUserForm):
                     'next_page',
                     HTML('<div class="align-center">'),
                     Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
-                    HTML('</div">'),
+                    HTML('</div>'),
                 )
             )
         )
@@ -441,7 +441,7 @@ class SignupCaptchaForm(SignupForm):
                 'next_page',
                 HTML('<div class="align-center">'),
                 Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l'),
-                HTML('</div">'),
+                HTML('</div>'),
             )
         )
 
@@ -561,10 +561,20 @@ class SubscriberAddressForm(SubscriberForm):
     address = CharField(
         label='Dirección',
         widget=TextInput(
-            attrs={'autocomplete': 'street-address', 'autocapitalize': 'sentences', 'spellcheck': 'false'}
+            attrs={
+                'autocomplete': 'street-address',
+                'autocapitalize': 'sentences',
+                'spellcheck': 'false',
+                'placeholder': 'Calle 1234'
+            }
         ),
     )
-    city = CharField(label='Ciudad')
+    city = CharField(
+        label='Ciudad',
+        widget=TextInput(
+            attrs={"placeholder": "Montevideo"}
+            )
+        )
     province = ChoiceField(
         label='Departamento',
         choices=settings.THEDAILY_PROVINCE_CHOICES,
@@ -675,6 +685,7 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
                 'autocomplete': 'new-password',
                 'autocapitalize': 'none',
                 'spellcheck': 'false',
+                'placeholder': 'Crea tu contraseña'
             }
         ),
     )
