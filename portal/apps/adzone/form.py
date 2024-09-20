@@ -10,7 +10,7 @@ MAX_UPLOAD_SIZE = "150165"  # 150kb
 class UploadFileForm(forms.ModelForm):
 
     def clean(self):
-        cleaned_data = super().clean()
+        cleaned_data = super().clean()  # noqa
         self.check_file(self)
         return self.cleaned_data
 

@@ -9,6 +9,8 @@ from django.conf import settings
 from django.test import TestCase
 from django.contrib.auth.models import User
 
+from libs.utils import crm_rest_api_kwargs
+
 
 def rand_chars(length=9):
     return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
@@ -26,28 +28,22 @@ class CRMSyncTestCase(TestCase):
         self.assertIsNotNone(user.subscriber)
         user.subscriber.save()
         # insert a contact in CRM with the same data
-        api_url = settings.CRM_API_UPDATE_USER_URI
+        api_uri = settings.CRM_API_UPDATE_USER_URI
         api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-        if api_url and api_key:
-            requests.post(
-                api_url,
-                headers={'Authorization': 'Api-Key ' + api_key},
-                data={"name": name, "email": email},
-            )
+        if api_uri and api_key:
+            requests.post(api_uri, **crm_rest_api_kwargs(api_key, data={"name": name, "email": email}))
         # change email
         new_email_prefix = "%s%s@" % (email_pre_prefix, rand_chars())
         user.email = new_email_prefix + settings.SITE_DOMAIN
         user.save()
         # check changed also in CRM
-        api_url = getattr(settings, "CRM_CONTACT_BY_EMAILPREFIX_API_URI", None)
+        api_uri = getattr(settings, "CRM_CONTACT_BY_EMAILPREFIX_API_URI", None)
         api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-        if api_url and api_key:
+        if api_uri and api_key:
             try:
                 self.assertEqual(
                     requests.post(
-                        api_url,
-                        headers={'Authorization': 'Api-Key ' + api_key},
-                        data={"email_prefix": new_email_prefix},
+                        api_uri, **crm_rest_api_kwargs(api_key, data={"email_prefix": new_email_prefix})
                     ).json().get("email"),
                     user.email,
                 )

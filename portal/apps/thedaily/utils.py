@@ -6,6 +6,13 @@ from urllib.parse import urlencode
 from pydoc import locate
 import requests
 
+from actstream.models import Follow
+from actstream.registry import check
+from favit.models import Favorite
+from social_django.models import UserSocialAuth
+from django_amp_readerid.models import UserReaderId
+from phonenumber_field.phonenumber import PhoneNumber
+
 from django.conf import settings
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
@@ -17,13 +24,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 
-from actstream.models import Follow
-from actstream.registry import check
-from favit.models import Favorite
-from social_django.models import UserSocialAuth
-from django_amp_readerid.models import UserReaderId
-from phonenumber_field.phonenumber import PhoneNumber
-
+from libs.utils import crm_rest_api_kwargs
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
 from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
@@ -109,7 +110,9 @@ def get_or_create_user_profile(user):
 
 
 def recent_following(user, *models):
-    """ The same as actstream.managers.FollowManager.following but sorted by '-started' """
+    """
+    The same as actstream.managers.FollowManager.following but sorted by '-started'
+    """
     qs = Follow.objects.filter(user=user)
     for model in models:
         check(model)
@@ -125,8 +128,7 @@ def add_default_mailtrain_lists(subscriber):
             try:
                 requests.post(
                     api_uri + "mailtrain_list_subscription/",
-                    headers={"Authorization": "Api-Key " + api_key},
-                    data={"email": subscriber.user.email, "list_id": mlist.list_cid},
+                    **crm_rest_api_kwargs(api_key, {"email": subscriber.user.email, "list_id": mlist.list_cid}),
                 )
             except Exception:
                 pass
