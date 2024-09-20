@@ -8,6 +8,9 @@ from hashids import Hashids
 from pymailcheck import split_email
 from pyisemail import is_email
 
+from social_django.models import UserSocialAuth
+from phonenumber_field.modelfields import PhoneNumberField
+
 from django.conf import settings
 from django.contrib.auth.models import User, Group, Permission
 from django.core.mail import mail_managers
@@ -36,12 +39,9 @@ from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.urls import reverse
 
-from social_django.models import UserSocialAuth
-from phonenumber_field.modelfields import PhoneNumberField
-
+from libs.utils import crm_rest_api_kwargs
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
-
 from .exceptions import UpdateCrmEx, EmailValidationError
 
 
@@ -312,7 +312,8 @@ def put_data_to_crm(api_url, data):
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        res = requests.put(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data)
+        api_kwargs = crm_rest_api_kwargs(api_key, data)
+        res = requests.put(api_url, **api_kwargs)
         res.raise_for_status()
         res.json()
 
@@ -328,8 +329,8 @@ def post_data_to_crm(api_url, data):
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        print(api_url)
-        res = requests.post(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data)
+        api_kwargs = crm_rest_api_kwargs(api_key, data)
+        res = requests.post(api_url, **api_kwargs)
         res.raise_for_status()
         return res.json()
 
@@ -345,11 +346,8 @@ def delete_data_from_crm(api_url, data):
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
         payload = json.dumps(data)
-        headers = {
-            'Authorization': 'Api-Key ' + api_key,
-            'Content-Type': 'application/json'
-        }
-        res = requests.delete(api_url, headers=headers, data=payload)
+        api_kwargs = crm_rest_api_kwargs(api_key, payload)
+        res = requests.delete(api_url, **api_kwargs)
         res.raise_for_status()
         res.json()
 
@@ -364,11 +362,9 @@ def get_data_from_crm(api_url, data):
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        headers = {
-            'Authorization': 'Api-Key ' + api_key,
-            'Content-Type': 'application/json'
-        }
-        res = requests.get(api_url, headers=headers, params=data)
+        api_kwargs = crm_rest_api_kwargs(api_key)
+        api_kwargs["params"] = data  # get call send data like query params
+        res = requests.get(api_url, **api_kwargs)
         res.raise_for_status()
         res.json()
 
@@ -479,21 +475,16 @@ def user_pre_save(sender, instance, **kwargs):
         raise IntegrityError(error_msg)
 
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
-        return True  # TODO: why True and not just "return"?
+        return
 
-    # sync email if changed
-    api_url = settings.CRM_API_UPDATE_USER_URI
-    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key, actualusr.email != instance.email)):
-        err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
+    api_uri = settings.CRM_API_UPDATE_USER_URI
+    if actualusr.email != instance.email:
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
-            requests.put(
-                api_url,
-                headers={'Authorization': 'Api-Key ' + api_key},
-                data={'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
-            ).raise_for_status()
+            data = {'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
+            put_data_to_crm(api_uri, data)
         except requests.exceptions.RequestException:
+            err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
             raise UpdateCrmEx(err_msg)
 
 
