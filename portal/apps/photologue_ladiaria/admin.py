@@ -170,7 +170,7 @@ class PhotographerFilter(admin.SimpleListFilter):
 
 
 class PhotoAdmin(PhotoAdminDefault):
-    list_display = ('title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public', 'view_count')
+    list_display = ('id', 'title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public', 'view_count')
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
     fieldsets = (
         (None, {'fields': ('title', 'image', 'caption')}),
