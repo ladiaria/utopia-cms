@@ -85,10 +85,12 @@ class AdBase(models.Model):
     """
     title = models.CharField(verbose_name=_('Title'), max_length=255)
     url = models.URLField(
+        max_length=500,
         verbose_name=_('Advertised URL'), help_text=_(
             'Siempre debe comenzar con http:// o https:// y si se '
             'necesita un timestamp usar %(timestamp)d'))
     mobile_url = models.URLField(
+        max_length=500,
         blank=True, null=True,
         verbose_name=_('Alternative Advertised URL for mobile.'),
         help_text=_('Ídem anterior. Si es la misma dejar en blanco.'))

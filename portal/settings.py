@@ -554,7 +554,8 @@ SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP version article page
 PHONENUMBER_DEFAULT_REGION = None
-
+CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
+ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
@@ -601,3 +602,7 @@ if CORE_ARTICLE_DETAIL_ENABLE_AMP:
 # CRM API
 if CRM_API_BASE_URI:
     CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + "updateuserweb/")
+
+if ENV_HTTP_BASIC_AUTH and not locals().get("API_KEY_CUSTOM_HEADER"):
+    # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
+    API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
