@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from builtins import str
 
 from socket import error
@@ -8,6 +7,7 @@ import re
 import smtplib
 from random import choices
 from hashids import Hashids
+from requests.auth import HTTPBasicAuth
 from pymailcheck import split_email
 
 from django.conf import settings
@@ -18,6 +18,26 @@ from django.http import HttpResponseBadRequest
 from tagging.models import Tag, TaggedItem
 
 from core.models import Article
+
+
+def crm_rest_api_kwargs(api_key, data=None):
+    """
+    Get the CRM API standard args.
+    @param api_key: CRM API key.
+    @param data: request body data to be send.
+    @return result: dictionary with all params.
+    """
+    # TODO: We could get the api_key inside this scope, instead of injecting it like params?
+    #       (explain better this TODO comment
+    http_basic_auth = settings.CRM_API_HTTP_BASIC_AUTH
+    result = {"headers": {"X-Api-Key": api_key} if http_basic_auth else {'Authorization': 'Api-Key ' + api_key}}
+    if not getattr(settings, "CRM_API_VERIFY_SSL", True):
+        result["verify"] = False
+    if data:
+        result["data"] = data
+    if http_basic_auth:
+        result["auth"] = HTTPBasicAuth(*http_basic_auth)
+    return result
 
 
 def remove_spaces(s):
