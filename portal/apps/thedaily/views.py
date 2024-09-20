@@ -6,18 +6,26 @@ from pydoc import locate
 import json
 import requests
 import pymongo
+from functools import wraps
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlparse, urlencode
 from uuid import uuid4
 from smtplib import SMTPRecipientsRefused
-from social_django.models import UserSocialAuth
-from emails.django import DjangoMessage as Message
 from PIL import Image
 from ga4mp import GtagMP
-from rest_framework.decorators import api_view, permission_classes
+
+from social_django.models import UserSocialAuth
+from emails.django import DjangoMessage as Message
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework_api_key.permissions import HasAPIKey
+from actstream import actions
+from actstream.models import following
+from favit.models import Favorite
+from favit.utils import is_xhr
+from django_amp_readerid.decorators import readerid_assoc
+from django_amp_readerid.utils import amp_login_param, get_related_user
 
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -55,15 +63,8 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
 
-from actstream import actions
-from actstream.models import following
-from favit.models import Favorite
-from favit.utils import is_xhr
-from django_amp_readerid.decorators import readerid_assoc
-from django_amp_readerid.utils import amp_login_param, get_related_user
-
 from apps import mongo_db, bouncer_blocklisted
-from libs.utils import set_amp_cors_headers, decode_hashid
+from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
 from decorators import render_response
@@ -123,6 +124,20 @@ delivery_err = "Error interno, intentá de nuevo más tarde."
 site_name = Site.objects.get_current().name
 
 
+def no_op_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+
+# Endpoints must be decorated with no auth classes if the deployment is under http basic auth, when no basic auth is
+# set, the decorator is no_op_decorator, which does nothing and let the endpoint acts as if it was not decorated.
+api_view_auth_decorator = (
+    authentication_classes([]) if getattr(settings, 'ENV_HTTP_BASIC_AUTH', False) else no_op_decorator
+)
+
+
 def notify_new_subscription(subscription_url, extra_subject=''):
     subject = settings.SUBSCRIPTION_EMAIL_SUBJECT + extra_subject
     rcv = settings.SUBSCRIPTION_EMAIL_TO
@@ -168,9 +183,7 @@ def mailtrain_lists(request):
         assert user.email and user.email not in bouncer_blocklisted
         api_uri, api_key = settings.CRM_API_BASE_URI, getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
         assert api_uri and api_key, "CRM api not configured"
-        r = requests.post(
-            api_uri + "mailtrain_lists/", headers={"Authorization": "Api-Key " + api_key}, data={"email": user.email}
-        )
+        r = requests.post(api_uri + "mailtrain_lists/", **crm_rest_api_kwargs(api_key, {"email": user.email}))
         r.raise_for_status()
     except Exception as exc:
         if settings.DEBUG:
@@ -204,8 +217,7 @@ def nl_auth_subscribe(request, nltype, nlslug):
                 assert api_uri and api_key, "CRM api not configured"
                 r = getattr(requests, "post" if nl_subscribe_activated else "delete")(
                     api_uri + "mailtrain_list_subscription/",
-                    headers={"Authorization": "Api-Key " + api_key},
-                    data={"email": user.email, "list_id": nlslug},
+                    **crm_rest_api_kwargs(api_key, {"email": user.email, "list_id": nlslug}),
                 )
                 r.raise_for_status()
         except Exception as exc:
@@ -1343,6 +1355,7 @@ def user_profile(request, user_id):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def update_user_from_crm(request):
     """
@@ -1658,6 +1671,7 @@ def users_api_noauth(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def users_api(request):
     return users_api_noauth(request)
@@ -1665,6 +1679,7 @@ def users_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def email_check_api(request):
     """
@@ -1707,6 +1722,7 @@ def email_check_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def most_read_api(request):
     """
@@ -1740,6 +1756,7 @@ def most_read_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def last_read_api(request):
     """
@@ -1777,6 +1794,7 @@ def last_read_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def read_articles_percentage_api(request):
     """
@@ -1841,6 +1859,7 @@ def read_articles_percentage_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def user_comments_api(request):
     result = {'error': None}
@@ -1876,6 +1895,7 @@ def user_comments_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def custom_api(request):
     msg = ''
