@@ -1435,11 +1435,13 @@ def update_user_from_crm(request):
                 set_cat_newsletters = set(given_categories.values_list("slug", flat=True))
                 # TODO: give an example where the next affirmation could happen (not easy to understand)
                 # This code set duplicates slugs in both relationships. This could be a bug in the future
-                # TODO: Pending of full review for remove the commented code
-                #       This can be demostrated with tests:
+                # TODO: Pending of full review for remove the commented code (commented code, now removed, is the code
+                #       that was here before this change)
+                #       This can be checked with tests:
                 #           given a set of slugs
                 #           after this sync is made, the Subscriber's NLs set must be equal to the set given
                 #       (that was exactly what the commented and now removed code used to do)
+                #       NOTE: is very probbable that the "if" now will require also be True for "area_newsletters"
                 s.newsletters.set(Publication.objects.filter(slug__in=set_newsletters))
                 s.category_newsletters.set(Category.objects.filter(slug__in=set_cat_newsletters))
             else:
