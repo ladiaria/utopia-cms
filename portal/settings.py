@@ -557,6 +557,7 @@ CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP versio
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 
+
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
 
