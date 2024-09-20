@@ -27,7 +27,8 @@ def crm_rest_api_kwargs(api_key, data=None):
     @param data: request body data to be send.
     @return result: dictionary with all params.
     """
-    # TODO: We could get the api_key inside this scope, instead of injecting it like params ?
+    # TODO: We could get the api_key inside this scope, instead of injecting it like params?
+    #       (explain better this TODO comment
     http_basic_auth = settings.CRM_API_HTTP_BASIC_AUTH
     result = {"headers": {"X-Api-Key": api_key} if http_basic_auth else {'Authorization': 'Api-Key ' + api_key}}
     if not getattr(settings, "CRM_API_VERIFY_SSL", True):

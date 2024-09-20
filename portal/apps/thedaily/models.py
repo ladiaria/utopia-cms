@@ -475,12 +475,12 @@ def user_pre_save(sender, instance, **kwargs):
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
         return
 
-    api_url = settings.CRM_API_UPDATE_USER_URI
+    api_uri = settings.CRM_API_UPDATE_USER_URI
     if actualusr.email != instance.email:
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
             data = {'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
-            put_data_to_crm(api_url, data)
+            put_data_to_crm(api_uri, data)
         except requests.exceptions.RequestException:
             err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
             raise UpdateCrmEx(err_msg)
