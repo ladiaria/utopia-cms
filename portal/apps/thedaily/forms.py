@@ -904,10 +904,13 @@ class GoogleSigninForm(CrispyModelForm):
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'google_signin'
-        self.helper.layout = Layout(
-            *('phone', "next_page")
-            + terms_and_conditions_layout_tuple()
-            + (FormActions(Submit('save', submit_label, css_class='ut-btn ut-btn-l')),)
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+              *('phone', "next_page")
+              + terms_and_conditions_layout_tuple()
+              + (FormActions(Submit('save', submit_label, css_class='ut-btn ut-btn-l')),)
+            )
         )
 
     class Meta:

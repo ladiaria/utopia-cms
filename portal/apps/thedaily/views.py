@@ -618,7 +618,8 @@ def google_phone(request):
             add_default_newsletters(profile)
 
     ctx.update({'google_signin_form': google_signin_form, "is_new": is_new})
-    return 'google_signup.html', ctx
+
+    return render(request, get_app_template("google_signup.html"), ctx)
 
 
 @never_cache
@@ -1176,6 +1177,7 @@ def edit_profile(request, user=None):
     # Google oauth note: disconnections are discouraged when the email used is the same as the user's email because
     #                    once disconnected, if the user has no valid password, he/she would not be able to login again
     #                    without a successful pasword reset.
+    # Update note: user can disconecctions if has a usable password - TODO: Check it
     oauth2_assoc, google_oauth2_multiple = None, False
     try:
         oauth2_assoc = UserSocialAuth.objects.get(user=user, provider='google-oauth2')
@@ -1195,7 +1197,7 @@ def edit_profile(request, user=None):
             'google_oauth2_assoc': oauth2_assoc,
             'google_oauth2_multiple': google_oauth2_multiple,
             'google_oauth2_allow_disconnect':
-                not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
+                not google_oauth2_multiple and oauth2_assoc and user.has_usable_password(),
             'publication_newsletters': Publication.objects.filter(has_newsletter=True),
             'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
             'newsletters': get_profile_newsletters_ordered(),
@@ -1211,6 +1213,7 @@ def edit_profile(request, user=None):
             ),
             "email_is_bouncer": user.subscriber.email_is_bouncer(),
             "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+            "user_has_password": user.has_usable_password(),
         },
     )
 
