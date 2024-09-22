@@ -24,6 +24,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 
+from libs.utils import crm_rest_api_kwargs
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
 from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
@@ -101,7 +102,9 @@ def qparamstr(qparams):
 
 
 def recent_following(user, *models):
-    """ The same as actstream.managers.FollowManager.following but sorted by '-started' """
+    """
+    The same as actstream.managers.FollowManager.following but sorted by '-started'
+    """
     qs = Follow.objects.filter(user=user)
     for model in models:
         check(model)
@@ -117,8 +120,7 @@ def add_default_mailtrain_lists(subscriber):
             try:
                 requests.post(
                     api_uri + "mailtrain_list_subscription/",
-                    headers={"Authorization": "Api-Key " + api_key},
-                    data={"email": subscriber.user.email, "list_id": mlist.list_cid},
+                    **crm_rest_api_kwargs(api_key, {"email": subscriber.user.email, "list_id": mlist.list_cid}),
                 )
             except Exception:
                 pass
