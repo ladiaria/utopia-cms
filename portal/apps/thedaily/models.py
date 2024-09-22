@@ -308,7 +308,7 @@ def updatecrmuser(contact_id, field, value):
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_uri, api_key)):
         data = {"contact_id": contact_id, "field": field, "value": value}
-        requests.put(api_uri, crm_rest_api_kwargs(api_key, data)).raise_for_status()
+        requests.put(api_uri, **crm_rest_api_kwargs(api_key, data)).raise_for_status()
 
 
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
