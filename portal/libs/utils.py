@@ -21,6 +21,9 @@ from core.models import Article
 
 
 def crm_rest_api_kwargs(api_key, data=None):
+    # we require the api_key as arg (we can obtain it from settings) because the caller code needs also it most of the
+    # time to make previous conditions to call us or build the data arg, this way the code is a bit less repeated but
+    # of course that the calls in all the code that call us can be refactored lettng this function with only one arg.
     http_basic_auth = settings.CRM_API_HTTP_BASIC_AUTH
     result = {"headers": {"X-Api-Key": api_key} if http_basic_auth else {'Authorization': 'Api-Key ' + api_key}}
     if not getattr(settings, "CRM_API_VERIFY_SSL", True):
