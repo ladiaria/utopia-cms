@@ -315,7 +315,7 @@ def put_data_to_crm(api_url, data):
         api_kwargs = crm_rest_api_kwargs(api_key, data)
         res = requests.put(api_url, **api_kwargs)
         res.raise_for_status()
-        res.json()
+        return res.json()
 
 
 def post_data_to_crm(api_url, data):
@@ -349,7 +349,7 @@ def delete_data_from_crm(api_url, data):
         api_kwargs = crm_rest_api_kwargs(api_key, payload)
         res = requests.delete(api_url, **api_kwargs)
         res.raise_for_status()
-        res.json()
+        return res.json()
 
 
 def get_data_from_crm(api_url, data):
@@ -366,13 +366,13 @@ def get_data_from_crm(api_url, data):
         api_kwargs["params"] = data  # get call send data like query params
         res = requests.get(api_url, **api_kwargs)
         res.raise_for_status()
-        res.json()
+        return res.json()
 
 
 def updatecrmuser(contact_id, field, value):
     api_url = settings.CRM_API_UPDATE_USER_URI
     data = {"contact_id": contact_id, "field": field, "value": value}
-    put_data_to_crm(api_url, data)
+    return put_data_to_crm(api_url, data)
 
 
 def createcrmuser(name, email):
