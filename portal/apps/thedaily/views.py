@@ -121,8 +121,8 @@ from .utils import (
     google_phone_next_page,
     product_checkout_template,
     qparamstr,
-    collector_analysis,
     get_app_template,
+    collector_analysis,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError

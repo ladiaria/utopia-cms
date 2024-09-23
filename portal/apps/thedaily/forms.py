@@ -489,7 +489,7 @@ class ProfileExtraDataForm(CrispyModelForm):
                     "profile/push_notifications.html"
                 )
             ),
-            Field('newsletters', template='profile/newsletters.html'),
+            Field('newsletters', template=get_app_template('profile/newsletters.html')),
             HTML('{%% include "%s" %%}' % get_app_template('profile/communications_start_section.html')),
             Field('allow_news', template=get_app_template('profile/allow_news.html')),
             Field('allow_promotions', template=get_app_template('profile/allow_promotions.html')),
