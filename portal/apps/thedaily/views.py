@@ -111,6 +111,7 @@ from .forms import (
     PhoneSubscriptionForm,
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
+    get_default_province,
 )
 from .utils import (
     get_or_create_user_profile,
@@ -691,6 +692,7 @@ def subscribe(request, planslug, category_slug=None):
         # TODO post release: Usage guide should describe when 404 is raised here
         subscription_price = get_object_or_404(SubscriptionPrices, subscription_type=planslug)
         oauth2_button, subscription_in_process = True, False
+        default_province = get_default_province()
 
         if user_is_authenticated:
 
@@ -705,10 +707,8 @@ def subscribe(request, planslug, category_slug=None):
                 if subscription_price.ga_category == 'D':
                     subscriber_form = GoogleSignupForm(instance=profile)
                 else:
-                    if not profile.province:
-                        default_province = getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None)
-                        if default_province:
-                            profile.province = default_province
+                    if not profile.province and default_province:
+                        profile.province = default_province
                     subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
                 initial = {
@@ -740,10 +740,8 @@ def subscribe(request, planslug, category_slug=None):
                 if subscription_price.ga_category == 'D':
                     subscriber_form = GoogleSignupForm(instance=profile)
                 else:
-                    if not profile.province:
-                        default_province = getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None)
-                        if default_province:
-                            profile.province = default_province
+                    if not profile.province and default_province:
+                        profile.province = default_province
                     subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
                 subscriber_form = (

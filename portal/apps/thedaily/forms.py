@@ -46,6 +46,11 @@ SUBSCRIPTION_PHONE_TIME_CHOICES = (
     ('4', 'En la tarde-noche (18:00 a 20:00)'),
 )
 TEMPLATE_PACK = get_template_pack()
+PASSWORD_MIN_LENGTH = getattr(settings, "THEDAILY_PASSWORD_MIN_LENGTH", 8)
+
+
+def get_default_province():
+    return getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None)
 
 
 def custom_layout(form_id):
@@ -75,10 +80,7 @@ terms_and_conditions_prelogin = (
 
 
 def check_password_strength(password):
-    if len(password) < 6:
-        return False
-    else:
-        return True
+    return len(password) >= PASSWORD_MIN_LENGTH
 
 
 def clean_terms_and_conds(form):
@@ -189,14 +191,7 @@ class LoginForm(CrispyForm):
     )
     password = CharField(
         label='Contraseña',
-        widget=PasswordInput(
-            attrs={
-                'class': CSS_CLASS,
-                'placeholder': 'Ingresá tu contraseña',
-                'autocomplete': 'current-password',
-                'autocapitalize': 'none',
-            }
-        ),
+        widget=PasswordInput(attrs={'class': CSS_CLASS, 'autocomplete': 'current-password', 'autocapitalize': 'none'}),
     )
 
     def __init__(self, *args, **kwargs):
@@ -364,8 +359,7 @@ class SignupForm(BaseUserForm):
                     'phone',
                     Field(
                         'password',
-                        minlength="6",
-                        placeholder="Crear contraseña",
+                        minlength=str(PASSWORD_MIN_LENGTH),
                         template='materialize_css_forms/layout/password.html',
                     ),
                 )
@@ -374,7 +368,7 @@ class SignupForm(BaseUserForm):
                     'next_page',
                     HTML('<div class="align-center">'),
                     Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
-                    HTML('</div">'),
+                    HTML('</div>'),
                 )
             )
         )
@@ -428,6 +422,7 @@ class SignupForm(BaseUserForm):
                     'autocomplete': 'new-password',
                     'autocapitalize': 'none',
                     'spellcheck': 'false',
+                    "minlength": PASSWORD_MIN_LENGTH,
                 }
             )
         }
@@ -447,7 +442,7 @@ class SignupCaptchaForm(SignupForm):
                 'next_page',
                 HTML('<div class="align-center">'),
                 Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l'),
-                HTML('</div">'),
+                HTML('</div>'),
             )
         )
 
@@ -567,14 +562,17 @@ class SubscriberAddressForm(SubscriberForm):
     address = CharField(
         label='Dirección',
         widget=TextInput(
-            attrs={'autocomplete': 'street-address', 'autocapitalize': 'sentences', 'spellcheck': 'false'}
+            attrs={
+                'autocomplete': 'street-address',
+                'autocapitalize': 'sentences',
+                'spellcheck': 'false',
+                'placeholder': 'Calle 1234',
+            }
         ),
     )
-    city = CharField(label='Ciudad')
+    city = CharField(label='Ciudad', widget=TextInput(attrs={"placeholder": "Ciudad"}))
     province = ChoiceField(
-        label='Departamento',
-        choices=settings.THEDAILY_PROVINCE_CHOICES,
-        initial=getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None),
+        label='Departamento', choices=settings.THEDAILY_PROVINCE_CHOICES, initial=get_default_province()
     )
 
     def __init__(self, *args, **kwargs):
@@ -622,8 +620,7 @@ class SubscriberSignupForm(SubscriberForm):
                 'autocomplete': 'new-password',
                 'autocapitalize': 'none',
                 'spellcheck': 'false',
-                'minlength': 6,
-                'placeholder': 'Crear contraseña',
+                'minlength': PASSWORD_MIN_LENGTH,
             }
         ),
     )
@@ -681,6 +678,7 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
                 'autocomplete': 'new-password',
                 'autocapitalize': 'none',
                 'spellcheck': 'false',
+                'minlength': PASSWORD_MIN_LENGTH,
             }
         ),
     )
@@ -949,8 +947,10 @@ class GoogleSignupAddressForm(GoogleSignupForm):
             attrs={'autocomplete': 'street-address', 'autocapitalize': 'sentences', 'spellcheck': 'false'}
         ),
     )
-    city = CharField(label='Ciudad')
-    province = ChoiceField(label='Departamento', choices=settings.THEDAILY_PROVINCE_CHOICES)
+    city = CharField(label='Ciudad', widget=TextInput(attrs={"placeholder": "Ciudad"}))
+    province = ChoiceField(
+        label='Departamento', choices=settings.THEDAILY_PROVINCE_CHOICES, initial=get_default_province()
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1059,7 +1059,14 @@ class ConfirmEmailRequestForm(CrispyForm):
 class PasswordChangeBaseForm(CrispyForm):
     new_password_1 = CharField(
         label='Nueva contraseña',
-        widget=PasswordInput(attrs={"autocomplete": "new-password", 'autocapitalize': 'none', 'spellcheck': 'false'}),
+        widget=PasswordInput(
+            attrs={
+                "autocomplete": "new-password",
+                'autocapitalize': 'none',
+                'spellcheck': 'false',
+                "minlength": PASSWORD_MIN_LENGTH,
+            }
+        ),
     )
     new_password_2 = CharField(
         label='Repetir contraseña',
@@ -1125,7 +1132,14 @@ class PasswordChangeForm(PasswordChangeBaseForm):
 class PasswordResetForm(PasswordChangeBaseForm):
     new_password_1 = CharField(
         label='Contraseña',
-        widget=PasswordInput(attrs={"autocomplete": "new-password", 'autocapitalize': 'none', 'spellcheck': 'false'}),
+        widget=PasswordInput(
+            attrs={
+                "autocomplete": "new-password",
+                'autocapitalize': 'none',
+                'spellcheck': 'false',
+                "minlength": PASSWORD_MIN_LENGTH,
+            }
+        ),
     )
     hash = CharField(widget=HiddenInput())
     gonzo = CharField(widget=HiddenInput())
