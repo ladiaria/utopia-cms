@@ -323,7 +323,7 @@ body.hard-paywall {
             padding-bottom: 20px;
             max-height: 400px;
           }
-          button {
+          button [type="submit"] {
             border-radius: 65px;
             background: $off-black;
             padding: 10px 21px;
