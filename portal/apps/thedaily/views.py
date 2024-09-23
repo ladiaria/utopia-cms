@@ -1336,8 +1336,8 @@ def update_user_from_crm(request):
     Update User or Subscriber from CRM.
     updatefromcrm flag must be set to avoid ws loop.
     User is updated when the field to change is "email"
-    Subscriber is updated when the field is other (a field mapping between CRM
-    fields and Subscriber's field should be provided somewhere)
+    Subscriber is updated when the field is other (a field mapping between CRM fields and Subscriber's field should be
+    provided somewhere)
     """
     def changeuseremail(user, newemail):
         """
@@ -1467,6 +1467,8 @@ def update_user_from_crm(request):
         updatesubscriberfields(subscriber, fields)
         updateuserfields(subscriber.user, name, last_name)
     except Subscriber.DoesNotExist:
+        if settings.DEBUG:
+            print(f"DEBUG: sync API: Subscriber.DoesNotExist for contact_id={contact_id}")
         if email or fields.get('email', None):
             try:
                 u = User.objects.get(email__exact=email)
@@ -1477,11 +1479,10 @@ def update_user_from_crm(request):
                 updateuserfields(u, name, last_name)
             except User.DoesNotExist:
                 # create new user
+                if settings.DEBUG:
+                    print(f"DEBUG: sync API: User.DoesNotExist for email={email}")
                 user_args = {
-                    "email": newemail,
-                    "username": newemail,
-                    "first_name": name if name is not None else "",
-                    "last_name": last_name if last_name is not None else "",
+                    "email": newemail, "username": newemail, "first_name": name or "", "last_name": last_name or ""
                 }
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
@@ -1502,11 +1503,10 @@ def update_user_from_crm(request):
                 return HttpResponseBadRequest()
             except User.DoesNotExist:
                 # create new user
+                if settings.DEBUG:
+                    print(f"DEBUG: sync API: User.DoesNotExist for email={newemail}")
                 user_args = {
-                    "email": newemail,
-                    "username": newemail,
-                    "first_name": name if name is not None else "",
-                    "last_name": last_name if last_name is not None else "",
+                    "email": newemail, "username": newemail, "first_name": name or "", "last_name": last_name or ""
                 }
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
