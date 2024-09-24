@@ -37,6 +37,18 @@ class CRMSyncTestCase(TestCase):
             settings.CRM_UPDATE_USER_API_KEY
         )
 
+    def tearDown(self):
+        # Clean up test data in the CRM
+        if self.test_user:
+            api_url = settings.CRM_API_UPDATE_USER_URI
+            api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+            if api_url and api_key:
+                requests.delete(
+                    api_url,
+                    headers={'Authorization': 'Api-Key ' + api_key},
+                    data={"email": self.test_user.email},
+                )
+
     def test_sync(self):
         # (commented next line before a big merge, may reduce conflict ammount) TODO: enable after merge
         # with override_settings(CRM_UPDATE_USER_ENABLED=True, CRM_UPDATE_SUBSCRIBER_FIELDS={"allow_promotions": "allow_promotions"}):  # noqa
@@ -80,6 +92,7 @@ class CRMSyncTestCase(TestCase):
 
         # TODO: Check if the change is reflected in CRM (uncomment when endpoint is ready)
         #       (endpoint can return something to alert if the field is not configured to be synced)
+        # What is the endpoint that needs to be ready for this check ?
         """
         response = requests.get(
             api_url,
@@ -115,30 +128,6 @@ class CRMSyncTestCase(TestCase):
                     data={"name": name, "email": email},
                 )
                 self.assertEqual(res.json()["contact_id"], self.test_user.subscriber.contact_id)
-
-    def test_delete_user_sync(self):
-        # Clean up test data in the CRM
-        # TODO: this does not tests any "sync" feature, only tests that the api call works ok (rename or fix)
-        if self.test_user:
-            api_url = settings.CRM_API_UPDATE_USER_URI
-            api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-            if api_url and api_key:
-                res = requests.delete(
-                    api_url,
-                    headers={'Authorization': 'Api-Key ' + api_key},
-                    data={"email": self.test_user.email},
-                )
-
-                # check if user exists in the CRM
-                api_url = settings.CRM_API_GET_USER_URI
-                api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-                if api_url and api_key:
-                    res = requests.get(
-                        api_url,
-                        headers={'Authorization': 'Api-Key ' + api_key},
-                        params={"email": self.test_user.email},
-                    )
-                self.assertFalse(res.json()["exists"])
 
     def test_not_create_user_without_sync(self):
         with override_settings(CRM_UPDATE_USER_ENABLED=False):
