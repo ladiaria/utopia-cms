@@ -8,6 +8,8 @@ from hashids import Hashids
 from pymailcheck import split_email
 from pyisemail import is_email
 
+from social_django.models import UserSocialAuth
+
 from django.conf import settings
 from django.contrib.auth.models import User, Group, Permission
 from django.core.mail import mail_managers
@@ -36,11 +38,9 @@ from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.urls import reverse
 
-from social_django.models import UserSocialAuth
-
+from libs.utils import crm_rest_api_kwargs
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
-
 from .exceptions import UpdateCrmEx, EmailValidationError
 
 
@@ -301,12 +301,12 @@ class Subscriber(Model):
 
 
 def updatecrmuser(contact_id, field, value):
-    # TODO: next lines can be encapsulated in a new function (DRY), then call also from this module lines ~ 402:409
-    api_url = settings.CRM_API_UPDATE_USER_URI
+    # TODO: next lines can be encapsulated in a new function (DRY), then call also from this module lines ~ 404:407
+    api_uri = settings.CRM_API_UPDATE_USER_URI
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_uri, api_key)):
         data = {"contact_id": contact_id, "field": field, "value": value}
-        requests.put(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data).raise_for_status()
+        requests.put(api_uri, **crm_rest_api_kwargs(api_key, data)).raise_for_status()
 
 
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
@@ -394,17 +394,16 @@ def user_pre_save(sender, instance, **kwargs):
         return True  # TODO: why True and not just "return"?
 
     # sync email if changed
-    api_url = settings.CRM_API_UPDATE_USER_URI
+    api_uri = settings.CRM_API_UPDATE_USER_URI
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key, actualusr.email != instance.email)):
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_uri, api_key, actualusr.email != instance.email)):
         err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
-            requests.put(
-                api_url,
-                headers={'Authorization': 'Api-Key ' + api_key},
-                data={'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
-            ).raise_for_status()
+            api_kwargs = crm_rest_api_kwargs(
+                api_key, {'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
+            )
+            requests.put(api_uri, **api_kwargs).raise_for_status()
         except requests.exceptions.RequestException:
             raise UpdateCrmEx(err_msg)
 

@@ -214,9 +214,11 @@
     "only_initials": false,
     "byline": [2],
     "headline": "test article2",
+    "alt_title_metadata": "article2 alternative title",
+    "alt_desc_metadata": "article2 alternative desc",
     "show_related_articles": true,
     "public": true,
-    "body": "test.",
+    "body": "test2.",
     "views": 0,
     "date_published": "2020-11-19T04:20:02",
     "last_modified": "2020-11-19T04:25:57",
@@ -607,10 +609,30 @@
   "model": "core.articleextension",
   "pk": 1,
   "fields": {
-      "article": 9,
-      "body": "<iframe width=\"100%\" height=\"380\" src=\"https://www.youtube.com/embed/RhwYtU8EERs\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>",
-      "size": "R",
-      "background_color": "#eaeaea"
+    "article": 9,
+    "body": "<iframe width=\"100%\" height=\"380\" src=\"https://www.youtube.com/embed/RhwYtU8EERs\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>",
+    "size": "R",
+    "background_color": "#eaeaea"
+  }
+},
+{
+  "model": "core.articleextension",
+  "pk": 2,
+  "fields": {
+    "article": 8,
+    "body": "<script src=\"valid.com/valid.js\"></script>",
+    "size": "R",
+    "background_color": "#eaeaea"
+  }
+},
+{
+  "model": "core.articleextension",
+  "pk": 3,
+  "fields": {
+    "article": 7,
+    "body": "<script src=\"instagram.com/embed.js\"></script>",
+    "size": "R",
+    "background_color": "#eaeaea"
   }
 }
 ]

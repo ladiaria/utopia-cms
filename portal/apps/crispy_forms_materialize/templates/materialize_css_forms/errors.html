@@ -2,13 +2,12 @@
   {% spaceless %}
     <div class="row alert-box">
       <div class="col s12">
-        
           {% if form_error_title %}<span class="title">{{ form_error_title }}</span>{% endif %}          
             <ul>
               {% for error in form.non_field_errors %}
                 <li>{{ error|safe }}</li>
               {% endfor %}
-            </ul>          
+            </ul>
       </div>
     </div>
   {% endspaceless %}
