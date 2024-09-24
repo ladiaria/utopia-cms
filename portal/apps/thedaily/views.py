@@ -1435,6 +1435,11 @@ def update_user_from_crm(request):
                 set_cat_newsletters = set(given_categories.values_list("slug", flat=True))
                 # TODO: give an example where the next affirmation could happen (not easy to understand)
                 # This code set duplicates slugs in both relationships. This could be a bug in the future
+                # This case would happens if for example we have a category with slug "deporte"
+                # and also we have an publication with the slug "deporte".
+                # In this case, if a "deporte" comes like slug for update newsletters,
+                # this code code will add "deporte" like a category newsletter and like publication newsletter,
+                # cause is hard to set up.
                 # TODO: Pending of full review for remove the commented code (commented code, now removed, is the code
                 #       that was here before this change)
                 #       This can be checked with tests:
@@ -1486,10 +1491,11 @@ def update_user_from_crm(request):
                 }
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
-                subscriber = Subscriber(contact_id)
-                new_user.subscriber = subscriber
                 new_user.save()
-                new_user.subscriber.save()
+                subscriber = new_user.subscriber
+                subscriber.contact_id = contact_id
+                subscriber.updatefromcrm = True
+                subscriber.save()
             except MultipleObjectsReturned:
                 mail_managers('Multiple email in users', email)
                 return HttpResponseBadRequest()
@@ -1508,12 +1514,15 @@ def update_user_from_crm(request):
                 user_args = {
                     "email": newemail, "username": newemail, "first_name": name or "", "last_name": last_name or ""
                 }
+
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
-                subscriber = Subscriber(contact_id)
-                new_user.subscriber = subscriber
                 new_user.save()
-                new_user.subscriber.save()
+                subscriber = new_user.subscriber
+                subscriber.contact_id = contact_id
+                subscriber.updatefromcrm = True
+                subscriber.save()
+
             except MultipleObjectsReturned:
                 mail_managers('Multiple email in users', newemail)
                 return HttpResponseBadRequest()
@@ -1563,13 +1572,13 @@ def delete_user_from_crm(request):
         except Exception as ex:
             raise Exception(f"Error al eliminar el usuario: {str(ex)}")
 
-    if request.method == "DELETE":
+    if request.method == "DELETE":  # maybe redundant
         try:
             contact_id = request.POST["contact_id"]
             email = request.POST.get("email", "")
         except KeyError:
             return HttpResponseBadRequest("Missing argument contact_id")
-
+        user_to_delete = None
         with transaction.atomic():
             try:
                 subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
@@ -1582,20 +1591,19 @@ def delete_user_from_crm(request):
                         return Http404("Usuario no encontrado")
                     except Exception as ex:
                         return HttpResponseServerError(str(ex))
-                else:
-                    return HttpResponseBadRequest("No se proporcionó un email válido")
             except Exception as ex:
                 return HttpResponseServerError(str(ex))
     else:
         return HttpResponseBadRequest()
 
-    is_valid, msg = validation_on_delete(user_to_delete)
-    if is_valid:
-        delete_user(user_to_delete)
-    else:
-        return HttpResponseBadRequest(f"No es seguro remover este usuario/suscriptor: {msg}")
+    if user_to_delete:
+        is_valid, msg = validation_on_delete(user_to_delete)
+        if is_valid:
+            delete_user(user_to_delete)
+        else:
+            return HttpResponseBadRequest(f"No es seguro remover este usuario/suscriptor: {msg}")
 
-    return JsonResponse({"message": "OK"})
+    return JsonResponse({"msg": "OK"})
 
 
 @never_cache

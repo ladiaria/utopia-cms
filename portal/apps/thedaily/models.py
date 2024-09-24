@@ -307,6 +307,7 @@ def put_data_to_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
+    @return: json data from the response
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
@@ -323,7 +324,7 @@ def post_data_to_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
-    return request response
+    @return request response in json format
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
@@ -340,6 +341,7 @@ def delete_data_from_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
+    @return reques response in json format
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
