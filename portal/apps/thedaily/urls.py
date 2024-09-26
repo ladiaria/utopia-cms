@@ -16,6 +16,7 @@ from .views import (
     signup,
     edit_profile,
     update_user_from_crm,
+    delete_user_from_crm,
     confirm_email,
     password_change,
     password_reset,
@@ -84,6 +85,7 @@ urlpatterns = [
     path('api/last_read/', last_read_api),
     path('api/comments/', user_comments_api),
     path('fromcrm', update_user_from_crm),
+    path('deletefromcrm', delete_user_from_crm),
     path('subscribe-notice-closed', subscribe_notice_closed, name='subscribe-notice-closed'),
     path(
         'unsubscribed-nls-notice-closed',

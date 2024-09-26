@@ -536,6 +536,7 @@ CRM_UPDATE_USER_ENABLED = False
 # CRM API urls will be assigned after local_settings import, if not overrided
 CRM_API_BASE_URI = None
 CRM_API_UPDATE_USER_URI = None
+CRM_API_GET_USER_URI = None
 
 # PWA
 PWA_SERVICE_WORKER_TEMPLATE = "core/templates/sw/serviceworker.js"
@@ -555,6 +556,8 @@ FREEZE_TIME = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP version article page
 CRM_UPDATE_USER_CREATE_CONTACT = None
 PHONENUMBER_DEFAULT_REGION = None
+CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
+ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 
 
 # Override previous settings with values in local_settings.py settings file
@@ -602,6 +605,11 @@ if CORE_ARTICLE_DETAIL_ENABLE_AMP:
 # CRM API
 if CRM_API_BASE_URI:
     CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + "updateuserweb/")
+    CRM_API_GET_USER_URI = CRM_API_GET_USER_URI or (CRM_API_BASE_URI + "existsuserweb/")
 if CRM_UPDATE_USER_CREATE_CONTACT is None:
     # defaults to the same value of the "base sync"
     CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED
+
+if ENV_HTTP_BASIC_AUTH and not locals().get("API_KEY_CUSTOM_HEADER"):
+    # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
+    API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"

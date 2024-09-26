@@ -48,10 +48,18 @@ SUBSCRIPTION_PHONE_TIME_CHOICES = (
 TEMPLATE_PACK = get_template_pack()
 
 
-def custom_layout(form_id):
+def custom_layout(form_id, *args, **kwargs):
     custom_layout_module = getattr(settings, "THEDAILY_CRISPY_CUSTOM_LAYOUTS_MODULE", None)
     if custom_layout_module:
-        return locate(f"{custom_layout_module}.layouts").get(form_id)
+        try:
+            layout_module = locate(f"{custom_layout_module}.layouts").get(form_id)
+            if callable(layout_module):
+                return layout_module(*args, **kwargs)
+            else:
+                return layout_module
+        except Exception as e:
+            print(f"Error getting custom layout: {e}")
+    return None
 
 
 def terms_and_conditions_field():
@@ -1073,12 +1081,15 @@ class PasswordChangeBaseForm(CrispyForm):
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'change_password'
-        self.helper.layout = Layout(
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id, fields=self.fields)
+            or Layout(
+              Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+              Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+              HTML('<div class="align-center">'),
+              FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+              HTML('</div>'),
+            )
         )
 
     def clean(self):
@@ -1106,13 +1117,16 @@ class PasswordChangeForm(PasswordChangeBaseForm):
         if 'user' in kwargs:
             del kwargs['user']
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Field('old_password', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id, fields=self.fields)
+            or Layout(
+              Field('old_password', template='materialize_css_forms/layout/password.html'),
+              Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+              Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+              HTML('<div class="align-center">'),
+              FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+              HTML('</div>'),
+            )
         )
 
     def clean_old_password(self):
@@ -1146,14 +1160,18 @@ class PasswordResetForm(PasswordChangeBaseForm):
         del kwargs['user']
 
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            Field('gonzo', type='hidden', value=initial['gonzo']),
-            Field('hash', type='hidden', value=initial['gonzo']),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+
+        self.helper.layout = (
+          custom_layout(self.helper.form_id, gonzo_value=initial['gonzo'], fields=self.fields)
+          or Layout(
+              Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+              Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+              Field('gonzo', type='hidden', value=initial['gonzo']),
+              Field('hash', type='hidden', value=initial['gonzo']),
+              HTML('<div class="align-center">'),
+              FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+              HTML('</div>'),
+          )
         )
 
     def gen_gonzo(self):
