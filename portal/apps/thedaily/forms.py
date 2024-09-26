@@ -908,12 +908,13 @@ class GoogleSigninForm(CrispyModelForm):
     next_page = CharField(required=False, widget=HiddenInput())
 
     def __init__(self, *args, **kwargs):
+        google_signin_is_new = kwargs.get("is_new", False)
         submit_label = 'crear cuenta' if kwargs.pop("is_new", None) else "continuar"
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'google_signin'
         self.helper.layout = (
-            custom_layout(self.helper.form_id)
+            custom_layout(self.helper.form_id, google_signin_is_new=google_signin_is_new)
             or Layout(
               *('phone', "next_page")
               + terms_and_conditions_layout_tuple()
