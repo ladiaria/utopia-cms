@@ -1,4 +1,4 @@
-# coding:utf-8
+# -*- coding: utf-8 -*-
 from django.conf import settings
 from django.urls import reverse
 from django.test import TestCase, Client
