@@ -1424,7 +1424,7 @@ def update_user_from_crm(request):
                     return HttpResponseBadRequest()
                 if check_user and check_user != user:
                     return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-            # change the web user email just if it's different maybe redundant validation
+            # change the web user email if it's different
             if user.email != newemail:
                 changeuseremail(user, newemail)
                 user.updatefromcrm = True
@@ -1439,6 +1439,7 @@ def update_user_from_crm(request):
             user.last_name = last_name
             updated = True
         if updated:
+            user.updatefromcrm = True
             user.save()
 
     def updatesubscriberfields(s, fields, contact_id=None):
@@ -1448,6 +1449,7 @@ def update_user_from_crm(request):
         @param contact_id: Contact ID from crm
         @param fields: fields and values in dictionary format
         """
+        save_subscriber = False
         if not s.contact_id and contact_id:
             try:
                 # Fetch subscriber with the given contact_id
@@ -1463,6 +1465,8 @@ def update_user_from_crm(request):
                 return HttpResponseBadRequest("Multiple subscribers found with the same contact ID.")
 
             s.contact_id = contact_id
+            save_subscriber = True
+
         for field, value in fields.items():
             if field == 'newsletters':
                 pubs_slugs = json.loads(value)
@@ -1488,9 +1492,11 @@ def update_user_from_crm(request):
                 s.category_newsletters.set(Category.objects.filter(slug__in=set_cat_newsletters))
             else:
                 changesubscriberfield(s, field, value)
+                save_subscriber = True
 
-        s.updatefromcrm = True
-        s.save()
+        if save_subscriber:
+            s.updatefromcrm = True
+            s.save()
 
     try:
         contact_id = request.data['contact_id']
@@ -1518,13 +1524,17 @@ def update_user_from_crm(request):
             try:
                 email_to_use = email or fields.get('email')
                 u = User.objects.get(email__exact=email_to_use)
+                u.updatefromcrm = True
                 if newemail:
                     updatesubscriberemail(u, newemail)
                 if hasattr(u, 'subscriber'):
+                    u.subscriber.updatefromcrm = True
                     updatesubscriberfields(u.subscriber, fields, contact_id)
                 updateuserfields(u, name, last_name)
             except User.DoesNotExist:
                 # create new user
+                # TODO: this except block is very to the one in the next "elif newemail:" block,
+                #       we should refactor this code to avoid repetition.
                 if settings.DEBUG:
                     print(f"DEBUG: sync API: User.DoesNotExist for email={email_to_use}")
                 user_args = {
@@ -1532,11 +1542,15 @@ def update_user_from_crm(request):
                 }
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
-                new_user.save()
-                subscriber = new_user.subscriber
-                subscriber.contact_id = contact_id
-                subscriber.updatefromcrm = True
-                subscriber.save()
+                try:
+                    new_user.save()
+                    subscriber = new_user.subscriber
+                    subscriber.contact_id = contact_id
+                    subscriber.updatefromcrm = True
+                    subscriber.save()
+                except IntegrityError as inner_ie:
+                    mail_managers('IntegrityError saving user', "%s: %s" % (email_to_use, strip_tags(str(inner_ie))))
+                    return HttpResponseBadRequest()
             except MultipleObjectsReturned:
                 mail_managers('Multiple email in users', email_to_use)
                 return HttpResponseBadRequest()
@@ -1557,7 +1571,6 @@ def update_user_from_crm(request):
                 user_args = {
                     "email": newemail, "username": newemail, "first_name": name or "", "last_name": last_name or ""
                 }
-
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
                 new_user.save()
@@ -1565,7 +1578,6 @@ def update_user_from_crm(request):
                 subscriber.contact_id = contact_id
                 subscriber.updatefromcrm = True
                 subscriber.save()
-
             except MultipleObjectsReturned:
                 mail_managers('Multiple email in users', newemail)
                 return HttpResponseBadRequest()

@@ -426,6 +426,7 @@ CORE_PUSH_NOTIFICATIONS_OPTIONS = {
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: values greater than 0 is not fully supported (only AMP endpoints need updates)
 SIGNUPWALL_RISE_REDIRECT = True
+SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
@@ -440,6 +441,7 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
 )
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
@@ -546,6 +548,10 @@ PWA_SERVICE_WORKER_VERSION = 1
 # Useful settings for testing (test management command, should be overriden in local_test_settings.py if necessary)
 TESTING_CHROME_HEADLESS = True
 TESTING_PORT = 8000
+# A flag to tell us that we must use the default django functions to send emails because these emails will be read by
+# tests that validate the emails received, for example, take the token from the signup validation email.
+# Override to True only if you set an email backend for test that is not SMTP.
+LOCAL_EMAIL_BACKEND_TEST = False
 
 # defaults that will be assigned after local settings import
 COMPRESS_OFFLINE_CONTEXT = {}
@@ -613,3 +619,7 @@ if CRM_UPDATE_USER_CREATE_CONTACT is None:
 if ENV_HTTP_BASIC_AUTH and not locals().get("API_KEY_CUSTOM_HEADER"):
     # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
     API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
+
+# thedaily debug signals
+if THEDAILY_DEBUG_SIGNALS is None:
+    THEDAILY_DEBUG_SIGNALS = locals().get("DEBUG", False)

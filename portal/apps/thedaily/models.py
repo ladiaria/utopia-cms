@@ -492,7 +492,7 @@ def user_pre_save(sender, instance, **kwargs):
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
 def subscriber_pre_save(sender, instance, **kwargs):
-    if getattr(settings, 'THEDAILY_DEBUG_SIGNALS', False):
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print('DEBUG: subscriber_pre_save signal called')
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
         return True
@@ -515,7 +515,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
     m2m_changed, sender=Subscriber.category_newsletters.through, dispatch_uid="subscriber_area_newsletters_changed"
 )
 def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
-    if settings.DEBUG:
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print(
             'DEBUG: thedaily.models.subscriber_newsletters_changed called with action=%s, pk_set=%s' % (action, pk_set)
         )
