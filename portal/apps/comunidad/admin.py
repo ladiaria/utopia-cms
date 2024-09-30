@@ -28,7 +28,7 @@ class RegistroAdmin(ModelAdmin):
 
 
 class BeneficioAdmin(ModelAdmin):
-    list_display = ('name', 'circuit', 'limit', 'quota')
+    list_display = ('name', 'circuit', 'slug', 'limit', 'quota')
     list_filter = ('circuit',)
 
 

@@ -107,6 +107,7 @@ class Beneficio(models.Model):
     circuit = models.ForeignKey(Circuito, on_delete=models.CASCADE, verbose_name='circuito', related_name='beneficios')
     limit = models.PositiveIntegerField('cupo general', null=True, blank=True)
     quota = models.PositiveIntegerField('cupo por suscriptor', default=1)
+    slug = models.SlugField(unique=True, null=True, blank=True)
 
     def __str__(self):
         return self.name
