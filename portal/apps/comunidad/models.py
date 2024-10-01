@@ -155,6 +155,11 @@ class Registro(models.Model):
     issued = models.DateTimeField(auto_now_add=True, verbose_name='creado')
     used = models.DateTimeField(null=True, blank=True, verbose_name='utilizado')
 
+    class Meta:
+        permissions = [
+            ('verify_registro', 'Can verify registro'),
+        ]
+
     def subscriber_email(self):
         return self.subscriber.user.email
 
