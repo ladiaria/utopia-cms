@@ -163,6 +163,8 @@ def add_registro(request, beneficio_id, hashed_subscriber_id):
     return 'comunidad/add_registro.html', {'error': error}
 
 
+@never_cache
+@permission_required("comunidad.verify_registro", raise_exception=True)
 def verify_registro(request, hashed_id):
     hashids = Hashids(salt=settings.SECRET_KEY, min_length=8)
     original_id = hashids.decode(hashed_id)
