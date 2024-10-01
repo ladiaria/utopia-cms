@@ -195,6 +195,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
 
     publication = article.main_section.edition.publication if article.main_section else None
     context = {
+        "DEBUG": settings.DEBUG,
         'article': article,
         "article_restricted_cf": article.is_restricted_consider_full(),
         "photo_render_allowed": article.photo_render_allowed(),
