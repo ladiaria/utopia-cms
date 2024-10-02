@@ -145,7 +145,8 @@ class Beneficio(models.Model):
             registro = Registro(subscriber=subscriber, benefit=self)
             registros.append(registro)
 
-        Registro.objects.bulk_create(registros)
+        for registro in registros:
+            registro.save()
         return registros
 
 
