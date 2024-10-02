@@ -883,7 +883,7 @@ class JournalistAdmin(ModelAdmin):
         (None, {'fields': ('name', 'email', 'image', 'bio', 'job', 'sections')}),
         (
             'Redes sociales',
-            {'description': 'Ingrese nombre de usuario de cada red social.', 'fields': ('fb', 'tt', 'gp', 'ig')},
+            {'description': 'Ingrese nombre de usuario de cada red social.', 'fields': ('fb', 'tt', 'ig')},
         ),
     )
 
@@ -1111,8 +1111,14 @@ class CategoryHomeArticleInline(TabularInline):
     formset = CategoryHomeArticleFormSet
     raw_id_fields = ('article', )
     verbose_name_plural = 'Artículos en portada'
+    classes = ('dynamic-order', )
 
     class Media:
+        js = (
+            'admin/js/jquery.js',
+            'js/jquery-ui-1.13.2.custom.min.js',
+            'js/homev2/dynamic_edition_admin.js',
+        )
         css = {'all': ('css/category_home.css', )}
 
 

@@ -157,6 +157,10 @@ var InlineOrdering = {
                     var order_field = 'order';
                     var tr_elem = container.find('tr[id^=categorynewsletterarticle_set]').filter('.has_original');
                 }
+                else if(container.find('tr[id^=categoryhomearticle_set]').length > 0){
+                    var order_field = 'position';
+                    var tr_elem = container.find('tr[id^=categoryhomearticle_set]').filter('.has_original');
+                }
                 else{
                     var order_field = '#';  // not matched character
                     var tr_elem = $(this);
