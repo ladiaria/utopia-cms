@@ -181,12 +181,12 @@ class VerifyQRView(TemplateView):
         try:
             self.registro = self.get_registro(kwargs['hashed_id'])
         except Registro.DoesNotExist:
-            return self.render_to_response({'message': 'Registro no encontrado'})
+            return render(request, self.template_name, {'message': 'Registro no encontrado'})
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         if self.registro.used:
-            return self.render_used_registro()
+            return self.render_used_registro(request)
         self.registro.use_registro()
         return super().get(request, *args, **kwargs)
 
@@ -197,8 +197,8 @@ class VerifyQRView(TemplateView):
         )
         return context
 
-    def render_used_registro(self):
+    def render_used_registro(self, request):
         message = f'Registro ya utilizado para {self.registro.benefit.name}'
         extra_message = f'El registro fue utilizado en la fecha {self.registro.used.strftime("%d/%m/%Y %H:%M:%S")}'
         context = {'message': message, 'extra_message': extra_message}
-        return self.render_to_response(context)
+        return render(request, self.template_name, context)
