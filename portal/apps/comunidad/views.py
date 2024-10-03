@@ -13,6 +13,8 @@ from django.forms import HiddenInput
 from django.contrib.auth.decorators import permission_required, login_required
 from django.views.decorators.cache import never_cache
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.generic import TemplateView
+from django.utils.decorators import method_decorator
 
 from decorators import render_response
 
@@ -163,13 +165,40 @@ def add_registro(request, beneficio_id, hashed_subscriber_id):
     return 'comunidad/add_registro.html', {'error': error}
 
 
-@never_cache
-@permission_required("comunidad.verify_registro", raise_exception=True)
-def verify_registro(request, hashed_id):
-    hashids = Hashids(salt=settings.SECRET_KEY, min_length=8)
-    original_id = hashids.decode(hashed_id)
-    if original_id:
-        registro = get_object_or_404(Registro, id=original_id[0])
-        # Here you can implement your verification logic
-        return HttpResponse(f"Registro verified: {registro}")
-    return HttpResponse("Invalid QR code", status=400)
+@method_decorator(never_cache, name='dispatch')
+@method_decorator(permission_required("comunidad.verify_registro", raise_exception=True), name='dispatch')
+class VerifyQRView(TemplateView):
+    template_name = "comunidad/verify_registro.html"
+
+    def get_registro(self, hashed_id):
+        hashids = Hashids(salt=settings.SECRET_KEY, min_length=8)
+        original_id = hashids.decode(hashed_id)
+        if not original_id:
+            raise Registro.DoesNotExist
+        return Registro.objects.get(id=original_id[0])
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            self.registro = self.get_registro(kwargs['hashed_id'])
+        except Registro.DoesNotExist:
+            return self.render_to_response({'message': 'Registro no encontrado'})
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        if self.registro.used:
+            return self.render_used_registro()
+        self.registro.use_registro()
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {"registro": self.registro, "message": f'Registro para {self.registro.benefit.name} verificado con éxito'}
+        )
+        return context
+
+    def render_used_registro(self):
+        message = f'Registro ya utilizado para {self.registro.benefit.name}'
+        extra_message = f'El registro fue utilizado en la fecha {self.registro.used.strftime("%d/%m/%Y %H:%M:%S")}'
+        context = {'message': message, 'extra_message': extra_message}
+        return self.render_to_response(context)
