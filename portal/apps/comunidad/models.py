@@ -229,6 +229,10 @@ class Registro(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
+    def use_registro(self):
+        self.used = timezone.now()
+        self.save()
+
     def __str__(self):
         return f"{self.subscriber.user.username} - {self.benefit.name}"
 

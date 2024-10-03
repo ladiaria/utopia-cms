@@ -3,7 +3,8 @@ from django.views.generic import TemplateView
 
 from updown.views import AddRatingFromModel
 from .views import (
-    add_article, edit_article, add_registro, article_detail, add_evento, edit_evento, beneficios, index, profile, verify_registro
+    add_article, edit_article, add_registro, article_detail, add_evento, edit_evento, beneficios, index, profile,
+    VerifyQRView,
 )
 
 
@@ -25,5 +26,5 @@ urlpatterns = [
     re_path(r'^formaparte', TemplateView.as_view(template_name='comunidad/formaparte.html'), name='formaparte'),
     re_path(r'beneficios', beneficios, name='beneficios'),
     re_path(r'^registro/(?P<beneficio_id>\d+)/(?P<hashed_subscriber_id>[\w]+)/$', add_registro),
-    re_path(r'^verify-registro/(?P<hashed_id>[\w]+)/$', verify_registro, name='verify_registro'),
+    path('verify-registro/<str:hashed_id>/', VerifyQRView.as_view(), name='verify_registro'),
 ]
