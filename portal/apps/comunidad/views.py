@@ -4,16 +4,17 @@ from crispy_forms.layout import Layout, Submit, HTML
 from crispy_forms.bootstrap import FormActions
 
 from django.conf import settings
-from django.http import Http404
 from django.contrib import messages
-from django.urls import reverse
-from django.shortcuts import redirect, get_object_or_404, render
-from django.forms import HiddenInput
-from django.contrib.auth.decorators import permission_required, login_required
-from django.views.decorators.cache import never_cache
 from django.contrib.admin.views.decorators import staff_member_required
-from django.views.generic import TemplateView, RedirectView
+from django.contrib.auth.decorators import permission_required, login_required
+from django.core.exceptions import PermissionDenied
+from django.forms import HiddenInput
+from django.http import Http404
+from django.shortcuts import redirect, get_object_or_404, render
+from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.views.generic import TemplateView, RedirectView
 
 from libs.utils import decode_hashid
 from decorators import render_response
@@ -178,6 +179,9 @@ class VerifyQRView(TemplateView):
         return Registro.objects.get(id=original_id[0])
 
     def dispatch(self, request, *args, **kwargs):
+        # Check if the user is in the group "Verify QR". This needs to be created in the admin.
+        if not request.user.groups.filter(name='Verify QR').exists():
+            raise PermissionDenied
         try:
             self.registro = self.get_registro(kwargs['hashed_id'])
         except Registro.DoesNotExist:
