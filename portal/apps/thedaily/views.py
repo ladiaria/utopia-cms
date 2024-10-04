@@ -1400,7 +1400,7 @@ def update_user_from_crm(request):
         # Conversion for boolean fields
         field_value = value
         if isinstance(getattr(subscriber, mapped_field), bool):
-            field_value = value.lower() in ['true', '1', 'yes']
+            field_value = value if type(value) is bool else value.lower() in ['true', '1', 'yes']
 
         setattr(subscriber, mapped_field, field_value)
 
@@ -1533,7 +1533,7 @@ def update_user_from_crm(request):
                 updateuserfields(u, name, last_name)
             except User.DoesNotExist:
                 # create new user
-                # TODO: this except block is very to the one in the next "elif newemail:" block,
+                # TODO: this except block is very similar to the one in the next "elif newemail:" block,
                 #       we should refactor this code to avoid repetition.
                 if settings.DEBUG:
                     print(f"DEBUG: sync API: User.DoesNotExist for email={email_to_use}")
@@ -1549,19 +1549,21 @@ def update_user_from_crm(request):
                     subscriber.updatefromcrm = True
                     subscriber.save()
                 except IntegrityError as inner_ie:
-                    mail_managers('IntegrityError saving user', "%s: %s" % (email_to_use, strip_tags(str(inner_ie))))
+                    mail_managers(
+                        'IntegrityError saving user', "%s: %s" % (email_to_use, strip_tags(str(inner_ie))), True
+                    )
                     return HttpResponseBadRequest()
             except MultipleObjectsReturned:
-                mail_managers('Multiple email in users', email_to_use)
+                mail_managers('Multiple email in users', email_to_use, True)
                 return HttpResponseBadRequest()
             except IntegrityError as ie:
-                mail_managers('IntegrityError saving user', "%s: %s" % (email_to_use, strip_tags(str(ie))))
+                mail_managers('IntegrityError saving user', "%s: %s" % (email_to_use, strip_tags(str(ie))), True)
                 return HttpResponseBadRequest()
         elif newemail:
             try:
                 u = User.objects.get(email__exact=newemail)
                 if hasattr(u, 'subscriber') and u.subscriber.contact_id and u.subscriber.contact_id != contact_id:
-                    mail_managers('The user already exists', newemail)
+                    mail_managers('The user already exists', newemail, True)
                     # return 409 (Conflict) when the contact_id is already associated with another user
                     return HttpResponseBadRequest(status=409)
             except User.DoesNotExist:
@@ -1579,14 +1581,16 @@ def update_user_from_crm(request):
                 subscriber.updatefromcrm = True
                 subscriber.save()
             except MultipleObjectsReturned:
-                mail_managers('Multiple email in users', newemail)
+                mail_managers('Multiple email in users', newemail, True)
                 return HttpResponseBadRequest()
             except IntegrityError as ie:
-                mail_managers('IntegrityError saving user', "%s: %s" % (newemail, strip_tags(str(ie))))
+                mail_managers('IntegrityError saving user', "%s: %s" % (newemail, strip_tags(str(ie))), True)
                 return HttpResponseBadRequest()
     except IntegrityError as ie:
         mail_managers(
-            'IntegrityError saving User or Subscriber', "contact_id=%s, %s" % (contact_id, strip_tags(str(ie)))
+            'IntegrityError saving User or Subscriber',
+            "contact_id=%s, %s" % (contact_id, strip_tags(str(ie))),
+            True,
         )
         return HttpResponseBadRequest()
     except KeyError:
