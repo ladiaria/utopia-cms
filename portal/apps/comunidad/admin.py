@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
 from django.contrib.admin import site, ModelAdmin, TabularInline
+
 from .models import SubscriberArticle, Circuito, Socio, Beneficio, Registro, Url as ComunidadUrl, Recommendation
 
 
@@ -22,7 +22,7 @@ class RegistroAdmin(ModelAdmin):
     search_fields = ('subscriber__user__email', 'benefit__slug')
 
     def qr_code_small(self, obj):
-        return obj.qr_code_image(size=60)  # Adjust the size as needed
+        return obj.qr_code_image(size=60)  # TODO: make a setting to adjust the size as needed
     qr_code_small.short_description = 'QR'
 
     def qr_code_image(self, obj):
@@ -49,7 +49,7 @@ class RecommendationAdmin(ModelAdmin):
     list_display = ('name', 'comment', 'url_list', 'article')
     fields = ('name', 'comment', 'article')
     search_fields = ('name', 'comment')
-    inlines = (UrlInline, )
+    inlines = (UrlInline,)
 
 
 site.register(SubscriberArticle)

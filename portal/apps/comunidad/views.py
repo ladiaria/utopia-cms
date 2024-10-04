@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from hashids import Hashids
-
 from crispy_forms.layout import Layout, Submit, HTML
 from crispy_forms.bootstrap import FormActions
 
 from django.conf import settings
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.contrib import messages
 from django.urls import reverse
 from django.shortcuts import redirect, get_object_or_404, render
@@ -16,9 +15,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic import TemplateView, RedirectView
 from django.utils.decorators import method_decorator
 
-from decorators import render_response
-
 from libs.utils import decode_hashid
+from decorators import render_response
 
 from .models import SubscriberEvento, SubscriberArticle, TopUser, Beneficio, Socio, Registro
 from .forms import ArticleForm, EventoForm, RegistroForm
@@ -123,7 +121,9 @@ def profile(request):
 @never_cache
 @login_required
 def beneficios(request):
-    """Register a benefit utilization"""
+    """
+    Register a benefit utilization
+    """
     try:
         # filter form default benefits by circuit of user's socio
         form, success = (
@@ -203,11 +203,12 @@ class VerifyQRView(TemplateView):
         context = {'message': message, 'extra_message': extra_message}
         return render(request, self.template_name, context)
 
+
 @method_decorator(never_cache, name='dispatch')
 @method_decorator(staff_member_required, name='dispatch')
 class SendQRByEmailView(RedirectView):
-    """View that sends a QR code by email. It's under development.
-
+    """
+    View that sends a QR code by email. It's under development.
     Keyword arguments:
     registro_id -- the id of the registro to send the QR code by email
     """

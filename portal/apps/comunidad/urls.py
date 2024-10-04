@@ -18,11 +18,7 @@ from .views import (
 
 
 urlpatterns = [
-    path(
-        '',
-        index,
-        name='comunidad',
-    ),
+    path('', index, name='comunidad'),
     path('perfil/', profile, name='comunidad_profile'),
     re_path(r'^article/(?P<slug>[-\w]+)$', article_detail, name='comunidad_article_detail'),
     path('add/article', add_article, name='comunidad_article_add'),
