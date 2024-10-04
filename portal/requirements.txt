@@ -69,6 +69,7 @@ factory-boy
 tqdm
 w3storage
 qrcode==7.4.2
+imgkit==1.2.3
 
 # Third party repo not updated yet in the latest pypi release:
 git+https://github.com/alesdotio/django-admin-shortcuts.git
