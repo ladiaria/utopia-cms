@@ -149,6 +149,10 @@ class Beneficio(models.Model):
             registro.save()
         return registros
 
+    def get_remaining_tickets(self):
+        exchanged_tickets = Registro.objects.filter(benefit=self).count()
+        return self.limit - exchanged_tickets
+
 
 class Registro(models.Model):
     subscriber = models.ForeignKey(Subscriber, on_delete=models.CASCADE, verbose_name='suscriptor')
