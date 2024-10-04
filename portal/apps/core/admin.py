@@ -24,7 +24,7 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
-from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea
+from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
@@ -32,6 +32,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.utils.text import Truncator
+from django.utils.safestring import mark_safe
 
 from .models import (
     Article,
@@ -1077,8 +1078,14 @@ class CategoryAdmin(ModelAdmin):
     raw_id_fields = ('full_width_cover_image',)
 
 
+class ReadOnlyDisplayWidget(Widget):
+
+    def render(self, name, value, attrs=None, renderer=None):
+        return mark_safe(f'<span>{value}</span>')
+
+
 class CategoryHomeArticleForm(ModelForm):
-    pos = IntegerField(label='orden', widget=TextInput(attrs={'size': 3, 'readonly': True}))
+    pos = IntegerField(label='orden', widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': 'readonly'}))
 
     class Meta:
         fields = ['position', 'pos', 'home', 'article', 'fixed']
