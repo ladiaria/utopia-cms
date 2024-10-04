@@ -1,30 +1,22 @@
-# Python standard library imports
 from datetime import timedelta
 import qrcode
 import base64
 from io import BytesIO
-
 from hashids import Hashids
+from updown.fields import RatingField
 
-# Django imports
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.auth.models import User
 from django.db import models, transaction
-from django.db.models import Count
 from django.db.models.fields import DateTimeField
 from django.db.models.fields.related import ForeignKey
 from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
-from django.utils.html import mark_safe
 
-# Third-party imports
-from updown.fields import RatingField
-
-# Local imports
 from cartelera.models import EventoBase
 from core.models import Article, ArticleBase
 from thedaily.models import Subscriber

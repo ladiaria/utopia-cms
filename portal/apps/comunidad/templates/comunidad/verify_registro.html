@@ -1,13 +1,11 @@
 {% extends "base.html" %}
 
 {% block body_class %}comunidad{% endblock %}
+
 {% block content %}
-
-    <h1>Verificación de código QR</h1>
-
-    <p>{{ message }}</p>
-    {% if extra_message %}
-        <p>{{ extra_message }}</p>
-    {% endif %}
-
+  <h1>Verificación de código QR</h1>
+  <p>{{ message }}</p>
+  {% if extra_message %}
+    <p>{{ extra_message }}</p>
+  {% endif %}
 {% endblock %}
