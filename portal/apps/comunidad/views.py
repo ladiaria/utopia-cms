@@ -13,7 +13,7 @@ from django.forms import HiddenInput
 from django.contrib.auth.decorators import permission_required, login_required
 from django.views.decorators.cache import never_cache
 from django.contrib.admin.views.decorators import staff_member_required
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, RedirectView
 from django.utils.decorators import method_decorator
 
 from decorators import render_response
@@ -202,3 +202,14 @@ class VerifyQRView(TemplateView):
         extra_message = f'El registro fue utilizado en la fecha {self.registro.used.strftime("%d/%m/%Y %H:%M:%S")}'
         context = {'message': message, 'extra_message': extra_message}
         return render(request, self.template_name, context)
+
+@method_decorator(never_cache, name='dispatch')
+@method_decorator(staff_member_required, name='dispatch')
+class SendQRByEmailView(RedirectView):
+    """View that sends a QR code by email. It's under development.
+
+    Keyword arguments:
+    registro_id -- the id of the registro to send the QR code by email
+    """
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('admin:comunidad_registro_change', args=[self.kwargs['registro_id']])
