@@ -161,30 +161,42 @@ class Registro(models.Model):
         return self.subscriber.user.email
 
     def clean(self):
-        # Check subscriber quota for this specific benefit
-        subscriber_benefit_registros = Registro.objects.filter(
-            subscriber=self.subscriber, benefit=self.benefit
-        ).count()
-        if subscriber_benefit_registros >= self.benefit.quota:
-            raise ValidationError(f"Subscriber has reached the quota for this benefit ({self.benefit.quota}).")
+        # Skip checks if we're just marking the registro as used
+        if not self.used:
+            # Check subscriber quota for this specific benefit
+            subscriber_benefit_registros = Registro.objects.filter(
+                subscriber=self.subscriber, benefit=self.benefit
+            ).count()
+            if subscriber_benefit_registros >= self.benefit.quota:
+                raise ValidationError(f"Subscriber has reached the quota for this benefit ({self.benefit.quota}).")
 
-        # Check subscriber's general quota for the circuit
-        subscriber_circuit_registros = Registro.objects.filter(
-            subscriber=self.subscriber, benefit__circuit=self.benefit.circuit
-        ).count()
-        if (
-            self.benefit.circuit.general_quota is not None
-            and subscriber_circuit_registros >= self.benefit.circuit.general_quota
-        ):
-            raise ValidationError(
-                f"Subscriber has reached the general quota for this circuit ({self.benefit.circuit.general_quota})."
-            )
+            # Check subscriber's general quota for the circuit
+            subscriber_circuit_registros = Registro.objects.filter(
+                subscriber=self.subscriber, benefit__circuit=self.benefit.circuit
+            ).count()
+            if (
+                self.benefit.circuit.general_quota is not None
+                and subscriber_circuit_registros >= self.benefit.circuit.general_quota
+            ):
+                raise ValidationError(
+                    f"Subscriber has reached the general quota for this circuit ({self.benefit.circuit.general_quota})."
+                )
 
-        # Check benefit's overall limit
-        if self.benefit.limit is not None:
-            total_benefit_registros = Registro.objects.filter(benefit=self.benefit).count()
-            if total_benefit_registros >= self.benefit.limit:
-                raise ValidationError(f"The benefit has reached its overall limit ({self.benefit.limit}).")
+            # Check benefit's overall limit
+            if self.benefit.limit is not None:
+                total_benefit_registros = Registro.objects.filter(benefit=self.benefit).count()
+                if total_benefit_registros >= self.benefit.limit:
+                    raise ValidationError(f"The benefit has reached its overall limit ({self.benefit.limit}).")
+
+    def use_registro(self):
+        self.used = timezone.now()
+        self.save(skip_clean=True)
+
+    def save(self, *args, **kwargs):
+        skip_clean = kwargs.pop('skip_clean', False)
+        if not skip_clean:
+            self.clean()
+        super().save(*args, **kwargs)
 
     def generate_hashed_id(self):
         hashids = Hashids(salt=settings.SECRET_KEY, min_length=8)
@@ -220,14 +232,6 @@ class Registro(models.Model):
         )
 
     qr_code_image.short_description = 'QR Code'
-
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
-
-    def use_registro(self):
-        self.used = timezone.now()
-        self.save()
 
     def __str__(self):
         return f"{self.subscriber.user.username} - {self.benefit.name}"
