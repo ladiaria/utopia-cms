@@ -104,7 +104,7 @@ class Subscriber(Model):
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
     document = CharField('documento de identidad', max_length=50, blank=True, null=True)
-    phone = PhoneNumberField('teléfono', blank=True)
+    phone = PhoneNumberField('teléfono', blank=True, default="")
 
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
     downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
