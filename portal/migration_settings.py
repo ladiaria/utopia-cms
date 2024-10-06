@@ -406,6 +406,7 @@ MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0
 SIGNUPWALL_RISE_REDIRECT = True
+SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
@@ -420,6 +421,7 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
 )
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
@@ -516,6 +518,7 @@ CRM_UPDATE_USER_ENABLED = False
 # CRM API urls will be assigned after local_settings import, if not overrided
 CRM_API_BASE_URI = None
 CRM_API_UPDATE_USER_URI = None
+CRM_API_GET_USER_URI = None
 
 # PWA
 PWA_SERVICE_WORKER_TEMPLATE = "core/templates/sw/serviceworker.js"
@@ -527,6 +530,7 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 PHONENUMBER_DEFAULT_REGION = None
 
@@ -576,3 +580,7 @@ if CORE_ARTICLE_DETAIL_ENABLE_AMP:
 # CRM API
 if CRM_API_BASE_URI:
     CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + "updateuserweb/")
+    CRM_API_GET_USER_URI = CRM_API_GET_USER_URI or (CRM_API_BASE_URI + "existsuserweb/")
+if CRM_UPDATE_USER_CREATE_CONTACT is None:
+    # defaults to the same value of the "base sync"
+    CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED

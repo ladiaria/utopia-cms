@@ -42,7 +42,7 @@ def send_confirmation_link(*args, **kwargs):
         headers={'Message-Id': make_msgid("u." + str(user.id)), "Return-Path": settings.NOTIFICATIONS_FROM_MX}
     )
     if (
-        not getattr(settings, 'LOCAL_EMAIL_BACKEND_TEST', False)
+        not settings.LOCAL_EMAIL_BACKEND_TEST
         and settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
     ):
         smtp = smtp_connect()

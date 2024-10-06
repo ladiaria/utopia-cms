@@ -426,6 +426,7 @@ CORE_PUSH_NOTIFICATIONS_OPTIONS = {
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: values greater than 0 is not fully supported (only AMP endpoints need updates)
 SIGNUPWALL_RISE_REDIRECT = True
+SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
@@ -440,6 +441,7 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
 )
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
@@ -536,6 +538,7 @@ CRM_UPDATE_USER_ENABLED = False
 # CRM API urls will be assigned after local_settings import, if not overrided
 CRM_API_BASE_URI = None
 CRM_API_UPDATE_USER_URI = None
+CRM_API_GET_USER_URI = None
 
 # PWA
 PWA_SERVICE_WORKER_TEMPLATE = "core/templates/sw/serviceworker.js"
@@ -545,6 +548,10 @@ PWA_SERVICE_WORKER_VERSION = 1
 # Useful settings for testing (test management command, should be overriden in local_test_settings.py if necessary)
 TESTING_CHROME_HEADLESS = True
 TESTING_PORT = 8000
+# A flag to tell us that we must use the default django functions to send emails because these emails will be read by
+# tests that validate the emails received, for example, take the token from the signup validation email.
+# Override to True only if you set an email backend for test that is not SMTP.
+LOCAL_EMAIL_BACKEND_TEST = False
 
 # defaults that will be assigned after local settings import
 COMPRESS_OFFLINE_CONTEXT = {}
@@ -552,6 +559,7 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP version article page
 PHONENUMBER_DEFAULT_REGION = None
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
@@ -603,7 +611,15 @@ if CORE_ARTICLE_DETAIL_ENABLE_AMP:
 # CRM API
 if CRM_API_BASE_URI:
     CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + "updateuserweb/")
+    CRM_API_GET_USER_URI = CRM_API_GET_USER_URI or (CRM_API_BASE_URI + "existsuserweb/")
+if CRM_UPDATE_USER_CREATE_CONTACT is None:
+    # defaults to the same value of the "base sync"
+    CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED
 
 if ENV_HTTP_BASIC_AUTH and not locals().get("API_KEY_CUSTOM_HEADER"):
     # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
     API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
+
+# thedaily debug signals
+if THEDAILY_DEBUG_SIGNALS is None:
+    THEDAILY_DEBUG_SIGNALS = locals().get("DEBUG", False)

@@ -104,7 +104,7 @@ class Subscriber(Model):
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
     document = CharField('documento de identidad', max_length=50, blank=True, null=True)
-    phone = PhoneNumberField('teléfono', blank=True)
+    phone = PhoneNumberField('teléfono', blank=True, default="")
 
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
     downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
@@ -302,13 +302,97 @@ class Subscriber(Model):
         verbose_name_plural = "suscriptores"
 
 
-def updatecrmuser(contact_id, field, value):
-    # TODO: next lines can be encapsulated in a new function (DRY), then call also from this module lines ~ 404:407
-    api_uri = settings.CRM_API_UPDATE_USER_URI
+def put_data_to_crm(api_url, data):
+    """
+    Performs an PUT request to the CRM app
+    api_url is the request url and data is the request body data
+    If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request body data
+    @return: json data from the response
+    """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-    if all((settings.CRM_UPDATE_USER_ENABLED, api_uri, api_key)):
-        data = {"contact_id": contact_id, "field": field, "value": value}
-        requests.put(api_uri, **crm_rest_api_kwargs(api_key, data)).raise_for_status()
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        api_kwargs = crm_rest_api_kwargs(api_key, data)
+        res = requests.put(api_url, **api_kwargs)
+        res.raise_for_status()
+        return res.json()
+
+
+def post_data_to_crm(api_url, data):
+    """
+    Performs an POST request to the CRM app
+    api_url is the request url and data is the request body data
+    If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request body data
+    @return request response in json format
+    """
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        api_kwargs = crm_rest_api_kwargs(api_key, data)
+        res = requests.post(api_url, **api_kwargs)
+        res.raise_for_status()
+        return res.json()
+
+
+def delete_data_from_crm(api_url, data):
+    """
+    Performs an DELETE request to the CRM app
+    api_url is the request url and data is the request body data
+    If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request body data
+    @return reques response in json format
+    """
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        payload = json.dumps(data)
+        api_kwargs = crm_rest_api_kwargs(api_key, payload)
+        res = requests.delete(api_url, **api_kwargs)
+        res.raise_for_status()
+        return res.json()
+
+
+def get_data_from_crm(api_url, data):
+    """
+    Performs an GET request to the CRM app
+    api_url is the request url and data is the request param data
+    If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request query params data
+    """
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        api_kwargs = crm_rest_api_kwargs(api_key)
+        api_kwargs["params"] = data  # get call send data like query params
+        res = requests.get(api_url, **api_kwargs)
+        res.raise_for_status()
+        return res.json()
+
+
+def updatecrmuser(contact_id, field, value):
+    api_url = settings.CRM_API_UPDATE_USER_URI
+    data = {"contact_id": contact_id, "field": field, "value": value}
+    return put_data_to_crm(api_url, data)
+
+
+def createcrmuser(name, email):
+    api_url = settings.CRM_API_UPDATE_USER_URI
+    return post_data_to_crm(api_url=api_url, data={"name": name, "email": email})
+
+
+def deletecrmuser(email):
+    api_url = settings.CRM_API_UPDATE_USER_URI
+    return delete_data_from_crm(api_url, {"email": email})
+
+
+def existscrmuser(email, contact_id=None):
+    api_url = settings.CRM_API_GET_USER_URI
+    data = {"email": email}
+    if contact_id:
+        data.update({"contact_id": contact_id})
+    return get_data_from_crm(api_url, data)
 
 
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
@@ -393,26 +477,22 @@ def user_pre_save(sender, instance, **kwargs):
         raise IntegrityError(error_msg)
 
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
-        return True  # TODO: why True and not just "return"?
+        return
 
-    # sync email if changed
     api_uri = settings.CRM_API_UPDATE_USER_URI
-    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-    if all((settings.CRM_UPDATE_USER_ENABLED, api_uri, api_key, actualusr.email != instance.email)):
-        err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
+    if actualusr.email != instance.email:
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
-            api_kwargs = crm_rest_api_kwargs(
-                api_key, {'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
-            )
-            requests.put(api_uri, **api_kwargs).raise_for_status()
+            data = {'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
+            put_data_to_crm(api_uri, data)
         except requests.exceptions.RequestException:
+            err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
             raise UpdateCrmEx(err_msg)
 
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
 def subscriber_pre_save(sender, instance, **kwargs):
-    if getattr(settings, 'THEDAILY_DEBUG_SIGNALS', False):
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print('DEBUG: subscriber_pre_save signal called')
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
         return True
@@ -435,7 +515,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
     m2m_changed, sender=Subscriber.category_newsletters.through, dispatch_uid="subscriber_area_newsletters_changed"
 )
 def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
-    if settings.DEBUG:
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print(
             'DEBUG: thedaily.models.subscriber_newsletters_changed called with action=%s, pk_set=%s' % (action, pk_set)
         )
@@ -460,15 +540,23 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
 @receiver(post_save, sender=User, dispatch_uid="createUserProfile")
 def createUserProfile(sender, instance, created, **kwargs):
     """
-    Create a UserProfile object each time a User is created; and link it.
-    Also keep sync the email field on Subscriptions
+    Creates a UserProfile object each time a User is created.
+    Also keep sync the email field on Subscriptions.
     """
-    Subscriber.objects.get_or_create(user=instance)
+    subscriber, created = Subscriber.objects.get_or_create(user=instance)
     if instance.email:
         try:
             instance.suscripciones.exclude(email=instance.email).update(email=instance.email)
         except Exception:
             pass
+        if not settings.CRM_UPDATE_USER_CREATE_CONTACT or getattr(instance, "updatefromcrm", False):
+            return True
+        if created:
+            res = createcrmuser(instance.get_full_name(), instance.email)
+            contact_id = res.get('contact_id') if res else None
+            if not subscriber.contact_id:
+                subscriber.contact_id = contact_id
+                subscriber.save()
 
 
 class OAuthState(Model):

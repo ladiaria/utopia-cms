@@ -48,3 +48,4 @@ cache
 /docs/site
 /docs/ssl/yoogle.com.*
 /docs/ssl/myCA.*
+/docs/ssl/calocal.sh
