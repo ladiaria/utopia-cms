@@ -104,7 +104,7 @@ class Subscriber(Model):
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
     document = CharField('documento de identidad', max_length=50, blank=True, null=True)
-    phone = PhoneNumberField('teléfono', blank=True)
+    phone = PhoneNumberField('teléfono', blank=True, default="", db_index=True)
 
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
     downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
@@ -309,6 +309,7 @@ def put_data_to_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
+    @return: json data from the response
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
@@ -325,7 +326,7 @@ def post_data_to_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
-    return request response
+    @return request response in json format
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
@@ -342,6 +343,7 @@ def delete_data_from_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
+    @return reques response in json format
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
@@ -490,7 +492,7 @@ def user_pre_save(sender, instance, **kwargs):
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
 def subscriber_pre_save(sender, instance, **kwargs):
-    if getattr(settings, 'THEDAILY_DEBUG_SIGNALS', False):
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print('DEBUG: subscriber_pre_save signal called')
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
         return True
@@ -513,7 +515,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
     m2m_changed, sender=Subscriber.category_newsletters.through, dispatch_uid="subscriber_area_newsletters_changed"
 )
 def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
-    if settings.DEBUG:
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print(
             'DEBUG: thedaily.models.subscriber_newsletters_changed called with action=%s, pk_set=%s' % (action, pk_set)
         )

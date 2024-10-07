@@ -406,6 +406,7 @@ MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0
 SIGNUPWALL_RISE_REDIRECT = True
+SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
@@ -420,6 +421,7 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
 )
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."

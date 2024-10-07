@@ -29,7 +29,7 @@ from django_amp_readerid.utils import amp_login_param, get_related_user
 
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.db.models.deletion import Collector
@@ -1365,7 +1365,7 @@ def user_profile(request, user_id):
 
 
 @never_cache
-@api_view(['POST'])
+@api_view(['POST', "PUT"])
 @api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def update_user_from_crm(request):
@@ -1400,7 +1400,7 @@ def update_user_from_crm(request):
         # Conversion for boolean fields
         field_value = value
         if isinstance(getattr(subscriber, mapped_field), bool):
-            field_value = value.lower() in ['true', '1', 'yes']
+            field_value = value if type(value) is bool else value.lower() in ['true', '1', 'yes']
 
         setattr(subscriber, mapped_field, field_value)
 
@@ -1424,7 +1424,7 @@ def update_user_from_crm(request):
                     return HttpResponseBadRequest()
                 if check_user and check_user != user:
                     return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-            # change the web user email just if it's different maybe redundant validation
+            # change the web user email if it's different
             if user.email != newemail:
                 changeuseremail(user, newemail)
                 user.updatefromcrm = True
@@ -1439,6 +1439,7 @@ def update_user_from_crm(request):
             user.last_name = last_name
             updated = True
         if updated:
+            user.updatefromcrm = True
             user.save()
 
     def updatesubscriberfields(s, fields, contact_id=None):
@@ -1448,6 +1449,7 @@ def update_user_from_crm(request):
         @param contact_id: Contact ID from crm
         @param fields: fields and values in dictionary format
         """
+        save_subscriber = False
         if not s.contact_id and contact_id:
             try:
                 # Fetch subscriber with the given contact_id
@@ -1463,15 +1465,22 @@ def update_user_from_crm(request):
                 return HttpResponseBadRequest("Multiple subscribers found with the same contact ID.")
 
             s.contact_id = contact_id
+            save_subscriber = True
+
         for field, value in fields.items():
             if field == 'newsletters':
                 pubs_slugs = json.loads(value)
                 given_publications = Publication.objects.filter(slug__in=pubs_slugs)
-                given_categories = Category.object.filter(slug__in=pubs_slugs)
+                given_categories = Category.objects.filter(slug__in=pubs_slugs)
                 set_newsletters = set(given_publications.values_list("slug", flat=True))
                 set_cat_newsletters = set(given_categories.values_list("slug", flat=True))
                 # TODO: give an example where the next affirmation could happen (not easy to understand)
                 # This code set duplicates slugs in both relationships. This could be a bug in the future
+                # This case would happens if for example we have a category with slug "deporte"
+                # and also we have an publication with the slug "deporte".
+                # In this case, if a "deporte" comes like slug for update newsletters,
+                # this code code will add "deporte" like a category newsletter and like publication newsletter,
+                # cause is hard to set up.
                 # TODO: Pending of full review for remove the commented code (commented code, now removed, is the code
                 #       that was here before this change)
                 #       This can be checked with tests:
@@ -1483,61 +1492,80 @@ def update_user_from_crm(request):
                 s.category_newsletters.set(Category.objects.filter(slug__in=set_cat_newsletters))
             else:
                 changesubscriberfield(s, field, value)
+                save_subscriber = True
 
-        s.updatefromcrm = True
-        s.save()
+        if save_subscriber:
+            s.updatefromcrm = True
+            s.save()
 
     try:
-        contact_id = request.POST['contact_id']
-        name = request.POST.get('name')
-        last_name = request.POST.get('last_name')
-        email = request.POST.get('email')
-        newemail = request.POST.get('newemail')
-        fields = request.POST.get('fields', {})
+        contact_id = request.data['contact_id']
+        name = request.data.get('name')
+        last_name = request.data.get('last_name')
+        email = request.data.get('email')
+        newemail = request.data.get('newemail')
+        fields = json.loads(request.data.get('fields', "{}"))
     except KeyError:
         return HttpResponseBadRequest()
     try:
         subscriber = Subscriber.objects.select_related('user').get(contact_id=contact_id)
-        # TODO: call update subscriber email it must change the email if meet the integrity validation and if new email
-        # exists (explain better what thing needs to be done, is related to the next commented line?)
-        updatesubscriberemail(subscriber.user, newemail)  # TODO: We will allow to update user email from CRM ?
-        updatesubscriberfields(subscriber, fields)
-        updateuserfields(subscriber.user, name, last_name)
+        if request.method == "PUT":
+            updatesubscriberemail(subscriber.user, newemail)
+            updatesubscriberfields(subscriber, fields)
+            updateuserfields(subscriber.user, name, last_name)
+        elif request.method == "POST":
+            return HttpResponseBadRequest("already exists", status=409)
     except Subscriber.DoesNotExist:
         if settings.DEBUG:
             print(f"DEBUG: sync API: Subscriber.DoesNotExist for contact_id={contact_id}")
-        if email or fields.get('email', None):
+            print(f"DEBUG: sync API: request.data={request.data}")
+            print(f"DEBUG: sync API: fields={fields}")
+        if email or fields.get('email'):
             try:
-                u = User.objects.get(email__exact=email)
+                email_to_use = email or fields.get('email')
+                u = User.objects.get(email__exact=email_to_use)
+                u.updatefromcrm = True
                 if newemail:
                     updatesubscriberemail(u, newemail)
                 if hasattr(u, 'subscriber'):
+                    u.subscriber.updatefromcrm = True
                     updatesubscriberfields(u.subscriber, fields, contact_id)
                 updateuserfields(u, name, last_name)
             except User.DoesNotExist:
                 # create new user
+                # TODO: this except block is very similar to the one in the next "elif newemail:" block,
+                #       we should refactor this code to avoid repetition.
                 if settings.DEBUG:
-                    print(f"DEBUG: sync API: User.DoesNotExist for email={email}")
+                    print(f"DEBUG: sync API: User.DoesNotExist for email={email_to_use}")
                 user_args = {
                     "email": newemail, "username": newemail, "first_name": name or "", "last_name": last_name or ""
                 }
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
-                subscriber = Subscriber(contact_id)
-                new_user.subscriber = subscriber
-                new_user.save()
-                new_user.subscriber.save()
+                try:
+                    new_user.save()
+                    subscriber = new_user.subscriber
+                    subscriber.contact_id = contact_id
+                    subscriber.updatefromcrm = True
+                    subscriber.save()
+                except IntegrityError as inner_ie:
+                    mail_managers(
+                        'IntegrityError saving user', "%s: %s" % (email_to_use, strip_tags(str(inner_ie))), True
+                    )
+                    return HttpResponseBadRequest()
             except MultipleObjectsReturned:
-                mail_managers('Multiple email in users', email)
+                mail_managers('Multiple email in users', email_to_use, True)
                 return HttpResponseBadRequest()
             except IntegrityError as ie:
-                mail_managers('IntegrityError saving user', "%s: %s" % (email, strip_tags(str(ie))))
+                mail_managers('IntegrityError saving user', "%s: %s" % (email_to_use, strip_tags(str(ie))), True)
                 return HttpResponseBadRequest()
         elif newemail:
             try:
                 u = User.objects.get(email__exact=newemail)
-                mail_managers('The user already exists', newemail)
-                return HttpResponseBadRequest()
+                if hasattr(u, 'subscriber') and u.subscriber.contact_id and u.subscriber.contact_id != contact_id:
+                    mail_managers('The user already exists', newemail, True)
+                    # return 409 (Conflict) when the contact_id is already associated with another user
+                    return HttpResponseBadRequest(status=409)
             except User.DoesNotExist:
                 # create new user
                 if settings.DEBUG:
@@ -1547,19 +1575,22 @@ def update_user_from_crm(request):
                 }
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
-                subscriber = Subscriber(contact_id)
-                new_user.subscriber = subscriber
                 new_user.save()
-                new_user.subscriber.save()
+                subscriber = new_user.subscriber
+                subscriber.contact_id = contact_id
+                subscriber.updatefromcrm = True
+                subscriber.save()
             except MultipleObjectsReturned:
-                mail_managers('Multiple email in users', newemail)
+                mail_managers('Multiple email in users', newemail, True)
                 return HttpResponseBadRequest()
             except IntegrityError as ie:
-                mail_managers('IntegrityError saving user', "%s: %s" % (newemail, strip_tags(str(ie))))
+                mail_managers('IntegrityError saving user', "%s: %s" % (newemail, strip_tags(str(ie))), True)
                 return HttpResponseBadRequest()
     except IntegrityError as ie:
         mail_managers(
-            'IntegrityError saving User or Subscriber', "contact_id=%s, %s" % (contact_id, strip_tags(str(ie)))
+            'IntegrityError saving User or Subscriber',
+            "contact_id=%s, %s" % (contact_id, strip_tags(str(ie))),
+            True,
         )
         return HttpResponseBadRequest()
     except KeyError:
@@ -1569,70 +1600,53 @@ def update_user_from_crm(request):
 
 @never_cache
 @api_view(['DELETE'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def delete_user_from_crm(request):
     """
-    Delete user and subscriber based on the CRM information
+    Delete user API
+    TODO: can be migrated to users API
     """
     def validation_on_delete(user):
         is_valid = True
-        if user.subscriber and user.subscriber.plan_id:
-            msg = "No se permite eliminar suscriptor con un plan asignado"
-            is_valid = False
-        elif user.is_active or user.is_staff or user.is_superuser:
-            msg = "No se permite eliminar usuarios 'staff' o usuarios activos"
+        if user.is_staff or user.is_superuser:
+            msg = "usuario 'staff'"
             is_valid = False
         else:
             collector = Collector(using='default')
             collector.collect([user])
             safe_to_delete, msg_err = collector_analysis(collector.data)
             if safe_to_delete:
-                msg = "El suscriptor seleccionado y su usuario fueron eliminados correctamente"
+                msg = "eliminado correctamente"
             else:
-                msg = "El conjunto de datos relacionados al usuario que se pretende eliminar se considera " \
-                            "importante o demasiado grande: %s" % msg_err
+                msg = f"conjunto de datos relacionados importante o demasiado grande: {msg_err}"
                 is_valid = False
         return is_valid, msg
 
-    def delete_user(user):
-        try:
-            user.delete()
-        except Exception as ex:
-            raise Exception(f"Error al eliminar el usuario: {str(ex)}")
+    try:
+        contact_id = request.POST["contact_id"]
+        email = request.POST.get("email", "")
+    except KeyError:
+        return HttpResponseBadRequest("Missing argument contact_id")
 
-    if request.method == "DELETE":
-        try:
-            contact_id = request.POST["contact_id"]
-            email = request.POST.get("email", "")
-        except KeyError:
-            return HttpResponseBadRequest("Missing argument contact_id")
+    user_to_delete = None
+    try:
+        subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
+        user_to_delete = subscriber.user
+    except Exception:
+        if email:
+            user_to_delete = get_object_or_404(User, email=email)
+        else:
+            raise Http404
 
-        with transaction.atomic():
-            try:
-                subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
-                user_to_delete = subscriber.user
-            except Subscriber.DoesNotExist:
-                if email:
-                    try:
-                        user_to_delete = User.objects.get(email=email)
-                    except User.DoesNotExist:
-                        return Http404("Usuario no encontrado")
-                    except Exception as ex:
-                        return HttpResponseServerError(str(ex))
-                else:
-                    return HttpResponseBadRequest("No se proporcionó un email válido")
-            except Exception as ex:
-                return HttpResponseServerError(str(ex))
-    else:
-        return HttpResponseBadRequest()
+    if user_to_delete:
+        is_valid, msg = validation_on_delete(user_to_delete)
+        if is_valid:
+            user_to_delete.delete()
+        else:
+            return HttpResponseBadRequest(f"No es seguro remover este usuario/suscriptor: {msg}")
 
-    is_valid, msg = validation_on_delete(user_to_delete)
-    if is_valid:
-        delete_user(user_to_delete)
-    else:
-        return HttpResponseBadRequest(f"No es seguro remover este usuario/suscriptor: {msg}")
-
-    return JsonResponse({"message": "OK"})
+    return JsonResponse({"msg": "OK"})
 
 
 @never_cache
