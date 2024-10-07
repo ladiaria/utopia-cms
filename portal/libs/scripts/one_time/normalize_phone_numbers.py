@@ -8,7 +8,7 @@ phone_fields = {Subscriber: ["phone"]}
 
 
 def sql_replacements(exclude=[]):
-    blank_patterns = ['-+', '0+']
+    blank_patterns = ['-01 x+']
     for model, fields in phone_fields.items():
         if model in exclude:
             continue
@@ -69,6 +69,7 @@ def normalize_phone_numbers(extra=[], filters={}, dry_run=False):
                     skipped += 1
                 else:
                     try:
+                        obj.updatefromcrm = True
                         obj.save()
                         saved += 1
                     except Exception as e:
