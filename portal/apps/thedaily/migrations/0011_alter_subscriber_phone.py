@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             model_name="subscriber",
             name="phone",
             field=phonenumber_field.modelfields.PhoneNumberField(
-                blank=True, max_length=128, region=None, verbose_name="teléfono", default=""
+                blank=True, max_length=128, region=None, verbose_name="teléfono", default="", db_index=True
             ),
         ),
     ]
