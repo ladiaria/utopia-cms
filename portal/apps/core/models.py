@@ -1273,7 +1273,10 @@ class ArticleBase(Model, CT):
                 "Un artículo publicado no puede ser libre y además estar disponible sólo para suscriptores."
             )
 
-        # other checks
+        self.handle_date_publish()
+        super(ArticleBase, self).save(*args, **kwargs)
+
+    def handle_date_publish(self):
 
         nowval = now()
 
@@ -1285,10 +1288,13 @@ class ArticleBase(Model, CT):
                     ping_google()
                 except Exception:
                     pass
-        else:
-            self.date_published = None
+        elif self.date_published:
+            self.is_published = True
 
         date_value = self.date_published or self.date_created or nowval
+        self.validate_date_publish_value(date_value)
+
+    def validate_date_publish_value(self, date_value):
         # No puede haber otro publicado con date_published en el mismo mes que date_value o no publicado con
         # date_created en el mismo mes que date_value, con el mismo slug. TODO: translate this comment to english.
         if isinstance(date_value, str):
@@ -1305,8 +1311,6 @@ class ArticleBase(Model, CT):
         if targets:
             # TODO: IntegrityError may be better exception to raise
             raise Exception('Ya existe un artículo en ese mes con el mismo título.')
-
-        super(ArticleBase, self).save(*args, **kwargs)
 
     def is_photo_article(self):
         return self.type == settings.CORE_PHOTO_ARTICLE
@@ -2489,6 +2493,7 @@ def get_current_edition(publication=None):
     """
     nowval = now()
     today, filters = nowval.date(), {}
+    nowval = make_aware(nowval)
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
     publishing = make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
 
