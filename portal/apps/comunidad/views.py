@@ -9,18 +9,19 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import permission_required, login_required
 from django.core.exceptions import PermissionDenied
 from django.forms import HiddenInput
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
-from django.views.generic import TemplateView, RedirectView
+from django.views.generic import TemplateView, RedirectView, FormView
+from django.views.decorators.http import require_POST
 
 from libs.utils import decode_hashid
 from decorators import render_response
 
 from .models import SubscriberEvento, SubscriberArticle, TopUser, Beneficio, Socio, Registro
-from .forms import ArticleForm, EventoForm, RegistroForm
+from .forms import ArticleForm, EventoForm, RegistroForm, ScanQRForm
 
 
 to_response = render_response('comunidad/templates/')
@@ -216,5 +217,63 @@ class SendQRByEmailView(RedirectView):
     Keyword arguments:
     registro_id -- the id of the registro to send the QR code by email
     """
+
     def get_redirect_url(self, *args, **kwargs):
         return reverse('admin:comunidad_registro_change', args=[self.kwargs['registro_id']])
+
+
+@method_decorator(never_cache, name='dispatch')
+@method_decorator(staff_member_required, name='dispatch')
+class ScanQRView(FormView):
+    template_name = "comunidad/scan_qr.html"
+    form_class = ScanQRForm
+
+    def dispatch(self, request, *args, **kwargs):
+        # Check if the user is in the group "Verify QR". This needs to be created in the admin.
+        if not request.user.groups.filter(name='Verify QR').exists():
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["SITE_URL"] = settings.SITE_URL
+        context.update({"message": "Escanear QR"})
+        return context
+
+    def form_valid(self, form):
+        code = form.cleaned_data['code']
+        hashids = Hashids(salt=settings.SECRET_KEY, min_length=8)
+        original_id = hashids.decode(code)
+        # Try to find a registro with the code
+        try:
+            registro = Registro.objects.get(id=original_id[0])
+            registro.use_registro()
+            messages.success(self.request, f'Registro para {registro.benefit.name} utilizado con éxito')
+        except Registro.DoesNotExist:
+            messages.error(self.request, 'Registro no encontrado')
+
+        return HttpResponseRedirect(reverse('scan_qr'))
+
+
+@require_POST
+def check_qr_code(request):
+    code = request.POST.get('code')
+    hashids = Hashids(salt=settings.SECRET_KEY, min_length=8)
+    original_id = hashids.decode(code)
+
+    if not original_id:
+        return JsonResponse({"error": "Código QR inválido"}, status=400)
+    try:
+        registro = Registro.objects.get(id=original_id[0])
+        if registro.used:
+            msg = f"Código para {registro.benefit.name} ya utilizado el {registro.used.strftime('%d/%m/%Y %H:%M:%S')}"
+            return JsonResponse(
+                {"error": msg},
+                status=400,
+            )
+        return JsonResponse({"name": registro.benefit.name})
+    except Registro.DoesNotExist:
+        return JsonResponse({"error": "Código QR no encontrado"}, status=404)

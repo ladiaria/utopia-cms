@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body_class %}comunidad{% endblock %}
+
+{% block javascript %}
+  <script src="{% static 'js/html5-qrcode.min.js' %}"></script>
+  <script>
+    function onScanSuccess(decodedText, decodedResult) {
+      if (decodedText.startsWith("{{ SITE_URL }}comunidad/verify-registro/")) {
+        // we just need to keep the last part of the url after the verify-registro and add it to the input field
+        let urlParts = decodedText.split('/');
+        let code = urlParts[urlParts.length - 2]; // Get the second to last part (QDx3rmg0)
+        document.getElementById("id_code").value = code;
+        $.ajax({
+          type: 'POST',
+          url: "{% url 'check_qr_code' %}", // Replace with the URL for the check_qr_code view
+          data: {
+              'code': code,  // Send the scanned QR code
+              'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value // Add CSRF token
+          },
+          success: function(response) {
+              // On success, update the div with the benefit's name
+              document.getElementById("benefit-name").innerText = response.name;
+              // Activate the submit button
+              document.getElementById("submit-button").disabled = false;
+          },
+          error: function(xhr, status, error) {
+            // Handle error response properly by parsing the JSON error message
+            let response = JSON.parse(xhr.responseText);
+
+            // Check for different types of errors and display the message accordingly
+            if (xhr.status === 404) {
+                document.getElementById("benefit-name").innerText = response.error || "Código QR no encontrado.";
+            } else if (xhr.status === 400) {
+                document.getElementById("benefit-name").innerText = response.error || "Código QR inválido.";
+            } else {
+                document.getElementById("benefit-name").innerText = "Ocurrió un error. Por favor, intenta de nuevo.";
+            }
+
+            // Disable the submit button in case of an error
+            document.getElementById("submit-button").disabled = true;
+          }
+        });
+      }
+      else {
+        document.getElementById("error-message").innerHTML = "Código QR inválido";
+      }
+    }
+
+  function onScanFailure(error) {
+    console.warn(`Code scan error = ${error}`);
+  }
+
+  let html5QrCode = new Html5Qrcode("qr-reader");
+  html5QrCode.start(
+      { facingMode: "environment" },  // Use the rear camera
+      {
+          fps: 10,  // Scans per second
+          qrbox: { width: 250, height: 250 }  // Define the scanning area
+      },
+      onScanSuccess,
+      onScanFailure
+  );
+  </script>
+{% endblock javascript %}
+
+{% block css %}
+  <style>
+    .qr-input {
+      width: 500px;
+    }
+    .benefit-name {
+      margin-top: 20px;
+    }
+    .error-message {
+      margin-top: 20px;
+      color: red;
+    }
+  </style>
+{% endblock css %}
+
+{% block content %}
+  <h1>Escanear QR</h1>
+  <div id="qr-reader" class="qr-input"></div>
+  <form action="{% url 'scan_qr' %}" method="post">
+    {% csrf_token %}
+    {{ form.code }}
+    <button type="submit" id="submit-button" disabled>Verificar</button>
+    <div id="benefit-name" class="benefit-name">Escanea algo para verificar.</div>
+    <div id="error-message" class="error-message"></div>
+  </form>
+{% endblock %}
