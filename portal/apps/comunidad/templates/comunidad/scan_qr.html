@@ -11,6 +11,8 @@
         let urlParts = decodedText.split('/');
         let code = urlParts[urlParts.length - 2]; // Get the second to last part (QDx3rmg0)
         document.getElementById("id_code").value = code;
+        document.getElementById("benefit-name").innerText = "Escaneando...";
+        document.getElementById("message").innerText = "Escaneando...";
         $.ajax({
           type: 'POST',
           url: "{% url 'check_qr_code' %}", // Replace with the URL for the check_qr_code view
@@ -21,6 +23,7 @@
           success: function(response) {
               // On success, update the div with the benefit's name
               document.getElementById("benefit-name").innerText = response.name;
+              document.getElementById("message").innerText = "Confirma el canje con el botón de abajo.";
               // Activate the submit button
               document.getElementById("submit-button").disabled = false;
           },
@@ -31,10 +34,13 @@
             // Check for different types of errors and display the message accordingly
             if (xhr.status === 404) {
                 document.getElementById("benefit-name").innerText = response.error || "Código QR no encontrado.";
+                document.getElementById("message").innerText = "No se puede canjear.";
             } else if (xhr.status === 400) {
                 document.getElementById("benefit-name").innerText = response.error || "Código QR inválido.";
+                document.getElementById("message").innerText = "No se puede canjear.";
             } else {
                 document.getElementById("benefit-name").innerText = "Ocurrió un error. Por favor, intenta de nuevo.";
+                document.getElementById("message").innerText = "No se puede canjear.";
             }
 
             // Disable the submit button in case of an error
@@ -56,18 +62,54 @@
       { facingMode: "environment" },  // Use the rear camera
       {
           fps: 10,  // Scans per second
-          qrbox: { width: 250, height: 250 }  // Define the scanning area
+          qrbox: { width: 150, height: 150 }  // Define the scanning area
       },
       onScanSuccess,
       onScanFailure
   );
+
+  document.getElementById("scan-qr-form").addEventListener("submit", function(event) {
+    event.preventDefault(); // Prevent form submission and page reload
+
+    const form = this;
+    const formData = new FormData(form); // Prepare form data
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken, // Add CSRF token to the headers
+            'X-Requested-With': 'XMLHttpRequest' // Ensure it's recognized as an AJAX request
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Handle the server's response
+        const messageDiv = document.getElementById("message");
+
+        if (data.success) {
+            messageDiv.innerText = data.message;
+            messageDiv.classList.remove('error');
+            messageDiv.classList.add('success');
+            document.getElementById("submit-button").disabled = true; // Optionally disable submit after success
+        } else {
+            messageDiv.innerText = data.message;
+            messageDiv.classList.remove('success');
+            messageDiv.classList.add('error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+  });
   </script>
 {% endblock javascript %}
 
 {% block css %}
   <style>
     .qr-input {
-      width: 500px;
+      width: 300px;
     }
     .benefit-name {
       margin-top: 20px;
@@ -82,11 +124,12 @@
 {% block content %}
   <h1>Escanear QR</h1>
   <div id="qr-reader" class="qr-input"></div>
-  <form action="{% url 'scan_qr' %}" method="post">
+  <form action="{% url 'scan_qr' %}" id="scan-qr-form" method="post">
     {% csrf_token %}
     {{ form.code }}
-    <button type="submit" id="submit-button" disabled>Verificar</button>
     <div id="benefit-name" class="benefit-name">Escanea algo para verificar.</div>
-    <div id="error-message" class="error-message"></div>
+    <div id="message" class="message"></div>
+
+    <button type="submit" id="submit-button" disabled>Verificar</button>
   </form>
 {% endblock %}

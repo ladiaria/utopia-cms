@@ -247,15 +247,27 @@ class ScanQRView(FormView):
         code = form.cleaned_data['code']
         hashids = Hashids(salt=settings.SECRET_KEY, min_length=8)
         original_id = hashids.decode(code)
-        # Try to find a registro with the code
         try:
             registro = Registro.objects.get(id=original_id[0])
             registro.use_registro()
-            messages.success(self.request, f'Registro para {registro.benefit.name} utilizado con éxito')
+            message = f'Registro para {registro.benefit.name} utilizado con éxito'
+            success = True
         except Registro.DoesNotExist:
-            messages.error(self.request, 'Registro no encontrado')
+            message = 'Registro no encontrado'
+            success = False
 
-        return HttpResponseRedirect(reverse('scan_qr'))
+        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': success,
+                'message': message
+            })
+        else:
+            if success:
+                messages.success(self.request, message)
+            else:
+                messages.error(self.request, message)
+
+            return HttpResponseRedirect(reverse('scan_qr'))
 
 
 @require_POST
