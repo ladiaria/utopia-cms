@@ -711,6 +711,18 @@ body.ld-profile-edit {
           content: "*";
         }
       }
+
+      #div_id_phone {
+        padding-bottom: 20px;
+        div.iti {
+          width: 100%;
+          input {
+            box-sizing: border-box;
+            padding: 0 8px;
+          }
+        }
+      }
+
       #div_id_province {
         margin-top: 1rem;
 

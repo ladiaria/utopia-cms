@@ -1,20 +1,23 @@
 # -*- coding: utf-8 -*-
-
+from hashids import Hashids
 from crispy_forms.layout import Layout, Submit, HTML
 from crispy_forms.bootstrap import FormActions
 
-from django.http import Http404
+from django.conf import settings
 from django.contrib import messages
-from django.urls import reverse
-from django.shortcuts import redirect, get_object_or_404, render
-from django.forms import HiddenInput
-from django.contrib.auth.decorators import permission_required, login_required
-from django.views.decorators.cache import never_cache
 from django.contrib.admin.views.decorators import staff_member_required
-
-from decorators import render_response
+from django.contrib.auth.decorators import permission_required, login_required
+from django.core.exceptions import PermissionDenied
+from django.forms import HiddenInput
+from django.http import Http404
+from django.shortcuts import redirect, get_object_or_404, render
+from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.views.generic import TemplateView, RedirectView
 
 from libs.utils import decode_hashid
+from decorators import render_response
 
 from .models import SubscriberEvento, SubscriberArticle, TopUser, Beneficio, Socio, Registro
 from .forms import ArticleForm, EventoForm, RegistroForm
@@ -119,7 +122,9 @@ def profile(request):
 @never_cache
 @login_required
 def beneficios(request):
-    """Register a benefit utilization"""
+    """
+    Register a benefit utilization
+    """
     try:
         # filter form default benefits by circuit of user's socio
         form, success = (
@@ -159,3 +164,57 @@ def add_registro(request, beneficio_id, hashed_subscriber_id):
     except IndexError:
         raise Http404
     return 'comunidad/add_registro.html', {'error': error}
+
+
+@method_decorator(never_cache, name='dispatch')
+@method_decorator(permission_required("comunidad.verify_registro", raise_exception=True), name='dispatch')
+class VerifyQRView(TemplateView):
+    template_name = "comunidad/verify_registro.html"
+
+    def get_registro(self, hashed_id):
+        hashids = Hashids(salt=settings.SECRET_KEY, min_length=8)
+        original_id = hashids.decode(hashed_id)
+        if not original_id:
+            raise Registro.DoesNotExist
+        return Registro.objects.get(id=original_id[0])
+
+    def dispatch(self, request, *args, **kwargs):
+        # Check if the user is in the group "Verify QR". This needs to be created in the admin.
+        if not request.user.groups.filter(name='Verify QR').exists():
+            raise PermissionDenied
+        try:
+            self.registro = self.get_registro(kwargs['hashed_id'])
+        except Registro.DoesNotExist:
+            return render(request, self.template_name, {'message': 'Registro no encontrado'})
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        if self.registro.used:
+            return self.render_used_registro(request)
+        self.registro.use_registro()
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {"registro": self.registro, "message": f'Registro para {self.registro.benefit.name} verificado con éxito'}
+        )
+        return context
+
+    def render_used_registro(self, request):
+        message = f'Registro ya utilizado para {self.registro.benefit.name}'
+        extra_message = f'El registro fue utilizado en la fecha {self.registro.used.strftime("%d/%m/%Y %H:%M:%S")}'
+        context = {'message': message, 'extra_message': extra_message}
+        return render(request, self.template_name, context)
+
+
+@method_decorator(never_cache, name='dispatch')
+@method_decorator(staff_member_required, name='dispatch')
+class SendQRByEmailView(RedirectView):
+    """
+    View that sends a QR code by email. It's under development.
+    Keyword arguments:
+    registro_id -- the id of the registro to send the QR code by email
+    """
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('admin:comunidad_registro_change', args=[self.kwargs['registro_id']])

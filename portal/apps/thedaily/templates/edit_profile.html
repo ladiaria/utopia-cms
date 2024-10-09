@@ -1,7 +1,11 @@
-{% extends "base.html" %}
+{% extends base_template %}
 {% load static crispy_forms_tags core_tags %}
 
 {% block page_title %}{% title_joinparts 'Panel de opciones' %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
+{% endblock %}
 
 {% block body_class %}thedaily ld-profile-edit{% endblock %}
 
@@ -47,7 +51,6 @@
           {% crispy profile_form %}
         </div>
         <div class="edit_profile_modal__container__footer">
-          <p class="required-fields">* Datos obligatorios</p>
           <div class="edit_profile_modal__container__footer-btn_container">
             <input class="ut-btn" type="submit" id="submit-id-save_changes" value="Guardar cambios" name="save_changes"/>
           </div>
@@ -241,6 +244,9 @@
     <script src="{% static 'js/push_notifications_editprofile.js' %}"></script>
   {% endif %}
   <script src="{% static 'js/switch_change_events.js' %}"></script>
+  <script src="{{ intl_tel_input_cdn }}js/intlTelInput.min.js"></script>
+  <script src="{% static 'js/edit_profile.js' %}"></script>
+  <script src="{% static 'js/phone_widget.js' %}"></script>
   <script>
 
     {% if push_notifications_keys_set %}
@@ -256,38 +262,14 @@
       {% endif %}
     {% endif %}
 
-    // open modal handler
-    function edit_profile_open_modal(){
-      document.getElementById("edit_profile_modal").style.display = "flex";
-      document.querySelector('html').style.overflow = "hidden";
-    }
-
     $(function() {
-      $('.scrollspy').scrollSpy();
-      const mainHeight = $('#main-content').height();
-      const tableHeight = $('.table-of-contents').height();
-      const bottomOffset = mainHeight - tableHeight;
-
-      $('.table-of-contents').pushpin({
-        offset: 75,
-        top: 320,
-        bottom: bottomOffset,
-        scrollOffset: 0
-      });
-
-      setTimeout(() => {
-        if (document.querySelector(".alert.alert-success.ld-message")) {
-          document.querySelector(".alert.alert-success.ld-message").style.display = "none";
-        }
-      }, 3000);
 
       {% if push_notifications_keys_set %}
         setNotificationCheckStatus();
         switch_change_events($('#notificaciones .switch-container'), true);
       {% endif %}
 
-      // "normal" nl/communications events
-      switch_change_events($('#newsletter-switches .switch-container,#ld-comunicaciones .switch-container'));
+      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}js/utils.js");{# init phone widget #}
 
       // mailtrain "nl" switches events
       {% if mailtrain_lists %}
@@ -312,47 +294,11 @@
         observer.observe(target[0]);
       {% endif %}
 
-      // Open modal event
-      document.getElementById("edit_profile_btn").addEventListener("click", function(e){
-        e.stopPropagation();
-        edit_profile_open_modal();
-      });
-      // open also on errors
-      {% if user_form.errors %}
+      // open modal on errors
+      {% if user_form.errors or profile_form.phone.errors %}
         edit_profile_open_modal();
       {% endif %}
 
-      // Close modal when clicking outside
-      document.getElementById("edit_profile_modal").addEventListener("click", function(e){
-        document.getElementById("edit_profile_modal").style.display = "none";
-        document.querySelector('html').style.overflow = "auto";
-      });
-
-      // Close modal when clicking on close button
-      document.getElementById("edit_profile_modal__close_btn").addEventListener("click", function(e){
-        document.getElementById("edit_profile_modal").style.display = "none";
-        document.querySelector('html').style.overflow = "auto";
-      });
-
-      // Prevent modal from closing when clicking inside
-      document.querySelector("#edit_profile_modal .edit_profile_modal__container").addEventListener("click", function(e) {
-        e.stopPropagation();
-      });
-
-      // TODO: explain this last js code
-      const subscriptionCancelBtns = document.getElementsByClassName("subscription-cancel-btn");
-      for (let i = 0; i < subscriptionCancelBtns.length; i++) {
-        subscriptionCancelBtns[i].style.display = "none";
-      }
-      if (document.getElementById("edit-subscriptions-btn")) {
-        document.getElementById("edit-subscriptions-btn").addEventListener("click", function(e) {
-          e.target.classList.contains("active") ? e.target.classList.remove("active") : e.target.classList.add("active");
-          for (let i = 0; i < subscriptionCancelBtns.length; i++) {
-            subscriptionCancelBtns[i].style.display = subscriptionCancelBtns[i].style.display === "block" ||
-              !subscriptionCancelBtns[i].style.display ? "none" : "block";
-          }
-        });
-      }
     });
   </script>
 {% endblock %}
