@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from os.path import join
+import logging
 import random as rdm
 from operator import attrgetter
 from urllib.parse import urlencode
@@ -27,7 +28,17 @@ from django.template.exceptions import TemplateDoesNotExist
 from libs.utils import crm_rest_api_kwargs
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
+from signupwall.utils import get_ip
 from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
+
+
+subscribe_logfile, subscribe_logger = getattr(settings, 'THEDAILY_SUBSCRIBE_LOGFILE', None), None
+if subscribe_logfile:
+    subscribe_logger = logging.getLogger(__name__)
+    subscribe_logger.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler(filename=subscribe_logfile)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S'))
+    subscribe_logger.addHandler(file_handler)
 
 
 non_relevant_data_max_amounts = {
@@ -94,6 +105,27 @@ def move_data(s0, s1):
         s1.newsletters.add(p)
     for c in s0.category_newsletters.all():
         s1.category_newsletters.add(c)
+
+
+def subscribe_log(request, message, level=logging.INFO):
+    # TODO: indicate wether if the request is ajax.
+    if subscribe_logger and not request.user_agent.is_bot:
+        log_session_keys = getattr(settings, "THEDAILY_SUBSCRIBE_LOG_SESSION_KEYS", False)
+        subscribe_logger.log(
+            level,
+            '[%s]\t%s %s\t(%s)\tuser: %s, "%s", session keys: %s' % (
+                get_ip(request),
+                request.method,
+                request.get_full_path(),
+                request.user_agent,
+                getattr(request.user, 'id', 'not_set'),
+                message,
+                (
+                    [k for k in request.session.keys() if request.session.get(k)]
+                    if log_session_keys else ["session keys log disabled"]
+                ),
+            )
+        )
 
 
 def qparamstr(qparams):
