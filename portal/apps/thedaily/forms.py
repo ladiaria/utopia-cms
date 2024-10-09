@@ -147,7 +147,7 @@ class CrispyModelForm(ModelForm):
 
 
 class PreLoginForm(CrispyForm):
-    email = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS, "placeholder": "ejemplo@gmail.com"}))
+    email = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
     if terms_and_conditions_prelogin:
         terms_and_conds_accepted = terms_and_conditions_field()
 
@@ -186,9 +186,7 @@ class PreLoginForm(CrispyForm):
 
 
 class LoginForm(CrispyForm):
-    name_or_mail = CharField(
-        label='Email', widget=TextInput(attrs={'class': CSS_CLASS, "placeholder": "ejemplo@gmail.com"})
-    )
+    name_or_mail = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
     password = CharField(
         label='Contraseña',
         widget=PasswordInput(attrs={'class': CSS_CLASS, 'autocomplete': 'current-password', 'autocapitalize': 'none'}),
@@ -302,11 +300,7 @@ class UserForm(BaseUserForm):
 def first_name_field():
     return CharField(
         label='Nombre',
-        widget=TextInput(
-            attrs={
-                'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false', 'placeholder': 'Nombre'
-            }
-        ),
+        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
     )
 
 
@@ -314,13 +308,7 @@ def email_field():
     return EmailField(
         label='Email',
         widget=EmailInput(
-            attrs={
-                'inputmode': 'email',
-                'autocomplete': 'email',
-                'autocapitalize': 'none',
-                'spellcheck': 'false',
-                'placeholder': 'ejemplo@gmail.com',
-            }
+            attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
         ),
     )
 
@@ -562,15 +550,10 @@ class SubscriberAddressForm(SubscriberForm):
     address = CharField(
         label='Dirección',
         widget=TextInput(
-            attrs={
-                'autocomplete': 'street-address',
-                'autocapitalize': 'sentences',
-                'spellcheck': 'false',
-                'placeholder': 'Calle 1234',
-            }
+            attrs={'autocomplete': 'street-address', 'autocapitalize': 'sentences', 'spellcheck': 'false'}
         ),
     )
-    city = CharField(label='Ciudad', widget=TextInput(attrs={"placeholder": "Ciudad"}))
+    city = CharField(label='Ciudad')
     province = ChoiceField(
         label='Departamento', choices=settings.THEDAILY_PROVINCE_CHOICES, initial=get_default_province()
     )
@@ -745,7 +728,6 @@ class PhoneSubscriptionForm(CrispyForm):
                 'autocomplete': 'name',
                 'autocapitalize': 'sentences',
                 'spellcheck': 'false',
-                'placeholder': 'Nombre',
             }
         ),
     )
@@ -899,12 +881,13 @@ class GoogleSigninForm(CrispyModelForm):
 
     def __init__(self, *args, **kwargs):
         submit_label = 'crear cuenta' if kwargs.pop("is_new", None) else "continuar"
+        assume_tnc_accepted = kwargs.pop("assume_tnc_accepted", False)
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'google_signin'
         self.helper.layout = Layout(
             *('phone', "next_page")
-            + terms_and_conditions_layout_tuple()
+            + terms_and_conditions_layout_tuple(**({"type": "hidden"} if assume_tnc_accepted else {}))
             + (FormActions(Submit('save', submit_label, css_class='ut-btn ut-btn-l')),)
         )
 
@@ -939,15 +922,16 @@ class GoogleSignupForm(GoogleSigninForm):
 
 
 class GoogleSignupAddressForm(GoogleSignupForm):
-    """ Child class to not exclude address info (address, city and province) """
-
+    """
+    Child class to not exclude address info (address, city and province)
+    """
     address = CharField(
         label='Dirección',
         widget=TextInput(
             attrs={'autocomplete': 'street-address', 'autocapitalize': 'sentences', 'spellcheck': 'false'}
         ),
     )
-    city = CharField(label='Ciudad', widget=TextInput(attrs={"placeholder": "Ciudad"}))
+    city = CharField(label='Ciudad')
     province = ChoiceField(
         label='Departamento', choices=settings.THEDAILY_PROVINCE_CHOICES, initial=get_default_province()
     )

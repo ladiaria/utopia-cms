@@ -70,6 +70,7 @@ future
 factory-boy
 tqdm
 w3storage
+qrcode
 
 # Third party repo not updated yet in the latest pypi release:
 git+https://github.com/alesdotio/django-admin-shortcuts.git

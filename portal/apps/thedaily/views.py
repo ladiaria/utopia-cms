@@ -121,8 +121,9 @@ from .utils import (
     google_phone_next_page,
     product_checkout_template,
     qparamstr,
-    get_app_template,
     collector_analysis,
+    get_app_template,
+    subscribe_log,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -580,6 +581,7 @@ def google_phone(request):
       after some seconds redirect to the "next" page (for AMP is the google page that closes the window).
     """
     # if planslug in session this came from a new subscription attemp and we should continue it
+    subscribe_log(request, 'google_phone begin')
     planslug, is_new = request.session.get('planslug'), request.GET.get('is_new') == '1'
     if planslug:
         request.session.pop('planslug')
@@ -595,9 +597,20 @@ def google_phone(request):
 
     profile, ctx = get_or_create_user_profile(oas.user), {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}
     next_page = google_phone_next_page(request, is_new)
-    form_kwargs, initial = {"instance": profile, "is_new": is_new}, {"next_page": next_page} if next_page else {}
+    assume_tnc_accepted = getattr(settings, 'THEDAILY_TERMS_AND_CONDITIONS_ACCEPTED_IN_GOOGLE', True)
+    form_kwargs = {"instance": profile, "is_new": is_new, "assume_tnc_accepted": assume_tnc_accepted}
+    initial = {"next_page": next_page} if next_page else {}
 
-    if request.session.get("terms_and_conds_accepted"):
+    if assume_tnc_accepted:
+        # By default we asume that the T&C are accepted in Google flows.
+        initial["terms_and_conds_accepted"] = True
+        if not profile.terms_and_conds_accepted:
+            profile.terms_and_conds_accepted = True
+            try:
+                profile.save()
+            except Exception as exc:
+                subscribe_log(request, 'google_phone error saving T&C accepted for user %d: %s' % (oas.user.id, exc))
+    elif request.session.get("terms_and_conds_accepted"):
         initial["terms_and_conds_accepted"] = True
     if initial:
         form_kwargs["initial"] = initial
@@ -611,10 +624,11 @@ def google_phone(request):
                 try:
                     send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!', ctx)
                 except Exception as exc:
-                    # fail silently in case of error when sending the email
+                    # fail silently in case of error when sending the email, only log or debug
+                    err_msg = "welcome email message send error for user %d: %s" % (oas.user.id, exc)
+                    subscribe_log(request, 'google_phone' + err_msg)
                     if settings.DEBUG:
-                        print("DEBUG: welcome email message send error: %s" % exc)
-            oas.delete()
+                        print("DEBUG: " + err_msg)
             request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
             redirect_kwargs = {'backend': 'google-oauth2'}
             # if the user didn't complete the phone, we tell pipeline to not redirect here again through oas obj
@@ -627,11 +641,14 @@ def google_phone(request):
                 reverse('social:begin', kwargs=redirect_kwargs) + (("?next=" + next_page) if next_page else "")
             )
     else:
-        google_signin_form = GoogleSigninForm(**form_kwargs)
         # if is a new user add the default category newsletters (reached only from "free" subscriptions)
         if is_new:
             add_default_newsletters(profile)
-
+        elif profile.terms_and_conds_accepted:
+            # can be redirected now if T&C
+            return HttpResponseRedirect(next_page or reverse('home'))
+        google_signin_form = GoogleSigninForm(**form_kwargs)
+    subscribe_log(request, 'google_phone end')
     ctx.update({'google_signin_form': google_signin_form, "is_new": is_new})
     return 'google_signup.html', ctx
 
