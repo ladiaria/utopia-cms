@@ -22,11 +22,17 @@ class RegistroAdmin(ModelAdmin):
     search_fields = ('subscriber__user__email', 'benefit__slug')
 
     def qr_code_small(self, obj):
-        return obj.qr_code_image(size=60)  # TODO: make a setting to adjust the size as needed
+        if obj and obj.pk:
+            return obj.qr_code_image(size=60)  # TODO: make a setting to adjust the size as needed
+        else:
+            return "Save the object to see the QR code"
     qr_code_small.short_description = 'QR'
 
     def qr_code_image(self, obj):
-        return obj.qr_code_image(size=150)  # Larger size for detail view
+        if obj and obj.pk:
+            return obj.qr_code_image(size=150)  # Larger size for detail view
+        else:
+            return "Save the object to see the QR code"
     qr_code_image.short_description = 'QR Code'
 
 

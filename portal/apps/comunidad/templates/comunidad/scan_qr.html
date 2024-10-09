@@ -11,8 +11,6 @@
         let urlParts = decodedText.split('/');
         let code = urlParts[urlParts.length - 2]; // Get the second to last part (QDx3rmg0)
         document.getElementById("id_code").value = code;
-        document.getElementById("benefit-name").innerText = "Escaneando...";
-        document.getElementById("message").innerText = "Escaneando...";
         $.ajax({
           type: 'POST',
           url: "{% url 'check_qr_code' %}", // Replace with the URL for the check_qr_code view
