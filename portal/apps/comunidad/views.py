@@ -198,14 +198,16 @@ class VerifyQRView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(
-            {"registro": self.registro, "message": f'Registro para {self.registro.benefit.name} verificado con éxito'}
+            {"message": f'Registro para {self.registro.benefit.name} verificado con éxito'}
         )
         return context
 
     def render_used_registro(self, request):
-        message = f'Registro ya utilizado para {self.registro.benefit.name}'
-        extra_message = f'El registro fue utilizado en la fecha {self.registro.used.strftime("%d/%m/%Y %H:%M:%S")}'
-        context = {'message': message, 'extra_message': extra_message}
+        message = (
+            f"QR utilizado el día {self.registro.used.strftime('%d/%m/%Y a las %H:%M:%S')}"
+            f" para: {self.registro.benefit.name}"
+        )
+        context = {'message': message}
         return render(request, self.template_name, context)
 
 
@@ -250,7 +252,7 @@ class ScanQRView(FormView):
         try:
             registro = Registro.objects.get(id=original_id[0])
             registro.use_registro()
-            message = f'Registro para {registro.benefit.name} utilizado con éxito'
+            message = f'QR confirmado con éxito'
             success = True
         except Registro.DoesNotExist:
             message = 'Registro no encontrado'
@@ -281,9 +283,11 @@ def check_qr_code(request):
     try:
         registro = Registro.objects.get(id=original_id[0])
         if registro.used:
-            msg = f"Código para {registro.benefit.name} ya utilizado el {registro.used.strftime('%d/%m/%Y %H:%M:%S')}"
+            # QR utilizado a las 13:40
+            # Cinemateca - sábado 12 de octubre - 14:00
+            msg = f"QR utilizado el día {registro.used.strftime('%d/%m/%Y a las %H:%M:%S')}"
             return JsonResponse(
-                {"error": msg},
+                {"error": msg, "benefit": registro.benefit.name},
                 status=400,
             )
         return JsonResponse({"name": registro.benefit.name})
