@@ -167,8 +167,12 @@ class Registro(models.Model):
         if not self.subscriber and not self.email:
             raise ValidationError("Either subscriber or email must be provided.")
 
-        # Skip checks if we're just marking the registro as used
-        if not self.used and self.subscriber:
+        # Skip checks if this is an existing instance (allows removing 'used' status)
+        if self.pk:
+            return
+
+        # Check quotas only for new registros
+        if self.subscriber:
             # Check subscriber quota for this specific benefit
             subscriber_benefit_registros = Registro.objects.filter(
                 subscriber=self.subscriber, benefit=self.benefit
