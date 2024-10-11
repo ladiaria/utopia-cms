@@ -129,5 +129,5 @@ class RegistroForm(forms.ModelForm):
 
 class ScanQRForm(forms.Form):
     code = forms.CharField(
-        max_length=50, required=True, label='Código', widget=forms.TextInput(attrs={'placeholder': 'Código QR'})
+        max_length=50, required=True, label='Código', widget=forms.TextInput(attrs={'readonly': True})
     )
