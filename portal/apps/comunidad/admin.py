@@ -16,7 +16,7 @@ class RegistroAdmin(ModelAdmin):
     change_form_template = 'comunidad/admin/registro/change_form.html'
 
     raw_id_fields = ('subscriber',)
-    list_display = ('subscriber', 'subscriber_email', 'benefit', 'issued', 'used', 'qr_code_small')
+    list_display = ('id', 'subscriber', 'subscriber_email', 'benefit', 'issued', 'used', 'qr_code_small')
     readonly_fields = ('qr_code_image', 'issued', 'used')
     list_filter = ('benefit',)
     search_fields = ('subscriber__user__email', 'benefit__slug')
