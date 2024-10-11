@@ -91,14 +91,14 @@ TopArticleRelInlineFormSet = inlineformset_factory(
 class HomeTopArticleInline(TabularInline):
     model = ArticleRel
     extra = 0
-    ##max_num = 0
+    # #max_num = 0
     ordering = ('top_position',)
     fields = ('article', 'section', 'top_position', "home_top")
-    ##readonly_fields = ('section',)
+    # #readonly_fields = ('section',)
     raw_id_fields = ('article',)
     verbose_name_plural = 'artículos'
     formset = TopArticleRelInlineFormSet
-    ##classes = ('dynamic-order',)
+    # #classes = ('dynamic-order',)
 
     """def get_queryset(self, request):
         qs = super().get_queryset(request)

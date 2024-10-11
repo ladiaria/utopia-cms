@@ -1,15 +1,10 @@
 var InlineOrdering = {
 
     init: function () {
-        /**///return;
-        $("th:contains('Orden')").hide();
-        $('td[class$=-top_position]').hide();
-        $('td[class$=-position]:not(:has(.errorlist))').hide();
 
         var inline_group_containers = $('.inline-group').has('.dynamic-order');
         // Rompemos el tbody para hacer multiples tbody.
         $('.inline-group > .dynamic-order > table > tbody').contents().unwrap();
-
         var MakePages = function(section){
             var section = $(section);
             var section_id = section.data('section_id');
@@ -211,6 +206,9 @@ var PopUpAdd = {
             else if (add_link.closest('div[id^=categorynewsletterarticle_set-].inline-group').length > 0){
                 var cover_group = add_link.closest('div[id^=categorynewsletterarticle_set-].inline-group');
             }
+            else if (add_link.closest('div[id^=categoryhomearticle_set-].inline-group').length > 0){
+                var cover_group = add_link.closest('div[id^=categoryhomearticle_set-].inline-group');
+            }
             else {
                 var cover_group = undefined;
             }
@@ -235,6 +233,24 @@ var PopUpAdd = {
         });
     },
 };
+
+// Set up for tables and behavior based on the view that is present
+var SetUp = {
+    init: function () {
+        // based on views that are being presented
+        if ($('div[id^=categoryhomearticle_set-]').length){
+            $("th:contains('Orden')").show();
+            $('td[class$=-top_position]').show();
+            $('td[class$=-position]:not(:has(.errorlist))').show();
+        }
+        else {
+            $("th:contains('Orden')").hide();
+            $('td[class$=-top_position]').hide();
+            $('td[class$=-position]:not(:has(.errorlist))').hide();
+        }
+    },
+};
+
 
 // refresh de la edición cuando se vuelve del popup
 function dismissAddAnotherPopup(win, newId, newRepr) {
@@ -270,7 +286,8 @@ function dismissRelatedLookupPopup(win, article_id){
 }
 
 $(function () {
-    /**//*$(document).on("load", InlineOrdering.init());
+    $(document).on("load", SetUp.init());
+    $(document).on("load", InlineOrdering.init());
     $(document).on("load", SectionIds.init());
-    $(document).on("load", PopUpAdd.init());*/
+    $(document).on("load", PopUpAdd.init());
 });
