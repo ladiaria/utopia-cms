@@ -17,7 +17,7 @@ class RegistroAdmin(ModelAdmin):
 
     raw_id_fields = ('subscriber',)
     list_display = ('id', 'subscriber', 'subscriber_email', 'benefit', 'issued', 'used', 'qr_code_small')
-    readonly_fields = ('qr_code_image', 'issued', 'used')
+    readonly_fields = ('qr_code_image', 'issued')
     list_filter = ('benefit',)
     search_fields = ('subscriber__user__email', 'benefit__slug')
 
