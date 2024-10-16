@@ -1,4 +1,4 @@
-django==4.1.4
+django<4.2
 Pillow
 bleach
 bleach-whitelist
@@ -15,12 +15,13 @@ djangorestframework-api-key
 django-filter==2.4.0
 django-avatar
 django-classy-tags==1.0.0
-django-crispy-forms==1.14.0
+django-crispy-forms<2.2
+# TODO: explain why tihs "still in repo" app is required also in the env (or remove if not)
+crispy-forms-materialize
 html2text
 markdownify
 martor
 mutagen
-crispy-forms-materialize
 django-cors-headers
 django-user-agents
 sorl-thumbnail==12.9.0
@@ -44,6 +45,7 @@ ebooklib
 django-tagging==0.5.0
 django-elasticsearch-dsl
 django-model-utils==4.3.1
+django-phonenumber-field[phonenumberslite]
 django-photologue
 django-robots
 django-sortedm2m
@@ -68,6 +70,7 @@ future
 factory-boy
 tqdm
 w3storage
+qrcode
 
 # Third party repo not updated yet in the latest pypi release:
 git+https://github.com/alesdotio/django-admin-shortcuts.git
