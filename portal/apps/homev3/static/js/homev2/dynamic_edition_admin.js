@@ -258,7 +258,7 @@ function dismissAddAnotherPopup(win, newId, newRepr) {
     location.reload();
 };
 
-function dismissRelatedLookupPopupTarget(win, chosenId) {
+function dismissRelatedLookupPopupTarget(win, chosenId, chosenText) {
         /*
         Convert open window name into an django html element ID format.
         Find element by ID if it's vManyToManyRawIdAdminField attach given ID to the value.
@@ -277,12 +277,17 @@ function dismissRelatedLookupPopupTarget(win, chosenId) {
                     $('#' + name).closest('tr').addClass('has_original');
                 }
             }
+            // Update the <strong> element next to the input with the chosen text
+            var strongElement = $('#' + name).closest('td').find('strong');
+            if (strongElement.length > 0) {
+                strongElement.text(chosenText); // Set the text of the <strong> element
+            }
         }
         win.close();
     }
 
-function dismissRelatedLookupPopup(win, article_id){
-    dismissRelatedLookupPopupTarget(win, article_id);
+function dismissRelatedLookupPopup(win, article_id, chosenText){
+    dismissRelatedLookupPopupTarget(win, article_id, chosenText);
 }
 
 $(function () {
