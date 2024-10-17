@@ -21,6 +21,15 @@
       </div>
     </div>
   </div>
+  {% comment %}
+    social links rendered commented for test compatibility. TODO: implement opensourcing this already done feature in
+    one of our custom apps.
+  {% endcomment %}
+  <!--
+    {% for social_name, social_value in journalist.get_socials.items %}
+      <title>Seguir en {{ social_name|capfirst }}</title>
+    {% endfor %}
+  -->
 {% endblock %}
 
 {% block content %}
