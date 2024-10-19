@@ -377,6 +377,14 @@ class ArticleAdminModelForm(ModelForm):
             cleaned_data.get('date_published') if cleaned_data.get('is_published')
             else cleaned_data.get('date_created')
         ) or timezone.now()
+        nowval = timezone.now()
+        date_published = cleaned_data.get('date_published')
+        is_published = cleaned_data.get('is_published')
+        # Handle the logic for publishing
+        if is_published and date_published and date_published > nowval:
+            self.add_error('date_published', 'No se puede publicar inmediatamente con fecha de publicacion futura')
+        elif not is_published and date_published and date_published <= nowval:
+            cleaned_data['is_published'] = True  # Automatically publish if the date is in the past
         # conversion to UTC is needed, it's not done automatically like Article.save does.
         # (save gets values from obj and not from the form), TODO: improve or investigate to explain better the cause.
         date_value = timezone.localtime(
@@ -500,7 +508,7 @@ class ArticleAdmin(VersionAdmin):
                 'classes': ('wide',),
             },
         ),
-        ('Metadatos', {'fields': ('date_published', 'tags', 'main_section')}),
+        ('Metadatos', {'fields': ('is_published', 'date_published', 'tags', 'main_section')}),
         ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse',)}),
         ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse',)}),
         (
@@ -508,7 +516,6 @@ class ArticleAdmin(VersionAdmin):
             {
                 'fields': (
                     'allow_comments',
-                    'is_published',
                     'allow_related',
                     'show_related_articles',
                     'newsletter_featured',

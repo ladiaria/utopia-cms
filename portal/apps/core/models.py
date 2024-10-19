@@ -1288,7 +1288,8 @@ class ArticleBase(Model, CT):
                     ping_google()
                 except Exception:
                     pass
-        elif self.date_published:
+
+        elif self.date_published and self.date_published <= nowval:
             self.is_published = True
 
         date_value = self.date_published or self.date_created or nowval
