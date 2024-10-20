@@ -58,3 +58,41 @@ def youtube_api_embeds(youtube_api, video_ids):
             part='player', id=",".join(t[0] for t in video_ids), maxHeight=210
         ).execute()["items"]
     )
+
+
+def youtube_api_search(channelId=None, search_q=None, playlistId=None, maxResults=None):
+    """
+    Returns a list of tuples with the video id, title and type of the search results inside a channel or all videos
+    from a playlist.
+    """
+    items = []
+    if channelId and search_q or playlistId:
+
+        youtube_api = build_youtube_api()
+        if youtube_api:
+
+            # example to get fileDetails of a video with video_id(s):
+            # youtube_api.videos().videos_list.list(part='fileDetails', id="KoRTsT9kz94,tG-7S8Hs5AY").execute()
+
+            if search_q:
+                # WARN: if searching by tag, use tags that do not include another tag in their name.
+                # Example:
+                #   If we want to search for videos of the tag #InterviewsTheBeatles, it's best to use q="TheBeatles"
+                #   because if not, the results will include other things that we don't exactly know why.
+
+                videos_search = youtube_api.search()
+                searchlist_kwargs = {
+                    "part": 'snippet', "channelId": channelId, "q": search_q, "type": 'video', "order": 'date'
+                }
+                if maxResults:
+                    searchlist_kwargs["maxResults"] = maxResults
+                items += [
+                    (v["id"]["videoId"], v["snippet"]["title"], "search") for v in videos_search.list(
+                        **searchlist_kwargs
+                    ).execute()["items"]
+                ]
+
+            elif playlistId:
+                items += youtube_api_playlistItems(youtube_api, playlistId, maxResults)
+
+    return items
