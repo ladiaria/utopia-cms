@@ -50,20 +50,20 @@ def youtube_api_playlistItems(youtube_api, playlistId, maxResults=8, reverse=Fal
 
 def youtube_api_embeds(youtube_api, video_ids):
     """
-    Returns a tuple with the "iframe" html tag for a list of videos
-    @param: vids is a list of tuples with the video in the first position)
+    Returns generator of the "iframe" html tags for a list of videos
+    @param: vids iterable of videos ids
     """
     return (
         p["player"]["embedHtml"] for p in youtube_api.videos().list(
-            part='player', id=",".join(t[0] for t in video_ids), maxHeight=210
+            part='player', id=",".join(video_ids), maxHeight=210
         ).execute()["items"]
     )
 
 
-def youtube_api_search(channelId=None, search_q=None, playlistId=None, maxResults=None):
+def youtube_api_search(channelId=None, search_q=None, playlistId=None, maxResults=None, embeds=False):
     """
     Returns a list of tuples with the video id, title and type of the search results inside a channel or all videos
-    from a playlist.
+    from a playlist. TODO: documnet embed param.
     """
     items = []
     if channelId and search_q or playlistId:
@@ -94,5 +94,6 @@ def youtube_api_search(channelId=None, search_q=None, playlistId=None, maxResult
 
             elif playlistId:
                 items += youtube_api_playlistItems(youtube_api, playlistId, maxResults)
-
+            if embeds:
+                items = youtube_api_embeds(youtube_api, [item[0] for item in items])
     return items
