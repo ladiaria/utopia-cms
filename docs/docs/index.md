@@ -120,3 +120,11 @@ The command will also copy all images related to the articles beeing dumped to t
   ```
   cp ~/article_dumps/photos/* media/photologue/photos
   ```
+
+## Youtube API
+
+Utopia CMS backend uses the Youtube Data API to offer a feature to get youtube video information and rendering, the functionality is quite basic but it might be cover many needs, since youtube API itself is quite limited and also for the purpose of this information system, things to be done with videos rarely need much sophistication.
+
+### Usage
+
+To use the Youtube API, you have to create a credentials file to use the oauth authentication or use an API key, you can follow the instructions in Youtube API official docs to achieve this requirement. We also have a [python script](videos.py) that exlpains how to obtain a credentials file and use oauth, this script was the result of many hours of trial and error, so take a look at it to avoid some headaches.
