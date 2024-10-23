@@ -38,7 +38,7 @@ def youtube_api_playlistItems(youtube_api, playlistId, maxResults=8, reverse=Fal
     """
     items = [
         (
-            v["snippet"]["resourceId"]["videoId"], v["snippet"]["title"], "playlist"
+            v["snippet"]["resourceId"]["videoId"], v["snippet"]["title"], v["snippet"]["description"], "playlist"
         ) for v in youtube_api.playlistItems().list(
             part="snippet", playlistId=playlistId, maxResults=maxResults
         ).execute()["items"]
