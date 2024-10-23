@@ -24,37 +24,39 @@ self.addEventListener('install', function(e) {
 
 self.addEventListener('fetch', e => {
   {% block fetch_begin %}{% endblock %}
-  e.respondWith(
-    caches.match(e.request).then(response => {
+  {% block fetch_body %}
+    e.respondWith(
+      caches.match(e.request).then(response => {
 
-      if (response) {
-        return response;
-      } else {
+        if (response) {
+          return response;
+        } else {
 
-        return (async () => {
-          try {
-            // Try to fetch the request from the network
-            const response = await fetch(e.request);
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response; // Return the original response if valid
+          return (async () => {
+            try {
+              // Try to fetch the request from the network
+              const response = await fetch(e.request);
+              if (!response || response.status !== 200 || response.type !== 'basic') {
+                return response; // Return the original response if valid
+              }
+              // optionally cache, disabled (TODO: investigate)
+              // const responseClone = response.clone();
+              // caches.open(staticCacheName).then(cache => cache.put(e.request, responseClone));
+              return response;
+            } catch (error) {
+              console.warn('SW fetch failed:', error);
+              // Optionally return a fallback response, e.g., an offline page
+              return caches.match('/offline.html') || new Response('Network error occurred', {
+                status: 503,
+                statusText: 'Service Unavailable',
+              });
             }
-            // optionally cache, disabled (TODO: investigate)
-            // const responseClone = response.clone();
-            // caches.open(staticCacheName).then(cache => cache.put(e.request, responseClone));
-            return response;
-          } catch (error) {
-            console.warn('SW fetch failed:', error);
-            // Optionally return a fallback response, e.g., an offline page
-            return caches.match('/offline.html') || new Response('Network error occurred', {
-              status: 503,
-              statusText: 'Service Unavailable',
-            });
-          }
-        })();
+          })();
 
-      }
-    })
-  );
+        }
+      })
+    );
+  {% endblock %}
 });
 
 self.addEventListener('activate', e => {
