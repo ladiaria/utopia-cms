@@ -1042,15 +1042,10 @@ class Section(Model):
 
 class Journalist(Model):
     objects = SlugNaturalManager()
-
     JOB_CHOICES = (
         ('PE', 'Periodista'),
         ('CO', 'Columnista'),
     )
-    DEFAULT_SOCIAL_ORDER = ['bluesky', 'facebook', 'instagram', 'linkedin',
-                            'mastodon', 'threads', 'tiktok', 'tumblr',
-                            'twitch', 'X', 'youtube', 'otro 1', 'otro 2', 'otro 3']
-
     name = CharField('nombre', max_length=50, unique=True)
     email = EmailField(blank=True, null=True)
     slug = SlugField('slug', unique=True)
@@ -1064,17 +1059,20 @@ class Journalist(Model):
     )
     bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
     sections = ManyToManyField(Section, verbose_name='secciones', blank=True)
+
+    # the order in which this class properties are declared is the order in which they'll be displayed unless
+    # overridden by CORE_JOURNALIST_SOCIAL_ORDER setting
+    bs = URLField('bluesky', blank=True, null=True)
     fb = URLField('facebook', blank=True, null=True)
-    tt = URLField('X', blank=True, null=True)
     ig = URLField('instagram', blank=True, null=True)
+    lnkin = URLField('linkedin', blank=True, null=True)
     mtdn = URLField('mastodon', blank=True, null=True)
     thds = URLField('threads', blank=True, null=True)
-    ytb = URLField('youtube', blank=True, null=True)
-    lnkin = URLField('linkedin', blank=True, null=True)
     tktk = URLField('tiktok', blank=True, null=True)
-    bs = URLField('bluesky', blank=True, null=True)
     tr = URLField('tumblr', blank=True, null=True)
     tw = URLField('twitch', blank=True, null=True)
+    tt = URLField('X', blank=True, null=True)
+    ytb = URLField('youtube', blank=True, null=True)
     other_one = URLField('otro 1', blank=True, null=True)
     other_two = URLField('otro 2', blank=True, null=True)
     other_three = URLField('otro 3', blank=True, null=True)
@@ -1114,17 +1112,17 @@ class Journalist(Model):
         @return field_value: social fields with values in dict format
         {"field_verbose_name": "field_value"}
         """
+        default_order = [f.verbose_name for f in self._meta.fields if type(f) is URLField]
         custom_order = getattr(settings, "CORE_JOURNALIST_SOCIAL_ORDER", None)
         if custom_order:
-            if len(custom_order) < len(self.DEFAULT_SOCIAL_ORDER):
-                # prevent incomplete order in custom settings.
-                # This complete the full order based in the default oreder.
-                missing_in_custom = set(self.DEFAULT_SOCIAL_ORDER) - set(custom_order)
-                verbose_names_of_interest = [custom_order.append(e) for e in missing_in_custom]
-            else:
-                verbose_names_of_interest = custom_order
+            if len(custom_order) < len(default_order):
+                # complete the full order based in the default oreder.
+                for prop in default_order:
+                    if prop not in custom_order:
+                        custom_order.append(prop)
+            verbose_names_of_interest = custom_order
         else:
-            verbose_names_of_interest = self.DEFAULT_SOCIAL_ORDER
+            verbose_names_of_interest = default_order
 
         # Create a mapping from verbose_name to field_name
         verbose_name_to_field = {
@@ -2000,15 +1998,20 @@ class Article(ArticleBase):
 
     def extensions_have_invalid_amp_tags(self):
         """
-        When this happen, we should not announce that an AMP version o the page is availabke
+        When this happen, we should not announce that an AMP version of the page is available
         """
         invalid_tags = "base img picture video audio iframe frame frameset object param applet embed".split()
+        invalid_filters = {"script": lambda node: "instagram.com/embed.js" in node.get("src", "")}
         for e in self.extensions.iterator():
             try:
                 soup = BeautifulSoup(e.body, 'html.parser')
                 for tag in invalid_tags:
                     if soup.find_all(tag):
                         return True
+                for tag, call in invalid_filters.items():
+                    for node in soup.find_all(tag):
+                        if call(node):
+                            return True
             except Exception:
                 pass
 

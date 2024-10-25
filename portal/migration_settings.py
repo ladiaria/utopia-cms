@@ -123,6 +123,7 @@ INSTALLED_APPS = (
     "reversion",
     "django_celery_results",
     "django_celery_beat",
+    "phonenumber_field",
 )
 
 SITE_ID = 1
@@ -405,6 +406,7 @@ MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0
 SIGNUPWALL_RISE_REDIRECT = True
+SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
@@ -412,15 +414,15 @@ PROMO_EMAIL_SUBJECT = "Nueva promoción"
 SUBSCRIPTION_EMAIL_TO = [NOTIFICATIONS_TO_ADDR]
 SUBSCRIPTION_BY_PHONE_EMAIL_TO = SUBSCRIPTION_EMAIL_TO
 MAX_USERS_API_SESSIONS = 3
+THEDAILY_GOOGLE_OAUTH2_ASK_PHONE = False
 THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID = None
 THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
     ("DDIGM", "Suscripción digital"),
     ("PAPYDIM", "Suscripción papel"),
 )
 THEDAILY_PROVINCE_CHOICES = []
-THEDAILY_WELCOME_TEMPLATE = "welcome.html"
-THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR = "thedaily/templates"
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
@@ -517,6 +519,7 @@ CRM_UPDATE_USER_ENABLED = False
 # CRM API urls will be assigned after local_settings import, if not overrided
 CRM_API_BASE_URI = None
 CRM_API_UPDATE_USER_URI = None
+CRM_API_GET_USER_URI = None
 
 # PWA
 PWA_SERVICE_WORKER_TEMPLATE = "core/templates/sw/serviceworker.js"
@@ -528,7 +531,9 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
+PHONENUMBER_DEFAULT_REGION = None
 
 
 # Override previous settings with values in local_migration_settings.py settings file
@@ -541,6 +546,10 @@ CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
 LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
 COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
+
+# phonenumbers default region (if not set) will default to LOCAL_COUNTRY
+if PHONENUMBER_DEFAULT_REGION is None:
+    PHONENUMBER_DEFAULT_REGION = LOCAL_COUNTRY
 
 # signupwall overrided/defaults
 if SIGNUPWALL_ENABLED is None:
@@ -569,6 +578,10 @@ if CORE_ARTICLE_DETAIL_ENABLE_AMP:
         + (MIDDLEWARE[-1],)
     )
 
-# CRM API urls
+# CRM API
 if CRM_API_BASE_URI:
     CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + "updateuserweb/")
+    CRM_API_GET_USER_URI = CRM_API_GET_USER_URI or (CRM_API_BASE_URI + "existsuserweb/")
+if CRM_UPDATE_USER_CREATE_CONTACT is None:
+    # defaults to the same value of the "base sync"
+    CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED

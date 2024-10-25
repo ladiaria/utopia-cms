@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from email.utils import make_msgid
 from emails.django import DjangoMessage as Message
 
@@ -18,7 +17,7 @@ welcome_email_sub = 'Tu suscripción %s está activa'
 
 def send_notification_message(subject, message, mailto):
     if (
-        not getattr(settings, 'LOCAL_EMAIL_BACKEND_TEST', False)
+        not settings.LOCAL_EMAIL_BACKEND_TEST
         and settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
     ):
         # send using smtp to receive bounces in another mailbox
@@ -33,8 +32,7 @@ def send_notification_message(subject, message, mailto):
 def send_notification(user, email_template, email_subject, extra_context={}):
     extra_context.update(
         {
-            'SITE_URL': settings.SITE_URL,
-            'URL_SCHEME': settings.URL_SCHEME,
+            'SITE_URL_SD': settings.SITE_URL_SD,
             'site': Site.objects.get_current(),
             'logo_url': settings.HOMEV3_SECONDARY_LOGO,
         }

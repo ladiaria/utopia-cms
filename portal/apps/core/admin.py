@@ -877,13 +877,31 @@ class JournalistForm(ModelForm):
 class JournalistAdmin(ModelAdmin):
     form = JournalistForm
     list_display = ('name', 'job', published_articles)
-    list_filter = ('job', )
+    list_filter = ('job',)
     search_fields = ['name']
     fieldsets = (
         (None, {'fields': ('name', 'email', 'image', 'bio', 'job', 'sections')}),
         (
             'Redes sociales',
-            {'description': 'Ingrese nombre de usuario de cada red social.', 'fields': ('fb', 'tt', 'gp', 'ig')},
+            {
+                'description': 'Ingrese enlace completo al respectivo perfil.(ej: https://example.com/perfil)',
+                'fields': (
+                    'bs',
+                    'fb',
+                    'tt',
+                    'ig',
+                    'mtdn',
+                    'thds',
+                    'ytb',
+                    'lnkin',
+                    'tktk',
+                    'tr',
+                    'tw',
+                    'other_one',
+                    'other_two',
+                    'other_three',
+                ),
+            },
         ),
     )
 
@@ -1109,17 +1127,17 @@ class CategoryHomeArticleInline(TabularInline):
     max_num = 20
     form = CategoryHomeArticleForm
     formset = CategoryHomeArticleFormSet
-    raw_id_fields = ('article', )
+    raw_id_fields = ('article',)
     verbose_name_plural = 'Artículos en portada'
 
     class Media:
-        css = {'all': ('css/category_home.css', )}
+        css = {'all': ('css/category_home.css',)}
 
 
 @admin.register(CategoryHome, site=site)
 class CategoryHomeAdmin(admin.ModelAdmin):
     list_display = ('category', 'cover')
-    exclude = ('articles', )
+    exclude = ('articles',)
     inlines = [CategoryHomeArticleInline]
 
     def save_related(self, request, form, formsets, change):

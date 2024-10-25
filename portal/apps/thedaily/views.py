@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from future import standard_library
 from builtins import str
 import os
@@ -7,24 +6,33 @@ from pydoc import locate
 import json
 import requests
 import pymongo
+from functools import wraps
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlparse, urlencode
 from uuid import uuid4
 from smtplib import SMTPRecipientsRefused
-from social_django.models import UserSocialAuth
-from emails.django import DjangoMessage as Message
 from PIL import Image
 from ga4mp import GtagMP
-from rest_framework.decorators import api_view, permission_classes
+
+from social_django.models import UserSocialAuth
+from emails.django import DjangoMessage as Message
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework_api_key.permissions import HasAPIKey
+from actstream import actions
+from actstream.models import following
+from favit.models import Favorite
+from favit.utils import is_xhr
+from django_amp_readerid.decorators import readerid_assoc
+from django_amp_readerid.utils import amp_login_param, get_related_user
 
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import IntegrityError
 from django.db.models import Count
 from django.db.models.query_utils import Q
+from django.db.models.deletion import Collector
 from django.core.mail import send_mail, mail_admins, mail_managers
 from django.urls import reverse
 from django.core.exceptions import MultipleObjectsReturned
@@ -37,10 +45,12 @@ from django.http import (
     HttpResponseServerError,
     JsonResponse,
 )
+from django.forms import ValidationError
 from django.forms.utils import ErrorList
 from django.contrib import messages
 from django.contrib.auth import authenticate, logout, login as do_login
 from django.contrib.auth.models import User
+from django.contrib.auth.views import LogoutView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
@@ -54,15 +64,8 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
 
-from actstream import actions
-from actstream.models import following
-from favit.models import Favorite
-from favit.utils import is_xhr
-from django_amp_readerid.decorators import readerid_assoc
-from django_amp_readerid.utils import amp_login_param, get_related_user
-
 from apps import mongo_db, bouncer_blocklisted
-from libs.utils import set_amp_cors_headers, decode_hashid
+from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
 from decorators import render_response
@@ -74,7 +77,15 @@ from signupwall.middleware import (
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
-from .models import Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList
+from .models import (
+    Subscriber,
+    Subscription,
+    SubscriptionPrices,
+    UsersApiSession,
+    OAuthState,
+    MailtrainList,
+    deletecrmuser,
+)
 from .forms import (
     __name__ as forms_module_name,
     LoginForm,
@@ -97,16 +108,22 @@ from .forms import (
     ProfileForm,
     ProfileExtraDataForm,
     UserForm,
+    PhoneSubscriptionForm,
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
+    get_default_province,
 )
 from .utils import (
+    get_or_create_user_profile,
     recent_following,
     add_default_newsletters,
     get_profile_newsletters_ordered,
     google_phone_next_page,
     product_checkout_template,
     qparamstr,
+    collector_analysis,
+    get_app_template,
+    subscribe_log,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -115,6 +132,22 @@ from .tasks import send_notification, notify_digital, notify_paper, send_notific
 
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
+delivery_err = "Error interno, intentá de nuevo más tarde."
+site_name = Site.objects.get_current().name
+
+
+def no_op_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+
+# Endpoints must be decorated with no auth classes if the deployment is under http basic auth, when no basic auth is
+# set, the decorator is no_op_decorator, which does nothing and let the endpoint acts as if it was not decorated.
+api_view_auth_decorator = (
+    authentication_classes([]) if getattr(settings, 'ENV_HTTP_BASIC_AUTH', False) else no_op_decorator
+)
 
 
 def notify_new_subscription(subscription_url, extra_subject=''):
@@ -162,9 +195,7 @@ def mailtrain_lists(request):
         assert user.email and user.email not in bouncer_blocklisted
         api_uri, api_key = settings.CRM_API_BASE_URI, getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
         assert api_uri and api_key, "CRM api not configured"
-        r = requests.post(
-            api_uri + "mailtrain_lists/", headers={"Authorization": "Api-Key " + api_key}, data={"email": user.email}
-        )
+        r = requests.post(api_uri + "mailtrain_lists/", **crm_rest_api_kwargs(api_key, {"email": user.email}))
         r.raise_for_status()
     except Exception as exc:
         if settings.DEBUG:
@@ -198,8 +229,7 @@ def nl_auth_subscribe(request, nltype, nlslug):
                 assert api_uri and api_key, "CRM api not configured"
                 r = getattr(requests, "post" if nl_subscribe_activated else "delete")(
                     api_uri + "mailtrain_list_subscription/",
-                    headers={"Authorization": "Api-Key " + api_key},
-                    data={"email": user.email, "list_id": nlslug},
+                    **crm_rest_api_kwargs(api_key, {"email": user.email, "list_id": nlslug}),
                 )
                 r.raise_for_status()
         except Exception as exc:
@@ -344,7 +374,7 @@ def login(request, product_slug=None, product_variant=None):
         context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "product_slug": product_slug})
     else:
         article_id = request.GET.get('article')
-        template = getattr(settings, 'THEDAILY_LOGIN_TEMPLATE', 'login.html')
+        template = get_app_template('login.html')
 
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
@@ -447,7 +477,7 @@ def login(request, product_slug=None, product_variant=None):
 
 @never_cache
 def signup(request):
-    template, article_id, context = "signup.html", request.GET.get("article"), {}
+    template, article_id, context = get_app_template('signup.html'), request.GET.get("article"), {}
 
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
@@ -489,12 +519,15 @@ def signup(request):
                     return HttpResponseRedirect(next_page)
                 else:
                     context['signup_mail'] = user.email
-                    return render(request, settings.THEDAILY_WELCOME_TEMPLATE, context)
+                    return render(request, get_app_template("welcome.html"), context)
             except Exception as exc:
                 msg = "Error al enviar email de verificación para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 if user:
+                    email_to_delete = user.email
                     user.delete()
+                    deletecrmuser(email_to_delete)
+
                 signup_form.add_error(None, msg)
     else:
         initial = {}
@@ -528,7 +561,7 @@ def welcome(request, signup=False, subscribed=False):
         request.session.pop('welcome')
         return render(
             request,
-            settings.THEDAILY_WELCOME_TEMPLATE,
+            get_app_template("welcome.html"),
             {'signup': signup, 'subscribed': subscribed, "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
     else:
@@ -548,6 +581,7 @@ def google_phone(request):
       after some seconds redirect to the "next" page (for AMP is the google page that closes the window).
     """
     # if planslug in session this came from a new subscription attemp and we should continue it
+    subscribe_log(request, 'google_phone begin')
     planslug, is_new = request.session.get('planslug'), request.GET.get('is_new') == '1'
     if planslug:
         request.session.pop('planslug')
@@ -563,9 +597,20 @@ def google_phone(request):
 
     profile, ctx = get_or_create_user_profile(oas.user), {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}
     next_page = google_phone_next_page(request, is_new)
-    form_kwargs, initial = {"instance": profile, "is_new": is_new}, {"next_page": next_page} if next_page else {}
+    assume_tnc_accepted = getattr(settings, 'THEDAILY_TERMS_AND_CONDITIONS_ACCEPTED_IN_GOOGLE', True)
+    form_kwargs = {"instance": profile, "is_new": is_new, "assume_tnc_accepted": assume_tnc_accepted}
+    initial = {"next_page": next_page} if next_page else {}
 
-    if request.session.get("terms_and_conds_accepted"):
+    if assume_tnc_accepted:
+        # By default we asume that the T&C are accepted in Google flows.
+        initial["terms_and_conds_accepted"] = True
+        if not profile.terms_and_conds_accepted:
+            profile.terms_and_conds_accepted = True
+            try:
+                profile.save()
+            except Exception as exc:
+                subscribe_log(request, 'google_phone error saving T&C accepted for user %d: %s' % (oas.user.id, exc))
+    elif request.session.get("terms_and_conds_accepted"):
         initial["terms_and_conds_accepted"] = True
     if initial:
         form_kwargs["initial"] = initial
@@ -579,21 +624,31 @@ def google_phone(request):
                 try:
                     send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!', ctx)
                 except Exception as exc:
-                    # fail silently in case of error when sending the email
+                    # fail silently in case of error when sending the email, only log or debug
+                    err_msg = "welcome email message send error for user %d: %s" % (oas.user.id, exc)
+                    subscribe_log(request, 'google_phone' + err_msg)
                     if settings.DEBUG:
-                        print("DEBUG: welcome email message send error: %s" % exc)
-            oas.delete()
+                        print("DEBUG: " + err_msg)
             request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
+            redirect_kwargs = {'backend': 'google-oauth2'}
+            # if the user didn't complete the phone, we tell pipeline to not redirect here again through oas obj
+            if google_signin_form.instance.phone:
+                oas.delete()
+            else:
+                oas.phone_submitted_blank = True
+                oas.save()
             return HttpResponseRedirect(
-                reverse('social:begin', kwargs={'backend': 'google-oauth2'})
-                + (("?next=" + next_page) if next_page else "")
+                reverse('social:begin', kwargs=redirect_kwargs) + (("?next=" + next_page) if next_page else "")
             )
     else:
-        google_signin_form = GoogleSigninForm(**form_kwargs)
         # if is a new user add the default category newsletters (reached only from "free" subscriptions)
         if is_new:
             add_default_newsletters(profile)
-
+        elif profile.terms_and_conds_accepted:
+            # can be redirected now if T&C
+            return HttpResponseRedirect(next_page or reverse('home'))
+        google_signin_form = GoogleSigninForm(**form_kwargs)
+    subscribe_log(request, 'google_phone end')
     ctx.update({'google_signin_form': google_signin_form, "is_new": is_new})
     return 'google_signup.html', ctx
 
@@ -654,6 +709,7 @@ def subscribe(request, planslug, category_slug=None):
         # TODO post release: Usage guide should describe when 404 is raised here
         subscription_price = get_object_or_404(SubscriptionPrices, subscription_type=planslug)
         oauth2_button, subscription_in_process = True, False
+        default_province = get_default_province()
 
         if user_is_authenticated:
 
@@ -668,10 +724,8 @@ def subscribe(request, planslug, category_slug=None):
                 if subscription_price.ga_category == 'D':
                     subscriber_form = GoogleSignupForm(instance=profile)
                 else:
-                    if not profile.province:
-                        default_province = getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None)
-                        if default_province:
-                            profile.province = default_province
+                    if not profile.province and default_province:
+                        profile.province = default_province
                     subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
                 initial = {
@@ -703,10 +757,8 @@ def subscribe(request, planslug, category_slug=None):
                 if subscription_price.ga_category == 'D':
                     subscriber_form = GoogleSignupForm(instance=profile)
                 else:
-                    if not profile.province:
-                        default_province = getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None)
-                        if default_province:
-                            profile.province = default_province
+                    if not profile.province and default_province:
+                        profile.province = default_province
                     subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
                 subscriber_form = (
@@ -822,14 +874,14 @@ def subscribe(request, planslug, category_slug=None):
                         user = subscriber_form_v.signup_form.create_user()
                         try:
                             was_sent = send_validation_email(
-                                'Verificá tu cuenta de ' + Site.objects.get_current().name,
+                                f'Verificá tu cuenta de {site_name}',
                                 user,
                                 'notifications/account_signup_subscribed.html',
                                 get_signup_validation_url,
                             )
                             if not was_sent:
                                 raise Exception(
-                                    "No se pudo enviar el email de verificación de suscripción para el usuario: %s"
+                                    "No se pudo enviar el email de verificación de suscripción para el usuario: %s."
                                     % (user)
                                 )
                         except Exception as exc:
@@ -906,14 +958,6 @@ def hash_validate(user_id, hash):
     return user
 
 
-def get_or_create_user_profile(user):
-    try:
-        profile = user.subscriber
-    except Subscriber.DoesNotExist:
-        profile = Subscriber.objects.create(user=user)
-    return profile
-
-
 def get_password_validation_url(user):
     return reverse(
         'account-password_change-hash',
@@ -983,76 +1027,91 @@ def complete_signup(request, user_id, hash):
 
 
 @never_cache
-@to_response
 def password_reset(request, user_id=None, hash=None):
     if user_id and hash:
         return password_change(request, user_id, hash)
-    reset_form = PasswordResetRequestForm()
+    ctx = {}
     if request.method == 'POST':
         # TODO: we should also check for telephone number as google_auth
         post = request.POST.copy()
         reset_form = PasswordResetRequestForm(post)
         if reset_form.is_valid():
             try:
-                if reset_form.user:
-                    was_sent = send_validation_email(
+                user = reset_form.cleaned_data["user"]
+                if user.is_active:
+                    send_validation_email(
                         'Recuperación de contraseña',
-                        reset_form.user,
-                        'notifications/password_reset_body.html',
+                        user,
+                        get_app_template('notifications/password_reset_body.html'),
                         get_password_validation_url,
                     )
-                    if not was_sent:
-                        raise Exception(
-                            "No se pudo enviar el email de recuperación de contraseña para el usuario: %s"
-                            % (reset_form.user)
-                        )
-                return HttpResponseRedirect(reverse('account-password_reset-mail_sent'))
+                else:
+                    is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
+                    notification_template = get_app_template(
+                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                    )
+                    send_validation_email(
+                        f'Verificá tu cuenta de {site_name}', user, notification_template, get_signup_validation_url
+                    )
             except Exception as exc:
-                msg = "Error al enviar email de recuperación de contraseña para el usuario: %s." % reset_form.user
-                error_log(msg + " Detalle: {}".format(str(exc)))
-                reset_form.add_error(None, msg)
-    return 'password_reset.html', {'form': reset_form}
+                error_log(delivery_err + " Detalle: {}".format(str(exc)))
+                ctx['error'] = delivery_err
+        ctx["action_content_template"] = get_app_template("password_reset_action_content.html")
+    else:
+        ctx['form'] = PasswordResetRequestForm()
+    return render(request, get_app_template('password_reset.html'), ctx)
 
 
 @never_cache
-@to_response
 def confirm_email(request):
-    confirm_email_form = ConfirmEmailRequestForm()
+    if request.user.is_authenticated:
+        raise Http404
+    ctx = {}
     if request.method == 'POST':
         confirm_email_form = ConfirmEmailRequestForm(request.POST)
         if confirm_email_form.is_valid():
-            user = None
             try:
-                user = confirm_email_form.user
-                was_sent = send_validation_email(
-                    'Verificá tu cuenta',
+                user = confirm_email_form.cleaned_data["user"]
+                is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
+                send_validation_email(
+                    f'Verificá tu cuenta de {site_name}',
                     user,
-                    'notifications/account_signup%s.html'
-                    % ('_subscribed' if hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any() else ''),
+                    get_app_template(
+                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                    ),
                     get_signup_validation_url,
                 )
-                if not was_sent:
-                    raise Exception("No se pudo enviar el email de verifición de cuenta para el usuario: %s" % user)
-                return 'confirm_email.html', {'sent': True, 'email': confirm_email_form.cleaned_data['email']}
             except Exception as exc:
-                msg = "Error al enviar email de verificacion para el usuario: %s." % user
-                error_log(msg + " Detalle: {}".format(str(exc)))
-                confirm_email_form.add_error(None, msg)
-    return 'confirm_email.html', {'form': confirm_email_form}
+                error_log(delivery_err + " Detalle: {}".format(str(exc)))
+                ctx['error'] = delivery_err
+        ctx["action_content_template"] = get_app_template("confirm_email_action_content.html")
+    else:
+        ctx["form"] = ConfirmEmailRequestForm()
+    return render(request, get_app_template('confirm_email.html'), ctx)
 
 
 @never_cache
-def session_refresh(request):
+def session_refresh(request, next_page=None):
     """
-    This view was created with the only purpose to delete subscription and
-    subscription_type session variables for an in-process subscription.
+    This view was created with the only purpose to delete subscription and subscription_type session variables for an
+    in-process subscription. Then another session variables that can impact in a "new session" were also removed.
     """
     subscription = request.session.pop('subscription', None)
     subscription_type = request.session.pop('subscription_type', None)
+    request.session.pop("google-oauth2_state", None)
     if subscription and subscription_type:
         subscription.subscription_type_prices.remove(subscription_type)
-    referer = request.headers.get('referer')
+    referer = next_page or request.headers.get('referer')
     return HttpResponseRedirect(referer if referer and referer != request.path else '/')
+
+
+@never_cache
+def logout_view(request, next_page='/usuarios/sesion-cerrada/'):
+    next_page = request.GET.get("next") or next_page
+    if request.user.is_authenticated:
+        return LogoutView.as_view(next_page=next_page)(request)
+    else:
+        return session_refresh(request, next_page)
 
 
 @never_cache
@@ -1078,11 +1137,14 @@ def password_change(request, user_id=None, hash=None):
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
-    return 'password_change.html', {'form': password_change_form, 'user_id': user_id, 'hash': hash}
+    return render(
+        request,
+        get_app_template('password_change.html'),
+        {'form': password_change_form, 'user_id': user_id, 'hash': hash},
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def edit_profile(request, user=None):
     user = user or request.user
@@ -1151,35 +1213,38 @@ def edit_profile(request, user=None):
     except UserSocialAuth.MultipleObjectsReturned:
         oauth2_assoc, google_oauth2_multiple = True, True
 
-    return 'edit_profile.html', {
-        'user_form': user_form,
-        'profile_form': profile_form,
-        'profile_data_form': ProfileExtraDataForm(instance=profile),
-        'is_subscriber_digital': user.subscriber.is_digital_only(),
-        'google_oauth2_assoc': oauth2_assoc,
-        'google_oauth2_multiple': google_oauth2_multiple,
-        'google_oauth2_allow_disconnect':
-            not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
-        'publication_newsletters': Publication.objects.filter(has_newsletter=True),
-        'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
-        'newsletters': get_profile_newsletters_ordered(),
-        "mailtrain_lists": MailtrainList.objects.all(),
-        "incomplete_field_count": sum(
-            not bool(value) for value in (
-                user.get_full_name(),
-                user.subscriber.document,
-                user.email,
-                user.subscriber.phone,
-                user.subscriber.address,
-            )
-        ),
-        "email_is_bouncer": user.subscriber.email_is_bouncer(),
-        "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
-    }
+    return render(
+        request,
+        get_app_template("edit_profile.html"),
+        {
+            'user_form': user_form,
+            'profile_form': profile_form,
+            'profile_data_form': ProfileExtraDataForm(instance=profile),
+            'is_subscriber_digital': user.subscriber.is_digital_only(),
+            'google_oauth2_assoc': oauth2_assoc,
+            'google_oauth2_multiple': google_oauth2_multiple,
+            'google_oauth2_allow_disconnect':
+                not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
+            'publication_newsletters': Publication.objects.filter(has_newsletter=True),
+            'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
+            'newsletters': get_profile_newsletters_ordered(),
+            "mailtrain_lists": MailtrainList.objects.all(),
+            "incomplete_field_count": sum(
+                not bool(value) for value in (
+                    user.get_full_name(),
+                    user.subscriber.document,
+                    user.email,
+                    user.subscriber.phone,
+                    user.subscriber.address,
+                )
+            ),
+            "email_is_bouncer": user.subscriber.email_is_bouncer(),
+            "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+        },
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_leer_despues(request):
     followings = recent_following(request.user, Article)
@@ -1198,11 +1263,14 @@ def lista_lectura_leer_despues(request):
         followings = paginator_leer_despues.page(paginator_leer_despues.num_pages)
     # end paginator for leer_despues
 
-    return 'lista-lectura.html', {'leer_despues': followings, 'leer_despues_count': followings_count}
+    return render(
+        request,
+        get_app_template("lista-lectura.html"),
+        {'leer_despues': followings, 'leer_despues_count': followings_count},
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_favoritos(request):
     user = request.user
@@ -1222,11 +1290,12 @@ def lista_lectura_favoritos(request):
         favoritos = paginator_favoritos.page(paginator_favoritos.num_pages)
     # end paginator for favoritos
 
-    return 'lista-lectura.html', {'favoritos': favoritos, 'favoritos_count': favoritos_count}
+    return render(
+        request, get_app_template("lista-lectura.html"), {'favoritos': favoritos, 'favoritos_count': favoritos_count}
+    )
 
 
 @never_cache
-@to_response
 @login_required
 def lista_lectura_historial(request):
     """
@@ -1262,7 +1331,9 @@ def lista_lectura_historial(request):
     except EmptyPage:
         historial = paginator_historial.page(paginator_historial.num_pages)
 
-    return 'lista-lectura.html', {'historial': historial, 'historial_count': historial_count}
+    return render(
+        request, get_app_template("lista-lectura.html"), {'historial': historial, 'historial_count': historial_count}
+    )
 
 
 @never_cache
@@ -1311,106 +1382,288 @@ def user_profile(request, user_id):
 
 
 @never_cache
-@api_view(['POST'])
+@api_view(['POST', "PUT"])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def update_user_from_crm(request):
     """
     Update User or Subscriber from CRM.
     updatefromcrm flag must be set to avoid ws loop.
     User is updated when the field to change is "email"
-    Subscriber is updated when the field is other (a field mapping between CRM
-    fields and Subscriber's field should be provided somewhere)
+    Subscriber is updated when the field is other (a field mapping between CRM fields and Subscriber's field should be
+    provided somewhere)
     """
-    def changeuseremail(user, email, newemail):
+    def changeuseremail(user, newemail):
+        """
+        Change linked user email
+        @param user: User object
+        @param newemail: new email to update the user
+        """
         if user.email == user.username:
             user.username = newemail
         user.email = newemail
 
-    def changesubscriberfield(s, field, v):
-        mfield = settings.CRM_UPDATE_SUBSCRIBER_FIELDS[field]
-        # eval the value before saving if type field is bool
-        setattr(s, mfield, eval(v) if isinstance(getattr(s, mfield), bool) else v)
+    def changesubscriberfield(s, field, value):
+        """
+        Change subscriber field value
+        @param s: Subscriber object
+        @param field: Subscriber field
+        @param value: Subscriber field value
+        """
+        mapped_field = settings.CRM_UPDATE_SUBSCRIBER_FIELDS.get(field)
+        if not mapped_field:
+            return  # Skip if no field mapping found
+
+        # Conversion for boolean fields
+        field_value = value
+        if isinstance(getattr(subscriber, mapped_field), bool):
+            field_value = value if type(value) is bool else value.lower() in ['true', '1', 'yes']
+
+        setattr(subscriber, mapped_field, field_value)
+
+    def updatesubscriberemail(user, newemail):
+        """
+        Update subscriber email and peforms integrity validations
+        @param u: User object
+        @param newemail: new email to update the subscriber
+        """
+        if newemail:
+            check_user_email = User.objects.filter(email=newemail)
+            check_user_username = User.objects.filter(username=newemail)
+            if check_user_email.exists() or check_user_username.exists():
+                if check_user_email.count() == 1:
+                    check_user = check_user_email[0]
+                elif check_user_username.count() == 1:
+                    check_user = check_user_username[0]
+                else:
+                    msg = 'Multiple email in users'
+                    mail_managers(msg, msg)
+                    return HttpResponseBadRequest()
+                if check_user and check_user != user:
+                    return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
+            # change the web user email if it's different
+            if user.email != newemail:
+                changeuseremail(user, newemail)
+                user.updatefromcrm = True
+                user.save()
+
+    def updateuserfields(user, first_name="", last_name=""):
+        updated = False
+        if first_name and user.first_name != first_name:
+            user.first_name = first_name
+            updated = True
+        if last_name and user.last_name != last_name:
+            user.last_name = last_name
+            updated = True
+        if updated:
+            user.updatefromcrm = True
+            user.save()
+
+    def updatesubscriberfields(s, fields, contact_id=None):
+        """
+        Update subscriber fields.
+        @param s: Subscriber object
+        @param contact_id: Contact ID from crm
+        @param fields: fields and values in dictionary format
+        """
+        save_subscriber = False
+        if not s.contact_id and contact_id:
+            try:
+                # Fetch subscriber with the given contact_id
+                checked_subscriber = Subscriber.objects.get(contact_id=contact_id)
+                if s != checked_subscriber:
+                    return HttpResponseBadRequest(f"Contact ID: {contact_id} is already associated with another user.")
+            except Subscriber.DoesNotExist:
+                # No action needed if the contact_id does not exist
+                pass
+            except Subscriber.MultipleObjectsReturned:
+                msg = f"Multiple contacts with ID: {contact_id} found in subscribers."
+                mail_managers(msg, msg)
+                return HttpResponseBadRequest("Multiple subscribers found with the same contact ID.")
+
+            s.contact_id = contact_id
+            save_subscriber = True
+
+        for field, value in fields.items():
+            if field == 'newsletters':
+                pubs_slugs = json.loads(value)
+                given_publications = Publication.objects.filter(slug__in=pubs_slugs)
+                given_categories = Category.objects.filter(slug__in=pubs_slugs)
+                set_newsletters = set(given_publications.values_list("slug", flat=True))
+                set_cat_newsletters = set(given_categories.values_list("slug", flat=True))
+                # TODO: give an example where the next affirmation could happen (not easy to understand)
+                # This code set duplicates slugs in both relationships. This could be a bug in the future
+                # This case would happens if for example we have a category with slug "deporte"
+                # and also we have an publication with the slug "deporte".
+                # In this case, if a "deporte" comes like slug for update newsletters,
+                # this code code will add "deporte" like a category newsletter and like publication newsletter,
+                # cause is hard to set up.
+                # TODO: Pending of full review for remove the commented code (commented code, now removed, is the code
+                #       that was here before this change)
+                #       This can be checked with tests:
+                #           given a set of slugs
+                #           after this sync is made, the Subscriber's NLs set must be equal to the set given
+                #       (that was exactly what the commented and now removed code used to do)
+                #       NOTE: is very probbable that the "if" now will require also be True for "area_newsletters"
+                s.newsletters.set(Publication.objects.filter(slug__in=set_newsletters))
+                s.category_newsletters.set(Category.objects.filter(slug__in=set_cat_newsletters))
+            else:
+                changesubscriberfield(s, field, value)
+                save_subscriber = True
+
+        if save_subscriber:
+            s.updatefromcrm = True
+            s.save()
 
     try:
-        contact_id = request.POST['contact_id']
-        email = request.POST.get('email')
-        newemail = request.POST.get('newemail')
-        field = request.POST.get('field')
-        value = request.POST.get('value')
+        contact_id = request.data['contact_id']
+        name = request.data.get('name')
+        last_name = request.data.get('last_name')
+        email = request.data.get('email')
+        newemail = request.data.get('newemail')
+        fields = json.loads(request.data.get('fields', "{}"))
     except KeyError:
         return HttpResponseBadRequest()
     try:
-        s = Subscriber.objects.get(contact_id=contact_id)
-        if field == 'email':
-            check_user = User.objects.filter(email=newemail)
-            if check_user.exists():
-                if check_user.count() == 1:
-                    check_user = check_user[0]
-                else:
-                    mail_managers('Multiple email in users', email)
-                    return HttpResponseBadRequest()
-            if check_user and check_user != s.user:
-                return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-            changeuseremail(s.user, email, newemail)
-            s.user.updatefromcrm = True
-            s.user.save()
-        elif field == 'newsletters':
-            # we remove the Subscriber's newsletters (whose pub has_newsletter) and name not in json, and then add all
-            # the ones in the value JSON list that are missing.
-            s.updatefromcrm, pub_names = True, json.loads(value)
-            for pub in s.newsletters.filter(has_newsletter=True):
-                if pub.name in pub_names:
-                    pub_names.remove(pub.name)
-                else:
-                    s.newsletters.remove(pub)
-            for pub_name in pub_names:
-                try:
-                    s.newsletters.add(Publication.objects.get(name=pub_name))
-                except Publication.DoesNotExist:
-                    pass
-        elif field == 'area_newsletters':
-            # the same as above but for category newsletters
-            s.updatefromcrm, cat_names = True, json.loads(value)
-            for cat in s.category_newsletters.filter(has_newsletter=True):
-                if cat.name in cat_names:
-                    cat_names.remove(cat.name)
-                else:
-                    s.category_newsletters.remove(cat)
-            for category_name in cat_names:
-                try:
-                    s.category_newsletters.add(Category.objects.get(name=category_name))
-                except Category.DoesNotExist:
-                    pass
-        else:
-            changesubscriberfield(s, field, value)
-            s.updatefromcrm = True
-            s.save()
+        subscriber = Subscriber.objects.select_related('user').get(contact_id=contact_id)
+        if request.method == "PUT":
+            updatesubscriberemail(subscriber.user, newemail)
+            updatesubscriberfields(subscriber, fields)
+            updateuserfields(subscriber.user, name, last_name)
+        elif request.method == "POST":
+            return HttpResponseBadRequest("already exists", status=409)
     except Subscriber.DoesNotExist:
-        if email and field == 'email':
+        if settings.DEBUG:
+            print(f"DEBUG: sync API: Subscriber.DoesNotExist for contact_id={contact_id}")
+            print(f"DEBUG: sync API: request.data={request.data}")
+            print(f"DEBUG: sync API: fields={fields}")
+        if email or fields.get('email'):
             try:
-                u = User.objects.get(email__exact=email)
-                if User.objects.filter(email__exact=newemail).exists():
-                    return HttpResponseBadRequest('El email ya existe en otro usuario de la web')
-                changeuseremail(u, email, newemail)
+                email_to_use = email or fields.get('email')
+                u = User.objects.get(email__exact=email_to_use)
                 u.updatefromcrm = True
-                u.save()
+                if newemail:
+                    updatesubscriberemail(u, newemail)
+                if hasattr(u, 'subscriber'):
+                    u.subscriber.updatefromcrm = True
+                    updatesubscriberfields(u.subscriber, fields, contact_id)
+                updateuserfields(u, name, last_name)
             except User.DoesNotExist:
-                # No problem, tipically this scenario is achieved using offline sync tools.
-                pass
+                # create new user
+                # TODO: this except block is very similar to the one in the next "elif newemail:" block,
+                #       we should refactor this code to avoid repetition.
+                if settings.DEBUG:
+                    print(f"DEBUG: sync API: User.DoesNotExist for email={email_to_use}")
+                user_args = {
+                    "email": newemail, "username": newemail, "first_name": name or "", "last_name": last_name or ""
+                }
+                new_user = User(**user_args)
+                new_user.updatefromcrm = True
+                try:
+                    new_user.save()
+                    subscriber = new_user.subscriber
+                    subscriber.contact_id = contact_id
+                    subscriber.updatefromcrm = True
+                    subscriber.save()
+                except IntegrityError as inner_ie:
+                    mail_managers(
+                        'IntegrityError saving user', "%s: %s" % (email_to_use, strip_tags(str(inner_ie))), True
+                    )
+                    return HttpResponseBadRequest()
             except MultipleObjectsReturned:
-                mail_managers('Multiple email in users', email)
+                mail_managers('Multiple email in users', email_to_use, True)
                 return HttpResponseBadRequest()
             except IntegrityError as ie:
-                mail_managers('IntegrityError saving user', "%s: %s" % (email, strip_tags(str(ie))))
+                mail_managers('IntegrityError saving user', "%s: %s" % (email_to_use, strip_tags(str(ie))), True)
+                return HttpResponseBadRequest()
+        elif newemail:
+            try:
+                u = User.objects.get(email__exact=newemail)
+                if hasattr(u, 'subscriber') and u.subscriber.contact_id and u.subscriber.contact_id != contact_id:
+                    mail_managers('The user already exists', newemail, True)
+                    # return 409 (Conflict) when the contact_id is already associated with another user
+                    return HttpResponseBadRequest(status=409)
+            except User.DoesNotExist:
+                # create new user
+                if settings.DEBUG:
+                    print(f"DEBUG: sync API: User.DoesNotExist for email={newemail}")
+                user_args = {
+                    "email": newemail, "username": newemail, "first_name": name or "", "last_name": last_name or ""
+                }
+                new_user = User(**user_args)
+                new_user.updatefromcrm = True
+                new_user.save()
+                subscriber = new_user.subscriber
+                subscriber.contact_id = contact_id
+                subscriber.updatefromcrm = True
+                subscriber.save()
+            except MultipleObjectsReturned:
+                mail_managers('Multiple email in users', newemail, True)
+                return HttpResponseBadRequest()
+            except IntegrityError as ie:
+                mail_managers('IntegrityError saving user', "%s: %s" % (newemail, strip_tags(str(ie))), True)
                 return HttpResponseBadRequest()
     except IntegrityError as ie:
         mail_managers(
-            'IntegrityError saving User or Subscriber', "contact_id=%s, %s" % (contact_id, strip_tags(str(ie)))
+            'IntegrityError saving User or Subscriber',
+            "contact_id=%s, %s" % (contact_id, strip_tags(str(ie))),
+            True,
         )
         return HttpResponseBadRequest()
     except KeyError:
         pass
-    return HttpResponse("OK", content_type="application/json")
+    return JsonResponse({"message": "OK"})
+
+
+@never_cache
+@api_view(['DELETE'])
+@api_view_auth_decorator
+@permission_classes([HasAPIKey])
+def delete_user_from_crm(request):
+    """
+    Delete user API
+    TODO: can be migrated to users API
+    """
+    def validation_on_delete(user):
+        is_valid = True
+        if user.is_staff or user.is_superuser:
+            msg = "usuario 'staff'"
+            is_valid = False
+        else:
+            collector = Collector(using='default')
+            collector.collect([user])
+            safe_to_delete, msg_err = collector_analysis(collector.data)
+            if safe_to_delete:
+                msg = "eliminado correctamente"
+            else:
+                msg = f"conjunto de datos relacionados importante o demasiado grande: {msg_err}"
+                is_valid = False
+        return is_valid, msg
+
+    try:
+        contact_id = request.POST["contact_id"]
+        email = request.POST.get("email", "")
+    except KeyError:
+        return HttpResponseBadRequest("Missing argument contact_id")
+
+    user_to_delete = None
+    try:
+        subscriber = Subscriber.objects.select_related("user").get(contact_id=contact_id)
+        user_to_delete = subscriber.user
+    except Exception:
+        if email:
+            user_to_delete = get_object_or_404(User, email=email)
+        else:
+            raise Http404
+
+    if user_to_delete:
+        is_valid, msg = validation_on_delete(user_to_delete)
+        if is_valid:
+            user_to_delete.delete()
+        else:
+            return HttpResponseBadRequest(f"No es seguro remover este usuario/suscriptor: {msg}")
+
+    return JsonResponse({"msg": "OK"})
 
 
 @never_cache
@@ -1627,6 +1880,7 @@ def users_api_noauth(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def users_api(request):
     return users_api_noauth(request)
@@ -1634,6 +1888,7 @@ def users_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def email_check_api(request):
     """
@@ -1676,6 +1931,7 @@ def email_check_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def most_read_api(request):
     """
@@ -1709,6 +1965,7 @@ def most_read_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def last_read_api(request):
     """
@@ -1746,6 +2003,7 @@ def last_read_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def read_articles_percentage_api(request):
     """
@@ -1810,6 +2068,7 @@ def read_articles_percentage_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def user_comments_api(request):
     result = {'error': None}
@@ -1845,6 +2104,7 @@ def user_comments_api(request):
 
 @never_cache
 @api_view(['POST'])
+@api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def custom_api(request):
     msg = ''
@@ -2032,16 +2292,9 @@ def notification_preview(request, template, days=False):
             'days': days,
             'seller_fullname': 'Seller Fullname' if seller_fullname is None else seller_fullname,
         }
-        dir_prefix = getattr(settings, 'THEDAILY_NOTIFICATIONS_TEMPLATE_PREFIX', '')
-        result = render(request, dir_prefix + ('notifications/%s.html' % template), ctx)
+        result = render(request, get_app_template('notifications/%s.html' % template), ctx)
     except TemplateDoesNotExist:
-        if dir_prefix:
-            try:
-                result = render(request, 'notifications/%s.html' % template, ctx)
-            except TemplateDoesNotExist:
-                raise Http404
-        else:
-            raise Http404
+        raise Http404
     return result
 
 
@@ -2057,25 +2310,43 @@ def subscribe_notice_closed(request, key="subscribe"):
 
 @never_cache
 def phone_subscription(request):
-    """ Sends an email notification to a configured receipt with the information submitted in this view """
+    """
+    Sends an email notification to a configured receipt with the information submitted in this view.
+    But also can send too, if there is enough information collected in the session using other views when the user
+    selects the "subscription by phone" method, these views process the POST themselves and redirect here.
+
+    Note: this is the default subscription method in utopia-cms because no payment gateways are ready to include yet.
+    """
     template, thankyou_template, ctx = 'phone_subscription_form.html', "phone_subscription_thankyou.html", {}
     subject, mail_to = "Solicitud de suscripción", settings.SUBSCRIPTION_BY_PHONE_EMAIL_TO
 
     if request.POST:
-        form = request.POST
-        phone = form.get('phone')
-        text = "Nombre: %s\nTeléfono: %s\nContactar: %s" % (form.get('full_name'), phone, form.get('time'))
-
-        ctx["phone_blocklisted"] = phone_blisted = phone_is_blocklisted(phone)
-        if not phone_blisted:
-            ctx["already_done"] = phone_subscription_log_get4today(request)
-        if not any(ctx.values()):
-            message = Message(subject=subject, text=text, mail_from=settings.DEFAULT_FROM_EMAIL, mail_to=mail_to)
-            send_notification_message(subject, message, mail_to)
-            # TODO: handle send possible errors?
-            phone_subscription_log(request)
-
-        template = thankyou_template
+        form = PhoneSubscriptionForm(request.POST)
+        if form.is_valid():
+            phone_blisted = phone_is_blocklisted(request.POST.get("phone"))
+            if phone_blisted:
+                template, ctx["phone_blocklisted"] = thankyou_template, phone_blisted
+            else:
+                already_done = phone_subscription_log_get4today(request)
+                if already_done:
+                    template, ctx["already_done"] = thankyou_template, already_done
+                else:
+                    text = "Nombre: %s\nTeléfono: %s\nContactar: %s" % (
+                        form.cleaned_data.get('full_name'),
+                        form.cleaned_data.get('phone'),
+                        dict(form.fields['preferred_time'].choices)[form.cleaned_data.get('preferred_time')]
+                    )
+                    message = Message(
+                        subject=subject, text=text, mail_from=settings.DEFAULT_FROM_EMAIL, mail_to=mail_to
+                    )
+                    try:
+                        send_notification_message(subject, message, mail_to)
+                    except Exception:
+                        form.add_error(None, ValidationError(delivery_err))
+                    else:
+                        phone_subscription_log(request)
+                        template = thankyou_template
+        ctx["form"] = form
 
     elif request.session.get('notify_phone_subscription'):
         is_authenticated = request.user.is_authenticated
@@ -2089,30 +2360,38 @@ def phone_subscription(request):
         user.subscriber.province = subscription.province
         preferred_time = request.session.get('preferred_time')
 
-        ctx["phone_blocklisted"] = phone_blisted = phone_is_blocklisted(user.subscriber.phone)
-        if not phone_blisted:
-            ctx["already_done"] = phone_subscription_log_get4today(request, user)
-        if not any(ctx.values()):
-            user.subscriber.save()
-            message = Message(
-                subject=subject,
-                text=telephone_subscription_msg(user, preferred_time),
-                mail_from=settings.DEFAULT_FROM_EMAIL,
-                mail_to=mail_to,
-            )
-            send_notification_message(subject, message, mail_to)
-            # TODO: handle send possible errors?
-            phone_subscription_log(request, user)
+        phone_blisted = phone_is_blocklisted(user.subscriber.phone.as_e164)
+        if phone_blisted:
+            template, ctx["phone_blocklisted"] = thankyou_template, phone_blisted
+        else:
+            already_done = phone_subscription_log_get4today(request, user)
+            if already_done:
+                template, ctx["already_done"] = thankyou_template, already_done
+            else:
+                user.subscriber.save()
+                message = Message(
+                    subject=subject,
+                    text=telephone_subscription_msg(user, preferred_time),
+                    mail_from=settings.DEFAULT_FROM_EMAIL,
+                    mail_to=mail_to,
+                )
+                try:
+                    send_notification_message(subject, message, mail_to)
+                except Exception:
+                    ctx["form"] = {"non_field_errors": [delivery_err]}
+                else:
+                    phone_subscription_log(request, user)
+                    request.session.pop('notify_phone_subscription')
+                    # delete this subscription successful attemp in session
+                    request.session.pop('subscription', None)
+                    is_google = request.session.get('google-oauth2_state')
+                    display = not is_google and not is_authenticated
+                    template = thankyou_template
+                    ctx.update({'display': display, 'email': user.email})
 
-        request.session.pop('notify_phone_subscription')
-        # delete this subscription successful attemp in session
-        request.session.pop('subscription', None)
-        is_google = request.session.get('google-oauth2_state')
-        display = not is_google and not is_authenticated
-        template = thankyou_template
-        ctx.update({'display': display, 'email': user.email})
-
-    return render(request, settings.THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR + "/" + template, ctx)
+    if "form" not in ctx:
+        ctx["form"] = PhoneSubscriptionForm()
+    return render(request, get_app_template(template), ctx)
 
 
 def phone_subscription_log_get4today(request, user=None):
