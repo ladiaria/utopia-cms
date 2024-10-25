@@ -359,6 +359,10 @@ ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
 SEARCH_ELASTIC_USE_FUZZY = False  # Ignored when previous setting is True (not allowed by Elasticsearch).
 
+# mongodb database
+MONGODB_DATABASE = "utopia_cms"
+MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
+
 # apps
 
 # core
@@ -396,12 +400,12 @@ CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 # show or hide photo credits in article cards
 CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 
+# use job to build journalist absolute url
+CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
+
 # enable related articles in article detail
 CORE_ENABLE_RELATED_ARTICLES = True
 
-# mongodb database
-MONGODB_DATABASE = "utopia_cms"
-MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0
