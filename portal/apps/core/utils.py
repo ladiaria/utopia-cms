@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from builtins import object
 
 import re
@@ -7,7 +6,7 @@ from datetime import datetime
 from os.path import join
 from pytz import country_timezones, country_names
 import requests
-import importlib
+
 from django.conf import settings
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
@@ -172,14 +171,3 @@ def smart_quotes(value):
     value = re.sub("\"(?=[¿¡\‘\'\(\[ÑÁÉÍÓÚñáéíóú])", "“", value)
     value = re.sub("(?<=[?!\’\'\)ÑÁÉÍÓÚñáéíóú\.\%\]])\"", "”", value)
     return value
-
-
-def get_service():
-    service_module_name = getattr(settings, "SERVICE_MODULE", None)
-    service_class_name = getattr(settings, "SERVICE_CLASS", None)
-
-    if service_module_name and service_class_name:
-        service_module = importlib.import_module(service_module_name)
-        service_class = getattr(service_module, service_class_name)
-        service_instance = service_class()
-        return service_instance

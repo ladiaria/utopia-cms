@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
 from django.http import HttpResponsePermanentRedirect
@@ -10,32 +9,28 @@ from core.models import Journalist
 
 
 @never_cache
-def journalist_detail(request, journalist_job, journalist_slug):
-    return get_journalist_and_articles(journalist_job, journalist_slug, request)
-
-
-def get_journalist_and_articles(journalist_job, journalist_slug, request):
-    journalist_job = journalist_job[:2].upper()
-    other_job = 'CO' if journalist_job == 'PE' else 'PE'
-
+def journalist_detail(request, journalist_job, journalist_slug, template_name=None):
+    journalist_job, get_kwargs = journalist_job[:2].upper(), {"slug": journalist_slug}
+    if settings.CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB:
+        get_kwargs["job"] = journalist_job
     try:
-        journalist = Journalist.objects.get(slug=journalist_slug, job=journalist_job)
+        journalist = Journalist.objects.get(**get_kwargs)
     except Journalist.DoesNotExist:
-        journalist = get_object_or_404(Journalist, slug=journalist_slug, job=other_job)
-        return HttpResponsePermanentRedirect(journalist.get_absolute_url()), None
+        if settings.CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB:
+            # Maybe it has the other job, if so, redirect
+            get_kwargs["job"] = 'CO' if journalist_job == 'PE' else 'PE'
+            journalist = get_object_or_404(Journalist, **get_kwargs)
+            return HttpResponsePermanentRedirect(journalist.get_absolute_url())
+        raise
 
     articles = journalist.articles_core.filter(is_published=True)
-    paginator = Paginator(articles, 20)
-    page = request.GET.get('pagina')
+    paginator, page = Paginator(articles, 20), request.GET.get('pagina')
     try:
         articles = paginator.page(page)
     except PageNotAnInteger:
         articles = paginator.page(1)
     except (EmptyPage, InvalidPage):
         articles = paginator.page(paginator.num_pages)
-
     return render(
-        request,
-        getattr(settings, "CORE_JOURNALIST_DETAIL_TEMPLATE", 'core/templates/journalist.html'),
-        {'journalist': journalist, 'articles': articles},
+        request, template_name or 'core/templates/journalist.html', {'journalist': journalist, 'articles': articles}
     )

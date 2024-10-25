@@ -81,7 +81,6 @@ from .utils import (
     smart_quotes,
     update_article_url_in_coral_talk,
     get_category_template,
-    get_service,
 )
 
 
@@ -1088,12 +1087,11 @@ class Journalist(Model):
         super(Journalist, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        service = get_service()
-        if service and hasattr(service, "get_journalist_absolute_url"):
-            return service.get_journalist_absolute_url(self)
+        reverse_kwargs = {'journalist_slug': self.slug}
+        if getattr(settings, "CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB", True):
+            reverse_kwargs['journalist_job'] = self.get_job_display().lower()
         return reverse(
-            'journalist_detail',
-            kwargs={'journalist_job': self.get_job_display().lower(), 'journalist_slug': self.slug},
+            getattr(settings, "CORE_JOURNALIST_GET_ABSOLUTE_URL_NAME", 'journalist_detail'), kwargs=reverse_kwargs
         )
 
     def get_sections(self):
