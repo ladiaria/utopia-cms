@@ -17,7 +17,9 @@
     <div class="container container--narrow">
       <div class="section-detail__head">
         <h1 class="section-detail__title">{{ journalist.name }}</h1>
-        <p class="section-detail__description">{{ journalist.bio }}</p>
+        {% if journalist.bio %}
+          <p class="section-detail__description">{{ journalist.bio }}</p>
+        {% endif %}
       </div>
     </div>
   </div>
