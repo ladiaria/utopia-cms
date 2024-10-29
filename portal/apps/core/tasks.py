@@ -72,6 +72,9 @@ try:
     update_category_home_workers = get_workers_for_queue(settings.CELERY_TASK_ROUTES["update-category-home"]["queue"])
 except (AttributeError, KeyError):
     update_category_home_workers = []
+except OperationalError:
+    # TODO: check why this is outside of a function, and prevent an error if Celery isn't running
+    update_category_home_workers = []
 
 
 def update_category_home():
