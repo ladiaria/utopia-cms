@@ -208,13 +208,13 @@ MIDDLEWARE = (
 )
 
 # Localization default settings
-LANGUAGES = (("es", "Español"),)
+LANGUAGES = (("en", "English"),)
 USE_I18N = True
 USE_L10N = True
 
-LANGUAGE_CODE = "es"
-LOCAL_LANG = "es"
-LOCAL_COUNTRY = "UY"
+LANGUAGE_CODE = "en"
+LOCAL_LANG = "en"
+LOCAL_COUNTRY = "US"
 
 USE_TZ = True
 DATE_INPUT_FORMATS = (
