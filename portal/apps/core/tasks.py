@@ -68,9 +68,12 @@ def get_workers_for_queue(queue_name):
     return list(workers_handling_queue)
 
 
+# - workers may allways be the same, thats why this code is not inside a function, to be called only once per py proc.
+# - if you are not running celery you should set CELERY_QUEUES = {} in your local_settings.py, then CELERY_TASK_ROUTES
+#   will not be populated and a KeyError will be raised and handled here.
 try:
     update_category_home_workers = get_workers_for_queue(settings.CELERY_TASK_ROUTES["update-category-home"]["queue"])
-except (AttributeError, KeyError):
+except (AttributeError, KeyError, OperationalError):
     update_category_home_workers = []
 
 
