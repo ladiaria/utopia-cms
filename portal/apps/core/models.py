@@ -1088,7 +1088,7 @@ class Journalist(Model):
 
     def get_absolute_url(self):
         reverse_kwargs = {'journalist_slug': self.slug}
-        if getattr(settings, "CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB", True):
+        if settings.CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB:
             reverse_kwargs['journalist_job'] = self.get_job_display().lower()
         return reverse(
             getattr(settings, "CORE_JOURNALIST_GET_ABSOLUTE_URL_NAME", 'journalist_detail'), kwargs=reverse_kwargs
