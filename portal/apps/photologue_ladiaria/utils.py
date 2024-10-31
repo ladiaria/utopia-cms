@@ -20,8 +20,6 @@ def convert_to_webp(photo):
 
     # Define the correct path without modifying image.name directly
     original_path = Path(photo.image.name)
-
-
     webp_name = original_path.stem + ".webp"  # Keep just the filename with .webp extension
 
     # Save the new image using the correct path

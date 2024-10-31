@@ -42,6 +42,7 @@ class PhotoExtendedInline(admin.StackedInline):
     can_delete = False
     fieldsets = (
         ('Metadatos', {'fields': ('date_taken', 'type', 'photographer', 'agency')}),
+        ('Guardar como webp', { 'fields': ('enable_webp',) }),
         (
             'Recorte para versión cuadrada',
             {'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse',)},
