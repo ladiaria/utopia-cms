@@ -67,6 +67,7 @@ class PhotoExtended(models.Model):
     agency = models.ForeignKey(
         Agency, on_delete=models.CASCADE, verbose_name='agencia', related_name='photos', blank=True, null=True
     )
+    enable_webp = models.BooleanField("Convertir a webp", default=True)
 
     class Meta:
         verbose_name = 'configuración extra'
@@ -135,6 +136,9 @@ class PhotoExtended(models.Model):
 @receiver(post_save, sender=Photo)
 def photo_post_save_handler(sender, **kwargs):
     instance = kwargs['instance']
-    convert_to_webp(instance)
+
     if not hasattr(instance, 'extended'):
         PhotoExtended.objects.create(image=instance)
+    elif instance.extended.enable_webp:
+        print('jijiji')
+        convert_to_webp(instance)
