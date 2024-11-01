@@ -1,14 +1,18 @@
-{% extends "base.html" %}
+{% extends base_template %}
 {% load static crispy_forms_tags thedaily_tags core_tags %}
 
 {% block page_title %}Suscripción a {{ product }}{% title_joinparts '' %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
+{% endblock %}
 
 {% block body_class %}subscribe hide-mobile-nav{% endblock %}
 
 {% block navbar %}
   <div id="main-header">
     <nav class="subscription_black">
-      <a class="header-logo emergentes" href="{% url 'home' %}">
+      <a {% block navbar_a_attrs %}class="header-logo emergentes" href="{% url 'home' %}"{% endblock %}>
         <img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_WIDTH }}" height="42">
       </a>
     </nav>
@@ -117,11 +121,19 @@
 
 {% block footer_block %}{% include 'footer_simple.html' with disable_signup=True %}{% endblock %}
 
+{% block materialize_scripts %}
+  <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
+  <script defer src="{% static 'materialize/js/modal.js' %}"></script>
+{% endblock %}
+
 {% block javascript %}
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
+  <script src="{{ intl_tel_input_cdn }}js/intlTelInput.min.js"></script>
+  <script src="{% static 'js/phone_widget.js' %}"></script>
   <script>
     $(function(){
-      $('label[for="id_terms_and_conds_accepted"] a').click(function(event){
+      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}js/utils.js");{# init phone widget #}
+      $('label[for="id_terms_and_conds_accepted"] a').on("click", function(event){
         event.preventDefault();
         $('.modal').modal('open');
       });
