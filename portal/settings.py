@@ -275,6 +275,7 @@ TEMPLATES = [
                 "context_processors.site",
                 "context_processors.publications",
                 "context_processors.gtm",
+                "context_processors.gpt_admanager",
                 "context_processors.main_menus",
                 "context_processors.article_content_type",
                 "django.template.context_processors.static",

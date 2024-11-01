@@ -55,6 +55,16 @@
       {% endif %}
     {% endif %}
 
+    {% if GPT_SLOTS_ENABLED %}
+      <!-- Google Publisher Tag -->
+      {% block gpt_ad_head %}
+        <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+        <script>window.googletag = window.googletag || {cmd: []};</script>
+        {# use block.super to include ad slots #}
+      {% endblock %}
+      <!-- End Google Publisher Tag -->
+    {% endif %}
+
     <!-- Title and description -->
     <title>{% spaceless %}{% block page_title %}{% endblock %}{% endspaceless %}</title>
     <meta name="description" content="{% spaceless %}
