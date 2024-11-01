@@ -55,6 +55,15 @@
     line-height: 22px;
     font-size: 18px;
     display: block;
+
+    &__w-border {
+      font-size: px-to-rem(18px);
+      font-weight: 700;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #d9d9d9;
+      display: block;
+    }
   }
 
   &__info {
@@ -64,6 +73,31 @@
     margin: 0 0 10px;
     p:last-of-type {
       margin-bottom: 0;
+    }
+  }
+
+  &__activate-nl {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 16px;
+    background: #262626;
+    padding: 6px 8px;
+
+    > p {
+      font-family: "Roboto", sans-serif;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      gap: 4px;
+      color: #fff;
+      font-weight: 600;
+      line-height: normal;
+      margin: 0;
+
+      svg {
+        height: auto;
+      }
     }
   }
 
