@@ -7,31 +7,30 @@
   }
 
   &.pwa {
-      .dismiss {
-          margin:10px 0 0;
-        a {
-            display: inline-block;
-            font-size: 14px;
-            text-decoration: underline;
+    .dismiss {
+      margin: 10px 0 0;
+      a {
+        display: inline-block;
+        font-size: 14px;
+        text-decoration: underline;
 
-            &:hover {
-                text-decoration: none;
-            }
-
+        &:hover {
+          text-decoration: none;
         }
       }
-      .dismissed {
-        font-size: 14px;
-        line-height: 17px;
+    }
+    .dismissed {
+      font-size: 14px;
+      line-height: 17px;
 
-        .undo {
-            display: inline-block;
-            margin-top:10px;
+      .undo {
+        display: inline-block;
+        margin-top: 10px;
 
-            &:hover {
-                text-decoration: none;
-            }
+        &:hover {
+          text-decoration: none;
         }
+      }
     }
   }
 }
@@ -42,7 +41,10 @@
   max-width: 300px;
   padding: 26px;
   border-radius: 2px;
-  box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14),0 3px 1px -2px rgba(0,0,0,0.12),0 1px 5px 0 rgba(0,0,0,0.2);
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
+    0 3px 1px -2px rgba(0, 0, 0, 0.12),
+    0 1px 5px 0 rgba(0, 0, 0, 0.2);
   margin-bottom: 8px;
   display: inline-block;
   border-radius: 10px;
@@ -66,14 +68,14 @@
   }
 
   &__login {
-    margin-top:30px;
+    margin-top: 30px;
 
     a:not(.ut-btn) {
       text-decoration: none;
       color: $off-black;
     }
     p {
-      margin:0 0 10px;
+      margin: 0 0 10px;
       font-family: "Roboto", sans-serif;
       color: $off-black;
     }
@@ -81,17 +83,17 @@
 
   &.pwa {
     .ld-subscribe-box__title {
-        margin-bottom: 10px;
+      margin-bottom: 10px;
     }
     .ld-subscribe-box__info {
-        font-size: 14px;
-        line-height: 17px;
-        margin-bottom: 15px;
+      font-size: 14px;
+      line-height: 17px;
+      margin-bottom: 15px;
     }
 
     .icon {
-        display: inline-block;
-        margin-bottom: 18px;
+      display: inline-block;
+      margin-bottom: 18px;
     }
   }
 }
