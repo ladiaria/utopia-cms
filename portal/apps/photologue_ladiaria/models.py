@@ -9,6 +9,7 @@ from django.dispatch import receiver
 
 from photologue.models import Photo, PhotoSize, get_storage_path
 
+from .utils import convert_to_webp
 
 class Agency(models.Model):
     name = models.CharField('nombre', max_length=50, unique=True)
@@ -66,6 +67,7 @@ class PhotoExtended(models.Model):
     agency = models.ForeignKey(
         Agency, on_delete=models.CASCADE, verbose_name='agencia', related_name='photos', blank=True, null=True
     )
+    enable_webp = models.BooleanField("Convertir a webp", default=True)
 
     class Meta:
         verbose_name = 'configuración extra'
@@ -134,5 +136,9 @@ class PhotoExtended(models.Model):
 @receiver(post_save, sender=Photo)
 def photo_post_save_handler(sender, **kwargs):
     instance = kwargs['instance']
+
     if not hasattr(instance, 'extended'):
         PhotoExtended.objects.create(image=instance)
+    elif instance.extended.enable_webp:
+        print('jijiji')
+        convert_to_webp(instance)
