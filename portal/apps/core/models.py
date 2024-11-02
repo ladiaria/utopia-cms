@@ -1245,6 +1245,7 @@ class ArticleBase(Model, CT):
         null=True,
     )
     is_published = BooleanField('publicado', default=True, db_index=True)
+    to_be_published = BooleanField('programar publicación', default=False, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField('última actualización', auto_now=True)
@@ -1325,6 +1326,8 @@ class ArticleBase(Model, CT):
         nowval = now()
 
         if self.is_published:
+            if self.to_be_published:
+                raise Exception("No se permite programar publicación de un artículo ya publicado")
             if not self.date_published:
                 self.date_published = nowval
             if not settings.DEBUG:
@@ -1332,6 +1335,14 @@ class ArticleBase(Model, CT):
                     ping_google()
                 except Exception:
                     pass
+        elif self.to_be_published:
+            if not self.date_published:
+                raise Exception("Para programar la publicación de un artículo se debe especificar la fecha")
+            elif self.date_published <= nowval:
+                raise Exception("La fecha de publicación programada no puede estar en el pasado")
+            else:
+                # TODO: update/create schedule task associated with this article
+                pass
         else:
             self.date_published = None
 
@@ -1351,9 +1362,13 @@ class ArticleBase(Model, CT):
             targets = targets.exclude(id=self.id)
         if targets:
             # TODO: IntegrityError may be better exception to raise
-            raise Exception('Ya existe un artículo en ese mes con el mismo título.')
+            raise Exception('Ya existe un artículo en ese mes con el mismo título')
 
         super(ArticleBase, self).save(*args, **kwargs)
+
+        if not self.to_be_published:
+            # TODO: delete any scheduled task associated with this article
+            pass
 
     def is_photo_article(self):
         return self.type == settings.CORE_PHOTO_ARTICLE
