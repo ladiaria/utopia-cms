@@ -32,6 +32,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.utils.text import Truncator
+from django.utils.timezone import now
 
 from .models import (
     Article,
@@ -352,6 +353,12 @@ class ArticleAdminModelForm(ModelForm):
             self.initial['pw_radio_choice'] = 'public_true'
         else:
             self.initial['pw_radio_choice'] = 'none'
+        nowval = now()
+        if not self.instance.pk:
+            self.initial['date_published'] = nowval
+        self.fields['date_published'].widget.attrs['min'] = nowval.isoformat()
+        self.fields['date_published'].required = False
+        self.fields['date_published'].label = ""
 
     def clean_tags(self):
         """
@@ -370,21 +377,29 @@ class ArticleAdminModelForm(ModelForm):
         # TODO: "add" errors right way (as django doc says) instead of raising them
         if self.errors:
             raise ValidationError("")
+
         cleaned_data = super().clean()
         if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
             raise ValidationError("La configuración necesaria para publicar en IPFS no está definida.")
-        date_value = (
-            cleaned_data.get('date_published') if cleaned_data.get('is_published')
-            else cleaned_data.get('date_created')
-        ) or timezone.now()
+
+        # TODO: DRY (Article.save does the same logic)
         nowval = timezone.now()
         date_published = cleaned_data.get('date_published')
-        is_published = cleaned_data.get('is_published')
-        # Handle the logic for publishing
-        if is_published and date_published and date_published > nowval:
-            self.add_error('date_published', 'No se puede publicar inmediatamente con fecha de publicacion futura')
-        elif not is_published and date_published and date_published <= nowval:
-            cleaned_data['is_published'] = True  # Automatically publish if the date is in the past
+        is_published, to_be_published = cleaned_data.get('is_published'), cleaned_data.get('to_be_published')
+
+        if is_published:
+            if to_be_published:
+                self.add_error(None, 'No se permite programar publicación de un artículo ya publicado')
+        elif to_be_published:
+            if not date_published:
+                self.add_error(None, 'Para programar la publicación de un artículo se debe especificar la fecha')
+            elif date_published <= nowval:
+                self.add_error(None, 'La fecha de publicación programada no puede estar en el pasado')
+
+        if self.errors:
+            raise ValidationError("")
+
+        date_value = (date_published if is_published else cleaned_data.get('date_created')) or nowval
         # conversion to UTC is needed, it's not done automatically like Article.save does.
         # (save gets values from obj and not from the form), TODO: improve or investigate to explain better the cause.
         date_value = timezone.localtime(
@@ -473,17 +488,18 @@ class ArticleAdmin(VersionAdmin):
         'get_sections',
         'creation_date',
         'publication_date',
-        'is_published',
+        "published_status",
         has_photo,
         'surl',
     )
     list_select_related = True
-    list_filter = ('type', 'date_created', 'is_published', 'date_published', 'newsletter_featured', 'byline')
+    list_filter = (
+        'type', 'date_created', 'is_published', 'to_be_published', 'date_published', 'newsletter_featured', 'byline'
+    )
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
     ordering = ('-date_created',)
     raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
-    readonly_fields = ('date_published',)
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
     fieldsets = (
         (
@@ -508,7 +524,7 @@ class ArticleAdmin(VersionAdmin):
                 'classes': ('wide',),
             },
         ),
-        ('Metadatos', {'fields': ('is_published', 'date_published', 'tags', 'main_section')}),
+        ('Metadatos', {'fields': ('is_published', 'to_be_published', 'date_published', 'tags', 'main_section')}),
         ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse',)}),
         ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse',)}),
         (
@@ -535,6 +551,7 @@ class ArticleAdmin(VersionAdmin):
         if 'apply' in request.POST:
             success_counter, error_counter = 0, 0
             for article in queryset:
+                # TODO: decide what to do if the article is scheduled to be published
                 article.is_published = not article.is_published
                 try:
                     article.save()
@@ -568,9 +585,18 @@ class ArticleAdmin(VersionAdmin):
     def creation_date(self, obj):
         return timezone.template_localtime(obj.date_created).strftime("%d %b %Y %H:%M")
 
+    @admin.display(description='Estado')
+    def published_status(self, obj):
+        result = "Borrador"
+        if obj.is_published:
+            result = "" if obj.to_be_published else "Publicado"
+        elif obj.to_be_published:
+            result = "Programado"
+        return result
+
     @admin.display(description='Publicado', ordering='date_published')
     def publication_date(self, obj):
-        if obj.date_published:
+        if obj.is_published and obj.date_published:
             return timezone.template_localtime(obj.date_published).strftime("%d %b %Y %H:%M")
         else:
             return ''
