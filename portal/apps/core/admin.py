@@ -546,19 +546,21 @@ class ArticleAdmin(VersionAdmin):
         ),
     )
 
-    @admin.action(description="Publicar o despublicar según valor del campo 'publicado'")
+    @admin.action(description="Intercambiar estado de publicación: publicado <-> borrador")
     def toggle_published(self, request, queryset):
         if 'apply' in request.POST:
             success_counter, error_counter = 0, 0
-            for article in queryset:
-                # TODO: decide what to do if the article is scheduled to be published
-                article.is_published = not article.is_published
-                try:
-                    article.save()
-                except Exception:
-                    error_counter += 1
-                else:
-                    success_counter += 1
+            if queryset.filter(to_be_published=True).exists():
+                self.message_user(request, "No se pueden seleccionar artículos programados para ejecutar esta acción")
+            else:
+                for article in queryset:
+                    article.is_published = not article.is_published
+                    try:
+                        article.save()
+                    except Exception:
+                        error_counter += 1
+                    else:
+                        success_counter += 1
             if success_counter:
                 self.message_user(request, "Fueron modificados {} artículo(s)".format(success_counter))
             if error_counter:
