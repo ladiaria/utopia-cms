@@ -147,7 +147,10 @@ class Beneficio(models.Model):
 
 
 class Registro(models.Model):
-    subscriber = models.ForeignKey(Subscriber, on_delete=models.CASCADE, verbose_name='suscriptor')
+    subscriber = models.ForeignKey(
+        Subscriber, on_delete=models.CASCADE, verbose_name='suscriptor', null=True, blank=True
+    )
+    email = models.EmailField(verbose_name='email', null=True, blank=True)
     benefit = models.ForeignKey(Beneficio, on_delete=models.CASCADE, verbose_name='beneficio')
     issued = models.DateTimeField(auto_now_add=True, verbose_name='creado')
     used = models.DateTimeField(null=True, blank=True, verbose_name='utilizado')
@@ -158,11 +161,18 @@ class Registro(models.Model):
         ]
 
     def subscriber_email(self):
-        return self.subscriber.user.email
+        return self.email or (self.subscriber.user.email if self.subscriber else None)
 
     def clean(self):
-        # Skip checks if we're just marking the registro as used
-        if not self.used:
+        if not self.subscriber and not self.email:
+            raise ValidationError("Either subscriber or email must be provided.")
+
+        # Skip checks if this is an existing instance (allows removing 'used' status)
+        if self.pk:
+            return
+
+        # Check quotas only for new registros
+        if self.subscriber:
             # Check subscriber quota for this specific benefit
             subscriber_benefit_registros = Registro.objects.filter(
                 subscriber=self.subscriber, benefit=self.benefit
@@ -182,11 +192,11 @@ class Registro(models.Model):
                     f"Subscriber has reached the general quota for this circuit ({self.benefit.circuit.general_quota})."
                 )
 
-            # Check benefit's overall limit
-            if self.benefit.limit is not None:
-                total_benefit_registros = Registro.objects.filter(benefit=self.benefit).count()
-                if total_benefit_registros >= self.benefit.limit:
-                    raise ValidationError(f"The benefit has reached its overall limit ({self.benefit.limit}).")
+        # Check benefit's overall limit, regardless of subscriber or email
+        if self.benefit.limit is not None:
+            total_benefit_registros = Registro.objects.filter(benefit=self.benefit).count()
+            if total_benefit_registros >= self.benefit.limit:
+                raise ValidationError(f"The benefit has reached its overall limit ({self.benefit.limit}).")
 
     def use_registro(self):
         self.used = timezone.now()
@@ -234,7 +244,10 @@ class Registro(models.Model):
     qr_code_image.short_description = 'QR Code'
 
     def __str__(self):
-        return f"{self.subscriber.user.username} - {self.benefit.name}"
+        if self.subscriber:
+            return f"{self.subscriber.user.username} - {self.benefit.name}"
+        else:
+            return f"{self.email} - {self.benefit.name}"
 
 
 class Url(models.Model):

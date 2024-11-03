@@ -1,11 +1,25 @@
 {% extends "base.html" %}
 
+{% block title %}Verificación QR{% endblock %}
+
 {% block body_class %}comunidad{% endblock %}
+
+{% block css %}
+  <style>
+    h1 {
+      font-size: 1.5rem;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .message {
+
+    }
+  </style>
+{% endblock css %}
 
 {% block content %}
   <h1>Verificación de código QR</h1>
-  <p>{{ message }}</p>
-  {% if extra_message %}
-    <p>{{ extra_message }}</p>
-  {% endif %}
+  <p class="message">{{ message }}</p>
 {% endblock %}
+
+{% block footer_block %}{% endblock %}

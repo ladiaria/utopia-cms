@@ -882,13 +882,31 @@ class JournalistForm(ModelForm):
 class JournalistAdmin(ModelAdmin):
     form = JournalistForm
     list_display = ('name', 'job', published_articles)
-    list_filter = ('job', )
+    list_filter = ('job',)
     search_fields = ['name']
     fieldsets = (
         (None, {'fields': ('name', 'email', 'image', 'bio', 'job', 'sections')}),
         (
             'Redes sociales',
-            {'description': 'Ingrese nombre de usuario de cada red social.', 'fields': ('fb', 'tt', 'ig')},
+            {
+                'description': 'Ingrese enlace completo al respectivo perfil.(ej: https://example.com/perfil)',
+                'fields': (
+                    'bs',
+                    'fb',
+                    'tt',
+                    'ig',
+                    'mtdn',
+                    'thds',
+                    'ytb',
+                    'lnkin',
+                    'tktk',
+                    'tr',
+                    'tw',
+                    'other_one',
+                    'other_two',
+                    'other_three',
+                ),
+            },
         ),
     )
 

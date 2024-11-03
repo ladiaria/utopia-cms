@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Verificación QR{% endblock %}
+
+{% block body_class %}comunidad{% endblock %}
+
+{% block css %}
+  <style>
+    .container {
+      width: 100%;
+    }
+    h1 {
+      font-size: 1.5rem;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    form#scan-qr-form {
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    form#scan-qr-form input {
+      text-align: center;
+      border: none;
+      font-size: 1.5rem;
+      font-weight: 900;
+      margin-top: 25px;
+      margin-bottom: 0;
+      padding-top: 20px;
+      padding-bottom: 8px;
+      border-top: 1px solid #DDD;
+      height: auto;
+      min-height: 0;
+    }
+    #benefit-name {
+      text-align: center;
+      margin: 0;
+    }
+    #benefit-name.error {
+      color: #E61A1A;
+      font-weight: 700;
+    }
+    #submit-button {
+      width: 148px;
+      height: 45px;
+      display: flex;
+      justify-content: center;
+      align-items:center;
+      margin: 15px auto 0;
+    }
+    #submit-button svg {
+      display: none;
+    }
+    #submit-button:disabled {
+      background-color: #d9d9d9;
+    }
+    #submit-button.with-tick svg {
+      display: inline;
+      margin-right: 0;
+    }
+    #submit-button.with-tick span {
+      display: none;
+    }
+    #qr-scanned-successfully {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+  </style>
+{% endblock css %}
+
+{% block content %}
+  <h1>Escanear QR</h1>
+  <div id="qr-reader" class="qr-input"></div>
+  <form action="{% url 'scan_qr' %}" id="scan-qr-form" method="post">
+    {% csrf_token %}
+    {{ form.code }}
+    <p id="benefit-name" class="benefit-name"></p>
+    <button type="submit" id="submit-button" class="ut-btn" disabled>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M4.125 13.125L9.375 18.375L19.875 7.125" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Confirmar</span>
+    </button>
+    <p id="qr-scanned-successfully"></p>
+  </form>
+{% endblock %}
+
+{% block javascript %}
+  <script src="{% static 'js/html5-qrcode.min.js' %}"></script>
+  <script>
+    function onScanSuccess(decodedText, decodedResult) {
+      if (decodedText.startsWith("{{ SITE_URL }}comunidad/verify-registro/")) {
+        // we just need to keep the last part of the url after the verify-registro and add it to the input field
+        let urlParts = decodedText.split('/');
+        let code = urlParts[urlParts.length - 2]; // Get the second to last part (QDx3rmg0)
+        document.getElementById("id_code").value = code;
+        const benefitName = document.getElementById("benefit-name");
+        const submitButton = document.getElementById("submit-button");
+
+        $.ajax({
+          type: 'POST',
+          url: "{% url 'check_qr_code' %}", // Replace with the URL for the check_qr_code view
+          data: {
+              'code': code,  // Send the scanned QR code
+              'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value // Add CSRF token
+          },
+          success: function(response) {
+              // On success, update the div with the benefit's name
+              benefitName.innerText = response.name;
+              benefitName.classList.remove("error");
+
+              // Activate the submit button
+              submitButton.disabled = false;
+              submitButton.classList.remove("with-tick");
+
+              document.getElementById("qr-scanned-successfully").innerHTML = "";
+          },
+          error: function(xhr, status, error) {
+            // Handle error response properly by parsing the JSON error message
+            let response = JSON.parse(xhr.responseText);
+
+            // Check for different types of errors and display the message accordingly
+            if (xhr.status === 404) {
+                benefitName.innerText = response.error || "Código QR no encontrado.";
+                benefitName.classList.add("error");
+            } else if (xhr.status === 400) {
+                benefitName.innerText = response.error || "Código QR inválido.";
+                benefitName.classList.add("error");
+            } else {
+                benefitName.innerText = "Ocurrió un error. Por favor, intenta de nuevo.";
+                benefitName.classList.add("error");
+            }
+            document.getElementById("qr-scanned-successfully").innerHTML = "";
+
+            // Disable the submit button in case of an error
+            document.getElementById("submit-button").disabled = true;
+          }
+        });
+      }
+      else {
+        document.getElementById("error-message").innerHTML = "Código QR inválido";
+      }
+    }
+
+  function onScanFailure(error) {
+    // console.warn(`Code scan error = ${error}`);
+  }
+
+  let html5QrCode = new Html5Qrcode("qr-reader");
+  html5QrCode.start(
+      { facingMode: "environment" },  // Use the rear camera
+      {
+          fps: 10,  // Scans per second
+          qrbox: { width: 150, height: 150 }  // Define the scanning area
+      },
+      onScanSuccess,
+      onScanFailure
+  );
+
+  document.getElementById("scan-qr-form").addEventListener("submit", function(event) {
+    event.preventDefault(); // Prevent form submission and page reload
+
+    const form = this;
+    const formData = new FormData(form); // Prepare form data
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken, // Add CSRF token to the headers
+            'X-Requested-With': 'XMLHttpRequest' // Ensure it's recognized as an AJAX request
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Handle the server's response
+        const messageDiv = document.getElementById("qr-scanned-successfully");
+        const submitBtn = document.getElementById("submit-button")
+
+        if (data.success) {
+            messageDiv.innerText = data.message;
+            messageDiv.classList.remove('error');
+            messageDiv.classList.add('success');
+            submitBtn.disabled = true; // Optionally disable submit after success
+            submitBtn.classList.add("with-tick")
+
+        } else {
+            messageDiv.innerText = data.message;
+            messageDiv.classList.remove('success');
+            messageDiv.classList.add('error');
+        }
+    })
+    .catch(error => {
+        //console.error('Error:', error);
+    });
+  });
+  </script>
+{% endblock javascript %}
+
+{% block footer_block %}{% endblock %}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from django.contrib.admin import site, ModelAdmin, TabularInline
-
+from django.contrib.admin import site, ModelAdmin, TabularInline, SimpleListFilter
+from django.utils.translation import gettext_lazy as _
 from .models import SubscriberArticle, Circuito, Socio, Beneficio, Registro, Url as ComunidadUrl, Recommendation
 
 
@@ -12,21 +12,49 @@ class SocioAdmin(ModelAdmin):
     raw_id_fields = ('user',)
 
 
+class UsedFilter(SimpleListFilter):
+    title = _('Usado')  # The title for the filter
+    parameter_name = 'used_null'  # The query parameter for the filter
+
+    def lookups(self, request, model_admin):
+        # Defining the filter options
+        return (
+            ('yes', _('Used')),
+            ('no', _('Not Used')),
+        )
+
+    def queryset(self, request, queryset):
+        # Filtering logic based on the selected filter option
+        if self.value() == 'yes':
+            return queryset.exclude(used__isnull=True)
+        if self.value() == 'no':
+            return queryset.filter(used__isnull=True)
+        return queryset
+
+
 class RegistroAdmin(ModelAdmin):
     change_form_template = 'comunidad/admin/registro/change_form.html'
 
     raw_id_fields = ('subscriber',)
-    list_display = ('subscriber', 'subscriber_email', 'benefit', 'issued', 'used', 'qr_code_small')
-    readonly_fields = ('qr_code_image', 'issued', 'used')
-    list_filter = ('benefit',)
-    search_fields = ('subscriber__user__email', 'benefit__slug')
+    list_display = ('id', 'subscriber', 'subscriber_email', 'benefit', 'issued', 'used', 'qr_code_small')
+    readonly_fields = ('qr_code_image', 'issued')
+    list_filter = ('benefit', UsedFilter)
+    search_fields = ('subscriber__user__email', 'email')
 
     def qr_code_small(self, obj):
-        return obj.qr_code_image(size=60)  # TODO: make a setting to adjust the size as needed
+        if obj and obj.pk:
+            return obj.qr_code_image(size=60)  # TODO: make a setting to adjust the size as needed
+        else:
+            return "Save the object to see the QR code"
+
     qr_code_small.short_description = 'QR'
 
     def qr_code_image(self, obj):
-        return obj.qr_code_image(size=150)  # Larger size for detail view
+        if obj and obj.pk:
+            return obj.qr_code_image(size=150)  # Larger size for detail view
+        else:
+            return "Save the object to see the QR code"
+
     qr_code_image.short_description = 'QR Code'
 
 
