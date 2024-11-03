@@ -77,11 +77,8 @@ class ArticleRelForm(ModelForm):
 
 
 class TopArticleRelBaseInlineFormSet(BaseInlineFormSet):
-
-    def __init__(self, *args, **kwargs):
-        # TODO: explain or remove commented code
-        super().__init__(*args, **kwargs)
-        # self.can_delete = False
+    # TODO: maybe useful to save in order
+    pass
 
 
 TopArticleRelInlineFormSet = inlineformset_factory(
@@ -90,23 +87,13 @@ TopArticleRelInlineFormSet = inlineformset_factory(
 
 
 class HomeTopArticleInline(TabularInline):
-    # TODO: explain or remove commented code
     model = ArticleRel
     extra = 0
-    # max_num = 0
     ordering = ('top_position',)
     fields = ('article', 'section', 'top_position', "home_top")
-    # readonly_fields = ('section',)
     raw_id_fields = ('article',)
     verbose_name_plural = 'artículos'
     formset = TopArticleRelInlineFormSet
-    # classes = ('dynamic-order',)
-
-    """
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(home_top=True)
-    """
 
     class Media:
         # jquery loaded again (admin uses custom js namespaces and we use jquery-ui)
@@ -129,27 +116,9 @@ class SectionArticleRelForm(ModelForm):
 SectionArticleRelInlineFormSet = inlineformset_factory(Edition, ArticleRel, form=SectionArticleRelForm)
 
 
-"""def section_top_article_inline_class(section):
-
-    class SectionTopArticleInline(HomeTopArticleInline):
-        max_num = 20
-        verbose_name_plural = 'Artículos en %s [[%d]]' % (section.name, section.id)
-        fields = ('article', 'position', 'home_top')
-        raw_id_fields = ('article', )
-        ordering = ('position', )
-        formset = SectionArticleRelInlineFormSet
-
-        def get_queryset(self, request):
-            # calling super of HomeTopArticleInline to avoid top=true filter
-            qs = super(HomeTopArticleInline, self).get_queryset(request)
-            return qs.filter(section=section)
-
-    return SectionTopArticleInline"""
-
-
 @admin.register(Edition, site=site)
 class EditionAdmin(ModelAdmin):
-    # TODO: [doing: directly the last item of this list] This class should be improved/fixed:
+    # TODO: [doing: directly the last item of this list] "it must be...":
     #       - section_id missing for "new" ArticleRel rows, this can be fixed handling the js event, we did this some
     #         time ago in the article admin js.
     #       - the header cells for each fieldset get broken when a row has a new td because of errors (no position)
@@ -171,13 +140,6 @@ class EditionAdmin(ModelAdmin):
         if obj:
             self.publication = obj.publication
         return super().get_form(request, obj, **kwargs)
-
-    """def get_inline_instances(self, request, obj=None):
-        self.inlines = [HomeTopArticleInline]
-        if self.publication:
-            for section in self.publication.section_set.order_by('home_order'):
-                self.inlines.append(section_top_article_inline_class(section))
-        return super().get_inline_instances(request)"""
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'cover':
