@@ -363,6 +363,10 @@ ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
 SEARCH_ELASTIC_USE_FUZZY = False  # Ignored when previous setting is True (not allowed by Elasticsearch).
 
+# mongodb database
+MONGODB_DATABASE = "utopia_cms"
+MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
+
 # apps
 
 # core
@@ -400,12 +404,11 @@ CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 # show or hide photo credits in article cards
 CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 
+# use job to build journalist absolute url
+CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
+
 # enable related articles in article detail
 CORE_ENABLE_RELATED_ARTICLES = True
-
-# mongodb database
-MONGODB_DATABASE = "utopia_cms"
-MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
 # push notifications
 CORE_PUSH_NOTIFICATIONS_OFFER = True  # offer to allow push notifications on all pages
@@ -426,13 +429,16 @@ CORE_PUSH_NOTIFICATIONS_OPTIONS = {
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: values greater than 0 is not fully supported (only AMP endpoints need updates)
 SIGNUPWALL_RISE_REDIRECT = True
+SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily
+# TODO: write comments to explain the usage (for the uncommented ones)
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
 PROMO_EMAIL_SUBJECT = "Nueva promoción"
 SUBSCRIPTION_EMAIL_TO = [NOTIFICATIONS_TO_ADDR]
 SUBSCRIPTION_BY_PHONE_EMAIL_TO = SUBSCRIPTION_EMAIL_TO
 MAX_USERS_API_SESSIONS = 3
+THEDAILY_GOOGLE_OAUTH2_ASK_PHONE = False
 THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID = None
 THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
     ("DDIGM", "Suscripción digital"),
@@ -440,6 +446,7 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
 )
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
@@ -546,6 +553,10 @@ PWA_SERVICE_WORKER_VERSION = 1
 # Useful settings for testing (test management command, should be overriden in local_test_settings.py if necessary)
 TESTING_CHROME_HEADLESS = True
 TESTING_PORT = 8000
+# A flag to tell us that we must use the default django functions to send emails because these emails will be read by
+# tests that validate the emails received, for example, take the token from the signup validation email.
+# Override to True only if you set an email backend for test that is not SMTP.
+LOCAL_EMAIL_BACKEND_TEST = False
 
 # defaults that will be assigned after local settings import
 COMPRESS_OFFLINE_CONTEXT = {}
@@ -613,3 +624,7 @@ if CRM_UPDATE_USER_CREATE_CONTACT is None:
 if ENV_HTTP_BASIC_AUTH and not locals().get("API_KEY_CUSTOM_HEADER"):
     # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
     API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
+
+# thedaily debug signals
+if THEDAILY_DEBUG_SIGNALS is None:
+    THEDAILY_DEBUG_SIGNALS = locals().get("DEBUG", False)
