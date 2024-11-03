@@ -5,6 +5,7 @@ import locale
 import tempfile
 import operator
 import json
+import zoneinfo
 from collections import OrderedDict
 from requests.exceptions import ConnectionError
 from kombu.exceptions import OperationalError as KombuOperationalError
@@ -2548,6 +2549,7 @@ def get_current_edition(publication=None):
     """
     nowval = now()
     today, filters = nowval.date(), {}
+    nowval = make_aware(nowval, timezone=zoneinfo.ZoneInfo('America/Montevideo'))
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
     publishing = make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
 
