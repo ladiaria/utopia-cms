@@ -168,7 +168,10 @@
     "name": "test journalist",
     "job": "PE",
     "sections": [],
-    "slug": "test-journalist"
+    "slug": "test-journalist",
+    "bio": "Journalist bio for test purpouses",
+    "ig": "https://www.instagram.com/johndoe",
+    "bs": "https://www.bluesky.com/johndoe"
   }
 },
 {
@@ -178,7 +181,9 @@
     "name": "test columnist",
     "job": "CO",
     "sections": [],
-    "slug": "test-columnist"
+    "slug": "test-columnist",
+    "bio": "Journalist bio for test purpouses",
+    "ig": "https://www.instagram.com/alicedoe"
   }
 },
 {
