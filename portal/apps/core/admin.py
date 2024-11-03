@@ -79,8 +79,9 @@ class ArticleRelForm(ModelForm):
 class TopArticleRelBaseInlineFormSet(BaseInlineFormSet):
 
     def __init__(self, *args, **kwargs):
+        # TODO: explain or remove commented code
         super().__init__(*args, **kwargs)
-        ##self.can_delete = False
+        # self.can_delete = False
 
 
 TopArticleRelInlineFormSet = inlineformset_factory(
@@ -89,20 +90,23 @@ TopArticleRelInlineFormSet = inlineformset_factory(
 
 
 class HomeTopArticleInline(TabularInline):
+    # TODO: explain or remove commented code
     model = ArticleRel
     extra = 0
-    # #max_num = 0
+    # max_num = 0
     ordering = ('top_position',)
     fields = ('article', 'section', 'top_position', "home_top")
-    # #readonly_fields = ('section',)
+    # readonly_fields = ('section',)
     raw_id_fields = ('article',)
     verbose_name_plural = 'artículos'
     formset = TopArticleRelInlineFormSet
-    # #classes = ('dynamic-order',)
+    # classes = ('dynamic-order',)
 
-    """def get_queryset(self, request):
+    """
+    def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.filter(home_top=True)"""
+        return qs.filter(home_top=True)
+    """
 
     class Media:
         # jquery loaded again (admin uses custom js namespaces and we use jquery-ui)
