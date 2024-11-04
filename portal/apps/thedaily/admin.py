@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from builtins import str
 
@@ -101,7 +100,7 @@ class SubscriberAdmin(ModelAdmin):
         'get_latest_article_visited',
     )
     list_filter = ['newsletters', 'category_newsletters', 'pdf', 'allow_news', 'allow_promotions', 'allow_polls']
-    actions = ['send_account_info', "delete_user"]
+    actions = ['send_account_info', "delete_user"]  # TODO: new action: sync_plan_id_from_activos_csv
     fieldsets = (
         (None, {
             'fields': (

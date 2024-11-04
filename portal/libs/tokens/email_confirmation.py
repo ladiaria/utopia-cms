@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from builtins import str
 import traceback
@@ -44,7 +42,7 @@ def send_confirmation_link(*args, **kwargs):
         headers={'Message-Id': make_msgid("u." + str(user.id)), "Return-Path": settings.NOTIFICATIONS_FROM_MX}
     )
     if (
-        not getattr(settings, 'LOCAL_EMAIL_BACKEND_TEST', False)
+        not settings.LOCAL_EMAIL_BACKEND_TEST
         and settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
     ):
         smtp = smtp_connect()
@@ -74,7 +72,7 @@ def send_validation_email(subject, user, msg_template, url_generator, extra_cont
     extra_context.update(
         {
             'SITE_URL': settings.SITE_URL,
-            'URL_SCHEME': settings.URL_SCHEME,
+            'SITE_URL_SD': settings.SITE_URL_SD,
             'site': Site.objects.get_current(),
             'logo_url': settings.HOMEV3_SECONDARY_LOGO,
         },

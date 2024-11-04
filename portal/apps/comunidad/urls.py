@@ -1,16 +1,26 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
 from django.urls import path, re_path
 from django.views.generic import TemplateView
 
 from updown.views import AddRatingFromModel
 from .views import (
-    add_article, edit_article, add_registro, article_detail, add_evento, edit_evento, beneficios, index, profile
+    add_article,
+    edit_article,
+    add_registro,
+    article_detail,
+    add_evento,
+    edit_evento,
+    beneficios,
+    index,
+    profile,
+    VerifyQRView,
+    SendQRByEmailView,
+    ScanQRView,
+    check_qr_code,
 )
 
 
 urlpatterns = [
-    path('', index, name='comunidad', ),
+    path('', index, name='comunidad'),
     path('perfil/', profile, name='comunidad_profile'),
     re_path(r'^article/(?P<slug>[-\w]+)$', article_detail, name='comunidad_article_detail'),
     path('add/article', add_article, name='comunidad_article_add'),
@@ -26,5 +36,9 @@ urlpatterns = [
     ),
     re_path(r'^formaparte', TemplateView.as_view(template_name='comunidad/formaparte.html'), name='formaparte'),
     re_path(r'beneficios', beneficios, name='beneficios'),
-    re_path(r'^registro/(?P<beneficio_id>\d+)/(?P<hashed_subscriber_id>[\w]+)/$', add_registro)
+    re_path(r'^registro/(?P<beneficio_id>\d+)/(?P<hashed_subscriber_id>[\w]+)/$', add_registro),
+    path('verify-registro/<str:hashed_id>/', VerifyQRView.as_view(), name='verify_registro'),
+    path('send-qr-by-email/<str:registro_id>/', SendQRByEmailView.as_view(), name='send_qr_by_email'),
+    path('scan-qr/', ScanQRView.as_view(), name='scan_qr'),
+    path('check-qr-code/', check_qr_code, name='check_qr_code'),
 ]

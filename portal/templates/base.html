@@ -3,17 +3,19 @@
 {% endspaceless %}<!doctype html>
 {% block html %}
 <!-- Legacy browsers support  -->
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="es-UY"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="es-UY"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9" lang="es-UY"> <![endif]-->
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
 <!-- End legacy browsers support  -->
-<html class="no-js" lang="es-UY">
+<html class="no-js" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}">
 {% endblock %}
   <head>
-    {% block head_first_content %}{% endblock %}
-    <!-- Progressive Web App (PWA) -->
-    <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
-    <!-- End Progressive Web App (PWA) -->
+    {% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
+    {% if PWA_ENABLED %}
+      <!-- Progressive Web App (PWA) -->
+      <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
+      <!-- End Progressive Web App (PWA) -->
+    {% endif %}
     {% if not debug %}
       {# The preferred way to load GA is using GTM #}
       {% if GTM_CONTAINER_ID %}
@@ -54,8 +56,10 @@
     {% endif %}
 
     <!-- Title and description -->
-    <title>{% block page_title %}{% endblock %}</title>
-    <meta name="description" content="{% block page_description %}{{ site_description }}{% endblock %}">
+    <title>{% spaceless %}{% block page_title %}{% endblock %}{% endspaceless %}</title>
+    <meta name="description" content="{% spaceless %}
+      {% block page_description %}{{ site_description }}{% endblock %}
+    {% endspaceless %}">
     <!-- End Title and description -->
 
     <!-- Meta tags base -->
@@ -101,7 +105,7 @@
       {% endif %}
     {% endif %}
     <meta name="theme-color" content="#F2F2F2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{ site.name }}">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- End Icons -->
@@ -114,7 +118,9 @@
       {% if HOMEV3_CUSTOM_CSS %}
         <link href="{% static HOMEV3_CUSTOM_CSS %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endif %}
-      <link href="{% static 'sass/print.scss' %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
+      {% block print_css %}
+        <link href="{% static 'sass/print.scss' %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
+      {% endblock %}
       {% if HOMEV3_CUSTOM_PRINT_CSS %}
         <link href="{% static HOMEV3_CUSTOM_PRINT_CSS %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
       {% endif %}
@@ -141,15 +147,19 @@
 
     {% block meta %}
       <meta property="og:type" content="website">
-      <meta property="og:description" content="{{ site_description }}">
-      <meta property="og:locale" content="es_UY">
+      {% block meta_og_description %}
+        <meta property="og:description" content="{{ site_description }}">
+      {% endblock %}
+      <meta property="og:locale" content="{{ local_lang }}_{{ LOCAL_COUNTRY }}">
       <meta property="og:site_name" content="{{ site.name }}">
       <meta property="og:url" content="{{ SITE_URL_SD }}{{ request.get_full_path }}">
-      {% if publication.slug in custom_icons_publications %}
-        <meta property="og:image" content="{{ SITE_URL_SD }}{% static publication.open_graph_image %}">
-      {% elif default_pub.open_graph_image %}
-        <meta property="og:image" content="{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}">
-      {% endif %}
+      {% block meta_og_image %}
+        {% if publication.slug in custom_icons_publications %}
+          <meta property="og:image" content="{{ SITE_URL_SD }}{% static publication.open_graph_image %}">
+        {% elif default_pub.open_graph_image %}
+          <meta property="og:image" content="{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}">
+        {% endif %}
+      {% endblock %}
       <!-- End Open Graph (http://ogp.me) -->
 
       <!-- Meta tags Twitter -->
@@ -212,7 +222,9 @@
     {% endif %}
 
     <!-- JavaScript -->
-    <script src="{% static 'js/index.js' %}"></script>
+    <script src="{% static 'js/index_functions.js' %}"></script>
+    {% if PWA_ENABLED %}<script src="{% static 'js/index_pwa_function.js' %}"></script>{% endif %}
+    <script src="{% static 'js/index_sw_call.js' %}"></script>
     <script src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
     {% if user.is_authenticated %}
       <script type="text/javascript">var userName = '{{ user.id|user_hashid }}';</script>
@@ -308,23 +320,25 @@
       <header{% if request.signupwall_header %} class="with-article-counter-container {{ request.remaining_articles_word }}-articles"{% endif %}>
         {% render_header %}
       </header>
-      <div class="pwa-prompt" style="display:none;">
-        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <g clip-path="url(#clip0_722_4218)">
-            <path d="M34.8333 31.1667V21.6333C33.9167 21.8167 33 22 32.0833 22H31.1667V33H12.8333V20.1667C12.8333 15.0333 16.8667 11 22 11C22.1833 8.61666 23.2833 6.59999 24.75 4.94999C24.2 4.21666 23.1 3.66666 22 3.66666C19.9833 3.66666 18.3333 5.31666 18.3333 7.33332V7.88332C12.8333 9.53332 9.16667 14.4833 9.16667 20.1667V31.1667L5.5 34.8333V36.6667H38.5V34.8333L34.8333 31.1667ZM18.3333 38.5C18.3333 40.5167 19.9833 42.1667 22 42.1667C24.0167 42.1667 25.6667 40.5167 25.6667 38.5H18.3333Z" fill="#262626"/>
-            <path d="M38.5 11.9167C38.5 15.4 35.5667 18.3333 32.0834 18.3333C28.6 18.3333 25.6667 15.4 25.6667 11.9167C25.6667 8.43333 28.6 5.5 32.0834 5.5C35.5667 5.5 38.5 8.43333 38.5 11.9167Z" fill="#FE5B4C"/>
-          </g>
-          <defs><clipPath id="clip0_722_4218"><rect width="44" height="44" fill="white"/></clipPath></defs>
-          <title>Ícono campana</title>
-        </svg>
-        <span class="title">Activá nuestras notificaciones y<br>enterate antes</span>
-        <div class="actions">
-          <span class="ut-btn" onclick="return confirmFunction();">Activar</span>
-          <span class="ut-btn ut-btn-outline" style="cursor:pointer;" onclick="return cancelFunction();">No, gracias</span>
+      {% if PWA_ENABLED %}
+        <div class="pwa-prompt" style="display:none;">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g clip-path="url(#clip0_722_4218)">
+              <path d="M34.8333 31.1667V21.6333C33.9167 21.8167 33 22 32.0833 22H31.1667V33H12.8333V20.1667C12.8333 15.0333 16.8667 11 22 11C22.1833 8.61666 23.2833 6.59999 24.75 4.94999C24.2 4.21666 23.1 3.66666 22 3.66666C19.9833 3.66666 18.3333 5.31666 18.3333 7.33332V7.88332C12.8333 9.53332 9.16667 14.4833 9.16667 20.1667V31.1667L5.5 34.8333V36.6667H38.5V34.8333L34.8333 31.1667ZM18.3333 38.5C18.3333 40.5167 19.9833 42.1667 22 42.1667C24.0167 42.1667 25.6667 40.5167 25.6667 38.5H18.3333Z" fill="#262626"/>
+              <path d="M38.5 11.9167C38.5 15.4 35.5667 18.3333 32.0834 18.3333C28.6 18.3333 25.6667 15.4 25.6667 11.9167C25.6667 8.43333 28.6 5.5 32.0834 5.5C35.5667 5.5 38.5 8.43333 38.5 11.9167Z" fill="#FE5B4C"/>
+            </g>
+            <defs><clipPath id="clip0_722_4218"><rect width="44" height="44" fill="white"/></clipPath></defs>
+            <title>Ícono campana</title>
+          </svg>
+          <span class="title">Activá nuestras notificaciones y<br>enterate antes</span>
+          <div class="actions">
+            <span class="ut-btn" onclick="return confirmFunction();">Activar</span>
+            <span class="ut-btn ut-btn-outline" style="cursor:pointer;" onclick="return cancelFunction();">No, gracias</span>
+          </div>
+          {# TODO: validate this message with UX because this div can appear again "tomorrow". #}
+          {# <span class="notice">Ésta es la única vez que vas a ver este mensaje</span> #}
         </div>
-        {# TODO: validate this message with UX because this div can appear again "tomorrow". #}
-        {# <span class="notice">Ésta es la única vez que vas a ver este mensaje</span> #}
-      </div>
+      {% endif %}
     {% endblock %}
 
     {% block subscribe_notice %}
@@ -340,20 +354,20 @@
     <!-- Main -->
     {% block main_open %}<main class="main" id="main-content">{% endblock %}
     {% if messages %}
-      <ul class="messages unstyled ld-messages">
-        {% for message in messages %}
-          <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
-            {{ message }}
-            <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
-          </li>
-        {% endfor %}
-      </ul>
+      {% block messages %}
+        <ul class="messages unstyled ld-messages">
+          {% for message in messages %}
+            <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
+              {{ message }}
+              <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endblock %}
     {% endif %}
 
     <!-- /container -->
-    {% block page_header %}
-      {% block page_header_sections %}{% endblock %}
-    {% endblock %}
+    {% block page_header %}{% endblock %}
 
     {% if user_form %}
       <div class="profile-container">
@@ -399,34 +413,38 @@
 
     <div id="alert_placeholder"></div>
 
-    {# js needed for the "dropdown" and "modal" menu items #}
-    <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
-    <script defer src="{% static 'materialize/js/global.js' %}"></script>
-    <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
-    <script defer src="{% static 'materialize/js/modal.js' %}"></script>
-    <script defer src="{% static 'materialize/js/forms.js' %}"></script>
+    {% block materialize_scripts %}
+      {# js needed for the "dropdown" and "modal" menu items #}
+      <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
+      <script defer src="{% static 'materialize/js/global.js' %}"></script>
+      <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
+      <script defer src="{% static 'materialize/js/modal.js' %}"></script>
+      <script defer src="{% static 'materialize/js/forms.js' %}"></script>
+    {% endblock %}
 
-    {% if user.is_authenticated %}
-      {# used only in pages that show article cards #}
-      <script defer src="{% static 'js/read_later_events.js' %}"></script>
-    {% endif %}
+    {% block ld_core_scripts %}
+      {% if user.is_authenticated %}
+        {# used only in pages that show article cards #}
+        <script defer src="{% static 'js/read_later_events.js' %}"></script>
+      {% endif %}
 
-    {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
-    <script defer src="{% static 'js/ld.js' %}"></script>
-    <script defer src="{% static 'js/resizeSubnav.js' %}" ></script>
+      {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
+      <script defer src="{% static 'js/ld.js' %}"></script>
+      <script defer src="{% static 'js/resizeSubnav.js' %}"></script>
 
-    {# Modernizr - Detect CSS Grid #}
-    <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
+      {# Modernizr - Detect CSS Grid #}
+      <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
+
+      {# picturefill #}
+      <script>
+        // Picture element HTML5 shiv
+        document.createElement("picture");
+      </script>
+      <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
+    {% endblock %}
 
     {# js.cookie #}
     <script src="{% static 'js/vendor/js.cookie.js' %}"></script>
-
-    {# picturefill #}
-    <script>
-      // Picture element HTML5 shiv
-      document.createElement("picture");
-    </script>
-    <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
 
     {% block javascript %}{% endblock %}
     {% block footer_scripts %}{% endblock %}

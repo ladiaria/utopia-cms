@@ -3,7 +3,6 @@
 """
 Note: output from this command is not used in the dashboard view
 """
-from __future__ import unicode_literals
 
 from os.path import join
 from csv import writer

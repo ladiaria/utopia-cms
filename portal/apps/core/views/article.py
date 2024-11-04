@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from os.path import join
 
@@ -38,6 +36,7 @@ from signupwall.middleware import subscriber_access
 from decorators import decorate_if_no_auth, decorate_if_auth
 from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
 from core.models import Publication, Category, Article, ArticleUrlHistory
+from thedaily.templatetags.thedaily_tags import has_restricted_access
 
 
 standard_library.install_aliases()
@@ -196,7 +195,9 @@ def article_detail(request, year, month, slug, domain_slug=None):
 
     publication = article.main_section.edition.publication if article.main_section else None
     context = {
+        "DEBUG": settings.DEBUG,
         'article': article,
+        "article_restricted_cf": article.is_restricted_consider_full(),
         "photo_render_allowed": article.photo_render_allowed(),
         'is_detail': True,
         'report_form': report_form,
@@ -212,12 +213,14 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'publication': publication,
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
         "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+        "signupwall_label_exclusive": settings.SIGNUPWALL_LABEL_EXCLUSIVE,
         'publication_newsletters':
             Publication.objects.filter(has_newsletter=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL),
         'date_published_use_main_publication': (
             publication
             and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())
         ),
+        "enable_amp": settings.CORE_ARTICLE_DETAIL_ENABLE_AMP and not article.extensions_have_invalid_amp_tags(),
     }
 
     context.update(
@@ -225,6 +228,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
             'followed': article in following(request.user, Article),
             'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
             "signupwall_remaining_banner": settings.SIGNUPWALL_REMAINING_BANNER_ENABLED,
+            "restricted_access": has_restricted_access(request.user, article),
         } if user_is_authenticated else {"signupwall_remaining_banner": settings.SIGNUPWALL_ENABLED}
     )  # NOTE: banner is rendered despite of setting for anon users
 

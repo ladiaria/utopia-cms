@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
@@ -81,10 +77,8 @@ class ArticleRelForm(ModelForm):
 
 
 class TopArticleRelBaseInlineFormSet(BaseInlineFormSet):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.can_delete = False
+    # TODO: maybe useful to save in order
+    pass
 
 
 TopArticleRelInlineFormSet = inlineformset_factory(
@@ -95,18 +89,11 @@ TopArticleRelInlineFormSet = inlineformset_factory(
 class HomeTopArticleInline(TabularInline):
     model = ArticleRel
     extra = 0
-    max_num = 0
-    ordering = ('top_position', )
-    fields = ('article', 'section', 'top_position')
-    readonly_fields = ('section', )
-    raw_id_fields = ('article', )
-    verbose_name_plural = 'Nota de tapa y titulines'
+    ordering = ('top_position',)
+    fields = ('article', 'section', 'top_position', "home_top")
+    raw_id_fields = ('article',)
+    verbose_name_plural = 'artículos'
     formset = TopArticleRelInlineFormSet
-    classes = ('dynamic-order', )
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(home_top=True)
 
     class Media:
         # jquery loaded again (admin uses custom js namespaces and we use jquery-ui)
@@ -129,27 +116,9 @@ class SectionArticleRelForm(ModelForm):
 SectionArticleRelInlineFormSet = inlineformset_factory(Edition, ArticleRel, form=SectionArticleRelForm)
 
 
-def section_top_article_inline_class(section):
-
-    class SectionTopArticleInline(HomeTopArticleInline):
-        max_num = 20
-        verbose_name_plural = 'Artículos en %s [[%d]]' % (section.name, section.id)
-        fields = ('article', 'position', 'home_top')
-        raw_id_fields = ('article', )
-        ordering = ('position', )
-        formset = SectionArticleRelInlineFormSet
-
-        def get_queryset(self, request):
-            # calling super of HomeTopArticleInline to avoid top=true filter
-            qs = super(HomeTopArticleInline, self).get_queryset(request)
-            return qs.filter(section=section)
-
-    return SectionTopArticleInline
-
-
 @admin.register(Edition, site=site)
 class EditionAdmin(ModelAdmin):
-    # TODO: This class should be improved/fixed:
+    # TODO: [doing: directly the last item of this list] "it must be...":
     #       - section_id missing for "new" ArticleRel rows, this can be fixed handling the js event, we did this some
     #         time ago in the article admin js.
     #       - the header cells for each fieldset get broken when a row has a new td because of errors (no position)
@@ -162,21 +131,15 @@ class EditionAdmin(ModelAdmin):
     fields = ('date_published', 'pdf', 'cover', 'publication')
     list_display = ('edition_pub', 'title', 'pdf', 'cover', 'get_supplements')
     list_filter = ('date_published', 'publication')
-    search_fields = ('title', )
+    search_fields = ('title',)
     date_hierarchy = 'date_published'
     publication = None
+    inlines = [HomeTopArticleInline]
 
     def get_form(self, request, obj=None, **kwargs):
         if obj:
             self.publication = obj.publication
         return super().get_form(request, obj, **kwargs)
-
-    def get_inline_instances(self, request, obj=None):
-        self.inlines = [HomeTopArticleInline]
-        if self.publication:
-            for section in self.publication.section_set.order_by('home_order'):
-                self.inlines.append(section_top_article_inline_class(section))
-        return super().get_inline_instances(request)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'cover':
@@ -225,10 +188,11 @@ class SectionAdmin(ModelAdmin):
     list_filter = ('category', 'in_home', 'home_block_all_pubs', 'home_block_show_featured', "publications")
     list_display = (
         'id',
+        'home_order',
         'name',
         'category',
+        "included_in_category_menu_short",
         'in_home',
-        'home_order',
         'get_publications',
         'articles_count',
     )
@@ -238,19 +202,25 @@ class SectionAdmin(ModelAdmin):
             None,
             {
                 'fields': (
-                    ('name', 'category', 'name_in_category_menu'),
+                    ('name', 'category'),
+                    ('name_in_category_menu', "included_in_category_menu"),
                     ('description', 'show_description'),
                     ('home_order', 'white_text', 'background_color'),
-                    ('publications', ),
-                    ('in_home', ),
-                    ('home_block_all_pubs', ),
-                    ('home_block_show_featured', ),
-                    ('imagen', 'show_image', 'contact'),
+                    ('publications',),
+                    ('in_home', 'home_block_all_pubs'),
+                    ('home_block_show_featured',),
+                    ('imagen', 'show_image'),
+                    ('contact',),
                 ),
             },
         ),
-        ('Metadatos', {'fields': (('html_title', ), ('meta_description', ))}),
+        ('Metadatos', {'fields': (('html_title',), ('meta_description',))}),
     )
+
+    def included_in_category_menu_short(self, instance):
+        return instance.included_in_category_menu
+    included_in_category_menu_short.short_description = "en menú de área"
+    included_in_category_menu_short.boolean = True
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
@@ -326,13 +296,29 @@ class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
 
 
 class ArticleAdminModelForm(ModelForm):
-    headline = CharField(label='Título', widget=TextInput(attrs={'style': 'width:600px'}))
+    PW_OPTIONS = (
+        ('none', 'Metered (por defecto)'),
+        ('full_restricted_true', 'Hard (solamente para suscriptores)'),
+        ('public_true', 'Sin paywall (libre acceso)'),
+    )
     slug = CharField(
         label='Slug',
         widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
         help_text='Se genera automáticamente en base al título.',
     )
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
+    pw_radio_choice = ChoiceField(
+        label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.full_restricted and not self.instance.public:
+            self.initial['pw_radio_choice'] = 'full_restricted_true'
+        elif not self.instance.full_restricted and self.instance.public:
+            self.initial['pw_radio_choice'] = 'public_true'
+        else:
+            self.initial['pw_radio_choice'] = 'none'
 
     def clean_tags(self):
         """
@@ -382,11 +368,25 @@ class ArticleAdminModelForm(ModelForm):
             targets = targets.exclude(id=self.instance.id)
         if targets:
             raise ValidationError('Ya existe un artículo en ese mes con el mismo título.')
+
+        # pw options:
+        pw_choice = cleaned_data.get('pw_radio_choice')
+        if pw_choice == 'none':
+            cleaned_data['full_restricted'] = False
+            cleaned_data['public'] = False
+        elif pw_choice == 'full_restricted_true':
+            cleaned_data['full_restricted'] = True
+            cleaned_data['public'] = False
+        elif pw_choice == 'public_true':
+            cleaned_data['full_restricted'] = False
+            cleaned_data['public'] = True
+
         return cleaned_data
 
     class Meta:
         model = Article
         fields = "__all__"
+        widgets = {"full_restricted": HiddenInput(), "public": HiddenInput()}
 
 
 @admin.display(description='Foto', boolean=True)
@@ -422,8 +422,8 @@ class ArticleAdmin(VersionAdmin):
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
     formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
-    prepopulated_fields = {'slug': ('headline', )}
-    filter_horizontal = ('byline', )
+    prepopulated_fields = {'slug': ('headline',)}
+    filter_horizontal = ('byline',)
     list_display = (
         'id',
         'headline',
@@ -440,38 +440,52 @@ class ArticleAdmin(VersionAdmin):
     list_filter = ('type', 'date_created', 'is_published', 'date_published', 'newsletter_featured', 'byline')
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
-    ordering = ('-date_created', )
+    ordering = ('-date_created',)
     raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
-    readonly_fields = ('date_published', )
+    readonly_fields = ('date_published',)
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
     fieldsets = (
-        (None, {'fields': ('type', 'headline', 'slug', 'keywords', 'deck', 'lead', 'body'), 'classes': ('wide', )}),
+        (
+            None,
+            {
+                'fields': (
+                    'type',
+                    ('headline', 'alt_title_metadata', 'alt_title_newsletters'),
+                    'slug',
+                    'keywords',
+                    ('deck', "alt_desc_metadata", "alt_desc_newsletters"),
+                    'lead',
+                    'body',
+                ),
+                'classes': ('wide',)
+            },
+        ),
         (
             'Portada',
             {
                 'fields': ('home_lead', 'home_top_deck', 'home_display', 'home_header_display', 'header_display'),
-                'classes': ('wide', ),
-            }
+                'classes': ('wide',),
+            },
         ),
         ('Metadatos', {'fields': ('date_published', 'tags', 'main_section')}),
-        ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse', )}),
-        ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse', )}),
+        ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse',)}),
+        ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse',)}),
         (
             'Avanzado',
             {
                 'fields': (
-                    (
-                        'allow_comments',
-                        'is_published',
-                        'public',
-                        'allow_related',
-                        'show_related_articles',
-                        'newsletter_featured',
-                    ),
-                    'additional_access',
-                    ('latitude', 'longitude', 'ipfs_upload'),
-                ),
-                'classes': ('collapse', ),
+                    'allow_comments',
+                    'is_published',
+                    'allow_related',
+                    'show_related_articles',
+                    'newsletter_featured',
+                    "pw_radio_choice",
+                    "full_restricted",
+                    "public",
+                )
+                + (('additional_access',) if Publication.multi() else ())
+                + ('latitude', 'longitude', 'ipfs_upload'),
+                'classes': ('collapse',),
             },
         ),
     )
@@ -830,13 +844,31 @@ class JournalistForm(ModelForm):
 class JournalistAdmin(ModelAdmin):
     form = JournalistForm
     list_display = ('name', 'job', published_articles)
-    list_filter = ('job', )
+    list_filter = ('job',)
     search_fields = ['name']
     fieldsets = (
         (None, {'fields': ('name', 'email', 'image', 'bio', 'job', 'sections')}),
         (
             'Redes sociales',
-            {'description': 'Ingrese nombre de usuario de cada red social.', 'fields': ('fb', 'tt', 'gp', 'ig')},
+            {
+                'description': 'Ingrese enlace completo al respectivo perfil.(ej: https://example.com/perfil)',
+                'fields': (
+                    'bs',
+                    'fb',
+                    'tt',
+                    'ig',
+                    'mtdn',
+                    'thds',
+                    'ytb',
+                    'lnkin',
+                    'tktk',
+                    'tr',
+                    'tw',
+                    'other_one',
+                    'other_two',
+                    'other_three',
+                ),
+            },
         ),
     )
 
@@ -871,6 +903,10 @@ class CustomSubjectAdminForm(ModelForm):
 
 class PublicationAdminForm(CustomSubjectAdminForm):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['extra_context'].required = False  # this was needed to avoid "field required" error
+
     class Meta:
         model = Publication
         fields = "__all__"
@@ -879,6 +915,7 @@ class PublicationAdminForm(CustomSubjectAdminForm):
             'newsletter_subject': TextInput(attrs={'size': 160}),
             'html_title': TextInput(attrs={'size': 128}),
             'meta_description': Textarea(),
+            "extra_context": Textarea(attrs={"spellcheck": "false", "style": "width:80%"}),
         }
 
 
@@ -898,42 +935,43 @@ class PublicationAdmin(ModelAdmin):
         'get_full_width_cover_image_tag',
     )
     list_editable = ('name', 'headline', 'weight', 'public', 'has_newsletter')
-    raw_id_fields = ('full_width_cover_image', )
+    raw_id_fields = ('full_width_cover_image',)
     fieldsets = (
         (
             None,
             {
                 'fields': (
                     ('name', 'image'),
-                    ('twitter_username', ),
-                    ('description', ),
+                    ('twitter_username',),
+                    ('description',),
                     ('slug', 'headline', 'weight'),
                     ('public', 'has_newsletter', "newsletter_new_pill"),
                     ('newsletter_name', 'newsletter_logo'),
-                    ('newsletter_tagline', ),
+                    ('newsletter_tagline',),
                     ('newsletter_periodicity', 'newsletter_header_color'),
                     ('newsletter_campaign', 'subscribe_box_question'),
                     ('subscribe_box_nl_subscribe_auth', 'subscribe_box_nl_subscribe_anon'),
-                    ('full_width_cover_image', ),
+                    ('full_width_cover_image',),
                     ('is_emergente', 'new_pill'),
                 ),
             },
         ),
-        ('Asunto de newsletter', {'fields': (('newsletter_automatic_subject', ), ('newsletter_subject', ))}),
+        ('Custom template data', {'fields': ('extra_context',), "classes": ("monospace",)}),
+        ('Asunto de newsletter', {'fields': (('newsletter_automatic_subject', ), ('newsletter_subject',))}),
         (
             'Metadatos',
             {
                 'fields': (
-                    ('html_title', ),
-                    ('meta_description', ),
+                    ('html_title',),
+                    ('meta_description',),
                     ('icon', 'icon_png'),
                     ('icon_png_16', 'icon_png_32'),
-                    ('apple_touch_icon_180', ),
-                    ('apple_touch_icon_192', ),
-                    ('apple_touch_icon_512', ),
-                    ('open_graph_image', ),
+                    ('apple_touch_icon_180',),
+                    ('apple_touch_icon_192',),
+                    ('apple_touch_icon_512',),
+                    ('open_graph_image',),
                     ('open_graph_image_width', 'open_graph_image_height'),
-                    ('publisher_logo', ),
+                    ('publisher_logo',),
                     ('publisher_logo_width', 'publisher_logo_height'),
                 ),
             },
@@ -1056,17 +1094,23 @@ class CategoryHomeArticleInline(TabularInline):
     max_num = 20
     form = CategoryHomeArticleForm
     formset = CategoryHomeArticleFormSet
-    raw_id_fields = ('article', )
+    raw_id_fields = ('article',)
     verbose_name_plural = 'Artículos en portada'
+    classes = ('dynamic-order', )
 
     class Media:
+        js = (
+            'admin/js/jquery.js',
+            'js/jquery-ui-1.13.2.custom.min.js',
+            'js/homev2/dynamic_edition_admin.js',
+        )
         css = {'all': ('css/category_home.css', )}
 
 
 @admin.register(CategoryHome, site=site)
 class CategoryHomeAdmin(admin.ModelAdmin):
     list_display = ('category', 'cover')
-    exclude = ('articles', )
+    exclude = ('articles',)
     inlines = [CategoryHomeArticleInline]
 
     def save_related(self, request, form, formsets, change):
@@ -1181,12 +1225,12 @@ class BreakingNewsModuleAdmin(ModelAdmin):
 
 class TagAdmin(admin.ModelAdmin):
     model = Tag
-    search_fields = ('name', )
+    search_fields = ('name',)
 
 
 class TaggedItemAdmin(admin.ModelAdmin):
     model = TaggedItem
-    search_fields = ('name', )
+    search_fields = ('name',)
 
 
 @admin.register(DeviceSubscribed, site=site)
@@ -1213,7 +1257,7 @@ class PushNotificationAdmin(admin.ModelAdmin):
     # TODO: adjust change_list columns width
     model = PushNotification
     list_display = ('message', 'article', 'sent', 'tag')
-    raw_id_fields = ('article', )
+    raw_id_fields = ('article',)
     actions = ['send_me_push_notification', 'send_push_notification_to_all']
     readonly_fields = ('sent', 'tag')
 

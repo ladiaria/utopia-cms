@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from videologue.models import Video, YouTubeVideo
 from videologue.forms import YouTubeVideoForm
 

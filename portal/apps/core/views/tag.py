@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
@@ -40,8 +39,10 @@ def tag_detail(request, tag_slug):
         articles = paginator.page(1)
     except (EmptyPage, InvalidPage):
         articles = paginator.page(paginator.num_pages)
-    # support to render a custom template if only one tag and the tag is a TagGroup member (first group found taken)
-    template, gt_dir = 'core/templates/article/list.html', getattr(settings, 'GROUPEDTAGS_TEMPLATE_DIR', None)
+    # support render a custom template
+    template = getattr(settings, "CORE_TAG_DETAIL_TEMPLATE", 'core/templates/article/list.html')
+    # support render another custom template if only one tag and the tag is a TagGroup member (first group found taken)
+    gt_dir = getattr(settings, 'GROUPEDTAGS_TEMPLATE_DIR', None)
     if gt_dir and len(tags) == 1:
         tg = tags[0].taggroup_set.first()
         if tg and tg.slug in getattr(settings, 'GROUPEDTAGS_CUSTOM_TEMPLATES', ()):
@@ -53,6 +54,7 @@ def tag_detail(request, tag_slug):
         {
             'tags': tags,
             'articles': articles,
-            "title_append_country": getattr(settings, "CORE_TAG_DETAIL_TITLE_APPEND_COUNTRY", True),
+            "title_append_country":
+                getattr(settings, "CORE_TAG_DETAIL_TITLE_APPEND_COUNTRY", settings.PORTAL_TITLE_APPEND_COUNTRY),
         },
     )

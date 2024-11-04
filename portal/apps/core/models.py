@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
-
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
 import locale
@@ -15,6 +10,7 @@ from requests.exceptions import ConnectionError
 from kombu.exceptions import OperationalError as KombuOperationalError
 from sorl.thumbnail import get_thumbnail
 from PIL import Image
+from bs4 import BeautifulSoup
 import readtime
 import mutagen
 import w3storage
@@ -64,6 +60,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.timezone import datetime, timedelta, make_aware, now, template_localtime
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
+from django.utils.html import escape
 
 from apps import blocklisted
 from photologue_ladiaria.models import PhotoExtended
@@ -117,6 +114,16 @@ class Publication(Model):
     newsletter_automatic_subject = BooleanField(default=True)
     newsletter_subject = CharField('asunto', max_length=256, blank=True, null=True)
     newsletter_logo = ImageField('logo para NL', upload_to='publications', blank=True, null=True)
+    extra_context = JSONField(
+        "Contexto extra para portadas y newsletter",
+        default=dict,
+        help_text=mark_safe(
+            'Diccionario Python en formato JSON que se utilizará como contexto al inicio de la construcción del '
+            'contexto predeterminado, sus entradas, si hay colisión, serían sobreescritas por la vista de portada en '
+            'backend o comando de envío de newsletter.<br>'
+            'Ejemplo: <code>{"custom_footer_msg": "Esta newsletter fue generada utilizando utopia-cms"}</code>'
+        ),
+    )
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
     subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
@@ -191,6 +198,10 @@ class Publication(Model):
         return reverse(
             'home', kwargs={} if self.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL else {'domain_slug': self.slug}
         )
+
+    @staticmethod
+    def multi():
+        return Publication.objects.count() > 1
 
     def newsletter_preview_url(self):
         """
@@ -305,7 +316,7 @@ class PortableDocumentFormatBaseModel(Model):
     pdf_md5 = CharField('checksum', max_length=32, editable=False)
     downloads = PositiveIntegerField('descargas', default=0)
     cover = ImageField('tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
-    date_published = DateField('fecha de publicación', default=now)
+    date_published = DateField('fecha de publicación', default=now, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
@@ -806,12 +817,13 @@ class Section(Model):
 
     category = ForeignKey(Category, on_delete=CASCADE, verbose_name='área', blank=True, null=True)
     name = CharField('nombre', max_length=50, unique=True)
+    included_in_category_menu = BooleanField("incluída en el menú del área", default=True)
     name_in_category_menu = CharField('nombre en el menú del área', max_length=50, blank=True, null=True)
     slug = SlugField('slug', unique=True)
     description = TextField('descripción', blank=True, null=True)
-    contact = EmailField('correo electrónico', blank=True, null=True)
+    contact = EmailField("email", blank=True, null=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
-    home_order = PositiveSmallIntegerField('orden en portada', default=0)
+    home_order = PositiveSmallIntegerField('orden', default=0)
     in_home = BooleanField(
         'en portada',
         default=False,
@@ -1029,14 +1041,12 @@ class Section(Model):
 
 class Journalist(Model):
     objects = SlugNaturalManager()
-
     JOB_CHOICES = (
         ('PE', 'Periodista'),
         ('CO', 'Columnista'),
     )
-
     name = CharField('nombre', max_length=50, unique=True)
-    email = EmailField('correo electrónico', blank=True, null=True)
+    email = EmailField(blank=True, null=True)
     slug = SlugField('slug', unique=True)
     image = ImageField('imagen', upload_to='journalist', blank=True, null=True)
     job = CharField(
@@ -1048,10 +1058,23 @@ class Journalist(Model):
     )
     bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
     sections = ManyToManyField(Section, verbose_name='secciones', blank=True)
-    fb = CharField('facebook', max_length=255, blank=True, null=True)
-    tt = CharField('twitter', max_length=255, blank=True, null=True)
-    gp = CharField('google plus', max_length=255, blank=True, null=True)
-    ig = CharField('instagram', max_length=255, blank=True, null=True)
+
+    # the order in which this class properties are declared is the order in which they'll be displayed unless
+    # overridden by CORE_JOURNALIST_SOCIAL_ORDER setting
+    bs = URLField('bluesky', blank=True, null=True)
+    fb = URLField('facebook', blank=True, null=True)
+    ig = URLField('instagram', blank=True, null=True)
+    lnkin = URLField('linkedin', blank=True, null=True)
+    mtdn = URLField('mastodon', blank=True, null=True)
+    thds = URLField('threads', blank=True, null=True)
+    tktk = URLField('tiktok', blank=True, null=True)
+    tr = URLField('tumblr', blank=True, null=True)
+    tw = URLField('twitch', blank=True, null=True)
+    tt = URLField('X', blank=True, null=True)
+    ytb = URLField('youtube', blank=True, null=True)
+    other_one = URLField('otro 1', blank=True, null=True)
+    other_two = URLField('otro 2', blank=True, null=True)
+    other_three = URLField('otro 3', blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -1064,9 +1087,11 @@ class Journalist(Model):
         super(Journalist, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
+        reverse_kwargs = {'journalist_slug': self.slug}
+        if settings.CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB:
+            reverse_kwargs['journalist_job'] = self.get_job_display().lower()
         return reverse(
-            'journalist_detail',
-            kwargs={'journalist_job': self.get_job_display().lower(), 'journalist_slug': self.slug},
+            getattr(settings, "CORE_JOURNALIST_GET_ABSOLUTE_URL_NAME", 'journalist_detail'), kwargs=reverse_kwargs
         )
 
     def get_sections(self):
@@ -1078,6 +1103,38 @@ class Journalist(Model):
         except IOError:
             result = False
         return result
+
+    def get_socials(self):
+        """
+        Get all socials that has value
+        @return field_value: social fields with values in dict format
+        {"field_verbose_name": "field_value"}
+        """
+        default_order = [f.verbose_name for f in self._meta.fields if type(f) is URLField]
+        custom_order = getattr(settings, "CORE_JOURNALIST_SOCIAL_ORDER", None)
+        if custom_order:
+            if len(custom_order) < len(default_order):
+                # complete the full order based in the default oreder.
+                for prop in default_order:
+                    if prop not in custom_order:
+                        custom_order.append(prop)
+            verbose_names_of_interest = custom_order
+        else:
+            verbose_names_of_interest = default_order
+
+        # Create a mapping from verbose_name to field_name
+        verbose_name_to_field = {
+            field.verbose_name: field.name for field in self._meta.fields
+        }
+
+        field_values = {}
+        for verbose_name in verbose_names_of_interest:
+            field_name = verbose_name_to_field.get(verbose_name)
+            if field_name and hasattr(self, field_name) and getattr(self, field_name):
+                field_value = getattr(self, field_name)
+                field_values[verbose_name] = field_value
+
+        return field_values
 
     class Meta:
         ordering = ('name', )
@@ -1123,24 +1180,24 @@ class ArticleBase(Model, CT):
 
     publication = ForeignKey(
         Publication,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='publicación',
         blank=True,
         null=True,
         related_name='articles_%(app_label)s',
     )
     type = CharField('tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True, db_index=True)
-    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en la nota.')
+    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en el artículo.')
     keywords = CharField(
         'titulín', max_length=45, blank=True, null=True, help_text='Se muestra encima del título en portada.'
     )
     slug = SlugField('slug', max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
-        'bajada', blank=True, null=True, help_text='Se muestra en la página de la nota debajo del título.'
+        'descripción', blank=True, null=True, help_text='Se muestra en la página del artículo debajo del título.'
     )
     lead = TextField(
-        'copete', blank=True, null=True, help_text='Se muestra en la página de la nota debajo de la bajada.'
+        'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
     body = MartorField("cuerpo")
     header_display = CharField(
@@ -1154,14 +1211,14 @@ class ArticleBase(Model, CT):
         null=True,
         default='SM',
     )
-    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada de la nota en portada.')
+    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada del artículo en portada.')
     home_display = CharField('mostrar en portada', max_length=2, choices=DISPLAY_CHOICES, blank=True, null=True)
     home_top_deck = TextField(
         'bajada en destacados',
         blank=True,
         null=True,
         help_text=(
-            'Se muestra en los destacados de la portada, en el caso de estar vació se muestra la bajada de la nota.'
+            'Se muestra en los destacados de la portada, en el caso de estar vacío se muestra la bajada del artículo.'
         ),
     )
     byline = ManyToManyField(
@@ -1181,13 +1238,13 @@ class ArticleBase(Model, CT):
     longitude = DecimalField('longitud', max_digits=10, decimal_places=6, blank=True, null=True)
     location = ForeignKey(
         Location,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='ubicación',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    is_published = BooleanField('publicado', default=True)
+    is_published = BooleanField('publicado', default=True, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField('última actualización', auto_now=True)
@@ -1195,27 +1252,29 @@ class ArticleBase(Model, CT):
     allow_comments = BooleanField('Habilitar comentarios', default=True)
     created_by = ForeignKey(
         User,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='creado por',
         related_name='created_articles_%(app_label)s',
         editable=False,
         blank=False,
         null=True,
     )
-    photo = ForeignKey(Photo, on_delete=CASCADE, blank=True, null=True, verbose_name='imagen')
-    gallery = ForeignKey(Gallery, on_delete=CASCADE, verbose_name='galería', blank=True, null=True)
+    photo = ForeignKey(Photo, on_delete=SET_NULL, blank=True, null=True, verbose_name='imagen')
+    gallery = ForeignKey(Gallery, on_delete=SET_NULL, verbose_name='galería', blank=True, null=True)
     video = ForeignKey(
         Video,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='video',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    youtube_video = ForeignKey(YouTubeVideo, on_delete=CASCADE, verbose_name='video de YouTube', blank=True, null=True)
+    youtube_video = ForeignKey(
+        YouTubeVideo, on_delete=SET_NULL, verbose_name='video de YouTube', blank=True, null=True
+    )
     audio = ForeignKey(
         Audio,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='audio',
         related_name='articles_%(app_label)s',
         blank=True,
@@ -1229,6 +1288,11 @@ class ArticleBase(Model, CT):
         'mostrar artículos relacionados dentro de este artículo', default=True, blank=False, null=False
     )
     public = BooleanField('Artículo libre', default=False)
+    full_restricted = BooleanField(
+        'Disponible sólo para suscriptores',
+        default=False,
+        help_text="Acceso solamente a usuarios que tengan alguna suscripción activa."
+    )
 
     published = PublishedArticleManager()
 
@@ -1247,6 +1311,16 @@ class ArticleBase(Model, CT):
                 setattr(self, attr, add_punctuation(getattr(self, attr, '')))
 
         self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
+
+        # full restricted / open consistency checks
+        # 1. If open => full_restricted == False
+        # 2. If full_restricted => open == False
+        if self.is_published and self.is_public() and self.full_restricted:
+            raise Exception(
+                "Un artículo publicado no puede ser libre y además estar disponible sólo para suscriptores."
+            )
+
+        # other checks
 
         nowval = now()
 
@@ -1612,29 +1686,62 @@ class Article(ArticleBase):
     )
     newsletter_featured = BooleanField('destacado en newsletter', default=False)
     ipfs_upload = BooleanField('Publicar en IPFS', default=False)
-    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
+    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID del artículo en IPFS')
+    # alternative fields
+    alt_title_metadata = CharField(
+        'título alternativo para metadatos',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica a metadatos: meta title, Open Graph y Schema en el '
+        ) + escape("<head>") + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Título principal.')
+    )
+    alt_desc_metadata = TextField(
+        'descripción alternativa para metadatos',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica a metadatos: meta description, Open Graph y Schema en el '
+        ) + escape("<head>")
+        + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Descripción principal.')
+    )
+    alt_title_newsletters = CharField(
+        'título alternativo para newsletters',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Título principal.'
+        )
+    )
+    alt_desc_newsletters = TextField(
+        'descripción alternativa para newsletters',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Descripción principal'
+        )
+    )
     # SuperDesk article ID
     sp_id = CharField(max_length=100, null=True, blank=True)
 
     def save(self, *args, **kwargs):
 
         if self.pk and self.sections:
-            # Only valid if the instance has already been saved.
-            # TODO: this should be reviewed, what happens if another article
-            # in the same edition-section is viewed (viewed implies saving)
+            # If already saved, sets the article at the last position in all its sections where it has no position yet.
             for ar in ArticleRel.objects.filter(article=self):
                 if not ar.position:
                     ar.position = ArticleRel.objects.filter(edition=ar.edition, section=ar.section).count() + 1
 
-        # TODO: also this if block should be reviewed (broken)
+        # TODO: next commented "if" block should be reviewed (broken)
         # if self.home_top and self.top_position is None:
-        #    self.top_position = Article.objects.filter(
-        #        edition=self.edition, home_top=self.home_top).count() + 1
+        #    self.top_position = Article.objects.filter(edition=self.edition, home_top=self.home_top).count() + 1
         if self.type == settings.CORE_HTML_ARTICLE:
             self.headline = 'HTML | %s | %s | %s' % (str(self.edition), str(self.section), str(self.section_position))
 
         old_url_path = self.url_path
-        super(Article, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         # the instance has already been saved, force_insert should be turned into False if a save is called again
         kwargs['force_insert'] = False
 
@@ -1648,7 +1755,7 @@ class Article(ArticleBase):
             if url_changed:
                 self.url_path = new_url_path
                 self.do_ipfs_upload()
-                super(Article, self).save(*args, **kwargs)
+                super().save(*args, **kwargs)
                 talk_url = getattr(settings, 'TALK_URL', None)
                 # if this is an insert, old_url_path is '', then skip talk update
                 if old_url_path and talk_url and not settings.DEBUG:
@@ -1660,14 +1767,14 @@ class Article(ArticleBase):
                         # fail silently because we should not break any script or shell that is saving the article
                         pass
             elif self.do_ipfs_upload():
-                super(Article, self).save(*args, **kwargs)
+                super().save(*args, **kwargs)
 
             # add to history the new url
             if not ArticleUrlHistory.objects.filter(article=self, absolute_url=new_url_path).exists():
                 ArticleUrlHistory.objects.create(article=self, absolute_url=new_url_path)
 
         elif self.do_ipfs_upload():
-            super(Article, self).save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     def do_ipfs_upload(self):
         """
@@ -1688,7 +1795,7 @@ class Article(ArticleBase):
                             render_to_string(
                                 "article/detail_ipfs_upload.html",
                                 {
-                                    "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+                                    "site_url": settings.SITE_URL_SD,
                                     "ipfs_cid": self.ipfs_cid,
                                     "headline": self.headline,
                                     "date_published": self.date_published,
@@ -1853,19 +1960,57 @@ class Article(ArticleBase):
             if section_imgs:
                 return PhotoExtended(image=section_imgs[0])
 
-    def is_restricted(self):
+    def is_restricted(self, consider_full=False):
         """
-        When the article's main pub is a restricted publication (by settings), also if no public and has no extra-perms
+        If the article is pulished:
+          If consider_full is True, the result will be True if this article is full_restricted.
+          If consider_full is False or the previous result was False, then, the result will be True when the article's
+            main pub is a restricted publication (by settings), plus the article is no public and has no extra-perms.
         """
         return (
-            not self.is_public()
-            and self.main_section
-            and self.main_section.edition.publication.slug in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
-            and not self.additional_access.exists()
+            self.is_published
+            and (
+                consider_full
+                and self.full_restricted
+                or (
+                    not self.is_public()
+                    and self.main_section
+                    and (
+                        self.main_section.edition.publication.slug
+                        in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
+                    )
+                    and not self.additional_access.exists()
+                )
+            )
         )
+
+    def is_restricted_consider_full(self):
+        """
+        Wrapper for previous method
+        """
+        return self.is_restricted(True)
 
     def published_collections(self):
         return self.linked_collections.filter(**get_published_kwargs())
+
+    def extensions_have_invalid_amp_tags(self):
+        """
+        When this happen, we should not announce that an AMP version of the page is available
+        """
+        invalid_tags = "base img picture video audio iframe frame frameset object param applet embed".split()
+        invalid_filters = {"script": lambda node: "instagram.com/embed.js" in node.get("src", "")}
+        for e in self.extensions.iterator():
+            try:
+                soup = BeautifulSoup(e.body, 'html.parser')
+                for tag in invalid_tags:
+                    if soup.find_all(tag):
+                        return True
+                for tag, call in invalid_filters.items():
+                    for node in soup.find_all(tag):
+                        if call(node):
+                            return True
+            except Exception:
+                pass
 
     def nl_serialize(self, for_cover=False, publication=None, category=None, dates=True):
         authors = self.get_authors()
@@ -2057,13 +2202,17 @@ class CategoryHomeArticle(Model):
 
     def __str__(self):
         # also a custom text version to be useful in the CategoryHome admin change form
-        return (
-            date_format(
-                self.article.last_published_by_category(self.home.category),
-                format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
-                use_l10n=True,
-            ) if self.article.is_published else "No publicado! "
-        ) + ('-F' if self.article.photo else '')
+        try:
+            result = (
+                date_format(
+                    self.article.last_published_by_category(self.home.category),
+                    format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
+                    use_l10n=True,
+                ) if self.article.is_published else "No publicado! "
+            ) + ('-F' if self.article.photo_render_allowed() else '')
+        except Exception:
+            result = super().__str__()
+        return result
 
     class Meta:
         ordering = ('position',)
@@ -2174,14 +2323,15 @@ class CategoryNewsletter(Model):
         """
         Returns the featured articles qs
         """
-        return self.articles.filter(newsletter_articles__featured=True)
+        return self.articles.filter(newsletter_articles__featured=True).order_by('newsletter_articles')
 
     def featured_article(self):
         """
         Returns the featured article in the 1st position
         """
-        featured = self.featured_articles()
-        return featured.exists() and featured.order_by('newsletter_articles')[0]
+        return getattr(
+            CategoryNewsletterArticle.objects.filter(newsletter=self, featured=True).first(), "article", None
+        )
 
     class Meta:
         verbose_name = 'newsletter de área'

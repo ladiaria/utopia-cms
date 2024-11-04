@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from builtins import object
 
 import re
@@ -146,10 +144,9 @@ def update_article_url_in_coral_talk(article_id, new_url_path):
     requests.post(
         settings.TALK_URL + 'api/graphql',
         headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
-        data='{"operationName":"updateStory","variables":{"input":{"id":%d,"story":{"url":"%s://%s%s"}'
+        data='{"operationName":"updateStory","variables":{"input":{"id":%d,"story":{"url":"%s"}'
         ',"clientMutationId":"url updated"}},"query":"mutation updateStory($input: UpdateStoryInput!)'
-        '{updateStory(input:$input){story{id}}}"}' % (
-            article_id, settings.URL_SCHEME, settings.SITE_DOMAIN, new_url_path),
+        '{updateStory(input:$input){story{id}}}"}' % (article_id, settings.SITE_URL_SD + new_url_path),
     ).json()['data']['updateStory']['story']
 
 

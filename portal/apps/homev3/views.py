@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from datetime import datetime, date
 
@@ -33,7 +31,7 @@ decorate_auth = getattr(settings, 'HOMEV3_INDEX_AUTH_DECORATOR', decorate_if_aut
 def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set, articles):
     for a in articles:
         compute_follow, a_id = True, a.id
-        if a.is_restricted():
+        if a.is_restricted(True):
             context['restricteds'].append(a_id)
             compute_follow = (
                 user_has_subscriber and user.subscriber.is_subscriber(a.main_section.edition.publication.slug)
@@ -92,14 +90,18 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
 
     # Context variables for publication, featured publications, sections "grids" and "big photo".
-    context = {
-        "cache_maxage": cache_maxage,
-        'publication': publication,
-        'featured_publications': [],
-        'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ()),
-        'news_wall_enabled': getattr(settings, 'HOMEV3_NEWS_WALL_ENABLED', True),
-        'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
-    }
+    context = publication.extra_context.copy()
+    context.update(
+        {
+            "cache_maxage": cache_maxage,
+            'publication': publication,
+            'featured_publications': [],
+            'featured_sections': getattr(settings, 'HOMEV3_FEATURED_SECTIONS', {}).get(publication.slug, ()),
+            'news_wall_enabled': getattr(settings, 'HOMEV3_NEWS_WALL_ENABLED', True),
+            'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
+            'allow_mas_leidos': getattr(settings, 'HOMEV3_ALLOW_MAS_LEIDOS', True),
+        }
+    )
 
     is_authenticated, user_has_subscriber = user.is_authenticated, hasattr(user, 'subscriber')
     if is_authenticated:
@@ -168,16 +170,8 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             edition = get_object_or_404(Edition, date_published=date_published, publication=publication)
         else:
             edition = get_current_edition(publication=publication)
-
         top_articles = edition.top_articles if edition else []
-
-        context.update(
-            {
-                'edition': edition,
-                'mas_leidos': False,
-                'allow_ads': getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_ALLOW_ADS', True),
-            }
-        )
+        context.update({'edition': edition, 'allow_ads': getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_ALLOW_ADS', True)})
         template = getattr(settings, 'HOMEV3_NON_DEFAULT_PUB_TEMPLATE', 'index_pubs.html')
     else:
         if date_published:
@@ -220,7 +214,6 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         context.update(
             {
                 'edition': ld_edition,
-                'mas_leidos': True,
                 'allow_ads': True,
                 'publications': Publication.objects.filter(public=True),
                 'home_publications': settings.HOME_PUBLICATIONS,

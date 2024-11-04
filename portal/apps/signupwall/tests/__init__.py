@@ -2,7 +2,7 @@ from os.path import join
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 
 # keep commented according lines to use chrome or firefox:
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -18,7 +18,8 @@ from django.test.testcases import LiveServerThread, QuietWSGIRequestHandler
 
 label_content_not_available = "Contenido no disponible con tu suscripción actual"
 label_to_continue_reading = "Para seguir leyendo ingresá o suscribite"
-label_exclusive = "Exclusivo para suscripción digital de pago"
+label_exclusive = settings.SIGNUPWALL_LABEL_EXCLUSIVE
+label_exclusive4u = "Contenido exclusivo con tu suscripción de pago"
 
 
 class LiveServerThreadWithReuse(LiveServerThread):
@@ -47,6 +48,7 @@ class LiveServerSeleniumTestCase(LiveServerTestCase):
         chrome_options = ChromeOptions()
         if headless:
             chrome_options.add_argument('--headless')
+            chrome_options.add_argument("--disable-gpu")  # may accelerate things (not checked, TODO: check)
 
         """
         Uncomment next line to test in chrome-android using an android device listed in "adb".
@@ -88,7 +90,7 @@ class LiveServerSeleniumTestCase(LiveServerTestCase):
     def take_screenshot_before_pay(self, img_name, img_dir="/tmp"):
         try:
             self.selenium.find_element(by=By.ID, value="main-content").screenshot(join(img_dir, img_name + ".png"))
-        except NoSuchElementException as exc:
+        except (NoSuchElementException, StaleElementReferenceException) as exc:
             if settings.DEBUG:
                 print("WARNING: Screenshot not taken (%s)" % exc)
 

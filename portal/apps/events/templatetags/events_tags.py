@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from django.template import Node, Library, Variable, TemplateSyntaxError
 from django.utils.timezone import now

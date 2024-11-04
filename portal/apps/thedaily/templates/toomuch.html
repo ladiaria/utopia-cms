@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load core_tags %}
 
-{% block page_title %}Demasiadas sesiones abiertas{% endblock %}
+{% block page_title %}{% title_joinparts 'Demasiadas sesiones abiertas' %}{% endblock %}
 {% block body_class %}thedaily{% endblock %}
 
 {% block content %}

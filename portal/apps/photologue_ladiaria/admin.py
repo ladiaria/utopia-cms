@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from django import forms
 from django.contrib import admin
 
@@ -47,7 +44,7 @@ class PhotoExtendedInline(admin.StackedInline):
         ('Metadatos', {'fields': ('date_taken', 'type', 'photographer', 'agency')}),
         (
             'Recorte para versión cuadrada',
-            {'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse',)}
+            {'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse',)},
         ),
     )
 
@@ -172,11 +169,12 @@ class PhotographerFilter(admin.SimpleListFilter):
 
 
 class PhotoAdmin(PhotoAdminDefault):
-    list_display = ('title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public', 'view_count')
+    list_display = ('id', 'title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public')
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
     fieldsets = (
         (None, {'fields': ('title', 'image', 'caption')}),
-        ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}))
+        ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}),
+    )
     inlines = [PhotoExtendedInline]
 
 

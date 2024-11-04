@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% load static core_tags homev3_tags %}
 
-{% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
-
 {% block page_title %}{% publication_title %}{% endblock %}
 
 {% block meta_og_title %}
@@ -52,6 +50,7 @@
 {% endblock %}
 
 {% block javascript %}
+  {% if allow_mas_leidos %}<script src="{% static 'js/most_read.js' %}"></script>{% endif %}
   <script type="text/javascript">
     $(function(){
       resizeSubnav($('.section-detail__sub-cats'), $('.section-detail__sub-cats-list'), 2);

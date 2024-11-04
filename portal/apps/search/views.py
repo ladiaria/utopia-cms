@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from builtins import range
 import re
@@ -9,17 +7,16 @@ from elasticsearch_dsl import Q
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
 from django.views.decorators.cache import never_cache
+from django.shortcuts import render
 
 from core.models import Article
-
-from decorators import render_response
 
 from .forms import SearchForm
 from .models import get_query
 from .documents import ArticleDocument
 
 
-to_response, dre, results_per_page = render_response('search/templates/'), re.compile(r'\w+[\w\s]+', re.UNICODE), 15
+dre, results_per_page = re.compile(r'\w+[\w\s]+', re.UNICODE), 15
 
 
 def _paginate(page, query, results_per_page=results_per_page):
@@ -48,7 +45,6 @@ def _page_results(page, s, total, results_per_page=results_per_page):
 
 
 @never_cache
-@to_response
 def search(request, token=''):
     search_form, page_results, elastic_search, elastic_match_phrase = SearchForm(), [], False, False
 
@@ -61,6 +57,7 @@ def search(request, token=''):
                     token = get.get('q', '')
                     token = ''.join(dre.findall(token))
 
+    template = getattr(settings, "SEARCH_RESULTS_TEMPLATE", "search/templates/search_results.html")
     page = request.GET.get("pagina")
     if token and len(token) > 2:
 
@@ -103,7 +100,7 @@ def search(request, token=''):
                 if settings.DEBUG:
                     print("search error: %s" % exc)
                 search_form.add_error('q', 'No es posible realizar la búsqueda en este momento.')
-                return 'search_results.html', {'form': search_form}
+                return render(request, template, {'form': search_form})
             cont, elastic_search = len(matches_query), True
 
         else:
@@ -118,8 +115,9 @@ def search(request, token=''):
 
         token, cont, results = '', 0, _paginate(page, '')
 
-    return (
-        'search_results.html',
+    return render(
+        request,
+        template,
         {
             'form': search_form,
             'token': token,

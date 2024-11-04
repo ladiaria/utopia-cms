@@ -1,11 +1,27 @@
 {% extends "base.html" %}
-{% load static %}
+{% load core_tags static crispy_forms_tags %}
 
-{% block page_title %}Suscribite por teléfono{% endblock %}
-{% block body_class %}thedaily subscribe hide-mobile-nav{% endblock %}
+{% block page_title %}{% title_joinparts 'Suscribite por teléfono' %}{% endblock %}
+
 {% block meta %}
   <meta name="robots" content="noindex">
 {% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
+{% endblock %}
+
+{% block header_scripts %}
+  <script src="{{ intl_tel_input_cdn }}js/intlTelInput.min.js"></script>
+  <script src="{% static 'js/phone_widget.js' %}"></script>
+  <script>
+    $(function(){
+      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}js/utils.js", true);{# init phone widget #}
+    });
+  </script>
+{% endblock %}
+
+{% block body_class %}thedaily subscribe hide-mobile-nav{% endblock %}
 
 {% block navbar %}
   <div id="main-header">
@@ -25,57 +41,7 @@
   {% else %}
     <main class="ld-content">
       <div class="row">
-        <div class="subscribe-header center-align">
-          <h1 class="ld-title-big">Suscribite por teléfono</h1>
-          <div class="ld-text-secondary">Completá el formulario y te llamaremos en las próximas 48 horas para realizar la suscripción.</div>
-        </div>
-        <div class="col s12 m8 offset-m2">
-          <div class="col s12">
-            <form id="subscribe" method="post">
-              {% csrf_token %}
-              <h3 class="small">Tus datos</h3>
-              <div class="row">
-                <div id="div_id_full_name" class="validate input-field col s12 ">
-                  <label for="id_full_name" class="required">Nombre completo<span class="asterisk"> (requerido)</span></label>
-                  <input id="id_full_name" type="text" class="textinput textInput" name="full_name" required>
-                </div>
-                <div id="div_id_phone" class="validate input-field col s12 ">
-                  <label for="id_phone" class="required">Teléfono<span class="asterisk"> (requerido)</span></label>
-                  <input id="id_phone" type="tel" class="textinput textInput" name="phone" required>
-                </div>
-              </div>
-              <div class="row">
-                <div id="div_id_time" class="validate  col s12 ">
-                  <h3 class="small">Hora de contacto preferida</h3>
-                  <div id="id_time_wrapper">
-                    <div class="radio">
-                      <input type="radio" name="time" id="id_time_1" value="Cualquier hora" checked="checked">
-                      <label for="id_time_1">Cualquier hora (9:00 a 20:00)</label>
-                    </div>
-                    <div class="radio">
-                      <input type="radio" name="time" id="id_time_2" value="En la mañana (9:00 a 12:00)">
-                      <label for="id_time_2">En la mañana (9:00 a 12:00)</label>
-                    </div>
-                    <div class="radio">
-                      <input type="radio" name="time" id="id_time_3" value="En la tarde (12:00 a 18:00)">
-                      <label for="id_time_3">En la tarde (12:00 a 18:00)</label>
-                    </div>
-                    <div class="radio">
-                      <input type="radio" name="time" id="id_time_4" value="En la tarde-noche (18:00 a 20:00)">
-                      <label for="id_time_4">En la tarde-noche (18:00 a 20:00)</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="ld-block--sm align-center">
-                <div class="form-group">
-                  <input name="send" value="ENVIAR" class="ut-btn ut-btn-light ut-btn-l" type="submit">
-                </div>
-              </div>
-            </form>
-            <p class="ld-text-secondary align-center"><a href="/suscribite/">O suscribite online</a></p>
-          </div>
-        </div>
+        {% include 'phone_subscription_form_anon_inner_content.html' %}
       </div>
     </main>
   {% endif %}

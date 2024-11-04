@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from builtins import str
 import json
@@ -37,7 +36,12 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
 
     section = get_object_or_404(Section, slug=section_slug)
 
-    context, edition, articles, page = {'section': section}, None, None, request.GET.get('pagina')
+    context = {
+        'section': section,
+        "title_append_country":
+            getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_COUNTRY", settings.PORTAL_TITLE_APPEND_COUNTRY),
+    }
+    edition, articles, page = None, None, request.GET.get('pagina')
 
     if section.meta_description:
         context['site_description'] = section.meta_description

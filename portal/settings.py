@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-# TODO: check if the 3 imports above are needed
-
 import sys
 from os.path import abspath, basename, dirname, join, realpath
 import mimetypes
@@ -35,6 +29,11 @@ SITE_DOMAIN = "example.com"
 URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+# default filename for the bse_template used to extend by variable
+PORTAL_BASE_TEMPLATE = "base.html"
+# country name in page titles
+PORTAL_TITLE_APPEND_COUNTRY = True
 
 # disable template settings warning until fixed migrating django-mobile to django-amp-tools
 SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
@@ -125,6 +124,7 @@ INSTALLED_APPS = (
     "reversion",
     "django_celery_results",
     "django_celery_beat",
+    "phonenumber_field",
 )
 
 SITE_ID = 1
@@ -205,8 +205,6 @@ MIDDLEWARE = (
     "core.middleware.cache.AnonymousRequest",  # hacks cookie header for anon users (req phase)
     "django.middleware.cache.FetchFromCacheMiddleware",  # runs during the request phase (top -> first)
     "social_django.middleware.SocialAuthExceptionMiddleware",
-    "amp_tools.middleware.AMPDetectionMiddleware",
-    "core.middleware.AMP.OnlyArticleDetail",
     "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
 )
 
@@ -365,6 +363,10 @@ ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
 SEARCH_ELASTIC_USE_FUZZY = False  # Ignored when previous setting is True (not allowed by Elasticsearch).
 
+# mongodb database
+MONGODB_DATABASE = "utopia_cms"
+MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
+
 # apps
 
 # core
@@ -402,12 +404,11 @@ CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 # show or hide photo credits in article cards
 CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 
+# use job to build journalist absolute url
+CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
+
 # enable related articles in article detail
 CORE_ENABLE_RELATED_ARTICLES = True
-
-# mongodb database
-MONGODB_DATABASE = "utopia_cms"
-MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
 # push notifications
 CORE_PUSH_NOTIFICATIONS_OFFER = True  # offer to allow push notifications on all pages
@@ -426,23 +427,26 @@ CORE_PUSH_NOTIFICATIONS_OPTIONS = {
 
 # signupwall (other settings will be populated after local settings import)
 SIGNUPWALL_MAX_CREDITS = 10
-SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: Implementation for values greater than 0 is not included
+SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: values greater than 0 is not fully supported (only AMP endpoints need updates)
+SIGNUPWALL_RISE_REDIRECT = True
+SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily
+# TODO: write comments to explain the usage (for the uncommented ones)
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
 PROMO_EMAIL_SUBJECT = "Nueva promoción"
 SUBSCRIPTION_EMAIL_TO = [NOTIFICATIONS_TO_ADDR]
 SUBSCRIPTION_BY_PHONE_EMAIL_TO = SUBSCRIPTION_EMAIL_TO
 MAX_USERS_API_SESSIONS = 3
+THEDAILY_GOOGLE_OAUTH2_ASK_PHONE = False
 THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID = None
 THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
     ("DDIGM", "Suscripción digital"),
     ("PAPYDIM", "Suscripción papel"),
 )
 THEDAILY_PROVINCE_CHOICES = []
-THEDAILY_WELCOME_TEMPLATE = "welcome.html"
-THEDAILY_PHONE_SUBSCRIPTION_TEMPLATE_DIR = "thedaily/templates"
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
@@ -539,6 +543,7 @@ CRM_UPDATE_USER_ENABLED = False
 # CRM API urls will be assigned after local_settings import, if not overrided
 CRM_API_BASE_URI = None
 CRM_API_UPDATE_USER_URI = None
+CRM_API_GET_USER_URI = None
 
 # PWA
 PWA_SERVICE_WORKER_TEMPLATE = "core/templates/sw/serviceworker.js"
@@ -548,12 +553,22 @@ PWA_SERVICE_WORKER_VERSION = 1
 # Useful settings for testing (test management command, should be overriden in local_test_settings.py if necessary)
 TESTING_CHROME_HEADLESS = True
 TESTING_PORT = 8000
+# A flag to tell us that we must use the default django functions to send emails because these emails will be read by
+# tests that validate the emails received, for example, take the token from the signup validation email.
+# Override to True only if you set an email backend for test that is not SMTP.
+LOCAL_EMAIL_BACKEND_TEST = False
 
 # defaults that will be assigned after local settings import
+COMPRESS_OFFLINE_CONTEXT = {}
 SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+CRM_UPDATE_USER_CREATE_CONTACT = None
+CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP version article page
+PHONENUMBER_DEFAULT_REGION = None
+CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
+ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 
 
 # Override previous settings with values in local_settings.py settings file
@@ -565,6 +580,11 @@ SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
 LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
+COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
+
+# phonenumbers default region (if not set) will default to LOCAL_COUNTRY
+if PHONENUMBER_DEFAULT_REGION is None:
+    PHONENUMBER_DEFAULT_REGION = LOCAL_COUNTRY
 
 # signupwall overrided/defaults
 if SIGNUPWALL_ENABLED is None:
@@ -584,6 +604,27 @@ if FREEZE_TIME:
 
 ABSOLUTE_URL_OVERRIDES = {"auth.user": SITE_URL + "usuarios/perfil/editar/"}
 
-# CRM API urls
+# AMP
+CORE_ARTICLE_DETAIL_ENABLE_AMP = "amp_tools" in INSTALLED_APPS
+if CORE_ARTICLE_DETAIL_ENABLE_AMP:
+    MIDDLEWARE = (
+        MIDDLEWARE[:-1]
+        + ("amp_tools.middleware.AMPDetectionMiddleware", "core.middleware.AMP.OnlyArticleDetail")
+        + (MIDDLEWARE[-1],)
+    )
+
+# CRM API
 if CRM_API_BASE_URI:
     CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + "updateuserweb/")
+    CRM_API_GET_USER_URI = CRM_API_GET_USER_URI or (CRM_API_BASE_URI + "existsuserweb/")
+if CRM_UPDATE_USER_CREATE_CONTACT is None:
+    # defaults to the same value of the "base sync"
+    CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED
+
+if ENV_HTTP_BASIC_AUTH and not locals().get("API_KEY_CUSTOM_HEADER"):
+    # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
+    API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
+
+# thedaily debug signals
+if THEDAILY_DEBUG_SIGNALS is None:
+    THEDAILY_DEBUG_SIGNALS = locals().get("DEBUG", False)

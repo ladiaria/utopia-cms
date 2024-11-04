@@ -1,6 +1,7 @@
 {% extends "cartelera/vivo_base.html" %}
+{% load core_tags %}
 
-{% block page_title %}Archivo de eventos{% endblock %}
+{% block page_title %}{% title_joinparts 'Archivo de eventos' %}{% endblock %}
 
 {% block content %}
 

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
+from os.path import join
+import logging
 import random as rdm
 from operator import attrgetter
+from urllib.parse import urlencode
 from pydoc import locate
 import requests
 
@@ -10,6 +11,8 @@ from actstream.models import Follow
 from actstream.registry import check
 from favit.models import Favorite
 from social_django.models import UserSocialAuth
+from django_amp_readerid.models import UserReaderId
+from phonenumber_field.phonenumber import PhoneNumber
 
 from django.conf import settings
 from django.core.validators import validate_email
@@ -19,10 +22,23 @@ from django.db.models import Value
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.template import Engine
+from django.template.exceptions import TemplateDoesNotExist
 
+from libs.utils import crm_rest_api_kwargs
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
+from signupwall.utils import get_ip
 from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
+
+
+subscribe_logfile, subscribe_logger = getattr(settings, 'THEDAILY_SUBSCRIBE_LOGFILE', None), None
+if subscribe_logfile:
+    subscribe_logger = logging.getLogger(__name__)
+    subscribe_logger.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler(filename=subscribe_logfile)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S'))
+    subscribe_logger.addHandler(file_handler)
 
 
 non_relevant_data_max_amounts = {
@@ -40,11 +56,11 @@ non_relevant_data_max_amounts = {
     Follow: 10,
     Favorite: 10,
     User.user_permissions.through: 3,
+    UserReaderId: 2,
 }
-for key, val in getattr(settings, "THEDAILY_COLLECTOR_ANALYSIS_EXTRA_AMOUNTS", {}).items():
-    keyclass = locate(key)
-    if keyclass:
-        non_relevant_data_max_amounts[keyclass] = val
+extra_func = locate(getattr(settings, "THEDAILY_COLLECTOR_ANALYSIS_EXTRA_LIMITS", "None"))
+if extra_func:
+    non_relevant_data_max_amounts.update(extra_func())
 
 movable = (
     SubscriberEvent,
@@ -91,8 +107,44 @@ def move_data(s0, s1):
         s1.category_newsletters.add(c)
 
 
+def subscribe_log(request, message, level=logging.INFO):
+    # TODO: indicate wether if the request is ajax.
+    if subscribe_logger and not request.user_agent.is_bot:
+        log_session_keys = getattr(settings, "THEDAILY_SUBSCRIBE_LOG_SESSION_KEYS", False)
+        subscribe_logger.log(
+            level,
+            '[%s]\t%s %s\t(%s)\tuser: %s, "%s", session keys: %s' % (
+                get_ip(request),
+                request.method,
+                request.get_full_path(),
+                request.user_agent,
+                getattr(request.user, 'id', 'not_set'),
+                message,
+                (
+                    [k for k in request.session.keys() if request.session.get(k)]
+                    if log_session_keys else ["session keys log disabled"]
+                ),
+            )
+        )
+
+
+def qparamstr(qparams):
+    qparams_str = urlencode(qparams)
+    return ('?%s' % qparams_str) if qparams_str else ''
+
+
+def get_or_create_user_profile(user):
+    try:
+        profile = user.subscriber
+    except Subscriber.DoesNotExist:  # TODO: check if handle RelatedObjectDoesNotExist can be better or not
+        profile = Subscriber.objects.create(user=user)
+    return profile
+
+
 def recent_following(user, *models):
-    """ The same as actstream.managers.FollowManager.following but sorted by '-started' """
+    """
+    The same as actstream.managers.FollowManager.following but sorted by '-started'
+    """
     qs = Follow.objects.filter(user=user)
     for model in models:
         check(model)
@@ -108,8 +160,7 @@ def add_default_mailtrain_lists(subscriber):
             try:
                 requests.post(
                     api_uri + "mailtrain_list_subscription/",
-                    headers={"Authorization": "Api-Key " + api_key},
-                    data={"email": subscriber.user.email, "list_id": mlist.list_cid},
+                    **crm_rest_api_kwargs(api_key, {"email": subscriber.user.email, "list_id": mlist.list_cid}),
                 )
             except Exception:
                 pass
@@ -203,3 +254,43 @@ def google_phone_next_page(request, is_new):
     return reverse('account-welcome') if is_new else (
         request.GET.get("next", request.POST.get("next_page")) or next_page
     )
+
+
+def get_app_template(relative_path):
+    """
+    This simplifies the use of one custom setting per file, but cannot map a known template to any file, if one day
+    this became a requirement, we can add a map setting to map the relative_path received here to whatever the custom
+    map says; for ex: relative_path = getattr(settings, "NEW_CUSTOM_SETTING", {}).get(relative_path, relative_path)
+    where NEW_CUSTOM_SETTING can be for ex: {"welcome.html": "goodbye.html"}
+    """
+    default_dir, custom_dir = "thedaily/templates", getattr(settings, "THEDAILY_ROOT_TEMPLATE_DIR", None)
+    template = join(default_dir, relative_path)  # fallback to the default
+    if custom_dir:
+        engine = Engine.get_default()
+        # search under custom and take it if found
+        template_try = join(custom_dir, relative_path)
+        try:
+            engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            pass
+        else:
+            template = template_try
+    # if custom dir is not defined, no search is needed
+    return template
+
+
+def product_checkout_template(product_slug, steps=False):
+    steps_suffix = "_steps" if steps else ""
+    template = get_app_template(f"market/product{steps_suffix}.html")  # fallback
+    template_try = get_app_template(f"market/products/{product_slug}{steps_suffix}.html")
+    try:
+        Engine.get_default().get_template(template_try)
+    except TemplateDoesNotExist:
+        pass
+    else:
+        template = template_try
+    return template
+
+
+def national_phone_as_e164(national_number):
+    return PhoneNumber.from_string(national_number).as_e164
