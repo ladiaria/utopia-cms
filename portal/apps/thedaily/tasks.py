@@ -17,7 +17,7 @@ welcome_email_sub = 'Tu suscripción %s está activa'
 
 def send_notification_message(subject, message, mailto):
     if (
-        not getattr(settings, 'LOCAL_EMAIL_BACKEND_TEST', False)
+        not settings.LOCAL_EMAIL_BACKEND_TEST
         and settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
     ):
         # send using smtp to receive bounces in another mailbox
