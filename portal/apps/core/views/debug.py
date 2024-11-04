@@ -3,7 +3,7 @@
 from django_user_agents.utils import get_user_agent
 
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404, HttpResponseServerError
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.cache import never_cache
 from django.contrib.admin.views.decorators import staff_member_required
@@ -46,3 +46,16 @@ def session_popkey(request, key):
     """
     request.session.pop(key, None)
     return JsonResponse({"status": "key was removed"})
+
+
+@never_cache
+def debug_custom_handlers(request):
+    """
+    This view is used to test custom handlers
+    """
+    status = request.GET.get('status', "404")
+    if status == "403":
+        raise PermissionDenied
+    elif status == "500":
+        raise HttpResponseServerError
+    raise Http404

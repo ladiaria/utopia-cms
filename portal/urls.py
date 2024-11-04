@@ -231,6 +231,11 @@ router.register(r'urls', UrlViewSet)
 router.register(r'subscribers', SubscriberViewSet)
 router.register(r'dollar_exchange', DollarExchangeViewSet)
 
+# error handlers
+handler403 = getattr(settings, 'CUSTOM_HANDLER_403', None)
+handler404 = getattr(settings, 'CUSTOM_HANDLER_404', None)
+handler500 = getattr(settings, 'CUSTOM_HANDLER_500', "homev3.views.custom_500_handler")
+
 urlpatterns = [
     path('photologue/', include('photologue.urls', namespace='photologue_photologue')),
     path('epubparser/', include('epubparser.urls')),

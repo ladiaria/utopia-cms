@@ -249,3 +249,8 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         if template_dir:
             template = '%s/%s.html' % (template_dir, publication.slug)
     return render(request, template, context)
+
+
+def custom_500_handler(request):
+    context = {'HOMEV3_LOGO': settings.HOMEV3_LOGO}
+    return render(request, '500.html', context, status=500)
