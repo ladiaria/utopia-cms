@@ -8,7 +8,7 @@ function phone_widget(local_country, util_script, required=false, use_placeholde
         phone: "phone"
       };
     },
-    utilsScript: util_script,
+    utilsScript: util_script
   };
   if (!use_placeholder) {
     options.placeholderNumberType = false;
