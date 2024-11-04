@@ -11,6 +11,9 @@ from .management.commands.send_notification import send_notification_func
 from .management.commands.update_article_urls import update_article_urls as update_article_urls_func
 
 
+inspector = celery_app.control.inspect()
+
+
 @celery_app.task(name="update-category-home")
 def update_category_home_task():
     result = update_category_home_func()
@@ -54,12 +57,62 @@ def test_task(test_arg=None):
     return "test_task executed with arg: %s" % test_arg
 
 
+def get_workers_for_queue(queue_name):
+    # Get the list of all registered workers and their queues
+    active_queues = inspector.active_queues() or {}
+    workers_handling_queue = set()
+    for worker, queues in active_queues.items():
+        for queue in queues:
+            if queue['name'] == queue_name:
+                workers_handling_queue.add(worker)
+    return list(workers_handling_queue)
+
+
+# - workers may allways be the same, thats why this code is not inside a function, to be called only once per py proc.
+# - if you are not running celery you should set CELERY_QUEUES = {} in your local_settings.py, then CELERY_TASK_ROUTES
+#   will not be populated and a KeyError will be raised and handled here.
+try:
+    update_category_home_workers = get_workers_for_queue(settings.CELERY_TASK_ROUTES["update-category-home"]["queue"])
+except (AttributeError, KeyError, OperationalError):
+    update_category_home_workers = []
+
+
 def update_category_home():
-    try:
-        update_category_home_task.delay()
-    except OperationalError as oe_exc:
-        if settings.DEBUG:
-            print("ERROR: update_category_home_task could not be started (%s)" % oe_exc)
+
+    # Check if the task is already running or enqueued before enqueueing it again
+    task_name, found = update_category_home_task.name, False
+    if update_category_home_workers:
+        active_tasks, found = inspector.active() or {}, False
+        for w in update_category_home_workers:
+            for task in active_tasks.get(w, []):
+                if task.get('name') == task_name:
+                    if settings.DEBUG:
+                        print("found active")
+                    found = True
+                    break
+            if found:
+                break
+
+        if not found:
+            queued_tasks = inspector.scheduled() or {}
+            for w in update_category_home_workers:
+                for task in queued_tasks.get(w, []):
+                    if task.get('name') == task_name:
+                        if settings.DEBUG:
+                            print("found queued")
+                        found = True
+                        break
+                if found:
+                    break
+
+    if not found:
+        try:
+            update_category_home_task.delay()
+        except OperationalError as oe_exc:
+            if settings.DEBUG:
+                print("ERROR: update_category_home_task could not be started (%s)" % oe_exc)
+    elif settings.DEBUG:
+        print("Task '%s' is already active or scheduled, no action taken." % task_name)
 
 
 def send_push_notification(msg, tag, url, img_url, user):
