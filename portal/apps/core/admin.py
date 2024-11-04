@@ -1066,7 +1066,9 @@ class CategoryAdmin(ModelAdmin):
 class ReadOnlyDisplayWidget(Widget):
 
     def render(self, name, value, attrs=None, renderer=None):
-        return mark_safe(f'<span>{value}</span>')
+        text_display = f'<span>{value}</span>'
+        hidden_input = f'<input type="hidden" name="{name}" value="{value}"/>'
+        return mark_safe(text_display + hidden_input)
 
 
 class CategoryHomeArticleForm(ModelForm):
