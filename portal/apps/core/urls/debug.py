@@ -1,6 +1,7 @@
 from django.urls import path
+from django.conf import settings
 
-from core.views.debug import request_meta, staff_only, auth_only, session_popkey
+from core.views.debug import request_meta, staff_only, auth_only, session_popkey, debug_custom_handlers
 
 
 urlpatterns = [
@@ -9,3 +10,6 @@ urlpatterns = [
     path('auth-only/', auth_only),
     path('session-popkey/<str:key>/', session_popkey),
 ]
+
+if getattr(settings, 'DEBUG_CUSTOM_HANDLERS', False):
+    urlpatterns.append(path('handler/', debug_custom_handlers))
