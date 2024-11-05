@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0048_alter_article_audio_alter_article_created_by_and_more"),
+        ("core", "0049_alter_categoryhomearticle_unique_together_and_more"),
     ]
 
     operations = [
