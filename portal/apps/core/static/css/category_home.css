@@ -1,5 +1,5 @@
 h2:has(+ #content-main){max-width: 1170px;}
-td.field-pos {
+td.field-position {
   width: 60px;
 }
 td.field-article {
