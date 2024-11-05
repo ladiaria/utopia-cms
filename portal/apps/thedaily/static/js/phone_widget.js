@@ -1,4 +1,4 @@
-function phone_widget(local_country, util_script, required=false, no_placeholder=false) {
+function phone_widget(local_country, util_script, required=false, use_placeholder=false, extra_options={}) {
 
   const input = document.querySelector("#id_phone");
   let options = {
@@ -10,8 +10,11 @@ function phone_widget(local_country, util_script, required=false, no_placeholder
     },
     utilsScript: util_script
   };
-  if (no_placeholder) {
+  if (!use_placeholder) {
     options.placeholderNumberType = false;
+  }
+  if (extra_options) {
+    Object.assign(options, extra_options);
   }
   const iti = window.intlTelInput(input, options);
   input.addEventListener("countrychange", function(e) {
