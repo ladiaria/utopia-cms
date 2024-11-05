@@ -888,7 +888,7 @@ body.ld-profile-edit {
 
   input:focus:not(:checked) + .slider {
     outline: none;
-    box-shadow: 0 0 1px #6fcf97;
+    box-shadow: none;
   }
 
   input:checked:focus + .slider {
