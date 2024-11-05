@@ -2189,13 +2189,13 @@ class ArticleViews(Model):
 
 
 class CategoryHomeArticle(Model):
+    # TODO: review the "custom label" comment in the position field (still needed?)
     home = ForeignKey('CategoryHome', on_delete=CASCADE)
     article = ForeignKey(
         Article,
         on_delete=CASCADE,
         verbose_name='artículo',
         related_name='home_articles',
-        limit_choices_to={'is_published': True},
     )
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
@@ -2216,7 +2216,6 @@ class CategoryHomeArticle(Model):
 
     class Meta:
         ordering = ('position',)
-        unique_together = ('home', 'position')
 
 
 class CategoryHome(Model):
