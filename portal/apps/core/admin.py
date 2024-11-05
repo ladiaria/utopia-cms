@@ -95,6 +95,7 @@ class HomeTopArticleInline(TabularInline):
     raw_id_fields = ('article',)
     verbose_name_plural = 'artículos'
     formset = TopArticleRelInlineFormSet
+    classes = ('dynamic-order',)
 
     class Media:
         # jquery loaded again (admin uses custom js namespaces and we use jquery-ui)
@@ -105,16 +106,6 @@ class HomeTopArticleInline(TabularInline):
             'js/RelatedObjectLookupsCustom.js',
         )
         css = {'all': ('css/home_admin.css',)}
-
-
-class SectionArticleRelForm(ModelForm):
-
-    class Meta:
-        fields = ('article', 'position', 'home_top')
-        model = ArticleRel
-
-
-SectionArticleRelInlineFormSet = inlineformset_factory(Edition, ArticleRel, form=SectionArticleRelForm)
 
 
 @admin.register(Edition, site=site)
@@ -1106,10 +1097,10 @@ class ReadOnlyDisplayWidget(Widget):
 
 
 class CategoryHomeArticleForm(ModelForm):
-    pos = IntegerField(label='orden', widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': 'readonly'}))
+    position = IntegerField(label='orden', widget=TextInput(attrs={'size': 3, 'readonly': True}))
 
     class Meta:
-        fields = ['position', 'pos', 'home', 'article', 'fixed']
+        fields = ['position', 'home', 'article', 'fixed']
         model = CategoryHomeArticle
         widgets = {
             "article": ForeignKeyRawIdWidgetMoreWords(
@@ -1125,9 +1116,7 @@ class CategoryHomeArticleFormSet(CategoryHomeArticleFormSetBase):
 
     def add_fields(self, form, index):
         super().add_fields(form, index)
-        form.fields["position"].widget = HiddenInput()
         if index is not None:
-            form.fields["pos"].initial = index + 1
             form.fields["position"].initial = index + 1
 
 
@@ -1139,15 +1128,11 @@ class CategoryHomeArticleInline(TabularInline):
     formset = CategoryHomeArticleFormSet
     raw_id_fields = ('article',)
     verbose_name_plural = 'Artículos en portada'
-    classes = ('dynamic-order', )
+    classes = ('dynamic-order',)
 
     class Media:
-        js = (
-            'admin/js/jquery.js',
-            'js/jquery-ui-1.13.2.custom.min.js',
-            'js/homev2/dynamic_edition_admin.js',
-        )
-        css = {'all': ('css/category_home.css', )}
+        js = ('admin/js/jquery.js', 'js/jquery-ui-1.13.2.custom.min.js', 'js/homev2/dynamic_edition_admin.js')
+        css = {'all': ('css/category_home.css',)}
 
 
 @admin.register(CategoryHome, site=site)
