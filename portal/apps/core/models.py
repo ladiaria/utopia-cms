@@ -2204,13 +2204,13 @@ class ArticleViews(Model):
 
 
 class CategoryHomeArticle(Model):
+    # TODO: review the "custom label" comment in the position field (still needed?)
     home = ForeignKey('CategoryHome', on_delete=CASCADE)
     article = ForeignKey(
         Article,
         on_delete=CASCADE,
         verbose_name='artículo',
         related_name='home_articles',
-        limit_choices_to={'is_published': True},
     )
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
@@ -2231,7 +2231,6 @@ class CategoryHomeArticle(Model):
 
     class Meta:
         ordering = ('position',)
-        unique_together = ('home', 'position')
 
 
 class CategoryHome(Model):
@@ -2548,8 +2547,6 @@ def get_current_edition(publication=None):
     """
     nowval = now()
     today, filters = nowval.date(), {}
-    # TODO: investigate why this line was included in the last merge, then remove it
-    # nowval = make_aware(nowval, timezone=zoneinfo.ZoneInfo('America/Montevideo'))
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
     publishing = make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
 
