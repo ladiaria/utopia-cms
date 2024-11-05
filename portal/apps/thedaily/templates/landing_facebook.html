@@ -8,13 +8,22 @@
 {% endblock %}
 
 {% block content %}
+{% comment %}
+  Usé un with con if's para poder dejar toda las posibilidades maquetadas
+
+  Tenemos 2 situaciones que mostrar.
+  1 - Facebook iOS - Facebook Android - Instagram iOS (usé variable "fb")
+  2 - Instagram Android (usé variable "ig_android")
+
+{% endcomment %}
+{% with browser_type="ig_android" %}
 <div class="open-external-browser-container">
   <div class="open-external-browser__header">
     <p>Abrí la nota en dos simples pasos:</p>
   </div>
   <div class="open-external-browser__body">
     <div class="step-row">
-      <svg xmlns="http://www.w3.org/2000/svg" width="41" height="41" viewBox="0 0 41 41" fill="none">
+      <svg title="tres puntos" xmlns="http://www.w3.org/2000/svg" width="41" height="41" viewBox="0 0 41 41" fill="none" class="{% if browser_type == 'ig_android' %}vertical-icon{% endif %}">
         <path d="M1 20.5C1 9.73045 9.73045 1 20.5 1C31.2696 1 40 9.73045 40 20.5C40 31.2696 31.2696 40 20.5 40C9.73045 40 1 31.2696 1 20.5Z" fill="white" stroke="#D9D9D9"/>
         <path d="M10.5 17.1667C8.66669 17.1667 7.16669 18.6667 7.16669 20.5C7.16669 22.3333 8.66669 23.8333 10.5 23.8333C12.3334 23.8333 13.8334 22.3333 13.8334 20.5C13.8334 18.6667 12.3334 17.1667 10.5 17.1667ZM30.5 17.1667C28.6667 17.1667 27.1667 18.6667 27.1667 20.5C27.1667 22.3333 28.6667 23.8333 30.5 23.8333C32.3334 23.8333 33.8334 22.3333 33.8334 20.5C33.8334 18.6667 32.3334 17.1667 30.5 17.1667ZM20.5 17.1667C18.6667 17.1667 17.1667 18.6667 17.1667 20.5C17.1667 22.3333 18.6667 23.8333 20.5 23.8333C22.3334 23.8333 23.8334 22.3333 23.8334 20.5C23.8334 18.6667 22.3334 17.1667 20.5 17.1667Z" fill="black"/>
       </svg>
@@ -30,9 +39,10 @@
       </svg>
       <div class="step-info">
         <p>Paso 2</p>
-        <p>Seleccionar la opción: <br><span class="font-medium">Abrir en navegador externo.</span></p>
+        <p>Seleccionar la opción: <br><span class="font-medium">Abrir en navegador{% if browser_type == "fb" %} externo{% endif %}.</span></p>
       </div>
     </div>
   </div>
 </div>
+{% endwith %}
 {% endblock %}
