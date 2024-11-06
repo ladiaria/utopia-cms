@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-from settings import INSTALLED_APPS, MIDDLEWARE
-
-
 INTERNAL_IPS = ("127.0.0.1", "0.0.0.0", "*")
 REMOTE_ADDR = "*"
 
@@ -12,13 +9,7 @@ AMP_SIMULATE = True  # remove this line or set to False in production
 RESTRICT_ACCESS = False
 SECRET_KEY = ""  # fill with any value as described in INSTALL.md
 
-if DEBUG:
-    MIDDLEWARE = list(MIDDLEWARE)
-    MIDDLEWARE.insert(5, "corsheaders.middleware.CorsMiddleware")
-    MIDDLEWARE = tuple(MIDDLEWARE)
-
 # Site settings
-CLOSED_SITE = False  # TODO: this feature should be reviewed (its middlewares are not ready for this Django version.
 SITE_DOMAIN = "yoogle.com"  # Don't use this domain in production, use a "real" one you own
 SESSION_COOKIE_DOMAIN = "." + SITE_DOMAIN
 ALLOWED_HOSTS = [SESSION_COOKIE_DOMAIN]
@@ -26,13 +17,6 @@ ALLOWED_HOSTS = [SESSION_COOKIE_DOMAIN]
 COMPRESS_OFFLINE = not DEBUG
 COMPRESS_ENABLED = True
 KEY_PREFIX = SITE_DOMAIN  # see: https://docs.djangoproject.com/en/4.1/ref/settings/#key-prefix
-
-if CLOSED_SITE or RESTRICT_ACCESS:
-    INSTALLED_APPS += ("closed_site",)
-    MIDDLEWARE = (
-        "closed_site.middleware.ClosedSiteMiddleware",
-        "closed_site.middleware.RestrictedAccessMiddleware",
-    ) + MIDDLEWARE
 
 ADMINS = (("Admin", "admin@example.com"),)  # change to a real mailbox for non-dev deployments
 
