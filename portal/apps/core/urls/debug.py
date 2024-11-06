@@ -12,4 +12,4 @@ urlpatterns = [
 ]
 
 if getattr(settings, 'DEBUG_CUSTOM_HANDLERS', False):
-    urlpatterns.append(path('handler/', debug_custom_handlers))
+    urlpatterns.append(path('handler/<int:status>/', debug_custom_handlers))

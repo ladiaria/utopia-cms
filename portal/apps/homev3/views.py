@@ -253,4 +253,4 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
 
 def custom_500_handler(request):
     context = {'HOMEV3_LOGO': settings.HOMEV3_LOGO}
-    return render(request, '500.html', context, status=500)
+    return render(request, getattr(settings, "HOMEV3_500_TEMPLATE", "500.html"), context, status=500)
