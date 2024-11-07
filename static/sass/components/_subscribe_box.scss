@@ -84,7 +84,7 @@
     background: #262626;
     padding: 6px 8px;
 
-    > p {
+    > label {
       font-family: "Roboto", sans-serif;
       display: flex;
       gap: 4px;
@@ -94,6 +94,7 @@
       font-weight: 600;
       line-height: normal;
       margin: 0;
+      font-size: px-to-rem(16px);
 
       svg {
         height: auto;
