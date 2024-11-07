@@ -588,11 +588,11 @@ COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
 if locals().get("DEBUG_TOOLBAR_ENABLE"):
     # NOTE when enabled, you need to: pip install "django-debug-toolbar==4.3.0" && ./manage.py collectstatic
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE = MIDDLEWARE[:7] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[7:]
+    MIDDLEWARE = MIDDLEWARE[:8] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[8:]
 
 DEBUG = locals().get("DEBUG", False)
 if DEBUG:
-    MIDDLEWARE = MIDDLEWARE[:7] + ("corsheaders.middleware.CorsMiddleware",) + MIDDLEWARE[7:]
+    MIDDLEWARE = MIDDLEWARE[:8] + ("corsheaders.middleware.CorsMiddleware",) + MIDDLEWARE[8:]
 
 # phonenumbers default region (if not set) will default to LOCAL_COUNTRY
 if PHONENUMBER_DEFAULT_REGION is None:

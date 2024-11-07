@@ -654,14 +654,14 @@ def google_phone(request):
 
 
 @never_cache
-@to_response
 def subscribe(request, planslug, category_slug=None):
     """
     This view handles the plan subscriptions.
     """
     custom_module, article_id = getattr(settings, 'THEDAILY_VIEWS_CUSTOM_MODULE', None), request.GET.get("article")
 
-    context, template, article = {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}, "subscribe.html", None
+    context, article = {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}, None
+    template = get_app_template("subscribe.html")
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
             article = Article.objects.get(id=article_id)
@@ -901,7 +901,7 @@ def subscribe(request, planslug, category_slug=None):
                             context.update(
                                 {'subscriber_form': subscriber_form_v, 'subscription_form': subscription_form_v}
                             )
-                            return template, context
+                            return render(request, template, context)
                     subscription.subscriber = user
 
                 subscription.save()
@@ -934,7 +934,7 @@ def subscribe(request, planslug, category_slug=None):
                         'product': product,
                     }
                 )
-                return template, context
+                return render(request, template, context)
 
         context.update(
             {
@@ -948,7 +948,7 @@ def subscribe(request, planslug, category_slug=None):
                 'subscription_in_process': subscription_in_process,
             }
         )
-        return template, context
+        return render(request, template, context)
 
 
 def hash_validate(user_id, hash):
