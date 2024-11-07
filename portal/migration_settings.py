@@ -124,6 +124,7 @@ INSTALLED_APPS = (
     "django_celery_results",
     "django_celery_beat",
     "phonenumber_field",
+    "closed_site",
 )
 
 SITE_ID = 1
@@ -185,6 +186,8 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap", "uni_form", "bootstrap3", "bootstr
 CRISPY_TEMPLATE_PACK = "materialize_css_forms"
 
 MIDDLEWARE = (
+    "closed_site.middleware.ClosedSiteMiddleware",
+    "closed_site.middleware.RestrictedAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.cache.UpdateCacheMiddleware",  # runs during the response phase (top -> last)
     "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)

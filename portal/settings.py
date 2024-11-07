@@ -125,6 +125,7 @@ INSTALLED_APPS = (
     "django_celery_results",
     "django_celery_beat",
     "phonenumber_field",
+    "closed_site",
 )
 
 SITE_ID = 1
@@ -186,6 +187,8 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap", "uni_form", "bootstrap3", "bootstr
 CRISPY_TEMPLATE_PACK = "materialize_css_forms"
 
 MIDDLEWARE = (
+    "closed_site.middleware.ClosedSiteMiddleware",
+    "closed_site.middleware.RestrictedAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.cache.UpdateCacheMiddleware",  # runs during the response phase (top -> last)
     "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)
@@ -582,6 +585,15 @@ ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
 LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
 COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
 
+if locals().get("DEBUG_TOOLBAR_ENABLE"):
+    # NOTE when enabled, you need to: pip install "django-debug-toolbar==4.3.0" && ./manage.py collectstatic
+    INSTALLED_APPS += ('debug_toolbar',)
+    MIDDLEWARE = MIDDLEWARE[:8] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[8:]
+
+DEBUG = locals().get("DEBUG", False)
+if DEBUG:
+    MIDDLEWARE = MIDDLEWARE[:8] + ("corsheaders.middleware.CorsMiddleware",) + MIDDLEWARE[8:]
+
 # phonenumbers default region (if not set) will default to LOCAL_COUNTRY
 if PHONENUMBER_DEFAULT_REGION is None:
     PHONENUMBER_DEFAULT_REGION = LOCAL_COUNTRY
@@ -627,4 +639,4 @@ if ENV_HTTP_BASIC_AUTH and not locals().get("API_KEY_CUSTOM_HEADER"):
 
 # thedaily debug signals
 if THEDAILY_DEBUG_SIGNALS is None:
-    THEDAILY_DEBUG_SIGNALS = locals().get("DEBUG", False)
+    THEDAILY_DEBUG_SIGNALS = DEBUG

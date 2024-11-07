@@ -33,16 +33,6 @@ var InlineOrdering = {
             });
         };
 
-        function UpdateArticlesPage(section){
-            var articles = $(section).find('.dynamic-order > table > tr').not('[id$=-empty]');
-            articles.each(function(i,art){
-                var art = $(art);
-                var input_page = art.find('input[id$=-page]');
-                var current_page = art.closest('tbody.page').data('page');
-                input_page.val(current_page);
-            });
-        };
-
         function UpdatePages(section){
             var table = $(section).find('.dynamic-order > table');
             var pages = table.find('> tbody');
@@ -79,36 +69,6 @@ var InlineOrdering = {
             } else {
                 UpdateSection(section);
             }
-        });
-
-        inline_group_containers.not('[id$=-group]').each( function(i, section){
-            var section = $(section);
-            var orderables = section.find('.dynamic-order > table > tbody > tr').has('td');
-            var connector = '.page';
-
-            $('.placeholder').hide();
-            section.sortable({
-                forcePlaceholderSize: 'true',
-                items: orderables,
-                connectWith: connector,
-                // Some options.
-                revert: true,
-                start: function(e, ui){
-                    ui.placeholder.height(ui.item.height());
-                },
-                stop: function(event, ui){
-                    UpdateArticlesPage(section);
-                    UpdateSection(section);
-                },
-                update: function(event, ui) {
-                    page = ui.item.closest('.dynamic-order > table > tbody');
-                    if (page.find('tr').not('[id$=-empty]').length > 6 && connector != ''){
-                        section.sortable('cancel');
-                    }
-                },
-            });
-            orderables.css('cursor', 'move');
-            $('td.field-order input').hide();
         });
 
         inline_group_containers.each( function(){
