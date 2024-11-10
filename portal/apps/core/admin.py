@@ -70,31 +70,143 @@ class PrintOnlyArticleInline(TabularInline):
     extra = 10
 
 
-class ArticleRelForm(ModelForm):
+"""
+core.models.Edition model admin.
+Articles related to editions are categorized into two distinct blocks in the admin add/change edition page:
 
-    class Meta:
-        fields = ('article', 'top_position')
-        model = ArticleRel
+- "Home Top": This block features articles prominently displayed on the home page. Although this scenario is less
+  common, it is the most frequently used, as the database is expected to contain numerous editions, mirroring the
+  periodic nature of news publications. In essence, this block represents the featured articles of an edition,
+  regardless of whether it is currently displayed on the home page.
+
+- "Non-Top Articles": This block comprises articles that are not featured in the edition.
+
+- Implementation: The solution employs inline formsets to filter articles into one of these two blocks. The UI logic
+  allows for the insertion of any article into either block, but not vice versa. To remove a featured article from an
+  edition, it must first be removed from the "Home Top" block, after which it will appear in the "Non-Top Articles"
+  block, enabling its removal from the edition. Note that dragging articles across blocks is not currently supported,
+  but may be implemented in the future.
+
+Happy publishing!
+"""
 
 
 class TopArticleRelBaseInlineFormSet(BaseInlineFormSet):
-    # TODO: maybe useful to save in order
-    pass
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.queryset = self.queryset.filter(home_top=True)
+
+    def clean(self):
+        # this also can be done using javascript after add a new row or drag the row to a new position
+        # but allways is a good practice to make server side validation
+        # TODO: 1. DRY: this can be encapsulated in a new base class method receiving the order field name
+        #               (be caution with the last condition, the one after "DELETE")
+        #       2. Test cases, as many combinations as possible of this actions:
+        #          1 - Untouched form
+        #          2 - Empty form, add rows
+        #          3 - drag
+        #          4 - unmark featured
+        #          5 - mark featured
+        #          6 - delete
+        super().clean()
+        last_idx = 0
+        for form in self.forms:
+            f_cleaned_data = form.cleaned_data
+            if f_cleaned_data and not f_cleaned_data.get('DELETE') and f_cleaned_data.get('home_top'):
+                position = f_cleaned_data.get('top_position')
+                if position:
+                    if position > last_idx:
+                        last_idx = position
+                else:
+                    last_idx += 1
+                    form.cleaned_data['top_position'] = form.instance.top_position = last_idx
 
 
-TopArticleRelInlineFormSet = inlineformset_factory(
-    Edition, ArticleRel, form=ArticleRelForm, formset=TopArticleRelBaseInlineFormSet
-)
+class NoTopArticleRelBaseInlineFormSet(BaseInlineFormSet):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.queryset = self.queryset.filter(home_top=False)
+
+    def clean(self):
+        # this also can be done using javascript after add a new row or drag the row to a new position
+        # but allways is a good practice to make server side validation
+        super().clean()
+        last_idx = 0
+        for form in self.forms:
+            f_cleaned_data = form.cleaned_data
+            if f_cleaned_data and not f_cleaned_data.get('DELETE') and not f_cleaned_data.get('home_top'):
+                position = f_cleaned_data.get('position')
+                if position:
+                    if position > last_idx:
+                        last_idx = position
+                else:
+                    last_idx += 1
+                    form.cleaned_data['position'] = form.instance.position = last_idx
 
 
-class HomeTopArticleInline(TabularInline):
+class ArticleRelAdminBaseModelForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['article'].label = 'artículo'
+        self.fields['section'].label = 'sección'
+        self.fields['section'].choices = section_choices()
+        self.fields['home_top'].label = 'en portada'
+
+    class Meta:
+        model = ArticleRel
+        fields = "__all__"
+
+
+class ArticleRelHomeTopForm(ArticleRelAdminBaseModelForm):
+    top_position = IntegerField(
+        label='posición',
+        widget=TextInput(attrs={'size': 3, 'readonly': True}),
+        help_text=(
+            'Arrastre la fila del artículo deseado hacia abajo o arriba para cambiar su posición en '
+            'portada; las posiciones serán recalculadas al guardar la edición con esta página.'
+        ),
+        required=False,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['home_top'].help_text = \
+            'Utilice esta opción para desmarcar y poder quitar el artículo de los artículos en portada.'
+
+    class Meta:
+        model = ArticleRel
+        fields = "__all__"
+
+
+class ArticleRelHomeNoTopForm(ArticleRelAdminBaseModelForm):
+    # TODO: draggable ordering is not working, FIX asap
+
+    position = IntegerField(
+        label='orden',
+        widget=TextInput(attrs={'size': 3, 'readonly': True}),
+        help_text=(
+            'Arrastre la fila del artículo deseado hacia abajo o arriba para cambiar su orden en '
+            'la edición; los valores serán recalculados al guardar la edición con esta página.'
+        ),
+        required=False,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['home_top'].help_text = 'Marque esta opción para agregar el artículo en portada.'
+
+    class Meta:
+        model = ArticleRel
+        fields = "__all__"
+
+
+class EditionBaseArticleInline(TabularInline):
     model = ArticleRel
     extra = 0
-    ordering = ('top_position',)
-    fields = ('article', 'section', 'top_position', "home_top")
     raw_id_fields = ('article',)
-    verbose_name_plural = 'artículos'
-    formset = TopArticleRelInlineFormSet
     classes = ('dynamic-order',)
 
     class Media:
@@ -108,25 +220,48 @@ class HomeTopArticleInline(TabularInline):
         css = {'all': ('css/home_admin.css',)}
 
 
+TopArticleRelInlineFormSet = inlineformset_factory(
+    Edition,
+    ArticleRel,
+    form=ArticleRelHomeTopForm,
+    formset=TopArticleRelBaseInlineFormSet,
+)
+NoTopArticleRelInlineFormSet = inlineformset_factory(
+    Edition,
+    ArticleRel,
+    form=ArticleRelHomeNoTopForm,
+    formset=NoTopArticleRelBaseInlineFormSet,
+)
+
+
+class HomeTopArticleInline(EditionBaseArticleInline):
+    ordering = ('top_position',)
+    fields = ('top_position', 'article', 'section', "home_top")
+    verbose_name = 'artículo en portada'
+    verbose_name_plural = 'artículos en portada'
+    form = ArticleRelHomeTopForm
+    formset = TopArticleRelInlineFormSet
+    can_delete = False
+
+
+class NoHomeTopArticleInline(EditionBaseArticleInline):
+    ordering = ('position',)
+    fields = ('position', 'article', 'section', "home_top")
+    verbose_name = 'artículo'
+    verbose_name_plural = 'artículos'
+    form = ArticleRelHomeNoTopForm
+    formset = NoTopArticleRelInlineFormSet
+
+
 @admin.register(Edition, site=site)
 class EditionAdmin(ModelAdmin):
-    # TODO: [doing: directly the last item of this list] "it must be...":
-    #       - section_id missing for "new" ArticleRel rows, this can be fixed handling the js event, we did this some
-    #         time ago in the article admin js.
-    #       - the header cells for each fieldset get broken when a row has a new td because of errors (no position)
-    #       - rearrange better the rows with info and data (new article link inserts at the begginig)
-    #       - It's necessary to show the section_id in the fieldset header? ("[[id]]")
-    #       - But all this, for what? with more than ~20 sections this UX is useless, it must be migrated to something
-    #         similar to the "publihed in" at the bottom of the Article's change form, and only keep here in the actual
-    #         version, the first draggable block with the featured articles. And also try to allow insertion of "new"
-    #         rows in the draggable block.
     fields = ('date_published', 'pdf', 'cover', 'publication')
     list_display = ('edition_pub', 'title', 'pdf', 'cover', 'get_supplements')
     list_filter = ('date_published', 'publication')
     search_fields = ('title',)
     date_hierarchy = 'date_published'
     publication = None
-    inlines = [HomeTopArticleInline]
+    inlines = [HomeTopArticleInline, NoHomeTopArticleInline]
 
     def get_form(self, request, obj=None, **kwargs):
         if obj:
@@ -251,16 +386,8 @@ class ArticleBodyImageInline(TabularInline):
         return instance.image.date_added
 
 
-class ArticleRelAdminModelForm(ModelForm):
+class ArticleRelAdminModelForm(ArticleRelAdminBaseModelForm):
     main = ChoiceField(label='principal', widget=RadioSelect, choices=((1, ''), ), required=False)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['section'].choices = section_choices()
-
-    class Meta:
-        model = ArticleRel
-        fields = "__all__"
 
 
 class ArticleEditionInline(TabularInline):

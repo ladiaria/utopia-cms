@@ -2,7 +2,6 @@ var InlineOrdering = {
 
     init: function () {
 
-        var inline_group_containers = $('.inline-group').has('.dynamic-order');
         // Rompemos el tbody para hacer multiples tbody.
         $('.inline-group > .dynamic-order > table > tbody').contents().unwrap();
         var MakePages = function(section){
@@ -71,9 +70,10 @@ var InlineOrdering = {
             }
         });
 
+        var inline_group_containers = $('fieldset.dynamic-order');
         inline_group_containers.each( function(){
             var section = $(this);
-            var orderables = section.find('.dynamic-order > table > tbody > tr').has('td');
+            var orderables = section.find('table > tbody > tr').has('td');
             section.sortable({
                 axis: 'y',
                 placeholder: 'ui-state-highlight',
@@ -87,67 +87,35 @@ var InlineOrdering = {
             $('td.field-order input').hide();
         });
 
-        $('.inline-group').each( function(group_id){
-            var group = $(this);
-            group.find('.field-home_top').each(function(i){
-                $(this).prepend($("<div class=''>Destacado</div>"));
-            });
-        });
-
         $('form').submit(function(){
-            inline_group_containers.each( function(){
-                var container = $(this);
-                var i = 0;
-                if(container.find('tr[id^=articlerel_set]').length > 0){
-                    var order_field = 'top_position';
-                    // TODO: explain better the next comment:
-                    // For fix the entire page uncomment these lines and build the section for store
-                    /*if(container.find('h2:contains("Nota de tapa y titulines")').length > 0){
-                        var order_field = 'top_position';
-                    } else {
-                        var order_field = 'position';
-                    }*/
-                    var tr_elem = container.find('tr[id^=articlerel_set]').filter('.has_original');
-                }
-                else if(container.find('tr[id^=categorynewsletterarticle_set]').length > 0){
-                    var order_field = 'order';
-                    var tr_elem = container.find('tr[id^=categorynewsletterarticle_set]').filter('.has_original');
-                }
-                else if(container.find('tr[id^=categoryhomearticle_set]').length > 0){
-                    var order_field = 'position';
-                    var tr_elem = container.find('tr[id^=categoryhomearticle_set]').filter('.has_original');
-                }
-                else{
-                    var order_field = '#';  // not matched character
-                    var tr_elem = $(this);
-                }
-
-                tr_elem.not('tr[id$=-empty]').each( function(){
-                    var input_find = ['input[id$=', order_field, ']'].join('');
-                    var order_input = $(this).find(input_find);
-                    // Pone en 0 antes del submit si no tiene article
-                    if ($(this).find('input[id$=headline]').val() == ''){
-                        order_input.val(0);
-                    } else {
-                        i++;
-                        order_input.val(i);
-                    }
-                });
+          inline_group_containers.each(function(){
+            var container = $(this);
+            if (container.find('tr[id^=articlerel_set]').length > 0) {
+              var order_field = (
+                $('h2:contains("Artículos en portada")', container).length ? 'top_' : ''
+              ) + 'position';
+              var tr_elem = container.find('tr[id^=articlerel_set]').filter('.has_original');
+            } else if(container.find('tr[id^=categorynewsletterarticle_set]').length > 0){
+              var order_field = 'order';
+              var tr_elem = container.find('tr[id^=categorynewsletterarticle_set]').filter('.has_original');
+            } else if(container.find('tr[id^=categoryhomearticle_set]').length > 0){
+              var order_field = 'position';
+              var tr_elem = container.find('tr[id^=categoryhomearticle_set]').filter('.has_original');
+            } else {
+              var order_field = '#';  // not matched character
+              var tr_elem = $(this);
+            }
+            tr_elem.not('tr[id$=-empty]').each(function(){
+              var input_find = ['input[id$=', order_field, ']'].join('');
+              var order_input = $(this).find(input_find);
+              // Set field to its row index or zero if no article
+              if ($(this).find('input[id$=headline]').val() == ''){
+                order_input.val(0);
+              } else {
+                order_input.val($(this).index());
+              }
             });
-        });
-    },
-};
-
-var SectionIds = {
-    init: function () {
-        var inline_group_containers = $('.inline-group').has('.dynamic-order');
-        inline_group_containers.not('[id$=-group]').each(function(){
-            var div = $(this);
-            var title = $(div.find('h2'));
-            var text = title.html();
-            var section_id = text.match(/[^\[/\[]+(?=\]\])/g);
-            title.html(text.replace('[[' + section_id + ']]',""));
-            div.attr('data-section_id', section_id);
+          });
         });
     },
 };
@@ -155,62 +123,24 @@ var SectionIds = {
 var last_clicked_inline;
 var last_section_id;
 
-// cambia el link de crear un inline por un popup y agrega link de elegir artículo existente
-var PopUpAdd = {
-    init: function () {
-        $('div.add-row a').each(function(){
-            var add_link = $(this);
-            if(add_link.closest('div[id^=articlerel_set-].inline-group').length > 0){
-                var cover_group = add_link.closest('div[id^=articlerel_set-].inline-group');
-            }
-            else if (add_link.closest('div[id^=categorynewsletterarticle_set-].inline-group').length > 0){
-                var cover_group = add_link.closest('div[id^=categorynewsletterarticle_set-].inline-group');
-            }
-            else if (add_link.closest('div[id^=categoryhomearticle_set-].inline-group').length > 0){
-                var cover_group = add_link.closest('div[id^=categoryhomearticle_set-].inline-group');
-            }
-            else {
-                var cover_group = undefined;
-            }
-            var section_id = cover_group.attr('data-section_id');
-            var pub_id = $('#id_publication').val();
-            add_link.off("click");
-            add_link.on("click", function(){
-                return showAddAnotherPopup(this);
-            });
-            var choose_link = add_link.clone();
-            add_link.after(choose_link);
-            choose_link.html('Elegir un Articulo existente');
-            choose_link.attr('href', '/admin/core/article/?t=id');
-            choose_link.on("click", function(){
-                last_clicked_inline = add_link;
-                last_section_id = section_id;
-                return showRelatedObjectLookupPopup(this);
-            });
-            choose_link.css('margin-left','24px');
-            // replace the div container by a tr
-            add_link.parent().replaceWith('<tr class="add-row"><td colspan="5">' + add_link.parent().html() + '</td></tr>');
-        });
-    },
-};
-
 // Set up for tables and behavior based on the view that is present
 var SetUp = {
     init: function () {
         // based on views that are being presented
-        if ($('div[id^=categoryhomearticle_set-]').length){
-            $("th:contains('Orden')").show();
+        if ($('div[id^=categoryhomearticle_set-]').length) {  // TODO: check if still needed
+            /**//*$("th:contains('Orden')").show();
             $('td[class$=-top_position]').show();
-            $('td[class$=-position]:not(:has(.errorlist))').show();
-        }
-        else {
-            $("th:contains('Orden')").hide();
-            $('td[class$=-top_position]').hide();
-            $('td[class$=-position]:not(:has(.errorlist))').hide();
+            $('td[class$=-position]:not(:has(.errorlist))').show();*/
+        } else {
+            if (!$('div[id^=articlerel_set-]').length) {  // hide is not needed anymore in edition admin change view
+                $("th:contains('Orden')").hide();
+                $("td.field-order").hide();
+                $('td[class$=-top_position]').hide();
+                $('td[class$=-position]:not(:has(.errorlist))').hide();
+            }
         }
     },
 };
-
 
 // refresh de la edición cuando se vuelve del popup
 function dismissAddAnotherPopup(win, newId, newRepr) {
@@ -253,6 +183,4 @@ function dismissRelatedLookupPopup(win, article_id, chosenText){
 $(function () {
     $(document).on("load", SetUp.init());
     $(document).on("load", InlineOrdering.init());
-    $(document).on("load", SectionIds.init());
-    $(document).on("load", PopUpAdd.init());
 });
