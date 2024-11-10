@@ -13,7 +13,7 @@ from core.factories import UserFactory
 class SubscribeTestCase(TestCase):
 
     fixtures = ['test']
-    var = {"test01_planslug": "DDIGM"}
+    var = {"test01_planslug": settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT}
 
     def check_one_entry(self, response):
         self.assertEqual(response.status_code, 200)
