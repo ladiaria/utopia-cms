@@ -24,7 +24,7 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
-from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea
+from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput
@@ -32,6 +32,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.utils.text import Truncator
+from django.utils.safestring import mark_safe
 
 from .models import (
     Article,
@@ -159,10 +160,19 @@ class ArticleRelAdminBaseModelForm(ModelForm):
         fields = "__all__"
 
 
+class ReadOnlyDisplayWidget(Widget):
+    # TODO: a better base class to inherit from would be HiddenInput using readonly=True by default, try to do it.
+
+    def render(self, name, value, attrs=None, renderer=None):
+        text_display = f'<span>{value}</span>'
+        hidden_input = f'<input type="hidden" name="{name}" value="{value}"/>'
+        return mark_safe(text_display + hidden_input)
+
+
 class ArticleRelHomeTopForm(ArticleRelAdminBaseModelForm):
     top_position = IntegerField(
         label='posición',
-        widget=TextInput(attrs={'size': 3, 'readonly': True}),
+        widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}),
         help_text=(
             'Arrastre la fila del artículo deseado hacia abajo o arriba para cambiar su posición en '
             'portada; las posiciones serán recalculadas al guardar la edición con esta página.'
@@ -185,7 +195,7 @@ class ArticleRelHomeNoTopForm(ArticleRelAdminBaseModelForm):
 
     position = IntegerField(
         label='orden',
-        widget=TextInput(attrs={'size': 3, 'readonly': True}),
+        widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}),
         help_text=(
             'Arrastre la fila del artículo deseado hacia abajo o arriba para cambiar su orden en '
             'la edición; los valores serán recalculados al guardar la edición con esta página.'
@@ -1181,7 +1191,7 @@ class CategoryAdmin(ModelAdmin):
 
 
 class CategoryHomeArticleForm(ModelForm):
-    position = IntegerField(label='orden', widget=TextInput(attrs={'size': 3, 'readonly': True}))
+    position = IntegerField(label='orden', widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}))
 
     class Meta:
         fields = ['position', 'home', 'article', 'fixed']
