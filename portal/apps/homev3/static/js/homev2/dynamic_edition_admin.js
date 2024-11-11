@@ -94,7 +94,7 @@ var InlineOrdering = {
               var order_field = (
                 $('h2:contains("Artículos en portada")', container).length ? 'top_' : ''
               ) + 'position';
-              var tr_elem = container.find('tr[id^=articlerel_set]').filter('.has_original');
+              var tr_elem = container.find('tr[id^=articlerel_set]');
             } else if(container.find('tr[id^=categorynewsletterarticle_set]').length > 0){
               var order_field = 'order';
               var tr_elem = container.find('tr[id^=categorynewsletterarticle_set]').filter('.has_original');
@@ -108,6 +108,8 @@ var InlineOrdering = {
             tr_elem.not('tr[id$=-empty]').each(function(){
               var input_find = ['input[id$=', order_field, ']'].join('');
               var order_input = $(this).find(input_find);
+              // NOTE: next commented line is useful to debug, keep it for now
+              // console.log(order_field + " iteration to set value in: " + order_input.attr('id'));
               // Set field to its row index or zero if no article
               if ($(this).find('input[id$=headline]').val() == ''){
                 order_input.val(0);

@@ -164,8 +164,8 @@ class ReadOnlyDisplayWidget(Widget):
     # TODO: a better base class to inherit from would be HiddenInput using readonly=True by default, try to do it.
 
     def render(self, name, value, attrs=None, renderer=None):
-        text_display = f'<span>{value}</span>'
-        hidden_input = f'<input type="hidden" name="{name}" value="{value}"/>'
+        text_display = f'<span>{value if value is not None else ""}</span>'
+        hidden_input = f'<input type="hidden" id="{name}" name="{name}" value="{value}"/>'
         return mark_safe(text_display + hidden_input)
 
 
@@ -184,6 +184,7 @@ class ArticleRelHomeTopForm(ArticleRelAdminBaseModelForm):
         super().__init__(*args, **kwargs)
         self.fields['home_top'].help_text = \
             'Utilice esta opción para desmarcar y poder quitar el artículo de los artículos en portada.'
+        self.initial['home_top'] = True
 
     class Meta:
         model = ArticleRel
