@@ -160,10 +160,19 @@ class ArticleRelAdminBaseModelForm(ModelForm):
         fields = "__all__"
 
 
+class ReadOnlyDisplayWidget(Widget):
+    # TODO: a better base class to inherit from would be HiddenInput using readonly=True by default, try to do it.
+
+    def render(self, name, value, attrs=None, renderer=None):
+        text_display = f'<span>{value}</span>'
+        hidden_input = f'<input type="hidden" name="{name}" value="{value}"/>'
+        return mark_safe(text_display + hidden_input)
+
+
 class ArticleRelHomeTopForm(ArticleRelAdminBaseModelForm):
     top_position = IntegerField(
         label='posición',
-        widget=TextInput(attrs={'size': 3, 'readonly': True}),
+        widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}),
         help_text=(
             'Arrastre la fila del artículo deseado hacia abajo o arriba para cambiar su posición en '
             'portada; las posiciones serán recalculadas al guardar la edición con esta página.'
@@ -186,7 +195,7 @@ class ArticleRelHomeNoTopForm(ArticleRelAdminBaseModelForm):
 
     position = IntegerField(
         label='orden',
-        widget=TextInput(attrs={'size': 3, 'readonly': True}),
+        widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}),
         help_text=(
             'Arrastre la fila del artículo deseado hacia abajo o arriba para cambiar su orden en '
             'la edición; los valores serán recalculados al guardar la edición con esta página.'
@@ -1181,16 +1190,8 @@ class CategoryAdmin(ModelAdmin):
     raw_id_fields = ('full_width_cover_image',)
 
 
-class ReadOnlyDisplayWidget(Widget):
-
-    def render(self, name, value, attrs=None, renderer=None):
-        text_display = f'<span>{value}</span>'
-        hidden_input = f'<input type="hidden" name="{name}" value="{value}"/>'
-        return mark_safe(text_display + hidden_input)
-
-
 class CategoryHomeArticleForm(ModelForm):
-    position = IntegerField(label='orden', widget=TextInput(attrs={'size': 3, 'readonly': True}))
+    position = IntegerField(label='orden', widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}))
 
     class Meta:
         fields = ['position', 'home', 'article', 'fixed']
