@@ -1180,7 +1180,7 @@ class ArticleBase(Model, CT):
 
     publication = ForeignKey(
         Publication,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='publicación',
         blank=True,
         null=True,
@@ -1238,7 +1238,7 @@ class ArticleBase(Model, CT):
     longitude = DecimalField('longitud', max_digits=10, decimal_places=6, blank=True, null=True)
     location = ForeignKey(
         Location,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='ubicación',
         related_name='articles_%(app_label)s',
         blank=True,
@@ -1252,27 +1252,29 @@ class ArticleBase(Model, CT):
     allow_comments = BooleanField('Habilitar comentarios', default=True)
     created_by = ForeignKey(
         User,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='creado por',
         related_name='created_articles_%(app_label)s',
         editable=False,
         blank=False,
         null=True,
     )
-    photo = ForeignKey(Photo, on_delete=CASCADE, blank=True, null=True, verbose_name='imagen')
-    gallery = ForeignKey(Gallery, on_delete=CASCADE, verbose_name='galería', blank=True, null=True)
+    photo = ForeignKey(Photo, on_delete=SET_NULL, blank=True, null=True, verbose_name='imagen')
+    gallery = ForeignKey(Gallery, on_delete=SET_NULL, verbose_name='galería', blank=True, null=True)
     video = ForeignKey(
         Video,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='video',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    youtube_video = ForeignKey(YouTubeVideo, on_delete=CASCADE, verbose_name='video de YouTube', blank=True, null=True)
+    youtube_video = ForeignKey(
+        YouTubeVideo, on_delete=SET_NULL, verbose_name='video de YouTube', blank=True, null=True
+    )
     audio = ForeignKey(
         Audio,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='audio',
         related_name='articles_%(app_label)s',
         blank=True,
@@ -2187,13 +2189,13 @@ class ArticleViews(Model):
 
 
 class CategoryHomeArticle(Model):
+    # TODO: review the "custom label" comment in the position field (still needed?)
     home = ForeignKey('CategoryHome', on_delete=CASCADE)
     article = ForeignKey(
         Article,
         on_delete=CASCADE,
         verbose_name='artículo',
         related_name='home_articles',
-        limit_choices_to={'is_published': True},
     )
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
@@ -2214,7 +2216,6 @@ class CategoryHomeArticle(Model):
 
     class Meta:
         ordering = ('position',)
-        unique_together = ('home', 'position')
 
 
 class CategoryHome(Model):
