@@ -260,8 +260,9 @@ class SignupwallMiddleware(MiddlewareMixin):
                 if restricted_article:
                     request.signupwall = True
                 else:
-                    if user_is_authenticated:
-                        urlname, reverse_kwargs = "subscribe", {"planslug": "DDIGM"}
+                    default_planslug = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+                    if user_is_authenticated and default_planslug:
+                        urlname, reverse_kwargs = "subscribe", {"planslug": default_planslug}
                     else:
                         urlname, reverse_kwargs = "account-login", {}
                     # TODO: check redirect status code for the next line
