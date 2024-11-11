@@ -210,7 +210,7 @@
         LDUser = {};
         {% if user.is_authenticated %}
           LDUser.is_authenticated = true;
-          LDUser.id = {{ user.id }};
+          LDUser.id = {{ user.subscriber.id }};
           LDUser.subscriber = {{ is_subscriber|lower }};
           LDUser.firstName = "{{ user.first_name }}";
           LDUser.lastName = "{{ user.last_name }}";
