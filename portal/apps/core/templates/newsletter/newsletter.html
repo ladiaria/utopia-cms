@@ -79,7 +79,11 @@
                       <span class="color:#797979;font-family:Roboto,Arial,sans-serif;font-size:12px;font-weight:400;text-decoration:none">{{ author.name }}{% if not forloop.last %}, {% else %} {% endif %}</span>
                     {% endfor %}
                   {% endif %}
-                  {% block newsdate_coverarticle %}{% endblock %}
+                  {% block newsdate_coverarticle %}
+                    <span style="text-transform: capitalize">
+                      {% if cover_article.has_byline %}|&nbsp;{% endif %}{{ cover_article.date_published|date:'l d' }}
+                    </span> de {{ cover_article.date_published|date:'F'|lower }}
+                  {% endblock %}
                   {% if photo_author %}
                     <span>| {{ cover_article.photo_type }}: {{ photo_author }} </span>
                   {% endif %}
