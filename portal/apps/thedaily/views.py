@@ -56,6 +56,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
+from django.views.generic import ListView
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.cache import never_cache, cache_control, cache_page
@@ -127,7 +128,7 @@ from .utils import (
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
-from .tasks import send_notification, notify_digital, notify_paper, send_notification_message
+from .tasks import send_notification, notify_subscription, send_notification_message
 
 
 standard_library.install_aliases()
@@ -360,6 +361,9 @@ def login(request, product_slug=None, product_variant=None):
         return HttpResponseRedirect(next_page)
 
     article_id, login_formclass, response, login_error, context = None, LoginForm, None, None, {}
+    default_planslug = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+    if default_planslug:
+        context["default_subscription_type"] = SubscriptionPrices.objects.get(subscription_type=default_planslug)
 
     market_next_page, market_next_qparams = None, {}
     if product_slug:
@@ -651,6 +655,11 @@ def google_phone(request):
     subscribe_log(request, 'google_phone end')
     ctx.update({'google_signin_form': google_signin_form, "is_new": is_new})
     return 'google_signup.html', ctx
+
+
+class SubscriptionPricesListView(ListView):
+    model = SubscriptionPrices
+    template_name = get_app_template("subscribe-landing.html")
 
 
 @never_cache
@@ -999,12 +1008,8 @@ def complete_signup(request, user_id, hash):
         st = user.suscripciones.all()[0].subscription_type_prices
         if st.count() == 1:
             subscription_type = st.all()[0].subscription_type
-            if subscription_type == 'DDIGM':
-                send_default_welcome = False
-                notify_digital(user)
-            elif subscription_type == 'PAPYDIM':
-                send_default_welcome = False
-                notify_paper(user)
+            send_default_welcome = False
+            notify_subscription(user, subscription_type)
 
     if send_default_welcome:
         send_notification(
