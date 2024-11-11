@@ -579,7 +579,9 @@ class ArticleAdmin(VersionAdmin):
     )
     list_select_related = True
     list_filter = (
-        'type', 'date_created', 'is_published', 'to_be_published', 'date_published', 'newsletter_featured', 'byline'
+        'type', 'date_created', 'is_published',
+        # 'to_be_published',  # TODO: add this filter when the field gets fully implemented
+        'date_published', 'newsletter_featured', 'byline'
     )
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
@@ -609,7 +611,16 @@ class ArticleAdmin(VersionAdmin):
                 'classes': ('wide',),
             },
         ),
-        ('Metadatos', {'fields': ('is_published', 'to_be_published', 'date_published', 'tags', 'main_section')}),
+        (
+            'Metadatos',
+            {
+                'fields': (
+                    'is_published',
+                    # 'to_be_published',  # TODO: add this field when it gets fully implemented
+                    'date_published', 'tags', 'main_section'
+                )
+            }
+        ),
         ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse',)}),
         ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse',)}),
         (
