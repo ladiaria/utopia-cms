@@ -80,7 +80,7 @@
                     {% endfor %}
                   {% endif %}
                   {% block newsdate_coverarticle %}
-                    {% if cover_article.has_byline %}<span> | </span>{% endif %}
+                    {% if cover_article.has_byline and photo_author %}<span> | </span>{% endif %}
                   {% endblock %}
                   {% if photo_author %}
                     <span>{{ cover_article.photo_type }}: {{ photo_author }} </span>
