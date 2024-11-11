@@ -80,12 +80,10 @@
                     {% endfor %}
                   {% endif %}
                   {% block newsdate_coverarticle %}
-                    <span style="text-transform: capitalize">
-                      {% if cover_article.has_byline %}|&nbsp;{% endif %}{{ cover_article.date_published|date:'l d' }}
-                    </span> de {{ cover_article.date_published|date:'F'|lower }}
+                    {% if cover_article.has_byline %}<span> | </span>{% endif %}
                   {% endblock %}
                   {% if photo_author %}
-                    <span>| {{ cover_article.photo_type }}: {{ photo_author }} </span>
+                    <span>{{ cover_article.photo_type }}: {{ photo_author }} </span>
                   {% endif %}
                 </p>
               </th>
@@ -129,7 +127,7 @@
                       <p style="font-size:12px;color:#797979;font-family:Roboto,Arial,sans-serif;font-weight:400;line-height:14px;margin:15px;margin-bottom:0;margin-top:0;padding:0;text-align:left">
                         {% if article.has_byline %}
                           {% for author in article.get_authors %}
-                            <span class="color:#797979;font-family:Roboto,Arial,sans-serif;font-size:12px;font-weight:400;text-decoration:none">{{ author.name }}{% if not forloop.last %}, {% else %} {% endif %}</span>
+                            <span class="color:#797979;font-family:Roboto,Arial,sans-serif;font-size:12px;font-weight:400;text-decoration:none">{{ author.name }}{% if not forloop.last %}, {% endif %}</span>
                           {% endfor %}
                         {% endif %}
                         {% block newsdate_article %}{% endblock %}
