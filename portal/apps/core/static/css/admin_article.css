@@ -16,39 +16,49 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
   min-width: 320px;
 }
 /* .change-form .object-tools{margin-top: -100px;} */  /* TODO: Check the purpose of this */
+
+/* textareas inside inlines */
 .dynamic-extensions td.field-body{width:50%;}
-.dynamic-extensions td.field-body textarea{width:100%;}
+.dynamic-attachments td.field-description{width:45%;}
+.dynamic-extensions td.field-body textarea, .dynamic-attachments td.field-description textarea {
+  width:100%;
+}
+
+/* missing (dont know why) border in "native" collapsed inlines */
+#extensions-group div fieldset, #attachments-group div fieldset,
+#body_image-group div fieldset, #articlerel_set-group div fieldset {
+  border: 1px solid var(--hairline-color);
+}
 
 /* paywall radio */
 .form-row.field-pw_radio_choice div {
-    display: block !important;
-    float: none !important;
+  display: block !important;
+  float: none !important;
 }
 .form-row.field-pw_radio_choice input { display: inline-block !important; }
 .form-row.field-pw_radio_choice label {
-    display: block !important;
-    float: none !important;
-    width: auto;
+  display: block !important;
+  float: none !important;
+  width: auto;
 }
 .form-row.field-slug input {
-    display: block !important;
-    float: none !important;
-    width: auto;
-    min-width: 280px;
-
-    @media (min-width: 880px) {
-      width: 600px;
-    }
+  display: block !important;
+  float: none !important;
+  width: auto;
+  min-width: 280px;
+  @media (min-width: 880px) {
+    width: 600px;
+  }
 }
 
 /* alternative title and description fields */
 #id_keywords, #id_headline {
-    @media (min-width: 880px) {
-      width: 600px;
-    }
+  @media (min-width: 880px) {
+    width: 600px;
+  }
 }
 .field-deck textarea, .field-lead textarea, .field-home_lead textarea, .field-home_top_deck textarea {
-    height: 120px;
+  height: 120px;
 }
 
 .fieldBox.field-alt_title_metadata input, .fieldBox.field-alt_title_newsletters input {
@@ -58,9 +68,9 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
   }
 }
 #id_alt_desc_metadata, #id_alt_desc_newsletters{
-    @media (min-width: 880px) {
-      margin-left: 200px;
-    }
+  @media (min-width: 880px) {
+    margin-left: 200px;
+  }
 }
 .field-alt_desc_metadata textarea, .field-alt_desc_newsletters textarea {
   @media (min-width: 880px) {
@@ -70,14 +80,14 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
 }
 .field-alt_title_metadata, .field-alt_title_newsletters,
 .field-alt_desc_metadata, .field-alt_desc_newsletters {
-    margin-top: 20px;
+  margin-top: 20px;
 }
 
 .field-headline, .field-alt_title_metadata, .field-alt_title_newsletters,
 .field-alt_desc_metadata, .field-alt_desc_newsletters {
-    @media (max-width: 767px) {
-      flex-grow: 1;
-    }
+  @media (max-width: 767px) {
+    flex-grow: 1;
+  }
 }
 
 .field-alt_desc_newsletters .fieldBox.field-deck {
@@ -94,7 +104,7 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
 }
 #id_headline_helptext, #id_alt_title_metadata_helptext, #id_alt_title_newsletters_helptext,
 #id_slug_helptext, #id_keywords_helptext {
-    padding-left: 0px;
+  padding-left: 0px;
 }
 label[for="id_headline"] { float: left; }
 label[for="id_alt_title_metadata"],
@@ -126,15 +136,15 @@ label[for="id_alt_desc_newsletters"] {
 
 /* published status row */
 .field-is_published, .field-to_be_published, .field-date_published {
-    width: unset !important;
-    display: block !important;
+  width: unset !important;
+  display: block !important;
 }
 .fieldBox.field-date_published label{
-    display: none !important;
+  display: none !important;
 }
 @media (min-width: 767px) {
   .field-date_published p {
-      margin-left: 20px !important;
+    margin-left: 20px !important;
   }
 }
 @media (max-width: 767px) {
