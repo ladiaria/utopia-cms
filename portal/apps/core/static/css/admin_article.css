@@ -144,7 +144,12 @@ label[for="id_alt_desc_newsletters"] {
 }
 @media (min-width: 767px) {
   .field-date_published p {
-    margin-left: 20px !important;
+    margin-left: 0px !important;
+  }
+}
+@media (min-width: 1024px) {
+  .field-date_published p {
+    padding-block: 0px !important;
   }
 }
 @media (max-width: 767px) {
