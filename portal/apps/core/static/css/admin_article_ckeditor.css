@@ -13,3 +13,10 @@ tr.dynamic-extensions td.field-body {
 div.ck-content p {
     margin-left: revert;
 }
+
+fieldset .fieldBox {
+  float: unset;
+}
+.aligned label {
+  padding-right: 0px !important;
+}
