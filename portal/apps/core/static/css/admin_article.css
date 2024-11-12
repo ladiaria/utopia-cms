@@ -62,3 +62,14 @@ label[for="id_alt_desc_newsletters"] {
     margin-left: 200px;
     width: 20em;
 }
+
+/* published status row */
+.field-is_published, .field-to_be_published, .field-date_published {
+    width: unset !important;
+}
+.fieldBox.field-date_published label{
+    display: none !important;
+}
+.field-date_published p {
+    margin-left: 20px !important;
+}

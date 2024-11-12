@@ -1,0 +1,11 @@
+{% load thedaily_tags %}
+
+{% subscriptionprice as subscription_price %}
+{% if subscription_price %}
+  <div class="ld-snackbar__block">
+    {# TODO: conditional subscribe url if category_signup #}
+    <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=paywall" class="{% block btn_class %}ut-btn ut-btn-l{% endblock %}">
+      Suscribite <i>por ${{ subscription_price }}/mes</i>
+    </a>
+  </div>
+{% endif %}

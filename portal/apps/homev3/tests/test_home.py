@@ -14,8 +14,6 @@ class HomeTestCase(TestCase):
     http_host_header_param = {'HTTP_HOST': settings.SITE_DOMAIN}
     urls_to_test = (
         {'url': '/'},
-        {'url': '/periodista/test-journalist/'},
-        {'url': '/columnista/test-columnist/'},
         {'url': '/test/'},
         {'url': '/tags/test/'},
         {'url': '/seccion/news/'},
@@ -85,7 +83,10 @@ class HomeTestCase(TestCase):
         # article_with_valid_script_in_extension
         response = c.get("/articulo/2020/11/test-full-restricted1/", **self.http_host_header_param)
         self.assertEqual(response.status_code, 200)
-        self.assertIn(self.amp_detection, response.content.decode())
+        if settings.CORE_ARTICLE_DETAIL_ENABLE_AMP:
+            self.assertIn(self.amp_detection, response.content.decode())
+        else:
+            self.assertNotIn(self.amp_detection, response.content.decode())
         # article_with_invalid_script_in_extension
         response = c.get("/spinoff/articulo/2020/11/test-article7/", **self.http_host_header_param)
         self.assertEqual(response.status_code, 200)

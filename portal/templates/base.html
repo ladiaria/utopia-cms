@@ -3,11 +3,11 @@
 {% endspaceless %}<!doctype html>
 {% block html %}
 <!-- Legacy browsers support  -->
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="es-UY"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="es-UY"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9" lang="es-UY"> <![endif]-->
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
 <!-- End legacy browsers support  -->
-<html class="no-js" lang="es-UY">
+<html class="no-js" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}">
 {% endblock %}
   <head>
     {% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
@@ -56,8 +56,10 @@
     {% endif %}
 
     <!-- Title and description -->
-    <title>{% block page_title %}{% endblock %}</title>
-    <meta name="description" content="{% block page_description %}{{ site_description }}{% endblock %}">
+    <title>{% spaceless %}{% block page_title %}{% endblock %}{% endspaceless %}</title>
+    <meta name="description" content="{% spaceless %}
+      {% block page_description %}{{ site_description }}{% endblock %}
+    {% endspaceless %}">
     <!-- End Title and description -->
 
     <!-- Meta tags base -->
@@ -103,7 +105,7 @@
       {% endif %}
     {% endif %}
     <meta name="theme-color" content="#F2F2F2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{ site.name }}">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- End Icons -->
@@ -116,7 +118,9 @@
       {% if HOMEV3_CUSTOM_CSS %}
         <link href="{% static HOMEV3_CUSTOM_CSS %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endif %}
-      <link href="{% static 'sass/print.scss' %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
+      {% block print_css %}
+        <link href="{% static 'sass/print.scss' %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
+      {% endblock %}
       {% if HOMEV3_CUSTOM_PRINT_CSS %}
         <link href="{% static HOMEV3_CUSTOM_PRINT_CSS %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
       {% endif %}
@@ -143,15 +147,19 @@
 
     {% block meta %}
       <meta property="og:type" content="website">
-      <meta property="og:description" content="{{ site_description }}">
-      <meta property="og:locale" content="es_UY">
+      {% block meta_og_description %}
+        <meta property="og:description" content="{{ site_description }}">
+      {% endblock %}
+      <meta property="og:locale" content="{{ local_lang }}_{{ LOCAL_COUNTRY }}">
       <meta property="og:site_name" content="{{ site.name }}">
       <meta property="og:url" content="{{ SITE_URL_SD }}{{ request.get_full_path }}">
-      {% if publication.slug in custom_icons_publications %}
-        <meta property="og:image" content="{{ SITE_URL_SD }}{% static publication.open_graph_image %}">
-      {% elif default_pub.open_graph_image %}
-        <meta property="og:image" content="{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}">
-      {% endif %}
+      {% block meta_og_image %}
+        {% if publication.slug in custom_icons_publications %}
+          <meta property="og:image" content="{{ SITE_URL_SD }}{% static publication.open_graph_image %}">
+        {% elif default_pub.open_graph_image %}
+          <meta property="og:image" content="{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}">
+        {% endif %}
+      {% endblock %}
       <!-- End Open Graph (http://ogp.me) -->
 
       <!-- Meta tags Twitter -->
@@ -334,11 +342,13 @@
     {% endblock %}
 
     {% block subscribe_notice %}
-      <!-- Subscribe notice for not authenticated users or non-subscribers -->
-      {# TODO: can we implement this kind of notice in AMP? (we never did that) #}
-      {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
-        {% if is_portada and publication == default_pub or is_detail %}
-          {% include subscribe_notice_template %}
+      {% if subscribe_notice_template %}
+        <!-- Subscribe notice for not authenticated users or non-subscribers -->
+        {# TODO: can we implement this kind of notice in AMP? (we never did that) #}
+        {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
+          {% if is_portada and publication == default_pub or is_detail %}
+            {% include subscribe_notice_template %}
+          {% endif %}
         {% endif %}
       {% endif %}
     {% endblock %}
@@ -346,14 +356,16 @@
     <!-- Main -->
     {% block main_open %}<main class="main" id="main-content">{% endblock %}
     {% if messages %}
-      <ul class="messages unstyled ld-messages">
-        {% for message in messages %}
-          <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
-            {{ message }}
-            <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
-          </li>
-        {% endfor %}
-      </ul>
+      {% block messages %}
+        <ul class="messages unstyled ld-messages">
+          {% for message in messages %}
+            <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
+              {{ message }}
+              <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endblock %}
     {% endif %}
 
     <!-- /container -->
@@ -412,27 +424,29 @@
       <script defer src="{% static 'materialize/js/forms.js' %}"></script>
     {% endblock %}
 
-    {% if user.is_authenticated %}
-      {# used only in pages that show article cards #}
-      <script defer src="{% static 'js/read_later_events.js' %}"></script>
-    {% endif %}
+    {% block ld_core_scripts %}
+      {% if user.is_authenticated %}
+        {# used only in pages that show article cards #}
+        <script defer src="{% static 'js/read_later_events.js' %}"></script>
+      {% endif %}
 
-    {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
-    <script defer src="{% static 'js/ld.js' %}"></script>
-    <script defer src="{% static 'js/resizeSubnav.js' %}" ></script>
+      {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
+      <script defer src="{% static 'js/ld.js' %}"></script>
+      <script defer src="{% static 'js/resizeSubnav.js' %}"></script>
 
-    {# Modernizr - Detect CSS Grid #}
-    <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
+      {# Modernizr - Detect CSS Grid #}
+      <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
+
+      {# picturefill #}
+      <script>
+        // Picture element HTML5 shiv
+        document.createElement("picture");
+      </script>
+      <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
+    {% endblock %}
 
     {# js.cookie #}
     <script src="{% static 'js/vendor/js.cookie.js' %}"></script>
-
-    {# picturefill #}
-    <script>
-      // Picture element HTML5 shiv
-      document.createElement("picture");
-    </script>
-    <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
 
     {% block javascript %}{% endblock %}
     {% block footer_scripts %}{% endblock %}

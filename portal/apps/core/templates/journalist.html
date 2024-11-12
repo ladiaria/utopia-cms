@@ -17,10 +17,21 @@
     <div class="container container--narrow">
       <div class="section-detail__head">
         <h1 class="section-detail__title">{{ journalist.name }}</h1>
-        <p class="section-detail__description">{{ journalist.bio }}</p>
+        {% if journalist.bio %}
+          <p class="section-detail__description">{{ journalist.bio }}</p>
+        {% endif %}
       </div>
     </div>
   </div>
+  {% comment %}
+    social links rendered commented for test compatibility. TODO: implement opensourcing this already done feature in
+    one of our custom apps.
+  {% endcomment %}
+  <!--
+    {% for social_name, social_value in journalist.get_socials.items %}
+      <title>Seguir en {{ social_name|capfirst }}</title>
+    {% endfor %}
+  -->
 {% endblock %}
 
 {% block content %}

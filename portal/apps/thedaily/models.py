@@ -8,10 +8,13 @@ from hashids import Hashids
 from pymailcheck import split_email
 from pyisemail import is_email
 
+from social_django.models import UserSocialAuth
+from phonenumber_field.modelfields import PhoneNumberField
+
 from django.conf import settings
 from django.contrib.auth.models import User, Group, Permission
 from django.core.mail import mail_managers
-from django.core.validators import RegexValidator, validate_email
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, validate_email
 from django.core.exceptions import ValidationError
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from django.db.models import CASCADE
@@ -21,6 +24,7 @@ from django.db.models import (
     DateTimeField,
     EmailField,
     ForeignKey,
+    JSONField,
     Model,
     OneToOneField,
     PositiveIntegerField,
@@ -36,23 +40,30 @@ from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.urls import reverse
 
-from social_django.models import UserSocialAuth
-
+from libs.utils import crm_rest_api_kwargs
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
-
 from .exceptions import UpdateCrmEx, EmailValidationError
 
 
-GA_CATEGORY_CHOICES = (('D', 'Digital'), ('P', 'Papel'))
+GA_CATEGORY_CHOICES, MIN0, MAX100 = (('D', 'Digital'), ('P', 'Papel')), MinValueValidator(0), MaxValueValidator(100)
 
 
 class SubscriptionPrices(Model):
+    # TODO: this first field can be migrated to 2 new fields; name and slug (both unique and required)
     subscription_type = CharField(
-        'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, default='PAPYDIM'
+        'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, blank=True, null=True
     )
-    price = DecimalField('Precio', max_digits=7, decimal_places=2)
-    order = PositiveSmallIntegerField('Orden', null=True)
+    order = PositiveSmallIntegerField('orden', null=True)
+    months = PositiveSmallIntegerField('meses', default=1)
+    price = DecimalField('precio', max_digits=9, decimal_places=2, validators=[MIN0])
+    price_total = DecimalField(
+        'precio total', max_digits=9, decimal_places=2, blank=True, null=True, validators=[MIN0]
+    )
+    discount = DecimalField(
+        'descuento (%)', max_digits=5, decimal_places=2, blank=True, null=True, validators=[MIN0, MAX100]
+    )
+    extra_info = JSONField("información extra", default=dict, help_text='Diccionario Python en formato JSON')
     paypal_button_id = CharField(max_length=13, null=True, blank=True)
     auth_group = ForeignKey(Group, on_delete=CASCADE, verbose_name='Grupo asociado al permiso', blank=True, null=True)
     publication = ForeignKey(Publication, on_delete=CASCADE, blank=True, null=True)
@@ -61,7 +72,10 @@ class SubscriptionPrices(Model):
     ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
 
     def __str__(self):
-        return "%s -- $ %s " % (self.get_subscription_type_display(), self.price)
+        return self.get_subscription_type_display() if self.subscription_type else self.periodicity()
+
+    def periodicity(self):
+        return "Mensual" if self.months == 1 else f"{self.months} meses"
 
     class Meta:
         verbose_name = 'Precio'
@@ -95,15 +109,15 @@ class Subscriber(Model):
 
     # agregamos estos campos para unificar la info de User y Subscriber
     address = CharField('dirección', max_length=255, blank=True, null=True)
-    country = CharField('país', max_length=50, blank=True, null=True)
-    city = CharField('ciudad', max_length=64, blank=True, null=True)
+    country = CharField('país de residencia', max_length=50, blank=True, null=True)
+    city = CharField('ciudad de residencia', max_length=64, blank=True, null=True)
     province = CharField(
         'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
     )
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
     document = CharField('documento de identidad', max_length=50, blank=True, null=True)
-    phone = CharField('teléfono', max_length=20)
+    phone = PhoneNumberField('teléfono', blank=True, default="", db_index=True)
 
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
     downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
@@ -124,7 +138,11 @@ class Subscriber(Model):
     subscription_mode = CharField(max_length=1, null=True, blank=True, default=None)
     last_paid_subscription = DateTimeField('Ultima subscripcion comienzo', null=True, blank=True)
 
+    def __str__(self):
+        return self.name or self.get_full_name()
+
     def save(self, *args, **kwargs):
+        # TODO: this should be reviewed ASAP (a new field 'doc type' may be added resulting incompatibilities)
         if self.document:
             non_decimal = re.compile(r'[^\d]+')
             self.document = non_decimal.sub('', self.document)
@@ -256,9 +274,6 @@ class Subscriber(Model):
             else:
                 return qs[0].downloads
 
-    def __str__(self):
-        return self.name or self.get_full_name()
-
     def get_full_name(self):
         if not self.user.first_name and not self.user.last_name:
             return "Usuario sin nombre"
@@ -307,12 +322,14 @@ def put_data_to_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
+    @return: json data from the response
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        res = requests.put(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data)
+        api_kwargs = crm_rest_api_kwargs(api_key, data)
+        res = requests.put(api_url, **api_kwargs)
         res.raise_for_status()
-        res.json()
+        return res.json()
 
 
 def post_data_to_crm(api_url, data):
@@ -322,12 +339,12 @@ def post_data_to_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
-    return request response
+    @return request response in json format
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        print(api_url)
-        res = requests.post(api_url, headers={'Authorization': 'Api-Key ' + api_key}, data=data)
+        api_kwargs = crm_rest_api_kwargs(api_key, data)
+        res = requests.post(api_url, **api_kwargs)
         res.raise_for_status()
         return res.json()
 
@@ -339,17 +356,15 @@ def delete_data_from_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
+    @return reques response in json format
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
         payload = json.dumps(data)
-        headers = {
-            'Authorization': 'Api-Key ' + api_key,
-            'Content-Type': 'application/json'
-        }
-        res = requests.delete(api_url, headers=headers, data=payload)
+        api_kwargs = crm_rest_api_kwargs(api_key, payload)
+        res = requests.delete(api_url, **api_kwargs)
         res.raise_for_status()
-        res.json()
+        return res.json()
 
 
 def get_data_from_crm(api_url, data):
@@ -362,19 +377,17 @@ def get_data_from_crm(api_url, data):
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
-        headers = {
-            'Authorization': 'Api-Key ' + api_key,
-            'Content-Type': 'application/json'
-        }
-        res = requests.get(api_url, headers=headers, params=data)
+        api_kwargs = crm_rest_api_kwargs(api_key)
+        api_kwargs["params"] = data  # get call send data like query params
+        res = requests.get(api_url, **api_kwargs)
         res.raise_for_status()
-        res.json()
+        return res.json()
 
 
 def updatecrmuser(contact_id, field, value):
     api_url = settings.CRM_API_UPDATE_USER_URI
     data = {"contact_id": contact_id, "field": field, "value": value}
-    put_data_to_crm(api_url, data)
+    return put_data_to_crm(api_url, data)
 
 
 def createcrmuser(name, email):
@@ -477,27 +490,22 @@ def user_pre_save(sender, instance, **kwargs):
         raise IntegrityError(error_msg)
 
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
-        return True  # TODO: why True and not just "return"?
+        return
 
-    # sync email if changed
-    api_url = settings.CRM_API_UPDATE_USER_URI
-    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
-    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key, actualusr.email != instance.email)):
-        err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
+    api_uri = settings.CRM_API_UPDATE_USER_URI
+    if actualusr.email != instance.email:
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
-            requests.put(
-                api_url,
-                headers={'Authorization': 'Api-Key ' + api_key},
-                data={'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
-            ).raise_for_status()
+            data = {'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
+            put_data_to_crm(api_uri, data)
         except requests.exceptions.RequestException:
+            err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
             raise UpdateCrmEx(err_msg)
 
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
 def subscriber_pre_save(sender, instance, **kwargs):
-    if getattr(settings, 'THEDAILY_DEBUG_SIGNALS', False):
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print('DEBUG: subscriber_pre_save signal called')
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
         return True
@@ -520,7 +528,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
     m2m_changed, sender=Subscriber.category_newsletters.through, dispatch_uid="subscriber_area_newsletters_changed"
 )
 def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
-    if settings.DEBUG:
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print(
             'DEBUG: thedaily.models.subscriber_newsletters_changed called with action=%s, pk_set=%s' % (action, pk_set)
         )
@@ -574,6 +582,7 @@ class OAuthState(Model):
     user = OneToOneField(User, on_delete=CASCADE)
     state = CharField(max_length=32, unique=True)
     fullname = CharField(max_length=255, blank=True, null=True)
+    phone_submitted_blank = BooleanField(default=False)
 
 
 class WebSubscriber(Subscriber):

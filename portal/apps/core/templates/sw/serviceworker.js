@@ -1,17 +1,16 @@
 /**
- * utopia-cms service worker.
- *
- * Service worker to control de PWA feature.
+ * {{ site.name }} service worker.
  *
  * @version {{ version }}
  *
  */
 
-var staticCacheName = "utopia-pwa-v" + new Date().getTime();
-var filesToCache = [
+var staticCacheNamePrefix = "{{ site.name }}-v";
+var staticCacheName = staticCacheNamePrefix + new Date().getTime();
+var filesToCache = [{% block files_to_cache %}
   '/static/meta/utopia-1024x1024.png',
   '/static/meta/utopia-512x512.png',
-  '/static/meta/utopia-192x192.png'
+  '/static/meta/utopia-192x192.png'{% endblock %}
 ];
 
 self.addEventListener('install', function(e) {
@@ -23,23 +22,51 @@ self.addEventListener('install', function(e) {
   );
 });
 
-self.addEventListener('fetch', function(e) {
-  // TODO: we can create a "runtime" cache to store the fetched response (django-progressive-webapp does this)
-  e.respondWith(
-    caches.match(e.request).then(function(response) {
-      return response || fetch(e.request);
-    })
-  );
+self.addEventListener('fetch', e => {
+  {% block fetch_begin %}{% endblock %}
+  {% block fetch_body %}
+    e.respondWith(
+      caches.match(e.request).then(response => {
+
+        if (response) {
+          return response;
+        } else {
+
+          return (async () => {
+            try {
+              // Try to fetch the request from the network
+              const response = await fetch(e.request);
+              if (!response || response.status !== 200 || response.type !== 'basic') {
+                return response; // Return the original response if valid
+              }
+              // optionally cache, disabled (TODO: investigate)
+              // const responseClone = response.clone();
+              // caches.open(staticCacheName).then(cache => cache.put(e.request, responseClone));
+              return response;
+            } catch (error) {
+              console.warn('SW fetch failed:', error);
+              // Optionally return a fallback response, e.g., an offline page
+              return caches.match('/offline.html') || new Response('Network error occurred', {
+                status: 503,
+                statusText: 'Service Unavailable',
+              });
+            }
+          })();
+
+        }
+      })
+    );
+  {% endblock %}
 });
 
-self.addEventListener('activate', event => {
-  event.waitUntil(clients.claim());
-  event.waitUntil(
+self.addEventListener('activate', e => {
+  e.waitUntil(clients.claim());
+  e.waitUntil(
     caches.keys().then(function(cacheNames) {
       return Promise.all(
         // deletes the previous staticCache (TODO: confirm this assumption)
         cacheNames.filter(function(cacheName) {
-          return cacheName.startsWith('utopia-pwa-') && cacheName != staticCacheName;
+          return cacheName.startsWith(staticCacheNamePrefix) && cacheName != staticCacheName;
         }).map(function(cacheName) {
           return caches.delete(cacheName);
         })
@@ -61,10 +88,10 @@ self.addEventListener('activate', event => {
     );
   });
 
-  self.addEventListener('notificationclick', event => {
-    const notification = event.notification;
+  self.addEventListener('notificationclick', e => {
+    const notification = e.notification;
     const link = notification.data.link;
-    const action = event.action;
+    const action = e.action;
 
     if (action === 'close') {
       notification.close();
