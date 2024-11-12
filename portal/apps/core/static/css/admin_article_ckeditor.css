@@ -14,7 +14,7 @@ div.ck-content p {
     margin-left: revert;
 }
 
-fieldset .fieldBox {
+fieldset .fieldBox:not(.field-to_be_published, .field-is_published, .field-date_published) {
   float: unset;
 }
 .aligned label {
