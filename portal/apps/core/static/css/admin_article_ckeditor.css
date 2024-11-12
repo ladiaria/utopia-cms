@@ -7,6 +7,9 @@ div.charcounter {
     border: 1px solid var(--hairline-color);
 }
 tr.dynamic-extensions td.field-body {
-    min-width:revert;
+    min-width: revert;
     padding-right: 2em;
+}
+div.ck-content p {
+    margin-left: revert;
 }
