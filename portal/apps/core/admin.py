@@ -432,7 +432,7 @@ class ArticleAdminModelForm(ModelForm):
     )
     slug = CharField(
         label='Slug',
-        widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
+        widget=TextInput(attrs={'readonly': 'readonly'}),
         help_text='Se genera automáticamente en base al título.',
     )
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
