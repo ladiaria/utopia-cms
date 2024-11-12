@@ -407,6 +407,9 @@ CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 # show or hide photo credits in article cards
 CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 
+# class to use for the body field in articles
+CORE_ARTICLE_BODY_FIELD_CLASS = "martor.models.MartorField"
+
 # use job to build journalist absolute url
 CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
 

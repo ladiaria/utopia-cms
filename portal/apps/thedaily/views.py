@@ -2365,7 +2365,7 @@ def phone_subscription(request):
         user.subscriber.province = subscription.province
         preferred_time = request.session.get('preferred_time')
 
-        phone_blisted = phone_is_blocklisted(user.subscriber.phone.as_e164)
+        phone_blisted = user.subscriber.phone and phone_is_blocklisted(user.subscriber.phone.as_e164)
         if phone_blisted:
             template, ctx["phone_blocklisted"] = thankyou_template, phone_blisted
         else:

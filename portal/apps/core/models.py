@@ -5,6 +5,7 @@ import locale
 import tempfile
 import operator
 import json
+from pydoc import locate
 from collections import OrderedDict
 from requests.exceptions import ConnectionError
 from kombu.exceptions import OperationalError as KombuOperationalError
@@ -14,7 +15,6 @@ from bs4 import BeautifulSoup
 import readtime
 import mutagen
 import w3storage
-from martor.models import MartorField
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -1199,7 +1199,7 @@ class ArticleBase(Model, CT):
     lead = TextField(
         'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
-    body = MartorField("cuerpo")
+    body = locate(settings.CORE_ARTICLE_BODY_FIELD_CLASS)("cuerpo")
     header_display = CharField(
         'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
     )

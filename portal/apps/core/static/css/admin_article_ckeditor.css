@@ -1,0 +1,12 @@
+
+/* ckeditor */
+div.charcounter {
+    display: none;
+}
+#extensions-group div fieldset {
+    border: 1px solid var(--hairline-color);
+}
+tr.dynamic-extensions td.field-body {
+    min-width:revert;
+    padding-right: 2em;
+}

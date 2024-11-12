@@ -5,10 +5,11 @@ from settings import *  # noqa
 # import faulthandler; faulthandler.enable()
 
 
-THEDAILY_SUBSCRIPTION_TYPE_CHOICES = {
-    "DDIGM": "Suscripción digital",
-    "PAPYDIM": "Suscripción papel",
-}
+if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_CHOICES"):
+    THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
+        ("DDIGM", "Suscripción digital"),
+        ("PAPYDIM", "Suscripción papel"),
+    )
 
 try:
     from local_test_settings import *  # noqa

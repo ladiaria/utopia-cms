@@ -403,6 +403,9 @@ CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 # show or hide photo credits in article cards
 CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 
+# class to use for the body field in articles
+CORE_ARTICLE_BODY_FIELD_CLASS = "martor.models.MartorField"
+
 # use job to build journalist absolute url
 CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
 
@@ -541,6 +544,9 @@ CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 PHONENUMBER_DEFAULT_REGION = None
 
 
+# ====================================================================================== visual separator =============
+
+
 # Override previous settings with values in local_migration_settings.py settings file
 from local_migration_settings import *  # noqa
 
@@ -600,7 +606,7 @@ if CRM_UPDATE_USER_CREATE_CONTACT is None:
     # defaults to the same value of the "base sync"
     CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED
 
-if ENV_HTTP_BASIC_AUTH and "API_KEY_CUSTOM_HEADER" not in locals():
+if locals().get("ENV_HTTP_BASIC_AUTH") and "API_KEY_CUSTOM_HEADER" not in locals():
     # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
     API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
 
