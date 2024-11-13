@@ -231,6 +231,11 @@ router.register(r'urls', UrlViewSet)
 router.register(r'subscribers', SubscriberViewSet)
 router.register(r'dollar_exchange', DollarExchangeViewSet)
 
+# error handlers
+handler403 = getattr(settings, 'CUSTOM_HANDLER_403', None)
+handler404 = getattr(settings, 'CUSTOM_HANDLER_404', None)
+handler500 = getattr(settings, 'CUSTOM_HANDLER_500', "homev3.views.custom_500_handler")
+
 urlpatterns = [
     path('photologue/', include('photologue.urls', namespace='photologue_photologue')),
     path('epubparser/', include('epubparser.urls')),
@@ -241,11 +246,10 @@ urlpatterns = [
     path('buscar/', include('search.urls')),
     # Service Worker
     re_path(r'^sw\.js$', service_worker, name='serviceworker'),
-    path('subscribe/', subscribe, name='subscribe'),
+    path('subscribe/', subscribe, name='subscribe'),  # TODO: check if makes any sense to have this url
     # Custom redirects
     path('suscribite-por-telefono/', RedirectView.as_view(url='/usuarios/suscribite-por-telefono/')),
     path('suscribite/', RedirectView.as_view(url=reverse_lazy('subscribe_landing'))),
-    path('digital/', RedirectView.as_view(url=reverse_lazy('subscribe', args=['DDIGM']))),
     re_path(
         r'^contacto/', RedirectView.as_view(url=getattr(settings, 'CONTACT_REDIRECT_URL', '/')), name="contact-form"
     ),

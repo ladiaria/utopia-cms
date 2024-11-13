@@ -46,12 +46,23 @@ SUBSCRIPTION_PHONE_TIME_CHOICES = (
     ('4', 'En la tarde-noche (18:00 a 20:00)'),
 )
 TEMPLATE_PACK = get_template_pack()
+PASSWORD_MIN_LENGTH = getattr(settings, "THEDAILY_PASSWORD_MIN_LENGTH", 8)
 
 
-def custom_layout(form_id):
+def get_default_province():
+    return getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None)
+
+
+def custom_layout(form_id, *args, **kwargs):
     custom_layout_module = getattr(settings, "THEDAILY_CRISPY_CUSTOM_LAYOUTS_MODULE", None)
     if custom_layout_module:
-        return locate(f"{custom_layout_module}.layouts").get(form_id)
+        layout_function = locate(f"{custom_layout_module}.{form_id}")
+        if callable(layout_function):
+            try:
+                return layout_function(*args, **kwargs)
+            except Exception as exc:
+                if settings.DEBUG:
+                    print(f"Error calling the custom layout function for '{form_id}' form: {exc}")
 
 
 def terms_and_conditions_field():
@@ -75,10 +86,7 @@ terms_and_conditions_prelogin = (
 
 
 def check_password_strength(password):
-    if len(password) < 6:
-        return False
-    else:
-        return True
+    return len(password) >= PASSWORD_MIN_LENGTH
 
 
 def clean_terms_and_conds(form):
@@ -145,7 +153,7 @@ class CrispyModelForm(ModelForm):
 
 
 class PreLoginForm(CrispyForm):
-    email = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS, "placeholder": "ejemplo@gmail.com"}))
+    email = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
     if terms_and_conditions_prelogin:
         terms_and_conds_accepted = terms_and_conditions_field()
 
@@ -184,19 +192,10 @@ class PreLoginForm(CrispyForm):
 
 
 class LoginForm(CrispyForm):
-    name_or_mail = CharField(
-        label='Email', widget=TextInput(attrs={'class': CSS_CLASS, "placeholder": "ejemplo@gmail.com"})
-    )
+    name_or_mail = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
     password = CharField(
         label='Contraseña',
-        widget=PasswordInput(
-            attrs={
-                'class': CSS_CLASS,
-                'placeholder': 'Ingresá tu contraseña',
-                'autocomplete': 'current-password',
-                'autocapitalize': 'none',
-            }
-        ),
+        widget=PasswordInput(attrs={'class': CSS_CLASS, 'autocomplete': 'current-password', 'autocapitalize': 'none'}),
     )
 
     def __init__(self, *args, **kwargs):
@@ -307,11 +306,7 @@ class UserForm(BaseUserForm):
 def first_name_field():
     return CharField(
         label='Nombre',
-        widget=TextInput(
-            attrs={
-                'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false', 'placeholder': 'Nombre'
-            }
-        ),
+        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
     )
 
 
@@ -319,13 +314,7 @@ def email_field():
     return EmailField(
         label='Email',
         widget=EmailInput(
-            attrs={
-                'inputmode': 'email',
-                'autocomplete': 'email',
-                'autocapitalize': 'none',
-                'spellcheck': 'false',
-                'placeholder': 'ejemplo@gmail.com',
-            }
+            attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
         ),
     )
 
@@ -364,8 +353,7 @@ class SignupForm(BaseUserForm):
                     'phone',
                     Field(
                         'password',
-                        minlength="6",
-                        placeholder="Crear contraseña",
+                        minlength=str(PASSWORD_MIN_LENGTH),
                         template='materialize_css_forms/layout/password.html',
                     ),
                 )
@@ -374,7 +362,7 @@ class SignupForm(BaseUserForm):
                     'next_page',
                     HTML('<div class="align-center">'),
                     Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
-                    HTML('</div">'),
+                    HTML('</div>'),
                 )
             )
         )
@@ -428,6 +416,7 @@ class SignupForm(BaseUserForm):
                     'autocomplete': 'new-password',
                     'autocapitalize': 'none',
                     'spellcheck': 'false',
+                    "minlength": PASSWORD_MIN_LENGTH,
                 }
             )
         }
@@ -447,7 +436,7 @@ class SignupCaptchaForm(SignupForm):
                 'next_page',
                 HTML('<div class="align-center">'),
                 Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l'),
-                HTML('</div">'),
+                HTML('</div>'),
             )
         )
 
@@ -494,7 +483,7 @@ class ProfileExtraDataForm(CrispyModelForm):
                     "profile/push_notifications.html"
                 )
             ),
-            Field('newsletters', template='profile/newsletters.html'),
+            Field('newsletters', template=get_app_template('profile/newsletters.html')),
             HTML('{%% include "%s" %%}' % get_app_template('profile/communications_start_section.html')),
             Field('allow_news', template=get_app_template('profile/allow_news.html')),
             Field('allow_promotions', template=get_app_template('profile/allow_promotions.html')),
@@ -572,9 +561,7 @@ class SubscriberAddressForm(SubscriberForm):
     )
     city = CharField(label='Ciudad')
     province = ChoiceField(
-        label='Departamento',
-        choices=settings.THEDAILY_PROVINCE_CHOICES,
-        initial=getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None),
+        label='Departamento', choices=settings.THEDAILY_PROVINCE_CHOICES, initial=get_default_province()
     )
 
     def __init__(self, *args, **kwargs):
@@ -622,8 +609,7 @@ class SubscriberSignupForm(SubscriberForm):
                 'autocomplete': 'new-password',
                 'autocapitalize': 'none',
                 'spellcheck': 'false',
-                'minlength': 6,
-                'placeholder': 'Crear contraseña',
+                'minlength': PASSWORD_MIN_LENGTH,
             }
         ),
     )
@@ -681,6 +667,7 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
                 'autocomplete': 'new-password',
                 'autocapitalize': 'none',
                 'spellcheck': 'false',
+                'minlength': PASSWORD_MIN_LENGTH,
             }
         ),
     )
@@ -747,7 +734,6 @@ class PhoneSubscriptionForm(CrispyForm):
                 'autocomplete': 'name',
                 'autocapitalize': 'sentences',
                 'spellcheck': 'false',
-                'placeholder': 'Nombre',
             }
         ),
     )
@@ -901,12 +887,13 @@ class GoogleSigninForm(CrispyModelForm):
 
     def __init__(self, *args, **kwargs):
         submit_label = 'crear cuenta' if kwargs.pop("is_new", None) else "continuar"
+        assume_tnc_accepted = kwargs.pop("assume_tnc_accepted", False)
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'google_signin'
         self.helper.layout = Layout(
             *('phone', "next_page")
-            + terms_and_conditions_layout_tuple()
+            + terms_and_conditions_layout_tuple(**({"type": "hidden"} if assume_tnc_accepted else {}))
             + (FormActions(Submit('save', submit_label, css_class='ut-btn ut-btn-l')),)
         )
 
@@ -941,8 +928,9 @@ class GoogleSignupForm(GoogleSigninForm):
 
 
 class GoogleSignupAddressForm(GoogleSignupForm):
-    """ Child class to not exclude address info (address, city and province) """
-
+    """
+    Child class to not exclude address info (address, city and province)
+    """
     address = CharField(
         label='Dirección',
         widget=TextInput(
@@ -950,7 +938,9 @@ class GoogleSignupAddressForm(GoogleSignupForm):
         ),
     )
     city = CharField(label='Ciudad')
-    province = ChoiceField(label='Departamento', choices=settings.THEDAILY_PROVINCE_CHOICES)
+    province = ChoiceField(
+        label='Departamento', choices=settings.THEDAILY_PROVINCE_CHOICES, initial=get_default_province()
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1059,7 +1049,14 @@ class ConfirmEmailRequestForm(CrispyForm):
 class PasswordChangeBaseForm(CrispyForm):
     new_password_1 = CharField(
         label='Nueva contraseña',
-        widget=PasswordInput(attrs={"autocomplete": "new-password", 'autocapitalize': 'none', 'spellcheck': 'false'}),
+        widget=PasswordInput(
+            attrs={
+                "autocomplete": "new-password",
+                'autocapitalize': 'none',
+                'spellcheck': 'false',
+                "minlength": PASSWORD_MIN_LENGTH,
+            }
+        ),
     )
     new_password_2 = CharField(
         label='Repetir contraseña',
@@ -1070,12 +1067,15 @@ class PasswordChangeBaseForm(CrispyForm):
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'change_password'
-        self.helper.layout = Layout(
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id, False)
+            or Layout(
+                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+                HTML('<div class="align-center">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def clean(self):
@@ -1103,13 +1103,16 @@ class PasswordChangeForm(PasswordChangeBaseForm):
         if 'user' in kwargs:
             del kwargs['user']
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Field('old_password', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                Field('old_password', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+                HTML('<div class="align-center">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def clean_old_password(self):
@@ -1125,7 +1128,14 @@ class PasswordChangeForm(PasswordChangeBaseForm):
 class PasswordResetForm(PasswordChangeBaseForm):
     new_password_1 = CharField(
         label='Contraseña',
-        widget=PasswordInput(attrs={"autocomplete": "new-password", 'autocapitalize': 'none', 'spellcheck': 'false'}),
+        widget=PasswordInput(
+            attrs={
+                "autocomplete": "new-password",
+                'autocapitalize': 'none',
+                'spellcheck': 'false',
+                "minlength": PASSWORD_MIN_LENGTH,
+            }
+        ),
     )
     hash = CharField(widget=HiddenInput())
     gonzo = CharField(widget=HiddenInput())
@@ -1143,14 +1153,18 @@ class PasswordResetForm(PasswordChangeBaseForm):
         del kwargs['user']
 
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            Field('gonzo', type='hidden', value=initial['gonzo']),
-            Field('hash', type='hidden', value=initial['gonzo']),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+
+        self.helper.layout = (
+            custom_layout(self.helper.form_id, False, initial['gonzo'])
+            or Layout(
+                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+                Field('gonzo', type='hidden', value=initial['gonzo']),
+                Field('hash', type='hidden', value=initial['gonzo']),
+                HTML('<div class="align-center">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def gen_gonzo(self):

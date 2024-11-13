@@ -3,11 +3,12 @@
 from pydoc import locate
 
 from django.conf import settings
-from django.urls import path, re_path
+from django.urls import path, re_path, reverse_lazy
 from django.views.generic import TemplateView, RedirectView
 from django.views.decorators.cache import never_cache
 
 from .views import (
+    SubscriptionPricesListView,
     subscribe,
     referrals,
     google_phone,
@@ -16,6 +17,7 @@ from .views import (
     signup,
     edit_profile,
     update_user_from_crm,
+    delete_user_from_crm,
     confirm_email,
     password_change,
     password_reset,
@@ -63,17 +65,31 @@ if views_custom_module:
 
 # override urls
 urls_custom_module = getattr(settings, 'THEDAILY_URLS_CUSTOM_MODULE', None)
-if urls_custom_module:
-    custom_patterns = locate(".".join([urls_custom_module, 'urlpatterns']))
-else:
-    custom_patterns = [
-        path('planes/', RedirectView.as_view(url='/usuarios/suscribite/DDIGM/'), name="subscribe_landing")
-    ]
+custom_patterns = locate(".".join([urls_custom_module, 'urlpatterns'])) if urls_custom_module else []
+# and also ensure an url with name "subscribe_landing" is available
+custom_patterns += [path('planes/', SubscriptionPricesListView.as_view(), name="subscribe_landing")]
+
+default_planslug = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='perfil/editar/')),
+    path('', RedirectView.as_view(url=reverse_lazy("edit-profile"))),
     path('comentarios/', never_cache(TemplateView.as_view(template_name='thedaily/templates/comments.html'))),
-] + custom_patterns + [
+] + custom_patterns + (
+    [
+        # path("suscribite/", RedirectView.as_view(url=f"/usuarios/suscribite/{default_planslug}/")),
+        path("suscribite/", RedirectView.as_view(url=reverse_lazy("subscribe-default"))),
+        path(
+            f"suscribite/{default_planslug}/",
+            subscribe,
+            name="subscribe-default",
+            kwargs={"planslug": default_planslug},
+        ),
+        re_path(rf"suscribite/{default_planslug}/(?P<category_slug>\w+)/$", subscribe, name="subscribe-default"),
+    ] if default_planslug else [
+        # ensure an url with name "subscribe-default" is available
+        path("suscribite/", RedirectView.as_view(url=reverse_lazy("subscribe-landing")), name="subscribe-default")
+    ]
+) + [
     re_path(r'^suscribite/(?P<planslug>\w+)/$', subscribe, name="subscribe"),
     re_path(r'^suscribite/(?P<planslug>\w+)/(?P<category_slug>\w+)/$', subscribe, name="subscribe"),
     path('api/', users_api),
@@ -84,6 +100,7 @@ urlpatterns = [
     path('api/last_read/', last_read_api),
     path('api/comments/', user_comments_api),
     path('fromcrm', update_user_from_crm),
+    path('deletefromcrm', delete_user_from_crm),
     path('subscribe-notice-closed', subscribe_notice_closed, name='subscribe-notice-closed'),
     path(
         'unsubscribed-nls-notice-closed',
