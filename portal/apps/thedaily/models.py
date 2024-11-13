@@ -14,7 +14,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.conf import settings
 from django.contrib.auth.models import User, Group, Permission
 from django.core.mail import mail_managers
-from django.core.validators import RegexValidator, validate_email
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, validate_email
 from django.core.exceptions import ValidationError
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from django.db.models import CASCADE
@@ -24,6 +24,7 @@ from django.db.models import (
     DateTimeField,
     EmailField,
     ForeignKey,
+    JSONField,
     Model,
     OneToOneField,
     PositiveIntegerField,
@@ -45,15 +46,24 @@ from core.models import Edition, Publication, Category, ArticleViewedBy
 from .exceptions import UpdateCrmEx, EmailValidationError
 
 
-GA_CATEGORY_CHOICES = (('D', 'Digital'), ('P', 'Papel'))
+GA_CATEGORY_CHOICES, MIN0, MAX100 = (('D', 'Digital'), ('P', 'Papel')), MinValueValidator(0), MaxValueValidator(100)
 
 
 class SubscriptionPrices(Model):
+    # TODO: this first field can be migrated to 2 new fields; name and slug (both unique and required)
     subscription_type = CharField(
-        'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, default='PAPYDIM'
+        'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, blank=True, null=True
     )
-    price = DecimalField('Precio', max_digits=7, decimal_places=2)
-    order = PositiveSmallIntegerField('Orden', null=True)
+    order = PositiveSmallIntegerField('orden', null=True)
+    months = PositiveSmallIntegerField('meses', default=1)
+    price = DecimalField('precio', max_digits=9, decimal_places=2, validators=[MIN0])
+    price_total = DecimalField(
+        'precio total', max_digits=9, decimal_places=2, blank=True, null=True, validators=[MIN0]
+    )
+    discount = DecimalField(
+        'descuento (%)', max_digits=5, decimal_places=2, blank=True, null=True, validators=[MIN0, MAX100]
+    )
+    extra_info = JSONField("información extra", default=dict, help_text='Diccionario Python en formato JSON')
     paypal_button_id = CharField(max_length=13, null=True, blank=True)
     auth_group = ForeignKey(Group, on_delete=CASCADE, verbose_name='Grupo asociado al permiso', blank=True, null=True)
     publication = ForeignKey(Publication, on_delete=CASCADE, blank=True, null=True)
@@ -62,7 +72,10 @@ class SubscriptionPrices(Model):
     ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
 
     def __str__(self):
-        return "%s -- $ %s " % (self.get_subscription_type_display(), self.price)
+        return self.get_subscription_type_display() if self.subscription_type else self.periodicity()
+
+    def periodicity(self):
+        return "Mensual" if self.months == 1 else f"{self.months} meses"
 
     class Meta:
         verbose_name = 'Precio'
@@ -104,7 +117,7 @@ class Subscriber(Model):
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
     document = CharField('documento de identidad', max_length=50, blank=True, null=True)
-    phone = PhoneNumberField('teléfono', blank=True)
+    phone = PhoneNumberField('teléfono', blank=True, default="", db_index=True)
 
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
     downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
@@ -309,6 +322,7 @@ def put_data_to_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
+    @return: json data from the response
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
@@ -325,7 +339,7 @@ def post_data_to_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
-    return request response
+    @return request response in json format
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
@@ -342,6 +356,7 @@ def delete_data_from_crm(api_url, data):
     If there are missing data for do the request; return None
     @param api_url: target url in str format
     @param data: request body data
+    @return reques response in json format
     """
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
@@ -490,7 +505,7 @@ def user_pre_save(sender, instance, **kwargs):
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
 def subscriber_pre_save(sender, instance, **kwargs):
-    if getattr(settings, 'THEDAILY_DEBUG_SIGNALS', False):
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print('DEBUG: subscriber_pre_save signal called')
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
         return True
@@ -513,7 +528,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
     m2m_changed, sender=Subscriber.category_newsletters.through, dispatch_uid="subscriber_area_newsletters_changed"
 )
 def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
-    if settings.DEBUG:
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print(
             'DEBUG: thedaily.models.subscriber_newsletters_changed called with action=%s, pk_set=%s' % (action, pk_set)
         )
