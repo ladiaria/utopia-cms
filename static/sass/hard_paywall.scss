@@ -312,13 +312,6 @@ body.hard-paywall {
         &__form-container {
           padding: 16px;
 
-          .form-DDIGM {
-            padding: 0 16px;
-            @media #{$medium-and-down} {
-              padding: 0 16px;
-            }
-          }
-
           img {
             padding-bottom: 20px;
             max-height: 400px;

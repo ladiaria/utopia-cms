@@ -1,6 +1,18 @@
 h2:has(+ #content-main){max-width: 1170px;}
+tr:not(.has_original) td.field-position {
+  padding-top: 1em !important;
+}
+.tabular td.original p {
+	left: 50px !important;
+}
+tr.has_original td.field-position {
+  padding-top: 1.6em !important;
+}
 td.field-position {
-  width: 60px;
+  width: 30px;
+  text-align: center;
+  font-weight: bold;
+  font-size: large;
 }
 td.field-article {
   padding-bottom: 1em;
@@ -16,4 +28,7 @@ td.field-fixed {
 }
 td.delete {
   width: 70px;
+}
+td.delete input {
+  margin-left: 20px;
 }

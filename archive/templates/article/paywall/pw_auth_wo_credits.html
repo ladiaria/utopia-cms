@@ -1,21 +1,16 @@
 {% load thedaily_tags %}
 
-{% comment "usage" %}
+{% comment "usage example of this template" %}
   <div class="article-body article-body--faded">
     {{ article.body|ldmarkup:article.id|truncatehtml:signupwall_truncate }}
   </div>
-  {% include 'article/paywall/pw_auth_wo_credits.html' %}
+  {% include 'article/paywall/pw_auth_wo_credits.html' %}{# this is the template, its contents is here from line 10 #}
 {% endcomment %}
 
 <div class="ld-snackbar ld-snackbar--active js-ld-snackbar ld-snackbar--static ld-snackbar--narrow">
   <div class="ld-snackbar__title">Llegaste al límite de artículos gratuitos</div>
   <div class="ld-snackbar__body">
-    <div class="ld-snackbar__block">
-      {# TODO: conditional subscribe url if category_signup #}
-      <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=paywall" class="ut-btn ut-btn-l">
-        Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
-      </a>
-    </div>
+    {% include "article/paywall/pw_subscribe_block.html" %}
     <div class="ld-snackbar__text ld-snackbar__block">Nuestro periodismo depende de vos</div>
   </div>
 </div>

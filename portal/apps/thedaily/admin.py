@@ -185,8 +185,23 @@ class SubscriberAdmin(ModelAdmin):
 
 
 class SubscriptionPricesAdmin(ModelAdmin):
-    list_display = ('id', 'subscription_type', 'price', 'order', 'auth_group', 'publication')
-    list_editable = ('subscription_type', 'price', 'order', 'auth_group', 'publication')
+    list_display = (
+        '__str__', 'order', 'months', 'price', 'price_total', "discount", 'auth_group', 'publication'
+    )
+    list_editable = list_display[1:]
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        field = super().formfield_for_dbfield(db_field, **kwargs)
+        if db_field.name in ('price', 'price_total'):
+            field.widget.attrs['style'] = 'width:8em;'
+        elif db_field.name == 'discount':
+            field.widget.attrs['style'] = 'width:5em;'
+        elif db_field.name in ('order', 'months'):
+            field.widget.attrs['style'] = 'width:3em;'
+        elif db_field.name == 'extra_info':
+            field.required = False
+            field.widget.attrs = {'style': 'width:80%;font-family:monospace', 'spellcheck': "false", 'rows': 10}
+        return field
 
 
 class RemainingContentAdmin(ModelAdmin):

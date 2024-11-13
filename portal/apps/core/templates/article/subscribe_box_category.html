@@ -33,7 +33,7 @@
       </label>
     </div>
   {% else %}
-    <a href="{% if category_signup %}{% url 'subscribe' planslug='DDIGM' category_slug=category.slug %}{% else %}{% url 'subscribe' planslug='DDIGM' %}{% endif %}" class="ut-btn ut-btn-outline">
+    <a href="{% if category_signup %}{% url 'subscribe-default' category_slug=category.slug %}{% else %}{% url 'subscribe-default' %}{% endif %}" class="ut-btn ut-btn-outline">
       Suscribite
     </a>
   {% endif %}

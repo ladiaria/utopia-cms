@@ -17,10 +17,10 @@ from django.utils.html import strip_tags
 register = Library()
 
 TITLES_RE = r'^\s*S>\s*(.*[^\s])\s*$'
-EXTENSION_KW = '__recuadro__'
+EXTENSION_KW = getattr(settings, 'CORE_ARTICLE_DETAIL_EXTENSION_KW', '__recuadro__')
 EXTENSION_RE = r'%s\s*(\d*)' % EXTENSION_KW
 
-IMAGE_KW = '__imagen__'
+IMAGE_KW = getattr(settings, 'CORE_ARTICLE_DETAIL_IMAGE_KW', '__imagen__')
 IMAGE_RE = r'%s\s*(\d*)' % IMAGE_KW
 MD_EXTRAS = ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra', "strike"]
 
@@ -132,10 +132,10 @@ def amp_ldmarkup(value, args=''):
 @register.filter
 def remove_markup(value):
     if value:
-        value = re.sub(r"__recuadro__.", "", value)
-        value = value.replace("__recuadro__", "")
-        value = re.sub(r"__imagen__.", "", value)
-        value = value.replace("__imagen__", "")
+        value = re.sub(fr"{EXTENSION_KW}.", "", value)
+        value = value.replace(EXTENSION_KW, "")
+        value = re.sub(fr"{IMAGE_KW}.", "", value)
+        value = value.replace(IMAGE_KW, "")
         # quitamos cualquier link que haya quedado
         value = re.sub(r"\(http(.*)\)", "", value)
         value = cleanhtml(ldmarkup(value))
