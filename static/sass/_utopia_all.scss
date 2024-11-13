@@ -1063,15 +1063,6 @@ a.ld-link-low {
   margin-bottom: -100px;
 }
 
-/* Temporary: Hide certain payment types for digital subscriptions */
-
-.form-DDIGM {
-  // Hide Redpagos option for digital subscriptions
-  .payment-option-4 {
-    display: none;
-  }
-}
-
 .newsletter-subscribe {
   background: $color-light-blue;
   padding: 50px 0;
