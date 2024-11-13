@@ -39,9 +39,12 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
           (*) To face this "session removal" we set the session's modified attr to True in some parts of our code, but
               this doesn't seem to be the right way, we believe that the "partial" approach is the right solution.
     """
-    subscriber = get_or_create_user_profile(user)
+    subscriber, is_new = get_or_create_user_profile(user), kwargs.get('is_new')
+    # The "missing data" form is shown when any of the following conditions is met:
+    # 1. This is a new user and the user has no phone number and the phone number is required by settings.
+    # 2. T&C are configured, assumed not to be accepted by default in google and the user has not accepted them yet.
     if (
-        (settings.THEDAILY_GOOGLE_OAUTH2_ASK_PHONE and not subscriber.phone)
+        (settings.THEDAILY_GOOGLE_OAUTH2_ASK_PHONE and not subscriber.phone and is_new)
         or (settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID and not subscriber.terms_and_conds_accepted)
     ):
         request = kwargs['request']
@@ -56,7 +59,4 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
                 oas.save()
         except OAuthState.DoesNotExist:
             OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
-        is_new, query_params = kwargs.get('is_new'), ''
-        if is_new:
-            query_params = '?is_new=1'
-        return HttpResponseRedirect('/usuarios/registrate/google/' + query_params)
+        return HttpResponseRedirect('/usuarios/registrate/google/%s' % ('?is_new=1' if is_new else ""))
