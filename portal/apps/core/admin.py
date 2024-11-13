@@ -625,9 +625,13 @@ class ArticleAdmin(VersionAdmin):
             'Metadatos',
             {
                 'fields': (
-                    'is_published',
-                    # 'to_be_published',  # TODO: add this field when it gets fully implemented
-                    'date_published', 'tags', 'main_section'
+                    (
+                        'is_published',
+                        # 'to_be_published',  # TODO: add this field when it gets fully implemented
+                        'date_published'
+                    ),
+                    'tags',
+                    'main_section'
                 )
             }
         ),

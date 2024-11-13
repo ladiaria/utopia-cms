@@ -117,7 +117,7 @@ class SignupwallTestCase(TestCase):
         # TODO: this test fails because the user is not a subscriber to the spinoff pub:
         #       Inconsistent html is rendered to the user with de badge of "content unlocked for your subscription" and
         #       and empty article body (no content).
-        #       This is happenning in "ladiaria" custom environment but not in "cambio" (not tested in utopia-only)
+        #       This is happenning in utopia-only and "ladiaria" custom environments but not in "cambio".
         pwclear()
         c, password, user = Client(), User.objects.make_random_password(), UserFactory()
         user.set_password(password)

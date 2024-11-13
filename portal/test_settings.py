@@ -11,6 +11,10 @@ if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_CHOICES"):
         ("PAPYDIM", "Suscripción papel"),
     )
 
+if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_DEFAULT"):
+    THEDAILY_SUBSCRIPTION_TYPE_DEFAULT = THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0]
+
+
 try:
     from local_test_settings import *  # noqa
 except ImportError:
