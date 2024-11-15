@@ -12,8 +12,10 @@ from core.factories import UserFactory
 
 class SubscribeTestCase(TestCase):
 
-    fixtures = ['test']
-    var = {"test01_planslug": "DDIGM"}
+    fixtures = getattr(settings, "THEDAILY_TEST_SUBSCRIBE_FIXTURES", ["test"])
+    var = {"test01_planslug": settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT}
+    # last word in the human readable name of the default subscription type
+    hname = dict(settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES)[var["test01_planslug"]].lower().split()[-1]
 
     def check_one_entry(self, response):
         self.assertEqual(response.status_code, 200)
@@ -26,7 +28,7 @@ class SubscribeTestCase(TestCase):
         response = c.get('/usuarios/planes/', follow=True)
         self.assertEqual(response.status_code, 200)
         response_content = response.content.decode()
-        self.assertIn("Suscripción digital", response_content)
+        self.assertIn(self.hname, response_content.lower())
         planslug = self.var["test01_planslug"]
         phone_subscription_log_clear()
         user = response.wsgi_request.user
@@ -119,7 +121,7 @@ class SubscribeTestCase(TestCase):
             self.assertEqual(response.status_code, 200)
             response_content = response.content.decode()
             self.assertNotIn("Creá tu cuenta", response_content)
-            self.assertIn("Suscripción digital", response_content)
+            self.assertIn(self.hname, response_content)
 
     def test03_user_profile(self):
         password, user = User.objects.make_random_password(), UserFactory()

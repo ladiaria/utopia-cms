@@ -14,7 +14,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.conf import settings
 from django.contrib.auth.models import User, Group, Permission
 from django.core.mail import mail_managers
-from django.core.validators import RegexValidator, validate_email
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, validate_email
 from django.core.exceptions import ValidationError
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from django.db.models import CASCADE
@@ -24,6 +24,7 @@ from django.db.models import (
     DateTimeField,
     EmailField,
     ForeignKey,
+    JSONField,
     Model,
     OneToOneField,
     PositiveIntegerField,
@@ -45,15 +46,24 @@ from core.models import Edition, Publication, Category, ArticleViewedBy
 from .exceptions import UpdateCrmEx, EmailValidationError
 
 
-GA_CATEGORY_CHOICES = (('D', 'Digital'), ('P', 'Papel'))
+GA_CATEGORY_CHOICES, MIN0, MAX100 = (('D', 'Digital'), ('P', 'Papel')), MinValueValidator(0), MaxValueValidator(100)
 
 
 class SubscriptionPrices(Model):
+    # TODO: this first field can be migrated to 2 new fields; name and slug (both unique and required)
     subscription_type = CharField(
-        'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, default='PAPYDIM'
+        'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, blank=True, null=True
     )
-    price = DecimalField('Precio', max_digits=7, decimal_places=2)
-    order = PositiveSmallIntegerField('Orden', null=True)
+    order = PositiveSmallIntegerField('orden', null=True)
+    months = PositiveSmallIntegerField('meses', default=1)
+    price = DecimalField('precio', max_digits=9, decimal_places=2, validators=[MIN0])
+    price_total = DecimalField(
+        'precio total', max_digits=9, decimal_places=2, blank=True, null=True, validators=[MIN0]
+    )
+    discount = DecimalField(
+        'descuento (%)', max_digits=5, decimal_places=2, blank=True, null=True, validators=[MIN0, MAX100]
+    )
+    extra_info = JSONField("información extra", default=dict, help_text='Diccionario Python en formato JSON')
     paypal_button_id = CharField(max_length=13, null=True, blank=True)
     auth_group = ForeignKey(Group, on_delete=CASCADE, verbose_name='Grupo asociado al permiso', blank=True, null=True)
     publication = ForeignKey(Publication, on_delete=CASCADE, blank=True, null=True)
@@ -62,7 +72,10 @@ class SubscriptionPrices(Model):
     ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
 
     def __str__(self):
-        return "%s -- $ %s " % (self.get_subscription_type_display(), self.price)
+        return self.get_subscription_type_display() if self.subscription_type else self.periodicity()
+
+    def periodicity(self):
+        return "Mensual" if self.months == 1 else f"{self.months} meses"
 
     class Meta:
         verbose_name = 'Precio'
