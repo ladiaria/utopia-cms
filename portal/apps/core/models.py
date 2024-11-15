@@ -1702,6 +1702,8 @@ class Article(ArticleBase):
     newsletter_featured = BooleanField('destacado en newsletter', default=False)
     ipfs_upload = BooleanField('Publicar en IPFS', default=False)
     ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID del artículo en IPFS')
+    # slug field again because prepopulate script does not get the maxlength from the base class
+    slug = SlugField('slug', max_length=200)
     # alternative fields
     alt_title_metadata = CharField(
         'título alternativo para metadatos',

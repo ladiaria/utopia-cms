@@ -50,6 +50,12 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
     width: 600px;
   }
 }
+.form-row.field-slug input.readonly {
+  color: gray;
+  border: none;
+  padding-left: 0px;
+  padding-top: 8px;
+}
 
 /* alternative title and description fields */
 #id_keywords, #id_headline {

@@ -430,14 +430,9 @@ class ArticleAdminModelForm(ModelForm):
         ('full_restricted_true', 'Hard (solamente para suscriptores)'),
         ('public_true', 'Sin paywall (libre acceso)'),
     )
-    slug = CharField(
-        label='Slug',
-        widget=TextInput(attrs={'readonly': 'readonly'}),
-        help_text='Se genera automáticamente en base al título.',
-    )
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
     pw_radio_choice = ChoiceField(
-        label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
+        label="paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
     )
 
     def __init__(self, *args, **kwargs):
@@ -454,6 +449,10 @@ class ArticleAdminModelForm(ModelForm):
         self.fields['date_published'].widget.attrs['min'] = nowval.isoformat()
         self.fields['date_published'].required = False
         self.fields['date_published'].label = ""
+        if not getattr(settings, "CORE_ARTICLE_SLUG_FIELD_EDITABLE", False):
+            self.fields['slug'].widget.attrs['readonly'] = True
+            self.fields['slug'].widget.attrs['class'] = "readonly"
+            self.fields['slug'].widget.attrs['placeholder'] = 'Se genera automáticamente en base al título.'
 
     def clean_tags(self):
         """
