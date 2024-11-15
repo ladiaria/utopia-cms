@@ -618,7 +618,7 @@ class SubscriberSignupForm(SubscriberForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
+        self.helper.layout = custom_layout("subscriber_signup_form") or Layout(
             'first_name',
             'email',
             'phone',

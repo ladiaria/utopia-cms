@@ -784,10 +784,14 @@ def subscribe(request, planslug, category_slug=None):
             if no_captcha(request)
             else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
         )
-
-        subscription_form = (
+        subscription_formclass = (
             subscription_formclass if subscription_price.ga_category == 'D' else SubscriptionForm
-        )(initial={'subscription_type_prices': planslug})
+        )
+        # a last transformation pipeline step for the subscription form (can be completely overrided by settings)
+        subscription_formclass_custom = getattr(settings, 'THEDAILY_SUBSCRIPTION_FORMCLASS', None)
+        if subscription_formclass_custom:
+            subscription_formclass = locate(subscription_formclass_custom)
+        subscription_form = subscription_formclass(initial={'subscription_type_prices': planslug})
 
         if not is_subscriber and request.method == 'POST':
             post = request.POST.copy()
@@ -823,11 +827,7 @@ def subscribe(request, planslug, category_slug=None):
                     SubscriberSignupForm if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm
                 )(post)
 
-            subscription_form_v = (
-                subscription_formclass if subscription_price.ga_category == 'D' else SubscriptionForm
-            )(
-                post
-            )  # TODO: is initial=initial also needed here?
+            subscription_form_v = subscription_formclass(post)
 
             if subscriber_form_v.is_valid(planslug) and subscription_form_v.is_valid():
                 # TODO: use form.cleaned_data instead of post.get
