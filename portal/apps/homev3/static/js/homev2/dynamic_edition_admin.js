@@ -1,14 +1,10 @@
 var InlineOrdering = {
 
     init: function () {
-        $("th:contains('Orden')").hide();
-        $('td[class$=-top_position]').hide();
-        $('td[class$=-position]:not(:has(.errorlist))').hide();
 
         var inline_group_containers = $('.inline-group').has('.dynamic-order');
         // Rompemos el tbody para hacer multiples tbody.
         $('.inline-group > .dynamic-order > table > tbody').contents().unwrap();
-
         var MakePages = function(section){
             var section = $(section);
             var section_id = section.data('section_id');
@@ -34,16 +30,6 @@ var InlineOrdering = {
                         art.attr('data-page', new_page);
                     }
                 }
-            });
-        };
-
-        function UpdateArticlesPage(section){
-            var articles = $(section).find('.dynamic-order > table > tr').not('[id$=-empty]');
-            articles.each(function(i,art){
-                var art = $(art);
-                var input_page = art.find('input[id$=-page]');
-                var current_page = art.closest('tbody.page').data('page');
-                input_page.val(current_page);
             });
         };
 
@@ -83,36 +69,6 @@ var InlineOrdering = {
             } else {
                 UpdateSection(section);
             }
-        });
-
-        inline_group_containers.not('[id$=-group]').each( function(i, section){
-            var section = $(section);
-            var orderables = section.find('.dynamic-order > table > tbody > tr').has('td');
-            var connector = '.page';
-
-            $('.placeholder').hide();
-            section.sortable({
-                forcePlaceholderSize: 'true',
-                items: orderables,
-                connectWith: connector,
-                // Some options.
-                revert: true,
-                start: function(e, ui){
-                    ui.placeholder.height(ui.item.height());
-                },
-                stop: function(event, ui){
-                    UpdateArticlesPage(section);
-                    UpdateSection(section);
-                },
-                update: function(event, ui) {
-                    page = ui.item.closest('.dynamic-order > table > tbody');
-                    if (page.find('tr').not('[id$=-empty]').length > 6 && connector != ''){
-                        section.sortable('cancel');
-                    }
-                },
-            });
-            orderables.css('cursor', 'move');
-            $('td.field-order input').hide();
         });
 
         inline_group_containers.each( function(){
@@ -156,6 +112,10 @@ var InlineOrdering = {
                 else if(container.find('tr[id^=categorynewsletterarticle_set]').length > 0){
                     var order_field = 'order';
                     var tr_elem = container.find('tr[id^=categorynewsletterarticle_set]').filter('.has_original');
+                }
+                else if(container.find('tr[id^=categoryhomearticle_set]').length > 0){
+                    var order_field = 'position';
+                    var tr_elem = container.find('tr[id^=categoryhomearticle_set]').filter('.has_original');
                 }
                 else{
                     var order_field = '#';  // not matched character
@@ -206,6 +166,9 @@ var PopUpAdd = {
             else if (add_link.closest('div[id^=categorynewsletterarticle_set-].inline-group').length > 0){
                 var cover_group = add_link.closest('div[id^=categorynewsletterarticle_set-].inline-group');
             }
+            else if (add_link.closest('div[id^=categoryhomearticle_set-].inline-group').length > 0){
+                var cover_group = add_link.closest('div[id^=categoryhomearticle_set-].inline-group');
+            }
             else {
                 var cover_group = undefined;
             }
@@ -231,13 +194,31 @@ var PopUpAdd = {
     },
 };
 
+// Set up for tables and behavior based on the view that is present
+var SetUp = {
+    init: function () {
+        // based on views that are being presented
+        if ($('div[id^=categoryhomearticle_set-]').length){
+            $("th:contains('Orden')").show();
+            $('td[class$=-top_position]').show();
+            $('td[class$=-position]:not(:has(.errorlist))').show();
+        }
+        else {
+            $("th:contains('Orden')").hide();
+            $('td[class$=-top_position]').hide();
+            $('td[class$=-position]:not(:has(.errorlist))').hide();
+        }
+    },
+};
+
+
 // refresh de la edición cuando se vuelve del popup
 function dismissAddAnotherPopup(win, newId, newRepr) {
     win.close();
     location.reload();
 };
 
-function dismissRelatedLookupPopupTarget(win, chosenId) {
+function dismissRelatedLookupPopupTarget(win, chosenId, chosenText) {
         /*
         Convert open window name into an django html element ID format.
         Find element by ID if it's vManyToManyRawIdAdminField attach given ID to the value.
@@ -256,15 +237,21 @@ function dismissRelatedLookupPopupTarget(win, chosenId) {
                     $('#' + name).closest('tr').addClass('has_original');
                 }
             }
+            // Update the <strong> element next to the input with the chosen text
+            var strongElement = $('#' + name).closest('td').find('strong');
+            if (strongElement.length > 0) {
+                strongElement.text(chosenText); // Set the text of the <strong> element
+            }
         }
         win.close();
     }
 
-function dismissRelatedLookupPopup(win, article_id){
-    dismissRelatedLookupPopupTarget(win, article_id);
+function dismissRelatedLookupPopup(win, article_id, chosenText){
+    dismissRelatedLookupPopupTarget(win, article_id, chosenText);
 }
 
 $(function () {
+    $(document).on("load", SetUp.init());
     $(document).on("load", InlineOrdering.init());
     $(document).on("load", SectionIds.init());
     $(document).on("load", PopUpAdd.init());
