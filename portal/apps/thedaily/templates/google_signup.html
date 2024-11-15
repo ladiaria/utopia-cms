@@ -16,11 +16,6 @@
 {% endspaceless %}{% endblock %}
 
 {% block content %}
-  {% if is_new %}
-  <script type="text/javascript">
-    const registrationSuccessfully = true;
-  </script>
-  {% endif %}
   {% block content_main_open %}<main class="ld-content">{% endblock %}
   <div class="subscribe-header center-align">
     <h1 class="ld-title-big">{% if is_new %}Cuenta gratuita{% else %}Ingreso con Google{% endif %}</h1>
