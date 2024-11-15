@@ -449,7 +449,7 @@ class ArticleAdminModelForm(ModelForm):
         self.fields['date_published'].widget.attrs['min'] = nowval.isoformat()
         self.fields['date_published'].required = False
         self.fields['date_published'].label = ""
-        if not getattr(settings, "CORE_ARTICLE_SLUG_FIELD_EDITABLE", False):
+        if getattr(settings, "CORE_ARTICLE_SLUG_FIELD_READONLY", True):
             self.fields['slug'].widget.attrs['readonly'] = True
             self.fields['slug'].widget.attrs['class'] = "readonly"
             self.fields['slug'].widget.attrs['placeholder'] = 'Se genera automáticamente en base al título.'
