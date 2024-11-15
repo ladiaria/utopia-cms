@@ -246,11 +246,10 @@ urlpatterns = [
     path('buscar/', include('search.urls')),
     # Service Worker
     re_path(r'^sw\.js$', service_worker, name='serviceworker'),
-    path('subscribe/', subscribe, name='subscribe'),
+    path('subscribe/', subscribe, name='subscribe'),  # TODO: check if makes any sense to have this url
     # Custom redirects
     path('suscribite-por-telefono/', RedirectView.as_view(url='/usuarios/suscribite-por-telefono/')),
     path('suscribite/', RedirectView.as_view(url=reverse_lazy('subscribe_landing'))),
-    path('digital/', RedirectView.as_view(url=reverse_lazy('subscribe', args=['DDIGM']))),
     re_path(
         r'^contacto/', RedirectView.as_view(url=getattr(settings, 'CONTACT_REDIRECT_URL', '/')), name="contact-form"
     ),
