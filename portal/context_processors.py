@@ -80,9 +80,12 @@ def publications(request):
     )
     if not is_amp_detect:
         result['footer_template'] = settings.HOMEV3_FOOTER_TEMPLATE
-        result['subscribe_notice_template'] = getattr(
-            settings, "HOMEV3_SUBSCRIBE_NOTICE_TEMPLATE", "homev3/templates/subscribe_notice.html"
-        )
+        if (
+            settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT and getattr(settings, "HOMEV3_SUBSCRIBE_NOTICE_ENABLED", True)
+        ):
+            result['subscribe_notice_template'] = getattr(
+                settings, "HOMEV3_SUBSCRIBE_NOTICE_TEMPLATE", "homev3/templates/subscribe_notice.html"
+            )
 
     # use this context processor to load also some other useful variables configured in settings
     result['PWA_ENABLED'] = getattr(settings, 'PWA_ENABLED', True)

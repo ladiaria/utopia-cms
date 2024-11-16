@@ -4,8 +4,8 @@ from kombu.exceptions import OperationalError
 from django.conf import settings
 from django.core.management.base import CommandError
 
+from core.models import Article
 from celeryapp import celery_app
-
 from .actions import update_category_home as update_category_home_func
 from .management.commands.send_notification import send_notification_func
 from .management.commands.update_article_urls import update_article_urls as update_article_urls_func
@@ -55,6 +55,25 @@ def test_sleep_task(secs=0, feedback_step=None):
 def test_task(test_arg=None):
     # was used for development only
     return "test_task executed with arg: %s" % test_arg
+
+
+@celery_app.task(name="article-publishing")
+def article_publishing(article_id):
+    # publish a scheduled article
+    result = None
+    try:
+        article = Article.objects.get(pk=article_id)
+    except Article.DoesNotExist:
+        result = f"Article with id {article_id} does not exist."
+    else:
+        article.is_published, article.to_be_published = True, False
+        try:
+            article.save()
+        except Exception as e:
+            result = f"Article {article} (id: {article.id}) could not be published: {e}"
+        else:
+            result = f"Article {article} (id: {article.id}) scheduled for publishing was published correctly."
+    return result
 
 
 def get_workers_for_queue(queue_name):

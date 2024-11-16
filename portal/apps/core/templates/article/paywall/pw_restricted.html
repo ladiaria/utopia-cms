@@ -21,19 +21,11 @@
         </div>
       {% else %}
         <div class="ld-snackbar__text ld-snackbar__block">Para acceder a todos los contenidos de manera ilimitada</div>
-        <div class="ld-snackbar__block">
-          <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=paywall" class="ut-btn ut-btn-l">
-            Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
-          </a>
-        </div>
+        {% include "article/paywall/pw_subscribe_block.html" %}
       {% endif %}
     {% else %}
       <div class="ld-snackbar__text ld-snackbar__block">Para acceder a todos los contenidos del sitio</div>
-      <div class="ld-snackbar__block">
-        <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=paywall" class="ut-btn ut-btn-l">
-          Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
-        </a>
-      </div>
+      {% include "article/paywall/pw_subscribe_block.html" %}
       <div class="ld-snackbar__text u-mb-10">Si ya tenés una cuenta</div>
       <div class="ld-snackbar__block">
         <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-outline">

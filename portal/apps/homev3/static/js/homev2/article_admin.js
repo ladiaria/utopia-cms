@@ -34,8 +34,8 @@ var prepareFields = function(){
     $('.inline-group').show();
   }
   $('#homearticle_set-group').hide();
-  // custom position for the "extensions" inline
-  var fset_body = $('.main-martor').closest('fieldset');
+  // custom position for the "extensions" inline (below martor or ckeditor widget, the body field)
+  var fset_body = $('.main-martor,div.ck').closest('fieldset');
   fset_body.after($('#extensions-group'));
 };
 var main_section_row_selected = function(radio_field){

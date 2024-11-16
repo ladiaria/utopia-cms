@@ -1,0 +1,19 @@
+
+/* ckeditor */
+div.charcounter {
+    display: none;
+}
+tr.dynamic-extensions td.field-body {
+    min-width: revert;
+    padding-right: 2em;
+}
+div.ck-content p {
+    margin-left: revert;
+}
+
+fieldset .fieldBox:not(.field-to_be_published, .field-is_published, .field-date_published) {
+  float: unset;
+}
+.aligned label {
+  padding-right: 0px !important;
+}
