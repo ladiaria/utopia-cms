@@ -4,6 +4,7 @@ from builtins import str
 
 from django.conf import settings
 from django.http import HttpResponseRedirect
+from django.db import IntegrityError
 from django.db.models.deletion import Collector
 from django.contrib import admin
 from django.contrib.auth.models import User
@@ -37,6 +38,9 @@ class UserAdmin(BaseUserAdmin):
         result = None
         try:
             result = super().change_view(request, object_id, form_url, extra_context)
+        except IntegrityError as ie:
+            self.message_user(request, str(ie), level=messages.ERROR)
+            result = HttpResponseRedirect(request.get_full_path())
         except UpdateCrmEx:
             self.message_user(
                 request, 'Error de comunicación con el CRM, no se aplicaron los cambios', level=messages.ERROR
