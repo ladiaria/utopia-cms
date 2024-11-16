@@ -4,8 +4,8 @@ from kombu.exceptions import OperationalError
 from django.conf import settings
 from django.core.management.base import CommandError
 
+from core.models import Article
 from celeryapp import celery_app
-
 from .actions import update_category_home as update_category_home_func
 from .management.commands.send_notification import send_notification_func
 from .management.commands.update_article_urls import update_article_urls as update_article_urls_func
@@ -57,6 +57,25 @@ def test_task(test_arg=None):
     return "test_task executed with arg: %s" % test_arg
 
 
+@celery_app.task(name="article-publishing")
+def article_publishing(article_id):
+    # publish a scheduled article
+    result = None
+    try:
+        article = Article.objects.get(pk=article_id)
+    except Article.DoesNotExist:
+        result = f"Article with id {article_id} does not exist."
+    else:
+        article.is_published, article.to_be_published = True, False
+        try:
+            article.save()
+        except Exception as e:
+            result = f"Article {article} (id: {article.id}) could not be published: {e}"
+        else:
+            result = f"Article {article} (id: {article.id}) scheduled for publishing was published correctly."
+    return result
+
+
 def get_workers_for_queue(queue_name):
     # Get the list of all registered workers and their queues
     active_queues = inspector.active_queues() or {}
@@ -68,9 +87,12 @@ def get_workers_for_queue(queue_name):
     return list(workers_handling_queue)
 
 
+# - workers may allways be the same, thats why this code is not inside a function, to be called only once per py proc.
+# - if you are not running celery you should set CELERY_QUEUES = {} in your local_settings.py, then CELERY_TASK_ROUTES
+#   will not be populated and a KeyError will be raised and handled here.
 try:
     update_category_home_workers = get_workers_for_queue(settings.CELERY_TASK_ROUTES["update-category-home"]["queue"])
-except (AttributeError, KeyError):
+except (AttributeError, KeyError, OperationalError):
     update_category_home_workers = []
 
 

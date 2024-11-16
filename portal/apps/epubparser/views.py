@@ -59,7 +59,7 @@ class ParseView(DetailView):
             book = epub.read_epub(epub_file)
             for item in book.get_items():
                 # - 9 es el codigo de tipo de archivo xhtml
-                if item.get_type() is 9:
+                if item.get_type() == 9:
                     content = item.get_body_content()
 
                     print(content)

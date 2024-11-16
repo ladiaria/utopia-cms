@@ -11,7 +11,7 @@
 {% if ad.bannerad %}
   <div class="ad_banner pub {% if not ad.bannerad.mobile_content_basename %}desktop-only{% endif %}">
     <a target="_blank" href="{{ ad.get_absolute_url }}" rel="sponsored">
-      {% if request.is_amp_detect %}
+      {% if is_amp_detect %}
         <amp-img layout="responsive" class="responsive-img" width="300" height="250" src="{% if ad.bannerad.mobile_content_basename %}{{ ad.bannerad.mobile_content.url }}{% else %}{{ ad.bannerad.content.url }}{% endif %}" alt="{{ ad.title }}" />
       {% else %}
         {% if ad.bannerad.mobile_content_basename %}
