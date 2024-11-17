@@ -27,7 +27,7 @@
           name="newsletters"
           data-url="{% url 'nl-auth-subscribe' nltype='c' nlslug=category.slug %}"
           data-key="nl_subscribe"
-          data-bouncer="false" {% comment %}TODO: Revisar cuando es false y cuando es true{% endcomment %}
+          data-bouncer="{{ user.subscriber.email_is_bouncer|lower }}"
         />
         <span class="slider"></span>
       </label>
