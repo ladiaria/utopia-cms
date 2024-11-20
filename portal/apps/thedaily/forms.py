@@ -235,7 +235,7 @@ class LoginForm(CrispyForm):
                     self.username = nom
                     result = data
                 else:
-                    self.add_eror(error=ValidationError(USER_PASS_ERROR))
+                    self.add_error(None, error=ValidationError(USER_PASS_ERROR))
             else:
                 result = data
         return result
