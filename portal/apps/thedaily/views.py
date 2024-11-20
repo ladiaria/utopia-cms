@@ -403,7 +403,7 @@ def login(request, product_slug=None, product_variant=None):
     if request.method == 'POST':
         login_form = login_formclass(request.POST)
         if login_form.is_valid():
-            password = request.POST.get('password')
+            password = request.POST.get('password')  # Taken directly from POST (not all form classes have password)
             if password:
                 user = authenticate(username=login_form.username, password=password)
                 if user is not None:
