@@ -969,7 +969,7 @@ def subscribe(request, planslug, category_slug=None):
                     )
                 else:
                     if online:
-                        context.update({"type": sp, "planslug": planslug, "user_created": user_created})
+                        context.update({"subscription_price": sp, "planslug": planslug, "user_created": user_created})
                         # TODO: decide the best way to render the template related to the online version of "planslug"
                         return render(request, get_app_template("online_subscription.html"), context)
                     else:
