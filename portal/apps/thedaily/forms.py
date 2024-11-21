@@ -261,6 +261,7 @@ class BaseUserForm(CrispyModelForm):
         return self.custom_clean()
 
     def clean_first_name(self):
+        # TODO: sync with django-admin validations because for ex. "@" is allowed there and not here
         first_name = self.cleaned_data.get('first_name')
         if not RE_ALPHANUM.match(first_name):
             self.add_error(
@@ -495,6 +496,8 @@ class ProfileExtraDataForm(CrispyModelForm):
         model = Subscriber
         fields = ('allow_news', 'allow_promotions', 'allow_polls', "newsletters")
 
+
+# TODO: from this line on, s/first_name/name
 
 class SubscriberForm(CrispyModelForm):
     first_name = first_name_field()

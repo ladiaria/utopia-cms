@@ -403,7 +403,7 @@ def login(request, product_slug=None, product_variant=None):
     if request.method == 'POST':
         login_form = login_formclass(request.POST)
         if login_form.is_valid():
-            password = login_form.cleaned_data.get('password')
+            password = request.POST.get('password')  # Taken directly from POST (not all form classes have password)
             if password:
                 user = authenticate(username=login_form.username, password=password)
                 if user is not None:
@@ -1513,6 +1513,7 @@ def update_user_from_crm(request):
                 #           after this sync is made, the Subscriber's NLs set must be equal to the set given
                 #       (that was exactly what the commented and now removed code used to do)
                 #       NOTE: is very probbable that the "if" now will require also be True for "area_newsletters"
+                s.updatefromcrm = True
                 s.newsletters.set(Publication.objects.filter(slug__in=set_newsletters))
                 s.category_newsletters.set(Category.objects.filter(slug__in=set_cat_newsletters))
             else:
@@ -1522,6 +1523,11 @@ def update_user_from_crm(request):
         if save_subscriber:
             s.updatefromcrm = True
             s.save()
+        if settings.DEBUG:
+            fields_keys, flag = fields.keys(), getattr(s, 'updatefromcrm', False)
+            print(
+                f"DEBUG: sync API: Subscriber={s} fields={fields_keys} save_subscriber={save_subscriber} flag={flag}"
+            )
 
     try:
         contact_id = request.data['contact_id']
@@ -1611,10 +1617,10 @@ def update_user_from_crm(request):
             except IntegrityError as ie:
                 mail_managers('IntegrityError saving user', "%s: %s" % (newemail, strip_tags(str(ie))), True)
                 return HttpResponseBadRequest()
-    except IntegrityError as ie:
+    except (IntegrityError, AttributeError) as ie_or_ae:
         mail_managers(
-            'IntegrityError saving User or Subscriber',
-            "contact_id=%s, %s" % (contact_id, strip_tags(str(ie))),
+            f'{type(ie_or_ae).__name__} saving User or Subscriber',
+            "contact_id=%s, %s" % (contact_id, strip_tags(str(ie_or_ae))),
             True,
         )
         return HttpResponseBadRequest()
