@@ -759,14 +759,52 @@ class PhoneSubscriptionForm(CrispyForm):
         )
 
 
-class SubscriptionForm(ModelForm):
+class WebSubscriptionForm(ModelForm):
     subscription_type_prices = ChoiceField(choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, widget=HiddenInput())
+    if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
+        terms_and_conds_accepted = terms_and_conditions_field()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = CrispyFormHelper()
+        self.helper.layout = Layout(
+            *terms_and_conditions_layout_tuple()
+            + (
+                HTML('<div class="ld-block--sm align-center">'),
+                FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
+                HTML(
+                    '<div class="ld-text-secondary align-center ld-subscription-step" style="display:none;">'
+                    'Paso 1 de 2'
+                ),
+                Field('subscription_type_prices'),
+            )
+        )
+
+    def clean_terms_and_conds_accepted(self):
+        return clean_terms_and_conds(self)
+
+    class Meta:
+        model = Subscription
+        fields = ['subscription_type_prices']
+
+
+class WebSubscriptionPromoCodeForm(WebSubscriptionForm):
+    promo_code = CharField(label='Código promocional (opcional)', required=False, max_length=8)
+
+
+class WebSubscriptionCaptchaForm(WebSubscriptionForm):
+    captcha = ReCaptchaField(label='')
+
+
+class WebSubscriptionPromoCodeCaptchaForm(WebSubscriptionPromoCodeForm):
+    captcha = ReCaptchaField(label='')
+
+
+class SubscriptionForm(WebSubscriptionForm):
     payment_type = ChoiceField(
         label='Elegí la forma de suscribirte', choices=(('tel', 'Telefónica (te llamamos)'),), initial='tel'
     )
     preferred_time = preferred_time_field()
-    if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
-        terms_and_conds_accepted = terms_and_conditions_field()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -789,13 +827,6 @@ class SubscriptionForm(ModelForm):
                 Field('subscription_type_prices'),
             )
         )
-
-    def clean_terms_and_conds_accepted(self):
-        return clean_terms_and_conds(self)
-
-    class Meta:
-        model = Subscription
-        fields = ['subscription_type_prices']
 
     class Media:
         js = ('js/preferred_time.js',)
