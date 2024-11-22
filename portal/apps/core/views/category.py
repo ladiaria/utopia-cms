@@ -84,6 +84,7 @@ def category_detail(request, slug):
                     "temática." % (category, Site.objects.get_current().name)
                 )
             ),
+            'allow_ads': slug in getattr(settings, 'CATEGORIES_ADS_ENABLED', ())
         },
     )
 

@@ -28,16 +28,6 @@ def gtm(request):
     }
 
 
-def gpt_admanager(request):
-    """
-    Fills context variables to use Google Publisher Tag / Google AdManager.
-    """
-    return {
-      'GPT_SLOTS_ENABLED': getattr(settings, "ENABLED_GPT_SLOTS", False),
-      'AD_MANAGER_NETWORK_ID': getattr(settings, "AD_MANAGER_NETWORK_ID", None),
-    }
-
-
 def site(request):
     result = {
         "phonenumber_default_region": settings.PHONENUMBER_DEFAULT_REGION,

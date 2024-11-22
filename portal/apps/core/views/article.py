@@ -221,6 +221,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
             and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())
         ),
         "enable_amp": settings.CORE_ARTICLE_DETAIL_ENABLE_AMP and not article.extensions_have_invalid_amp_tags(),
+        "allow_ads": category is not None and category.slug in getattr(settings, 'CATEGORIES_ADS_ENABLED', ())
     }
 
     context.update(
