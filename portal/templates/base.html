@@ -343,11 +343,13 @@
     {% endblock %}
 
     {% block subscribe_notice %}
-      <!-- Subscribe notice for not authenticated users or non-subscribers -->
-      {# TODO: can we implement this kind of notice in AMP? (we never did that) #}
-      {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
-        {% if is_portada and publication == default_pub or is_detail %}
-          {% include subscribe_notice_template %}
+      {% if subscribe_notice_template %}
+        <!-- Subscribe notice for not authenticated users or non-subscribers -->
+        {# TODO: can we implement this kind of notice in AMP? (we never did that) #}
+        {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
+          {% if is_portada and publication == default_pub or is_detail %}
+            {% include subscribe_notice_template %}
+          {% endif %}
         {% endif %}
       {% endif %}
     {% endblock %}

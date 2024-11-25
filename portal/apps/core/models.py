@@ -5,6 +5,7 @@ import locale
 import tempfile
 import operator
 import json
+from pydoc import locate
 from collections import OrderedDict
 from requests.exceptions import ConnectionError
 from kombu.exceptions import OperationalError as KombuOperationalError
@@ -14,7 +15,6 @@ from bs4 import BeautifulSoup
 import readtime
 import mutagen
 import w3storage
-from martor.models import MartorField
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -1180,7 +1180,7 @@ class ArticleBase(Model, CT):
 
     publication = ForeignKey(
         Publication,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='publicación',
         blank=True,
         null=True,
@@ -1199,7 +1199,7 @@ class ArticleBase(Model, CT):
     lead = TextField(
         'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
-    body = MartorField("cuerpo")
+    body = locate(settings.CORE_ARTICLE_BODY_FIELD_CLASS)("cuerpo")
     header_display = CharField(
         'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
     )
@@ -1238,13 +1238,14 @@ class ArticleBase(Model, CT):
     longitude = DecimalField('longitud', max_digits=10, decimal_places=6, blank=True, null=True)
     location = ForeignKey(
         Location,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='ubicación',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
     is_published = BooleanField('publicado', default=True, db_index=True)
+    to_be_published = BooleanField('programar publicación', default=False, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField('última actualización', auto_now=True)
@@ -1252,27 +1253,29 @@ class ArticleBase(Model, CT):
     allow_comments = BooleanField('Habilitar comentarios', default=True)
     created_by = ForeignKey(
         User,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='creado por',
         related_name='created_articles_%(app_label)s',
         editable=False,
         blank=False,
         null=True,
     )
-    photo = ForeignKey(Photo, on_delete=CASCADE, blank=True, null=True, verbose_name='imagen')
-    gallery = ForeignKey(Gallery, on_delete=CASCADE, verbose_name='galería', blank=True, null=True)
+    photo = ForeignKey(Photo, on_delete=SET_NULL, blank=True, null=True, verbose_name='imagen')
+    gallery = ForeignKey(Gallery, on_delete=SET_NULL, verbose_name='galería', blank=True, null=True)
     video = ForeignKey(
         Video,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='video',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    youtube_video = ForeignKey(YouTubeVideo, on_delete=CASCADE, verbose_name='video de YouTube', blank=True, null=True)
+    youtube_video = ForeignKey(
+        YouTubeVideo, on_delete=SET_NULL, verbose_name='video de YouTube', blank=True, null=True
+    )
     audio = ForeignKey(
         Audio,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='audio',
         related_name='articles_%(app_label)s',
         blank=True,
@@ -1323,6 +1326,8 @@ class ArticleBase(Model, CT):
         nowval = now()
 
         if self.is_published:
+            if self.to_be_published:
+                raise Exception("No se permite programar publicación de un artículo ya publicado")
             if not self.date_published:
                 self.date_published = nowval
             if not settings.DEBUG:
@@ -1330,6 +1335,14 @@ class ArticleBase(Model, CT):
                     ping_google()
                 except Exception:
                     pass
+        elif self.to_be_published:
+            if not self.date_published:
+                raise Exception("Para programar la publicación de un artículo se debe especificar la fecha")
+            elif self.date_published <= nowval:
+                raise Exception("La fecha de publicación programada no puede estar en el pasado")
+            else:
+                # TODO: update/create schedule task associated with this article
+                pass
         else:
             self.date_published = None
 
@@ -1349,9 +1362,13 @@ class ArticleBase(Model, CT):
             targets = targets.exclude(id=self.id)
         if targets:
             # TODO: IntegrityError may be better exception to raise
-            raise Exception('Ya existe un artículo en ese mes con el mismo título.')
+            raise Exception('Ya existe un artículo en ese mes con el mismo título')
 
         super(ArticleBase, self).save(*args, **kwargs)
+
+        if not self.to_be_published:
+            # TODO: delete any scheduled task associated with this article
+            pass
 
     def is_photo_article(self):
         return self.type == settings.CORE_PHOTO_ARTICLE
@@ -2187,13 +2204,13 @@ class ArticleViews(Model):
 
 
 class CategoryHomeArticle(Model):
+    # TODO: review the "custom label" comment in the position field (still needed?)
     home = ForeignKey('CategoryHome', on_delete=CASCADE)
     article = ForeignKey(
         Article,
         on_delete=CASCADE,
         verbose_name='artículo',
         related_name='home_articles',
-        limit_choices_to={'is_published': True},
     )
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
@@ -2214,7 +2231,6 @@ class CategoryHomeArticle(Model):
 
     class Meta:
         ordering = ('position',)
-        unique_together = ('home', 'position')
 
 
 class CategoryHome(Model):

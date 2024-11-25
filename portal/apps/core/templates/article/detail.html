@@ -91,6 +91,8 @@
 {% endblock %}
 
 {% block content %}
+  {% include 'profile/notification_box.html' %}
+
   <main>
     <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
 
@@ -604,7 +606,7 @@
                   <p class="desc">Suscribite para guardar este artículo como favorito</p>
                   <!-- caso leer después -->
                   <p class="desc">Suscribite para guardar este artículo para leer después</p>
-                  <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Suscribite</a>
+                  <a href="{% url 'subscribe-default' %}" class="ut-btn ut-btn-l">Suscribite</a>
                   <p class="desc">¿Ya tenés suscripción?</p>
                   <a href="{% url 'account-login' %}?next={{ request.path }}" class="ut-btn ut-btn-l ut-btn-outline">
                     Ingresá
@@ -621,7 +623,7 @@
                           Suscribite para guardar este artículo para leer después
                         </div>
                         <div class="ld-snackbar__block">
-                          <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
+                          <a href="{% url 'subscribe-default' %}" class="ut-btn ut-btn-l">
                             Suscribite
                           </a>
                         </div>
@@ -724,10 +726,10 @@
               <div class="talk-login align-center display-hidden">
                 {% if user.is_authenticated %}
                   {% if not is_subscriber %}
-                    <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+                    <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
                   {% endif %}
                 {% else %}
-                  <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+                  <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
                   <span class="ld-caption ld-caption-subscribe-to-comment">
                     ¿Ya tenés suscripción?
                     <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
@@ -1070,6 +1072,7 @@
 {% endblock %}
 
 {% block footer_scripts_extra %}
+  <script src="{% static 'js/switch_change_events.js' %}"></script>
   <script type="text/javascript">
     $(function(){
       $('#bn-module').load("{% url 'bn-content' %}", function(response){
@@ -1082,6 +1085,8 @@
         }
       });
     });
+    {% comment %} used in article/subscribe_box.html file {% endcomment %}
+    switch_change_events($('.switch-container'));
   </script>
 {% endblock %}
 

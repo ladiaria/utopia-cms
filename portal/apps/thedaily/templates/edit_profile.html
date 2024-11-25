@@ -269,7 +269,7 @@
         switch_change_events($('#notificaciones .switch-container'), true);
       {% endif %}
 
-      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}js/utils.js");{# init phone widget #}
+      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");
 
       // mailtrain "nl" switches events
       {% if mailtrain_lists %}
