@@ -1453,12 +1453,12 @@ header.with-article-counter-container {
   z-index: 2;
   background: #8ebbff;
 
-  @media screen and (max-width: 282px) {
+  @media #{$medium-and-down} {
     flex-direction: column;
     gap: 0;
     padding: 8px 16px;
 
-    svg {
+    > svg {
       display: none;
     }
   }
