@@ -10,6 +10,11 @@ if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_CHOICES"):
         ("DDIGM", "Suscripción digital"),
         ("PAPYDIM", "Suscripción papel"),
     )
+if not locals().get("THEDAILY_PROVINCE_CHOICES"):
+    THEDAILY_PROVINCE_CHOICES = (
+        ("", ""),
+        ("Montevideo", "Montevideo"),
+    )
 
 if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_DEFAULT"):
     THEDAILY_SUBSCRIPTION_TYPE_DEFAULT = THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0]
