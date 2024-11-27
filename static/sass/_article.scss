@@ -1453,16 +1453,6 @@ header.with-article-counter-container {
   z-index: 2;
   background: #8ebbff;
 
-  @media #{$medium-and-down} {
-    flex-direction: column;
-    gap: 0;
-    padding: 8px 16px;
-
-    > svg {
-      display: none;
-    }
-  }
-
   button {
     position: absolute;
     right: 48px;
@@ -1497,6 +1487,27 @@ header.with-article-counter-container {
   }
   p a {
     font-weight: 700;
+  }
+
+  p.only-mobile {
+    display: none;
+  }
+
+  @media #{$medium-and-down} {
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 16px;
+
+    > svg {
+      display: none;
+    }
+
+    p.only-desktop {
+      display: none;
+    }
+    p.only-mobile {
+      display: block;
+    }
   }
 
   &.six-articles {
