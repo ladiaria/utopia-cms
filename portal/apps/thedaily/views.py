@@ -34,7 +34,7 @@ from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.db.models.deletion import Collector
 from django.core.mail import send_mail, mail_admins, mail_managers
-from django.urls import reverse
+from django.urls import reverse, resolve
 from django.core.exceptions import MultipleObjectsReturned
 from django.http import (
     HttpResponseRedirect,
@@ -64,6 +64,7 @@ from django.template import Engine, TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
+from django.utils.translation import gettext as _
 
 from apps import mongo_db, bouncer_blocklisted
 from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
@@ -936,12 +937,18 @@ def subscribe(request, planslug, category_slug=None):
                             subscription.delete()
                             errors = subscriber_form_v._errors.setdefault("email", ErrorList())
                             errors.append(
-                                'No se pudo enviar el email de verificación al crear tu cuenta, '
-                                + (
-                                    '¿lo escribiste correctamente?'
-                                    if isinstance(exc, SMTPRecipientsRefused)
-                                    else 'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
-                                    % reverse('account-confirm_email')
+                                (
+                                    'Datos de suscripción incorrectos, '
+                                    '<a class="ld-link-low" href="%s">cierre sesión</a>' % reverse("logout")
+                                    + " e intente nuevamente utilizando otra dirección de " + _("email")
+                                ) if isinstance(exc, IntegrityError) else (
+                                    'No se pudo enviar el email de verificación al crear tu cuenta, '
+                                    + (
+                                        '¿lo escribiste correctamente?'
+                                        if isinstance(exc, SMTPRecipientsRefused)
+                                        else 'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
+                                        % reverse('account-confirm_email')
+                                    )
                                 )
                             )
                             context.update(
@@ -969,9 +976,22 @@ def subscribe(request, planslug, category_slug=None):
                     )
                 else:
                     if online:
-                        context.update({"subscription_price": sp, "planslug": planslug, "user_created": user_created})
-                        # TODO: decide the best way to render the template related to the online version of "planslug"
-                        return render(request, get_app_template("online_subscription.html"), context)
+                        context.update(
+                            # TODO: try save the subscription form, then last entry can be removed (==form.instance)
+                            {
+                                "subscription_price": sp,
+                                "planslug": planslug,
+                                "user_created": user_created,
+                                'subscriber_form': subscriber_form_v,
+                                'subscription_form': subscription_form_v,
+                                'subscription': subscription
+                            }
+                        )
+                        try:
+                            view_func = resolve(subscription_form_v.next_page).match.func
+                        except AttributeError:
+                            view_func = render
+                        return view_func(request, get_app_template("online_subscription.html"), context)
                     else:
                         request.session['notify_phone_subscription'] = True
                         request.session['preferred_time'] = post.get('preferred_time')

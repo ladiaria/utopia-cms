@@ -1,0 +1,164 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-11-25 05:09-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: apps/faq/__init__.py:10
+msgid "faq"
+msgstr ""
+
+#: apps/faq/actions.py:21
+#, python-format
+msgid "Changed status to '%s'."
+msgstr ""
+
+#: apps/faq/actions.py:33
+#, python-format
+msgid "%(rows_updated)s %(verbose_name)s was successfully %(verb)s."
+msgid_plural ""
+"%(rows_updated)s  %(verbose_name_plural)s were successfully %(verb)s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: apps/faq/actions.py:47
+#, python-format
+msgid "Draft selected %(verbose_name_plural)s"
+msgstr ""
+
+#: apps/faq/actions.py:53
+#, python-format
+msgid "Publish selected %(verbose_name_plural)s"
+msgstr ""
+
+#: apps/faq/actions.py:59
+#, python-format
+msgid "Remove selected %(verbose_name_plural)s"
+msgstr ""
+
+#: apps/faq/admin.py:41
+msgid "Drafted"
+msgstr ""
+
+#: apps/faq/admin.py:46
+msgid "Published"
+msgstr ""
+
+#: apps/faq/admin.py:51
+msgid "Removed"
+msgstr ""
+
+#: apps/faq/admin.py:56
+msgid "Total"
+msgstr ""
+
+#: apps/faq/constants.py:10
+msgid "drafted"
+msgstr ""
+
+#: apps/faq/constants.py:11
+msgid "published"
+msgstr ""
+
+#: apps/faq/constants.py:12
+msgid "removed"
+msgstr ""
+
+#: apps/faq/models.py:16
+msgid "date created"
+msgstr ""
+
+#: apps/faq/models.py:17
+msgid "date modified"
+msgstr ""
+
+#: apps/faq/models.py:19
+msgid "status"
+msgstr ""
+
+#: apps/faq/models.py:23
+#, python-format
+msgid "Only %(class)s with \"published\" status will be displayed publicly."
+msgstr ""
+
+#: apps/faq/models.py:45
+msgid "title"
+msgstr ""
+
+#: apps/faq/models.py:46 apps/faq/models.py:75
+msgid "slug"
+msgstr ""
+
+#: apps/faq/models.py:46
+msgid "Used in the URL for the topic. Must be unique."
+msgstr ""
+
+#: apps/faq/models.py:47
+msgid "description"
+msgstr ""
+
+#: apps/faq/models.py:47
+msgid "A short description of this topic."
+msgstr ""
+
+#: apps/faq/models.py:48
+msgid "sites"
+msgstr ""
+
+#: apps/faq/models.py:50
+msgid "template name"
+msgstr ""
+
+#: apps/faq/models.py:54
+msgid ""
+"Optional template to use for this topic's detail page, e.g., \"faq/topics/"
+"special.html\". If not             given the standard template will be used."
+msgstr ""
+
+#: apps/faq/models.py:61 apps/faq/models.py:77
+msgid "topic"
+msgstr ""
+
+#: apps/faq/models.py:62
+msgid "topics"
+msgstr ""
+
+#: apps/faq/models.py:74 apps/faq/models.py:90
+msgid "question"
+msgstr ""
+
+#: apps/faq/models.py:75
+msgid "Used in the URL for the Question. Must be unique."
+msgstr ""
+
+#: apps/faq/models.py:76
+msgid "answer"
+msgstr ""
+
+#: apps/faq/models.py:79
+msgid "ordering"
+msgstr ""
+
+#: apps/faq/models.py:83
+msgid ""
+"An integer used to order the question amongst others related to the same "
+"topic. If not given this             question will be last in the list."
+msgstr ""
+
+#: apps/faq/models.py:91
+msgid "questions"
+msgstr ""
