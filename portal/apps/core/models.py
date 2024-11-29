@@ -71,7 +71,13 @@ from tagging.models import Tag
 import thedaily
 from videologue.models import Video, YouTubeVideo
 
-from .managers import get_published_kwargs, PublishedArticleManager, EditionManager, SlugNaturalManager
+from .managers import (
+    get_published_kwargs,
+    PublishedArticleManager,
+    EditionManager,
+    SlugNaturalManager,
+    PublishedBreakingNewsModuleManager,
+)
 from .templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from .utils import (
     datetime_isoformat,
@@ -2462,6 +2468,8 @@ class BreakingNewsModule(Model):
     embed14_content = TextField('contenido de incrustado 14', blank=True, null=True)
     publications = ManyToManyField(Publication, verbose_name='portada de publicaciones', blank=True)
     categories = ManyToManyField(Category, verbose_name='portada de áreas', blank=True)
+
+    published = PublishedBreakingNewsModuleManager()
 
     def __str__(self):
         return self.headline or ''
