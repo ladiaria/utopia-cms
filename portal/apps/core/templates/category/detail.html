@@ -15,7 +15,7 @@
 {% block body_class %}section-detail{% endblock %}
 
 {% block page_header %}
-  <div id="bn-module"></div>
+  {% if bn_module_published_count %}<div id="bn-module"></div>{% endif %}
   {% block page_header_content %}
     <div class="container container--wide">
       <div class="section-detail__head">
@@ -259,16 +259,19 @@
   <script>
     $(function(){
       resizeSubnav($('.section-detail__sub-cats'), $('.section-detail__sub-cats-list'), 2);
-      $('#bn-module').load("{% url 'bn-content' %}?category={{ category.slug }}", function(response){
-        if(response){
-          $('.breaking-notice').find('.btn-close').click(function(){
-            var notification = $(this).parents('.breaking-notice');
-            $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
-              notification.toggle();
+      {% if bn_module_published_count %}
+        $('#bn-module').load("{% url 'bn-content' %}?category={{ category.slug }}", function(response){
+          if(response){
+            {# TODO: check if this can be simplified calling notification_close function #}
+            $('.breaking-notice').find('.btn-close').on('click', function(){
+              var notification = $(this).parents('.breaking-notice');
+              $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
+                notification.toggle();
+              });
             });
-          });
-        }
-      });
+          }
+        });
+      {% endif %}
     });
   </script>
 {% endblock %}

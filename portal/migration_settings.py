@@ -281,6 +281,7 @@ TEMPLATES = [
                 "context_processors.article_content_type",
                 "django.template.context_processors.static",
                 "apps.core.context_processors.aniosdias",
+                "apps.core.context_processors.bn_module",
                 "social_django.context_processors.backends",
                 "social_django.context_processors.login_redirect",
                 "django.contrib.messages.context_processors.messages",
