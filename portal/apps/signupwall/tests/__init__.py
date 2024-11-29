@@ -1,6 +1,7 @@
 from os.path import join
-
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 
@@ -57,7 +58,13 @@ class LiveServerSeleniumTestCase(LiveServerTestCase):
         here to launch a mobile emulation in the desktop browsers, ex: https://stackoverflow.com/a/63798638/2292933
         """
         # chrome_options.add_experimental_option('androidPackage', 'com.android.chrome')
-        driver, implicitly_wait = webdriver.Chrome(options=chrome_options), 0.5
+        chrome_custom_binary = getattr(settings, "TESTING_CHROME_BINARY", None)
+        if chrome_custom_binary:
+            chrome_options.binary_location = chrome_custom_binary
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        else:
+            driver = webdriver.Chrome(options=chrome_options)
+        implicitly_wait = 0.5
         driver.implicitly_wait(implicitly_wait)
         driver.delete_all_cookies()
         cls.selenium = driver
