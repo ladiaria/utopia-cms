@@ -406,6 +406,8 @@ class SignupForm(BaseUserForm):
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
         user = User.objects.create_user(email, email, password)
+        if not getattr(user, 'subscriber', None):
+            user.subscriber, created = Subscriber.objects.get_or_create_deferred(user=user)
         if not user.subscriber.phone:
             user.subscriber.phone = self.cleaned_data.get('phone', '')
         if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
