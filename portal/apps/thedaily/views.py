@@ -920,7 +920,24 @@ def subscribe(request, planslug, category_slug=None):
                         subscription.save()
                         oas.delete()
                     else:
-                        user, user_created = subscriber_form_v.signup_form.create_user(), True
+                        try:
+                            user, user_created = subscriber_form_v.signup_form.create_user(), True
+                        except UpdateCrmEx as uce:
+                            error_log(str(uce))
+                            subscription.delete()
+                            # TODO: try delete the user also
+                            # TODO: check this error rendering in utopia-cms "solo" environment
+                            subscriber_form_v.helper.form_error_title = "Error interno de comunicación"
+                            subscriber_form_v.add_error(None, "Intente nuevamente más tarde.")
+                            context.update(
+                                {
+                                    "subscription_price": subscription_price,
+                                    "planslug": planslug,
+                                    'subscriber_form': subscriber_form_v,
+                                    'subscription_form': subscription_form_v,
+                                }
+                            )
+                            return render(request, template, context)
                         try:
                             was_sent = send_validation_email(
                                 f'Verificá tu cuenta de {site_name}',
@@ -951,7 +968,12 @@ def subscribe(request, planslug, category_slug=None):
                                 )
                             )
                             context.update(
-                                {'subscriber_form': subscriber_form_v, 'subscription_form': subscription_form_v}
+                                {
+                                    "subscription_price": subscription_price,
+                                    "planslug": planslug,
+                                    'subscriber_form': subscriber_form_v,
+                                    'subscription_form': subscription_form_v,
+                                }
                             )
                             return render(request, template, context)
                         else:

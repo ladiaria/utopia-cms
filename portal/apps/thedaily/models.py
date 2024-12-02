@@ -575,20 +575,25 @@ def createUserProfile(sender, instance, created, **kwargs):
             return True
         subscriber, created = Subscriber.objects.get_or_create_deferred(user=instance)
         if created:
-            res = createcrmuser(instance.first_name, instance.last_name, instance.email)
-            contact_id = res.get('contact_id')
-            # if contact_id is returned by CRM, perform some consistency checks before saving
-            if contact_id:
-                # 1. there is no subscriber with this contact_id yet
-                # 2. if there is one, TODO: call dedupe to make its magic (but before, "dedupe" must be opensourced)
-                if Subscriber.objects.filter(contact_id=contact_id).exists():
-                    if debug:
-                        print(f"{debug}contact_id ({contact_id}) returned by CRM already in use by another subscriber")
-                else:
-                    subscriber.contact_id = contact_id
-            elif debug:
-                print(f"{debug}contact_id not returned by CRM, value retuned was: {res}")
-            subscriber.save()
+            try:
+                res = createcrmuser(instance.first_name, instance.last_name, instance.email)
+            except Exception as exc:
+                if debug:
+                    print(f"{debug}communication error trying to create the CRM Contact: {exc}")
+            else:
+                contact_id = res.get('contact_id')
+                # if contact_id is returned by CRM, perform some consistency checks before saving
+                if contact_id:
+                    # 1. there is no subscriber with this contact_id yet
+                    # 2. if there is one, TODO: call dedupe to make its magic ("dedupe" must be opensourced first)
+                    if Subscriber.objects.filter(contact_id=contact_id).exists():
+                        if debug:
+                            print(f"{debug}contact_id ({contact_id}) returned by CRM already used by other subscriber")
+                    else:
+                        subscriber.contact_id = contact_id
+                elif debug:
+                    print(f"{debug}contact_id not returned by CRM, value retuned was: {res}")
+                subscriber.save()
 
 
 class OAuthState(Model):
