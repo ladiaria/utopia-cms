@@ -552,23 +552,32 @@ def createUserProfile(sender, instance, created, **kwargs):
     Creates a UserProfile object each time a User is created.
     Also keep sync the email field on Subscriptions.
     """
+    debug = settings.THEDAILY_DEBUG_SIGNALS and "DEBUG: createUserProfile (user post_save signal) - "
     if instance.email:
         try:
             instance.suscripciones.exclude(email=instance.email).update(email=instance.email)
-        except Exception:
-            pass
+        except Exception as exc:
+            if debug:
+                print(f"{debug}error updating user email: {exc}")
         if not settings.CRM_UPDATE_USER_CREATE_CONTACT or getattr(instance, "updatefromcrm", False):
+            if debug:
+                print(f"{debug}skipping CRM sync")
             return True
         subscriber, created = Subscriber.objects.get_or_create_deferred(user=instance)
         if created:
             res = createcrmuser(instance.first_name, instance.last_name, instance.email)
-            contact_id = getattr(res, 'contact_id', None)
+            contact_id = res.get('contact_id')
             # if contact_id is returned by CRM, perform some consistency checks before saving
             if contact_id:
                 # 1. there is no subscriber with this contact_id yet
                 # 2. if there is one, TODO: call dedupe to make its magic (but before, "dedupe" must be opensourced)
-                if not Subscriber.objects.filter(contact_id=contact_id).exists():
+                if Subscriber.objects.filter(contact_id=contact_id).exists():
+                    if debug:
+                        print(f"{debug}contact_id ({contact_id}) returned by CRM already in use by another subscriber")
+                else:
                     subscriber.contact_id = contact_id
+            elif debug:
+                print(f"{debug}contact_id not returned by CRM, value retuned was: {res}")
             subscriber.save()
 
 

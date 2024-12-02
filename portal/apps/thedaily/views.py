@@ -1675,7 +1675,8 @@ def update_user_from_crm(request):
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
                 new_user.save()
-                subscriber = new_user.subscriber
+                new_user.refresh_from_db()
+                subscriber, created = Subscriber.objects.get_or_create_deferred(user=new_user)
                 subscriber.contact_id = contact_id
                 subscriber.updatefromcrm = True
                 subscriber.save()
