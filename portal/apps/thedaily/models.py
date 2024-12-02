@@ -39,7 +39,7 @@ from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.urls import reverse
-
+from django.utils.translation import gettext_lazy as _
 from libs.utils import crm_rest_api_kwargs
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
@@ -125,7 +125,12 @@ class Subscriber(Model):
     objects = SubscriberManager()
 
     def __str__(self):
-        return self.name or self.get_full_name()
+        return self.get_full_name()
+
+    def repr(self):
+        return '%s' % self
+
+    repr.short_description = _("name")
 
     def save(self, *args, **kwargs):
         # TODO: this should be reviewed ASAP (a new field 'doc type' may be added resulting incompatibilities)
@@ -289,6 +294,11 @@ class Subscriber(Model):
     @property
     def user_email(self):
         return self.user.email if self.user else None
+
+    def user_id(self):
+        return self.user.id if self.user else None
+
+    user_id.short_description = _("user id")
 
     def email_is_bouncer(self):
         return self.user_email in bouncer_blocklisted

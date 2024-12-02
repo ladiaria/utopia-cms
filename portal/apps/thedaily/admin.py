@@ -90,8 +90,20 @@ class ExteriorSubscriptionAdmin(SubscriptionAdmin):
 
 
 class SubscriberAdmin(ModelAdmin):
-    list_display = ('id', 'contact_id', 'user', 'user_is_active', 'user_email', 'get_newsletters')
-    search_fields = ("id", "user__id", 'user__username', 'name', 'user__email', 'contact_id', 'document', 'phone')
+    list_display = (
+        'id', 'contact_id', "repr", 'user_id', 'user_is_active', 'user_email', 'get_newsletters'
+    )
+    search_fields = (
+        "id",
+        "user__id",
+        'user__username',
+        'user__first_name',
+        'user__last_name',
+        'user__email',
+        'contact_id',
+        'document',
+        'phone'
+    )
     raw_id_fields = ('user',)
     readonly_fields = ('plan_id', 'get_latest_article_visited')
     list_filter = ['newsletters', 'category_newsletters', 'allow_news', 'allow_promotions', 'allow_polls']
@@ -99,7 +111,7 @@ class SubscriberAdmin(ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                ('contact_id', 'user', 'name'),
+                ('contact_id', 'user'),
                 ('address', 'country', 'city', 'province'),
                 ('document', 'phone'),
                 ('newsletters', 'category_newsletters'),

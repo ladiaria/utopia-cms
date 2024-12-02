@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-11-25 05:09-0300\n"
+"POT-Creation-Date: 2024-12-02 08:38-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #: apps/comunidad/admin.py:16
 msgid "Usado"
 msgstr ""
@@ -29,9 +30,17 @@ msgstr ""
 msgid "Not Used"
 msgstr ""
 
-#: apps/thedaily/forms.py:156
+#: apps/thedaily/forms.py:161 apps/thedaily/forms.py:328
 msgid "Email"
 msgstr "Correo electrónico"
+
+#: apps/thedaily/models.py:133
+msgid "name"
+msgstr "nombre"
+
+#: apps/thedaily/views.py:942
+msgid "email"
+msgstr "correo electrónico"
 
 #: templates/admin/app_list.html:11
 #, python-format
