@@ -90,12 +90,17 @@ class CRMSyncTestCase(TestCase):
         api_uri = settings.CRM_API_UPDATE_USER_URI
         res = requests.put(
             api_uri,
-            **crm_rest_api_kwargs(self.api_key, data={"name": self.test_user.name, "email": self.test_user.email}),
+            **crm_rest_api_kwargs(
+                self.api_key, data={"name": self.test_user.first_name, "email": self.test_user.email}
+            ),
         ).json()
         c_id = res.get("contact_id")
         self.assertTrue(c_id)
         # TODO: check if the else part of next if got broken by new sync approach
         if settings.CRM_UPDATE_USER_CREATE_CONTACT:
+            # TODO: failing, the explanation of this assert is that this class setUp method creates the user and the
+            #       signal related will create the peer contact in CRM, this signal also sets the contact_id in the
+            #       subscriber model? (check/fix if this is/must happen first). Then the assert here will pass.
             self.assertEqual(res.get("contact_id"), self.test_user.subscriber.contact_id)
 
     def test3_delete_user_sync(self):

@@ -879,8 +879,7 @@ def subscribe(request, planslug, category_slug=None):
                 else:
                     subscription = Subscription.objects.create(email=email)
 
-                sp = SubscriptionPrices.objects.get(subscription_type=post['subscription_type_prices'])
-                subscription.subscription_type_prices.add(sp)
+                subscription.subscription_type_prices.add(subscription_price)
 
                 first_name = subscriber_form_v.cleaned_data.get("first_name")
                 if oauth2_state:
@@ -960,7 +959,8 @@ def subscribe(request, planslug, category_slug=None):
                             subscription.save()
 
                 # we should save the subscription and its type in the session
-                request.session['subscription'], request.session['subscription_type'] = subscription, sp
+                request.session['subscription'] = subscription
+                request.session['subscription_type'] = subscription_price
                 # TODO (DRY_end)
 
                 if oauth2_state:
@@ -979,19 +979,21 @@ def subscribe(request, planslug, category_slug=None):
                         context.update(
                             # TODO: try save the subscription form, then last entry can be removed (==form.instance)
                             {
-                                "subscription_price": sp,
+                                "subscription_price": subscription_price,
                                 "planslug": planslug,
                                 "user_created": user_created,
                                 'subscriber_form': subscriber_form_v,
                                 'subscription_form': subscription_form_v,
-                                'subscription': subscription
+                                'subscription': subscription,
                             }
                         )
                         try:
+                            # TODO: more customization is needed on how to use the next_page
                             view_func = resolve(subscription_form_v.next_page).match.func
+                            return view_func(request, planslug, context)
                         except AttributeError:
-                            view_func = render
-                        return view_func(request, get_app_template("online_subscription.html"), context)
+                            pass
+                        return render(request, get_app_template("online_subscription.html"), context)
                     else:
                         request.session['notify_phone_subscription'] = True
                         request.session['preferred_time'] = post.get('preferred_time')
@@ -1009,6 +1011,7 @@ def subscribe(request, planslug, category_slug=None):
                         'subscription_form': subscription_form_v,
                         'oauth2_button': oauth2_button,
                         'planslug': planslug,
+                        'subscription_price': subscription_price,
                     }
                 )
                 return render(request, template, context)

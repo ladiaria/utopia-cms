@@ -1166,9 +1166,7 @@ class PasswordChangeForm(PasswordChangeBaseForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.get('user')
-        if 'user' in kwargs:
-            del kwargs['user']
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.helper.layout = (
             custom_layout(self.helper.form_id)
@@ -1208,16 +1206,13 @@ class PasswordResetForm(PasswordChangeBaseForm):
     gonzo = CharField(widget=HiddenInput())
 
     def __init__(self, *args, **kwargs):
-        initial = {}
         if 'hash' not in kwargs:
             raise AttributeError('Missing hash')
-        self.user = kwargs.get('user')
-        self.hash = kwargs.get('hash')
-        initial['hash'] = self.hash
+        self.user = kwargs.pop('user', None)
+        self.hash = kwargs.pop('hash')
+        initial = {'hash': self.hash}
         initial['gonzo'] = self.gen_gonzo()
         kwargs['initial'] = initial
-        del kwargs['hash']
-        del kwargs['user']
 
         super().__init__(*args, **kwargs)
 
