@@ -34,7 +34,7 @@ from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.db.models.deletion import Collector
 from django.core.mail import send_mail, mail_admins, mail_managers
-from django.urls import reverse
+from django.urls import reverse, resolve
 from django.core.exceptions import MultipleObjectsReturned
 from django.http import (
     HttpResponseRedirect,
@@ -64,6 +64,7 @@ from django.template import Engine, TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
+from django.utils.translation import gettext as _
 
 from apps import mongo_db, bouncer_blocklisted
 from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
@@ -795,6 +796,10 @@ def subscribe(request, planslug, category_slug=None):
             (SubscriptionPromoCodeForm if PROMOCODE_ENABLED else SubscriptionForm)
             if nocaptcha else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
         )
+        # a last transformation pipeline step for the subscription form (can be completely overrided by settings)
+        subscription_formclass_custom = getattr(settings, 'THEDAILY_SUBSCRIPTION_FORMCLASS', None)
+        if subscription_formclass_custom:
+            subscription_formclass = locate(subscription_formclass_custom)
 
         initial = {
             'subscription_type_prices': planslug,
@@ -875,8 +880,7 @@ def subscribe(request, planslug, category_slug=None):
                 else:
                     subscription = Subscription.objects.create(email=email)
 
-                sp = SubscriptionPrices.objects.get(subscription_type=post['subscription_type_prices'])
-                subscription.subscription_type_prices.add(sp)
+                subscription.subscription_type_prices.add(subscription_price)
 
                 first_name = subscriber_form_v.cleaned_data.get("first_name")
                 if oauth2_state:
@@ -917,7 +921,24 @@ def subscribe(request, planslug, category_slug=None):
                         subscription.save()
                         oas.delete()
                     else:
-                        user, user_created = subscriber_form_v.signup_form.create_user(), True
+                        try:
+                            user, user_created = subscriber_form_v.signup_form.create_user(), True
+                        except UpdateCrmEx as uce:
+                            error_log(str(uce))
+                            subscription.delete()
+                            # TODO: try delete the user also
+                            # TODO: check this error rendering in utopia-cms "solo" environment
+                            subscriber_form_v.helper.form_error_title = "Error interno de comunicación"
+                            subscriber_form_v.add_error(None, "Intente nuevamente más tarde.")
+                            context.update(
+                                {
+                                    "subscription_price": subscription_price,
+                                    "planslug": planslug,
+                                    'subscriber_form': subscriber_form_v,
+                                    'subscription_form': subscription_form_v,
+                                }
+                            )
+                            return render(request, template, context)
                         try:
                             was_sent = send_validation_email(
                                 f'Verificá tu cuenta de {site_name}',
@@ -933,16 +954,27 @@ def subscribe(request, planslug, category_slug=None):
                             subscription.delete()
                             errors = subscriber_form_v._errors.setdefault("email", ErrorList())
                             errors.append(
-                                'No se pudo enviar el email de verificación al crear tu cuenta, '
-                                + (
-                                    '¿lo escribiste correctamente?'
-                                    if isinstance(exc, SMTPRecipientsRefused)
-                                    else 'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
-                                    % reverse('account-confirm_email')
+                                (
+                                    'Datos de suscripción incorrectos, '
+                                    '<a class="ld-link-low" href="%s">cierre sesión</a>' % reverse("logout")
+                                    + " e intente nuevamente utilizando otra dirección de " + _("email")
+                                ) if isinstance(exc, IntegrityError) else (
+                                    'No se pudo enviar el email de verificación al crear tu cuenta, '
+                                    + (
+                                        '¿lo escribiste correctamente?'
+                                        if isinstance(exc, SMTPRecipientsRefused)
+                                        else 'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
+                                        % reverse('account-confirm_email')
+                                    )
                                 )
                             )
                             context.update(
-                                {'subscriber_form': subscriber_form_v, 'subscription_form': subscription_form_v}
+                                {
+                                    "subscription_price": subscription_price,
+                                    "planslug": planslug,
+                                    'subscriber_form': subscriber_form_v,
+                                    'subscription_form': subscription_form_v,
+                                }
                             )
                             return render(request, template, context)
                         else:
@@ -950,7 +982,8 @@ def subscribe(request, planslug, category_slug=None):
                             subscription.save()
 
                 # we should save the subscription and its type in the session
-                request.session['subscription'], request.session['subscription_type'] = subscription, sp
+                request.session['subscription'] = subscription
+                request.session['subscription_type'] = subscription_price
                 # TODO (DRY_end)
 
                 if oauth2_state:
@@ -966,8 +999,23 @@ def subscribe(request, planslug, category_slug=None):
                     )
                 else:
                     if online:
-                        context.update({"type": sp, "planslug": planslug, "user_created": user_created})
-                        # TODO: decide the best way to render the template related to the online version of "planslug"
+                        context.update(
+                            # TODO: try save the subscription form, then last entry can be removed (==form.instance)
+                            {
+                                "subscription_price": subscription_price,
+                                "planslug": planslug,
+                                "user_created": user_created,
+                                'subscriber_form': subscriber_form_v,
+                                'subscription_form': subscription_form_v,
+                                'subscription': subscription,
+                            }
+                        )
+                        try:
+                            # TODO: more customization is needed on how to use the next_page
+                            view_func = resolve(subscription_form_v.next_page).match.func
+                            return view_func(request, planslug, context)
+                        except AttributeError:
+                            pass
                         return render(request, get_app_template("online_subscription.html"), context)
                     else:
                         request.session['notify_phone_subscription'] = True
@@ -986,6 +1034,7 @@ def subscribe(request, planslug, category_slug=None):
                         'subscription_form': subscription_form_v,
                         'oauth2_button': oauth2_button,
                         'planslug': planslug,
+                        'subscription_price': subscription_price,
                     }
                 )
                 return render(request, template, context)
@@ -1652,7 +1701,8 @@ def update_user_from_crm(request):
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
                 new_user.save()
-                subscriber = new_user.subscriber
+                new_user.refresh_from_db()
+                subscriber, created = Subscriber.objects.get_or_create_deferred(user=new_user)
                 subscriber.contact_id = contact_id
                 subscriber.updatefromcrm = True
                 subscriber.save()

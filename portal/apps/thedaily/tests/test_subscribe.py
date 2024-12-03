@@ -35,7 +35,8 @@ class SubscribeTestCase(TestCase):
         user = response.wsgi_request.user
         my_email, good_phone = user.email if user.is_authenticated else "userone@gmail.com", "+59896112233"
         post_data = {
-            "first_name": "User One",
+            "first_name": "User",
+            "last_name": "One",
             "email": my_email,
             "phone": good_phone,
             "password": User.objects.make_random_password(),

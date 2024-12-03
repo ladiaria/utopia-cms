@@ -31,7 +31,8 @@ class CRMSyncTestCase(TestCase):
             email = "%s%s@%s" % (cls.email_pre_prefix, rand_chars(), "gmail.com")
             # create a user with very low collission probability on email field
             cls.test_user = User.objects.create_user(email, email, password)
-            cls.test_user.name, cls.test_user.is_active = name, True
+            cls.test_user.first_name, cls.test_user.last_name = name.split()
+            cls.test_user.is_active = True
             cls.test_user.save()
             if not settings.CRM_UPDATE_USER_CREATE_CONTACT:
                 createcrmuser(cls.test_user.name, cls.test_user.email)
@@ -87,10 +88,13 @@ class CRMSyncTestCase(TestCase):
         """
 
     def test2_call_update_api(self):
+        self.setUpClass()  # TODO: called to recreate the user, if not, fails when run all module tests; investigate.
         api_uri = settings.CRM_API_UPDATE_USER_URI
         res = requests.put(
             api_uri,
-            **crm_rest_api_kwargs(self.api_key, data={"name": self.test_user.name, "email": self.test_user.email}),
+            **crm_rest_api_kwargs(
+                self.api_key, data={"name": self.test_user.first_name, "email": self.test_user.email}
+            ),
         ).json()
         c_id = res.get("contact_id")
         self.assertTrue(c_id)

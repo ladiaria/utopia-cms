@@ -1,0 +1,113 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-11-25 05:09-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: apps/notification/management/__init__.py:11
+msgid "Guardaste un artículo para leer luego."
+msgstr ""
+
+#: apps/notification/management/__init__.py:11
+msgid "default notice"
+msgstr ""
+
+#: apps/notification/models.py:37
+msgid "label"
+msgstr ""
+
+#: apps/notification/models.py:38
+msgid "display"
+msgstr ""
+
+#: apps/notification/models.py:39
+msgid "description"
+msgstr ""
+
+#: apps/notification/models.py:42
+msgid "default"
+msgstr ""
+
+#: apps/notification/models.py:48 apps/notification/models.py:87
+msgid "notice type"
+msgstr ""
+
+#: apps/notification/models.py:49
+msgid "notice types"
+msgstr ""
+
+#: apps/notification/models.py:86
+msgid "user"
+msgstr ""
+
+#: apps/notification/models.py:88
+msgid "medium"
+msgstr ""
+
+#: apps/notification/models.py:89
+msgid "send"
+msgstr ""
+
+#: apps/notification/models.py:92
+msgid "notice setting"
+msgstr ""
+
+#: apps/notification/models.py:93
+msgid "notice settings"
+msgstr ""
+
+#: apps/notification/templates/notification/email_subject.txt:1
+#, python-format
+msgid "[%(current_site)s] %(message)s"
+msgstr ""
+
+#: apps/notification/templates/notification/follow/full.txt:1
+#: apps/notification/templates/notification/follow/notice.html:1
+#: apps/notification/templates/notification/full.html:1
+#: apps/notification/templates/notification/full.txt:1
+#: apps/notification/templates/notification/notice.html:1
+#: apps/notification/templates/notification/short.txt:1
+#, python-format
+msgid "%(notice)s"
+msgstr ""
+
+#: apps/notification/templates/notification/notice_settings.html:7
+msgid "Notification Settings"
+msgstr ""
+
+#: apps/notification/templates/notification/notice_settings.html:11
+msgid "Configuración de notificaciones"
+msgstr ""
+
+#: apps/notification/templates/notification/notice_settings.html:15
+#, python-format
+msgid ""
+"\n"
+"        <p class=\"alert alert-warning\">\n"
+"            <span class=\"warning\">Atención:</span>:\n"
+"            No tenés un email registrado para recibir las notificaciones, <a "
+"href=\"%(email_url)s\">agrega un email</a>.\n"
+"        </p>\n"
+"        "
+msgstr ""
+
+#: apps/notification/templates/notification/notice_settings.html:27
+msgid "Notification Type"
+msgstr ""
+
+#: apps/notification/templates/notification/notice_settings.html:52
+msgid "Cambiar"
+msgstr ""
