@@ -1312,6 +1312,11 @@ def edit_profile(request, user=None):
     except UserSocialAuth.MultipleObjectsReturned:
         oauth2_assoc, google_oauth2_multiple = True, True
 
+    user_has_password = user.has_usable_password()
+    google_oauth2_allow_disconnect = (
+        not google_oauth2_multiple and oauth2_assoc and (user_has_password or user.email != oauth2_assoc.uid)
+    )
+
     return render(
         request,
         get_app_template("edit_profile.html"),
@@ -1322,10 +1327,7 @@ def edit_profile(request, user=None):
             'is_subscriber_digital': user.subscriber.is_digital_only(),
             'google_oauth2_assoc': oauth2_assoc,
             'google_oauth2_multiple': google_oauth2_multiple,
-            'google_oauth2_allow_disconnect':
-                not google_oauth2_multiple
-                and oauth2_assoc
-                and (user.has_usable_password() or user.email != oauth2_assoc.uid),
+            'google_oauth2_allow_disconnect': google_oauth2_allow_disconnect,
             'publication_newsletters': Publication.objects.filter(has_newsletter=True),
             'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
             'newsletters': get_profile_newsletters_ordered(),
@@ -1341,7 +1343,7 @@ def edit_profile(request, user=None):
             ),
             "email_is_bouncer": user.subscriber.email_is_bouncer(),
             "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
-            "user_has_password": user.has_usable_password(),
+            "user_has_password": user_has_password,
         },
     )
 
