@@ -282,6 +282,7 @@ TEMPLATES = [
                 "context_processors.article_content_type",
                 "django.template.context_processors.static",
                 "apps.core.context_processors.aniosdias",
+                "apps.core.context_processors.bn_module",
                 "social_django.context_processors.backends",
                 "social_django.context_processors.login_redirect",
                 "django.contrib.messages.context_processors.messages",
@@ -627,6 +628,15 @@ if CORE_ARTICLE_DETAIL_ENABLE_AMP:
         MIDDLEWARE[:-1]
         + ("amp_tools.middleware.AMPDetectionMiddleware", "core.middleware.AMP.OnlyArticleDetail")
         + (MIDDLEWARE[-1],)
+    )
+
+# breaking news module footer template script for publications
+if "CORE_BN_MODULE_FOOTER_SCRIPTS_TEMPLATE" not in locals():
+    CORE_BN_MODULE_FOOTER_SCRIPTS_TEMPLATE = (
+        locals().get(
+            "CORE_BN_MODULE_LIVEBLOG_FOOTER_SCRIPTS_TEMPLATE", "utopia_cms_liveblog/bn_module_publications_loader.html"
+        ) if "utopia_cms_liveblog.apps.UtopiaCmsLiveblogConfig" in INSTALLED_APPS
+        else "breaking_news_module/publications_loader.html"
     )
 
 # CRM API
