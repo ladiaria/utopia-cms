@@ -5,7 +5,7 @@
     <div class="switch-container">
       <span class="label-text on" {% if not field.value %}style="display: none;"{% endif %}>Activada</span>
       <span class="label-text off{% if email_is_bouncer %} grey-text{% endif %}" {% if field.value %}style="display: none;"{% endif %}>Activar</span>
-      <label class="switch">
+      <label class="ld-switch">
         <input
           type="checkbox"
           id="id_{{ field.name }}"

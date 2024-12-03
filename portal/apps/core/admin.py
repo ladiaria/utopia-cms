@@ -121,6 +121,9 @@ class TopArticleRelBaseInlineFormSet(BaseInlineFormSet):
                 else:
                     last_idx += 1
                     form.cleaned_data['top_position'] = form.instance.top_position = last_idx
+            # if for any reason the article has not position, set it = 1
+            if not form.cleaned_data.get('position'):
+                form.cleaned_data['position'] = form.instance.position = 1
 
 
 class NoTopArticleRelBaseInlineFormSet(BaseInlineFormSet):
