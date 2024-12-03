@@ -112,7 +112,8 @@ class SubscriberAdmin(ModelAdmin):
         (None, {
             'fields': (
                 ('contact_id', 'user'),
-                ('address', 'country', 'city', 'province'),
+                ('address', 'country'),
+                ('city', 'province'),
                 ('document', 'phone'),
                 ('newsletters', 'category_newsletters'),
                 ('allow_news', 'allow_promotions', 'allow_polls'),
