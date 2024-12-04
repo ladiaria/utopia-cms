@@ -328,14 +328,10 @@ def render_toolbar_for(context, toolbar_object):
             if context.get('is_cover'):
                 edition = context.get('edition')
                 if edition:
-                    params.update(
-                        {
-                            'featured_order': ', '.join(
-                                str(tp) for tp in toolbar_object.articlerel_set.filter(
-                                    edition=edition, home_top=True
-                                ).values_list('top_position', flat=True)
-                            ),
-                        }
+                    params['featured_order'] = ', '.join(
+                        str(tp) for tp in toolbar_object.articlerel_set.filter(
+                            edition=edition, home_top=True
+                        ).values_list('top_position', flat=True)
                     )
             context.update(params)
             return loader.render_to_string(toolbar_template, context.flatten())
