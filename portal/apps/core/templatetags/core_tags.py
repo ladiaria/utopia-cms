@@ -320,12 +320,10 @@ def render_toolbar_for(context, toolbar_object):
     """
     Usage example: {% render_toolbar_for article %}
     """
-    if getattr(settings, "CORE_ENABLE_ARTICLE_TOOLBAR", True):
+    toolbar_template = getattr(settings, "CORE_ARTICLE_CARD_TOOLBAR_TEMPLATE", 'core/templates/article/toolbar.html')
+    if toolbar_template:
         user = context.get('user')
         if user and user.is_staff and isinstance(toolbar_object, Article):
-            toolbar_template = getattr(
-                settings, "CORE_ARTICLE_CARD_TOOLBAR_TEMPLATE", 'core/templates/article/toolbar.html'
-            )
             params = {'article': toolbar_object, 'is_detail': False}
             if context.get('is_cover'):
                 edition = context.get('edition')
