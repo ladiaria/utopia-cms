@@ -207,7 +207,7 @@ class LoginForm(CrispyForm):
         super().__init__(*args, **kwargs)
         self.helper.form_id = 'account_login'
         self.helper.layout = (
-            custom_layout(self.helper.form_id)
+            custom_layout(self.helper.form_id, self)
             or Layout(
                 Field(
                     'name_or_mail',
