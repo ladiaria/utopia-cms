@@ -12,7 +12,7 @@
 {% endif %}
 <meta property="article:modified_time" content="{{ article.last_modified_isoformat }}">
 {% if publication.slug in custom_icons_publications %}
-  <meta property="og:image" content="{{ SITE_URL_SD }}{% if article.photo %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static publication.open_graph_image %}{% endif %}">
+  <meta property="og:image" content="{{ SITE_URL_SD }}{% if photo_render_allowed %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static publication.open_graph_image %}{% endif %}">
 {% elif section.is_satirical %}
   {% with satirical_social_img='img/'|add:section.slug|add:'-social.png' %}
     <meta property="og:image" content="{{ SITE_URL_SD }}{% static satirical_social_img %}">

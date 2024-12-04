@@ -105,7 +105,7 @@
       {% endif %}
     {% endif %}
     <meta name="theme-color" content="#F2F2F2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{ site.name }}">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- End Icons -->
@@ -113,6 +113,9 @@
     <!-- CSS -->
     {% compress css %}
       {% block base_css %}
+        {% block materialize_forms_css %}
+          <link href="{% static 'sass/utopia_materialize/_forms.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+        {% endblock %}
         <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endblock %}
       {% if HOMEV3_CUSTOM_CSS %}
@@ -147,15 +150,19 @@
 
     {% block meta %}
       <meta property="og:type" content="website">
-      <meta property="og:description" content="{{ site_description }}">
+      {% block meta_og_description %}
+        <meta property="og:description" content="{{ site_description }}">
+      {% endblock %}
       <meta property="og:locale" content="{{ local_lang }}_{{ LOCAL_COUNTRY }}">
       <meta property="og:site_name" content="{{ site.name }}">
       <meta property="og:url" content="{{ SITE_URL_SD }}{{ request.get_full_path }}">
-      {% if publication.slug in custom_icons_publications %}
-        <meta property="og:image" content="{{ SITE_URL_SD }}{% static publication.open_graph_image %}">
-      {% elif default_pub.open_graph_image %}
-        <meta property="og:image" content="{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}">
-      {% endif %}
+      {% block meta_og_image %}
+        {% if publication.slug in custom_icons_publications %}
+          <meta property="og:image" content="{{ SITE_URL_SD }}{% static publication.open_graph_image %}">
+        {% elif default_pub.open_graph_image %}
+          <meta property="og:image" content="{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}">
+        {% endif %}
+      {% endblock %}
       <!-- End Open Graph (http://ogp.me) -->
 
       <!-- Meta tags Twitter -->
@@ -208,6 +215,7 @@
           LDUser.is_authenticated = true;
           LDUser.id = {{ user.id }};
           LDUser.subscriber = {{ is_subscriber|lower }};
+          LDUser.subscriber_id = {{ user.subscriber.id }};
           LDUser.firstName = "{{ user.first_name }}";
           LDUser.lastName = "{{ user.last_name }}";
         {% else %}
@@ -338,11 +346,13 @@
     {% endblock %}
 
     {% block subscribe_notice %}
-      <!-- Subscribe notice for not authenticated users or non-subscribers -->
-      {# TODO: can we implement this kind of notice in AMP? (we never did that) #}
-      {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
-        {% if is_portada and publication == default_pub or is_detail %}
-          {% include subscribe_notice_template %}
+      {% if subscribe_notice_template %}
+        <!-- Subscribe notice for not authenticated users or non-subscribers -->
+        {# TODO: can we implement this kind of notice in AMP? (we never did that) #}
+        {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
+          {% if is_portada and publication == default_pub or is_detail %}
+            {% include subscribe_notice_template %}
+          {% endif %}
         {% endif %}
       {% endif %}
     {% endblock %}

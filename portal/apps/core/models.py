@@ -5,6 +5,7 @@ import locale
 import tempfile
 import operator
 import json
+from pydoc import locate
 from collections import OrderedDict
 from requests.exceptions import ConnectionError
 from kombu.exceptions import OperationalError as KombuOperationalError
@@ -14,7 +15,6 @@ from bs4 import BeautifulSoup
 import readtime
 import mutagen
 import w3storage
-from martor.models import MartorField
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -71,7 +71,13 @@ from tagging.models import Tag
 import thedaily
 from videologue.models import Video, YouTubeVideo
 
-from .managers import get_published_kwargs, PublishedArticleManager, EditionManager, SlugNaturalManager
+from .managers import (
+    get_published_kwargs,
+    PublishedArticleManager,
+    EditionManager,
+    SlugNaturalManager,
+    PublishedBreakingNewsModuleManager,
+)
 from .templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from .utils import (
     datetime_isoformat,
@@ -1087,9 +1093,11 @@ class Journalist(Model):
         super(Journalist, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
+        reverse_kwargs = {'journalist_slug': self.slug}
+        if settings.CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB:
+            reverse_kwargs['journalist_job'] = self.get_job_display().lower()
         return reverse(
-            'journalist_detail',
-            kwargs={'journalist_job': self.get_job_display().lower(), 'journalist_slug': self.slug},
+            getattr(settings, "CORE_JOURNALIST_GET_ABSOLUTE_URL_NAME", 'journalist_detail'), kwargs=reverse_kwargs
         )
 
     def get_sections(self):
@@ -1178,7 +1186,7 @@ class ArticleBase(Model, CT):
 
     publication = ForeignKey(
         Publication,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='publicación',
         blank=True,
         null=True,
@@ -1197,7 +1205,7 @@ class ArticleBase(Model, CT):
     lead = TextField(
         'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
-    body = MartorField("cuerpo")
+    body = locate(settings.CORE_ARTICLE_BODY_FIELD_CLASS)("cuerpo")
     header_display = CharField(
         'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
     )
@@ -1236,13 +1244,14 @@ class ArticleBase(Model, CT):
     longitude = DecimalField('longitud', max_digits=10, decimal_places=6, blank=True, null=True)
     location = ForeignKey(
         Location,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='ubicación',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
     is_published = BooleanField('publicado', default=True, db_index=True)
+    to_be_published = BooleanField('programar publicación', default=False, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField('última actualización', auto_now=True)
@@ -1250,27 +1259,29 @@ class ArticleBase(Model, CT):
     allow_comments = BooleanField('Habilitar comentarios', default=True)
     created_by = ForeignKey(
         User,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='creado por',
         related_name='created_articles_%(app_label)s',
         editable=False,
         blank=False,
         null=True,
     )
-    photo = ForeignKey(Photo, on_delete=CASCADE, blank=True, null=True, verbose_name='imagen')
-    gallery = ForeignKey(Gallery, on_delete=CASCADE, verbose_name='galería', blank=True, null=True)
+    photo = ForeignKey(Photo, on_delete=SET_NULL, blank=True, null=True, verbose_name='imagen')
+    gallery = ForeignKey(Gallery, on_delete=SET_NULL, verbose_name='galería', blank=True, null=True)
     video = ForeignKey(
         Video,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='video',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    youtube_video = ForeignKey(YouTubeVideo, on_delete=CASCADE, verbose_name='video de YouTube', blank=True, null=True)
+    youtube_video = ForeignKey(
+        YouTubeVideo, on_delete=SET_NULL, verbose_name='video de YouTube', blank=True, null=True
+    )
     audio = ForeignKey(
         Audio,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='audio',
         related_name='articles_%(app_label)s',
         blank=True,
@@ -1321,6 +1332,8 @@ class ArticleBase(Model, CT):
         nowval = now()
 
         if self.is_published:
+            if self.to_be_published:
+                raise Exception("No se permite programar publicación de un artículo ya publicado")
             if not self.date_published:
                 self.date_published = nowval
             if not settings.DEBUG:
@@ -1328,6 +1341,14 @@ class ArticleBase(Model, CT):
                     ping_google()
                 except Exception:
                     pass
+        elif self.to_be_published:
+            if not self.date_published:
+                raise Exception("Para programar la publicación de un artículo se debe especificar la fecha")
+            elif self.date_published <= nowval:
+                raise Exception("La fecha de publicación programada no puede estar en el pasado")
+            else:
+                # TODO: update/create schedule task associated with this article
+                pass
         else:
             self.date_published = None
 
@@ -1347,9 +1368,13 @@ class ArticleBase(Model, CT):
             targets = targets.exclude(id=self.id)
         if targets:
             # TODO: IntegrityError may be better exception to raise
-            raise Exception('Ya existe un artículo en ese mes con el mismo título.')
+            raise Exception('Ya existe un artículo en ese mes con el mismo título')
 
         super(ArticleBase, self).save(*args, **kwargs)
+
+        if not self.to_be_published:
+            # TODO: delete any scheduled task associated with this article
+            pass
 
     def is_photo_article(self):
         return self.type == settings.CORE_PHOTO_ARTICLE
@@ -1725,22 +1750,19 @@ class Article(ArticleBase):
     def save(self, *args, **kwargs):
 
         if self.pk and self.sections:
-            # Only valid if the instance has already been saved.
-            # TODO: this should be reviewed, what happens if another article
-            # in the same edition-section is viewed (viewed implies saving)
+            # If already saved, sets the article at the last position in all its sections where it has no position yet.
             for ar in ArticleRel.objects.filter(article=self):
                 if not ar.position:
                     ar.position = ArticleRel.objects.filter(edition=ar.edition, section=ar.section).count() + 1
 
-        # TODO: also this if block should be reviewed (broken)
+        # TODO: next commented "if" block should be reviewed (broken)
         # if self.home_top and self.top_position is None:
-        #    self.top_position = Article.objects.filter(
-        #        edition=self.edition, home_top=self.home_top).count() + 1
+        #    self.top_position = Article.objects.filter(edition=self.edition, home_top=self.home_top).count() + 1
         if self.type == settings.CORE_HTML_ARTICLE:
             self.headline = 'HTML | %s | %s | %s' % (str(self.edition), str(self.section), str(self.section_position))
 
         old_url_path = self.url_path
-        super(Article, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         # the instance has already been saved, force_insert should be turned into False if a save is called again
         kwargs['force_insert'] = False
 
@@ -1754,7 +1776,7 @@ class Article(ArticleBase):
             if url_changed:
                 self.url_path = new_url_path
                 self.do_ipfs_upload()
-                super(Article, self).save(*args, **kwargs)
+                super().save(*args, **kwargs)
                 talk_url = getattr(settings, 'TALK_URL', None)
                 # if this is an insert, old_url_path is '', then skip talk update
                 if old_url_path and talk_url and not settings.DEBUG:
@@ -1766,14 +1788,14 @@ class Article(ArticleBase):
                         # fail silently because we should not break any script or shell that is saving the article
                         pass
             elif self.do_ipfs_upload():
-                super(Article, self).save(*args, **kwargs)
+                super().save(*args, **kwargs)
 
             # add to history the new url
             if not ArticleUrlHistory.objects.filter(article=self, absolute_url=new_url_path).exists():
                 ArticleUrlHistory.objects.create(article=self, absolute_url=new_url_path)
 
         elif self.do_ipfs_upload():
-            super(Article, self).save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     def do_ipfs_upload(self):
         """
@@ -2188,13 +2210,13 @@ class ArticleViews(Model):
 
 
 class CategoryHomeArticle(Model):
+    # TODO: review the "custom label" comment in the position field (still needed?)
     home = ForeignKey('CategoryHome', on_delete=CASCADE)
     article = ForeignKey(
         Article,
         on_delete=CASCADE,
         verbose_name='artículo',
         related_name='home_articles',
-        limit_choices_to={'is_published': True},
     )
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
@@ -2215,7 +2237,6 @@ class CategoryHomeArticle(Model):
 
     class Meta:
         ordering = ('position',)
-        unique_together = ('home', 'position')
 
 
 class CategoryHome(Model):
@@ -2447,6 +2468,8 @@ class BreakingNewsModule(Model):
     embed14_content = TextField('contenido de incrustado 14', blank=True, null=True)
     publications = ManyToManyField(Publication, verbose_name='portada de publicaciones', blank=True)
     categories = ManyToManyField(Category, verbose_name='portada de áreas', blank=True)
+
+    published = PublishedBreakingNewsModuleManager()
 
     def __str__(self):
         return self.headline or ''
