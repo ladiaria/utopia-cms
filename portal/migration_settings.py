@@ -124,6 +124,7 @@ INSTALLED_APPS = (
     "django_celery_results",
     "django_celery_beat",
     "phonenumber_field",
+    "closed_site",
 )
 
 SITE_ID = 1
@@ -185,6 +186,8 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap", "uni_form", "bootstrap3", "bootstr
 CRISPY_TEMPLATE_PACK = "materialize_css_forms"
 
 MIDDLEWARE = (
+    "closed_site.middleware.ClosedSiteMiddleware",
+    "closed_site.middleware.RestrictedAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.cache.UpdateCacheMiddleware",  # runs during the response phase (top -> last)
     "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)
@@ -208,13 +211,13 @@ MIDDLEWARE = (
 )
 
 # Localization default settings
-LANGUAGES = (("es", "Español"),)
+LANGUAGES = (("en", "English"),)
 USE_I18N = True
 USE_L10N = True
 
-LANGUAGE_CODE = "es"
-LOCAL_LANG = "es"
-LOCAL_COUNTRY = "UY"
+LANGUAGE_CODE = "en"
+LOCAL_LANG = "en"
+LOCAL_COUNTRY = "US"
 
 USE_TZ = True
 DATE_INPUT_FORMATS = (
@@ -278,6 +281,7 @@ TEMPLATES = [
                 "context_processors.article_content_type",
                 "django.template.context_processors.static",
                 "apps.core.context_processors.aniosdias",
+                "apps.core.context_processors.bn_module",
                 "social_django.context_processors.backends",
                 "social_django.context_processors.login_redirect",
                 "django.contrib.messages.context_processors.messages",
@@ -359,6 +363,10 @@ ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
 SEARCH_ELASTIC_USE_FUZZY = False  # Ignored when previous setting is True (not allowed by Elasticsearch).
 
+# mongodb database
+MONGODB_DATABASE = "utopia_cms"
+MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
+
 # apps
 
 # core
@@ -396,16 +404,20 @@ CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 # show or hide photo credits in article cards
 CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 
+# class to use for the body field in articles
+CORE_ARTICLE_BODY_FIELD_CLASS = "martor.models.MartorField"
+
+# use job to build journalist absolute url
+CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
+
 # enable related articles in article detail
 CORE_ENABLE_RELATED_ARTICLES = True
 
-# mongodb database
-MONGODB_DATABASE = "utopia_cms"
-MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0
 SIGNUPWALL_RISE_REDIRECT = True
+SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily
 SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
@@ -413,13 +425,13 @@ PROMO_EMAIL_SUBJECT = "Nueva promoción"
 SUBSCRIPTION_EMAIL_TO = [NOTIFICATIONS_TO_ADDR]
 SUBSCRIPTION_BY_PHONE_EMAIL_TO = SUBSCRIPTION_EMAIL_TO
 MAX_USERS_API_SESSIONS = 3
+THEDAILY_GOOGLE_OAUTH2_ASK_PHONE = False
 THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID = None
-THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
-    ("DDIGM", "Suscripción digital"),
-    ("PAPYDIM", "Suscripción papel"),
-)
+THEDAILY_SUBSCRIPTION_TYPE_CHOICES = ()
+THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
@@ -528,9 +540,12 @@ SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
-CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 CRM_UPDATE_USER_CREATE_CONTACT = None
+CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 PHONENUMBER_DEFAULT_REGION = None
+
+
+# ====================================================================================== visual separator =============
 
 
 # Override previous settings with values in local_migration_settings.py settings file
@@ -543,6 +558,15 @@ CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
 LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
 COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
+
+if locals().get("DEBUG_TOOLBAR_ENABLE"):
+    # NOTE when enabled, you need to: pip install "django-debug-toolbar==4.3.0" && ./manage.py collectstatic
+    INSTALLED_APPS += ('debug_toolbar',)
+    MIDDLEWARE = MIDDLEWARE[:8] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[8:]
+
+DEBUG = locals().get("DEBUG", False)
+if DEBUG:
+    MIDDLEWARE = MIDDLEWARE[:8] + ("corsheaders.middleware.CorsMiddleware",) + MIDDLEWARE[8:]
 
 # phonenumbers default region (if not set) will default to LOCAL_COUNTRY
 if PHONENUMBER_DEFAULT_REGION is None:
@@ -582,3 +606,14 @@ if CRM_API_BASE_URI:
 if CRM_UPDATE_USER_CREATE_CONTACT is None:
     # defaults to the same value of the "base sync"
     CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED
+
+if locals().get("ENV_HTTP_BASIC_AUTH") and "API_KEY_CUSTOM_HEADER" not in locals():
+    # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
+    API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
+
+# thedaily default subscription type and debug signals
+if "THEDAILY_SUBSCRIPTION_TYPE_DEFAULT" not in locals():
+    THEDAILY_SUBSCRIPTION_TYPE_DEFAULT = \
+        THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0] if THEDAILY_SUBSCRIPTION_TYPE_CHOICES else None
+if THEDAILY_DEBUG_SIGNALS is None:
+    THEDAILY_DEBUG_SIGNALS = DEBUG

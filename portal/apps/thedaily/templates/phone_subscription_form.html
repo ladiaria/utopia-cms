@@ -16,7 +16,7 @@
   <script src="{% static 'js/phone_widget.js' %}"></script>
   <script>
     $(function(){
-      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}js/utils.js", true);{# init phone widget #}
+      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}", true);
     });
   </script>
 {% endblock %}

@@ -11,11 +11,7 @@
     </button>
   </div>
   <div class="ld-snackbar__body">
-    <div class="ld-snackbar__block">
-      <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=paywall" class="ld-btn-default">
-        Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i>
-      </a>
-    </div>
+    {% include "article/pw_subscribe_block.html" %}
     <div class="ld-snackbar__text ld-snackbar__block">Si ya tenés una cuenta</div>
     <div class="ld-snackbar__block"><a on="tap:amp-access.login" class="btn bordered">Ingresá</a></div>
     <div class="ld-snackbar__text ld-snackbar__block">
