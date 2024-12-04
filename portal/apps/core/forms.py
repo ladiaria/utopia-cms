@@ -105,7 +105,7 @@ def feedback_allowed(request, article, is_amp_authenticated=False):
     if custom_allowed:
         return custom_allowed(request, article, is_amp_authenticated)
     else:
-        is_auth = is_amp_authenticated if request.is_amp_detect else request.user.is_authenticated
+        is_auth = is_amp_authenticated if getattr(request, "is_amp_detect", False) else request.user.is_authenticated
         return article.is_published and is_auth
 
 

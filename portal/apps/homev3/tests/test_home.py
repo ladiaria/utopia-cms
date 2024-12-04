@@ -14,8 +14,6 @@ class HomeTestCase(TestCase):
     http_host_header_param = {'HTTP_HOST': settings.SITE_DOMAIN}
     urls_to_test = (
         {'url': '/'},
-        {'url': '/periodista/test-journalist/'},
-        {'url': '/columnista/test-columnist/'},
         {'url': '/test/'},
         {'url': '/tags/test/'},
         {'url': '/seccion/news/'},

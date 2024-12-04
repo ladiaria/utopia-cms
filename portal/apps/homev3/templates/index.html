@@ -95,19 +95,4 @@
   <script defer src="{% static 'materialize/js/tabs.js' %}"></script>
 {% endblock %}
 
-{% block footer_scripts %}
-  <script type="text/javascript">
-    $(function(){
-      $('#bn-module').load("{% url 'bn-content' %}?publication={{ publication.slug }}", function(response){
-        if(response){
-          var btn_close = $('.btn-close', this);
-          if(btn_close.length){
-            btn_close.click(function(){
-              notification_close(this);
-            });
-          }
-        }
-      });
-    });
-  </script>
-{% endblock %}
+{% block footer_scripts %}{% include bn_module_footer_scripts_template %}{% endblock %}

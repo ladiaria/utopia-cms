@@ -1,0 +1,13 @@
+{% if bn_module_published_count %}
+  <script type="text/javascript">
+    $(function(){
+      $('#bn-module').load("{% url 'bn-content' %}?publication={{ publication.slug }}", function(response){
+        if(response){
+          $('.btn-close', this).on('click', function(){
+            notification_close(this);
+          });
+        }
+      });
+    });
+  </script>
+{% endif %}
