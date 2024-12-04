@@ -1413,9 +1413,10 @@ def lista_lectura_historial(request):
                 # the article could be removed
                 pass
     # perform the union with the ones in the model
-    historial += [
-        avb.article for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at')
-    ]
+    for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at'):
+        article = avb.get_article()
+        if article:
+            historial.append(article)
     historial_count = len(historial)
     if is_xhr(request):
         return HttpResponse(historial_count)

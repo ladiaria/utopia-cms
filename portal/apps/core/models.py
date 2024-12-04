@@ -2195,6 +2195,12 @@ class ArticleViewedBy(Model):
     user = ForeignKey(User, on_delete=CASCADE)
     viewed_at = DateTimeField(db_index=True)
 
+    def get_article(self):
+        try:
+            return self.article
+        except Article.DoesNotExist:
+            return None
+
     class Meta:
         unique_together = ('article', 'user')
 
