@@ -60,16 +60,4 @@
   </script>
 {% endblock %}
 
-{% block footer_scripts %}
-  <script type="text/javascript">
-    $(function(){
-      $('#bn-module').load("{% url 'bn-content' %}?publication={{ publication.slug }}", function(response){
-        if(response){
-          $('.btn-close', this).click(function(){
-            notification_close(this);
-          });
-        }
-      });
-    });
-  </script>
-{% endblock %}
+{% block footer_scripts %}{% include bn_module_footer_scripts_template %}{% endblock %}

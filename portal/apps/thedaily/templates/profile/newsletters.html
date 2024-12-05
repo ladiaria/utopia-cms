@@ -28,7 +28,7 @@
                     <div class="switch-container">
                       <span class="label-text on" style="display: none;">Activada</span>
                       <span class="label-text off{% if email_is_bouncer %} grey-text{% endif %}">Activar</span>
-                      <label class="switch">
+                      <label class="ld-switch">
                         <input
                           type="checkbox"
                           id="id_{{ field.html_name }}_{{ forloop.counter }}"
@@ -80,7 +80,7 @@
                 <div class="switch-container">
                   <span class="label-text on" style="display: none;">Activada</span>
                   <span class="label-text off{% if email_is_bouncer %} grey-text{% endif %}">Activar</span>
-                  <label class="switch">
+                  <label class="ld-switch">
                     <input
                       type="checkbox"
                       id="{{ mlist.list_cid }}"

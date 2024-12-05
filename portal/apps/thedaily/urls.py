@@ -65,7 +65,7 @@ if views_custom_module:
 
 # override urls
 urls_custom_module = getattr(settings, 'THEDAILY_URLS_CUSTOM_MODULE', None)
-custom_patterns = locate(".".join([urls_custom_module, 'urlpatterns'])) if urls_custom_module else []
+custom_patterns = (locate(".".join([urls_custom_module, 'urlpatterns'])) if urls_custom_module else []) or []
 # and also ensure an url with name "subscribe_landing" is available
 custom_patterns += [path('planes/', SubscriptionPricesListView.as_view(), name="subscribe_landing")]
 
@@ -84,7 +84,12 @@ urlpatterns = [
             name="subscribe-default",
             kwargs={"planslug": default_planslug},
         ),
-        re_path(rf"suscribite/{default_planslug}/(?P<category_slug>\w+)/$", subscribe, name="subscribe-default"),
+        re_path(
+            rf"suscribite/{default_planslug}/(?P<category_slug>\w+)/$",
+            subscribe,
+            name="subscribe-default",
+            kwargs={"planslug": default_planslug},
+        ),
     ] if default_planslug else [
         # ensure an url with name "subscribe-default" is available
         path("suscribite/", RedirectView.as_view(url=reverse_lazy("subscribe-landing")), name="subscribe-default")
