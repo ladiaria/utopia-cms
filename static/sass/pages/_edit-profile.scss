@@ -671,13 +671,16 @@ body.ld-profile-edit {
 
     @media #{$medium-and-down} {
       align-items: stretch;
+      padding: 75px 0;
     }
   }
 
   &__container {
     background-color: white;
-    padding: 8px;
+    padding: 12px 8px;
     height: fit-content;
+    width: 90%;
+    border-radius: 8px;
 
     @media #{$medium-and-up} {
       margin: 100px 8px;
@@ -702,6 +705,11 @@ body.ld-profile-edit {
     }
 
     form#user_form {
+      label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
       .input-field .required {
         .asterisk {
           display: none;
@@ -759,7 +767,7 @@ body.ld-profile-edit {
       }
 
       @media #{$medium-and-down} {
-        padding: 8px 8px 16px;
+        padding: 12px 8px 16px;
       }
     }
 
