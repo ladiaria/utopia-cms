@@ -677,7 +677,7 @@ body.ld-profile-edit {
 
   &__container {
     background-color: white;
-    padding: 12px 8px;
+    padding: 16px 12px;
     height: fit-content;
     width: 90%;
     border-radius: 8px;
@@ -708,7 +708,7 @@ body.ld-profile-edit {
       label {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
       }
       .input-field .required {
         .asterisk {
@@ -722,6 +722,10 @@ body.ld-profile-edit {
 
       #div_id_phone {
         padding-bottom: 20px;
+        label {
+          transform: translateY(-140%);
+          font-size: 0.8rem;
+        }
         div.iti {
           width: 100%;
           input {
@@ -736,7 +740,6 @@ body.ld-profile-edit {
 
         label {
           position: relative;
-          top: 0;
           font-size: px-to-rem(14px);
         }
       }
