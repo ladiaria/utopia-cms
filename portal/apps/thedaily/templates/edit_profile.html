@@ -302,3 +302,11 @@
     });
   </script>
 {% endblock %}
+
+{% block materialize_scripts %}
+  {# js needed for the "dropdown" and "modal" menu items #}
+  <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
+  <script defer src="{% static 'materialize/js/global.js' %}"></script>
+  <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
+  <script defer src="{% static 'materialize/js/modal.js' %}"></script>
+{% endblock %}
