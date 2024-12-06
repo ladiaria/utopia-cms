@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import re
 from inflect import engine
 
 from django.conf import settings
@@ -19,9 +18,6 @@ from thedaily.email_logic import limited_free_article_mail
 
 debug = getattr(settings, 'SIGNUPWALL_DEBUG', settings.DEBUG)
 signupwall_exclude = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
-ig_version_spaced_parenthesis = r"Instagram\s+(\d+\.)*\d+\s+\("
-fb_regex = re.compile(rf"FBA[NV]|{ig_version_spaced_parenthesis}iPhone")
-ig_android_regex = re.compile(rf"{ig_version_spaced_parenthesis}Android")
 
 
 def number_to_words(number):
@@ -113,13 +109,16 @@ def is_google_amp(request):
 
 
 def fb_browser_type(request):
-    value, ua = None, request.META.get('HTTP_USER_AGENT', '')
-    if re.search(fb_regex, ua):
+    value, ua_os, ua_browser = None, request.user_agent.get_os(), request.user_agent.get_browser()
+    os_is_android, os_is_ios = ua_os.startswith("Android"), ua_os.startswith("iOS")
+    browser_is_fb, browser_is_ig = ua_browser.startswith("Facebook"), ua_browser.startswith("Instagram")
+    # definitions taken from core/article/landing_facebook.html template
+    if browser_is_fb or (os_is_ios and browser_is_ig):
         value = "fb"
-    elif re.search(ig_android_regex, ua):
+    elif os_is_android and browser_is_ig:
         value = "ig_android"
     if value:
-        request.fb_browser = value
+        request.fb_browser_type = value
         return True
 
 

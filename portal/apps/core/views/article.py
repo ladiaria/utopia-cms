@@ -149,7 +149,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
     if not signupwall_exclude_request_condition:
         fb_browser_type = getattr(request, 'fb_browser_type', None)
         if fb_browser_type:
-            return render(request, 'landing_facebook.html', {'browser_type': fb_browser_type})
+            return render(request, 'article/landing_facebook.html', {'browser_type': fb_browser_type})
 
     # 4. log article views
     is_amp_detect, user_is_authenticated = getattr(request, "is_amp_detect", False), request.user.is_authenticated
