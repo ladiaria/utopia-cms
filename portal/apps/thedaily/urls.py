@@ -65,7 +65,7 @@ if views_custom_module:
 
 # override urls
 urls_custom_module = getattr(settings, 'THEDAILY_URLS_CUSTOM_MODULE', None)
-custom_patterns = locate(".".join([urls_custom_module, 'urlpatterns'])) if urls_custom_module else []
+custom_patterns = (locate(".".join([urls_custom_module, 'urlpatterns'])) if urls_custom_module else []) or []
 # and also ensure an url with name "subscribe_landing" is available
 custom_patterns += [path('planes/', SubscriptionPricesListView.as_view(), name="subscribe_landing")]
 
