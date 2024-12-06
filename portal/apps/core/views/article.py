@@ -145,11 +145,22 @@ def article_detail(request, year, month, slug, domain_slug=None):
     signupwall_exclude_request_condition = signupwall_exclude(request)
     # If the call to the condition with the request as argument returns True, the visit is not logged to mongodb.
 
+    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
+    template_engine = Engine.get_default()
+
     # 3. render "landing facebook" if fb browser detected and previous condition is not met
     if not signupwall_exclude_request_condition:
         fb_browser_type = getattr(request, 'fb_browser_type', None)
         if fb_browser_type:
-            return render(request, 'article/landing_facebook.html', {'browser_type': fb_browser_type})
+            template = "article/landing_facebook.html"
+            template_try = join(template_dir, template)
+            try:
+                template_engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template = template_try
+            return render(request, template, {'browser_type': fb_browser_type})
 
     # 4. log article views
     is_amp_detect, user_is_authenticated = getattr(request, "is_amp_detect", False), request.user.is_authenticated
@@ -238,10 +249,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         } if user_is_authenticated else {"signupwall_remaining_banner": settings.SIGNUPWALL_ENABLED}
     )  # NOTE: banner is rendered despite of setting for anon users
 
-    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
     template = "article/detail"
-    template_engine = Engine.get_default()
-
     # custom template support and custom article.type-based tmplates, search for the template iterations:
     # TODO: 16 tests cases: this 4 scenarios * 2 combinations of dir custom settings * 2 cann/AMP
     # 1- search w custom dir w tp
