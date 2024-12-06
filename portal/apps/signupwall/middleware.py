@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import re
 from inflect import engine
 
 from django.conf import settings
@@ -18,6 +18,10 @@ from thedaily.email_logic import limited_free_article_mail
 
 
 debug = getattr(settings, 'SIGNUPWALL_DEBUG', settings.DEBUG)
+signupwall_exclude = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
+ig_version_spaced_parenthesis = r"Instagram\s+(\d+\.)*\d+\s+\("
+fb_regex = re.compile(rf"FBA[NV]|{ig_version_spaced_parenthesis}iPhone")
+ig_android_regex = re.compile(rf"{ig_version_spaced_parenthesis}Android")
 
 
 def number_to_words(number):
@@ -108,6 +112,17 @@ def is_google_amp(request):
     return False
 
 
+def fb_browser_type(request):
+    value, ua = None, request.META.get('HTTP_USER_AGENT', '')
+    if re.search(fb_regex, ua):
+        value = "fb"
+    elif re.search(ig_android_regex, ua):
+        value = "ig_android"
+    if value:
+        request.fb_browser = value
+        return True
+
+
 class SignupwallMiddleware(MiddlewareMixin):
 
     def anon_articles_visited_count(self, nowval, visitor, credits, debug=False):
@@ -165,9 +180,11 @@ class SignupwallMiddleware(MiddlewareMixin):
         if path_resolved.url_name == 'article_detail':
             try:
                 article = get_article_by_url_path(request.path)
-                # ignore AMP-feeding requests by Google and also AMP requests in "simulation"
+                # ignore AMP-feeding requests by Google, those excluded by settings, and AMP requests in "simulation"
+                excluded = signupwall_exclude(request)
                 if (
-                    is_google_amp(request)
+                    excluded
+                    or is_google_amp(request)
                     or (
                         getattr(settings, 'AMP_SIMULATE', False)
                         and request.GET.get(settings.AMP_TOOLS_GET_PARAMETER) == 'amp'
@@ -182,6 +199,10 @@ class SignupwallMiddleware(MiddlewareMixin):
             # ignore signupwall for non article_detail paths
             if debug:
                 print('DEBUG: signupwall.middleware.process_request - non article_detail path')
+            return
+
+        # ignore also if the browser is facebook-type (article detail will render steps to open other browser)
+        if fb_browser_type(request):
             return
 
         user = request.user

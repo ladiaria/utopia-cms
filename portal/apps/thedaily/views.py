@@ -1416,9 +1416,6 @@ def lista_lectura_toggle(request, event, article_id):
 
     return HttpResponse()
 
-@never_cache
-def landing_facebook(request):
-    return render(request, 'landing_facebook.html')
 
 @never_cache
 @staff_member_required
