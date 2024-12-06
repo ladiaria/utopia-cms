@@ -181,14 +181,21 @@ class SignupwallMiddleware(MiddlewareMixin):
                 article = get_article_by_url_path(request.path)
                 # ignore AMP-feeding requests by Google, those excluded by settings, and AMP requests in "simulation"
                 excluded = signupwall_exclude(request)
-                if (
+                ignored = (
                     excluded
                     or is_google_amp(request)
                     or (
                         getattr(settings, 'AMP_SIMULATE', False)
                         and request.GET.get(settings.AMP_TOOLS_GET_PARAMETER) == 'amp'
                     )
-                ):
+                )
+                if debug:
+                    print(
+                        "DEBUG: signupwall request (user_agent, excluded, ignored): ('%s', %s, %s)" % (
+                            request.user_agent, excluded, ignored
+                        )
+                    )
+                if ignored:
                     return
             except Article.DoesNotExist:
                 # ignore signupwall for not-found articles (core.views.article.article_detail will redirect if the
