@@ -28,6 +28,11 @@ class PublishedArticleManager(Manager):
         return super().get_queryset().filter(**get_published_kwargs())
 
 
+class PublishedBreakingNewsModuleManager(Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_published=True)
+
+
 class DebugManager(Manager):
 
     def get_queryset(self):

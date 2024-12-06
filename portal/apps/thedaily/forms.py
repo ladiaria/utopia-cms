@@ -53,10 +53,16 @@ def get_default_province():
     return getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None)
 
 
-def custom_layout(form_id):
+def custom_layout(form_id, *args, **kwargs):
     custom_layout_module = getattr(settings, "THEDAILY_CRISPY_CUSTOM_LAYOUTS_MODULE", None)
     if custom_layout_module:
-        return locate(f"{custom_layout_module}.layouts").get(form_id)
+        layout_function = locate(f"{custom_layout_module}.{form_id}")
+        if callable(layout_function):
+            try:
+                return layout_function(*args, **kwargs)
+            except Exception as exc:
+                if settings.DEBUG:
+                    print(f"Error calling the custom layout function for '{form_id}' form: {exc}")
 
 
 def terms_and_conditions_field():
@@ -229,7 +235,7 @@ class LoginForm(CrispyForm):
                     self.username = nom
                     result = data
                 else:
-                    self.add_eror(error=ValidationError(USER_PASS_ERROR))
+                    self.add_error(None, ValidationError(USER_PASS_ERROR))
             else:
                 result = data
         return result
@@ -255,6 +261,7 @@ class BaseUserForm(CrispyModelForm):
         return self.custom_clean()
 
     def clean_first_name(self):
+        # TODO: sync with django-admin validations because for ex. "@" is allowed there and not here
         first_name = self.cleaned_data.get('first_name')
         if not RE_ALPHANUM.match(first_name):
             self.add_error(
@@ -477,7 +484,7 @@ class ProfileExtraDataForm(CrispyModelForm):
                     "profile/push_notifications.html"
                 )
             ),
-            Field('newsletters', template='profile/newsletters.html'),
+            Field('newsletters', template=get_app_template('profile/newsletters.html')),
             HTML('{%% include "%s" %%}' % get_app_template('profile/communications_start_section.html')),
             Field('allow_news', template=get_app_template('profile/allow_news.html')),
             Field('allow_promotions', template=get_app_template('profile/allow_promotions.html')),
@@ -489,6 +496,8 @@ class ProfileExtraDataForm(CrispyModelForm):
         model = Subscriber
         fields = ('allow_news', 'allow_promotions', 'allow_polls', "newsletters")
 
+
+# TODO: from this line on, s/first_name/name
 
 class SubscriberForm(CrispyModelForm):
     first_name = first_name_field()
@@ -750,14 +759,52 @@ class PhoneSubscriptionForm(CrispyForm):
         )
 
 
-class SubscriptionForm(ModelForm):
+class WebSubscriptionForm(ModelForm):
     subscription_type_prices = ChoiceField(choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, widget=HiddenInput())
+    if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
+        terms_and_conds_accepted = terms_and_conditions_field()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = CrispyFormHelper()
+        self.helper.layout = Layout(
+            *terms_and_conditions_layout_tuple()
+            + (
+                HTML('<div class="ld-block--sm align-center">'),
+                FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
+                HTML(
+                    '<div class="ld-text-secondary align-center ld-subscription-step" style="display:none;">'
+                    'Paso 1 de 2'
+                ),
+                Field('subscription_type_prices'),
+            )
+        )
+
+    def clean_terms_and_conds_accepted(self):
+        return clean_terms_and_conds(self)
+
+    class Meta:
+        model = Subscription
+        fields = ['subscription_type_prices']
+
+
+class WebSubscriptionPromoCodeForm(WebSubscriptionForm):
+    promo_code = CharField(label='Código promocional (opcional)', required=False, max_length=8)
+
+
+class WebSubscriptionCaptchaForm(WebSubscriptionForm):
+    captcha = ReCaptchaField(label='')
+
+
+class WebSubscriptionPromoCodeCaptchaForm(WebSubscriptionPromoCodeForm):
+    captcha = ReCaptchaField(label='')
+
+
+class SubscriptionForm(WebSubscriptionForm):
     payment_type = ChoiceField(
         label='Elegí la forma de suscribirte', choices=(('tel', 'Telefónica (te llamamos)'),), initial='tel'
     )
     preferred_time = preferred_time_field()
-    if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
-        terms_and_conds_accepted = terms_and_conditions_field()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -780,13 +827,6 @@ class SubscriptionForm(ModelForm):
                 Field('subscription_type_prices'),
             )
         )
-
-    def clean_terms_and_conds_accepted(self):
-        return clean_terms_and_conds(self)
-
-    class Meta:
-        model = Subscription
-        fields = ['subscription_type_prices']
 
     class Media:
         js = ('js/preferred_time.js',)
@@ -1061,12 +1101,15 @@ class PasswordChangeBaseForm(CrispyForm):
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'change_password'
-        self.helper.layout = Layout(
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id, False)
+            or Layout(
+                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+                HTML('<div class="align-center">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def clean(self):
@@ -1094,13 +1137,16 @@ class PasswordChangeForm(PasswordChangeBaseForm):
         if 'user' in kwargs:
             del kwargs['user']
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Field('old_password', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                Field('old_password', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+                HTML('<div class="align-center">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def clean_old_password(self):
@@ -1141,14 +1187,18 @@ class PasswordResetForm(PasswordChangeBaseForm):
         del kwargs['user']
 
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            Field('gonzo', type='hidden', value=initial['gonzo']),
-            Field('hash', type='hidden', value=initial['gonzo']),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+
+        self.helper.layout = (
+            custom_layout(self.helper.form_id, False, initial['gonzo'])
+            or Layout(
+                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+                Field('gonzo', type='hidden', value=initial['gonzo']),
+                Field('hash', type='hidden', value=initial['gonzo']),
+                HTML('<div class="align-center">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def gen_gonzo(self):

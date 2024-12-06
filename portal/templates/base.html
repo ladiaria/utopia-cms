@@ -113,6 +113,9 @@
     <!-- CSS -->
     {% compress css %}
       {% block base_css %}
+        {% block materialize_forms_css %}
+          <link href="{% static 'sass/utopia_materialize/_forms.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+        {% endblock %}
         <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endblock %}
       {% if HOMEV3_CUSTOM_CSS %}
@@ -212,6 +215,7 @@
           LDUser.is_authenticated = true;
           LDUser.id = {{ user.id }};
           LDUser.subscriber = {{ is_subscriber|lower }};
+          LDUser.subscriber_id = {{ user.subscriber.id }};
           LDUser.firstName = "{{ user.first_name }}";
           LDUser.lastName = "{{ user.last_name }}";
         {% else %}
@@ -342,11 +346,13 @@
     {% endblock %}
 
     {% block subscribe_notice %}
-      <!-- Subscribe notice for not authenticated users or non-subscribers -->
-      {# TODO: can we implement this kind of notice in AMP? (we never did that) #}
-      {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
-        {% if is_portada and publication == default_pub or is_detail %}
-          {% include subscribe_notice_template %}
+      {% if subscribe_notice_template %}
+        <!-- Subscribe notice for not authenticated users or non-subscribers -->
+        {# TODO: can we implement this kind of notice in AMP? (we never did that) #}
+        {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
+          {% if is_portada and publication == default_pub or is_detail %}
+            {% include subscribe_notice_template %}
+          {% endif %}
         {% endif %}
       {% endif %}
     {% endblock %}
