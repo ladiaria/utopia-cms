@@ -727,6 +727,9 @@ body.ld-profile-edit {
           transform: translateY(-140%);
           font-size: 0.8rem;
         }
+        button.iti__selected-country:focus {
+          background-color: transparent;
+        }
         div.iti {
           width: 100%;
           input {
