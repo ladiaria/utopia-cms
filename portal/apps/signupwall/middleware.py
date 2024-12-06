@@ -109,17 +109,18 @@ def is_google_amp(request):
 
 
 def fb_browser_type(request):
-    value, ua_os, ua_browser = None, request.user_agent.get_os(), request.user_agent.get_browser()
-    os_is_android, os_is_ios = ua_os.startswith("Android"), ua_os.startswith("iOS")
-    browser_is_fb, browser_is_ig = ua_browser.startswith("Facebook"), ua_browser.startswith("Instagram")
-    # definitions taken from core/article/landing_facebook.html template
-    if browser_is_fb or (os_is_ios and browser_is_ig):
-        value = "fb"
-    elif os_is_android and browser_is_ig:
-        value = "ig_android"
-    if value:
-        request.fb_browser_type = value
-        return True
+    if getattr(settings, 'SIGNUPWALL_FB_BROWSERWALL_ENABLED', True):
+        value, ua_os, ua_browser = None, request.user_agent.get_os(), request.user_agent.get_browser()
+        os_is_android, os_is_ios = ua_os.startswith("Android"), ua_os.startswith("iOS")
+        browser_is_fb, browser_is_ig = ua_browser.startswith("Facebook"), ua_browser.startswith("Instagram")
+        # definitions taken from core/article/landing_facebook.html template
+        if browser_is_fb or (os_is_ios and browser_is_ig):
+            value = "fb"
+        elif os_is_android and browser_is_ig:
+            value = "ig_android"
+        if value:
+            request.fb_browser_type = value
+            return True
 
 
 class SignupwallMiddleware(MiddlewareMixin):
