@@ -3,6 +3,8 @@
 
 {% block page_title %}Abrir en un navegador externo{% endblock %}
 
+{% block navbar %}{% with disable_nav=True %}{{ block.super }}{% endwith %}{% endblock %}
+
 {% block css %}
   <link href="{% static 'sass/landing_facebook.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
@@ -42,3 +44,7 @@
     </div>
   </div>
 {% endblock %}
+
+{% block nav_mobile %}{% endblock %}
+
+{% block footer_block %}{% endblock %}
