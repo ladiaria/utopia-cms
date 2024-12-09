@@ -1,4 +1,4 @@
-{% load static ldml %}
+{% load static ldml thumbnail %}
 
 <script type="application/ld+json">{# TODO: some parts of this code can be made easier with template tags #}
   {
@@ -48,6 +48,16 @@
       "width": "1200"
     },
     "thumbnailUrl": "{{ SITE_URL_SD }}{{ article.photo.get_1200w_url }}"
+    {% elif open_graph_author_img %}
+    {% thumbnail open_graph_author_img "1200x675" crop="top" as im %}
+    "image": {
+      "@type": "ImageObject",
+      "url": "{{ SITE_URL_SD }}{{ im.url }}",
+      "width": "1200"
+      "height": "675"
+    },
+    "thumbnailUrl": "{{ SITE_URL_SD }}{{ im.url }}"
+    {% endthumbnail %}
     {% elif default_pub.open_graph_image %},
     "image": {
       "@type": "ImageObject",
