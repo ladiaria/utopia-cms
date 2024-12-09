@@ -50,7 +50,6 @@ from .views import (
     subscribe_notice_closed,
     nl_track_open_event,
     mailtrain_lists,
-    landing_facebook,
 )
 from .utils import get_app_template
 
@@ -214,5 +213,4 @@ urlpatterns = [
     ),
     # Mailtrain lists the user has subscribed to
     path('mailtrain-lists/', mailtrain_lists, name="mailtrain-lists"),
-    path('landing-facebook/', landing_facebook, name="landing-facebook"),
 ]
