@@ -411,8 +411,8 @@ def existscrmuser(email, contact_id=None):
 
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
     msg, error_msg_prefix, error_code = None, f"El {email_i18n} ingresado ", None
-    error_msg_invalid = error_msg_prefix + f"no es un {email_i18n} válido."
-    error_msg_exists = error_msg_prefix + "ya posee una cuenta de usuario"
+    error_msg_invalid = error_msg_prefix + "no es válido."
+    error_msg_exists = error_msg_prefix + "ya posee una cuenta"
     error_msg_next = ("?next=" + next_page) if next_page else ""
     exclude_kwargs_user = {'id': instance_id} if instance_id else {}
     exclude_kwargs_user_sa = {'user_id': instance_id} if instance_id else {}
