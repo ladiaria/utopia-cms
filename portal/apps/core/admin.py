@@ -1269,8 +1269,8 @@ class CategoryHomeArticleFormSet(CategoryHomeArticleFormSetBase):
 
 class CategoryHomeArticleInline(TabularInline):
     model = CategoryHome.articles.through
-    extra = 20
-    max_num = 20
+    max_num = getattr(settings, "CORE_UPDATE_CATEGORY_HOMES_ARTICLES_INLINE_MAX_NUM", 20)
+    extra = max_num
     form = CategoryHomeArticleForm
     formset = CategoryHomeArticleFormSet
     raw_id_fields = ('article',)
