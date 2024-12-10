@@ -4,6 +4,8 @@ from os.path import abspath, basename, dirname, join, realpath
 import mimetypes
 from freezegun import freeze_time
 from kombu import Queue
+from babel import Locale
+from pycountry import countries
 
 import django
 from django.conf.global_settings import DEFAULT_CHARSET
@@ -195,6 +197,7 @@ MIDDLEWARE = (
     "libs.middleware.url.UrlMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.auth.middleware.RemoteUserMiddleware",
@@ -211,13 +214,11 @@ MIDDLEWARE = (
 )
 
 # Localization default settings
-LANGUAGES = (("en", "English"),)
 USE_I18N = True
 USE_L10N = True
-
-LANGUAGE_CODE = "en"
 LOCAL_LANG = "en"
 LOCAL_COUNTRY = "US"
+LOCALE_PATHS = [join(PROJECT_ABSOLUTE_DIR, "locale")]
 
 USE_TZ = True
 DATE_INPUT_FORMATS = (
@@ -556,13 +557,21 @@ SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain 
 SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
-LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
+
+LANGUAGE_CODE = LOCAL_LANG
+LOCALE_NAME_PREFIX = f"{LOCAL_LANG}_{LOCAL_COUNTRY}"
+LOCALE_NAME = f"{LOCALE_NAME_PREFIX}.{DEFAULT_CHARSET}"
+
+LANG_NAME = Locale.parse(LOCAL_LANG).get_display_name().capitalize()
+COUNTRY_NAME = countries.get(alpha_2=LOCAL_COUNTRY).name
+LANGUAGES = ((LANGUAGE_CODE, LANG_NAME), (LOCALE_NAME_PREFIX.replace("_", "-"), f"{LANG_NAME} ({COUNTRY_NAME})"))
+
 COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
 
 if locals().get("DEBUG_TOOLBAR_ENABLE"):
     # NOTE when enabled, you need to: pip install "django-debug-toolbar==4.3.0" && ./manage.py collectstatic
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE = MIDDLEWARE[:8] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[8:]
+    MIDDLEWARE = MIDDLEWARE[:9] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[9:]
 
 DEBUG = locals().get("DEBUG", False)
 if DEBUG:

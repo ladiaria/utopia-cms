@@ -40,6 +40,7 @@ from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+
 from libs.utils import crm_rest_api_kwargs
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
@@ -48,6 +49,7 @@ from .managers import SubscriberManager
 
 
 GA_CATEGORY_CHOICES, MIN0, MAX100 = (('D', 'Digital'), ('P', 'Papel')), MinValueValidator(0), MaxValueValidator(100)
+email_i18n = _("email")
 
 
 class SubscriptionPrices(Model):
@@ -408,8 +410,8 @@ def existscrmuser(email, contact_id=None):
 
 
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
-    msg, error_msg_prefix, error_code = None, "El email ingresado ", None
-    error_msg_invalid = error_msg_prefix + 'no es un email válido.'
+    msg, error_msg_prefix, error_code = None, f"El {email_i18n} ingresado ", None
+    error_msg_invalid = error_msg_prefix + f"no es un {email_i18n} válido."
     error_msg_exists = error_msg_prefix + "ya posee una cuenta de usuario"
     error_msg_next = ("?next=" + next_page) if next_page else ""
     exclude_kwargs_user = {'id': instance_id} if instance_id else {}

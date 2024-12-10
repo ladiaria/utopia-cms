@@ -32,7 +32,7 @@ from crispy_forms.utils import get_template_pack
 from phonenumber_field.formfields import PhoneNumberField
 from phonenumber_field.widgets import RegionalPhoneNumberWidget
 
-from .models import Subscription, Subscriber, email_extra_validations
+from .models import Subscription, Subscriber, email_extra_validations, email_i18n
 from .utils import get_all_newsletters, get_app_template
 from .exceptions import EmailValidationError
 
@@ -573,12 +573,14 @@ class SubscriberForm(CrispyModelForm):
                     email__iexact=self.cleaned_data.get('email'), date_created__date=now().date()
                 )
                 if subscription_type in s.subscription_type_prices.values_list('subscription_type', flat=True):
-                    self.add_error('email', ValidationError("Su email ya posee una suscripción en proceso."))
+                    self.add_error('email', ValidationError(f"Su {email_i18n} ya posee una suscripción en proceso."))
                     result = False
             except Subscription.MultipleObjectsReturned:
                 # TODO: this can be relaxed using the same "if" above and only invalidate when all objects found
                 #       evaluates the "if" to True, and also the view should be changed to be aware of this.
-                self.add_error('email', ValidationError("Su email ya posee más de una suscripción en proceso."))
+                self.add_error(
+                    'email', ValidationError(f"Su {email_i18n} ya posee más de una suscripción en proceso.")
+                )
                 result = False
             except Subscription.DoesNotExist:
                 pass

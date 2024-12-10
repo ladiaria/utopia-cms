@@ -16,7 +16,6 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: apps/comunidad/admin.py:16
 msgid "Usado"
@@ -33,12 +32,12 @@ msgstr "No usado"
 #: apps/core/templates/edition/download_email_sent.html:12
 #: apps/thedaily/forms.py:161 apps/thedaily/forms.py:328
 msgid "Email"
-msgstr "Correo electrónico"
+msgstr "Email"
 
 #: apps/core/templates/edition/download_email_sent.html:14
 #: apps/thedaily/models.py:52 apps/thedaily/views.py:961
 msgid "email"
-msgstr "correo electrónico"
+msgstr "email"
 
 #: apps/thedaily/models.py:135
 msgid "name"
@@ -69,7 +68,7 @@ msgstr "Cambiar"
 
 #: templates/admin/app_list.html:88
 msgid "You don’t have permission to view or edit anything."
-msgstr "Usted no tiene permisos para ver o editar nada."
+msgstr "No tienes permisos para ver o editar nada."
 
 #: templates/admin/change_form_object_tools.html:6
 #: templates/admin/core/article/change_form_object_tools.html:8

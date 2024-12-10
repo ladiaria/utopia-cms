@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=50, unique=True, verbose_name='nombre')),
-                ('email', models.EmailField(blank=True, max_length=254, null=True, verbose_name='correo electr\xf3nico')),
+                ('email', models.EmailField(blank=True, max_length=254, null=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True, verbose_name='fecha de creaci\xf3n')),
             ],
             options={

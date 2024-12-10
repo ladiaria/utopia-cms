@@ -87,6 +87,7 @@ from .models import (
     OAuthState,
     MailtrainList,
     deletecrmuser,
+    email_i18n,
 )
 from .forms import (
     __name__ as forms_module_name,
@@ -140,6 +141,7 @@ standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
 site_name = Site.objects.get_current().name
+verif_email_i18n = f"{email_i18n} de verificación"
 
 
 def no_op_decorator(func):
@@ -522,7 +524,7 @@ def signup(request):
                     {'request': request},
                 )
                 if not was_sent:
-                    raise Exception("El email de verificación para el usuario %s no pudo ser enviado." % user)
+                    raise Exception(f"El {verif_email_i18n} para el usuario %s no pudo ser enviado." % user)
                 next_page = signup_form.cleaned_data.get('next_page')
                 if next_page:
                     return HttpResponseRedirect(next_page)
@@ -530,7 +532,7 @@ def signup(request):
                     context['signup_mail'] = user.email
                     return render(request, get_app_template("welcome.html"), context)
             except Exception as exc:
-                msg = "Error al enviar email de verificación para el usuario: %s." % user
+                msg = f"Error al enviar {verif_email_i18n} para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 if user:
                     email_to_delete = user.email
@@ -946,7 +948,7 @@ def subscribe(request, planslug, category_slug=None):
                                 get_signup_validation_url,
                             )
                             if not was_sent:
-                                raise Exception("Error al enviar email de verificación para el usuario %s" % user)
+                                raise Exception(f"Error al enviar {verif_email_i18n} para el usuario %s" % user)
                         except Exception as exc:
                             msg = str(exc)
                             error_log(msg)
@@ -958,7 +960,7 @@ def subscribe(request, planslug, category_slug=None):
                                     '<a class="ld-link-low" href="%s">cierre sesión</a>' % reverse("logout")
                                     + " e intente nuevamente utilizando otra dirección de " + _("email")
                                 ) if isinstance(exc, IntegrityError) else (
-                                    'No se pudo enviar el email de verificación al crear tu cuenta, '
+                                    f'No se pudo enviar el {verif_email_i18n} al crear tu cuenta, '
                                     + (
                                         '¿lo escribiste correctamente?'
                                         if isinstance(exc, SMTPRecipientsRefused)
@@ -1269,7 +1271,7 @@ def edit_profile(request, user=None):
                         'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url
                     )
                     if not was_sent:
-                        raise Exception("Error al enviar email de verificación para el usuario %s" % user)
+                        raise Exception(f"Error al enviar {verif_email_i18n} para el usuario %s" % user)
                     UserSocialAuth.objects.filter(user=user, provider='google-oauth2').delete()
                     user_form.save()
                     profile_form.save()
@@ -1289,7 +1291,7 @@ def edit_profile(request, user=None):
 
             except Exception as exc:
                 user.refresh_from_db()
-                msg = "Error al enviar email de verificacion para el usuario: %s." % user
+                msg = f"Error al enviar {verif_email_i18n} para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 user_form.add_error(None, msg)
                 profile_form.add_error(None, msg)
