@@ -7,6 +7,7 @@
   {% if enable_amp %}
     <link rel="amphtml" href="{{ SITE_URL_SD }}{{ article.get_absolute_url }}?display=amp">
   {% endif %}
+  <!-- End Canonical and AMP (if allowed) urls -->
 {% endblock %}
 
 {% block page_title %}{% include 'article/page_title.html' %}{% endblock %}
