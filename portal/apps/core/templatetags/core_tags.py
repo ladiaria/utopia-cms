@@ -59,10 +59,30 @@ def published_articles(context, **kwargs):
     return articles[:limit] if limit else articles
 
 
-@register.simple_tag(takes_context=True)
-def render_related(context, article, amp=False):
+def related_data_using_publication(publication, section, article, limit, title=None):
+    if (
+        publication
+        and section.slug not in getattr(settings, 'CORE_SECTIONS_EXCLUDE_RELATED', ())
+        and publication.slug not in getattr(settings, 'CORE_PUBLICATIONS_EXCLUDE_RELATED', ())
+    ):
+        # use the publication
+        upd_dict = {
+            'articles': section.latest_related_by_publication(publication.id, article.id, limit),
+            'section': title or (
+                publication.headline
+                if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_RELATED_USE_HEADLINE', ())
+                else publication.name
+            ),
+        }
+        if title:
+            upd_dict['title_no_prefix'] = True
+        return upd_dict
 
-    if not getattr(settings, "CORE_ARTICLE_DETAIL_ENABLE_RELATED", True):
+
+@register.simple_tag(takes_context=True)
+def render_related(context, article, amp=False, publication_priority=None, title=None):
+
+    if not settings.CORE_ENABLE_RELATED_ARTICLES:
         return ""
 
     article, section = context.get('article'), context.get('section')
@@ -71,42 +91,56 @@ def render_related(context, article, amp=False):
 
     category, publication, upd_dict = section.category, context.get('publication'), None
 
-    if (
-        publication
-        and section.slug not in getattr(settings, 'CORE_SECTIONS_EXCLUDE_RELATED', ())
-        and publication.slug not in getattr(settings, 'CORE_PUBLICATIONS_EXCLUDE_RELATED', ())
-    ):
-        # use the publication
-        upd_dict = {
-            'articles': section.latest4relatedbypublication(publication.id, article.id),
-            'section': publication.headline if publication.slug in getattr(
-                settings, 'CORE_PUBLICATIONS_RELATED_USE_HEADLINE', ()
-            ) else publication.name,
-        }
+    settings_publication_priority = getattr(settings, "CORE_RENDER_RELATED_PUBLICATION_PRIORITY", False)
+    if publication_priority is None:
+        publication_priority = settings_publication_priority
+    related_default_limit = getattr(settings, 'CORE_RENDER_REALTED_DEFAULT_LIMIT', 4)
 
-    elif category and category.slug in getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', ()):
-        # use the category
-        upd_dict = {
-            'articles': section.latest4relatedbycategory(category.id, article.id),
-            'section': category.more_link_title or category.name,
-        }
-
-    else:
-        # use a category also, defined in settings and if it belongs to the article and the section is not skipped.
-        use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY_SKIPPING_SECTIONS', [])
-        if use_category_skip_sections:
-            article_categories = article.get_categories_slugs()
-            for category_slug, section_slugs in use_category_skip_sections:
-                if category_slug in article_categories and section.slug not in section_slugs:
-                    category = Category.objects.get(slug=category_slug)
-                    upd_dict = {
-                        'articles': section.latest4relatedbycategory(category.id, article.id),
-                        'section': category.name,
-                    }
-                    break
+    if publication and publication_priority:
+        # 1st: give priority to publication, if defined by settings
+        upd_dict = related_data_using_publication(publication, section, article, related_default_limit, title)
 
     if not upd_dict:
-        upd_dict = {'articles': section.latest4related(article.id), 'section': section.name}
+        category_priority = getattr(settings, "CORE_CATEGORY_RELATED_CATEGORY_PRIORITY", False)
+        category_related_limits = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', {})
+
+        # 2nd: use category, if it is priorized globally or by settings
+        if category_priority or (category and category.slug in category_related_limits):
+
+            if category:
+                related_limit = (
+                    category_related_limits.get(category.slug, related_default_limit)
+                ) or related_default_limit
+                upd_dict = {
+                    'articles': section.latest_related_by_category(category.id, article.id, related_limit),
+                    'section': category.more_link_title or category.name,
+                }
+
+        if not upd_dict:
+            # 3rd: A conditional category-priorized (only for the sections specified in the setting)
+            use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY_SKIPPING_SECTIONS', [])
+            if use_category_skip_sections:
+                article_categories = article.get_categories_slugs()
+                for category_slug, section_slugs in use_category_skip_sections:
+                    if category_slug in article_categories and section.slug not in section_slugs:
+                        category = Category.objects.get(slug=category_slug)
+                        related_limit = category_related_limits.get(category.slug, related_default_limit)
+                        if related_limit:
+                            upd_dict = {
+                                'articles': section.latest_related_by_category(category.id, article.id, related_limit),
+                                'section': category.name,
+                            }
+                            break
+
+        # 4th, if still blank, now is the turn of the default behavior, use the section
+        if not upd_dict:
+            upd_dict = {'articles': section.latest_related(article.id, related_default_limit), 'section': section.name}
+
+        if not (upd_dict or publication_priority):
+            # 5th: use the publication now, if it was not prioritized in the 1st "call"
+            # NOTE: if the pub was prioritized, we already know here that it returns nothing,
+            #       that's why we only call it "again" only if we know that it was not prioritized.
+            upd_dict = related_data_using_publication(publication, section, article, related_default_limit, title)
 
     upd_dict.update({'is_detail': False, 'amp': amp})
     flatten_ctx = context.flatten()
