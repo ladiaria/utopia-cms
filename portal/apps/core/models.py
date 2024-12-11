@@ -2187,7 +2187,6 @@ class ArticleRel(Model):
 
     class Meta:
         ordering = ('position', '-article__date_published')
-        unique_together = ('article', 'edition', 'section', 'position')
 
 
 class ArticleViewedBy(Model):
