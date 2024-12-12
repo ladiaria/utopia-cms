@@ -36,6 +36,25 @@ body.user-newsletters {
     }
   }
 
+  @media #{$medium-and-down} {
+    .container {
+      padding: 40px 30px;
+    }
+
+    h1 {
+      font-size: px-to-rem(24px);
+    }
+
+    p.deck {
+      font-size: px-to-rem(14px);
+    }
+
+    .grid-nl-cards {
+      padding-top: 40px;
+      gap: 8px;
+    }
+  }
+
   .edit_profile_card {
     &__inner-section {
       box-shadow: 2px 2px 4px 0px rgba(0, 0, 0, 0.25);
