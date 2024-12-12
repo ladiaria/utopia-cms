@@ -69,6 +69,16 @@ body.user-newsletters {
         border-bottom: 1px solid #d8d8d8;
         padding-bottom: 12px;
       }
+      .title {
+        color: #000000;
+      }
+      .switch-container .label-text {
+        color: #727272;
+
+        &.on {
+          color: #21966a;
+        }
+      }
       &_body {
         padding-top: 12px;
       }
