@@ -10,6 +10,8 @@
 {% endblock %}
 
 {% block content %}
+  {% include 'profile/notification_box.html' %}
+
   <h1>Recibí por mail el contenido que te interesa</h1>
   <p class="deck">Acá encontrarás las newsletters de <em>la diaria</em> que aún no tenés activadas. Si querés desactivar alguna, podrás hacerlo ingresando a tu perfil.</p>
 
@@ -110,4 +112,16 @@
       </div>
     </div>
   </div>
+{% endblock %}
+
+{% block javascript %}
+  <script src="{% static 'js/switch_change_events.js' %}"></script>
+
+  <script type="text/javascript">
+    function changeHandler(input) {
+      input.closest('.edit_profile_card__inner-section').classList.toggle('active');
+    }
+    switch_change_events($('.grid-nl-cards'), null, changeHandler);
+
+  </script>
 {% endblock %}

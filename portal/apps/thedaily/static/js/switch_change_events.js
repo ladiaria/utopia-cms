@@ -6,7 +6,7 @@ function showNotification(notification) {
   notificationBox.classList.remove("error");
   if (isError) notificationBox.classList.add("error");
   notificationBox.querySelector("p").textContent = notification.text;
-  setTimeout(function() {
+  setTimeout(function () {
     notificationBox.style.display = "none";
   }, isError ? 3000 : 2000);
 }
@@ -30,7 +30,7 @@ function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement) {
     data: data,
     url: newsletterUrl,
     cache: false,
-    success: function(html, textStatus) {
+    success: function (html, textStatus) {
       showNotification({
         text: "Tus cambios fueron guardados"
       });
@@ -41,7 +41,7 @@ function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement) {
         type: "error",
         duration: 3000,
       });
-      setTimeout(function() {
+      setTimeout(function () {
         revertSwitch(switchHTMLElement)
       }, 250);
     }
@@ -49,7 +49,7 @@ function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement) {
 }
 
 // set switch change events
-function switch_change_events(switches, push_notifications_keys_set){
+function switch_change_events(switches, push_notifications_keys_set, changeHandler) {
   for (let i = 0; i < switches.length; i++) {
     const switchElement = switches[i];
     const input = switchElement.querySelector('input[type="checkbox"]');
@@ -77,6 +77,7 @@ function switch_change_events(switches, push_notifications_keys_set){
           input.setAttribute("disabled", "disabled");
         }
       }
+      changeHandler(input);
     });
   }
 }
