@@ -1430,6 +1430,10 @@ def user_profile(request, user_id):
     return edit_profile(request, user)
 
 
+def newsletters(request):
+    return render(request, get_app_template("newsletters.html"))
+
+
 @never_cache
 @api_view(['POST', "PUT"])
 @api_view_auth_decorator

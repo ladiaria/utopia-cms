@@ -1,0 +1,51 @@
+@import "../utopia_mixins";
+@import "../utopia_materialize/variables";
+
+body.user-newsletters {
+  p,
+  a,
+  h1 {
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 1132px;
+    padding: 60px 0;
+  }
+
+  h1 {
+    font-size: px-to-rem(28px);
+  }
+
+  p.deck {
+    padding-top: 12px;
+    color: #4f4f4f;
+    font-size: px-to-rem(18px);
+  }
+
+  .grid-nl-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding-top: 60px;
+
+    @media #{$medium-and-down} {
+      grid-template-columns: repeat(1, 1fr);
+    }
+  }
+
+  .edit_profile_card {
+    &__inner-section {
+      box-shadow: 2px 2px 4px 0px rgba(0, 0, 0, 0.25);
+      margin: 0;
+
+      &.active {
+        box-shadow: none;
+        border: 2px solid #21966a;
+        background-color: white;
+      }
+    }
+  }
+}

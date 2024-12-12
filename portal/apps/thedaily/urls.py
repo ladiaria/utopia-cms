@@ -13,6 +13,7 @@ from .views import (
     referrals,
     google_phone,
     user_profile,
+    newsletters,
     users_api,
     signup,
     edit_profile,
@@ -122,6 +123,7 @@ urlpatterns = [
     ),
     path('perfil/<int:user_id>/', user_profile, name="user-profile"),
 
+    path('newsletters/', newsletters, name="newsletters"),
     path('registrate/', signup, name="account-signup"),
     path('registrate/google/', google_phone, name="account-google"),
     path('salir/', logout_view, name="account-logout"),

@@ -1,0 +1,113 @@
+{% extends base_template %}
+{% load static %}
+
+{% block page_title %}Configurá tus Newsletters{% endblock %}
+
+{% block body_class %}user-newsletters{% endblock %}
+
+{% block css %}
+  <link href="{% static 'sass/pages/_user_newsletters.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
+{% block content %}
+  <h1>Recibí por mail el contenido que te interesa</h1>
+  <p class="deck">Acá encontrarás las newsletters de <em>la diaria</em> que aún no tenés activadas. Si querés desactivar alguna, podrás hacerlo ingresando a tu perfil.</p>
+
+  <div class="grid-nl-cards">
+    <div class="edit_profile_card__inner-section">
+      <div class="edit_profile_card__inner-section_header">
+        <label class="title" for="id_newsletters_1">A la mañana</label>
+        <div class="switch-container">
+          <span class="label-text on" style="display: none;">Activada</span>
+          <span class="label-text off" style="display: inline-block;">Activar</span>
+          <label class="ld-switch">
+            <input type="checkbox" id="id_newsletters_1"
+              name="newsletters"
+              value="ladiaria"
+              data-url="/usuarios/nlsubscribe/p.ladiaria/"
+              data-key="nl_subscribe"
+              data-bouncer="false"
+            >
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="edit_profile_card__inner-section_body">
+        <p class="periodicity">de lunes a viernes a la mañana.</p>
+        <p class="description">Empezá tu día con toda la información + la columna <i>Apuntes del día</i> de Marcelo Pereira.</p>
+      </div>
+    </div>
+    <div class="edit_profile_card__inner-section active">
+      <div class="edit_profile_card__inner-section_header">
+        <label class="title" for="id_newsletters_1">A la mañana</label>
+        <div class="switch-container">
+          <span class="label-text on" style="display: inline-block;">Activada</span>
+          <span class="label-text off" style="display: none;">Activar</span>
+          <label class="ld-switch">
+            <input type="checkbox" id="id_newsletters_1"
+              name="newsletters"
+              value="ladiaria"
+              data-url="/usuarios/nlsubscribe/p.ladiaria/"
+              data-key="nl_subscribe"
+              data-bouncer="false"
+              checked="checked"
+            >
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="edit_profile_card__inner-section_body">
+        <p class="periodicity">de lunes a viernes a la mañana.</p>
+        <p class="description">Empezá tu día con toda la información + la columna <i>Apuntes del día</i> de Marcelo Pereira.</p>
+      </div>
+    </div>
+    <div class="edit_profile_card__inner-section active">
+      <div class="edit_profile_card__inner-section_header">
+        <label class="title" for="id_newsletters_1">A la mañana</label>
+        <div class="switch-container">
+          <span class="label-text on" style="display: inline-block;">Activada</span>
+          <span class="label-text off" style="display: none;">Activar</span>
+          <label class="ld-switch">
+            <input type="checkbox" id="id_newsletters_1"
+              name="newsletters"
+              value="ladiaria"
+              data-url="/usuarios/nlsubscribe/p.ladiaria/"
+              data-key="nl_subscribe"
+              data-bouncer="false"
+              checked="checked"
+            >
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="edit_profile_card__inner-section_body">
+        <p class="periodicity">de lunes a viernes a la mañana.</p>
+        <p class="description">Empezá tu día con toda la información + la columna <i>Apuntes del día</i> de Marcelo Pereira.</p>
+      </div>
+    </div>
+    <div class="edit_profile_card__inner-section active">
+      <div class="edit_profile_card__inner-section_header">
+        <label class="title" for="id_newsletters_1">A la mañana</label>
+        <div class="switch-container">
+          <span class="label-text on" style="display: inline-block;">Activada</span>
+          <span class="label-text off" style="display: none;">Activar</span>
+          <label class="ld-switch">
+            <input type="checkbox" id="id_newsletters_1"
+              name="newsletters"
+              value="ladiaria"
+              data-url="/usuarios/nlsubscribe/p.ladiaria/"
+              data-key="nl_subscribe"
+              data-bouncer="false"
+              checked="checked"
+            >
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="edit_profile_card__inner-section_body">
+        <p class="periodicity">de lunes a viernes a la mañana.</p>
+        <p class="description">Empezá tu día con toda la información + la columna <i>Apuntes del día</i> de Marcelo Pereira.</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
