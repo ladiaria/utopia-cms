@@ -65,6 +65,16 @@ body.user-newsletters {
         border: 2px solid #21966a;
         background-color: white;
       }
+      &_header {
+        border-bottom: 1px solid #d8d8d8;
+        padding-bottom: 12px;
+      }
+      &_body {
+        padding-top: 12px;
+      }
+      .description {
+        padding-top: 12px;
+      }
     }
   }
 }
