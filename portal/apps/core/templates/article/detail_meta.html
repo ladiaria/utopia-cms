@@ -19,7 +19,7 @@
     <meta property="og:image" content="{{ SITE_URL_SD }}{% static satirical_social_img %}">
   {% endwith %}
 {% elif open_graph_author_img %}
-  {% thumbnail open_graph_author_img "1200x675" crop="top" as im %}
+  {% thumbnail open_graph_author_img "1200x630" crop="top" as im %} {# TODO: Check crop position #}
   <meta property="og:image" content="{{ SITE_URL_SD }}{{ im.url }}">
   {% endthumbnail %}
 {% elif default_pub.open_graph_image %}
