@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
 import re
+from os.path import join
 from generator.views import contribute
 from rest_framework import serializers, viewsets, routers
 
@@ -250,14 +250,35 @@ urlpatterns = [
     # Custom redirects
     path('suscribite-por-telefono/', RedirectView.as_view(url='/usuarios/suscribite-por-telefono/')),
     path('suscribite/', RedirectView.as_view(url=reverse_lazy('subscribe_landing'))),
-    re_path(
-        r'^contacto/', RedirectView.as_view(url=getattr(settings, 'CONTACT_REDIRECT_URL', '/')), name="contact-form"
-    ),
     # AMP copy iframe
     re_path(r'^copier/', TemplateView.as_view(template_name="core/templates/amp/article/copier.html"), name='copier'),
     # AMP reader ID
     path('amp-readerid/', include('django_amp_readerid.urls')),
 ]
+
+# contact and help redirects
+contact_redirection = getattr(settings, 'CONTACT_REDIRECT_URL', None)
+flatpage_not_configured = TemplateView.as_view(
+    template_name=join(getattr(settings, 'PORTAL_FLATPAGES_DIR', 'flatpages'), 'not-configured.html'),
+    extra_context={
+        "content_text":
+            "La página o acción a la cual has accedido aún no se ha configurado en nuestro sitio.",
+    }
+)
+urlpatterns.append(
+    re_path(
+        r'^contacto/',
+        (RedirectView.as_view(url=contact_redirection) if contact_redirection else flatpage_not_configured),
+        name="contact-form",
+    )
+)
+help_redirection = getattr(settings, 'HELP_REDIRECT_URL', None)
+if help_redirection:
+    # Match only the first path segment to be url-tag-usage friendly, example: href="{% url 'help' %}help-subpage/"
+    urlpatterns.append(re_path(r'^ayuda/$', RedirectView.as_view(url=help_redirection), name="help"))
+else:
+    # Match any /ayuda/... pattern and render the not-configured template
+    urlpatterns.append(re_path(r'^ayuda/', flatpage_not_configured, name="help"))
 
 # Used to add customized url patterns from custom modules
 urls_custom_modules = getattr(settings, 'PORTAL_URLS_CUSTOM_MODULES', [])
