@@ -11,9 +11,12 @@ from django.contrib.sites.models import Site
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
 from thedaily.views import get_password_validation_url
 from thedaily.tasks import notify_subscription, send_notification
+from thedaily.management.commands.automatic_mail_paywall import send_message
 
 
 class Command(BaseCommand):
+    # TODO: make "wrappers" for each kind of send action, this way, the template can be encapsulated on it and won't be
+    # necessary to pass it here duplicating code with hardcoded filenames. (signup_wall is already using this approach)
     help = '(this can be seen as a test), the suffix "preview" was choosed for not to make confussion with native test'
 
     def add_arguments(self, parser):
@@ -104,6 +107,9 @@ class Command(BaseCommand):
             'Tu cuenta gratuita está activa',
             {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
+
+        # signup_wall.html
+        send_message(u)
 
     def handle(self, *args, **options):
         user_id = options.get("user_id")

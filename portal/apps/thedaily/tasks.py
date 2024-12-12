@@ -11,6 +11,7 @@ from libs.utils import smtp_connect
 from thedaily.models import SentMail
 
 
+notifications_template_dir = getattr(settings, 'THEDAILY_NOTIFICATIONS_TEMPLATE_DIR', 'notifications/')
 welcome_email_sub = 'Tu suscripción %s está activa'
 
 

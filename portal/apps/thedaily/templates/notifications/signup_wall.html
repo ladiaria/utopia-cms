@@ -1,0 +1,30 @@
+{% extends notifications_signup_base %}
+
+{% block body %}
+  <tr>
+    <td>
+      <p>Hola, ¿cómo estás?</p>
+      <p>
+        Nos alegra que te interesen los contenidos de <span style="font-style: italic;">{{ site.name }}</span>,
+        notamos que ya leíste {{ signupwall_max_credits|pluralize:"el,los" }}
+        {% if signupwall_max_credits > 1 %}{{ signupwall_max_credits }} {% endif %}artículo{{ signupwall_max_credits|pluralize }}
+        mensual{{ signupwall_max_credits|pluralize:"es" }} de tu cuenta gratuita, para acceder a todos los artículos
+        de {{ site.name }} de forma ilimitada suscribite.
+      </p>
+    </td>
+  </tr>
+{% endblock %}
+
+{% block second_extra_body %}
+  <tr>
+    <td>
+      <p>
+        Si no querés recibir más estos emails, desactivá el item "Promociones" en el
+        <a href="{{ SITE_URL_SD }}/usuarios/perfil/editar/" style="color: #0a0a0a;">Panel de opciones</a>.
+      </p>
+      <p>
+        ¿Tenés problemas para ingresar? <a href="{{ SITE_URL_SD }}/TODO-esto-sera-una-pagina-estatica-signo-de-pregunta/como-ingresar-al-sitio-web/" style="color: #0a0a0a;">Tutorial de cómo ingresar al sitio web</a>.
+      </p>
+    </td>
+  <tr>
+{% endblock %}

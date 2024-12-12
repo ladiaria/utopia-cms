@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import re
 import json
 import requests
@@ -40,6 +39,7 @@ from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+
 from libs.utils import crm_rest_api_kwargs
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy

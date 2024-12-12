@@ -432,6 +432,7 @@ THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
+THEDAILY_AUTOMATIC_MAIL_LOGFILE = "/var/log/utopiacms/thedaily/automatic_mail.log"
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
@@ -562,7 +563,7 @@ COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
 if locals().get("DEBUG_TOOLBAR_ENABLE"):
     # NOTE when enabled, you need to: pip install "django-debug-toolbar==4.3.0" && ./manage.py collectstatic
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE = MIDDLEWARE[:8] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[8:]
+    MIDDLEWARE = MIDDLEWARE[:9] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[9:]
 
 DEBUG = locals().get("DEBUG", False)
 if DEBUG:
