@@ -1547,6 +1547,10 @@ class ArticleBase(Model, CT):
         return self.photo and self.photo.extended.photographer
 
     @property
+    def photo_agency(self):
+        return self.photo and self.photo.extended.agency
+
+    @property
     def photo_caption(self):
         result = self.photo.caption or "Foto principal del artículo '%s'" % remove_markup(self.headline)
         if self.photo_author:
