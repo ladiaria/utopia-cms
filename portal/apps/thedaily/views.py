@@ -78,6 +78,8 @@ from signupwall.middleware import (
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
+from thedaily.utils import unsubscribed_newsletters
+
 from .models import (
     Subscriber,
     Subscription,
@@ -1431,7 +1433,19 @@ def user_profile(request, user_id):
 
 
 def newsletters(request):
-    return render(request, get_app_template("newsletters.html"))
+    # Create context variable
+    context = {}
+    user = request.user
+    is_authenticated, user_has_subscriber = user.is_authenticated, hasattr(user, 'subscriber')
+    if (
+        is_authenticated
+        and user_has_subscriber
+        and user.email
+        and user.email not in bouncer_blocklisted
+    ):
+        context["unsubscribed_newsletters"] = unsubscribed_newsletters(user.subscriber, False)
+
+    return render(request, get_app_template("newsletters.html"), context)
 
 
 @never_cache
