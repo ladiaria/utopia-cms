@@ -53,7 +53,9 @@
     function changeHandler(input) {
       input.closest('.edit_profile_card__inner-section').classList.toggle('active');
     }
-    switch_change_events($('.grid-nl-cards'), null, changeHandler);
+    $(function() {
+      switch_change_events($('.grid-nl-cards .switch-container'), null, changeHandler);
+    });
 
   </script>
 {% endblock %}
