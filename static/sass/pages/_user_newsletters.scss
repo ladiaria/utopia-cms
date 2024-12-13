@@ -62,6 +62,10 @@ body.user-newsletters {
       border: none;
       outline: 1px solid #d8d8d8;
 
+      &:hover {
+        box-shadow: none;
+      }
+
       &.active {
         box-shadow: none;
         outline: 2px solid #21966a;
