@@ -39,7 +39,7 @@ def youtube_api_playlistItems(youtube_api, playlistId, maxResults=8, reverse=Fal
     items = [
         (
             (v["snippet"]["resourceId"]["videoId"], v["snippet"]["title"])
-            + (v["snippet"]["description"],) if include_description else ()
+            + ((v["snippet"]["description"],) if include_description else ())
             + ("playlist",)
         ) for v in youtube_api.playlistItems().list(
             part="snippet", playlistId=playlistId, maxResults=maxResults
@@ -97,7 +97,9 @@ def youtube_api_search(
                 ]
 
             elif playlistId:
-                items += youtube_api_playlistItems(youtube_api, playlistId, maxResults, include_description)
+                items += youtube_api_playlistItems(
+                    youtube_api, playlistId, maxResults, include_description=include_description
+                )
             if embeds:
                 items = youtube_api_embeds(youtube_api, [item[0] for item in items])
     return items
