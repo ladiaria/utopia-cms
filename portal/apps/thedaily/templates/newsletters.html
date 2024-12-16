@@ -12,14 +12,9 @@
 {% block content %}
   {% include 'profile/notification_box.html' %}
 
-  {% if unsubscribed_newsletters %}
+  {% if False %}
     <h1>Recibí por mail el contenido que te interesa</h1>
     <p class="deck">Acá encontrarás las newsletters de <em>la diaria</em> que aún no tenés activadas. Si querés desactivar alguna, podrás hacerlo <a href="{% url 'edit-profile' %}">ingresando a tu perfil</a>.</p>
-  {% else %}
-    <h1>Ya activaste todas las newsletters de <em>la diaria</em></h1>
-    <p class="deck">Si querés desactivar alguna, podrás hacerlo <a href="{% url 'edit-profile' %}">ingresando a tu perfil</a>.</p>
-  {% endif %}
-  {% if unsubscribed_newsletters %}
     <div class="grid-nl-cards">
       {% for nl_item in unsubscribed_newsletters %}
         <div class="edit_profile_card__inner-section">
@@ -50,6 +45,11 @@
           </div>
         </div>
       {% endfor %}
+    </div>
+  {% else %}
+    <div class="no-nls">
+      <h1>Ya activaste todas las newsletters de <em>la diaria</em></h1>
+      <p class="deck">Si querés desactivar alguna, podrás hacerlo <a href="{% url 'edit-profile' %}">ingresando a tu perfil</a>.</p>
     </div>
   {% endif %}
 {% endblock %}

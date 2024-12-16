@@ -92,4 +92,14 @@ body.user-newsletters {
       }
     }
   }
+
+  .no-nls {
+    max-width: 45.8rem;
+    margin: 0 auto;
+    min-height: 280px;
+
+    p.deck {
+      padding-top: 1rem;
+    }
+  }
 }
