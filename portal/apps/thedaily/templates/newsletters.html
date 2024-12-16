@@ -24,13 +24,15 @@
             <span class="label-text on" style="display: none;">Activada</span>
             <span class="label-text off" style="display: inline-block;">Activar</span>
             <label class="ld-switch">
-              <input type="checkbox" id="id_{{ nl_item.slug }}"
-                name="{{ nl_item.slug }}"
-                value="ladiaria"
-                data-url="{% url 'nl-auth-subscribe' nltype=nl_item.nltype nlslug=nl_item.slug %}"
-                data-key="com_subscribe"
-                data-bouncer="false"
-              >
+              {% if not user.is_anonymous %}
+                <input type="checkbox" id="id_{{ nl_item.slug }}"
+                  name="{{ nl_item.slug }}"
+                  value="ladiaria"
+                  data-url="{% url 'nl-auth-subscribe' nltype=nl_item.nltype nlslug=nl_item.slug %}"
+                  data-key="com_subscribe"
+                  data-bouncer="false"
+                >
+              {% endif %}
               <span class="slider"></span>
             </label>
           </div>
@@ -47,15 +49,26 @@
 {% endblock %}
 
 {% block javascript %}
-  <script src="{% static 'js/switch_change_events.js' %}"></script>
+  {% if not user.is_anonymous  %}
+    <script src="{% static 'js/switch_change_events.js' %}"></script>
+  {% endif %}
 
   <script type="text/javascript">
-    function changeHandler(input) {
-      input.closest('.edit_profile_card__inner-section').classList.toggle('active');
-    }
-    $(function() {
-      switch_change_events($('.grid-nl-cards .switch-container'), null, changeHandler);
-    });
+    {% if not user.is_anonymous  %}
+      function changeHandler(input) {
+        input.closest('.edit_profile_card__inner-section').classList.toggle('active');
+      }
+      $(function() {
+        switch_change_events($('.grid-nl-cards .switch-container'), null, changeHandler);
+      });
+    {% else %}
+      const switches = document.querySelectorAll('.ld-switch');
 
+      for (let i = 0; i < switches.length; i++) {
+        switches[i].addEventListener("click", (e) => {
+          window.location.href = "{% url 'account-signup' %}";
+        })
+      }
+    {% endif %}
   </script>
 {% endblock %}

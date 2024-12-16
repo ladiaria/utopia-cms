@@ -1433,17 +1433,27 @@ def user_profile(request, user_id):
 
 
 def newsletters(request):
-    # Create context variable
-    context = {}
     user = request.user
-    is_authenticated, user_has_subscriber = user.is_authenticated, hasattr(user, 'subscriber')
-    if (
-        is_authenticated
-        and user_has_subscriber
+    subscriber = getattr(user, 'subscriber', None)
+
+    # Verificar si el usuario puede tener newsletters no suscritas basadas en las condiciones
+    user_can_subscribe = (
+        user.is_authenticated
+        and subscriber is not None
         and user.email
         and user.email not in bouncer_blocklisted
-    ):
-        context["unsubscribed_newsletters"] = unsubscribed_newsletters(user.subscriber, False)
+    )
+
+    # Si el usuario puede suscribirse, se le pasan sus datos; en caso contrario se pasa False.
+    unsubscribed_list = unsubscribed_newsletters(subscriber if user_can_subscribe else False, False)
+
+    context = {
+        "unsubscribed_newsletters": unsubscribed_list
+    }
+
+    # Si el usuario no cumple las condiciones, lo añadimos al contexto
+    if not user_can_subscribe:
+        context["user"] = user
 
     return render(request, get_app_template("newsletters.html"), context)
 
