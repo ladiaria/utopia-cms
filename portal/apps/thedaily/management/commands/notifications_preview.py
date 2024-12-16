@@ -12,7 +12,7 @@ from libs.tokens.email_confirmation import send_validation_email, get_signup_val
 from thedaily.views import get_password_validation_url
 from thedaily.tasks import notify_subscription, send_notification
 from thedaily.management.commands.automatic_mail_paywall import send_message
-
+from thedaily.utils import get_app_template
 
 class Command(BaseCommand):
     # TODO: make "wrappers" for each kind of send action, this way, the template can be encapsulated on it and won't be
@@ -41,7 +41,7 @@ class Command(BaseCommand):
         was_sent = send_validation_email(
             'Ingreso al sitio web',
             u,
-            'notifications/account_info.html',
+            get_app_template('notifications/account_info.html'),
             get_signup_validation_url,
             {'user_email': u.email},
         )
@@ -52,7 +52,7 @@ class Command(BaseCommand):
         was_sent = send_validation_email(
             'Verificá tu cuenta',
             u,
-            'notifications/account_signup.html',
+            get_app_template('notifications/account_signup.html'),
             get_signup_validation_url,
         )
         if not was_sent:
@@ -63,7 +63,7 @@ class Command(BaseCommand):
             was_sent = send_validation_email(
                 'Verificá tu cuenta de ' + site.name,
                 u,
-                'notifications/account_signup_subscribed.html',
+                get_app_template('notifications/account_signup_subscribed.html'),
                 get_signup_validation_url,
             )
             if not was_sent:
@@ -74,7 +74,7 @@ class Command(BaseCommand):
 
         # new subscriptions
         html_message = render_to_string(
-            'notifications/validation_email.html',
+            get_app_template('notifications/validation_email.html'),
             {"site": site, "SITE_URL_SD": settings.SITE_URL_SD, 'logo_url': settings.HOMEV3_SECONDARY_LOGO},
         )
         # validation_email.html
@@ -91,7 +91,7 @@ class Command(BaseCommand):
             was_sent = send_validation_email(
                 'Recuperación de contraseña',
                 u,
-                'notifications/password_reset_body.html',
+                get_app_template('notifications/password_reset_body.html'),
                 get_password_validation_url,
             )
             if not was_sent:
@@ -103,7 +103,7 @@ class Command(BaseCommand):
         # signup.html
         send_notification(
             u,
-            'notifications/signup.html',
+            get_app_template('notifications/signup.html'),
             'Tu cuenta gratuita está activa',
             {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )

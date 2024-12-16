@@ -28,7 +28,7 @@ from .models import (
     RemainingContent,
     MailtrainList,
 )
-from .utils import collector_analysis
+from .utils import collector_analysis, get_app_template
 from .exceptions import UpdateCrmEx
 
 
@@ -130,7 +130,7 @@ class SubscriberAdmin(ModelAdmin):
                 was_sent = send_validation_email(
                     'Ingreso al sitio web',
                     s.user,
-                    'notifications/account_info.html',
+                    get_app_template('notifications/account_info.html'),
                     get_signup_validation_url,
                     {'user_email': s.user.email},
                 )
