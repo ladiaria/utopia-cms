@@ -12,40 +12,46 @@
 {% block content %}
   {% include 'profile/notification_box.html' %}
 
-  <h1>Recibí por mail el contenido que te interesa</h1>
-  <p class="deck">Acá encontrarás las newsletters de <em>la diaria</em> que aún no tenés activadas. Si querés desactivar alguna, podrás hacerlo ingresando a <a href="{% url 'edit-profile' %}">tu perfil</a>.</p>
-
-  <div class="grid-nl-cards">
-    {% for nl_item in unsubscribed_newsletters %}
-      <div class="edit_profile_card__inner-section">
-        <div class="edit_profile_card__inner-section_header">
-          <label class="title" for="id_newsletters_1">{{ nl_item.profile_newsletter_name|default:nl_item.name }}</label>
-          <div class="switch-container">
-            <span class="label-text on" style="display: none;">Activada</span>
-            <span class="label-text off" style="display: inline-block;">Activar</span>
-            <label class="ld-switch">
-              {% if not user.is_anonymous %}
-                <input type="checkbox" id="id_{{ nl_item.slug }}"
-                  name="{{ nl_item.slug }}"
-                  value="ladiaria"
-                  data-url="{% url 'nl-auth-subscribe' nltype=nl_item.nltype nlslug=nl_item.slug %}"
-                  data-key="com_subscribe"
-                  data-bouncer="false"
-                >
-              {% endif %}
-              <span class="slider"></span>
-            </label>
+  {% if unsubscribed_newsletters %}
+    <h1>Recibí por mail el contenido que te interesa</h1>
+    <p class="deck">Acá encontrarás las newsletters de <em>la diaria</em> que aún no tenés activadas. Si querés desactivar alguna, podrás hacerlo <a href="{% url 'edit-profile' %}">ingresando a tu perfil</a>.</p>
+  {% else %}
+    <h1>Ya activaste todas las newsletters de <em>la diaria</em></h1>
+    <p class="deck">Si querés desactivar alguna, podrás hacerlo <a href="{% url 'edit-profile' %}">ingresando a tu perfil</a>.</p>
+  {% endif %}
+  {% if unsubscribed_newsletters %}
+    <div class="grid-nl-cards">
+      {% for nl_item in unsubscribed_newsletters %}
+        <div class="edit_profile_card__inner-section">
+          <div class="edit_profile_card__inner-section_header">
+            <label class="title" for="id_newsletters_1">{{ nl_item.profile_newsletter_name|default:nl_item.name }}</label>
+            <div class="switch-container">
+              <span class="label-text on" style="display: none;">Activada</span>
+              <span class="label-text off" style="display: inline-block;">Activar</span>
+              <label class="ld-switch">
+                {% if not user.is_anonymous %}
+                  <input type="checkbox" id="id_{{ nl_item.slug }}"
+                    name="{{ nl_item.slug }}"
+                    value="ladiaria"
+                    data-url="{% url 'nl-auth-subscribe' nltype=nl_item.nltype nlslug=nl_item.slug %}"
+                    data-key="nl_subscribe"
+                    data-bouncer="false"
+                  >
+                {% endif %}
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="edit_profile_card__inner-section_body">
+            {% if nl_item.newsletter_periodicity %}
+              <p class="periodicity">{{ nl_item.newsletter_periodicity }}.</p>
+            {% endif %}
+            <p class="description">{{ nl_item.newsletter_tagline|safe }}.</p>
           </div>
         </div>
-        <div class="edit_profile_card__inner-section_body">
-          {% if nl_item.newsletter_periodicity %}
-            <p class="periodicity">{{ nl_item.newsletter_periodicity }}.</p>
-          {% endif %}
-          <p class="description">{{ nl_item.newsletter_tagline|safe }}.</p>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block javascript %}
