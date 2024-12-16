@@ -100,6 +100,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             'news_wall_enabled': getattr(settings, 'HOMEV3_NEWS_WALL_ENABLED', True),
             'bigphoto_template': getattr(settings, 'HOMEV3_BIGPHOTO_TEMPLATE', 'bigphoto.html'),
             'allow_mas_leidos': getattr(settings, 'HOMEV3_ALLOW_MAS_LEIDOS', True),
+            'youtube_playlist_id': getattr(settings, "HOMEV3_YOUTUBE_PLAYLIST_ID", None)
         }
     )
 
