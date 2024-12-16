@@ -14,7 +14,7 @@
       ]]>
     </style>
     <style>
-      .body a{color:#262626}
+      .body a{color:{%block anchor_color %}#262626{% endblock %}}
       @font-face {
         font-family: 'Roboto';
         font-style: normal;
@@ -62,7 +62,7 @@
         </tr>
       </tbody>
     </table>
-    <table style="box-sizing: border-box; width: 100%; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 24px; height: 0px; min-height: 30px; margin-top: 10px; margin-right: auto; margin-bottom: 0px; margin-left: auto; border-collapse: separate; max-width: 580px; background-color:{% block bg_color_body %}white{% endblock %}; border: 1px solid #D8D8D8; font-family: Roboto, sans-serif; color: #616161;"
+    <table style="box-sizing: border-box; width: 100%; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 24px; height: 0px; min-height: 30px; margin-top: 10px; margin-right: auto; margin-bottom: 0px; margin-left: auto; border-collapse: separate; max-width: 580px; background-color:{% block bg_color_body %}white{% endblock %}; border: 1px solid #D8D8D8; font-family: Roboto, sans-serif; color: {% block body_color %}#616161{% endblock %};"
            width="100%" height="0">
       <tbody style="box-sizing: border-box;background:white">
         {% block body %}
