@@ -4,6 +4,7 @@ from builtins import str
 
 from django.conf import settings
 from django.http import HttpResponseRedirect
+from django.db import IntegrityError
 from django.db.models.deletion import Collector
 from django.contrib import admin
 from django.contrib.auth.models import User
@@ -37,6 +38,9 @@ class UserAdmin(BaseUserAdmin):
         result = None
         try:
             result = super().change_view(request, object_id, form_url, extra_context)
+        except IntegrityError as ie:
+            self.message_user(request, str(ie), level=messages.ERROR)
+            result = HttpResponseRedirect(request.get_full_path())
         except UpdateCrmEx:
             self.message_user(
                 request, 'Error de comunicación con el CRM, no se aplicaron los cambios', level=messages.ERROR
@@ -185,8 +189,23 @@ class SubscriberAdmin(ModelAdmin):
 
 
 class SubscriptionPricesAdmin(ModelAdmin):
-    list_display = ('id', 'subscription_type', 'price', 'order', 'auth_group', 'publication')
-    list_editable = ('subscription_type', 'price', 'order', 'auth_group', 'publication')
+    list_display = (
+        '__str__', 'order', 'months', 'price', 'price_total', "discount", 'auth_group', 'publication'
+    )
+    list_editable = list_display[1:]
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        field = super().formfield_for_dbfield(db_field, **kwargs)
+        if db_field.name in ('price', 'price_total'):
+            field.widget.attrs['style'] = 'width:8em;'
+        elif db_field.name == 'discount':
+            field.widget.attrs['style'] = 'width:5em;'
+        elif db_field.name in ('order', 'months'):
+            field.widget.attrs['style'] = 'width:3em;'
+        elif db_field.name == 'extra_info':
+            field.required = False
+            field.widget.attrs = {'style': 'width:80%;font-family:monospace', 'spellcheck': "false", 'rows': 10}
+        return field
 
 
 class RemainingContentAdmin(ModelAdmin):

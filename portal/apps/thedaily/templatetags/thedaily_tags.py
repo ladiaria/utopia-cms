@@ -107,7 +107,7 @@ register.tag('iftimeuntil', if_time)
 
 
 @register.simple_tag
-def subscriptionprice(subscription_type):
+def subscriptionprice(subscription_type=settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT):
     try:
         price = SubscriptionPrices.objects.get(subscription_type=subscription_type).price
     except SubscriptionPrices.DoesNotExist:

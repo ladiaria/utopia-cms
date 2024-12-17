@@ -1,0 +1,1187 @@
+[
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Publicidad",
+    "permissions": [
+      [
+        "add_adbase",
+        "adzone",
+        "adbase"
+      ],
+      [
+        "change_adbase",
+        "adzone",
+        "adbase"
+      ],
+      [
+        "delete_adbase",
+        "adzone",
+        "adbase"
+      ],
+      [
+        "view_adbase",
+        "adzone",
+        "adbase"
+      ],
+      [
+        "add_adcategory",
+        "adzone",
+        "adcategory"
+      ],
+      [
+        "change_adcategory",
+        "adzone",
+        "adcategory"
+      ],
+      [
+        "delete_adcategory",
+        "adzone",
+        "adcategory"
+      ],
+      [
+        "view_adcategory",
+        "adzone",
+        "adcategory"
+      ],
+      [
+        "add_adclick",
+        "adzone",
+        "adclick"
+      ],
+      [
+        "change_adclick",
+        "adzone",
+        "adclick"
+      ],
+      [
+        "delete_adclick",
+        "adzone",
+        "adclick"
+      ],
+      [
+        "view_adclick",
+        "adzone",
+        "adclick"
+      ],
+      [
+        "add_adimpression",
+        "adzone",
+        "adimpression"
+      ],
+      [
+        "change_adimpression",
+        "adzone",
+        "adimpression"
+      ],
+      [
+        "delete_adimpression",
+        "adzone",
+        "adimpression"
+      ],
+      [
+        "view_adimpression",
+        "adzone",
+        "adimpression"
+      ],
+      [
+        "add_advertiser",
+        "adzone",
+        "advertiser"
+      ],
+      [
+        "change_advertiser",
+        "adzone",
+        "advertiser"
+      ],
+      [
+        "delete_advertiser",
+        "adzone",
+        "advertiser"
+      ],
+      [
+        "view_advertiser",
+        "adzone",
+        "advertiser"
+      ],
+      [
+        "add_adzone",
+        "adzone",
+        "adzone"
+      ],
+      [
+        "change_adzone",
+        "adzone",
+        "adzone"
+      ],
+      [
+        "delete_adzone",
+        "adzone",
+        "adzone"
+      ],
+      [
+        "view_adzone",
+        "adzone",
+        "adzone"
+      ],
+      [
+        "add_bannerad",
+        "adzone",
+        "bannerad"
+      ],
+      [
+        "change_bannerad",
+        "adzone",
+        "bannerad"
+      ],
+      [
+        "delete_bannerad",
+        "adzone",
+        "bannerad"
+      ],
+      [
+        "view_bannerad",
+        "adzone",
+        "bannerad"
+      ],
+      [
+        "add_textad",
+        "adzone",
+        "textad"
+      ],
+      [
+        "change_textad",
+        "adzone",
+        "textad"
+      ],
+      [
+        "delete_textad",
+        "adzone",
+        "textad"
+      ],
+      [
+        "view_textad",
+        "adzone",
+        "textad"
+      ],
+      [
+        "view_newsletterdelivery",
+        "dashboard",
+        "newsletterdelivery"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Audio",
+    "permissions": [
+      [
+        "add_audio",
+        "audiologue",
+        "audio"
+      ],
+      [
+        "change_audio",
+        "audiologue",
+        "audio"
+      ],
+      [
+        "delete_audio",
+        "audiologue",
+        "audio"
+      ],
+      [
+        "view_audio",
+        "audiologue",
+        "audio"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Editor",
+    "permissions": [
+      [
+        "delete_action",
+        "actstream",
+        "action"
+      ],
+      [
+        "add_attachment",
+        "attachments",
+        "attachment"
+      ],
+      [
+        "change_attachment",
+        "attachments",
+        "attachment"
+      ],
+      [
+        "delete_attachment",
+        "attachments",
+        "attachment"
+      ],
+      [
+        "view_attachment",
+        "attachments",
+        "attachment"
+      ],
+      [
+        "add_article",
+        "core",
+        "article"
+      ],
+      [
+        "change_article",
+        "core",
+        "article"
+      ],
+      [
+        "delete_article",
+        "core",
+        "article"
+      ],
+      [
+        "view_article",
+        "core",
+        "article"
+      ],
+      [
+        "add_articlebodyimage",
+        "core",
+        "articlebodyimage"
+      ],
+      [
+        "change_articlebodyimage",
+        "core",
+        "articlebodyimage"
+      ],
+      [
+        "delete_articlebodyimage",
+        "core",
+        "articlebodyimage"
+      ],
+      [
+        "view_articlebodyimage",
+        "core",
+        "articlebodyimage"
+      ],
+      [
+        "add_articleextension",
+        "core",
+        "articleextension"
+      ],
+      [
+        "change_articleextension",
+        "core",
+        "articleextension"
+      ],
+      [
+        "delete_articleextension",
+        "core",
+        "articleextension"
+      ],
+      [
+        "view_articleextension",
+        "core",
+        "articleextension"
+      ],
+      [
+        "add_articlerel",
+        "core",
+        "articlerel"
+      ],
+      [
+        "change_articlerel",
+        "core",
+        "articlerel"
+      ],
+      [
+        "delete_articlerel",
+        "core",
+        "articlerel"
+      ],
+      [
+        "view_articlerel",
+        "core",
+        "articlerel"
+      ],
+      [
+        "add_edition",
+        "core",
+        "edition"
+      ],
+      [
+        "change_edition",
+        "core",
+        "edition"
+      ],
+      [
+        "delete_edition",
+        "core",
+        "edition"
+      ],
+      [
+        "view_edition",
+        "core",
+        "edition"
+      ],
+      [
+        "add_editionheader",
+        "core",
+        "editionheader"
+      ],
+      [
+        "change_editionheader",
+        "core",
+        "editionheader"
+      ],
+      [
+        "delete_editionheader",
+        "core",
+        "editionheader"
+      ],
+      [
+        "view_editionheader",
+        "core",
+        "editionheader"
+      ],
+      [
+        "add_journalist",
+        "core",
+        "journalist"
+      ],
+      [
+        "change_journalist",
+        "core",
+        "journalist"
+      ],
+      [
+        "delete_journalist",
+        "core",
+        "journalist"
+      ],
+      [
+        "view_journalist",
+        "core",
+        "journalist"
+      ],
+      [
+        "add_location",
+        "core",
+        "location"
+      ],
+      [
+        "change_location",
+        "core",
+        "location"
+      ],
+      [
+        "delete_location",
+        "core",
+        "location"
+      ],
+      [
+        "view_location",
+        "core",
+        "location"
+      ],
+      [
+        "add_printonlyarticle",
+        "core",
+        "printonlyarticle"
+      ],
+      [
+        "change_printonlyarticle",
+        "core",
+        "printonlyarticle"
+      ],
+      [
+        "delete_printonlyarticle",
+        "core",
+        "printonlyarticle"
+      ],
+      [
+        "view_printonlyarticle",
+        "core",
+        "printonlyarticle"
+      ],
+      [
+        "add_section",
+        "core",
+        "section"
+      ],
+      [
+        "change_section",
+        "core",
+        "section"
+      ],
+      [
+        "delete_section",
+        "core",
+        "section"
+      ],
+      [
+        "view_section",
+        "core",
+        "section"
+      ],
+      [
+        "add_supplement",
+        "core",
+        "supplement"
+      ],
+      [
+        "change_supplement",
+        "core",
+        "supplement"
+      ],
+      [
+        "delete_supplement",
+        "core",
+        "supplement"
+      ],
+      [
+        "view_supplement",
+        "core",
+        "supplement"
+      ],
+      [
+        "add_gallery",
+        "photologue",
+        "gallery"
+      ],
+      [
+        "change_gallery",
+        "photologue",
+        "gallery"
+      ],
+      [
+        "delete_gallery",
+        "photologue",
+        "gallery"
+      ],
+      [
+        "view_gallery",
+        "photologue",
+        "gallery"
+      ],
+      [
+        "add_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "change_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "delete_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "view_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "add_url",
+        "short",
+        "url"
+      ],
+      [
+        "change_url",
+        "short",
+        "url"
+      ],
+      [
+        "delete_url",
+        "short",
+        "url"
+      ],
+      [
+        "view_url",
+        "short",
+        "url"
+      ],
+      [
+        "add_tag",
+        "tagging",
+        "tag"
+      ],
+      [
+        "change_tag",
+        "tagging",
+        "tag"
+      ],
+      [
+        "delete_tag",
+        "tagging",
+        "tag"
+      ],
+      [
+        "view_tag",
+        "tagging",
+        "tag"
+      ],
+      [
+        "add_taggeditem",
+        "tagging",
+        "taggeditem"
+      ],
+      [
+        "change_taggeditem",
+        "tagging",
+        "taggeditem"
+      ],
+      [
+        "delete_taggeditem",
+        "tagging",
+        "taggeditem"
+      ],
+      [
+        "view_taggeditem",
+        "tagging",
+        "taggeditem"
+      ],
+      [
+        "add_video",
+        "videologue",
+        "video"
+      ],
+      [
+        "change_video",
+        "videologue",
+        "video"
+      ],
+      [
+        "delete_video",
+        "videologue",
+        "video"
+      ],
+      [
+        "view_video",
+        "videologue",
+        "video"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Editor de módulo de último momento",
+    "permissions": [
+      [
+        "add_breakingnewsmodule",
+        "core",
+        "breakingnewsmodule"
+      ],
+      [
+        "change_breakingnewsmodule",
+        "core",
+        "breakingnewsmodule"
+      ],
+      [
+        "delete_breakingnewsmodule",
+        "core",
+        "breakingnewsmodule"
+      ],
+      [
+        "view_breakingnewsmodule",
+        "core",
+        "breakingnewsmodule"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Editores de áreas y newsletters",
+    "permissions": [
+      [
+        "change_adcategory",
+        "adzone",
+        "adcategory"
+      ],
+      [
+        "add_categoryhome",
+        "core",
+        "categoryhome"
+      ],
+      [
+        "change_categoryhome",
+        "core",
+        "categoryhome"
+      ],
+      [
+        "delete_categoryhome",
+        "core",
+        "categoryhome"
+      ],
+      [
+        "view_categoryhome",
+        "core",
+        "categoryhome"
+      ],
+      [
+        "add_categoryhomearticle",
+        "core",
+        "categoryhomearticle"
+      ],
+      [
+        "change_categoryhomearticle",
+        "core",
+        "categoryhomearticle"
+      ],
+      [
+        "delete_categoryhomearticle",
+        "core",
+        "categoryhomearticle"
+      ],
+      [
+        "view_categoryhomearticle",
+        "core",
+        "categoryhomearticle"
+      ],
+      [
+        "add_categorynewsletter",
+        "core",
+        "categorynewsletter"
+      ],
+      [
+        "change_categorynewsletter",
+        "core",
+        "categorynewsletter"
+      ],
+      [
+        "delete_categorynewsletter",
+        "core",
+        "categorynewsletter"
+      ],
+      [
+        "view_categorynewsletter",
+        "core",
+        "categorynewsletter"
+      ],
+      [
+        "add_categorynewsletterarticle",
+        "core",
+        "categorynewsletterarticle"
+      ],
+      [
+        "change_categorynewsletterarticle",
+        "core",
+        "categorynewsletterarticle"
+      ],
+      [
+        "delete_categorynewsletterarticle",
+        "core",
+        "categorynewsletterarticle"
+      ],
+      [
+        "view_categorynewsletterarticle",
+        "core",
+        "categorynewsletterarticle"
+      ],
+      [
+        "add_taggroup",
+        "groupedtags",
+        "taggroup"
+      ],
+      [
+        "change_taggroup",
+        "groupedtags",
+        "taggroup"
+      ],
+      [
+        "delete_taggroup",
+        "groupedtags",
+        "taggroup"
+      ],
+      [
+        "view_taggroup",
+        "groupedtags",
+        "taggroup"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Páginas",
+    "permissions": [
+      [
+        "add_flatpage",
+        "flatpages",
+        "flatpage"
+      ],
+      [
+        "change_flatpage",
+        "flatpages",
+        "flatpage"
+      ],
+      [
+        "delete_flatpage",
+        "flatpages",
+        "flatpage"
+      ],
+      [
+        "view_flatpage",
+        "flatpages",
+        "flatpage"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Fotografía admin",
+    "permissions": [
+      [
+        "add_gallery",
+        "photologue",
+        "gallery"
+      ],
+      [
+        "change_gallery",
+        "photologue",
+        "gallery"
+      ],
+      [
+        "delete_gallery",
+        "photologue",
+        "gallery"
+      ],
+      [
+        "view_gallery",
+        "photologue",
+        "gallery"
+      ],
+      [
+        "add_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "change_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "delete_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "view_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "add_agency",
+        "photologue_ladiaria",
+        "agency"
+      ],
+      [
+        "change_agency",
+        "photologue_ladiaria",
+        "agency"
+      ],
+      [
+        "delete_agency",
+        "photologue_ladiaria",
+        "agency"
+      ],
+      [
+        "view_agency",
+        "photologue_ladiaria",
+        "agency"
+      ],
+      [
+        "add_photoextended",
+        "photologue_ladiaria",
+        "photoextended"
+      ],
+      [
+        "change_photoextended",
+        "photologue_ladiaria",
+        "photoextended"
+      ],
+      [
+        "delete_photoextended",
+        "photologue_ladiaria",
+        "photoextended"
+      ],
+      [
+        "view_photoextended",
+        "photologue_ladiaria",
+        "photoextended"
+      ],
+      [
+        "add_photographer",
+        "photologue_ladiaria",
+        "photographer"
+      ],
+      [
+        "change_photographer",
+        "photologue_ladiaria",
+        "photographer"
+      ],
+      [
+        "delete_photographer",
+        "photologue_ladiaria",
+        "photographer"
+      ],
+      [
+        "view_photographer",
+        "photologue_ladiaria",
+        "photographer"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Fotografía fotos",
+    "permissions": [
+      [
+        "add_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "change_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "delete_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "view_photo",
+        "photologue",
+        "photo"
+      ],
+      [
+        "add_photoextended",
+        "photologue_ladiaria",
+        "photoextended"
+      ],
+      [
+        "change_photoextended",
+        "photologue_ladiaria",
+        "photoextended"
+      ],
+      [
+        "delete_photoextended",
+        "photologue_ladiaria",
+        "photoextended"
+      ],
+      [
+        "view_photoextended",
+        "photologue_ladiaria",
+        "photoextended"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Estadísticas de newsletters",
+    "permissions": [
+      [
+        "view_newsletterdelivery",
+        "dashboard",
+        "newsletterdelivery"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Preguntas frecuentes",
+    "permissions": [
+      [
+        "add_question",
+        "faq",
+        "question"
+      ],
+      [
+        "change_question",
+        "faq",
+        "question"
+      ],
+      [
+        "delete_question",
+        "faq",
+        "question"
+      ],
+      [
+        "view_question",
+        "faq",
+        "question"
+      ],
+      [
+        "add_topic",
+        "faq",
+        "topic"
+      ],
+      [
+        "change_topic",
+        "faq",
+        "topic"
+      ],
+      [
+        "delete_topic",
+        "faq",
+        "topic"
+      ],
+      [
+        "view_topic",
+        "faq",
+        "topic"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Modificar publicaciones",
+    "permissions": [
+      [
+        "change_publication",
+        "core",
+        "publication"
+      ],
+      [
+        "view_publication",
+        "core",
+        "publication"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Notificaciones push",
+    "permissions": [
+      [
+        "add_pushnotification",
+        "core",
+        "pushnotification"
+      ],
+      [
+        "change_pushnotification",
+        "core",
+        "pushnotification"
+      ],
+      [
+        "delete_pushnotification",
+        "core",
+        "pushnotification"
+      ],
+      [
+        "view_pushnotification",
+        "core",
+        "pushnotification"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Redirecciones admin",
+    "permissions": [
+      [
+        "add_redirect",
+        "redirects",
+        "redirect"
+      ],
+      [
+        "change_redirect",
+        "redirects",
+        "redirect"
+      ],
+      [
+        "delete_redirect",
+        "redirects",
+        "redirect"
+      ],
+      [
+        "view_redirect",
+        "redirects",
+        "redirect"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Paywall admin",
+    "permissions": [
+      [
+        "add_remainingcontent",
+        "thedaily",
+        "remainingcontent"
+      ],
+      [
+        "change_remainingcontent",
+        "thedaily",
+        "remainingcontent"
+      ],
+      [
+        "delete_remainingcontent",
+        "thedaily",
+        "remainingcontent"
+      ],
+      [
+        "view_remainingcontent",
+        "thedaily",
+        "remainingcontent"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Modificar Social Auth",
+    "permissions": [
+      [
+        "change_usersocialauth",
+        "social_django",
+        "usersocialauth"
+      ],
+      [
+        "delete_usersocialauth",
+        "social_django",
+        "usersocialauth"
+      ],
+      [
+        "view_usersocialauth",
+        "social_django",
+        "usersocialauth"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Acortador de urls",
+    "permissions": [
+      [
+        "add_url",
+        "short",
+        "url"
+      ],
+      [
+        "change_url",
+        "short",
+        "url"
+      ],
+      [
+        "delete_url",
+        "short",
+        "url"
+      ],
+      [
+        "view_url",
+        "short",
+        "url"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Modificar datos de usuarios registrados",
+    "permissions": [
+      [
+        "change_user",
+        "auth",
+        "user"
+      ],
+      [
+        "view_user",
+        "auth",
+        "user"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Ventas: Modificar precios",
+    "permissions": [
+      [
+        "change_subscriptionprices",
+        "thedaily",
+        "subscriptionprices"
+      ],
+      [
+        "view_subscriptionprices",
+        "thedaily",
+        "subscriptionprices"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Ventas: Modificar datos de los suscriptores",
+    "permissions": [
+      [
+        "change_subscriber",
+        "thedaily",
+        "subscriber"
+      ],
+      [
+        "view_subscriber",
+        "thedaily",
+        "subscriber"
+      ]
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Ventas: Modificar datos de las suscripciones asociadas a los suscriptores",
+    "permissions": [
+      [
+        "change_subscription",
+        "thedaily",
+        "subscription"
+      ],
+      [
+        "view_subscription",
+        "thedaily",
+        "subscription"
+      ]
+    ]
+  }
+}
+]

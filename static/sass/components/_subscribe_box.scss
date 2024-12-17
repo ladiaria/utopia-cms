@@ -7,31 +7,30 @@
   }
 
   &.pwa {
-      .dismiss {
-          margin:10px 0 0;
-        a {
-            display: inline-block;
-            font-size: 14px;
-            text-decoration: underline;
+    .dismiss {
+      margin: 10px 0 0;
+      a {
+        display: inline-block;
+        font-size: 14px;
+        text-decoration: underline;
 
-            &:hover {
-                text-decoration: none;
-            }
-
+        &:hover {
+          text-decoration: none;
         }
       }
-      .dismissed {
-        font-size: 14px;
-        line-height: 17px;
+    }
+    .dismissed {
+      font-size: 14px;
+      line-height: 17px;
 
-        .undo {
-            display: inline-block;
-            margin-top:10px;
+      .undo {
+        display: inline-block;
+        margin-top: 10px;
 
-            &:hover {
-                text-decoration: none;
-            }
+        &:hover {
+          text-decoration: none;
         }
+      }
     }
   }
 }
@@ -42,7 +41,10 @@
   max-width: 300px;
   padding: 26px;
   border-radius: 2px;
-  box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14),0 3px 1px -2px rgba(0,0,0,0.12),0 1px 5px 0 rgba(0,0,0,0.2);
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
+    0 3px 1px -2px rgba(0, 0, 0, 0.12),
+    0 1px 5px 0 rgba(0, 0, 0, 0.2);
   margin-bottom: 8px;
   display: inline-block;
   border-radius: 10px;
@@ -53,6 +55,15 @@
     line-height: 22px;
     font-size: 18px;
     display: block;
+
+    &__w-border {
+      font-size: px-to-rem(18px);
+      font-weight: 700;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #d9d9d9;
+      display: block;
+    }
   }
 
   &__info {
@@ -65,15 +76,42 @@
     }
   }
 
+  &__activate-nl {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 16px;
+    background: #262626;
+    padding: 6px 8px;
+    margin-top: 24px;
+
+    > label {
+      font-family: "Roboto", sans-serif;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      gap: 4px;
+      color: #fff;
+      font-weight: 600;
+      line-height: normal;
+      margin: 0;
+      font-size: px-to-rem(16px);
+
+      svg {
+        height: auto;
+      }
+    }
+  }
+
   &__login {
-    margin-top:30px;
+    margin-top: 30px;
 
     a:not(.ut-btn) {
       text-decoration: none;
       color: $off-black;
     }
     p {
-      margin:0 0 10px;
+      margin: 0 0 10px;
       font-family: "Roboto", sans-serif;
       color: $off-black;
     }
@@ -81,17 +119,17 @@
 
   &.pwa {
     .ld-subscribe-box__title {
-        margin-bottom: 10px;
+      margin-bottom: 10px;
     }
     .ld-subscribe-box__info {
-        font-size: 14px;
-        line-height: 17px;
-        margin-bottom: 15px;
+      font-size: 14px;
+      line-height: 17px;
+      margin-bottom: 15px;
     }
 
     .icon {
-        display: inline-block;
-        margin-bottom: 18px;
+      display: inline-block;
+      margin-bottom: 18px;
     }
   }
 }

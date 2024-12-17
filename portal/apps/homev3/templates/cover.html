@@ -1,6 +1,6 @@
 {% load core_tags homev3_tags adzone_tags static %}
 
-<div id="bn-module"></div>
+{% if bn_module_published_count %}<div id="bn-module"></div>{% endif %}
 
 {% if event %}
   {% if event.is_free or is_subscriber_any %}
