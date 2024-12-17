@@ -94,12 +94,26 @@ body.user-newsletters {
   }
 
   .no-nls {
-    max-width: 45.8rem;
+    max-width: max-content;
     margin: 0 auto;
     min-height: 280px;
 
+    h1 {
+      font-size: 2.25rem;
+    }
+
     p.deck {
+      font-size: 1.25rem;
       padding-top: 1rem;
+    }
+
+    @media #{$medium-and-down} {
+      h1 {
+        font-size: 1.75rem;
+      }
+      p.deck {
+        font-size: 1rem;
+      }
     }
   }
 }

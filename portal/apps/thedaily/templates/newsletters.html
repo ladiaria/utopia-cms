@@ -12,7 +12,7 @@
 {% block content %}
   {% include 'profile/notification_box.html' %}
 
-  {% if False %}
+  {% if unsubscribed_newsletters %}
     <h1>Recibí por mail el contenido que te interesa</h1>
     <p class="deck">Acá encontrarás las newsletters de <em>la diaria</em> que aún no tenés activadas. Si querés desactivar alguna, podrás hacerlo <a href="{% url 'edit-profile' %}">ingresando a tu perfil</a>.</p>
     <div class="grid-nl-cards">
