@@ -175,6 +175,15 @@ class Publication(Model):
         super().__init__(*args, **kwargs)
         self.__original_slug = self.slug
 
+    @staticmethod
+    def default_name():
+        DEFAULT_PUB = settings.DEFAULT_PUB
+        try:
+            default_pub_name = Publication.objects.get(slug=DEFAULT_PUB).name
+        except Publication.DoesNotExist:
+            default_pub_name = "default"
+        return default_pub_name
+
     def save(self, *args, **kwargs):
         # needed for articles url update
         super().save(*args, **kwargs)
@@ -2426,6 +2435,65 @@ class ArticleUrlHistory(Model):
 
     class Meta:
         unique_together = ('article', 'absolute_url')
+
+
+# Models for the default_pub custom NLs
+class DefaultNewsletterArticleBase(Model):
+    newsletter = ForeignKey('DefaultNewsletter', on_delete=CASCADE)
+    order = PositiveSmallIntegerField('orden', null=True, blank=True)
+
+    def __str__(self):
+        # also a custom text version to be useful in the DefaultNewsletter admin change form
+        return date_format(
+            self.article.last_published_by_publication_slug(settings.DEFAULT_PUB),
+            format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shorter format
+            use_l10n=True,
+        ) if self.article.is_published else "NP"
+
+    class Meta:
+        abstract = True
+        ordering = ('order', )
+
+
+class DefaultNewsletterArticle(DefaultNewsletterArticleBase):
+    article = ForeignKey(
+        Article, on_delete=CASCADE,
+        verbose_name='artículo',
+        related_name='default_newsletter_articles',
+        limit_choices_to={'is_published': True},
+    )
+    include_photo = BooleanField('incluir foto', default=False)
+
+    def __str__(self):
+        return super().__str__() + ('-F' if self.article.photo else '')
+
+
+default_pub_name = Publication.default_name()
+
+
+class DefaultNewsletter(Model):
+    day = DateField('fecha', unique=True, default=now)
+    articles = ManyToManyField(Article, through=DefaultNewsletterArticle, related_name='default_newsletters_m2m')
+
+    def __str__(self):
+        return '%s - %s' % (self.day, self.cover_desc("Artículo principal no configurado"))
+
+    def cover_desc(self, force_desc=""):
+        return self.cover() or force_desc or mark_safe("<em>no configurado</em>")
+    cover_desc.short_description = "Artículo principal"
+
+    def cover(self):
+        """ Returns the article in the 1st position """
+        return self.articles.exists() and self.articles.order_by('default_newsletter_articles')[0]
+
+    def get_article_set(self):
+        return self.defaultnewsletterarticle_set
+
+    class Meta:
+        verbose_name = f'newsletter {default_pub_name}'
+        verbose_name_plural = f'newsletters {default_pub_name}'
+        ordering = ('-day', )
+        get_latest_by = 'day'
 
 
 class BreakingNewsModule(Model):

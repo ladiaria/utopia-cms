@@ -345,6 +345,7 @@ urlpatterns.extend(
         # Other pages (TODO: check and organize better)
         re_path(r'^(?P<journalist_job>(periodista|columnista))/', include('core.urls.journalist')),
         path('area/', include('core.urls.category')),
+        path('nl/', include('core.urls.publication')),
         path('bn/', include('core.urls.breaking_news_module')),
     ]
 )

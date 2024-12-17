@@ -93,7 +93,58 @@
                           <tbody style="background:#ffffff;padding:0;border-bottom:0">
                             <tr style="padding:0;text-align:left;vertical-align:top">
                               <td style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0;border-collapse:collapse!important;color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0;padding:0;text-align:left;vertical-align:top;word-wrap:break-word">
-                                {% block logo %}{% endblock %}
+                                {% block logo %}
+                                  <table style="background:{{ publication.newsletter_header_color }};border-collapse:collapse;border-spacing:0;display:table;padding:0;position:relative;text-align:left;vertical-align:top;width:100%">
+                                    <tbody style="background:{{ publication.newsletter_header_color }};padding:0">
+                                      <tr style="padding:0;text-align:left;vertical-align:top">
+                                        <th class="small-12 large-12 columns first last" style="Margin:0 auto;color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0 auto;padding:0;padding-bottom:0;padding-left:0;padding-right:0;text-align:left;width:588px">
+                                          <table style="border-collapse:collapse;border-spacing:0;padding:0;text-align:left;vertical-align:top;width:100%">
+                                            <tbody>
+                                              <tr style="padding:0;text-align:left;vertical-align:top">
+                                                <th style="Margin:0;color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0;text-align:left">
+                                                  <table style="border-collapse:collapse;border-spacing:0;display:table;padding:0;position:relative;text-align:left;vertical-align:top;width:100%">
+                                                    <tbody style="background:{{ publication.newsletter_header_color }};padding:0">
+                                                      <tr style="padding:0;text-align:left;vertical-align:top">
+                                                        <th class="small-12 large-4 columns" style="Margin:0 auto;color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0 auto;padding:0;padding-bottom:0px;padding-left:0!important;padding-right:0!important;text-align:center;width:100%">
+                                                          <table style="border-collapse:collapse;border-spacing:0;padding:0;text-align:left;vertical-align:top;width:100%">
+                                                            <tbody>
+                                                              <tr style="padding:0;text-align:left;vertical-align:top">
+                                                                <th style="Margin:0;color:#0a0a0a;font-family:Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:16px 0 0 0;text-align:center; display:block;">
+                                                                  <a href="{{ site_url }}/" style="display:inline-block;">
+                                                                    <img class="float-center" src="{{ site_url }}{{ logo_url }}" alt="Logo {{ newsletter_campaign }}" align="middle"
+                                                                        style="-ms-interpolation-mode:bicubic;Margin:0 auto;clear:both;display:block;float:none;margin:0 auto;max-width:100%;outline:0;text-align:center;text-decoration:none;image-rendering:-webkit-optimize-contrast;">
+                                                                  </a>
+                                                                </th>
+                                                              </tr>
+                                                              <tr style="padding:0;text-align:left;vertical-align:top">
+                                                                <th style="Margin:0;color:{{ date_color|default:"#686868" }};font-family:Roboto,Arial,sans-serif;font-size:12px;font-weight:400;line-height:1.3;margin:0;padding:8px 0 0 0;text-align:center; display:block;">
+                                                                  {{ nl_date }}
+                                                                </th>
+                                                              </tr>
+                                                              <tr style="padding:0;text-align:left;vertical-align:top">
+                                                                <th style="height:8px"></th>
+                                                              </tr>
+                                                              {% if not is_subscriber_any and support_message_template %}
+                                                                {% include support_message_template %}
+                                                              {% endif %}
+                                                              <tr style="padding:0;text-align:left;vertical-align:top">
+                                                                <th style="height:8px; background:{{ publication.newsletter_header_color }};"></th>
+                                                              </tr>
+                                                            </tbody>
+                                                          </table>
+                                                        </th>
+                                                      </tr>
+                                                    </tbody>
+                                                  </table>
+                                                </th>
+                                              </tr>
+                                            </tbody>
+                                          </table>
+                                        </th>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                {% endblock %}
                               </td>
                             </tr>
                           </tbody>

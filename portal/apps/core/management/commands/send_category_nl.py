@@ -26,7 +26,7 @@ from django.utils.timezone import now, datetime
 
 from apps import blocklisted
 from core.models import Category, CategoryNewsletter, CategoryHome, Article, get_latest_edition
-from core.utils import get_category_template
+from core.utils import get_category_template, get_nl_featured_article_id
 from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter, subscribers_nl_iter_filter
@@ -154,10 +154,11 @@ class Command(SendNLCommand):
                         cover_article = top_articles.pop(0)[0] if top_articles else None
 
                 # featured directly by article.id in settings/edition
-                featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
-                nl_featured = Article.objects.filter(
-                    id=featured_article_id
-                ) if featured_article_id else get_latest_edition().newsletter_featured_articles()
+                featured_article_id = get_nl_featured_article_id()
+                nl_featured = (
+                    Article.objects.filter(id=featured_article_id) if featured_article_id
+                    else get_latest_edition().newsletter_featured_articles()
+                )
                 opinion_article = nl_featured[0] if nl_featured else None
 
                 # featured articles by featured section in the category (by settings)

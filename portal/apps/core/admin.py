@@ -58,6 +58,8 @@ from .models import (
     BreakingNewsModule,
     DeviceSubscribed,
     PushNotification,
+    DefaultNewsletter,
+    DefaultNewsletterArticle,
 )
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
@@ -1018,6 +1020,49 @@ def published_articles(obj):
     return obj.articles_core.filter(is_published=True).count()
 
 
+# Classes for the default_pub custom NLs
+class DefaultNewsletterArticleForm(ModelForm):
+
+    class Meta:
+        fields = ['order', 'include_photo', 'article']
+        model = DefaultNewsletterArticle
+        widgets = {
+            'order': TextInput(attrs={'size': 3}),
+            "article": ForeignKeyRawIdWidgetMoreWords(
+                DefaultNewsletterArticle._meta.get_field("article").remote_field, site
+            ),
+        }
+
+
+class DefaultNewsletterArticleFormset(BaseInlineFormSet):
+    def clean(self):
+        super().clean()  # not sure if this call is really needed
+        unsaved_data = []
+        for form in self.forms:
+            cleaned_data = form.cleaned_data
+            if cleaned_data.get('article'):
+                # consider only the rows that have a valid article
+                unsaved_data.append((cleaned_data.get('order') or 0, cleaned_data.get('include_photo', 0)))
+        if unsaved_data:
+            # sort data to be sure which are the articles with minimal order
+            unsaved_data.sort()
+            # initialize variables with the first values in the minimal order group
+            first_order, include_photo_count = unsaved_data[0]
+            # flag to know when we finished iterate over the minimal group
+            first_order_passed = False
+            max_no_feat_photo_count = getattr(settings, "CORE_DEFAULT_NL_MAX_NO_FEATURED_PHOTOS", None)
+            for order, include_photo in unsaved_data[1:]:             # iterate over data tail
+                if not first_order_passed and order != first_order:
+                    first_order_passed = True
+                    if include_photo_count == 0:
+                        # if no one in the minimal group was checked, the first article will always include foto
+                        include_photo_count = 1
+                include_photo_count += include_photo
+                if max_no_feat_photo_count and include_photo_count > max_no_feat_photo_count:
+                    pl_phrase = 'artículo no principal' if max_no_feat_photo_count == 1 else 'artículos no principales'
+                    raise ValidationError(f'No se puede incluir más de {max_no_feat_photo_count} {pl_phrase} con foto')
+
+
 class JournalistForm(ModelForm):
     def clean_name(self):
         name = self.cleaned_data['name'].strip()
@@ -1359,6 +1404,41 @@ class ArticleInline(TabularInline):
     verbose_name_plural = 'Artículos relacionados'
 
 
+class UtopiaCategoryNewsletterArticleInline(TabularInline):
+    """
+    this class is copied from CategoryNewsletterArticleInline and modified because a child class can't be used, it
+    should be dificult modify a child class to suit our needs here.
+    """
+    extra = 20
+    max_num = 20
+    raw_id_fields = ('article', )
+    verbose_name_plural = 'Artículos en newsletter'
+
+    class Media:
+        css = {'all': ('css/category_newsletter.css', )}
+
+
+class DefaultNewsletterArticleInline(UtopiaCategoryNewsletterArticleInline):
+    model = DefaultNewsletter.articles.through
+    form = DefaultNewsletterArticleForm
+    formset = DefaultNewsletterArticleFormset
+    verbose_name_plural = 'Artículos en bloque principal'
+
+    class Media:
+        css = {'all': ('css/default_newsletter.css', )}
+
+
+class DefaultNewsletterAdmin(ModelAdmin):
+    list_display = ('day', 'cover_desc')
+    exclude = ('articles',)
+    inlines = [DefaultNewsletterArticleInline]
+    date_hierarchy = 'day'
+
+    class Media:
+        # jquery loaded again (admin uses custom js namespaces and we use "jquery dirty")
+        js = ('admin/js/jquery.js', )
+
+
 @admin.register(BreakingNewsModule, site=site)
 class BreakingNewsModuleAdmin(ModelAdmin):
     list_display = ('id', 'headline', 'deck', 'covers', 'is_published')
@@ -1515,3 +1595,4 @@ site.unregister(Tag)
 site.unregister(TaggedItem)
 site.register(Tag, TagAdmin)
 site.register(TaggedItem, TaggedItemAdmin)
+site.register(DefaultNewsletter, DefaultNewsletterAdmin)

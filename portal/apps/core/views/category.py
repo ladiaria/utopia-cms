@@ -24,7 +24,7 @@ from libs.utils import decode_hashid, nl_serialize_multi
 from thedaily.models import Subscriber
 from faq.models import Topic
 from ..models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
-from ..utils import get_category_template
+from ..utils import get_category_template, get_nl_featured_article_id
 from ..templatetags.ldml import remove_markup
 
 
@@ -154,10 +154,9 @@ def newsletter_preview(request, slug):
                     cover_article = top_articles.pop(0)[0] if top_articles else None
 
             # featured directly by article.id in settings
-            featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
+            featured_article_id = get_nl_featured_article_id()
             nl_featured = (
-                Article.objects.filter(id=featured_article_id)
-                if featured_article_id
+                Article.objects.filter(id=featured_article_id) if featured_article_id
                 else get_latest_edition().newsletter_featured_articles()
             )
             opinion_article = nl_featured[0] if nl_featured else None
