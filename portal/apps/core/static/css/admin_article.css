@@ -6,53 +6,106 @@ h2:has(+ #content-main){max-width: 950px;}
 fieldset.module h2{font-size: 12px !important;font-weight: 400 !important;margin: 0 !important;}
 td.original p{height: auto !important;}
 .empty-form{display: none !important;}
-fieldset.collapse,fieldset.collapsed{display: block !important;}
-.change-form .object-tools{margin-top: -100px;}
+fieldset.collapse,fieldset.collapsed{display: block !important; overflow: auto;}
+fieldset.collapse h2,fieldset.collapsed h2 {
+  position: sticky;
+  top: 0;
+  left: 0;
+}
+fieldset.collapse textarea,fieldset.collapsed textarea {
+  min-width: 320px;
+}
+/* .change-form .object-tools{margin-top: -100px;} */  /* TODO: Check the purpose of this */
+
+/* textareas inside inlines */
 .dynamic-extensions td.field-body{width:50%;}
-.dynamic-extensions td.field-body textarea{width:100%;}
+.dynamic-attachments td.field-description{width:45%;}
+.dynamic-extensions td.field-body textarea, .dynamic-attachments td.field-description textarea {
+  width:100%;
+}
+
+/* missing (dont know why) border in collapsed inlines */
+#extensions-group div fieldset, #attachments-group div fieldset,
+#body_image-group div fieldset, #articlerel_set-group div fieldset {
+  border: 1px solid var(--hairline-color);
+}
 
 /* paywall radio */
 .form-row.field-pw_radio_choice div {
-    display: block !important;
-    float: none !important;
+  display: block !important;
+  float: none !important;
 }
 .form-row.field-pw_radio_choice input { display: inline-block !important; }
 .form-row.field-pw_radio_choice label {
-    display: block !important;
-    float: none !important;
-    width: auto;
+  display: block !important;
+  float: none !important;
+  width: auto;
+}
+.form-row.field-slug input {
+  display: block !important;
+  float: none !important;
+  width: auto;
+  min-width: 280px;
+  @media (min-width: 880px) {
+    width: 600px;
+  }
 }
 
 /* alternative title and description fields */
 #id_keywords, #id_headline {
+  @media (min-width: 880px) {
     width: 600px;
+  }
 }
-.field-deck textarea, .field-lead textarea, /*.field-home_lead textarea,*/ .field-home_top_deck textarea {
-    height: 120px;
+.field-deck textarea, .field-lead textarea, .field-home_top_deck textarea {
+  height: 120px;
 }
+
 .fieldBox.field-alt_title_metadata input, .fieldBox.field-alt_title_newsletters input {
-    margin-left: 200px;
+  @media (min-width: 880px) {
+    margin-left: 200px !important;
     width: 600px;
+  }
 }
-#id_home_lead, #id_alt_desc_metadata, #id_alt_desc_newsletters{
+#id_home_lead, #id_alt_desc_metadata, #id_alt_desc_newsletters {
+  @media (min-width: 880px) {
     margin-left: 200px;
+  }
 }
 .field-home_lead textarea, .field-alt_desc_metadata textarea, .field-alt_desc_newsletters textarea {
+  @media (min-width: 880px) {
     width: 600px;
-    height: 120px;
+  }
+  height: 120px;
 }
 .field-alt_title_metadata, .field-alt_title_newsletters,
-.field-home_lead, .field-alt_desc_metadata, .field-alt_desc_newsletters {
-    margin-top: 20px;
+.field-alt_desc_metadata, .field-alt_desc_newsletters, .field-home_lead {
+  margin-top: 20px;
 }
+
+.field-headline, .field-alt_title_metadata, .field-alt_title_newsletters,
+.field-alt_desc_metadata, .field-alt_desc_newsletters {
+  @media (max-width: 767px) {
+    flex-grow: 1;
+  }
+}
+
+.field-alt_desc_newsletters .fieldBox.field-deck {
+  @media (max-width: 767px) {
+    flex-grow: 1;
+  }
+}
+
 #id_home_lead_helptext,
 #id_alt_desc_metadata_helptext,
 #id_alt_desc_newsletters_helptext {
+  @media (min-width: 880px) {
     margin-left: 165px;
+  }
 }
 #id_headline_helptext, #id_alt_title_metadata_helptext, #id_alt_title_newsletters_helptext,
 #id_slug_helptext, #id_keywords_helptext {
-    padding-left: 0px;
+  padding-left: 0px;
 }
 label[for="id_headline"] { float: left; }
 label[for="id_alt_title_metadata"],
@@ -60,7 +113,54 @@ label[for="id_alt_title_newsletters"],
 label[for="id_home_lead"],
 label[for="id_alt_desc_metadata"],
 label[for="id_alt_desc_newsletters"] {
+  @media (min-width: 880px) {
     float: initial;
     margin-left: 200px;
     width: 25em;
+  }
+}
+
+.form-row:not(.empty-form) {
+  @media (max-width: 767px) {
+    td {
+      white-space: nowrap;
+    }
+  }
+}
+
+[data-model-ref="periodista"] ul.selector-chooser {
+  @media (max-width: 767px) {
+    display: flex !important;
+    width: 60px !important;
+    justify-content: space-between !important;
+  }
+}
+
+/* published status row */
+.field-is_published, .field-to_be_published, .field-date_published {
+  width: unset !important;
+  display: block !important;
+}
+.fieldBox.field-date_published label{
+  display: none !important;
+}
+@media (min-width: 767px) {
+  .field-date_published p {
+    margin-left: 0px !important;
+  }
+}
+@media (min-width: 1024px) {
+  .field-date_published p {
+    padding-block: 0px !important;
+  }
+}
+@media (max-width: 767px) {
+  .form-row .datetime input.vDateField, .form-row .datetime input.vTimeField {
+    margin-left: 0px !important;
+    width: 100% !important;
+  }
+  .fieldBox.field-date_published .datetime .datetimeshortcuts {
+    margin-left: 0px !important;
+    display: block !important;
+  }
 }
