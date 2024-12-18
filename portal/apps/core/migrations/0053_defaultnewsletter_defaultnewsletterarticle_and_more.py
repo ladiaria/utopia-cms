@@ -8,7 +8,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0051_alter_breakingnewsmodule_managers"),
+        ("core", "0052_alter_articlerel_unique_together"),
     ]
 
     operations = [

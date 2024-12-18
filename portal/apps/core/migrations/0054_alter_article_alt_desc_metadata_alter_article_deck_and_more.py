@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("photologue", "0013_alter_watermark_image"),
         ("videologue", "0002_alter_video_byline_alter_video_caption_and_more"),
-        ("core", "0052_defaultnewsletter_defaultnewsletterarticle_and_more"),
+        ("core", "0053_defaultnewsletter_defaultnewsletterarticle_and_more"),
     ]
 
     operations = [
