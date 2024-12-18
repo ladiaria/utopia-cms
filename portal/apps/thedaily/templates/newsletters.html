@@ -14,7 +14,7 @@
 
   {% if unsubscribed_newsletters %}
     <h1>Recibí por mail el contenido que te interesa</h1>
-    <p class="deck">Acá encontrarás las newsletters de <em>la diaria</em> que aún no tenés activadas. Si querés desactivar alguna, podrás hacerlo <a href="{% url 'edit-profile' %}">ingresando a tu perfil</a>.</p>
+    <p class="deck">Cuando quieras desactivar alguna newsletter que ya recibas, podés hacerlo en <a href="{% url 'edit-profile' %}">tu perfil</a>.</p>
     <div class="grid-nl-cards">
       {% for nl_item in unsubscribed_newsletters %}
         <div class="edit_profile_card__inner-section">
