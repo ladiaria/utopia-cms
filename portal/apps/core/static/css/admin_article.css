@@ -57,7 +57,7 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
     width: 600px;
   }
 }
-.field-deck textarea, .field-lead textarea, .field-home_lead textarea, .field-home_top_deck textarea {
+.field-deck textarea, .field-lead textarea, .field-home_top_deck textarea {
   height: 120px;
 }
 
@@ -67,19 +67,19 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
     width: 600px;
   }
 }
-#id_alt_desc_metadata, #id_alt_desc_newsletters{
+#id_home_lead, #id_alt_desc_metadata, #id_alt_desc_newsletters {
   @media (min-width: 880px) {
     margin-left: 200px;
   }
 }
-.field-alt_desc_metadata textarea, .field-alt_desc_newsletters textarea {
+.field-home_lead textarea, .field-alt_desc_metadata textarea, .field-alt_desc_newsletters textarea {
   @media (min-width: 880px) {
     width: 600px;
   }
   height: 120px;
 }
 .field-alt_title_metadata, .field-alt_title_newsletters,
-.field-alt_desc_metadata, .field-alt_desc_newsletters {
+.field-alt_desc_metadata, .field-alt_desc_newsletters, .field-home_lead {
   margin-top: 20px;
 }
 
@@ -96,6 +96,7 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
   }
 }
 
+#id_home_lead_helptext,
 #id_alt_desc_metadata_helptext,
 #id_alt_desc_newsletters_helptext {
   @media (min-width: 880px) {
@@ -109,12 +110,13 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
 label[for="id_headline"] { float: left; }
 label[for="id_alt_title_metadata"],
 label[for="id_alt_title_newsletters"],
+label[for="id_home_lead"],
 label[for="id_alt_desc_metadata"],
 label[for="id_alt_desc_newsletters"] {
   @media (min-width: 880px) {
     float: initial;
     margin-left: 200px;
-    width: 20em;
+    width: 25em;
   }
 }
 
