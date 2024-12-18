@@ -304,6 +304,9 @@ urlpatterns.extend(
         # Most read
         path('masleidos/', include('core.urls.masleidos')),
 
+        # newsletters
+        path('newsletters/', include('core.urls.newsletters')),
+
         # supplements
         re_path(r'^suplementos/', supplement_list, name='supplement_list'),
         path('suplemento/', include('core.urls.supplement')),
