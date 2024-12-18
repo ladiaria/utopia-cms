@@ -1055,6 +1055,7 @@ class Journalist(Model):
     email = EmailField(blank=True, null=True)
     slug = SlugField('slug', unique=True)
     image = ImageField('imagen', upload_to='journalist', blank=True, null=True)
+    bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
     job = CharField(
         'trabajo',
         max_length=2,
@@ -1062,11 +1063,10 @@ class Journalist(Model):
         default='PE',
         help_text='Rol en que se desempeña principalmente.',
     )
-    bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
     sections = ManyToManyField(Section, verbose_name='secciones', blank=True)
 
-    # the order in which this class properties are declared is the order in which they'll be displayed unless
-    # overridden by CORE_JOURNALIST_SOCIAL_ORDER setting
+    # the order in which this class properties are declared is the order in which they'll be displayed, unless
+    # overridden in CORE_JOURNALIST_SOCIAL_ORDER setting
     bs = URLField('bluesky', blank=True, null=True)
     fb = URLField('facebook', blank=True, null=True)
     ig = URLField('instagram', blank=True, null=True)
@@ -1174,8 +1174,8 @@ class ArticleBase(Model, CT):
     )
 
     HEADER_DISPLAY_CHOICES = (
-        ('FW', 'Ancho completo'),
-        ('BG', 'Grande'),
+        ('FW', getattr(settings, 'CORE_ARTICLE_DETAIL_HEADER_DISPLAY_CHOICES_FW', 'Ancho completo')),
+        ('BG', getattr(settings, 'CORE_ARTICLE_DETAIL_HEADER_DISPLAY_CHOICES_BG', 'Grande')),
     )
 
     HOME_HEADER_DISPLAY_CHOICES = (
@@ -1200,14 +1200,20 @@ class ArticleBase(Model, CT):
     slug = SlugField('slug', max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
-        'descripción', blank=True, null=True, help_text='Se muestra en la página del artículo debajo del título.'
+        'descripción',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            "Se muestra en la página del artículo debajo del título<br>y en demás lugares del sitio que se muestre la "
+            "descripción."
+        ),
     )
     lead = TextField(
         'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
     body = locate(settings.CORE_ARTICLE_BODY_FIELD_CLASS)("cuerpo")
     header_display = CharField(
-        'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
+        'estilo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
     )
     home_header_display = CharField(
         'tipo de cabezal cuando es portada',
@@ -1217,7 +1223,14 @@ class ArticleBase(Model, CT):
         null=True,
         default='SM',
     )
-    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada del artículo en portada.')
+    home_lead = TextField(
+        "Descripción alternativa para portada principal (home)",
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            "Se muestra en la portada principal (home).<br>Si se deja vacía aplica Descripción principal."
+        ),
+    )
     home_display = CharField('mostrar en portada', max_length=2, choices=DISPLAY_CHOICES, blank=True, null=True)
     home_top_deck = TextField(
         'bajada en destacados',
@@ -1266,18 +1279,11 @@ class ArticleBase(Model, CT):
         blank=False,
         null=True,
     )
-    photo = ForeignKey(Photo, on_delete=SET_NULL, blank=True, null=True, verbose_name='imagen')
-    gallery = ForeignKey(Gallery, on_delete=SET_NULL, verbose_name='galería', blank=True, null=True)
-    video = ForeignKey(
-        Video,
-        on_delete=SET_NULL,
-        verbose_name='video',
-        related_name='articles_%(app_label)s',
-        blank=True,
-        null=True,
-    )
+    photo = ForeignKey(Photo, on_delete=SET_NULL, blank=True, null=True, verbose_name="imagen principal")
+    gallery = ForeignKey(Gallery, on_delete=SET_NULL, blank=True, null=True, verbose_name="galería")
+    video = ForeignKey(Video, on_delete=SET_NULL, related_name='articles_%(app_label)s', blank=True, null=True)
     youtube_video = ForeignKey(
-        YouTubeVideo, on_delete=SET_NULL, verbose_name='video de YouTube', blank=True, null=True
+        YouTubeVideo, on_delete=SET_NULL, blank=True, null=True, verbose_name='video de YouTube'
     )
     audio = ForeignKey(
         Audio,
