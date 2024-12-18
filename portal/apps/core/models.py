@@ -1204,8 +1204,8 @@ class ArticleBase(Model, CT):
         blank=True,
         null=True,
         help_text=mark_safe(
-            "Se muestra en la página del artículo debajo del título<br>y en demás lugares del sitio que se muestre la "
-            "descripción."
+            "Se muestra en la página del artículo debajo del título y en demás lugares<br>del sitio que se muestre la "
+            "descripción (a no ser que tenga una versión<br>alternativa activa que la reemplace)."
         ),
     )
     lead = TextField(
@@ -1728,10 +1728,10 @@ class Article(ArticleBase):
         'descripción alternativa para metadatos',
         blank=True,
         null=True,
-        help_text=mark_safe(
-            'Aplica a metadatos: meta description, Open Graph y Schema en el '
-        ) + escape("<head>")
-        + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Descripción principal.')
+        help_text=(
+            mark_safe('Aplica a metadatos: meta description, Open Graph y Schema en el<br>') + escape("<head>")
+            + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Descripción principal.')
+        )
     )
     alt_title_newsletters = CharField(
         'título alternativo para newsletters',
