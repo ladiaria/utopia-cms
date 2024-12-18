@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import random
 import string
 from builtins import str, range
@@ -324,7 +323,7 @@ def render_toolbar_for(context, toolbar_object):
     if getattr(settings, "CORE_ENABLE_ARTICLE_TOOLBAR", True):
         user = context.get('user')
         if user and user.is_staff and isinstance(toolbar_object, Article):
-            toolbar_template = 'core/templates/article/toolbar.html'
+            toolbar_template = getattr(settings, "CORE_TOOLBAR_TEMPLATE", 'core/templates/article/toolbar.html')
             params = {'article': toolbar_object, 'is_detail': False}
             if context.get('is_cover'):
                 edition = context.get('edition')

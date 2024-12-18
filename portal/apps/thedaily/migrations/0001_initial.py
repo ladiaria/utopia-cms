@@ -151,7 +151,7 @@ class Migration(migrations.Migration):
             name='SubscriptionPrices',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('subscription_type', models.CharField(choices=[('DDIGM', 'Suscripción digital'), ('PAPYDIM', 'Suscripción papel')], default='PAPYDIM', max_length=7, unique=True, verbose_name='tipo')),
+                ('subscription_type', models.CharField(choices=[], max_length=7, unique=True, verbose_name='tipo')),
                 ('price', models.DecimalField(decimal_places=2, max_digits=7, verbose_name='Precio')),
                 ('order', models.PositiveSmallIntegerField(null=True, verbose_name='Orden')),
                 ('paypal_button_id', models.CharField(blank=True, max_length=13, null=True)),

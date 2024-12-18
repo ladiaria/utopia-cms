@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from os.path import join
 
 from future import standard_library
@@ -195,6 +194,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
 
     publication = article.main_section.edition.publication if article.main_section else None
     context = {
+        "DEBUG": settings.DEBUG,
         'article': article,
         "article_restricted_cf": article.is_restricted_consider_full(),
         "photo_render_allowed": article.photo_render_allowed(),
@@ -212,6 +212,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'publication': publication,
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
         "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+        "signupwall_label_exclusive": settings.SIGNUPWALL_LABEL_EXCLUSIVE,
         'publication_newsletters':
             Publication.objects.filter(has_newsletter=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL),
         'date_published_use_main_publication': (

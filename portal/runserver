@@ -4,7 +4,28 @@
 # An utility shell script to clear cache and run the Django development server with an optional parameter.
 # Example: ./runserver yoogle.com:8000
 set -e
-python -W ignore manage.py clear_cache
+
+usage() {
+    echo "Usage: $0 [address:port] [--no-clear-cache]"
+    exit 1
+}
+
+if [ -z "$1" ]; then
+    usage
+fi
+
+if [ -n "$2" ]; then
+    if [ "$2" != "--no-clear-cache" ]; then
+        usage
+    else
+        NO_CLEAR_CACHE="true"
+    fi
+fi
+
+if [ -z "$NO_CLEAR_CACHE" ]; then
+    python -W ignore manage.py clear_cache
+fi
+
 # Check if systemctl exists
 if command -v systemctl > /dev/null 2>&1; then
     SVACTIVE="systemctl is-active --quiet supervisord"
