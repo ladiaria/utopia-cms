@@ -1183,8 +1183,8 @@ class ArticleBase(Model, CT):
     )
 
     HEADER_DISPLAY_CHOICES = (
-        ('FW', getattr(settings, 'CORE_ARTICLE_DETAIL_HEADER_DISPLAY_CHOICES_FW', 'Ancho completo')),
-        ('BG', getattr(settings, 'CORE_ARTICLE_DETAIL_HEADER_DISPLAY_CHOICES_BG', 'Grande')),
+        ('FW', getattr(settings, 'CORE_ARTICLE_HEADER_DISPLAY_CHOICES_FW', 'Ancho completo')),
+        ('BG', getattr(settings, 'CORE_ARTICLE_HEADER_DISPLAY_CHOICES_BG', 'Grande')),
     )
 
     HOME_HEADER_DISPLAY_CHOICES = (
