@@ -27,11 +27,12 @@ body.user-newsletters {
   .grid-nl-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
+    gap: 26px;
     padding-top: 60px;
 
     @media #{$medium-and-down} {
       grid-template-columns: repeat(1, 1fr);
+      gap: 20px;
     }
   }
 
