@@ -120,6 +120,7 @@ urlpatterns = [
         disable_profile_property,
         name="disable-profile-property",
     ),
+
     path('perfil/<int:user_id>/', user_profile, name="user-profile"),
     path('registrate/', signup, name="account-signup"),
     path('registrate/google/', google_phone, name="account-google"),
