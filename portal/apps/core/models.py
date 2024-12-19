@@ -1272,7 +1272,9 @@ class ArticleBase(Model, CT):
         blank=True,
         null=True,
     )
-    is_published = BooleanField('publicado', default=True, db_index=True)
+    is_published = BooleanField(
+        'publicado', default=getattr(settings, 'CORE_ARTICLE_IS_PUBLISHED_DEFAULT', True), db_index=True
+    )
     to_be_published = BooleanField('programar publicación', default=False, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
