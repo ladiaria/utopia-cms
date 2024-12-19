@@ -160,6 +160,15 @@ class ArticleRelAdminBaseModelForm(ModelForm):
         self.fields['section'].choices = section_choices()
         self.fields['home_top'].label = 'en portada'
 
+    """ Example of how to override the clean method to change a null position to 1
+    def clean(self):
+        super().clean()
+        position = self.cleaned_data.get('position')
+        if not position:
+            # possible TODO: another option is to get the actual max position and add 1
+            self.cleaned_data['position'] = self.instance.position = 1
+    """
+
     class Meta:
         model = ArticleRel
         fields = "__all__"
@@ -288,8 +297,19 @@ class EditionAdmin(ModelAdmin):
     publication = None
     inlines = [HomeTopArticleInline, NoHomeTopArticleInline]
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        try:
+            return super().change_view(request, object_id, form_url, extra_context)
+        except ValidationError as e:
+            self.message_user(request, e.message, messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:core_edition_changelist'))
+
     def get_form(self, request, obj=None, **kwargs):
         if obj:
+            if obj.articlerel_set.count() > settings.DATA_UPLOAD_MAX_NUMBER_FIELDS / 2:
+                raise ValidationError(
+                    "ERROR: demasiados artículos asociados a la edición para poder gestionarla a través de este sitio"
+                )
             self.publication = obj.publication
         return super().get_form(request, obj, **kwargs)
 

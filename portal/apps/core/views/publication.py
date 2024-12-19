@@ -85,15 +85,16 @@ class NewsletterPreview(TemplateView):
                 # include sections (and include_photo flag)
                 top_articles = [(a.article, a.include_photo) if default_nl else (a, False) for a in top_articles]
 
-                # cover article (as in sendnewsletter_ladiaria or sendnewsletter commands usage)
+                # cover article (as in send_publication_nl command usage)
+                cover_article = None
                 if default:
                     err_msg = ''
                     try:
                         cover_article = (
                             default_nl.cover() if default_nl
                             else edition.articlerel_set.get(
-                                article__is_published=True, home_top=True, top_position=1)
-                            .article
+                                article__is_published=True, home_top=True, top_position=1
+                            ).article
                         )
                     except ArticleRel.DoesNotExist:
                         err_msg = 'Artículo de portada no configurado.'
@@ -106,93 +107,100 @@ class NewsletterPreview(TemplateView):
                 else:
                     cover_article = top_articles.pop(0)[0]
 
-                try:
-                    hashed_id = hashids.encode(int(request.user.subscriber.id))
-                except AttributeError:
-                    hashed_id = hashids.encode(0)
-
-                # get logo url from publication's images or default to logo-white
-                logo_url = getattr(
-                    publication.newsletter_logo or publication.image, 'url', '/static/img/logo-white.png'
-                )
-
-                if site and default:
-                    email_from_name = site.name
-                elif publication.slug in getattr(settings, 'CORE_PUBLICATIONS_NL_FROM_NAME_NAMEONLY', ()):
-                    email_from_name = publication.name
-                else:
+                if cover_article:
                     try:
-                        email_from_name = '%s %s' % (
-                            Publication.objects.get(slug=settings.DEFAULT_PUB).name,
-                            publication.newsletter_name or publication.name,
-                        )
-                    except Publication.DoesNotExist:
-                        email_from_name = publication.newsletter_name or publication.name
+                        hashed_id = hashids.encode(int(request.user.subscriber.id))
+                    except AttributeError:
+                        hashed_id = hashids.encode(0)
 
-                custom_subject = publication.newsletter_automatic_subject is False and publication.newsletter_subject
-                custom_subject_prefix = self.custom_subject_prefix() if hasattr(self, 'custom_subject_prefix') else ""
-                email_subject = custom_subject or (custom_subject_prefix + remove_markup(cover_article.headline))
-
-                headers = {
-                    'From': '%s <%s>' % (email_from_name, settings.NOTIFICATIONS_FROM_ADDR1),
-                    'Subject': email_subject,
-                }
-
-                site_url = settings.SITE_URL_SD
-                as_news = request.GET.get("as_news", "0").lower() in ("true", "1")
-                if as_news:
-                    unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
-                else:
-                    unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                        '&utm_campaign=%s&utm_content=unsubscribe' % (
-                            site_url, publication_slug, hashed_id, publication.newsletter_campaign
-                        )
-                headers['List-Unsubscribe'] = '<%s>' % unsubscribe_url
-                headers['List-Unsubscribe-Post'] = "List-Unsubscribe=One-Click"
-
-                try:
-                    download_url = (
-                        publication_slug in getattr(settings, 'CORE_PUBLICATIONS_EDITION_DOWNLOAD', [])
-                        and edition.get_download_url()
-                    )
-                except ValueError:
-                    context.update({"headers_preview": True, "preview_err": "No hay PDF asociado a la edición"})
-                    template_name = "newsletter/error.html"
-                    render_kwargs["status"] = 406
-                else:
-                    context.update(
-                        {
-                            'cover_article': serialize_wrapper(cover_article, publication, True, False),
-                            'articles': serialize_wrapper(top_articles, publication, dates=False),
-                            'hashed_id': hashed_id,
-                            "as_news": as_news,
-                            'unsubscribe_url': unsubscribe_url,
-                            'site_url': site_url,
-                            'logo_url': logo_url,
-                            'download_url': request.GET.get("s_pdf", "0").lower() in ("true", "1") and download_url,
-                            'newsletter_campaign': publication.newsletter_campaign,
-                            'custom_subject': custom_subject,
-                            'headers_preview': headers,
-                            "request_is_xhr": is_xhr(request),
-                            'nl_date': edition.date_published_verbose(False),
-                        }
+                    # get logo url from publication's images or default to logo-white
+                    logo_url = getattr(
+                        publication.newsletter_logo or publication.image, 'url', '/static/img/logo-white.png'
                     )
 
-                    if default:
+                    if site and default:
+                        email_from_name = site.name
+                    elif publication.slug in getattr(settings, 'CORE_PUBLICATIONS_NL_FROM_NAME_NAMEONLY', ()):
+                        email_from_name = publication.name
+                    else:
+                        try:
+                            email_from_name = '%s %s' % (
+                                Publication.objects.get(slug=settings.DEFAULT_PUB).name,
+                                publication.newsletter_name or publication.name,
+                            )
+                        except Publication.DoesNotExist:
+                            email_from_name = publication.newsletter_name or publication.name
 
-                        if edition.date_published != now().date():
-                            if context["preview_warn"]:
-                                context["preview_warn"] += "<br>"
-                            context["preview_warn"] += "La fecha de esta edición es distinta a la fecha de hoy"
+                    custom_subject = \
+                        publication.newsletter_automatic_subject is False and publication.newsletter_subject
+                    if custom_subject:
+                        email_subject = custom_subject
+                    else:
+                        custom_subject_prefix = \
+                            self.custom_subject_prefix() if hasattr(self, 'custom_subject_prefix') else ""
+                        email_subject = custom_subject_prefix + remove_markup(cover_article.headline)
 
-                    # override is_subscriber_any and _default only to "False"
-                    for suffix in ('any', 'default'):
-                        is_subscriber_var = 'is_subscriber_' + suffix
-                        is_subscriber_val = request.GET.get(is_subscriber_var)
-                        if is_subscriber_val and is_subscriber_val.lower() in ('false', '0'):
-                            context[is_subscriber_var] = False
+                    headers = {
+                        'From': '%s <%s>' % (email_from_name, settings.NOTIFICATIONS_FROM_ADDR1),
+                        'Subject': email_subject,
+                    }
 
-                    template_name = self.get_template_name(publication_slug=publication_slug)
+                    site_url = settings.SITE_URL_SD
+                    as_news = request.GET.get("as_news", "0").lower() in ("true", "1")
+                    if as_news:
+                        unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
+                    else:
+                        unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/?utm_source=newsletter&utm_medium=email' \
+                            '&utm_campaign=%s&utm_content=unsubscribe' % (
+                                site_url, publication_slug, hashed_id, publication.newsletter_campaign
+                            )
+                    headers['List-Unsubscribe'] = '<%s>' % unsubscribe_url
+                    headers['List-Unsubscribe-Post'] = "List-Unsubscribe=One-Click"
+
+                    try:
+                        download_url = (
+                            publication_slug in getattr(settings, 'CORE_PUBLICATIONS_EDITION_DOWNLOAD', [])
+                            and edition.get_download_url()
+                        )
+                    except ValueError:
+                        context.update({"headers_preview": True, "preview_err": "No hay PDF asociado a la edición"})
+                        template_name = "newsletter/error.html"
+                        render_kwargs["status"] = 406
+                    else:
+                        context.update(
+                            {
+                                'cover_article': serialize_wrapper(cover_article, publication, True, False),
+                                'articles': serialize_wrapper(top_articles, publication, dates=False),
+                                'hashed_id': hashed_id,
+                                "as_news": as_news,
+                                'unsubscribe_url': unsubscribe_url,
+                                'site_url': site_url,
+                                'logo_url': logo_url,
+                                'download_url':
+                                    request.GET.get("s_pdf", "0").lower() in ("true", "1") and download_url,
+                                'newsletter_campaign': publication.newsletter_campaign,
+                                'custom_subject': custom_subject,
+                                'headers_preview': headers,
+                                "request_is_xhr": is_xhr(request),
+                                'nl_date': edition.date_published_verbose(False),
+                            }
+                        )
+
+                        if default:
+
+                            if edition.date_published != now().date():
+                                if context["preview_warn"]:
+                                    context["preview_warn"] += "<br>"
+                                context["preview_warn"] += "La fecha de esta edición es distinta a la fecha de hoy"
+
+                        # override is_subscriber_any and _default only to "False"
+                        for suffix in ('any', 'default'):
+                            is_subscriber_var = 'is_subscriber_' + suffix
+                            is_subscriber_val = request.GET.get(is_subscriber_var)
+                            if is_subscriber_val and is_subscriber_val.lower() in ('false', '0'):
+                                context[is_subscriber_var] = False
+
+                        template_name = self.get_template_name(publication_slug=publication_slug)
 
             else:
                 context.update({"headers_preview": True, "preview_err": "Edición sin artículos de portada"})
