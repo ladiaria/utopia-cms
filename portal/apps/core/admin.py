@@ -260,7 +260,8 @@ class HomeTopArticleInline(EditionBaseArticleInline):
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         if (
-            obj.publication.slug == settings.DEFAULT_PUB
+            obj
+            and obj.publication.slug == settings.DEFAULT_PUB
             and self.verbose_name_plural == self.verbose_name_plural_default
         ):
             self.verbose_name_plural += " principal"
