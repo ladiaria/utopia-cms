@@ -159,11 +159,16 @@ body.hard-paywall {
 
           .alert-box {
             background: none;
-            color: #b61616;
-            height: 50px;
+            color: #a72a22;
             font-size: 90%;
+            display: block;
             ul {
+              border: 2px solid #ebccd1;
+              background-color: #f2dede;
               width: 100%;
+              border-radius: 8px;
+              margin: 0;
+              padding: 10px;
             }
           }
         }
