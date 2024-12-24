@@ -1554,7 +1554,7 @@ body.interior {
   }
 }
 
-.subscribe-notice {
+.home-notice {
   color: $off-black;
   background: $primary-color;
   font-size: 1rem;
@@ -1583,7 +1583,7 @@ body.interior {
     background-blend-mode: exclusion, normal;
     background-size: 280px;
 
-    @media screen and (min-width: 600px) {
+    @media #{$medium-and-up} {
       opacity: 0.2;
     }
   }
@@ -1721,6 +1721,33 @@ body.interior {
 
       span {
         font-weight: 400;
+      }
+    }
+
+    &.user-nl-notice {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      svg.logo-la-diaria {
+        z-index: 1;
+        position: absolute;
+        left: 80px;
+      }
+
+      &::before {
+        background-image: url(../img/bg_nl_popup.png);
+        background-blend-mode: unset;
+        background-size: 100%;
+        @media #{$medium-and-up} {
+          opacity: 1;
+        }
+      }
+
+      p .ut-btn {
+        background-color: #ffff00;
+        color: $off-black;
+        box-shadow: 4px 4px 20px 6px rgba(0, 0, 0, 0.25);
       }
     }
   }
