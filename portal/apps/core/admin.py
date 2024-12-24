@@ -271,7 +271,8 @@ class HomeTopArticleInline(EditionBaseArticleInline):
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         if (
-            obj.publication.slug == settings.DEFAULT_PUB
+            obj
+            and obj.publication.slug == settings.DEFAULT_PUB
             and self.verbose_name_plural == self.verbose_name_plural_default
         ):
             self.verbose_name_plural += " principal"
@@ -1344,8 +1345,8 @@ class CategoryHomeArticleFormSet(CategoryHomeArticleFormSetBase):
 
 class CategoryHomeArticleInline(TabularInline):
     model = CategoryHome.articles.through
-    extra = 20
-    max_num = 20
+    max_num = getattr(settings, "CORE_UPDATE_CATEGORY_HOMES_ARTICLES_INLINE_MAX_NUM", 20)
+    extra = max_num
     form = CategoryHomeArticleForm
     formset = CategoryHomeArticleFormSet
     raw_id_fields = ('article',)
