@@ -2286,7 +2286,7 @@ def nlunsubscribe(request, publication_slug, hashed_id):
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+        return render(request, get_app_template('nlunsubscribe.html'), ctx)
     except IndexError:
         raise Http404
 
@@ -2317,7 +2317,7 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+        return render(request, get_app_template('nlunsubscribe.html'), ctx)
     except IndexError:
         raise Http404
 

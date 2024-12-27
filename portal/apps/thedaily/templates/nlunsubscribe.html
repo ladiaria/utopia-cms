@@ -1,6 +1,6 @@
 {% load static compress %}<!doctype html>
 {% block html %}
-  <html lang="es-UY">
+  <html lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}">
 {% endblock %}
 <head>
   <meta charset="utf-8">
@@ -9,10 +9,13 @@
   <meta name="description" content="{% block description %}Desuscripción{% endblock %}.">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% compress css %}
-    <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {% block css %}
+      <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {% endblock %}
   {% endcompress %}
 </head>
-<body class="nlunsubscribe ld-notice">
+<body class="{% block body_class %}nlunsubscribe ld-notice{% endblock %}">
+  {% block body_content %}
   <div id="main-header">
     <nav class="subscription_black">
       <a href="{% url 'home' %}">
@@ -41,4 +44,6 @@
       para cancelar tu suscripción <a href="{% url 'contact-form' %}">comunicate con atención al cliente</a>.
     </div>
   </div>
+  {% endblock %}
 </body>
+</html>
