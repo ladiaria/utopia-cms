@@ -21,11 +21,11 @@ from django.utils import translation
 from django.utils.timezone import datetime, make_naive
 
 from apps import blocklisted
-from libs.utils import smtp_connect, get_nl_featured_article_id
+from libs.utils import smtp_connect
 from core.models import Publication, Article, Edition, DefaultNewsletter
 from core.views.publication import nl_template_name
 from core.templatetags.ldml import remove_markup
-from core.utils import serialize_wrapper
+from core.utils import serialize_wrapper, get_nl_featured_article_id
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter_filter
 from . import SendNLCommand

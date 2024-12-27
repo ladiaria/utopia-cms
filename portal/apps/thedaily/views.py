@@ -291,7 +291,7 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
                 ctx['error'] = e.displaymessage
-            return render(request, 'nlsubscribe.html', ctx)
+            return render(request, get_app_template('nlsubscribe.html'), ctx)
         else:
             raise Http404
     # default behavour: go to profile or login
@@ -306,7 +306,6 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
 
 
 @never_cache
-@to_response
 def nl_category_subscribe(request, slug, hashed_id=None):
     """
     if hashed id is given, this view will do similar things than nl_subscribe with a category instead of a publication
@@ -333,7 +332,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
                 next_page = request.GET.get('next')
                 if next_page:
                     return HttpResponseRedirect(next_page)
-            return 'nlsubscribe.html', ctx
+            return render(request, get_app_template('nlsubscribe.html'), ctx)
         else:
             raise Http404
     else:
@@ -2355,15 +2354,17 @@ def nl_track_open_event(request, s8r_or_registered, hashed_id, nl_campaign, nl_d
 
 @csrf_exempt
 @never_cache
-@to_response
 def disable_profile_property(request, property_id, hashed_id):
-    """ Disables the profile bool property_id related to the subscriber matching the hashed_id argument given """
+    """
+    Disables the profile bool property_id related to the subscriber matching the hashed_id argument given
+    """
     try:
         subscriber = get_object_or_404(Subscriber, id=decode_hashid(hashed_id)[0])
         if not subscriber.user:
             raise Http404
         setattr(subscriber, property_id, False)
         ctx = {
+            'nlunsubscribe_template': get_app_template('nlunsubscribe.html'),
             'property_name': {
                 'allow_news': 'Novedades',
                 'allow_promotions': 'Promociones',
@@ -2377,7 +2378,7 @@ def disable_profile_property(request, property_id, hashed_id):
         except Exception as e:
             # for some reason UpdateCrmEx does not work in test (Python ver?)
             ctx['error'] = e.displaymessage
-        return 'disable_profile_property.html', ctx
+        return render(request, get_app_template('disable_profile_property.html'), ctx)
     except IndexError:
         raise Http404
 

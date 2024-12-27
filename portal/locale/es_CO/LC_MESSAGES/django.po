@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-02 08:38-0300\n"
+"POT-Creation-Date: 2024-12-27 19:20-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,6 +30,10 @@ msgstr ""
 msgid "Not Used"
 msgstr ""
 
+#: apps/thedaily/exceptions.py:8
+msgid "contactate"
+msgstr "contáctese"
+
 #: apps/thedaily/forms.py:161 apps/thedaily/forms.py:328
 msgid "Email"
 msgstr "Correo electrónico"
@@ -38,7 +42,19 @@ msgstr "Correo electrónico"
 msgid "name"
 msgstr "nombre"
 
-#: apps/thedaily/views.py:942
+#: apps/thedaily/models.py:506
+msgid "tus datos"
+msgstr "sus datos"
+
+#: apps/thedaily/models.py:525
+msgid "tu perfil"
+msgstr "su perfil"
+
+#: apps/thedaily/templates/disable_profile_property.html:8
+msgid "recibirás"
+msgstr "recibirá"
+
+#: apps/thedaily/views.py:958
 msgid "email"
 msgstr "correo electrónico"
 

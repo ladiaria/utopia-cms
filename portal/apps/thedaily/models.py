@@ -43,7 +43,7 @@ from django.utils.translation import gettext_lazy as _
 from libs.utils import crm_rest_api_kwargs
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
-from .exceptions import UpdateCrmEx, EmailValidationError
+from .exceptions import UpdateCrmEx, EmailValidationError, MSG_ERR_UPDATE
 from .managers import SubscriberManager
 
 
@@ -503,8 +503,7 @@ def user_pre_save(sender, instance, **kwargs):
             changeset.update({'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email})
             put_data_to_crm(api_uri, changeset)
         except requests.exceptions.RequestException:
-            err_msg = "No se han podido actualizar tus datos, contactate con nosotros"
-            raise UpdateCrmEx(err_msg)
+            raise UpdateCrmEx(MSG_ERR_UPDATE % _("tus datos"))
 
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
@@ -523,7 +522,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
             try:
                 updatecrmuser(instance.contact_id, None, changeset)
             except requests.exceptions.RequestException:
-                raise UpdateCrmEx("No se ha podido actualizar tu perfil, contactate con nosotros")
+                raise UpdateCrmEx(MSG_ERR_UPDATE % _("tu perfil"))
     except Subscriber.DoesNotExist:
         # this happens only on creation
         pass
