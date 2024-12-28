@@ -4,13 +4,15 @@ from hashids import Hashids
 from favit.utils import is_xhr
 
 from django.conf import settings
-from django.views.generic import TemplateView
 from django.core.exceptions import PermissionDenied
+from django.db.utils import ProgrammingError
+from django.views.generic import TemplateView
+from django.views.decorators.cache import never_cache
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from django.utils.timezone import now
-from django.db.utils import ProgrammingError
+from django.utils.decorators import method_decorator
 from django.contrib.sites.models import Site
 
 from core.models import Publication, Edition, ArticleRel, DefaultNewsletter, get_latest_edition
@@ -42,6 +44,7 @@ def nl_template_name(publication_slug, default="newsletter/newsletter.html"):
     return default
 
 
+@method_decorator(never_cache, name='dispatch')
 class NewsletterPreview(TemplateView):
     def get_template_name(self, *args, **kwargs):
         return nl_template_name(kwargs.get('publication_slug'))
