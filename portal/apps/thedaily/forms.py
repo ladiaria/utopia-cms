@@ -5,6 +5,7 @@ from pydoc import locate
 from django.conf import settings
 from django.http import UnreadablePostError
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password, get_password_validators
 from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 from django.core.mail import mail_managers
@@ -46,7 +47,7 @@ SUBSCRIPTION_PHONE_TIME_CHOICES = (
     ('4', 'En la tarde-noche (18:00 a 20:00)'),
 )
 TEMPLATE_PACK = get_template_pack()
-PASSWORD_MIN_LENGTH = getattr(settings, "THEDAILY_PASSWORD_MIN_LENGTH", 8)
+PASSWORD_MIN_LENGTH = getattr(settings, "THEDAILY_PASSWORD_MIN_LENGTH", 8)  # TODO: update in sync with auth_pass_validation new settings # noqa
 
 
 def get_default_province():
@@ -90,8 +91,11 @@ terms_and_conditions_prelogin = (
 )
 
 
-def check_password_strength(password):
-    return len(password) >= PASSWORD_MIN_LENGTH
+def check_password_strength(password, user=None):
+    validators = getattr(settings, 'AUTH_PASSWORD_VALIDATORS', None)
+    if validators:
+        validators = get_password_validators(validators)
+    return validate_password(password, user, validators)
 
 
 def clean_terms_and_conds(form):
