@@ -1,22 +1,27 @@
 import socket
 from os.path import join
+import json
 from hashids import Hashids
 from favit.utils import is_xhr
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db.utils import ProgrammingError
+from django.http import HttpResponseForbidden, Http404
 from django.views.generic import TemplateView
 from django.views.decorators.cache import never_cache
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 from django.shortcuts import render, get_object_or_404
-from django.utils.timezone import now
+from django.utils.timezone import now, datetime
 from django.utils.decorators import method_decorator
 from django.contrib.sites.models import Site
+from django.contrib.auth.decorators import login_required
 
-from core.models import Publication, Edition, ArticleRel, DefaultNewsletter, get_latest_edition
-from core.templatetags.ldml import remove_markup
+from libs.utils import decode_hashid
+from thedaily.models import Subscriber
+from ..models import Publication, Edition, ArticleRel, DefaultNewsletter, get_latest_edition
+from ..templatetags.ldml import remove_markup
 from ..utils import serialize_wrapper
 
 try:
@@ -141,7 +146,7 @@ class NewsletterPreview(TemplateView):
                     else:
                         custom_subject_prefix = \
                             self.custom_subject_prefix() if hasattr(self, 'custom_subject_prefix') else ""
-                        email_subject = custom_subject_prefix + remove_markup(cover_article.headline)
+                        email_subject = custom_subject_prefix + remove_markup(cover_article.nl_title())
 
                     headers = {
                         'From': '%s <%s>' % (email_from_name, settings.NOTIFICATIONS_FROM_ADDR1),
@@ -214,3 +219,104 @@ class NewsletterPreview(TemplateView):
             return render(request, template_name or template_name_default, **render_kwargs)
         except TemplateDoesNotExist:
             return render(request, template_name_default, **render_kwargs)
+
+
+@method_decorator(never_cache, name='dispatch')
+class NewsletterBrowserPreview(TemplateView):
+    def is_subscriber(self, subscriber, publication_slug):
+        return subscriber.is_subscriber(publication_slug)
+
+    def download_allowed(self, subscriber, publication_slug):
+        return False
+
+    def dispatch(self, request, publication_slug, hashed_id=None):
+        if hashed_id:
+            decoded = decode_hashid(hashed_id)
+            # TODO: if authenticated => assert same logged in user
+            if decoded:
+                subscriber = get_object_or_404(Subscriber, id=decoded[0])
+                if not subscriber.user:
+                    raise Http404
+            else:
+                raise Http404
+        else:
+            # called from the auth view wrapper
+            try:
+                subscriber = request.user.subscriber
+            except AttributeError:
+                return HttpResponseForbidden()
+        try:
+            edition = json.loads(
+                open(join(settings.SENDNEWSLETTER_EXPORT_DIR, '%s_edition.json' % publication_slug)).read()
+            )
+            context = json.loads(
+                open(join(settings.SENDNEWSLETTER_EXPORT_DIR, '%s_ctx.json' % publication_slug)).read()
+            )
+        except IOError:
+            raise Http404
+
+        site_url, publication = context['site_url'], edition['publication']
+        newsletter_campaign = publication['newsletter_campaign']
+        context.update(
+            {
+                "browser_preview": True,
+                'publication': publication,
+                'newsletter_campaign': newsletter_campaign,
+                'nl_date': edition['date_published'],
+            }
+        )
+        # de-serialize dates
+        dp_cover = datetime.strptime(context['cover_article']['date_published'], '%Y-%m-%d').date()
+        context['cover_article']['date_published'] = dp_cover
+        dp_articles, pub_is_default = [], publication_slug == settings.DEFAULT_PUB
+        try:
+            # TODO: check if this try is needed in the other browser preview views.
+            for a, include_photo in context['articles']:
+                dp_article = datetime.strptime(a['date_published'], '%Y-%m-%d').date()
+                a['date_published'] = dp_article
+                dp_articles.append((a, include_photo))
+        except ValueError:
+            # TODO: mail managers
+            context["preview_err"] = "Previsualización no disponible"
+
+        as_news = request.GET.get("as_news", "0").lower() in ("true", "1")
+
+        if hashed_id:
+            if as_news:
+                unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
+            else:
+                unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/?utm_source=newsletter&utm_medium=email' \
+                    '&utm_campaign=%s&utm_content=unsubscribe' % (
+                        site_url, publication_slug, hashed_id, newsletter_campaign
+                    )
+            context.update(
+                {
+                    'unsubscribe_url': unsubscribe_url,
+                    "download_url":
+                        self.download_allowed(subscriber, publication_slug) and edition.get('download_url'),
+                }
+            )
+
+        context.update(
+            {
+                "articles": dp_articles,
+                "as_news": as_news,
+                "hashed_id": hashed_id,
+                'subscriber_id': subscriber.id,
+                'is_subscriber':
+                    subscriber.is_subscriber() if pub_is_default else self.is_subscriber(subscriber, publication_slug),
+                'is_subscriber_any': subscriber.is_subscriber_any(),
+                'is_subscriber_default': subscriber.is_subscriber(settings.DEFAULT_PUB),
+            }
+        )
+
+        return render(request, nl_template_name(publication_slug), context)
+
+
+@never_cache
+@login_required
+def nl_browser_authpreview(request, slug):
+    """
+    wrapper view for the special url pattern for authenticated users
+    """
+    return NewsletterBrowserPreview.as_view()(request, slug)

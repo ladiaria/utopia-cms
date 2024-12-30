@@ -349,15 +349,18 @@ class PortableDocumentFormatBaseModel(Model):
         return '%s.jpg' % self.get_pdf_filename()[:-4]
 
     def get_download_url(self):
-        return reverse(
-            'edition_download',
-            kwargs={
-                'publication_slug': self.publication.slug,
-                'year': self.date_published.year,
-                'month': '%02d' % self.date_published.month,
-                'day': '%02d' % self.date_published.day,
-                'filename': basename(self.pdf.path),
-            },
+        return (
+            self.publication.slug in getattr(settings, 'CORE_PUBLICATIONS_EDITION_DOWNLOAD', ())
+            and reverse(
+                'edition_download',
+                kwargs={
+                    'publication_slug': self.publication.slug,
+                    'year': self.date_published.year,
+                    'month': '%02d' % self.date_published.month,
+                    'day': '%02d' % self.date_published.day,
+                    'filename': basename(self.pdf.path),
+                },
+            )
         )
 
     def download(self, request=None):
@@ -2050,6 +2053,12 @@ class Article(ArticleBase):
             except Exception:
                 pass
 
+    def nl_title(self):
+        return self.alt_title_newsletters or self.headline
+
+    def nl_desc(self):
+        return self.alt_desc_newsletters or self.deck or self.lead or self.home_lead
+
     def nl_serialize(self, for_cover=False, publication=None, category=None, dates=True):
         authors = self.get_authors()
         section = self.publication_section(publication) if publication else self.get_section(category)
@@ -2057,9 +2066,8 @@ class Article(ArticleBase):
             'id': self.id,
             'get_absolute_url': self.get_absolute_url(),
             'date_published': str(self.date_published.date()) if dates else self.date_published,
-            'headline': self.headline,
-            'home_lead': self.home_lead,
-            'deck': self.deck,
+            'nl_title': self.nl_title(),
+            'nl_desc': self.nl_desc(),
             'has_byline': self.has_byline(),
             'get_authors': [
                 {

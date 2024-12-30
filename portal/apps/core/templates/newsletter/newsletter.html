@@ -23,16 +23,12 @@
 {% block body_text_preview %}
   {% if cover_article %}
     {% if custom_subject %}
-      {{ cover_article.headline|ldmarkup|bleach }}
+      {{ cover_article.nl_title|ldmarkup|bleach }}
     {% else %}
-      {% if cover_article.home_lead %}
-        {{ cover_article.home_lead|ldmarkup|bleach }}
+      {% if cover_article.nl_desc %}
+        {{ cover_article.nl_desc|ldmarkup|bleach }}
       {% else %}
-        {% if cover_article.deck %}
-          {{ cover_article.deck|ldmarkup|bleach }}
-        {% else %}
-          {{ cover_article.body|ldmarkup|truncatehtml:100 }}
-        {% endif %}
+        {{ cover_article.body|ldmarkup|truncatehtml:100 }}
       {% endif %}
     {% endif %}
   {% endif %}
@@ -52,7 +48,7 @@
                      style="{% block cover_article_anchor_style %}Margin:0;color:#2199e8;font-family:Helvetica,Arial,sans-serif;font-weight:400;line-height:1.3;margin:0;padding:0 15px;text-align:left;text-decoration:none;margin-bottom:15px;display:block;{% endblock %}">
                     <img src="{{ site_url }}{% block cover_article_photo_urlpath %}{{ cover_article.photo.get_700w_url }}{% endblock %}"
                          style="-ms-interpolation-mode:bicubic;border:none;clear:both;display:block;max-width:100%;outline:0;text-decoration:none;width:auto"
-                         alt="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}"
+                         alt="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.nl_title|remove_markup }}'{% endif %}"
                          align="middle">
                   </a>
                 {% endif %}
@@ -66,12 +62,14 @@
                 <h1 style="{% block cover_article_title_style %}Margin:0;color:inherit;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:20px;line-height:1.2;font-weight:700;margin:0 15px;margin-bottom:0;margin-top:5px;padding:0;text-align:left;word-wrap:normal;{% endblock %}">
                   {% block extra_cover_title %}{% endblock %}
                   <a href="{{ site_url }}{{ cover_article.get_absolute_url }}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}" style="{% block cover_article_title_anchor_style %}Margin:0;color:#262626;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:20px;font-weight:700;line-height:1.2;margin:0;padding:0;text-align:left;text-decoration:none;{% endblock %}">
-                    {{ cover_article.headline|ldmarkup|bleach }}
+                    {{ cover_article.nl_title|ldmarkup|bleach }}
                   </a>
                 </h1>
-                <p style="{% block cover_article_lead_style %}color:{{ primary_black|default:"#0a0a0a" }};font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:16px;font-weight:400;line-height:1.3;margin:5px 15px 10px;padding:0;text-align:left;{% endblock %}">
-                  {% if cover_article.home_lead %}{{ cover_article.home_lead|ldmarkup|bleach }}{% else %}{{ cover_article.deck|ldmarkup|bleach }}{% endif %}
-                </p>
+                {% if cover_article.nl_desc %}
+                  <p style="{% block cover_article_lead_style %}color:{{ primary_black|default:"#0a0a0a" }};font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:16px;font-weight:400;line-height:1.3;margin:5px 15px 10px;padding:0;text-align:left;{% endblock %}">
+                    {{ cover_article.nl_desc|ldmarkup|bleach }}
+                  </p>
+                {% endif %}
                 <p style="{% block cover_article_credits_style %}font-size:12px;margin:0 15px;margin-bottom:0;margin-top:0;padding:0;text-align:left;color:#797979;line-height:14px;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};{% endblock %}">
                   {% photo_byline cover_article as photo_author %}
                   {% if cover_article.has_byline %}
@@ -117,12 +115,14 @@
                       <h2 style="{% block article_title_style %}color:inherit;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:20px;font-weight:700;line-height:1.2;margin:15px;margin-bottom:0;margin-top:8px;padding:0;text-align:left;word-wrap:normal{% endblock %}">
                         {% block extra_title %}{% endblock %}
                         <a href="{{ site_url }}{{ article.get_absolute_url }}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}" style="{% block article_title_anchor_style %}Margin:0;color:#262626;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:20px;font-weight:700;line-height:1.2;margin:0;padding:0;text-align:left;text-decoration:none;{% endblock %}">
-                          {{ article.headline|ldmarkup|bleach }}
+                          {{ article.nl_title|ldmarkup|bleach }}
                         </a>
                       </h2>
-                      <p style="{% block article_lead_style %}color:{{ primary_black|default:"#0a0a0a" }};font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:16px;font-weight:400;line-height:1.3;margin:5px 15px 10px;padding:0;text-align:left;{% endblock %}">
-                        {% if article.home_lead %}{{ article.home_lead|ldmarkup|bleach }}{% else %}{{ article.deck|ldmarkup|bleach }}{% endif %}
-                      </p>
+                      {% if article.nl_desc %}
+                        <p style="{% block article_lead_style %}color:{{ primary_black|default:"#0a0a0a" }};font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:16px;font-weight:400;line-height:1.3;margin:5px 15px 10px;padding:0;text-align:left;{% endblock %}">
+                          {{ article.nl_desc|ldmarkup|bleach }}
+                        </p>
+                      {% endif %}
                       <p style="{% block article_credits_style %}font-size:12px;color:#797979;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-weight:400;line-height:14px;margin:15px;margin-bottom:0;margin-top:0;padding:0;text-align:left;{% endblock %}">
                         {% if article.has_byline %}
                           {% for author in article.get_authors %}

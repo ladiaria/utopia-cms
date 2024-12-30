@@ -268,11 +268,9 @@ class Command(SendNLCommand):
 
                 custom_subject = (publication.newsletter_automatic_subject is False and publication.newsletter_subject)
                 custom_subject_prefix = self.custom_subject_prefix() if hasattr(self, 'custom_subject_prefix') else ""
-                email_subject = custom_subject or (custom_subject_prefix + remove_markup(cover_article.headline))
+                email_subject = custom_subject or (custom_subject_prefix + remove_markup(cover_article.nl_title()))
                 edition_cover_url = self.get_edition_cover_url()
-                edition_download_url = publication.slug in getattr(
-                    settings, 'CORE_PUBLICATIONS_EDITION_DOWNLOAD', ()
-                ) and self.edition.get_download_url()
+                edition_download_url = self.edition.get_download_url()
 
             # iterate over receivers and yield the subscribers first, saving the
             # not subscribers ids in a temporal list an then yield them also
