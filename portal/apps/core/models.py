@@ -1567,6 +1567,10 @@ class ArticleBase(Model, CT):
         return self.photo and self.photo.extended.photographer
 
     @property
+    def photo_agency(self):
+        return self.photo and self.photo.extended.agency
+
+    @property
     def photo_caption(self):
         result = self.photo.caption or "Foto principal del artículo '%s'" % remove_markup(self.headline)
         if self.photo_author:
@@ -2085,6 +2089,8 @@ class Article(ArticleBase):
                 result['photo'] = {'get_700w_url': self.photo.get_700w_url(), 'caption': self.photo.caption}
                 if self.photo_author:
                     result.update({'photo_author': self.photo_author.name, 'photo_type': self.photo_type})
+                if self.photo_agency:
+                    result.update({'photo_agency': self.photo_agency.name})
         # extra data for category NLs
         if category:
             nl_email_template = get_category_template(category.slug, "newsletter")
