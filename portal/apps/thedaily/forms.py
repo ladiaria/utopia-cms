@@ -49,12 +49,15 @@ TEMPLATE_PACK = get_template_pack()
 
 # password validators
 PASSWORD_MIN_LENGTH, PASSWORD_VALIDATORS = None, getattr(settings, 'AUTH_PASSWORD_VALIDATORS', None)
+min_len_found = False
 if PASSWORD_VALIDATORS:
     for validator in PASSWORD_VALIDATORS:
         for key, value in validator.items():
             if key == "NAME" and value == "django.contrib.auth.password_validation.MinimumLengthValidator":
-                PASSWORD_MIN_LENGTH = validator.get("OPTIONS", {}).get("min_length")
+                PASSWORD_MIN_LENGTH, min_len_found = validator.get("OPTIONS", {}).get("min_length"), True
                 break
+        if min_len_found:
+            break
 PASSWORD_MIN_LENGTH = PASSWORD_MIN_LENGTH or 8
 
 
