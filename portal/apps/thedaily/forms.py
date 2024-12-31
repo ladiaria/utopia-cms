@@ -7,7 +7,6 @@ from django.http import UnreadablePostError
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password, get_password_validators
 from django.contrib.auth.tokens import default_token_generator
-from django.shortcuts import get_object_or_404
 from django.core.mail import mail_managers
 from django.forms import (
     Form,
@@ -47,7 +46,16 @@ SUBSCRIPTION_PHONE_TIME_CHOICES = (
     ('4', 'En la tarde-noche (18:00 a 20:00)'),
 )
 TEMPLATE_PACK = get_template_pack()
-PASSWORD_MIN_LENGTH = getattr(settings, "THEDAILY_PASSWORD_MIN_LENGTH", 8)
+
+# password validators
+PASSWORD_MIN_LENGTH, PASSWORD_VALIDATORS = None, getattr(settings, 'AUTH_PASSWORD_VALIDATORS', None)
+if PASSWORD_VALIDATORS:
+    for validator in PASSWORD_VALIDATORS:
+        for key, value in validator.items():
+            if key == "NAME" and value == "django.contrib.auth.password_validation.MinimumLengthValidator":
+                PASSWORD_MIN_LENGTH = validator.get("OPTIONS", {}).get("min_length")
+                break
+PASSWORD_MIN_LENGTH = PASSWORD_MIN_LENGTH or 8
 
 
 def get_default_province():
@@ -87,10 +95,9 @@ terms_and_conditions_prelogin = (
 
 
 def check_password_strength(password, user=None):
-    validators = getattr(settings, 'AUTH_PASSWORD_VALIDATORS', None)
-    if validators:
-        validators = get_password_validators(validators)
-    return validate_password(password, user, validators)
+    return validate_password(
+        password, user, get_password_validators(PASSWORD_VALIDATORS) if PASSWORD_VALIDATORS else None
+    )
 
 
 def clean_terms_and_conds(form):
@@ -383,10 +390,7 @@ class SignupForm(BaseUserForm):
     def clean_password(self):
         data = self.cleaned_data
         password = data.get('password')
-        if check_password_strength(password):
-            return password
-        else:
-            self.add_error('password', ValidationError('La contraseña debe tener 6 o más caracteres.'))
+        return check_password_strength(password) or password
 
     def clean_terms_and_conds_accepted(self):
         return clean_terms_and_conds(self)
@@ -1102,6 +1106,8 @@ class PasswordChangeBaseForm(CrispyForm):
     )
 
     def __init__(self, *args, **kwargs):
+        if 'user' in kwargs:
+            self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'change_password'
@@ -1121,7 +1127,7 @@ class PasswordChangeBaseForm(CrispyForm):
         if p1 and p2:
             if p1 != p2:
                 self.add_error('new_password_1', ValidationError('Las contraseñas no coinciden.'))
-            elif check_password_strength(p1):
+            elif not check_password_strength(p1, getattr(self, 'user', None)):
                 return self.data
 
     def get_password(self):
@@ -1137,9 +1143,6 @@ class PasswordChangeForm(PasswordChangeBaseForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.get('user')
-        if 'user' in kwargs:
-            del kwargs['user']
         super().__init__(*args, **kwargs)
         self.helper.layout = (
             custom_layout(self.helper.form_id)
@@ -1182,13 +1185,11 @@ class PasswordResetForm(PasswordChangeBaseForm):
         initial = {}
         if 'hash' not in kwargs:
             raise AttributeError('Missing hash')
-        self.user = kwargs.get('user')
         self.hash = kwargs.get('hash')
         initial['hash'] = self.hash
         initial['gonzo'] = self.gen_gonzo()
         kwargs['initial'] = initial
         del kwargs['hash']
-        del kwargs['user']
 
         super().__init__(*args, **kwargs)
 
@@ -1217,8 +1218,7 @@ class PasswordResetForm(PasswordChangeBaseForm):
             if self.data.get('gonzo') != self.gen_gonzo():
                 self.add_error(None, ValidationError(err_msg))
             else:
-                user = get_object_or_404(User, id=self.user)
-                if not default_token_generator.check_token(user, self.hash):
+                if not default_token_generator.check_token(self.user, self.hash):
                     self.add_error(None, ValidationError(err_msg))
                 else:
                     return self.data

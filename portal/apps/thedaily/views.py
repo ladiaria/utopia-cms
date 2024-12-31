@@ -1170,16 +1170,16 @@ def password_change(request, user_id=None, hash=None):
     post = request.POST.copy() if is_post else None
     if user_id and hash:
         user = get_object_or_404(User, id=user_id)
-        form_kwargs = {'user': user_id, 'hash': hash}
+        form_kwargs = {'user': user, 'hash': hash}
         password_change_form = PasswordResetForm(post, **form_kwargs) if is_post else PasswordResetForm(**form_kwargs)
     else:
         if not request.user.is_authenticated:
             raise Http404('Unauthorized access.')
         user = request.user
         if user.has_usable_password():
-            password_change_form = PasswordChangeForm(post, user=request.user) if is_post else PasswordChangeForm()
+            password_change_form = PasswordChangeForm(post, user=user) if is_post else PasswordChangeForm()
         else:
-            password_change_form = PasswordChangeBaseForm(post) if is_post else PasswordChangeBaseForm()
+            password_change_form = PasswordChangeBaseForm(post, user=user) if is_post else PasswordChangeBaseForm()
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])
