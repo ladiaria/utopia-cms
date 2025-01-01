@@ -29,7 +29,7 @@ from django_amp_readerid.utils import amp_login_param, get_related_user
 
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db import IntegrityError, ProgrammingError
+from django.db import IntegrityError
 from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.db.models.deletion import Collector
@@ -53,7 +53,6 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
-from django.contrib.sites.models import Site
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import ListView
@@ -66,7 +65,7 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 
 from apps import mongo_db, bouncer_blocklisted
-from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
+from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs, get_site_name
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
 from decorators import render_response
@@ -139,12 +138,7 @@ from .tasks import send_notification, notify_subscription, send_notification_mes
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
-account_verify_msg = 'Verificá tu cuenta de'
-
-try:
-    account_verify_msg += ' ' + Site.objects.get_current().name
-except ProgrammingError:
-    account_verify_msg += ' ' + settings.SITE_DOMAIN
+account_verify_msg = 'Verificá tu cuenta de' + get_site_name()
 
 
 def no_op_decorator(func):
