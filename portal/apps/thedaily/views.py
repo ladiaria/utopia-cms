@@ -117,6 +117,7 @@ from .forms import (
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
     get_default_province,
+    check_password_strength,
 )
 from .utils import (
     get_or_create_user_profile,
@@ -412,6 +413,11 @@ def login(request, product_slug=None, product_variant=None):
                 user = authenticate(username=login_form.username, password=password)
                 if user is not None:
                     if user.is_active:
+                        if user.is_staff:
+                            try:
+                                check_password_strength(password, user)
+                            except ValidationError:
+                                mail_managers("Staff user with weak password", f"User: {user}, Id: {user.id}")
                         do_login(request, user)
                         request.session.pop('next', None)
                         # also remove possible unfinished google sign-in information from the session, if not,
@@ -1170,16 +1176,16 @@ def password_change(request, user_id=None, hash=None):
     post = request.POST.copy() if is_post else None
     if user_id and hash:
         user = get_object_or_404(User, id=user_id)
-        form_kwargs = {'user': user_id, 'hash': hash}
+        form_kwargs = {'user': user, 'hash': hash}
         password_change_form = PasswordResetForm(post, **form_kwargs) if is_post else PasswordResetForm(**form_kwargs)
     else:
         if not request.user.is_authenticated:
             raise Http404('Unauthorized access.')
         user = request.user
         if user.has_usable_password():
-            password_change_form = PasswordChangeForm(post, user=request.user) if is_post else PasswordChangeForm()
+            password_change_form = PasswordChangeForm(post, user=user) if is_post else PasswordChangeForm()
         else:
-            password_change_form = PasswordChangeBaseForm(post) if is_post else PasswordChangeBaseForm()
+            password_change_form = PasswordChangeBaseForm(post, user=user) if is_post else PasswordChangeBaseForm()
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])
