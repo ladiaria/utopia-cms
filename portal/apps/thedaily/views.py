@@ -118,6 +118,7 @@ from .forms import (
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
     get_default_province,
+    check_password_strength,
 )
 from .utils import (
     get_or_create_user_profile,
@@ -412,6 +413,11 @@ def login(request, product_slug=None, product_variant=None):
                 user = authenticate(username=login_form.username, password=password)
                 if user is not None:
                     if user.is_active:
+                        if user.is_staff:
+                            try:
+                                check_password_strength(password, user)
+                            except ValidationError:
+                                mail_managers("Staff user with weak password", f"User: {user}, Id: {user.id}")
                         do_login(request, user)
                         request.session.pop('next', None)
                         # also remove possible unfinished google sign-in information from the session, if not,
