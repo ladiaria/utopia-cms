@@ -24,7 +24,7 @@ from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sitemaps import ping_google
-from django.db import IntegrityError, connection
+from django.db import IntegrityError, ProgrammingError, connection
 from django.db.models import (
     Q,
     Manager,
@@ -216,7 +216,10 @@ class Publication(Model):
 
     @staticmethod
     def multi():
-        return Publication.objects.count() > 1
+        try:
+            return Publication.objects.count() > 1
+        except ProgrammingError:
+            return False
 
     def newsletter_preview_url(self):
         """

@@ -53,7 +53,6 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
-from django.contrib.sites.models import Site
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import ListView
@@ -67,7 +66,7 @@ from django.utils.html import strip_tags
 from django.utils.translation import gettext as _
 
 from apps import mongo_db, bouncer_blocklisted
-from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
+from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs, get_site_name
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
 from decorators import render_response
@@ -140,7 +139,7 @@ from .tasks import send_notification, notify_subscription, send_notification_mes
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
-site_name = Site.objects.get_current().name
+account_verify_msg = 'Verificá tu cuenta de' + get_site_name()
 
 
 def no_op_decorator(func):
@@ -945,7 +944,7 @@ def subscribe(request, planslug, category_slug=None):
                             return render(request, template, context)
                         try:
                             was_sent = send_validation_email(
-                                f'Verificá tu cuenta de {site_name}',
+                                account_verify_msg,
                                 user,
                                 'notifications/account_signup_subscribed.html',
                                 get_signup_validation_url,
@@ -1153,9 +1152,7 @@ def password_reset(request, user_id=None, hash=None):
                     notification_template = get_app_template(
                         'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
                     )
-                    send_validation_email(
-                        f'Verificá tu cuenta de {site_name}', user, notification_template, get_signup_validation_url
-                    )
+                    send_validation_email(account_verify_msg, user, notification_template, get_signup_validation_url)
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
@@ -1177,7 +1174,7 @@ def confirm_email(request):
                 user = confirm_email_form.cleaned_data["user"]
                 is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
                 send_validation_email(
-                    f'Verificá tu cuenta de {site_name}',
+                    account_verify_msg,
                     user,
                     get_app_template(
                         'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
