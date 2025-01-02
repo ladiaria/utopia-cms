@@ -48,7 +48,7 @@
     </div>
   {% else %}
     <div class="no-nls">
-      <h1>Ya activaste todas las newsletters de la diaria</h1>
+      <h1>Ya activaste todas las newsletters de {{ site_name }}</h1>
       <p class="deck">Si querés desactivar alguna, podrás hacerlo en <a href="{% url 'edit-profile' %}">tu perfil</a>.</p>
     </div>
   {% endif %}
@@ -72,7 +72,7 @@
 
       for (let i = 0; i < switches.length; i++) {
         switches[i].addEventListener("click", (e) => {
-          window.location.href = "{% url 'account-signup' %}";
+          window.location.href = "{% url 'account-login' %}";
         })
       }
     {% endif %}
