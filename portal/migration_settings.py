@@ -125,6 +125,7 @@ INSTALLED_APPS = (
     "django_celery_beat",
     "phonenumber_field",
     "closed_site",
+    "concurrency",
 )
 
 SITE_ID = 1
@@ -440,7 +441,7 @@ THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
-THEDAILY_AUTOMATIC_MAIL_LOGFILE = "/var/log/utopiacms/thedaily/automatic_mail.log"
+THEDAILY_AUTOMATIC_MAIL_LOGFILE = "/var/log/utopiacms/automatic_mail.log"
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."

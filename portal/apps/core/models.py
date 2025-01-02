@@ -15,6 +15,8 @@ from bs4 import BeautifulSoup
 import readtime
 import mutagen
 import w3storage
+from concurrency.api import apply_concurrency_check
+from concurrency.fields import IntegerVersionField
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -2110,6 +2112,9 @@ class Article(ArticleBase):
         return result
 
 
+apply_concurrency_check(Article, 'version', IntegerVersionField)
+
+
 class ArticleCollection(Article):
     objects = Manager()  # needed to avoid django to use the "published" as the default manager
     traversal_categorization = BooleanField(
@@ -2481,7 +2486,8 @@ class DefaultNewsletterArticleBase(Model):
 
 class DefaultNewsletterArticle(DefaultNewsletterArticleBase):
     article = ForeignKey(
-        Article, on_delete=CASCADE,
+        Article,
+        on_delete=CASCADE,
         verbose_name='artículo',
         related_name='default_newsletter_articles',
         limit_choices_to={'is_published': True},
@@ -2493,6 +2499,13 @@ class DefaultNewsletterArticle(DefaultNewsletterArticleBase):
 
 
 default_pub_name = Publication.default_name()
+
+
+class DefaultNewsletterMeta:
+    verbose_name = f'newsletter {default_pub_name}'
+    verbose_name_plural = f'newsletters {default_pub_name}'
+    ordering = ('-day', )
+    get_latest_by = 'day'
 
 
 class DefaultNewsletter(Model):
@@ -2513,11 +2526,8 @@ class DefaultNewsletter(Model):
     def get_article_set(self):
         return self.defaultnewsletterarticle_set
 
-    class Meta:
-        verbose_name = f'newsletter {default_pub_name}'
-        verbose_name_plural = f'newsletters {default_pub_name}'
-        ordering = ('-day', )
-        get_latest_by = 'day'
+    class Meta(DefaultNewsletterMeta):
+        pass
 
 
 class BreakingNewsModule(Model):

@@ -12,6 +12,8 @@ from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
 from reversion.admin import VersionAdmin
 from martor.models import MartorField
 from martor.widgets import AdminMartorWidget
+from concurrency.api import disable_concurrency
+from concurrency.admin import ConcurrentModelAdmin
 
 from django.conf import settings
 from django.urls import path
@@ -504,6 +506,15 @@ class ArticleAdminModelForm(ModelForm):
             tags = '"' + tags + '"'
         return tags
 
+    def clean_version(self):
+        version = self.cleaned_data['version']
+        if not self.data.get("recover"):  # skip if coming from reversion
+            if settings.DEBUG:
+                print(f"DEBUG: article version submitted/instance {version}/{self.instance.version}")
+            if version != self.instance.version:
+                self.add_error(None, ValidationError("La versión del artículo no coincide con la versión actual."))
+        return version
+
     def clean(self):
         # TODO: "add" errors right way (as django doc says) instead of raising them
         if self.errors:
@@ -604,7 +615,7 @@ def get_editions():
 
 
 @admin.register(Article, site=site)
-class ArticleAdmin(VersionAdmin):
+class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
@@ -684,6 +695,7 @@ class ArticleAdmin(VersionAdmin):
                     "pw_radio_choice",
                     "full_restricted",
                     "public",
+                    "version",
                 )
                 + (('additional_access',) if Publication.multi() else ())
                 + ('latitude', 'longitude', 'ipfs_upload'),
@@ -907,6 +919,14 @@ class ArticleAdmin(VersionAdmin):
         response = super(VersionAdmin, self).history_view(request, object_id)
         self.object_history_template = object_history_template_bak
         return response
+
+    @disable_concurrency()
+    def revision_view(self, request, object_id, version_id, extra_context=None):
+        return super().revision_view(request, object_id, version_id, extra_context=None)
+
+    @disable_concurrency()
+    def recover_view(self, request, version_id, extra_context=None):
+        return super().recover_view(request, version_id, extra_context)
 
     class Media:
         css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
@@ -1289,9 +1309,10 @@ class CategoryAdminForm(CustomSubjectAdminForm):
 class CategoryAdmin(ModelAdmin):
     form = CategoryAdminForm
     list_display = (
-        'id', 'name', 'order', 'slug', 'title', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag'
+        'id', 'name', 'order', 'slug', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag'
     )
     list_editable = ('name', 'order', 'slug', 'has_newsletter')
+    list_filter = ('has_newsletter',)
     fieldsets = (
         (
             None,
@@ -1317,6 +1338,9 @@ class CategoryAdmin(ModelAdmin):
         ('Metadatos', {'fields': (('html_title',), ('meta_description',))}),
     )
     raw_id_fields = ('full_width_cover_image',)
+
+    class Media:
+        css = {'all': ('css/admin_category.css',)}
 
 
 class CategoryHomeArticleForm(ModelForm):
