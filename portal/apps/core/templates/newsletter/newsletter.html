@@ -52,8 +52,8 @@
                           alt="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.nl_title|remove_markup }}'{% endif %}"
                           align="middle">
                     </a>
-                    {% endblock %}
-                  {% endif %}
+                  {% endblock %}
+                {% endif %}
                 {% block section_coverarticle %}
                   {% if cover_article.section %}
                     <span style="{% block cover_article_section_style %}margin:5px 15px 0;display:block;color:#757474;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:12px;line-height:14px;font-weight:400;text-decoration:none;text-transform:uppercase;{% endblock %}">
