@@ -54,13 +54,15 @@ class NewsletterPreview(TemplateView):
     def get_template_name(self, *args, **kwargs):
         return nl_template_name(kwargs.get('publication_slug'))
 
+    def get_default_nl(self, day):
+        try:
+            return DefaultNewsletter.objects.get(day=day)
+        except DefaultNewsletter.DoesNotExist:
+            return None
+
     def get_defaults(self, publication_slug, day):
-        default, default_nl = publication_slug == settings.DEFAULT_PUB, None
-        if default:
-            try:
-                default_nl = DefaultNewsletter.objects.get(day=day)
-            except DefaultNewsletter.DoesNotExist:
-                pass
+        default = publication_slug == settings.DEFAULT_PUB
+        default_nl = self.get_default_nl(day) if default else None
         return default, default_nl
 
     def get(self, request, *args, **kwargs):

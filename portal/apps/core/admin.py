@@ -1481,7 +1481,7 @@ class DefaultNewsletterAdmin(ModelAdmin):
 
     class Media:
         # jquery loaded again (admin uses custom js namespaces and we use "jquery dirty")
-        js = ('admin/js/jquery.js', )
+        js = ('admin/js/jquery.js',)
 
 
 @admin.register(BreakingNewsModule, site=site)
