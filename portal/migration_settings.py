@@ -108,7 +108,6 @@ INSTALLED_APPS = (
     "star_ratings",
     "tagging_autocomplete_tagit",
     "avatar",
-    "notification",
     "django.contrib.flatpages",
     "epubparser",
     "django_filters",

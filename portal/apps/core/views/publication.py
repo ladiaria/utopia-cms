@@ -63,7 +63,7 @@ class NewsletterPreview(TemplateView):
                 pass
         return default, default_nl
 
-    def dispatch(self, request, publication_slug):
+    def get(self, request, *args, **kwargs):
         # allow only staff members or requests from localhost
         if not (
             request.user.is_staff
@@ -72,17 +72,17 @@ class NewsletterPreview(TemplateView):
             )
         ):
             raise PermissionDenied
+        publication_slug = kwargs.get('publication_slug')
         publication = get_object_or_404(Publication, slug=publication_slug)
-        context = publication.extra_context.copy()
+        context = super().get_context_data()
+        context.update(publication.extra_context.copy())
         context.update({"publication": publication, "preview_warn": ""})
-        render_kwargs = {"context": context}
-        template_name, template_name_default = None, self.template_name
+        status, template_name, template_name_default = None, None, self.template_name
         try:
             edition = get_latest_edition(publication)
         except Edition.DoesNotExist as edne:
             context.update({"headers_preview": True, "preview_err": edne})
-            template_name = "newsletter/error.html"
-            render_kwargs["status"] = 406
+            template_name, status = "newsletter/error.html", 406
         else:
             default, default_nl = self.get_defaults(publication.slug, edition.date_published)
             if default_nl:
@@ -110,8 +110,7 @@ class NewsletterPreview(TemplateView):
                         err_msg = 'Más de un artículo configurado como portada.'
                     if err_msg:
                         context.update({"headers_preview": True, "preview_err": err_msg})
-                        template_name = "newsletter/error.html"
-                        render_kwargs["status"] = 406
+                        template_name, status = "newsletter/error.html", 406
                 else:
                     cover_article = top_articles.pop(0)[0]
 
@@ -172,8 +171,7 @@ class NewsletterPreview(TemplateView):
                         )
                     except ValueError:
                         context.update({"headers_preview": True, "preview_err": "No hay PDF asociado a la edición"})
-                        template_name = "newsletter/error.html"
-                        render_kwargs["status"] = 406
+                        template_name, status = "newsletter/error.html", 406
                     else:
                         context.update(
                             {
@@ -212,9 +210,12 @@ class NewsletterPreview(TemplateView):
 
             else:
                 context.update({"headers_preview": True, "preview_err": "Edición sin artículos de portada"})
-                template_name = "newsletter/error.html"
-                render_kwargs["status"] = 406
+                template_name, status = "newsletter/error.html", 406
 
+        context.update(self.get_context_data())
+        render_kwargs = {"context": context}
+        if status:
+            render_kwargs["status"] = status
         try:
             return render(request, template_name or template_name_default, **render_kwargs)
         except TemplateDoesNotExist:

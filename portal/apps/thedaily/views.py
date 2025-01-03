@@ -15,6 +15,7 @@ from uuid import uuid4
 from smtplib import SMTPRecipientsRefused
 from PIL import Image
 from ga4mp import GtagMP
+from hashids import Hashids
 
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
@@ -140,6 +141,8 @@ standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
 account_verify_msg = 'Verificá tu cuenta de' + get_site_name()
+# Initialize the hashid object with salt from settings and custom length
+hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 
 def no_op_decorator(func):
@@ -2384,6 +2387,37 @@ def disable_profile_property(request, property_id, hashed_id):
         return render(request, get_app_template('disable_profile_property.html'), ctx)
     except IndexError:
         raise Http404
+
+
+@never_cache
+@staff_member_required
+def news_preview(request):
+    # TODO: check/fix the logo and the feature to give any template by query param.
+    subscriber = None
+    try:
+        subscriber = Subscriber.objects.get(id=request.GET.get('subscriber_id'))
+    except (Subscriber.DoesNotExist, ValueError):
+        try:
+            subscriber = request.user.subscriber
+        except AttributeError:
+            is_subscriber, subscriber_id = False, 0
+    if subscriber:
+        is_subscriber, subscriber_id = subscriber.is_subscriber(), int(subscriber.id)
+    site_url, hashed_id = settings.SITE_URL_SD, hashids.encode(subscriber_id)
+    return render(
+        request,
+        get_app_template('news/%s' % request.GET.get('template', 'notice.html')),
+        {
+            'preview': True,
+            'is_subscriber': is_subscriber,
+            'subscriber_id': subscriber_id,
+            'hashed_id': hashed_id,
+            'logo_url': settings.HOMEV3_SECONDARY_LOGO,
+            'site_url': site_url,
+            'unsubscribe_url': '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id),
+            'minimal_footer': request.GET.get('minimal_footer', '0') == '1',
+        },
+    )
 
 
 @never_cache

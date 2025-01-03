@@ -360,8 +360,6 @@ urlpatterns.extend(
         path('debug/', include('core.urls.debug')),
         # Usuarios
         path('usuarios/', include('thedaily.urls')),
-        # notification (TODO: move to thedaily.urls)
-        path('usuarios/alertas/', include('notification.urls')),
         # TODO: verify if this repeated path (?) makes sense
         path('', include('sitemaps.urls')),
         path('', include('social_django.urls', namespace='social')),
