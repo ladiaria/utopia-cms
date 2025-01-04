@@ -48,6 +48,9 @@ class Command(SendNLCommand):
     # Allow to choose the latest edition if no today edition found (for the pubs in nlobj_pubs only).
     nlobj_pubs_edition_use_latest = True
 
+    # A way to disallow this base command to be used for some publications. (to be overriden in child commands)
+    disallowed_publications = getattr(settings, "CORE_PUBLICATIONS_NL_DISALLOW_BASE_CMD", ())
+
     edition, nlobj, subscriber_extra_info_keys, log = None, None, (), logging.getLogger(__name__)
 
     def add_arguments(self, parser):
@@ -481,13 +484,15 @@ class Command(SendNLCommand):
         self.nlobj = DefaultNewsletter.objects.get(day=ed_date)
 
     def handle(self, *args, **options):
+        self.pub_slug = options.get("publication_slug")
+        if self.pub_slug in self.disallowed_publications:
+            raise CommandError("The newsletter of this publication is not allowed to be sent using this command")
+
         self.load_options(options)
         ed_date = options.get('edition_date')
 
         if (self.offline or self.export_subscribers) and ed_date:
             raise CommandError('--edition-date can not be used with --offline or --export-subscribers')
-
-        self.pub_slug = options.get("publication_slug")
 
         self.initlog(self.log, self.pub_slug)
 
@@ -496,6 +501,13 @@ class Command(SendNLCommand):
             offline_edition_file = join(settings.SENDNEWSLETTER_EXPORT_DIR, self.pub_slug + '_edition.json')
             if self.offline:
                 self.edition = json.loads(open(offline_edition_file).read())
+                if (
+                    not self.nlobj_pubs_edition_use_latest
+                    and self.edition.get('date_published_iso') != self.nl_delivery_dt.strftime("%Y-%m-%d")
+                ):
+                    error_msg = "Serialized edition date does not match today's date"
+                    self.log.error(error_msg)
+                    raise CommandError(error_msg)
             elif not self.export_subscribers:
                 editions = Edition.objects.filter(publication__slug=self.pub_slug)
                 if self.pub_slug in self.nlobj_pubs:

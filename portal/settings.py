@@ -459,6 +459,7 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = ()
 THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW = ()  # newsletter slugs to disable preview in browser
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 THEDAILY_AUTOMATIC_MAIL_LOGFILE = "/var/log/utopiacms/automatic_mail.log"
 

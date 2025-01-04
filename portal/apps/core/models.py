@@ -539,6 +539,7 @@ class Edition(PortableDocumentFormatBaseModel):
             },
             'pdf': {'path': self.pdf.path} if self.pdf else None,
             'date_published': self.date_published_verbose(False),
+            'date_published_iso': self.date_published.strftime("%Y-%m-%d"),
             'supplements': [s.pdf.path for s in Supplement.objects.filter(date_published=self.date_published)],
         }
         if self.publication.slug in getattr(settings, 'CORE_PUBLICATIONS_EDITION_DOWNLOAD', ()):

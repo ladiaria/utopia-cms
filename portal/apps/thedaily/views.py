@@ -1329,7 +1329,7 @@ def edit_profile(request, user=None):
             'google_oauth2_allow_disconnect':
                 not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
             'publication_newsletters': Publication.objects.filter(has_newsletter=True),
-            'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
+            'newsletters_disabled_preview': settings.THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW,
             'newsletters': get_profile_newsletters_ordered(),
             "mailtrain_lists": MailtrainList.objects.all(),
             "incomplete_field_count": sum(
