@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import sys
 from os.path import join
 import locale
@@ -108,11 +107,7 @@ def newsletter_preview(request, slug):
 
     site = Site.objects.get_current()
     category = get_object_or_404(Category, slug=slug)
-    context = {
-        'category': category,
-        'newsletter_campaign': category.slug,
-        "request_is_xhr": is_xhr(request),
-    }
+    context = {'ctobj': category, 'newsletter_campaign': category.slug, "request_is_xhr": is_xhr(request)}
     context.update(category.newsletter_extra_context)
     render_kwargs = {"context": context}
     template_name, nowval = None, now()
@@ -184,7 +179,7 @@ def newsletter_preview(request, slug):
         if not custom_subject:
             subject_call = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category.slug, None)
             email_subject += \
-                locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "headline", ""))
+                locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "nl_title", ""))
 
         email_from = '%s <%s>' % (
             category.newsletter_from_name or (
@@ -247,7 +242,7 @@ def newsletter_preview(request, slug):
 
 @never_cache
 def newsletter_browser_preview(request, slug, hashed_id=None):
-    category = get_object_or_404(Category, slug=slug)
+    get_object_or_404(Category, slug=slug)  # only to assert that the category exists
     if hashed_id:
         decoded = decode_hashid(hashed_id)
         # TODO: if authenticated => assert same logged in user
@@ -306,7 +301,6 @@ def newsletter_browser_preview(request, slug, hashed_id=None):
     # TODO: obtain missing vars from hashed_id subscriber (TODO: which are those vars?)
     context.update(
         {
-            "category": category,
             "browser_preview": True,
             "as_news": as_news,
             'hashed_id': hashed_id,

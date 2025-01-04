@@ -69,13 +69,13 @@ class Command(SendNLCommand):
     def build_and_send(self):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
         export_ctx = {
+            'ctobj': self.ctobj,
             'newsletter_campaign': self.category_slug,
             'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=self.nl_delivery_dt).capitalize(),
             'hide_after_content_block': self.hide_after_content_block,
         }
         export_ctx.update(self.newsletter_extra_context)
         context = export_ctx.copy()
-        context['category'] = self.category
 
         try:
 
@@ -238,7 +238,7 @@ class Command(SendNLCommand):
             if not custom_subject:
                 subject_call = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(self.category_slug)
                 email_subject += \
-                    locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "headline", ""))
+                    locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "nl_title", ""))
 
             # TODO: encapsulate this in a Category model method
             email_from = (
@@ -316,7 +316,7 @@ class Command(SendNLCommand):
                         is_subscriber_default = eval(is_subscriber_default)
                     else:
                         s, is_subscriber = next(subscribers_iter)
-                        s_id, s_name, s_user_email = s.id, s.name, s.user.email
+                        s_id, s_name, s_user_email = s.id, s.get_full_name(), s.user.email
                         hashed_id = hashids.encode(int(s_id))
                         is_subscriber_any = s.is_subscriber_any()
                         is_subscriber_default = s.is_subscriber(settings.DEFAULT_PUB)
@@ -413,6 +413,7 @@ class Command(SendNLCommand):
             c = Category.objects.get(slug=self.category_slug)
             self.category = self.category_slug if self.offline else c
             self.newsletter_extra_context = c.newsletter_extra_context
+            self.ctobj = c.nl_serialize()
         except Category.DoesNotExist:
             raise CommandError('No category matching the given slug found')
         self.initlog(log, self.category_slug)

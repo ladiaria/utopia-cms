@@ -189,7 +189,7 @@ class Command(SendNLCommand):
             site_url = context['site_url']
             list_id = context['list_id']
             self.newsletter_campaign = publication['newsletter_campaign']
-            context.update({'publication': publication, 'nl_date': self.edition['date_published']})
+            context.update({'ctobj': publication, 'nl_date': self.edition['date_published']})
             # de-serialize dates
             dp_cover = datetime.strptime(context['cover_article']['date_published'], '%Y-%m-%d').date()
             context['cover_article']['date_published'] = dp_cover
@@ -271,7 +271,7 @@ class Command(SendNLCommand):
 
                 custom_subject = (publication.newsletter_automatic_subject is False and publication.newsletter_subject)
                 custom_subject_prefix = self.custom_subject_prefix() if hasattr(self, 'custom_subject_prefix') else ""
-                email_subject = custom_subject or (custom_subject_prefix + remove_markup(cover_article.nl_title()))
+                email_subject = custom_subject or (custom_subject_prefix + remove_markup(cover_article.nl_title))
                 edition_cover_url = self.get_edition_cover_url()
                 edition_download_url = self.edition.get_download_url()
 
@@ -339,7 +339,6 @@ class Command(SendNLCommand):
             if not self.export_subscribers:
                 context.update(
                     {
-                        'publication': publication,
                         'newsletter_campaign': self.newsletter_campaign,
                         'custom_subject': custom_subject,
                         'edition_cover_url': edition_cover_url,

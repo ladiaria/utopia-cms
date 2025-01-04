@@ -77,8 +77,8 @@ class NewsletterPreview(TemplateView):
         publication_slug = kwargs.get('publication_slug')
         publication = get_object_or_404(Publication, slug=publication_slug)
         context = super().get_context_data()
+        context.update({"ctobj": publication, "preview_warn": ""})
         context.update(publication.extra_context.copy())
-        context.update({"publication": publication, "preview_warn": ""})
         status, template_name, template_name_default = None, None, self.template_name
         try:
             edition = get_latest_edition(publication)
@@ -147,7 +147,7 @@ class NewsletterPreview(TemplateView):
                     else:
                         custom_subject_prefix = \
                             self.custom_subject_prefix() if hasattr(self, 'custom_subject_prefix') else ""
-                        email_subject = custom_subject_prefix + remove_markup(cover_article.nl_title())
+                        email_subject = custom_subject_prefix + remove_markup(cover_article.nl_title)
 
                     headers = {
                         'From': '%s <%s>' % (email_from_name, settings.NOTIFICATIONS_FROM_ADDR1),
@@ -263,7 +263,7 @@ class NewsletterBrowserPreview(TemplateView):
         context.update(
             {
                 "browser_preview": True,
-                'publication': publication,
+                'ctobj': publication,
                 'newsletter_campaign': newsletter_campaign,
                 'nl_date': edition['date_published'],
             }

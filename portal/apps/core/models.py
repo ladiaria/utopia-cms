@@ -627,6 +627,7 @@ class Category(Model):
     newsletter_new_pill = BooleanField('pill de "nuevo" para la newsletter en el perfil de usuario', default=False)
     newsletter_tagline = CharField(max_length=128, blank=True, null=True)
     newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
+    newsletter_header_color = CharField('color de cabezal para NL', max_length=7, default='#262626')
     newsletter_from_name = CharField("nombre en el 'From' del mensaje", max_length=64, blank=True, null=True)
     newsletter_from_email = EmailField("email en el 'From' del mensaje", blank=True, null=True)
     newsletter_automatic_subject = BooleanField(default=True)
@@ -784,6 +785,9 @@ class Category(Model):
             except NoReverseMatch:
                 result = None
         return result
+
+    def nl_serialize(self):
+        return {"newsletter_header_color": self.newsletter_header_color}
 
     def profile_newsletter_name(self):
         """
@@ -2063,6 +2067,7 @@ class Article(ArticleBase):
             except Exception:
                 pass
 
+    @property
     def nl_title(self):
         return self.alt_title_newsletters or self.headline
 
@@ -2076,7 +2081,7 @@ class Article(ArticleBase):
             'id': self.id,
             'get_absolute_url': self.get_absolute_url(),
             'date_published': str(self.date_published.date()) if dates else self.date_published,
-            'nl_title': self.nl_title(),
+            'nl_title': self.nl_title,
             'nl_desc': self.nl_desc(),
             'has_byline': self.has_byline(),
             'get_authors': [

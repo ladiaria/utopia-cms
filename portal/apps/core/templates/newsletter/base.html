@@ -1,4 +1,5 @@
 {% block base_newsletter %}
+{% with primary_black=primary_black|default:"#0a0a0a" main_font=main_font|default:"Roboto,Arial,sans-serif" %}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -6,11 +7,11 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>{% spaceless %}{# https://stackoverflow.com/q/12237776/2292933 #}
       {% if headers_preview or browser_preview %}
-        {{ site.name }} - {% if category %}{{ category }}{% else %}{{ publication }}{% endif %} - newsletter {% if browser_preview %}browser {% endif %}preview
+        {{ site.name }} - {{ newsletter_campaign }} - newsletter {% if browser_preview %}browser {% endif %}preview
       {% endif %}
     {% endspaceless %}</title>
   </head>{% spaceless %}
-  <body style="-moz-box-sizing:border-box;-ms-text-size-adjust:100%;-webkit-box-sizing:border-box;-webkit-text-size-adjust:100%;Margin:0;box-sizing:border-box;color:{{ primary_black|default:"#0a0a0a" }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;min-width:100%;padding:0;text-align:left;width:100%!important">
+  <body style="-moz-box-sizing:border-box;-ms-text-size-adjust:100%;-webkit-box-sizing:border-box;-webkit-text-size-adjust:100%;Margin:0;box-sizing:border-box;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;min-width:100%;padding:0;text-align:left;width:100%!important">
     <div style="display:none;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden">
       {% block body_text_preview %}{% endblock %}
     </div>
@@ -66,7 +67,7 @@
         {% endif %}
       </table>
     {% else %}
-      <table id="Bcontainer" class="body" data-made-with-foundation="" style="margin:0;background:{% block bg_color %}#f3f3f3{% endblock %};border-collapse:collapse;border-spacing:0;color:{{ primary_black|default:"#0a0a0a" }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;height:100%;line-height:1.3;padding:0;text-align:left;vertical-align:top;width:100%">
+      <table id="Bcontainer" class="body" data-made-with-foundation="" style="margin:0;background:{% block bg_color %}#f3f3f3{% endblock %};border-collapse:collapse;border-spacing:0;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;height:100%;line-height:1.3;padding:0;text-align:left;vertical-align:top;width:100%">
         <tbody>
           <tr{% if preview_err %} style="display:none"{% endif %}>
             <td style="padding:0">
@@ -81,7 +82,7 @@
                         <div style="max-width:580px;width:100%;margin:0 auto;text-align:center">
                           {% if browser_preview_url %}
                             <a style="margin:0;display:inline-block;color:#686868;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:12px;font-weight:400;line-height:1.3"
-                              href="{{ browser_preview_url }}{% if as_news %}?as_news=1{% endif %}">
+                               href="{{ browser_preview_url }}{% if as_news %}?as_news=1{% endif %}">
                               Ver en el navegador
                             </a>
                           {% endif %}
@@ -89,28 +90,28 @@
                       </td>
                     </tr>
                     <tr style="padding:0;text-align:left;vertical-align:top">
-                      <td style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0;border-collapse:collapse!important;color:{{ primary_black|default:"#0a0a0a" }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0;padding:0;text-align:left;vertical-align:top;word-wrap:break-word">
+                      <td style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0;border-collapse:collapse!important;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0;padding:0;text-align:left;vertical-align:top;word-wrap:break-word">
                         <table style="Margin:0 auto;background:#fefefe;border-collapse:collapse;border-spacing:0;margin:0 auto;padding:0;text-align:inherit;vertical-align:top;max-width:580px;border-top-left-radius:4px;border-top-right-radius:4px;border-spacing:0;border-collapse:separate;overflow:hidden;border:1px solid {% block header_border_color %}#D8D8D8{% endblock %};width:100%" align="center">
                           <tbody style="background:#ffffff;padding:0;border-bottom:0">
                             <tr style="padding:0;text-align:left;vertical-align:top">
-                              <td style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0;border-collapse:collapse!important;color:{{ primary_black|default:"#0a0a0a" }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0;padding:0;text-align:left;vertical-align:top;word-wrap:break-word">
+                              <td style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0;border-collapse:collapse!important;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0;padding:0;text-align:left;vertical-align:top;word-wrap:break-word">
                                 {% block logo %}
-                                  <table style="background:{{ publication.newsletter_header_color }};border-collapse:collapse;border-spacing:0;display:table;padding:0;position:relative;text-align:left;vertical-align:top;width:100%">
-                                    <tbody style="background:{{ publication.newsletter_header_color }};padding:0">
+                                  <table style="background:{{ ctobj.newsletter_header_color }};border-collapse:collapse;border-spacing:0;display:table;padding:0;position:relative;text-align:left;vertical-align:top;width:100%">
+                                    <tbody style="background:{{ ctobj.newsletter_header_color }};padding:0">
                                       <tr style="padding:0;text-align:left;vertical-align:top">
-                                        <th class="small-12 large-12 columns first last" style="Margin:0 auto;color:{{ primary_black|default:"#0a0a0a" }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0 auto;padding:0;padding-bottom:0;padding-left:0;padding-right:0;text-align:left;width:588px">
+                                        <th class="small-12 large-12 columns first last" style="Margin:0 auto;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0 auto;padding:0;padding-bottom:0;padding-left:0;padding-right:0;text-align:left;width:588px">
                                           <table style="border-collapse:collapse;border-spacing:0;padding:0;text-align:left;vertical-align:top;width:100%">
                                             <tbody>
                                               <tr style="padding:0;text-align:left;vertical-align:top">
-                                                <th style="Margin:0;color:{{ primary_black|default:"#0a0a0a" }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0;text-align:left">
+                                                <th style="Margin:0;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0;text-align:left">
                                                   <table style="border-collapse:collapse;border-spacing:0;display:table;padding:0;position:relative;text-align:left;vertical-align:top;width:100%">
-                                                    <tbody style="background:{{ publication.newsletter_header_color }};padding:0">
+                                                    <tbody style="background:{{ ctobj.newsletter_header_color }};padding:0">
                                                       <tr style="padding:0;text-align:left;vertical-align:top">
-                                                        <th class="small-12 large-4 columns" style="Margin:0 auto;color:{{ primary_black|default:"#0a0a0a" }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0 auto;padding:0;padding-bottom:0px;padding-left:0!important;padding-right:0!important;text-align:center;width:100%">
+                                                        <th class="small-12 large-4 columns" style="Margin:0 auto;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0 auto;padding:0;padding-bottom:0px;padding-left:0!important;padding-right:0!important;text-align:center;width:100%">
                                                           <table style="border-collapse:collapse;border-spacing:0;padding:0;text-align:left;vertical-align:top;width:100%">
                                                             <tbody>
                                                               <tr style="padding:0;text-align:left;vertical-align:top">
-                                                                <th style="Margin:0;color:{{ primary_black|default:"#0a0a0a" }};font-family:Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:16px 0 0 0;text-align:center; display:block;">
+                                                                <th style="Margin:0;color:{{ primary_black }};font-family:Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:16px 0 0 0;text-align:center; display:block;">
                                                                   <a href="{{ site_url }}/" style="display:inline-block;">
                                                                     <img class="float-center" src="{{ site_url }}{% block logo_url %}{{ logo_url }}{% endblock %}" alt="Logo {{ newsletter_campaign }}" align="middle"
                                                                         style="-ms-interpolation-mode:bicubic;Margin:0 auto;clear:both;display:block;float:none;margin:0 auto;max-width:{{ logo_max_width|default:"100%" }};outline:0;text-align:center;text-decoration:none;image-rendering:-webkit-optimize-contrast;">
@@ -129,7 +130,7 @@
                                                                 {% include support_message_template %}
                                                               {% endif %}
                                                               <tr style="padding:0;text-align:left;vertical-align:top">
-                                                                <th style="height:8px; background:{{ publication.newsletter_header_color }};"></th>
+                                                                <th style="height:8px; background:{{ ctobj.newsletter_header_color }};"></th>
                                                               </tr>
                                                             </tbody>
                                                           </table>
@@ -159,14 +160,14 @@
           </tr>
           {% block email_body %}{# TODO: rename this block better #}
             <tr style="padding:0;text-align:left;vertical-align:top">
-              <td class="float-center" style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0 auto;border-collapse:collapse!important;color:{{ primary_black|default:"#0a0a0a" }};float:none;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0 auto;padding:0;text-align:center;vertical-align:top;word-wrap:break-word" valign="top" align="center">
+              <td class="float-center" style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0 auto;border-collapse:collapse!important;color:{{ primary_black }};float:none;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0 auto;padding:0;text-align:center;vertical-align:top;word-wrap:break-word" valign="top" align="center">
                 <center data-parsed="" style="{% block body_center_col_style %}max-width:580px;width:100%;margin:0 auto;{% endblock %}">
                   <table style="{% block body_margin %}Margin:0 auto 10px auto{% endblock %};background:#fefefe;border-collapse:collapse;border-spacing:0;padding:0;text-align:inherit;vertical-align:top;max-width:580px;{% block body_border_radius %}border-bottom-left-radius:4px;border-bottom-right-radius:4px;{% endblock %}border-spacing:0;border-collapse:separate;overflow:hidden" align="center">
                     <tbody>
                       {% block message %}{% endblock %}
                       {% block featured_article %}{% endblock %}
                       <tr style="padding:0;text-align:left;vertical-align:top">
-                        <td style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0;border-collapse:collapse!important;color:{{ primary_black|default:"#0a0a0a" }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0;padding:0;text-align:left;vertical-align:top;word-wrap:break-word">
+                        <td style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0;border-collapse:collapse!important;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0;padding:0;text-align:left;vertical-align:top;word-wrap:break-word">
                           <table style="border-bottom:solid 1px;border-left:solid 1px;border-right:solid 1px;border-color:{% block bottom_border_color_coverarticle %}#cecece{% endblock %};border-collapse:collapse;border-spacing:0;display:table;padding:0;position:relative;text-align:left;vertical-align:top;width:100%;overflow:hidden">
                             <tbody>
                               {% block list_section %}{% endblock %}
@@ -225,4 +226,5 @@
     {% endif %}
   </body>{% endspaceless %}
 </html>
+{% endwith %}
 {% endblock %}
