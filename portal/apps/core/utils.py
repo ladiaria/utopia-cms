@@ -131,6 +131,22 @@ def get_category_template(category_slug, template_destination="detail"):
     return template
 
 
+def get_nl_featured_article_id():
+    return getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', None)
+
+
+def serialize_wrapper(article_or_list, publication, for_cover=False, dates=True):
+    if isinstance(article_or_list, list):
+        return [
+            (
+                t[0].nl_serialize(t[1], publication, dates=dates), t[1]
+            ) if isinstance(t, tuple)
+            else t.nl_serialize(publication=publication, dates=dates) for t in article_or_list
+        ]
+    elif article_or_list:
+        return article_or_list.nl_serialize(for_cover, publication, dates=dates)
+
+
 def add_punctuation(text):
     valid_chars = 'AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789"'
     if text != '':
@@ -166,6 +182,7 @@ class CT(object):
 
 
 def smart_quotes(value):
+    # TODO: explain this function and try to change it at least to eliminate the warnings of "invalid escape sequence"
     value = re.sub(r"(?![^<>]*>)(\")\b", "“", value)
     value = re.sub(r"\b(?![^<>]*>)(\")", "”", value)
     value = re.sub("\"(?=[¿¡\‘\'\(\[ÑÁÉÍÓÚñáéíóú])", "“", value)

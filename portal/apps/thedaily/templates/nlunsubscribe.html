@@ -1,44 +1,60 @@
 {% load static compress %}<!doctype html>
 {% block html %}
-  <html lang="es-UY">
+  <html lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}">
 {% endblock %}
 <head>
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   <title>{% block title %}Desuscripción a newsletter{% endblock %}</title>
-  <meta name="description" content="{% block description %}Desuscripción{% endblock %}.">
+  <meta name="description" content="{% block description %}Desuscripción a newsletter{% endblock %}.">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% compress css %}
-    <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {% block css %}
+      <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {% endblock %}
   {% endcompress %}
 </head>
-<body class="nlunsubscribe ld-notice">
-  <div id="main-header">
-    <nav class="subscription_black">
-      <a href="{% url 'home' %}">
-        <img class="logo_ladiaria" src="{% static logo %}" alt="Logo de {{ site.name }}" width="{{ logo_width }}" height="42">
-      </a>
-    </nav>
-  </div>
-  <div class="ld-subscribe-box">
-    <span class="ld-subscribe-box__title">
-      {% if error %}
-        {{ error }}.
-      {% else %}
-        {% block success %}Ya no recibirás la newsletter de {{ publication.newsletter_name|default:publication.name }}{% endblock %}.
-      {% endif %}
-    </span>
-    <div class="ld-subscribe-box__info ld-caption">
-      <p>
-        {% block configure %}<a href="{% url 'edit-profile' %}#ld-newsletters">Configurar todos tus newsletters</a>{% endblock %}
-      </p>
-      <p><a href="/">Ir a la portada</a></p>
-    </div>
-  </div>
-  <div class="ld-text-secondary nlunsubscribe__info">
-    <div class="container">
-      Esta acción no cancela tu suscripción a <i>{{ site.name }}</i>,
-      para cancelar tu suscripción <a href="{% url 'contact-form' %}">comunicate con atención al cliente</a>.
-    </div>
-  </div>
+<body class="{% block body_class %}nlunsubscribe ld-notice{% endblock %}">
+  {% block body_content %}
+    {% block header %}
+      <div id="main-header">
+        <nav class="subscription_black">
+          <a href="{% url 'home' %}">
+            <img{% if logo_class %} class="{{ logo_class }}"{% endif %} src="{% static logo %}" alt="Logo de {{ site.name }}" width="{{ logo_width }}" height="42">
+          </a>
+        </nav>
+      </div>
+    {% endblock %}
+    {% block body_content_inner %}
+      <div class="ld-subscribe-box">
+        <span class="ld-subscribe-box__title">
+          {% if error %}
+            {{ error }}.
+          {% else %}
+            {% block success %}Ya no recibirás la newsletter de {{ publication.newsletter_name|default:publication.name }}{% endblock %}.
+          {% endif %}
+        </span>
+        <div class="ld-subscribe-box__info ld-caption">
+          <p>
+            {% block configure %}
+              <a href="{% url 'edit-profile' %}#ld-{{ configure_hash|default:"newsletters" }}"
+                 {% if configure_class %} class="{{ configure_class }}"{% endif %}>
+                {{ configure_text|default:"Configurar todos tus newsletters" }}
+              </a>
+            {% endblock %}
+          </p>
+          <p><a href="/">Ir a la portada</a></p>
+        </div>
+      </div>
+    {% endblock %}
+    {% block footer %}
+      <div class="ld-text-secondary nlunsubscribe__info">
+        <div class="container">
+          Esta acción no cancela tu suscripción a <i>{{ site.name }}</i>,
+          para cancelar tu suscripción <a href="{% url 'contact-form' %}">comunicate con atención al cliente</a>.
+        </div>
+      </div>
+    {% endblock %}
+  {% endblock %}
 </body>
+</html>

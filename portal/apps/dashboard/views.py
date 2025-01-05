@@ -20,6 +20,7 @@ from django.utils.timezone import now, datetime
 
 from django_amp_readerid.utils import get_related_user
 
+from core.models import Publication
 from thedaily.utils import get_profile_newsletters_ordered
 from .management.commands.nldelivery_sync_stats import get_report
 from .models import AudioStatistics, NewsletterDelivery
@@ -47,6 +48,7 @@ def index(request):
             'financial_extra_items_template': getattr(settings, 'DASHBOARD_FINANCIAL_EXTRA_ITEMS_TEMPLATE', None),
             "newsletters": get_profile_newsletters_ordered(),
             "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+            "multi_publication": Publication.multi(),
         },
     )
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-02 08:38-0300\n"
+"POT-Creation-Date: 2024-12-27 19:47-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,57 +20,79 @@ msgstr ""
 
 #: apps/comunidad/admin.py:16
 msgid "Usado"
-msgstr ""
+msgstr "Usado"
 
 #: apps/comunidad/admin.py:22
 msgid "Used"
-msgstr ""
+msgstr "Usado"
 
 #: apps/comunidad/admin.py:23
 msgid "Not Used"
-msgstr ""
+msgstr "No usado"
 
+#: apps/core/templates/edition/download_email_sent.html:12
 #: apps/thedaily/forms.py:161 apps/thedaily/forms.py:328
 msgid "Email"
 msgstr "Correo electrónico"
 
-#: apps/thedaily/models.py:133
+#: apps/core/templates/edition/download_email_sent.html:14
+#: apps/thedaily/models.py:51 apps/thedaily/views.py:961
+msgid "email"
+msgstr "correo electrónico"
+
+#: apps/thedaily/exceptions.py:8
+msgid "contactate"
+msgstr "contáctese"
+
+#: apps/thedaily/models.py:134
 msgid "name"
 msgstr "nombre"
 
-#: apps/thedaily/views.py:942
-msgid "email"
-msgstr "correo electrónico"
+#: apps/thedaily/models.py:302
+msgid "user id"
+msgstr "id de usuario"
+
+#: apps/thedaily/models.py:507
+msgid "tus datos"
+msgstr "sus datos"
+
+#: apps/thedaily/models.py:526
+msgid "tu perfil"
+msgstr "su perfil"
+
+#: apps/thedaily/templates/disable_profile_property.html:8
+msgid "recibirás"
+msgstr "recibirá"
 
 #: templates/admin/app_list.html:11
 #, python-format
 msgid "Models in the %(name)s application"
-msgstr ""
+msgstr "Modelos en la aplicación %(name)s"
 
 #: templates/admin/app_list.html:40 templates/admin/app_list.html:60
 #: templates/admin/app_list.html:73
 msgid "Add"
-msgstr ""
+msgstr "Agregar"
 
 #: templates/admin/app_list.html:47
 msgid "View"
-msgstr ""
+msgstr "Ver"
 
 #: templates/admin/app_list.html:49 templates/admin/app_list.html:65
 #: templates/admin/app_list.html:78
 msgid "Change"
-msgstr ""
+msgstr "Cambiar"
 
 #: templates/admin/app_list.html:88
 msgid "You don’t have permission to view or edit anything."
-msgstr ""
+msgstr "Usted no tiene permisos para ver o editar nada."
 
 #: templates/admin/change_form_object_tools.html:6
 #: templates/admin/core/article/change_form_object_tools.html:8
 msgid "History"
-msgstr ""
+msgstr "Histórico"
 
 #: templates/admin/change_form_object_tools.html:9
 #: templates/admin/change_form_object_tools.html:10
 msgid "View on site"
-msgstr ""
+msgstr "Ver en el sitio"

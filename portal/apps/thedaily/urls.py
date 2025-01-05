@@ -50,6 +50,7 @@ from .views import (
     subscribe_notice_closed,
     nl_track_open_event,
     mailtrain_lists,
+    news_preview,
 )
 from .utils import get_app_template
 
@@ -196,6 +197,7 @@ urlpatterns = [
 
     path('suscribite-por-telefono/', phone_subscription, name="phone-subscription"),
 
+    path('news_preview/', news_preview, name="news-preview"),
     re_path(r'^notification_preview/(?P<template>[\w]+)/$', notification_preview, name="notification_preview"),
     re_path(
         r'^notification_preview/(?P<template>[\w]+)/days/$',

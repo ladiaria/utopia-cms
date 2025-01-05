@@ -15,6 +15,7 @@ from uuid import uuid4
 from smtplib import SMTPRecipientsRefused
 from PIL import Image
 from ga4mp import GtagMP
+from hashids import Hashids
 
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
@@ -140,6 +141,8 @@ standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
 account_verify_msg = 'Verificá tu cuenta de' + get_site_name()
+# Initialize the hashid object with salt from settings and custom length
+hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 
 def no_op_decorator(func):
@@ -291,7 +294,7 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
                 ctx['error'] = e.displaymessage
-            return render(request, 'nlsubscribe.html', ctx)
+            return render(request, get_app_template('nlsubscribe.html'), ctx)
         else:
             raise Http404
     # default behavour: go to profile or login
@@ -306,7 +309,6 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
 
 
 @never_cache
-@to_response
 def nl_category_subscribe(request, slug, hashed_id=None):
     """
     if hashed id is given, this view will do similar things than nl_subscribe with a category instead of a publication
@@ -333,7 +335,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
                 next_page = request.GET.get('next')
                 if next_page:
                     return HttpResponseRedirect(next_page)
-            return 'nlsubscribe.html', ctx
+            return render(request, get_app_template('nlsubscribe.html'), ctx)
         else:
             raise Http404
     else:
@@ -1327,7 +1329,7 @@ def edit_profile(request, user=None):
             'google_oauth2_allow_disconnect':
                 not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
             'publication_newsletters': Publication.objects.filter(has_newsletter=True),
-            'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
+            'newsletters_disabled_preview': settings.THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW,
             'newsletters': get_profile_newsletters_ordered(),
             "mailtrain_lists": MailtrainList.objects.all(),
             "incomplete_field_count": sum(
@@ -2289,7 +2291,7 @@ def nlunsubscribe(request, publication_slug, hashed_id):
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+        return render(request, get_app_template('nlunsubscribe.html'), ctx)
     except IndexError:
         raise Http404
 
@@ -2320,7 +2322,7 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+        return render(request, get_app_template('nlunsubscribe.html'), ctx)
     except IndexError:
         raise Http404
 
@@ -2358,15 +2360,17 @@ def nl_track_open_event(request, s8r_or_registered, hashed_id, nl_campaign, nl_d
 
 @csrf_exempt
 @never_cache
-@to_response
 def disable_profile_property(request, property_id, hashed_id):
-    """ Disables the profile bool property_id related to the subscriber matching the hashed_id argument given """
+    """
+    Disables the profile bool property_id related to the subscriber matching the hashed_id argument given
+    """
     try:
         subscriber = get_object_or_404(Subscriber, id=decode_hashid(hashed_id)[0])
         if not subscriber.user:
             raise Http404
         setattr(subscriber, property_id, False)
         ctx = {
+            'nlunsubscribe_template': get_app_template('nlunsubscribe.html'),
             'property_name': {
                 'allow_news': 'Novedades',
                 'allow_promotions': 'Promociones',
@@ -2380,9 +2384,40 @@ def disable_profile_property(request, property_id, hashed_id):
         except Exception as e:
             # for some reason UpdateCrmEx does not work in test (Python ver?)
             ctx['error'] = e.displaymessage
-        return 'disable_profile_property.html', ctx
+        return render(request, get_app_template('disable_profile_property.html'), ctx)
     except IndexError:
         raise Http404
+
+
+@never_cache
+@staff_member_required
+def news_preview(request):
+    # TODO: check/fix the logo and the feature to give any template by query param.
+    subscriber = None
+    try:
+        subscriber = Subscriber.objects.get(id=request.GET.get('subscriber_id'))
+    except (Subscriber.DoesNotExist, ValueError):
+        try:
+            subscriber = request.user.subscriber
+        except AttributeError:
+            is_subscriber, subscriber_id = False, 0
+    if subscriber:
+        is_subscriber, subscriber_id = subscriber.is_subscriber(), int(subscriber.id)
+    site_url, hashed_id = settings.SITE_URL_SD, hashids.encode(subscriber_id)
+    return render(
+        request,
+        get_app_template('news/%s' % request.GET.get('template', 'notice.html')),
+        {
+            'preview': True,
+            'is_subscriber': is_subscriber,
+            'subscriber_id': subscriber_id,
+            'hashed_id': hashed_id,
+            'logo_url': settings.HOMEV3_SECONDARY_LOGO,
+            'site_url': site_url,
+            'unsubscribe_url': '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id),
+            'minimal_footer': request.GET.get('minimal_footer', '0') == '1',
+        },
+    )
 
 
 @never_cache

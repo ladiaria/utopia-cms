@@ -15,6 +15,8 @@ from bs4 import BeautifulSoup
 import readtime
 import mutagen
 import w3storage
+from concurrency.api import apply_concurrency_check
+from concurrency.fields import IntegerVersionField
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -174,6 +176,15 @@ class Publication(Model):
         # needed for articles url update on save
         super().__init__(*args, **kwargs)
         self.__original_slug = self.slug
+
+    @staticmethod
+    def default_name():
+        DEFAULT_PUB = settings.DEFAULT_PUB
+        try:
+            default_pub_name = Publication.objects.get(slug=DEFAULT_PUB).name
+        except Publication.DoesNotExist:
+            default_pub_name = "default"
+        return default_pub_name
 
     def save(self, *args, **kwargs):
         # needed for articles url update
@@ -343,15 +354,18 @@ class PortableDocumentFormatBaseModel(Model):
         return '%s.jpg' % self.get_pdf_filename()[:-4]
 
     def get_download_url(self):
-        return reverse(
-            'edition_download',
-            kwargs={
-                'publication_slug': self.publication.slug,
-                'year': self.date_published.year,
-                'month': '%02d' % self.date_published.month,
-                'day': '%02d' % self.date_published.day,
-                'filename': basename(self.pdf.path),
-            },
+        return (
+            self.publication.slug in getattr(settings, 'CORE_PUBLICATIONS_EDITION_DOWNLOAD', ())
+            and reverse(
+                'edition_download',
+                kwargs={
+                    'publication_slug': self.publication.slug,
+                    'year': self.date_published.year,
+                    'month': '%02d' % self.date_published.month,
+                    'day': '%02d' % self.date_published.day,
+                    'filename': basename(self.pdf.path),
+                },
+            )
         )
 
     def download(self, request=None):
@@ -525,6 +539,7 @@ class Edition(PortableDocumentFormatBaseModel):
             },
             'pdf': {'path': self.pdf.path} if self.pdf else None,
             'date_published': self.date_published_verbose(False),
+            'date_published_iso': self.date_published.strftime("%Y-%m-%d"),
             'supplements': [s.pdf.path for s in Supplement.objects.filter(date_published=self.date_published)],
         }
         if self.publication.slug in getattr(settings, 'CORE_PUBLICATIONS_EDITION_DOWNLOAD', ()):
@@ -612,6 +627,7 @@ class Category(Model):
     newsletter_new_pill = BooleanField('pill de "nuevo" para la newsletter en el perfil de usuario', default=False)
     newsletter_tagline = CharField(max_length=128, blank=True, null=True)
     newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
+    newsletter_header_color = CharField('color de cabezal para NL', max_length=7, default='#262626')
     newsletter_from_name = CharField("nombre en el 'From' del mensaje", max_length=64, blank=True, null=True)
     newsletter_from_email = EmailField("email en el 'From' del mensaje", blank=True, null=True)
     newsletter_automatic_subject = BooleanField(default=True)
@@ -769,6 +785,9 @@ class Category(Model):
             except NoReverseMatch:
                 result = None
         return result
+
+    def nl_serialize(self):
+        return {"newsletter_header_color": self.newsletter_header_color}
 
     def profile_newsletter_name(self):
         """
@@ -1058,6 +1077,7 @@ class Journalist(Model):
     email = EmailField(blank=True, null=True)
     slug = SlugField('slug', unique=True)
     image = ImageField('imagen', upload_to='journalist', blank=True, null=True)
+    bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
     job = CharField(
         'trabajo',
         max_length=2,
@@ -1065,11 +1085,10 @@ class Journalist(Model):
         default='PE',
         help_text='Rol en que se desempeña principalmente.',
     )
-    bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
     sections = ManyToManyField(Section, verbose_name='secciones', blank=True)
 
-    # the order in which this class properties are declared is the order in which they'll be displayed unless
-    # overridden by CORE_JOURNALIST_SOCIAL_ORDER setting
+    # the order in which this class properties are declared is the order in which they'll be displayed, unless
+    # overridden in CORE_JOURNALIST_SOCIAL_ORDER setting
     bs = URLField('bluesky', blank=True, null=True)
     fb = URLField('facebook', blank=True, null=True)
     ig = URLField('instagram', blank=True, null=True)
@@ -1177,8 +1196,8 @@ class ArticleBase(Model, CT):
     )
 
     HEADER_DISPLAY_CHOICES = (
-        ('FW', 'Ancho completo'),
-        ('BG', 'Grande'),
+        ('FW', getattr(settings, 'CORE_ARTICLE_HEADER_DISPLAY_CHOICES_FW', 'Ancho completo')),
+        ('BG', getattr(settings, 'CORE_ARTICLE_HEADER_DISPLAY_CHOICES_BG', 'Grande')),
     )
 
     HOME_HEADER_DISPLAY_CHOICES = (
@@ -1203,14 +1222,20 @@ class ArticleBase(Model, CT):
     slug = SlugField('slug', max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
-        'descripción', blank=True, null=True, help_text='Se muestra en la página del artículo debajo del título.'
+        'descripción',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            "Se muestra en la página del artículo debajo del título y en demás lugares<br>del sitio que se muestre la "
+            "descripción (a no ser que tenga una versión<br>alternativa activa que la reemplace)."
+        ),
     )
     lead = TextField(
         'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
     body = locate(settings.CORE_ARTICLE_BODY_FIELD_CLASS)("cuerpo")
     header_display = CharField(
-        'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
+        'estilo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
     )
     home_header_display = CharField(
         'tipo de cabezal cuando es portada',
@@ -1220,7 +1245,14 @@ class ArticleBase(Model, CT):
         null=True,
         default='SM',
     )
-    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada del artículo en portada.')
+    home_lead = TextField(
+        "Descripción alternativa para portada principal (home)",
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            "Se muestra en la portada principal (home).<br>Si se deja vacía aplica Descripción principal."
+        ),
+    )
     home_display = CharField('mostrar en portada', max_length=2, choices=DISPLAY_CHOICES, blank=True, null=True)
     home_top_deck = TextField(
         'bajada en destacados',
@@ -1253,7 +1285,9 @@ class ArticleBase(Model, CT):
         blank=True,
         null=True,
     )
-    is_published = BooleanField('publicado', default=True, db_index=True)
+    is_published = BooleanField(
+        'publicado', default=getattr(settings, 'CORE_ARTICLE_IS_PUBLISHED_DEFAULT', True), db_index=True
+    )
     to_be_published = BooleanField('programar publicación', default=False, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
@@ -1269,18 +1303,11 @@ class ArticleBase(Model, CT):
         blank=False,
         null=True,
     )
-    photo = ForeignKey(Photo, on_delete=SET_NULL, blank=True, null=True, verbose_name='imagen')
-    gallery = ForeignKey(Gallery, on_delete=SET_NULL, verbose_name='galería', blank=True, null=True)
-    video = ForeignKey(
-        Video,
-        on_delete=SET_NULL,
-        verbose_name='video',
-        related_name='articles_%(app_label)s',
-        blank=True,
-        null=True,
-    )
+    photo = ForeignKey(Photo, on_delete=SET_NULL, blank=True, null=True, verbose_name="imagen principal")
+    gallery = ForeignKey(Gallery, on_delete=SET_NULL, blank=True, null=True, verbose_name="galería")
+    video = ForeignKey(Video, on_delete=SET_NULL, related_name='articles_%(app_label)s', blank=True, null=True)
     youtube_video = ForeignKey(
-        YouTubeVideo, on_delete=SET_NULL, verbose_name='video de YouTube', blank=True, null=True
+        YouTubeVideo, on_delete=SET_NULL, blank=True, null=True, verbose_name='video de YouTube'
     )
     audio = ForeignKey(
         Audio,
@@ -1550,6 +1577,10 @@ class ArticleBase(Model, CT):
         return self.photo and self.photo.extended.photographer
 
     @property
+    def photo_agency(self):
+        return self.photo and self.photo.extended.agency
+
+    @property
     def photo_caption(self):
         result = self.photo.caption or "Foto principal del artículo '%s'" % remove_markup(self.headline)
         if self.photo_author:
@@ -1725,10 +1756,10 @@ class Article(ArticleBase):
         'descripción alternativa para metadatos',
         blank=True,
         null=True,
-        help_text=mark_safe(
-            'Aplica a metadatos: meta description, Open Graph y Schema en el '
-        ) + escape("<head>")
-        + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Descripción principal.')
+        help_text=(
+            mark_safe('Aplica a metadatos: meta description, Open Graph y Schema en el<br>') + escape("<head>")
+            + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Descripción principal.')
+        )
     )
     alt_title_newsletters = CharField(
         'título alternativo para newsletters',
@@ -2036,6 +2067,13 @@ class Article(ArticleBase):
             except Exception:
                 pass
 
+    @property
+    def nl_title(self):
+        return self.alt_title_newsletters or self.headline
+
+    def nl_desc(self):
+        return self.alt_desc_newsletters or self.deck or self.lead or self.home_lead
+
     def nl_serialize(self, for_cover=False, publication=None, category=None, dates=True):
         authors = self.get_authors()
         section = self.publication_section(publication) if publication else self.get_section(category)
@@ -2043,9 +2081,8 @@ class Article(ArticleBase):
             'id': self.id,
             'get_absolute_url': self.get_absolute_url(),
             'date_published': str(self.date_published.date()) if dates else self.date_published,
-            'headline': self.headline,
-            'home_lead': self.home_lead,
-            'deck': self.deck,
+            'nl_title': self.nl_title,
+            'nl_desc': self.nl_desc(),
             'has_byline': self.has_byline(),
             'get_authors': [
                 {
@@ -2063,6 +2100,8 @@ class Article(ArticleBase):
                 result['photo'] = {'get_700w_url': self.photo.get_700w_url(), 'caption': self.photo.caption}
                 if self.photo_author:
                     result.update({'photo_author': self.photo_author.name, 'photo_type': self.photo_type})
+                if self.photo_agency:
+                    result.update({'photo_agency': self.photo_agency.name})
         # extra data for category NLs
         if category:
             nl_email_template = get_category_template(category.slug, "newsletter")
@@ -2077,6 +2116,9 @@ class Article(ArticleBase):
                 extra_meta_data = json.loads(extra_meta_template.render(Context({"article": self})))
                 result.update(extra_meta_data)
         return result
+
+
+apply_concurrency_check(Article, 'version', IntegerVersionField)
 
 
 class ArticleCollection(Article):
@@ -2190,7 +2232,6 @@ class ArticleRel(Model):
 
     class Meta:
         ordering = ('position', '-article__date_published')
-        unique_together = ('article', 'edition', 'section', 'position')
 
 
 class ArticleViewedBy(Model):
@@ -2429,6 +2470,70 @@ class ArticleUrlHistory(Model):
 
     class Meta:
         unique_together = ('article', 'absolute_url')
+
+
+# Models for the default_pub custom NLs
+class DefaultNewsletterArticleBase(Model):
+    newsletter = ForeignKey('DefaultNewsletter', on_delete=CASCADE)
+    order = PositiveSmallIntegerField('orden', null=True, blank=True)
+
+    def __str__(self):
+        # also a custom text version to be useful in the DefaultNewsletter admin change form
+        return date_format(
+            self.article.last_published_by_publication_slug(settings.DEFAULT_PUB),
+            format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shorter format
+            use_l10n=True,
+        ) if self.article.is_published else "NP"
+
+    class Meta:
+        abstract = True
+        ordering = ('order', )
+
+
+class DefaultNewsletterArticle(DefaultNewsletterArticleBase):
+    article = ForeignKey(
+        Article,
+        on_delete=CASCADE,
+        verbose_name='artículo',
+        related_name='default_newsletter_articles',
+        limit_choices_to={'is_published': True},
+    )
+    include_photo = BooleanField('incluir foto', default=False)
+
+    def __str__(self):
+        return super().__str__() + ('-F' if self.article.photo else '')
+
+
+default_pub_name = Publication.default_name()
+
+
+class DefaultNewsletterMeta:
+    verbose_name = f'newsletter {default_pub_name}'
+    verbose_name_plural = f'newsletters {default_pub_name}'
+    ordering = ('-day', )
+    get_latest_by = 'day'
+
+
+class DefaultNewsletter(Model):
+    day = DateField('fecha', unique=True, default=now)
+    articles = ManyToManyField(Article, through=DefaultNewsletterArticle, related_name='default_newsletters_m2m')
+
+    def __str__(self):
+        return '%s - %s' % (self.day, self.cover_desc("Artículo principal no configurado"))
+
+    def cover_desc(self, force_desc=""):
+        return self.cover() or force_desc or mark_safe("<em>no configurado</em>")
+    cover_desc.short_description = "Artículo principal"
+
+    def cover(self):
+        """ Returns the article in the 1st position """
+        return self.articles.exists() and self.articles.order_by('default_newsletter_articles')[0]
+
+    def get_article_set(self):
+        return self.defaultnewsletterarticle_set
+
+    class Meta(DefaultNewsletterMeta):
+        pass
 
 
 class BreakingNewsModule(Model):

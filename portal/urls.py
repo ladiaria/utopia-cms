@@ -345,6 +345,7 @@ urlpatterns.extend(
         # Other pages (TODO: check and organize better)
         re_path(r'^(?P<journalist_job>(periodista|columnista))/', include('core.urls.journalist')),
         path('area/', include('core.urls.category')),
+        path('nl/', include('core.urls.publication')),
         path('bn/', include('core.urls.breaking_news_module')),
     ]
 )
@@ -359,8 +360,6 @@ urlpatterns.extend(
         path('debug/', include('core.urls.debug')),
         # Usuarios
         path('usuarios/', include('thedaily.urls')),
-        # notification (TODO: move to thedaily.urls)
-        path('usuarios/alertas/', include('notification.urls')),
         # TODO: verify if this repeated path (?) makes sense
         path('', include('sitemaps.urls')),
         path('', include('social_django.urls', namespace='social')),

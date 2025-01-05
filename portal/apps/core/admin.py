@@ -12,6 +12,8 @@ from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
 from reversion.admin import VersionAdmin
 from martor.models import MartorField
 from martor.widgets import AdminMartorWidget
+from concurrency.api import disable_concurrency
+from concurrency.admin import ConcurrentModelAdmin
 
 from django.conf import settings
 from django.urls import path
@@ -58,6 +60,8 @@ from .models import (
     BreakingNewsModule,
     DeviceSubscribed,
     PushNotification,
+    DefaultNewsletter,
+    DefaultNewsletterArticle,
 )
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
@@ -157,6 +161,15 @@ class ArticleRelAdminBaseModelForm(ModelForm):
         self.fields['section'].label = 'sección'
         self.fields['section'].choices = section_choices()
         self.fields['home_top'].label = 'en portada'
+
+    """ Example of how to override the clean method to change a null position to 1
+    def clean(self):
+        super().clean()
+        position = self.cleaned_data.get('position')
+        if not position:
+            # possible TODO: another option is to get the actual max position and add 1
+            self.cleaned_data['position'] = self.instance.position = 1
+    """
 
     class Meta:
         model = ArticleRel
@@ -287,8 +300,19 @@ class EditionAdmin(ModelAdmin):
     publication = None
     inlines = [HomeTopArticleInline, NoHomeTopArticleInline]
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        try:
+            return super().change_view(request, object_id, form_url, extra_context)
+        except ValidationError as e:
+            self.message_user(request, e.message, messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:core_edition_changelist'))
+
     def get_form(self, request, obj=None, **kwargs):
         if obj:
+            if obj.articlerel_set.count() > settings.DATA_UPLOAD_MAX_NUMBER_FIELDS / 2:
+                raise ValidationError(
+                    "ERROR: demasiados artículos asociados a la edición para poder gestionarla a través de este sitio"
+                )
             self.publication = obj.publication
         return super().get_form(request, obj, **kwargs)
 
@@ -482,6 +506,15 @@ class ArticleAdminModelForm(ModelForm):
             tags = '"' + tags + '"'
         return tags
 
+    def clean_version(self):
+        version = self.cleaned_data['version']
+        if not self.data.get("recover"):  # skip if coming from reversion
+            if settings.DEBUG:
+                print(f"DEBUG: article version submitted/instance {version}/{self.instance.version}")
+            if version != self.instance.version:
+                self.add_error(None, ValidationError("La versión del artículo no coincide con la versión actual."))
+        return version
+
     def clean(self):
         # TODO: "add" errors right way (as django doc says) instead of raising them
         if self.errors:
@@ -582,7 +615,7 @@ def get_editions():
 
 
 @admin.register(Article, site=site)
-class ArticleAdmin(VersionAdmin):
+class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
@@ -662,6 +695,7 @@ class ArticleAdmin(VersionAdmin):
                     "pw_radio_choice",
                     "full_restricted",
                     "public",
+                    "version",
                 )
                 + (('additional_access',) if Publication.multi() else ())
                 + ('latitude', 'longitude', 'ipfs_upload'),
@@ -886,6 +920,14 @@ class ArticleAdmin(VersionAdmin):
         self.object_history_template = object_history_template_bak
         return response
 
+    @disable_concurrency()
+    def revision_view(self, request, object_id, version_id, extra_context=None):
+        return super().revision_view(request, object_id, version_id, extra_context=None)
+
+    @disable_concurrency()
+    def recover_view(self, request, version_id, extra_context=None):
+        return super().recover_view(request, version_id, extra_context)
+
     class Media:
         css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
         js = (
@@ -1017,6 +1059,49 @@ class PrintOnlyArticleAdmin(ModelAdmin):
 )
 def published_articles(obj):
     return obj.articles_core.filter(is_published=True).count()
+
+
+# Classes for the default_pub custom NLs
+class DefaultNewsletterArticleForm(ModelForm):
+
+    class Meta:
+        fields = ['order', 'include_photo', 'article']
+        model = DefaultNewsletterArticle
+        widgets = {
+            'order': TextInput(attrs={'size': 3}),
+            "article": ForeignKeyRawIdWidgetMoreWords(
+                DefaultNewsletterArticle._meta.get_field("article").remote_field, site
+            ),
+        }
+
+
+class DefaultNewsletterArticleFormset(BaseInlineFormSet):
+    def clean(self):
+        super().clean()  # not sure if this call is really needed
+        unsaved_data = []
+        for form in self.forms:
+            cleaned_data = form.cleaned_data
+            if cleaned_data.get('article'):
+                # consider only the rows that have a valid article
+                unsaved_data.append((cleaned_data.get('order') or 0, cleaned_data.get('include_photo', 0)))
+        if unsaved_data:
+            # sort data to be sure which are the articles with minimal order
+            unsaved_data.sort()
+            # initialize variables with the first values in the minimal order group
+            first_order, include_photo_count = unsaved_data[0]
+            # flag to know when we finished iterate over the minimal group
+            first_order_passed = False
+            max_no_feat_photo_count = getattr(settings, "CORE_DEFAULT_NL_MAX_NO_FEATURED_PHOTOS", None)
+            for order, include_photo in unsaved_data[1:]:             # iterate over data tail
+                if not first_order_passed and order != first_order:
+                    first_order_passed = True
+                    if include_photo_count == 0:
+                        # if no one in the minimal group was checked, the first article will always include foto
+                        include_photo_count = 1
+                include_photo_count += include_photo
+                if max_no_feat_photo_count and include_photo_count > max_no_feat_photo_count:
+                    pl_phrase = 'artículo no principal' if max_no_feat_photo_count == 1 else 'artículos no principales'
+                    raise ValidationError(f'No se puede incluir más de {max_no_feat_photo_count} {pl_phrase} con foto')
 
 
 class JournalistForm(ModelForm):
@@ -1224,9 +1309,10 @@ class CategoryAdminForm(CustomSubjectAdminForm):
 class CategoryAdmin(ModelAdmin):
     form = CategoryAdminForm
     list_display = (
-        'id', 'name', 'order', 'slug', 'title', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag'
+        'id', 'name', 'order', 'slug', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag'
     )
     list_editable = ('name', 'order', 'slug', 'has_newsletter')
+    list_filter = ('has_newsletter',)
     fieldsets = (
         (
             None,
@@ -1239,8 +1325,10 @@ class CategoryAdmin(ModelAdmin):
                     ('full_width_cover_image', 'full_width_cover_image_title'),
                     ('full_width_cover_image_lead',),
                     ('has_newsletter', "newsletter_new_pill"),
+                    ('newsletter_header_color',),
                     ("newsletter_from_name", "newsletter_from_email"),
-                    ('newsletter_tagline', 'newsletter_periodicity'),
+                    ('newsletter_tagline',),
+                    ('newsletter_periodicity',),
                     ('subscribe_box_question',),
                     ('subscribe_box_nl_subscribe_auth',),
                     ('subscribe_box_nl_subscribe_anon',),
@@ -1252,6 +1340,9 @@ class CategoryAdmin(ModelAdmin):
         ('Metadatos', {'fields': (('html_title',), ('meta_description',))}),
     )
     raw_id_fields = ('full_width_cover_image',)
+
+    class Media:
+        css = {'all': ('css/admin_category.css',)}
 
 
 class CategoryHomeArticleForm(ModelForm):
@@ -1358,6 +1449,41 @@ class ArticleInline(TabularInline):
     max_num = 3
     raw_id_fields = ('article', )
     verbose_name_plural = 'Artículos relacionados'
+
+
+class UtopiaCategoryNewsletterArticleInline(TabularInline):
+    """
+    this class is copied from CategoryNewsletterArticleInline and modified because a child class can't be used, it
+    should be dificult modify a child class to suit our needs here.
+    """
+    extra = 20
+    max_num = 20
+    raw_id_fields = ('article', )
+    verbose_name_plural = 'Artículos en newsletter'
+
+    class Media:
+        css = {'all': ('css/category_newsletter.css', )}
+
+
+class DefaultNewsletterArticleInline(UtopiaCategoryNewsletterArticleInline):
+    model = DefaultNewsletter.articles.through
+    form = DefaultNewsletterArticleForm
+    formset = DefaultNewsletterArticleFormset
+    verbose_name_plural = 'Artículos en bloque principal'
+
+    class Media:
+        css = {'all': ('css/default_newsletter.css', )}
+
+
+class DefaultNewsletterAdmin(ModelAdmin):
+    list_display = ('day', 'cover_desc')
+    exclude = ('articles',)
+    inlines = [DefaultNewsletterArticleInline]
+    date_hierarchy = 'day'
+
+    class Media:
+        # jquery loaded again (admin uses custom js namespaces and we use "jquery dirty")
+        js = ('admin/js/jquery.js',)
 
 
 @admin.register(BreakingNewsModule, site=site)
@@ -1516,3 +1642,4 @@ site.unregister(Tag)
 site.unregister(TaggedItem)
 site.register(Tag, TagAdmin)
 site.register(TaggedItem, TaggedItemAdmin)
+site.register(DefaultNewsletter, DefaultNewsletterAdmin)
