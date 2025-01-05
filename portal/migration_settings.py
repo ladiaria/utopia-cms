@@ -129,6 +129,14 @@ INSTALLED_APPS = (
 
 SITE_ID = 1
 
+# password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 9}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
 # martor
 # disable emoji (our markdown filter not yet support this)
 MARTOR_TOOLBAR_BUTTONS = [
