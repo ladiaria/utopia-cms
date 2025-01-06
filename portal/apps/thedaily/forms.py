@@ -156,18 +156,18 @@ class CrispyModelFormHelper(CrispyFormHelper):
     field_class = 'col-sm-8'
 
 
-class CrispyForm(Form):
+custom_helper_class = getattr(settings, "THEDAILY_CRISPY_CUSTOM_FORM_HELPER_CLASS", None)
 
+
+class CrispyForm(Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = CrispyFormHelper()
+        self.helper = (locate(custom_helper_class) if custom_helper_class else CrispyFormHelper)()
 
 
 class CrispyModelForm(ModelForm):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        custom_helper_class = getattr(settings, "THEDAILY_CRISPY_CUSTOM_MODEL_FORM_HELPER_CLASS", None)
         self.helper = (locate(custom_helper_class) if custom_helper_class else CrispyModelFormHelper)()
 
 
@@ -807,14 +807,13 @@ class PhoneSubscriptionForm(CrispyForm):
         )
 
 
-class WebSubscriptionForm(ModelForm):
+class WebSubscriptionForm(CrispyModelForm):
     subscription_type_prices = ChoiceField(choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, widget=HiddenInput())
     if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
         terms_and_conds_accepted = terms_and_conditions_field()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = CrispyFormHelper()
         self.helper.layout = Layout(
             *terms_and_conditions_layout_tuple()
             + (
@@ -856,7 +855,6 @@ class SubscriptionForm(WebSubscriptionForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = CrispyFormHelper()
         self.helper.layout = Layout(
             *(
                 HTML('<div class="col s12" style="margin-top: 30px; margin-bottom: 50px;">'),

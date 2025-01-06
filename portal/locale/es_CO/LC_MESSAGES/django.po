@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-27 19:47-0300\n"
+"POT-Creation-Date: 2025-01-06 19:04-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -31,12 +31,12 @@ msgid "Not Used"
 msgstr "No usado"
 
 #: apps/core/templates/edition/download_email_sent.html:12
-#: apps/thedaily/forms.py:161 apps/thedaily/forms.py:328
+#: apps/thedaily/forms.py:175 apps/thedaily/forms.py:342
 msgid "Email"
 msgstr "Correo electrónico"
 
 #: apps/core/templates/edition/download_email_sent.html:14
-#: apps/thedaily/models.py:51 apps/thedaily/views.py:961
+#: apps/thedaily/models.py:51 apps/thedaily/views.py:970
 msgid "email"
 msgstr "correo electrónico"
 
@@ -44,19 +44,19 @@ msgstr "correo electrónico"
 msgid "contactate"
 msgstr "contáctese"
 
-#: apps/thedaily/models.py:134
+#: apps/thedaily/models.py:144
 msgid "name"
 msgstr "nombre"
 
-#: apps/thedaily/models.py:302
+#: apps/thedaily/models.py:314
 msgid "user id"
 msgstr "id de usuario"
 
-#: apps/thedaily/models.py:507
+#: apps/thedaily/models.py:519
 msgid "tus datos"
 msgstr "sus datos"
 
-#: apps/thedaily/models.py:526
+#: apps/thedaily/models.py:538
 msgid "tu perfil"
 msgstr "su perfil"
 
