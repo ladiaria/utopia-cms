@@ -35,7 +35,7 @@ class CRMSyncTestCase(TestCase):
             cls.test_user.is_active = True
             cls.test_user.save()
             if not settings.CRM_UPDATE_USER_CREATE_CONTACT:
-                createcrmuser(cls.test_user.name, cls.test_user.email)
+                createcrmuser(cls.test_user.first_name, cls.test_user.last_name, cls.test_user.email)
         else:
             print("WARNING: CRM sync tests are disabled due to missing configuration.")
             raise unittest.SkipTest("CRM sync tests are disabled.")

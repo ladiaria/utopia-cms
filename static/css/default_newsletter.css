@@ -1,14 +1,3 @@
-fieldset.aligned label {
-  width: 180px;
-}
-tr.dynamic-defaultnewsletterarticle_set td,
-tr.dynamic-fsnewsletterarticle_set td,
-tr.dynamic-defaultnewslettersatiricalarticle_set td,
-tr.dynamic-trnewslettersatiricalarticle_set td,
-tr.dynamic-fsnewslettermundoarticle_set td,
-tr.dynamic-fsnewsletterextraarticle_set td {
-  padding-top: 1.4em !important;
-}
-td.field-include_photo {
-  width: 76px;
-}
+fieldset.aligned label {width: 180px;}
+tr.dynamic-defaultnewsletterarticle_set td{padding-top: 1.4em !important;}
+td.field-include_photo {width: 76px;}

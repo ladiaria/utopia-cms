@@ -14,6 +14,7 @@ from thedaily.tasks import notify_subscription, send_notification
 from thedaily.management.commands.automatic_mail_paywall import send_message
 from thedaily.utils import get_app_template
 
+
 class Command(BaseCommand):
     # TODO: make "wrappers" for each kind of send action, this way, the template can be encapsulated on it and won't be
     # necessary to pass it here duplicating code with hardcoded filenames. (signup_wall is already using this approach)
@@ -31,9 +32,13 @@ class Command(BaseCommand):
 
     def send_tests(self, user_id):
         # the idea is to test all templates under thedaily/templates/notifications sending a email with each of them.
-        u = User.objects.get(id=user_id)
-        if not u.email:
-            raise CommandError("The user with the user_id given has no email, aborting")
+        try:
+            u = User.objects.get(id=user_id)
+            assert u.email, "The user with the user_id given has no email, aborting"
+        except User.DoesNotExist:
+            raise CommandError("The user with the user_id given does not exist, aborting")
+        except AssertionError as exc:
+            raise CommandError(str(exc))
 
         site = Site.objects.get_current()
 
@@ -43,7 +48,6 @@ class Command(BaseCommand):
             u,
             get_app_template('notifications/account_info.html'),
             get_signup_validation_url,
-            {'user_email': u.email},
         )
         if not was_sent:
             print("account_info.html - FAIL")

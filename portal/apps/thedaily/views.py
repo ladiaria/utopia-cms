@@ -638,7 +638,9 @@ def google_phone(request):
             if is_new:
                 request.session['welcome'] = True
                 try:
-                    send_notification(oas.user, get_app_template('notifications/signup.html'), '¡Te damos la bienvenida!', ctx)
+                    send_notification(
+                        oas.user, get_app_template('notifications/signup.html'), '¡Te damos la bienvenida!', ctx
+                    )
                 except Exception as exc:
                     # fail silently in case of error when sending the email, only log or debug
                     err_msg = "welcome email message send error for user %d: %s" % (oas.user.id, exc)
@@ -1271,7 +1273,10 @@ def edit_profile(request, user=None):
                 if old_email != user.email:
                     # TODO: send the email after saving the user and take actions if it not sent
                     was_sent = send_validation_email(
-                        'Verificá tu cuenta', user, get_app_template('notifications/account_signup.html'), get_signup_validation_url
+                        'Verificá tu cuenta',
+                        user,
+                        get_app_template('notifications/account_signup.html'),
+                        get_signup_validation_url,
                     )
                     if not was_sent:
                         raise Exception("Error al enviar email de verificación para el usuario %s" % user)

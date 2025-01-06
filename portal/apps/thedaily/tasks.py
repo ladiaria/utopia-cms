@@ -8,7 +8,7 @@ from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 
 from libs.utils import smtp_connect
-from thedaily.models import SentMail
+from thedaily.models import SentMail, SubscriptionPrices
 from thedaily.utils import get_app_template
 
 
@@ -36,6 +36,7 @@ def send_notification(user, email_template, email_subject, extra_context={}):
             'SITE_URL_SD': settings.SITE_URL_SD,
             'site': Site.objects.get_current(),
             'logo_url': settings.HOMEV3_SECONDARY_LOGO,
+            'user': user,
         }
     )
     msg = Message(
@@ -51,11 +52,16 @@ def send_notification(user, email_template, email_subject, extra_context={}):
 def notify_subscription(user, subscription_type, seller_fullname=None):
     site = Site.objects.get_current()
     subj_inner = getattr(settings, "THEDAILY_WELCOME_EMAIL_SUBJECT_INNER", {}).get(subscription_type, f"a {site.name}")
+    extra_context = {"sp": SubscriptionPrices.objects.get(subscription_type=subscription_type[0])}
+    if seller_fullname:
+        extra_context["seller_fullname"] = seller_fullname
     send_notification(
         user,
-        settings.THEDAILY_WELCOME_EMAIL_TEMPLATES.get(subscription_type, get_app_template('notifications/new_subscription.html')),
+        settings.THEDAILY_WELCOME_EMAIL_TEMPLATES.get(
+            subscription_type, get_app_template('notifications/new_subscription.html')
+        ),
         welcome_email_sub % subj_inner,
-        {'seller_fullname': seller_fullname} if seller_fullname else {},
+        extra_context,
     )
     SentMail.objects.create(subscriber=user.subscriber, subject=f"Bienvenida {subj_inner}")
 

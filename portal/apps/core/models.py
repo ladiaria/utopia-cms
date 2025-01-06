@@ -342,11 +342,6 @@ class PortableDocumentFormatBaseModel(Model):
     def __str__(self):
         return self.pdf[self.pdf.rfind('/') + 1:]
 
-    class Meta:
-        abstract = True
-        get_latest_by = 'date_published'
-        ordering = ('-date_published',)
-
     def get_pdf_filename(self):
         return None
 
@@ -387,6 +382,11 @@ class PortableDocumentFormatBaseModel(Model):
         ).format(d=self.date_published)
         return result.title() if short else result.capitalize()
 
+    class Meta:
+        abstract = True
+        get_latest_by = 'date_published'
+        ordering = ('-date_published',)
+
 
 """ TODO: better enable this after new structure works well (**) (why? what does it improve?)
 class EditionSection(models.Model):
@@ -408,11 +408,6 @@ class Edition(PortableDocumentFormatBaseModel):
         Publication, on_delete=CASCADE, verbose_name='publicación', related_name="%(app_label)s_%(class)s"
     )
     # (**) sections = ManyToManyField(Section, through='EditionSection')
-
-    class Meta(PortableDocumentFormatBaseModel.Meta):
-        verbose_name = 'edición'
-        verbose_name_plural = 'ediciones'
-        unique_together = [["date_published", "publication"]]  # TODO: is this the right way? why not a single tuple?
 
     def __str__(self):
         try:
@@ -546,6 +541,11 @@ class Edition(PortableDocumentFormatBaseModel):
             result['download_url'] = self.get_download_url()
         return result
 
+    class Meta(PortableDocumentFormatBaseModel.Meta):
+        verbose_name = 'edición'
+        verbose_name_plural = 'ediciones'
+        unique_together = [["date_published", "publication"]]  # TODO: is this the right way? why not a single tuple?
+
 
 class EditionHeader(Model):
     edition = OneToOneField(Edition, on_delete=CASCADE, verbose_name='edición')
@@ -566,13 +566,6 @@ class Supplement(PortableDocumentFormatBaseModel):
     slug = SlugField('slug', unique=True)
     headline = CharField('titular', max_length=100)
     public = BooleanField('público', default=True)
-
-    class Meta:
-        get_latest_by = 'date_published'
-        ordering = ('-date_published', 'name')
-        unique_together = ('date_published', 'name')
-        verbose_name = 'suplemento'
-        verbose_name_plural = 'suplementos'
 
     def __str__(self):
         return '%s - %s' % (self.date_published.strftime('%d-%m-%Y'), self.get_name_display())
@@ -615,6 +608,13 @@ class Supplement(PortableDocumentFormatBaseModel):
             return self.pdf.url
         except Exception:
             return ""
+
+    class Meta:
+        get_latest_by = 'date_published'
+        ordering = ('-date_published', 'name')
+        unique_together = ('date_published', 'name')
+        verbose_name = 'suplemento'
+        verbose_name_plural = 'suplementos'
 
 
 class Category(Model):
@@ -1165,7 +1165,7 @@ class Journalist(Model):
         return field_values
 
     class Meta:
-        ordering = ('name', )
+        ordering = ('name',)
         verbose_name = 'periodista'
         verbose_name_plural = 'periodistas'
 
@@ -2487,7 +2487,7 @@ class DefaultNewsletterArticleBase(Model):
 
     class Meta:
         abstract = True
-        ordering = ('order', )
+        ordering = ('order',)
 
 
 class DefaultNewsletterArticle(DefaultNewsletterArticleBase):
@@ -2510,7 +2510,7 @@ default_pub_name = Publication.default_name()
 class DefaultNewsletterMeta:
     verbose_name = f'newsletter {default_pub_name}'
     verbose_name_plural = f'newsletters {default_pub_name}'
-    ordering = ('-day', )
+    ordering = ('-day',)
     get_latest_by = 'day'
 
 

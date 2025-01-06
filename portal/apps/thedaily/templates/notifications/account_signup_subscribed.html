@@ -1,26 +1,3 @@
-{% extends "notifications/signup.html" %}
-{# TODO: Only diffs with account_signup.html in 1 word (not difficult to apply a DRY pattern) #}
+{% extends "notifications/account_signup.html" %}
 
-{% block body %}
-  <tr>
-    <td>
-      <p>Te damos la bienvenida.</p>
-      <p>Activá tu suscripción para completar el registro:</p>
-      <p>
-        <a href="https://{{ site.domain }}{{ validation_url }}" style="background-color: #6ef9ff; color: #262626; padding: 10px 20px 10px 20px; text-decoration: none; text-transform: uppercase; line-height: 30px; height: 30px; font-size: 14px; font-weight: bold; letter-spacing: .5px; vertical-align: middle; border-radius:100px">activar suscripción</a>
-      </p>
-      <div style="color: #A4A4A4; font-size: 12px;">
-        <hr>
-        <p>
-          Alternativamente, tal vez necesites copiar y pegar esta url en tu navegador:<br>
-          <a href="https://{{ site.domain }}{{ validation_url }}" style="color: #0a0a0a;">https://{{ site.domain }}{{ validation_url }}</a>
-        </p>
-        <p>
-          ¿Tenés consultas? Visitá nuestro <a href="https://{{ site.domain }}/ayuda/" style="color: #0a0a0a;">centro de ayuda</a> o <a href="https://{{ site.domain }}/contacto/" style="color: #0a0a0a;">contactanos</a>.
-        </p>
-      </div>
-    </td>
-  </tr>
-{% endblock %}
-
-{% block thank_you_body %}{% endblock %}
+{% block body %}{% with account_word='suscripción' %}{{ block.super }}{% endwith %}{% endblock %}

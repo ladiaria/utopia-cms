@@ -28,10 +28,10 @@ def send_confirmation_link(*args, **kwargs):
     else:
         generator_params = {'user': kwargs['user']}
     url_generator = kwargs['url_generator']
-    extra_context = kwargs['extra_context']
     from_mail = getattr(settings, 'DEFAULT_FROM_EMAIL')
     subject = '%s %s' % (getattr(settings, 'EMAIL_SUBJECT_PREFIX', ''), subject)
-    context = {'validation_url': url_generator(**generator_params)}
+    context = {'user': user, 'validation_url': url_generator(**generator_params)}
+    extra_context = kwargs['extra_context']
     if extra_context:
         context.update(extra_context)
     message = Message(

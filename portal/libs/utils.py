@@ -21,34 +21,6 @@ from tagging.models import Tag, TaggedItem
 from core.models import Article
 
 
-def get_site_name():
-    try:
-        return Site.objects.get_current().name
-    except ProgrammingError:
-        return settings.SITE_DOMAIN
-
-
-def crm_rest_api_kwargs(api_key, data=None):
-    """
-    Get the CRM API standard args.
-    @param api_key: CRM API key.
-    @param data: request body data to be send.
-    @return result: dictionary with all params.
-    """
-    # we require the api_key as arg (we can obtain it from settings) because the caller code needs also it most of the
-    # time to make previous conditions to call us or build the data arg, this way the code is a bit less repeated but
-    # of course that the calls in all the code that call us can be refactored lettng this function with only one arg.
-    http_basic_auth = settings.CRM_API_HTTP_BASIC_AUTH
-    result = {"headers": {"X-Api-Key": api_key} if http_basic_auth else {'Authorization': 'Api-Key ' + api_key}}
-    if not getattr(settings, "CRM_API_VERIFY_SSL", True):
-        result["verify"] = False
-    if data:
-        result["data"] = data
-    if http_basic_auth:
-        result["auth"] = HTTPBasicAuth(*http_basic_auth)
-    return result
-
-
 def remove_spaces(s):
     inline_tags = 'a|b|i|u|em|span|strong|sup|sub|tt|font|small|big'
     inlines_with_spaces = r'</(%s)>[\s\n\t]+<(%s)\b' % (
@@ -87,16 +59,6 @@ def next(request):
     return next
 
 
-def do_gonzo(*args, **kwargs):
-    hash_this = ''
-    for arg in args:
-        hash_this += '%s$' % str(arg)
-    for arg in kwargs:
-        hash_this += '%s$' % str(kwargs.get(arg))
-    hash_this += settings.SECRET_KEY
-    return md5(hash_this.encode('utf-8')).hexdigest()
-
-
 def md5file(filename):
     """
     Re-implementation of md5sum in python. Return the hex digest of a file
@@ -117,6 +79,49 @@ def md5file(filename):
 
 
 # TODO: check if the functions above this line are used, if not, remove.
+def do_gonzo(*args, **kwargs):
+    hash_this = ''
+    for arg in args:
+        hash_this += '%s$' % str(arg)
+    for arg in kwargs:
+        hash_this += '%s$' % str(kwargs.get(arg))
+    hash_this += settings.SECRET_KEY
+    return md5(hash_this.encode('utf-8')).hexdigest()
+
+
+def get_site_name():
+    try:
+        return Site.objects.get_current().name
+    except ProgrammingError:
+        return settings.SITE_DOMAIN
+
+
+def crm_rest_api_kwargs(api_key, data=None):
+    """
+    Get the CRM API standard args.
+    @param api_key: CRM API key.
+    @param data: request body data to be send.
+    @return result: dictionary with all params.
+    """
+    # we require the api_key as arg (we can obtain it from settings) because the caller code needs also it most of the
+    # time to make previous conditions to call us or build the data arg, this way the code is a bit less repeated but
+    # of course that the calls in all the code that call us can be refactored lettng this function with only one arg.
+    http_basic_auth = settings.CRM_API_HTTP_BASIC_AUTH
+    result = {"headers": {"X-Api-Key": api_key} if http_basic_auth else {'Authorization': 'Api-Key ' + api_key}}
+    if not getattr(settings, "CRM_API_VERIFY_SSL", True):
+        result["verify"] = False
+    if data:
+        result["data"] = data
+    if http_basic_auth:
+        result["auth"] = HTTPBasicAuth(*http_basic_auth)
+    return result
+
+
+def space_join(first_part, second_part):
+    if first_part and second_part:
+        return first_part + ' ' + second_part
+    else:
+        return first_part or second_part or ''
 
 
 def set_amp_cors_headers(request, response):

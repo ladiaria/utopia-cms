@@ -34,8 +34,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "newsletter Cambio",
-                "verbose_name_plural": "newsletters Cambio",
+                "verbose_name": "newsletter default",
+                "verbose_name_plural": "newsletters default",
                 "ordering": ("-day",),
                 "get_latest_by": "day",
             },

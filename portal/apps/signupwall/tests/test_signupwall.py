@@ -57,7 +57,7 @@ class SignupwallTestCase(TestCase):
 
     def user_faces_wall(self, c, restricted_msg=label_exclusive, is_subscriber_any=False):
         for i in range(settings.SIGNUPWALL_MAX_CREDITS - 1):
-            a = Article.objects.create(type="NE", headline='test%d' % (i + 1))
+            a = Article.objects.create(type="NE", headline='test%d' % (i + 1), is_published=True)
             response = c.get(a.get_absolute_url(), **self.http_host_header_param)
             self.assertEqual(response.status_code, 200)
             response_content = response.content.decode()
@@ -65,14 +65,14 @@ class SignupwallTestCase(TestCase):
             self.assertIn("Te queda", response_content)
             self.assertNotIn(label_to_continue_reading, response_content)
 
-        a = Article.objects.create(type="NE", headline='test_last')
+        a = Article.objects.create(type="NE", headline='test_last', is_published=True)
         r = c.get(a.get_absolute_url(), **self.http_host_header_param)
         self.assertEqual(r.status_code, 200)
         response_content = r.content.decode()
         self.assertIn("Tu cuenta", response_content)
         self.assertIn("Este es tu último", response_content)
 
-        a = Article.objects.create(headline='test_walled')
+        a = Article.objects.create(headline='test_walled', is_published=True)
         r = c.get(a.get_absolute_url(), **self.http_host_header_param)
         if settings.SIGNUPWALL_RISE_REDIRECT:
             self.assertEqual(r.status_code, 302)
@@ -88,12 +88,12 @@ class SignupwallTestCase(TestCase):
         pwclear()
         c = Client()
         for i in range(settings.SIGNUPWALL_ANON_MAX_CREDITS):
-            a = Article.objects.create(headline='test%d' % (i + 1))
+            a = Article.objects.create(headline='test%d' % (i + 1), is_published=True)
             response = c.get(a.get_absolute_url(), **self.http_host_header_param)
             self.assertEqual(response.status_code, 200)
             self.assertNotIn(label_to_continue_reading, response.content.decode())
 
-        a = Article.objects.create(headline='test_walled')
+        a = Article.objects.create(headline='test_walled', is_published=True)
         response = c.get(a.get_absolute_url(), **self.http_host_header_param)
         if settings.SIGNUPWALL_RISE_REDIRECT:
             self.assertEqual(response.status_code, 302)
@@ -109,6 +109,7 @@ class SignupwallTestCase(TestCase):
         c, password, user = Client(), User.objects.make_random_password(), UserFactory()
         user.set_password(password)
         user.save()
+        self.assertTrue(hasattr(user, 'subscriber'))
         c.login(username=user.username, password=password)
         self.user_faces_wall(c)
 
@@ -146,7 +147,7 @@ class SignupwallTestCase(TestCase):
         c.login(username=user.username, password=password)
 
         for i in range(settings.SIGNUPWALL_MAX_CREDITS + 1):
-            a = Article.objects.create(headline='test%d' % (i + 1))
+            a = Article.objects.create(headline='test%d' % (i + 1), is_published=True)
             response = c.get(a.get_absolute_url(), **self.http_host_header_param)
             self.assertEqual(response.status_code, 200)
             response_content = response.content.decode()

@@ -105,7 +105,7 @@ class SubscriberAdmin(ModelAdmin):
         'phone'
     )
     raw_id_fields = ('user',)
-    readonly_fields = ('plan_id', 'get_latest_article_visited')
+    readonly_fields = ("extra_info", 'plan_id', 'get_latest_article_visited')
     list_filter = ['newsletters', 'category_newsletters', 'allow_news', 'allow_promotions', 'allow_polls']
     actions = ['send_account_info', "delete_user"]  # TODO: new action: sync_plan_id_from_activos_csv
     fieldsets = (
@@ -117,6 +117,7 @@ class SubscriberAdmin(ModelAdmin):
                 ('document', 'phone'),
                 ('newsletters', 'category_newsletters'),
                 ('allow_news', 'allow_promotions', 'allow_polls'),
+                ('extra_info',),
                 ('plan_id',),
                 ('get_latest_article_visited',),
             ),
@@ -132,7 +133,6 @@ class SubscriberAdmin(ModelAdmin):
                     s.user,
                     get_app_template('notifications/account_info.html'),
                     get_signup_validation_url,
-                    {'user_email': s.user.email},
                 )
                 if not was_sent:
                     raise Exception("El email de notificación para el usuario: %s no pudo ser enviado." % s.user)
