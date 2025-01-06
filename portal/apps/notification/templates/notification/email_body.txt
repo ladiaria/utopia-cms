@@ -1,9 +1,0 @@
-{% load i18n %}{% url "notification_notice_settings" as notices_url %}
-
-Este email es para avisarte que "{{ message }}" en {{ current_site }}.
-
-Ingresa para ver tu perfil.
-
---------------------------------------------------------------------------
-Para configurar los avisos dirigíte a: {{ default_http_protocol }}://{{ current_site }}{{ notices_url }}
-
