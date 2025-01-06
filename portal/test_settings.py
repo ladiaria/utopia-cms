@@ -6,18 +6,18 @@ from settings import *  # noqa
 
 
 if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_CHOICES"):
+    print("NOTE: filling THEDAILY_SUBSCRIPTION_TYPE_CHOICES with some default values for testing purposes")
     THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
         ("DDIGM", "Suscripción digital"),
         ("PAPYDIM", "Suscripción papel"),
     )
+
 if not locals().get("THEDAILY_PROVINCE_CHOICES"):
+    print("NOTE: filling THEDAILY_PROVINCE_CHOICES with some default values for testing purposes")
     THEDAILY_PROVINCE_CHOICES = (
         ("", ""),
         ("Montevideo", "Montevideo"),
     )
-
-if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_DEFAULT"):
-    THEDAILY_SUBSCRIPTION_TYPE_DEFAULT = THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0]
 
 
 try:

@@ -11,6 +11,7 @@ social-auth-app-django
 social-auth-core
 pymemcache==4.0.0
 django-compressor
+django-concurrency
 djangorestframework==3.14.0
 djangorestframework-api-key
 django-filter==2.4.0

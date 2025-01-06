@@ -36,6 +36,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 PORTAL_BASE_TEMPLATE = "base.html"
 # country name in page titles
 PORTAL_TITLE_APPEND_COUNTRY = True
+# flatpages template directory, join this value with a template path, example: os.path.join(this_value, "default.html")
+PORTAL_FLATPAGES_DIR = "flatpages"
 
 # disable template settings warning until fixed migrating django-mobile to django-amp-tools
 SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
@@ -111,7 +113,6 @@ INSTALLED_APPS = (
     "star_ratings",
     "tagging_autocomplete_tagit",
     "avatar",
-    "notification",
     "django.contrib.flatpages",
     "epubparser",
     "django_filters",
@@ -128,9 +129,18 @@ INSTALLED_APPS = (
     "django_celery_beat",
     "phonenumber_field",
     "closed_site",
+    "concurrency",
 )
 
 SITE_ID = 1
+
+# password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 9}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
 
 # martor
 # disable emoji (our markdown filter not yet support this)
@@ -452,7 +462,9 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = ()
 THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW = ()  # newsletter slugs to disable preview in browser
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
+THEDAILY_AUTOMATIC_MAIL_LOGFILE = "/var/log/utopiacms/automatic_mail.log"
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."

@@ -52,7 +52,11 @@ def get_extension(match, aid):
     return render_to_string('core/templates/article/extension.html', {'extension': extension})
 
 
-def get_image(match, aid, amp=False):
+def get_image_template(forkdir=""):
+    return f'core/templates/{forkdir}article/image.html'
+
+
+def get_image(match, aid, **kwargs):
     from core.models import Article
 
     if match.groups()[0] == '':
@@ -71,10 +75,9 @@ def get_image(match, aid, amp=False):
             except IOError:
                 return ''
             else:
-                return render_to_string(
-                    'core/templates/%sarticle/image.html' % ('amp/' if amp else ''),
-                    {'article': article, 'image': article_body_image.image, 'display': article_body_image.display},
-                )
+                ctx = {'article': article, 'image': article_body_image.image, 'display': article_body_image.display}
+                ctx.update(kwargs.get("extra_context", {}))
+                return render_to_string(kwargs.get('template_name', get_image_template()), ctx)
         else:
             return ''
     except Article.DoesNotExist:
@@ -93,7 +96,7 @@ def photo_byline(article, allowed=True):
 
 @register.filter
 @stringfilter
-def ldmarkup(value, args='', amp=False):
+def ldmarkup(value, args='', get_image_kwargs={}):
     """ Usage: {% article.body|ldmarkup:article.id %} """
     value = normalize(value)
     value = strip_tags(value)
@@ -105,13 +108,13 @@ def ldmarkup(value, args='', amp=False):
         reg = re.compile(EXTENSION_RE, re.UNICODE + re.MULTILINE)
         value = reg.sub(lambda x: get_extension(x, args), value)
         reg = re.compile(IMAGE_RE, re.UNICODE + re.MULTILINE)
-        value = reg.sub(lambda x: get_image(x, args, amp), value)
+        value = reg.sub(lambda x: get_image(x, args, **get_image_kwargs), value)
     return mark_safe(force_str(markdown(value, extras=MD_EXTRAS).strip()))
 
 
 @register.filter
 @stringfilter
-def ldmarkup_extension(value, args='', amp=False):
+def ldmarkup_extension(value, args=''):
     """ Usage: {% article.body|ldmarkup_extension %} """
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
     value = reg.sub(r'\n\n\1\n----', value)
@@ -126,7 +129,7 @@ def amp_ldmarkup(value, args=''):
     Wrapper of ldmarkup for amp
     Usage: {% article.body|amp_ldmarkup:article.id %}
     """
-    return ldmarkup(value, args, True)
+    return ldmarkup(value, args, get_image_kwargs={"template_name": get_image_template("amp/")})
 
 
 @register.filter

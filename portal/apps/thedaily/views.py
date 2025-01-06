@@ -15,6 +15,7 @@ from uuid import uuid4
 from smtplib import SMTPRecipientsRefused
 from PIL import Image
 from ga4mp import GtagMP
+from hashids import Hashids
 
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
@@ -53,7 +54,6 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
-from django.contrib.sites.models import Site
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import ListView
@@ -67,7 +67,7 @@ from django.utils.html import strip_tags
 from django.utils.translation import gettext as _
 
 from apps import mongo_db, bouncer_blocklisted
-from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
+from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs, get_site_name
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
 from decorators import render_response
@@ -119,6 +119,7 @@ from .forms import (
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
     get_default_province,
+    check_password_strength,
 )
 from .utils import (
     get_or_create_user_profile,
@@ -140,8 +141,10 @@ from .tasks import send_notification, notify_subscription, send_notification_mes
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
-site_name = Site.objects.get_current().name
 verif_email_i18n = f"{email_i18n} de verificación"
+account_verify_msg = 'Verificá tu cuenta de' + get_site_name()
+# Initialize the hashid object with salt from settings and custom length
+hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 
 def no_op_decorator(func):
@@ -293,7 +296,7 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
                 ctx['error'] = e.displaymessage
-            return render(request, 'nlsubscribe.html', ctx)
+            return render(request, get_app_template('nlsubscribe.html'), ctx)
         else:
             raise Http404
     # default behavour: go to profile or login
@@ -308,7 +311,6 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
 
 
 @never_cache
-@to_response
 def nl_category_subscribe(request, slug, hashed_id=None):
     """
     if hashed id is given, this view will do similar things than nl_subscribe with a category instead of a publication
@@ -335,7 +337,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
                 next_page = request.GET.get('next')
                 if next_page:
                     return HttpResponseRedirect(next_page)
-            return 'nlsubscribe.html', ctx
+            return render(request, get_app_template('nlsubscribe.html'), ctx)
         else:
             raise Http404
     else:
@@ -415,6 +417,11 @@ def login(request, product_slug=None, product_variant=None):
                 user = authenticate(username=login_form.username, password=password)
                 if user is not None:
                     if user.is_active:
+                        if user.is_staff:
+                            try:
+                                check_password_strength(password, user)
+                            except ValidationError:
+                                mail_managers("Staff user with weak password", f"User: {user}, Id: {user.id}")
                         do_login(request, user)
                         request.session.pop('next', None)
                         # also remove possible unfinished google sign-in information from the session, if not,
@@ -519,7 +526,7 @@ def signup(request):
                 was_sent = send_validation_email(
                     'Verificá tu cuenta',
                     user,
-                    'notifications/account_signup.html',
+                    get_app_template('notifications/account_signup.html'),
                     get_signup_validation_url,
                     {'request': request},
                 )
@@ -633,7 +640,9 @@ def google_phone(request):
             if is_new:
                 request.session['welcome'] = True
                 try:
-                    send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!', ctx)
+                    send_notification(
+                        oas.user, get_app_template('notifications/signup.html'), '¡Te damos la bienvenida!', ctx
+                    )
                 except Exception as exc:
                     # fail silently in case of error when sending the email, only log or debug
                     err_msg = "welcome email message send error for user %d: %s" % (oas.user.id, exc)
@@ -942,9 +951,9 @@ def subscribe(request, planslug, category_slug=None):
                             return render(request, template, context)
                         try:
                             was_sent = send_validation_email(
-                                f'Verificá tu cuenta de {site_name}',
+                                account_verify_msg,
                                 user,
-                                'notifications/account_signup_subscribed.html',
+                                get_app_template('notifications/account_signup.html'),
                                 get_signup_validation_url,
                             )
                             if not was_sent:
@@ -1109,7 +1118,7 @@ def complete_signup(request, user_id, hash):
     if send_default_welcome:
         send_notification(
             user,
-            'notifications/signup.html',
+            get_app_template('notifications/signup.html'),
             'Tu cuenta gratuita está activa',
             {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
@@ -1150,9 +1159,7 @@ def password_reset(request, user_id=None, hash=None):
                     notification_template = get_app_template(
                         'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
                     )
-                    send_validation_email(
-                        f'Verificá tu cuenta de {site_name}', user, notification_template, get_signup_validation_url
-                    )
+                    send_validation_email(account_verify_msg, user, notification_template, get_signup_validation_url)
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
@@ -1174,7 +1181,7 @@ def confirm_email(request):
                 user = confirm_email_form.cleaned_data["user"]
                 is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
                 send_validation_email(
-                    f'Verificá tu cuenta de {site_name}',
+                    account_verify_msg,
                     user,
                     get_app_template(
                         'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
@@ -1221,16 +1228,16 @@ def password_change(request, user_id=None, hash=None):
     post = request.POST.copy() if is_post else None
     if user_id and hash:
         user = get_object_or_404(User, id=user_id)
-        form_kwargs = {'user': user_id, 'hash': hash}
+        form_kwargs = {'user': user, 'hash': hash}
         password_change_form = PasswordResetForm(post, **form_kwargs) if is_post else PasswordResetForm(**form_kwargs)
     else:
         if not request.user.is_authenticated:
             raise Http404('Unauthorized access.')
         user = request.user
         if user.has_usable_password():
-            password_change_form = PasswordChangeForm(post, user=request.user) if is_post else PasswordChangeForm()
+            password_change_form = PasswordChangeForm(post, user=user) if is_post else PasswordChangeForm()
         else:
-            password_change_form = PasswordChangeBaseForm(post) if is_post else PasswordChangeBaseForm()
+            password_change_form = PasswordChangeBaseForm(post, user=user) if is_post else PasswordChangeBaseForm()
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])
@@ -1268,7 +1275,10 @@ def edit_profile(request, user=None):
                 if old_email != user.email:
                     # TODO: send the email after saving the user and take actions if it not sent
                     was_sent = send_validation_email(
-                        'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url
+                        'Verificá tu cuenta',
+                        user,
+                        get_app_template('notifications/account_signup.html'),
+                        get_signup_validation_url,
                     )
                     if not was_sent:
                         raise Exception(f"Error al enviar {verif_email_i18n} para el usuario %s" % user)
@@ -1326,7 +1336,7 @@ def edit_profile(request, user=None):
             'google_oauth2_allow_disconnect':
                 not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
             'publication_newsletters': Publication.objects.filter(has_newsletter=True),
-            'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
+            'newsletters_disabled_preview': settings.THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW,
             'newsletters': get_profile_newsletters_ordered(),
             "mailtrain_lists": MailtrainList.objects.all(),
             "incomplete_field_count": sum(
@@ -2289,7 +2299,7 @@ def nlunsubscribe(request, publication_slug, hashed_id):
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+        return render(request, get_app_template('nlunsubscribe.html'), ctx)
     except IndexError:
         raise Http404
 
@@ -2320,7 +2330,7 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+        return render(request, get_app_template('nlunsubscribe.html'), ctx)
     except IndexError:
         raise Http404
 
@@ -2358,15 +2368,17 @@ def nl_track_open_event(request, s8r_or_registered, hashed_id, nl_campaign, nl_d
 
 @csrf_exempt
 @never_cache
-@to_response
 def disable_profile_property(request, property_id, hashed_id):
-    """ Disables the profile bool property_id related to the subscriber matching the hashed_id argument given """
+    """
+    Disables the profile bool property_id related to the subscriber matching the hashed_id argument given
+    """
     try:
         subscriber = get_object_or_404(Subscriber, id=decode_hashid(hashed_id)[0])
         if not subscriber.user:
             raise Http404
         setattr(subscriber, property_id, False)
         ctx = {
+            'nlunsubscribe_template': get_app_template('nlunsubscribe.html'),
             'property_name': {
                 'allow_news': 'Novedades',
                 'allow_promotions': 'Promociones',
@@ -2380,9 +2392,40 @@ def disable_profile_property(request, property_id, hashed_id):
         except Exception as e:
             # for some reason UpdateCrmEx does not work in test (Python ver?)
             ctx['error'] = e.displaymessage
-        return 'disable_profile_property.html', ctx
+        return render(request, get_app_template('disable_profile_property.html'), ctx)
     except IndexError:
         raise Http404
+
+
+@never_cache
+@staff_member_required
+def news_preview(request):
+    # TODO: check/fix the logo and the feature to give any template by query param.
+    subscriber = None
+    try:
+        subscriber = Subscriber.objects.get(id=request.GET.get('subscriber_id'))
+    except (Subscriber.DoesNotExist, ValueError):
+        try:
+            subscriber = request.user.subscriber
+        except AttributeError:
+            is_subscriber, subscriber_id = False, 0
+    if subscriber:
+        is_subscriber, subscriber_id = subscriber.is_subscriber(), int(subscriber.id)
+    site_url, hashed_id = settings.SITE_URL_SD, hashids.encode(subscriber_id)
+    return render(
+        request,
+        get_app_template('news/%s' % request.GET.get('template', 'notice.html')),
+        {
+            'preview': True,
+            'is_subscriber': is_subscriber,
+            'subscriber_id': subscriber_id,
+            'hashed_id': hashed_id,
+            'logo_url': settings.HOMEV3_SECONDARY_LOGO,
+            'site_url': site_url,
+            'unsubscribe_url': '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id),
+            'minimal_footer': request.GET.get('minimal_footer', '0') == '1',
+        },
+    )
 
 
 @never_cache

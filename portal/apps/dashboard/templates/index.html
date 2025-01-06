@@ -36,8 +36,12 @@
           let qparam = "";
           // only when "as news" or not subscribed to default pub (staff user is always subscribed)
           if(!c1_checked){
-            // case 0-1: is_subscriber_default=0; case 0-0: is_subscriber_any=0
-            qparam += ($(c2).is(":checked") ? c1.name : c2.name) + "=0";
+            {% if multi_publication %}
+              // case 0-1: is_subscriber_default=0; case 0-0: is_subscriber_any=0
+              qparam += ($(c2).is(":checked") ? c1.name : c2.name) + "=0";
+            {% else %}
+              qparam += "is_subscriber_any=0";
+            {% endif %}
           }
           $.each([c3, c4], function(i, c_elem){
             if($(c_elem).is(":checked")){
@@ -61,9 +65,11 @@
           <form id="nl_switches" onsubmit="return nl_switches_submit('` + hash + `')">
             <fieldset class="border-bottom">
               <input type="checkbox" id="nl_switches_1" name="is_subscriber_default" checked="checked">
-              <label class="pr-2 align-middle" for="nl_switches_1">Suscriptor pago de {{ DEFAULT_PUB }}</label>
-              <input type="checkbox" id="nl_switches_2" name="is_subscriber_any" checked="checked" disabled="disabled">
-              <label class="pr-2 align-middle" for="nl_switches_2">Suscriptor pago de al menos una publicación</label>
+              <label class="pr-2 align-middle" for="nl_switches_1">Suscriptor pago de {{ default_pub.name }}</label>
+              {% if multi_publication %}
+                <input type="checkbox" id="nl_switches_2" name="is_subscriber_any" checked="checked" disabled="disabled">
+                <label class="pr-2 align-middle" for="nl_switches_2">Suscriptor pago de al menos una publicación</label>
+              {% endif %}
               <input type="checkbox" id="nl_switches_3" name="as_news">
               <label class="pr-2 align-middle" for="nl_switches_3">"as news"</label>
               <input type="checkbox" id="nl_switches_4" name="s_pdf">
@@ -74,14 +80,16 @@
             </fieldset>
           </form>
         `);
-        $("#nl_switches_1").on("change", function(){
-          if($(this).is(":checked")){
-            $("#nl_switches_2").prop({"checked": true, "disabled": true});
-          }else{
-            $("#nl_switches_2").prop("disabled", false);
-          }
-        });
-        $("#nl_switches_2").on("change", function(){
+        {% if multi_publication %}
+          $("#nl_switches_1").on("change", function(){
+            if($(this).is(":checked")){
+              $("#nl_switches_2").prop({"checked": true, "disabled": true});
+            }else{
+              $("#nl_switches_2").prop("disabled", false);
+            }
+          });
+        {% endif %}
+        $("#nl_switches_{% if multi_publication %}2{% else %}1{% endif %}").on("change", function(){
           if($(this).is(":checked")){
             $("#nl_switches_4").prop("disabled", false);
           }else{

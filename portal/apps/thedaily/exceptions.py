@@ -2,6 +2,11 @@
 from builtins import str
 
 from django.forms import ValidationError
+from django.utils.translation import gettext_lazy as _
+
+
+CONTACT_ACTION = _("contactate")  # TODO: test this translation is working
+MSG_ERR_UPDATE = f"No fue posible actualizar %s, {CONTACT_ACTION} con nosotros"
 
 
 class UpdateCrmEx(ValueError):

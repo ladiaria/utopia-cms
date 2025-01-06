@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import re
 import json
 import requests
@@ -41,10 +40,10 @@ from django.dispatch import receiver
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-from libs.utils import crm_rest_api_kwargs
+from libs.utils import crm_rest_api_kwargs, space_join
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
-from .exceptions import UpdateCrmEx, EmailValidationError
+from .exceptions import UpdateCrmEx, EmailValidationError, MSG_ERR_UPDATE
 from .managers import SubscriberManager
 
 
@@ -90,6 +89,16 @@ alphanumeric = RegexValidator(
     '^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$',
     'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.',
 )
+user_noname_result = "Usuario sin nombre"
+
+
+def user_fullname(user):
+    result = user_noname_result
+    if user:
+        fullname = user.get_full_name().strip()
+        if fullname:
+            result = fullname
+    return result
 
 
 class Subscriber(Model):
@@ -141,8 +150,22 @@ class Subscriber(Model):
             self.document = non_decimal.sub('', self.document)
         super(Subscriber, self).save(*args, **kwargs)
 
+    def has_user(self):
+        try:
+            return bool(self.user)
+        except User.DoesNotExist:
+            return False
+
+    @property
     def first_name(self):
-        return self.user.first_name
+        return (self.user.first_name or '').strip()
+
+    @property
+    def last_name(self):
+        return (self.user.last_name or '').strip()
+
+    def get_full_name(self):
+        return user_fullname(self.user)
 
     def download(self, pdfinstance):
         try:
@@ -158,31 +181,25 @@ class Subscriber(Model):
         self.save()
 
     def is_subscriber(self, pub_slug=settings.DEFAULT_PUB, operation="get"):
-        try:
+        if self.has_user():
 
-            if self.user:
+            if self.user.is_staff:
+                return True
 
-                if self.user.is_staff:
+            elif pub_slug in getattr(settings, 'THEDAILY_IS_SUBSCRIBER_CUSTOM_PUBLICATIONS', ()):
+                is_subscriber_custom = __import__(
+                    settings.THEDAILY_IS_SUBSCRIBER_CUSTOM_MODULE, fromlist=['is_subscriber']
+                ).is_subscriber
+                return is_subscriber_custom(self, pub_slug, operation)
+
+            else:
+                if operation == "get":
+                    return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
+                elif operation == "set":
+                    self.user.user_permissions.add(Permission.objects.get(codename='es_suscriptor_' + pub_slug))
                     return True
-
-                elif pub_slug in getattr(settings, 'THEDAILY_IS_SUBSCRIBER_CUSTOM_PUBLICATIONS', ()):
-                    is_subscriber_custom = __import__(
-                        settings.THEDAILY_IS_SUBSCRIBER_CUSTOM_MODULE, fromlist=['is_subscriber']
-                    ).is_subscriber
-                    return is_subscriber_custom(self, pub_slug, operation)
-
                 else:
-                    if operation == "get":
-                        return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
-                    elif operation == "set":
-                        self.user.user_permissions.add(Permission.objects.get(codename='es_suscriptor_' + pub_slug))
-                        return True
-                    else:
-                        raise ValueError("Unknown operation")
-
-        except User.DoesNotExist:
-            # rare, but we saw once this exception happen
-            pass
+                    raise ValueError("Unknown operation")
 
         return False
 
@@ -203,7 +220,7 @@ class Subscriber(Model):
         return True
 
     def user_is_active(self):
-        return self.user and self.user.is_active
+        return self.has_user() and self.user.is_active
 
     user_is_active.short_description = 'user act.'
     user_is_active.boolean = True
@@ -270,12 +287,6 @@ class Subscriber(Model):
             else:
                 return qs[0].downloads
 
-    def get_full_name(self):
-        if not self.user.first_name and not self.user.last_name:
-            return "Usuario sin nombre"
-        else:
-            return self.user.get_full_name()
-
     def get_latest_article_visited(self):
         """
         Returns info about the latest visit to an article from this subscriber.
@@ -295,10 +306,10 @@ class Subscriber(Model):
 
     @property
     def user_email(self):
-        return self.user.email if self.user else None
+        return self.user.email if self.has_user() else None
 
     def user_id(self):
-        return self.user.id if self.user else None
+        return self.user.id if self.has_user() else None
 
     user_id.short_description = _("user id")
 
@@ -505,8 +516,7 @@ def user_pre_save(sender, instance, **kwargs):
             changeset.update({'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email})
             put_data_to_crm(api_uri, changeset)
         except requests.exceptions.RequestException:
-            err_msg = "No se han podido actualizar tus datos, contactate con nosotros"
-            raise UpdateCrmEx(err_msg)
+            raise UpdateCrmEx(MSG_ERR_UPDATE % _("tus datos"))
 
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
@@ -525,7 +535,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
             try:
                 updatecrmuser(instance.contact_id, None, changeset)
             except requests.exceptions.RequestException:
-                raise UpdateCrmEx("No se ha podido actualizar tu perfil, contactate con nosotros")
+                raise UpdateCrmEx(MSG_ERR_UPDATE % _("tu perfil"))
     except Subscriber.DoesNotExist:
         # this happens only on creation
         pass
@@ -571,12 +581,13 @@ def createUserProfile(sender, instance, created, **kwargs):
         except Exception as exc:
             if debug:
                 print(f"{debug}error updating user email: {exc}")
-        if not settings.CRM_UPDATE_USER_CREATE_CONTACT or getattr(instance, "updatefromcrm", False):
-            if debug:
-                print(f"{debug}skipping CRM sync")
-            return True
         subscriber, created = Subscriber.objects.get_or_create_deferred(user=instance)
         if created:
+            if not settings.CRM_UPDATE_USER_CREATE_CONTACT or getattr(instance, "updatefromcrm", False):
+                if debug:
+                    print(f"{debug}skipping CRM sync")
+                subscriber.save()
+                return True
             try:
                 res = createcrmuser(instance.first_name, instance.last_name, instance.email)
             except Exception as exc:
@@ -718,10 +729,11 @@ class Subscription(Model):
         return self.get_full_name()
 
     def get_full_name(self):
-        if not self.first_name and not self.last_name:
-            return "Usuario sin nombre"
+        if self.first_name or self.last_name:
+            return space_join(self.first_name, self.last_name)
         else:
-            return '%s %s' % (self.first_name, self.last_name)
+            append = ("fullname: " + user_fullname(self.subscriber)) if self.subscriber else "null"
+            return f"Sin nombre en suscripción, user_fk_{append}"
 
     def get_subscription_type_prices(self):
         return ', '.join('%s' % stp for stp in self.subscription_type_prices.all())
