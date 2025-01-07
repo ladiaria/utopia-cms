@@ -156,7 +156,7 @@ class CrispyModelFormHelper(CrispyFormHelper):
     field_class = 'col-sm-8'
 
 
-custom_helper_class = getattr(settings, "THEDAILY_CRISPY_CUSTOM_FORM_HELPER_CLASS", None)
+custom_helper_class = getattr(settings, "THEDAILY_FORMS_HELPER_CLASS", None)
 
 
 class CrispyForm(Form):

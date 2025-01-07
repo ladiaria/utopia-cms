@@ -111,7 +111,6 @@ from .forms import (
     GoogleSignupAddressForm,
     SubscriberSignupForm,
     SubscriberSignupAddressForm,
-    ConfirmEmailRequestForm,
     ProfileForm,
     ProfileExtraDataForm,
     UserForm,
@@ -1177,9 +1176,9 @@ def password_reset(request, user_id=None, hash=None):
 def confirm_email(request):
     if request.user.is_authenticated:
         raise Http404
-    ctx = {}
+    ctx, form_class = {}, get_formclass(request, "ConfirmEmailRequest")
     if request.method == 'POST':
-        confirm_email_form = ConfirmEmailRequestForm(request.POST)
+        confirm_email_form = form_class(request.POST)
         if confirm_email_form.is_valid():
             try:
                 user = confirm_email_form.cleaned_data["user"]
@@ -1197,7 +1196,7 @@ def confirm_email(request):
                 ctx['error'] = delivery_err
         ctx["action_content_template"] = get_app_template("confirm_email_action_content.html")
     else:
-        ctx["form"] = ConfirmEmailRequestForm()
+        ctx["form"] = form_class()
     return render(request, get_app_template('confirm_email.html'), ctx)
 
 
