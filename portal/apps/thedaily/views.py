@@ -120,6 +120,7 @@ from .forms import (
     SUBSCRIPTION_PHONE_TIME_CHOICES,
     get_default_province,
     check_password_strength,
+    custom_forms_module,
 )
 from .utils import (
     get_or_create_user_profile,
@@ -176,10 +177,13 @@ def no_captcha(request):
     ) in getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED', [])
 
 
+def get_custom_formclass(classname):
+    return locate(f"{custom_forms_module}.{classname}")
+
+
 def get_formclass(request, formclass_prefix):
-    return locate(
-        "%s.%s%s%s" % (forms_module_name, formclass_prefix, "" if no_captcha(request) else "Captcha", "Form")
-    )
+    classname = "%s%s%s" % (formclass_prefix, "" if no_captcha(request) else "Captcha", "Form")
+    return get_custom_formclass(classname) or locate(f"{forms_module_name}.{classname}")
 
 
 def hard_paywall_template():
@@ -806,10 +810,10 @@ def subscribe(request, planslug, category_slug=None):
             (SubscriptionPromoCodeForm if PROMOCODE_ENABLED else SubscriptionForm)
             if nocaptcha else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
         )
-        # a last transformation pipeline step for the subscription form (can be completely overrided by settings)
-        subscription_formclass_custom = getattr(settings, 'THEDAILY_SUBSCRIPTION_FORMCLASS', None)
-        if subscription_formclass_custom:
-            subscription_formclass = locate(subscription_formclass_custom)
+        # a last transformation pipeline step if the resultant form class is customized
+        subscription_formclass = (
+            locate(f"{custom_forms_module}.{subscription_formclass.__name__}") or subscription_formclass
+        )
 
         initial = {
             'subscription_type_prices': planslug,

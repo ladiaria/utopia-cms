@@ -59,6 +59,7 @@ if PASSWORD_VALIDATORS:
         if min_len_found:
             break
 PASSWORD_MIN_LENGTH = PASSWORD_MIN_LENGTH or 8
+custom_forms_module = getattr(settings, "THEDAILY_FORMS_MODULE", None)
 
 
 def get_default_province():
@@ -71,9 +72,8 @@ def custom_layout(form_id, *args, **kwargs):
     them. And make a function to be called from the views to get the customized forms, if any, and default to the ones
     defined here.
     """
-    custom_layout_module = getattr(settings, "THEDAILY_CRISPY_CUSTOM_LAYOUTS_MODULE", None)
-    if custom_layout_module:
-        layout_function = locate(f"{custom_layout_module}.{form_id}")
+    if custom_forms_module:
+        layout_function = locate(f"{custom_forms_module}.{form_id}")
         if callable(layout_function):
             try:
                 return layout_function(*args, **kwargs)
@@ -82,8 +82,8 @@ def custom_layout(form_id, *args, **kwargs):
                     print(f"Error calling the custom layout function for '{form_id}' form: {exc}")
 
 
-def terms_and_conditions_field():
-    return BooleanField(label=mark_safe('Leí y acepto los <a>términos y condiciones</a>'), required=False)
+def terms_and_conditions_field(required=False):
+    return BooleanField(label=mark_safe('Leí y acepto los <a>términos y condiciones</a>'), required=required)
 
 
 def terms_and_conds_accepted_field(**extra_kwargs):
@@ -93,7 +93,7 @@ def terms_and_conds_accepted_field(**extra_kwargs):
 def terms_and_conditions_layout_tuple(**extra_kwargs):
     return (
         terms_and_conds_accepted_field(**extra_kwargs),
-    ) if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID else ()
+    ) if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID or extra_kwargs.get('required', False) else ()
 
 
 terms_and_conditions_prelogin = (
@@ -326,14 +326,14 @@ class UserForm(BaseUserForm):
 def first_name_field():
     return CharField(
         label='Nombre',
-        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
+        widget=TextInput(attrs={'autocomplete': 'given-name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
     )
 
 
 def last_name_field():
     return CharField(
         label='Apellido',
-        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
+        widget=TextInput(attrs={'autocomplete': 'family-name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
     )
 
 
@@ -372,27 +372,24 @@ class SignupForm(BaseUserForm):
         super().__init__(*args, **kwargs)
         self.helper.form_id = 'signup_form'
         self.helper.form_tag = True
-        self.helper.layout = (
-            custom_layout(self.helper.form_id)
-            or Layout(
-                *(
-                    'first_name',
-                    'last_name',
-                    'email',
-                    'phone',
-                    Field(
-                        'password',
-                        minlength=str(PASSWORD_MIN_LENGTH),
-                        template='materialize_css_forms/layout/password.html',
-                    ),
-                )
-                + terms_and_conditions_layout_tuple()
-                + (
-                    'next_page',
-                    HTML('<div class="align-center">'),
-                    Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
-                    HTML('</div>'),
-                )
+        self.helper.layout = Layout(
+            *(
+                'first_name',
+                'last_name',
+                'email',
+                Field(
+                    'password',
+                    minlength=str(PASSWORD_MIN_LENGTH),
+                    template='materialize_css_forms/layout/password.html',
+                ),
+                'phone',
+            )
+            + terms_and_conditions_layout_tuple()
+            + (
+                'next_page',
+                HTML('<div class="align-center">'),
+                Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
+                HTML('</div>'),
             )
         )
         # uncomment next lines to test error rendering without interaction
@@ -455,8 +452,8 @@ class SignupCaptchaForm(SignupForm):
                 'first_name',
                 'last_name',
                 'email',
-                'phone',
                 Field('password', template='materialize_css_forms/layout/password.html'),
+                'phone',
             )
             + terms_and_conditions_layout_tuple()
             + (
@@ -669,9 +666,9 @@ class SubscriberSignupForm(SubscriberForm):
             'first_name',
             'last_name',
             'email',
+            Field('password', template='materialize_css_forms/layout/password.html'),
             'phone',
             'next_page',
-            Field('password', template='materialize_css_forms/layout/password.html'),
         )
 
     def is_valid(self, subscription_type, payment_type=None):
@@ -684,8 +681,8 @@ class SubscriberSignupForm(SubscriberForm):
                     'first_name': self.cleaned_data.get('first_name'),
                     'last_name': self.cleaned_data.get('last_name'),
                     'email': self.cleaned_data.get('email'),
-                    'phone': self.cleaned_data.get('phone'),
                     'password': self.cleaned_data.get('password'),
+                    'phone': self.cleaned_data.get('phone'),
                     "terms_and_conds_accepted": self.cleaned_data.get("terms_and_conds_accepted"),
                     'next_page': self.cleaned_data.get('next_page'),
                 }
@@ -729,9 +726,9 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
             'first_name',
             'last_name',
             'email',
+            Field('password', template='materialize_css_forms/layout/password.html'),
             'phone',
             'next_page',
-            Field('password', template='materialize_css_forms/layout/password.html'),
             HTML(
                 '<div class="validate col s12">'
                 '  <h3 class="medium" style="color:black;">Información de entrega</h3>'
@@ -752,8 +749,8 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
                     'first_name': self.cleaned_data.get('first_name'),
                     'last_name': self.cleaned_data.get('last_name'),
                     'email': self.cleaned_data.get('email'),
-                    'phone': self.cleaned_data.get('phone'),
                     'password': self.cleaned_data.get('password'),
+                    'phone': self.cleaned_data.get('phone'),
                     "terms_and_conds_accepted": self.cleaned_data.get("terms_and_conds_accepted"),
                     'next_page': self.cleaned_data.get('next_page'),
                 }
@@ -782,7 +779,7 @@ class PhoneSubscriptionForm(CrispyForm):
         widget=TextInput(
             attrs={
                 "class": "textinput textInput",
-                'autocomplete': 'name',
+                'autocomplete': 'given-name',
                 'autocapitalize': 'sentences',
                 'spellcheck': 'false',
             }
