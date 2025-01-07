@@ -678,3 +678,7 @@ if "THEDAILY_SUBSCRIPTION_TYPE_DEFAULT" not in locals():
         THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0] if THEDAILY_SUBSCRIPTION_TYPE_CHOICES else None
 if THEDAILY_DEBUG_SIGNALS is None:
     THEDAILY_DEBUG_SIGNALS = DEBUG
+
+# terms and conditions page related context processor
+if THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
+    TEMPLATES[0]['OPTIONS']['context_processors'].append('thedaily.context_processors.terms_and_conditions')
