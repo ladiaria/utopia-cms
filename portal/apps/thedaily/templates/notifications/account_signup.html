@@ -18,8 +18,8 @@
             <a href="{{ SITE_URL_SD }}{{ validation_url }}" style="color: #0a0a0a;">{{ SITE_URL_SD }}{{ validation_url }}</a>
           </p>
           <p>
-            ¿Tenés consultas? Visitá nuestro <a href="{{ SITE_URL_SD }}/ayuda/" style="color: #0a0a0a;">centro de ayuda</a>
-            o <a href="{{ SITE_URL_SD }}/contacto/" style="color: #0a0a0a;">contactanos</a>.
+            ¿Tenés consultas? Visitá nuestro <a href="{{ SITE_URL_SD }}{% url 'help' %}" style="color: #0a0a0a;">centro de ayuda</a>
+            o <a href="{{ SITE_URL_SD }}{% url 'contact-form' %}" style="color: #0a0a0a;">contactanos</a>.
           </p>
         </div>
       {% endwith %}
