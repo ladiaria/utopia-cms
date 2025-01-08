@@ -141,7 +141,7 @@ def serialize_wrapper(article_or_list, publication, for_cover=False, dates=True)
             (
                 t[0].nl_serialize(t[1], publication, dates=dates), t[1]
             ) if isinstance(t, tuple)
-            else t.nl_serialize(publication=publication, dates=dates) for t in article_or_list
+            else t.nl_serialize(publication=publication, for_cover=for_cover, dates=dates) for t in article_or_list
         ]
     elif article_or_list:
         return article_or_list.nl_serialize(for_cover, publication, dates=dates)

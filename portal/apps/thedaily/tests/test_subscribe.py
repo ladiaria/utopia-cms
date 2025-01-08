@@ -12,17 +12,17 @@ from core.factories import UserFactory
 from thedaily.models import SubscriptionPrices
 
 
+sp_default = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+
+
 def generate_password():
     allowed = ascii_letters + digits + punctuation
     return User.objects.make_random_password(allowed_chars=allowed)
 
 
 class SubscribeTestCase(TestCase):
-
     fixtures = getattr(settings, "THEDAILY_TEST_SUBSCRIBE_FIXTURES", ["test"])
-    var = {"test01_planslug": settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT}
-    # last word in the human readable name of the default subscription type
-    hname = dict(settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES)[var["test01_planslug"]].lower().split()[-1]
+    var = {}  # useful for child classes in custom third party apps tests
 
     def check_one_entry(self, response):
         self.assertEqual(response.status_code, 200)
@@ -31,12 +31,16 @@ class SubscribeTestCase(TestCase):
         elif settings.DEBUG:
             print("WARNING: mongo_db is None, %s should be tested again with a 'working mongoDB' config." % type(self))
 
+    def set_hname(self):
+        # last word in the human readable name of the default subscription type
+        self.hname = dict(settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES)[sp_default].lower().split()[-1]
+
     def subscribe_requests(self, c, blocked_phone_prefix):
         response = c.get('/usuarios/planes/', follow=True)
         self.assertEqual(response.status_code, 200)
         response_content = response.content.decode()
         self.assertIn(self.hname, response_content.lower())
-        planslug = self.var["test01_planslug"]
+        planslug = sp_default
         phone_subscription_log_clear()
         user = response.wsgi_request.user
         my_email, good_phone = user.email if user.is_authenticated else "userone@gmail.com", "+59896112233"
@@ -50,7 +54,7 @@ class SubscribeTestCase(TestCase):
             "terms_and_conds_accepted": True,
             "subscription_type_prices": planslug,
             "payment_type": "tel",
-            "province": "Montevideo",
+            "province": settings.THEDAILY_PROVINCE_CHOICES[1][0],
             "city": "Montevideo",
             "address": "Treinta y Tres 1479",
         }
@@ -98,9 +102,11 @@ class SubscribeTestCase(TestCase):
         self.assertNotIn(display_msg, response_content)
 
     def test01_subscribe_landing(self):
-        # change the category of default price to use a no online default price
+        self.assertIsNotNone(sp_default)
+        self.set_hname()
+        # change the category of default price to use a no onlie default price
         # but TODO: write this test version for "online" also ASAP
-        sp = SubscriptionPrices.objects.get(subscription_type=self.var["test01_planslug"])
+        sp = SubscriptionPrices.objects.get(subscription_type=sp_default)
         sp.ga_category = "P"
         sp.save()
         c, blocked_phone_prefix = Client(), "+598966555"
@@ -115,6 +121,8 @@ class SubscribeTestCase(TestCase):
             self.subscribe_requests(c, blocked_phone_prefix)
 
     def test02_subscribe_landing_logged_in(self):
+        self.assertIsNotNone(sp_default)
+        self.set_hname()
         password, user = User.objects.make_random_password(), UserFactory()
         user.set_password(password)
         user.save()

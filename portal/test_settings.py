@@ -12,6 +12,11 @@ if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_CHOICES"):
         ("PAPYDIM", "Suscripción papel"),
     )
 
+
+if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_DEFAULT"):
+    THEDAILY_SUBSCRIPTION_TYPE_DEFAULT = THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0]
+
+
 if not locals().get("THEDAILY_PROVINCE_CHOICES"):
     print("NOTE: filling THEDAILY_PROVINCE_CHOICES with some default values for testing purposes")
     THEDAILY_PROVINCE_CHOICES = (

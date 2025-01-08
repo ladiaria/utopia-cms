@@ -244,7 +244,7 @@ ROOT_URLCONF = "urls"
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 
-# Default publication slug.
+# Default publication slug
 DEFAULT_PUB = "default"
 
 FIRST_DAY_OF_WEEK = 0  # 0 is Sunday

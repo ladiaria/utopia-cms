@@ -85,11 +85,14 @@ def get_image(match, aid, **kwargs):
 
 
 @register.simple_tag
-def photo_byline(article, allowed=True):
+def photo_byline(article, allowed=True, include_agency=False):
     # if allowed by setting and not disallowed by the allow arg given, it returns the article's "photo_autor" entry if
     # article arg is dict (useful in "offline" rendering), otherwise (if it is an Article object) returns the method.
     if settings.CORE_ARTICLE_ENABLE_PHOTO_BYLINE and allowed:
-        return (dict.get if isinstance(article, dict) else getattr)(article, "photo_author", "")
+        author = (dict.get if isinstance(article, dict) else getattr)(article, "photo_author", "")
+        if include_agency:
+            return (author, (dict.get if isinstance(article, dict) else getattr)(article, "photo_agency", ""))
+        return author
     else:
         return ""
 

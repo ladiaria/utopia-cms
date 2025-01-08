@@ -179,11 +179,14 @@ class Publication(Model):
 
     @staticmethod
     def default_name():
+        default_pub_name = getattr(settings, 'DEFAULT_PUB_NAME', None)
+        if default_pub_name:
+            return default_pub_name
         DEFAULT_PUB = settings.DEFAULT_PUB
         try:
             default_pub_name = Publication.objects.get(slug=DEFAULT_PUB).name
         except Publication.DoesNotExist:
-            default_pub_name = "default"
+            default_pub_name = DEFAULT_PUB
         return default_pub_name
 
     def save(self, *args, **kwargs):
