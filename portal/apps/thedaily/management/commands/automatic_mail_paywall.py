@@ -32,6 +32,7 @@ from django.utils.timezone import datetime, timedelta, make_aware
 from thedaily.models import SentMail, SubscriberEvent
 from thedaily.email_logic import DESC_FREE_ARTICLES_LIMIT, whitelisted, sent_recently
 from thedaily.tasks import notifications_template_dir, send_notification
+from thedaily.utils import get_notification_subjects
 
 
 # WARNING: A change on this variable should also be made in database rows already inserted.
@@ -43,10 +44,11 @@ log.setLevel(logging.INFO)
 
 
 def send_message(user):
+    template_name = "signup_wall.html"
     send_notification(
         user,
-        f"{notifications_template_dir}signup_wall.html",
-        'Llegaste al límite de artículos gratuitos',
+        f"{notifications_template_dir}{template_name}",
+        get_notification_subjects()[template_name],
         {
             "notifications_signup_base": f"{notifications_template_dir}signup.html",
             "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,

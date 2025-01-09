@@ -9,11 +9,10 @@ from django.template.loader import render_to_string
 
 from libs.utils import smtp_connect
 from thedaily.models import SentMail, SubscriptionPrices
-from thedaily.utils import get_app_template
+from thedaily.utils import get_app_template, get_notification_subjects
 
 
 notifications_template_dir = getattr(settings, 'THEDAILY_NOTIFICATIONS_TEMPLATE_DIR', 'notifications/')
-welcome_email_sub = 'Tu suscripción %s está activa'
 
 
 def send_notification_message(subject, message, mailto):
@@ -55,12 +54,14 @@ def notify_subscription(user, subscription_type, seller_fullname=None):
     extra_context = {"sp": SubscriptionPrices.objects.get(subscription_type=subscription_type[0])}
     if seller_fullname:
         extra_context["seller_fullname"] = seller_fullname
+    template_file = "new_subscription.html"
+    custom_subject = get_notification_subjects().get(template_file)
     send_notification(
         user,
         settings.THEDAILY_WELCOME_EMAIL_TEMPLATES.get(
-            subscription_type, get_app_template('notifications/new_subscription.html')
+            subscription_type, get_app_template(f'notifications/{template_file}')
         ),
-        welcome_email_sub % subj_inner,
+        custom_subject or ('Tu suscripción %s está activa' % subj_inner),
         extra_context,
     )
     SentMail.objects.create(subscriber=user.subscriber, subject=f"Bienvenida {subj_inner}")

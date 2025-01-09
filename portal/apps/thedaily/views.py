@@ -67,7 +67,7 @@ from django.utils.html import strip_tags
 from django.utils.translation import gettext as _
 
 from apps import mongo_db, bouncer_blocklisted
-from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs, get_site_name
+from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
 from decorators import render_response
@@ -132,6 +132,7 @@ from .utils import (
     collector_analysis,
     get_app_template,
     subscribe_log,
+    get_notification_subjects,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -142,7 +143,7 @@ standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
 verif_email_i18n = f"{email_i18n} de verificación"
-account_verify_msg = 'Verificá tu cuenta de' + get_site_name()
+notification_subjects = get_notification_subjects()
 # Initialize the hashid object with salt from settings and custom length
 hashids = Hashids(settings.HASHIDS_SALT, 32)
 
@@ -524,14 +525,14 @@ def signup(request):
             try:
                 user = signup_form.create_user()
                 add_default_newsletters(user.subscriber)  # TODO: better call this after email confirmation success
-                # TODO: check if request is needed
                 # TODO: notifications/signup.html is also used for this purpose (2 templates to the same thing?)
+                notification_template = "account_signup.html"
                 was_sent = send_validation_email(
-                    'Verificá tu cuenta',
+                    notification_subjects[notification_template],
                     user,
-                    get_app_template('notifications/account_signup.html'),
+                    get_app_template(f'notifications/{notification_template}'),
                     get_signup_validation_url,
-                    {'request': request},
+                    {'request': request},  # the request is needed to be used in a further render_to_string call
                 )
                 if not was_sent:
                     raise Exception(f"El {verif_email_i18n} para el usuario %s no pudo ser enviado." % user)
@@ -643,8 +644,12 @@ def google_phone(request):
             if is_new:
                 request.session['welcome'] = True
                 try:
+                    notification_template = 'signup.html'
                     send_notification(
-                        oas.user, get_app_template('notifications/signup.html'), '¡Te damos la bienvenida!', ctx
+                        oas.user,
+                        get_app_template(f'notifications/{notification_template}'),
+                        notification_subjects[notification_template],
+                        ctx
                     )
                 except Exception as exc:
                     # fail silently in case of error when sending the email, only log or debug
@@ -953,10 +958,11 @@ def subscribe(request, planslug, category_slug=None):
                             )
                             return render(request, template, context)
                         try:
+                            notification_template = 'account_signup.html'
                             was_sent = send_validation_email(
-                                account_verify_msg,
+                                notification_subjects[notification_template],
                                 user,
-                                get_app_template('notifications/account_signup.html'),
+                                get_app_template(f'notifications/{notification_template}'),
                                 get_signup_validation_url,
                             )
                             if not was_sent:
@@ -1119,10 +1125,11 @@ def complete_signup(request, user_id, hash):
             notify_subscription(user, subscription_type)
 
     if send_default_welcome:
+        notification_template = 'signup.html'
         send_notification(
             user,
-            get_app_template('notifications/signup.html'),
-            'Tu cuenta gratuita está activa',
+            get_app_template(f'notifications/{notification_template}'),
+            notification_subjects[f"{notification_template}_variant"],
             {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
 
@@ -1151,18 +1158,22 @@ def password_reset(request, user_id=None, hash=None):
             try:
                 user = reset_form.cleaned_data["user"]
                 if user.is_active:
+                    notification_template = 'password_reset_body.html'
                     send_validation_email(
-                        'Recuperación de contraseña',
+                        notification_subjects[notification_template],
                         user,
-                        get_app_template('notifications/password_reset_body.html'),
+                        get_app_template(f'notifications/{notification_template}'),
                         get_password_validation_url,
                     )
                 else:
                     is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
-                    notification_template = get_app_template(
-                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                    notification_template = 'account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                    send_validation_email(
+                        notification_subjects[notification_template],
+                        user,
+                        get_app_template(f'notifications/{notification_template}'),
+                        get_signup_validation_url,
                     )
-                    send_validation_email(account_verify_msg, user, notification_template, get_signup_validation_url)
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
@@ -1183,12 +1194,11 @@ def confirm_email(request):
             try:
                 user = confirm_email_form.cleaned_data["user"]
                 is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
+                notification_template = 'account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
                 send_validation_email(
-                    account_verify_msg,
+                    notification_subjects[notification_template],
                     user,
-                    get_app_template(
-                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
-                    ),
+                    get_app_template(f'notifications/{notification_template}'),
                     get_signup_validation_url,
                 )
             except Exception as exc:

@@ -25,7 +25,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 
-from libs.utils import crm_rest_api_kwargs
+from libs.utils import crm_rest_api_kwargs, get_site_name
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
 from signupwall.utils import get_ip
@@ -277,6 +277,21 @@ def get_app_template(relative_path):
             template = template_try
     # if custom dir is not defined, no search is needed
     return template
+
+
+def get_notification_subjects():
+    account_verify_msg_subject_nosite = "Verificá tu cuenta"
+    account_verify_msg_subject = " de ".join((account_verify_msg_subject_nosite, get_site_name()))
+    notification_subjects = {
+        "account_signup.html": account_verify_msg_subject_nosite,
+        "account_signup_subscribed.html": account_verify_msg_subject,
+        "password_reset_body.html": "Recuperación de contraseña",
+        "signup.html": "¡Te damos la bienvenida!",
+        "signup.html_variant": "Tu cuenta gratuita está activa",
+        "signup_wall.html": 'Llegaste al límite de artículos gratuitos',
+    }
+    notification_subjects.update(getattr(settings, "NOTIFICATION_SUBJECTS", {}))
+    return notification_subjects
 
 
 def product_checkout_template(product_slug, steps=False):
