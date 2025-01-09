@@ -1287,10 +1287,11 @@ def edit_profile(request, user=None):
 
                 if old_email != user.email:
                     # TODO: send the email after saving the user and take actions if it not sent
+                    template_name = 'account_signup.html'
                     was_sent = send_validation_email(
-                        'Verificá tu cuenta',
+                        notification_subjects[template_name],
                         user,
-                        get_app_template('notifications/account_signup.html'),
+                        get_app_template(f'notifications/{template_name}'),
                         get_signup_validation_url,
                     )
                     if not was_sent:
