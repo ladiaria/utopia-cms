@@ -79,6 +79,15 @@ def md5file(filename):
 
 
 # TODO: check if the functions above this line are used, if not, remove.
+def prefix_notification_subject(subject):
+    subject_prefix = getattr(settings, 'EMAIL_SUBJECT_PREFIX', '')
+    if hasattr(settings, 'NOTIFICATIONS_SUBJECT_PREFIX'):
+        subject_prefix = settings.NOTIFICATIONS_SUBJECT_PREFIX
+    if subject_prefix:
+        subject = f"{subject_prefix} {subject}"
+    return subject
+
+
 def do_gonzo(*args, **kwargs):
     hash_this = ''
     for arg in args:

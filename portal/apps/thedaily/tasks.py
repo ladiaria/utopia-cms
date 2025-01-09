@@ -7,7 +7,7 @@ from django.core.mail import send_mail
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 
-from libs.utils import smtp_connect
+from libs.utils import smtp_connect, prefix_notification_subject
 from thedaily.models import SentMail, SubscriptionPrices
 from thedaily.utils import get_app_template, get_notification_subjects
 
@@ -38,6 +38,7 @@ def send_notification(user, email_template, email_subject, extra_context={}):
             'user': user,
         }
     )
+    email_subject = prefix_notification_subject(email_subject)
     msg = Message(
         html=render_to_string(email_template, extra_context),
         mail_to=(user.get_full_name(), user.email),
