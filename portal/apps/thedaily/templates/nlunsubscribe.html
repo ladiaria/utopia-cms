@@ -1,4 +1,4 @@
-{% load static compress %}<!doctype html>
+{% load static i18n compress %}<!doctype html>
 {% block html %}
   <html lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}">
 {% endblock %}
@@ -37,9 +37,10 @@
         <div class="ld-subscribe-box__info ld-caption">
           <p>
             {% block configure %}
+              {% trans "Configurar todas tus newsletters" as configure_text_i18n %}
               <a href="{% url 'edit-profile' %}#ld-{{ configure_hash|default:"newsletters" }}"
                  {% if configure_class %} class="{{ configure_class }}"{% endif %}>
-                {{ configure_text|default:"Configurar todos tus newsletters" }}
+                {{ configure_text|default:configure_text_i18n }}
               </a>
             {% endblock %}
           </p>
