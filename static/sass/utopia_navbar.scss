@@ -1554,7 +1554,7 @@ body.interior {
   }
 }
 
-.subscribe-notice {
+.home-notice {
   color: $off-black;
   background: $primary-color;
   font-size: 1rem;
@@ -1583,7 +1583,7 @@ body.interior {
     background-blend-mode: exclusion, normal;
     background-size: 280px;
 
-    @media screen and (min-width: 600px) {
+    @media #{$medium-and-up} {
       opacity: 0.2;
     }
   }
@@ -1665,6 +1665,78 @@ body.interior {
     }
   }
 
+  &.user-nl-notice {
+    padding: 0 16px 16px;
+
+    &::before {
+      background-image: url("../img/bg_nl_popup_mobile.png");
+      opacity: 1;
+      background-blend-mode: unset;
+      background-size: cover;
+    }
+
+    .home-notice__header {
+      display: flex;
+      align-items: center;
+      padding-top: 8px;
+      margin-bottom: 16px;
+
+      svg {
+        position: relative;
+        z-index: 1;
+      }
+    }
+
+    .home-notice__footer {
+      svg.mail-icon {
+        display: none;
+      }
+      .ut-btn {
+        background-color: #ff0;
+        color: $off-black;
+        box-shadow: 4px 4px 20px 6px rgba(0, 0, 0, 0.25);
+      }
+    }
+
+    #btn-toggle-banner {
+      position: relative;
+      margin-left: auto;
+    }
+
+    &.collapsed {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: space-between;
+      padding: 12px 19px;
+
+      .home-notice__header {
+        margin: 0;
+        padding: 0;
+
+        #btn-toggle-banner {
+          top: 0;
+          right: 0;
+          background-color: #ff0;
+        }
+        > svg {
+          display: none;
+        }
+      }
+      .home-notice__footer {
+        gap: 8px;
+        svg.mail-icon {
+          display: block;
+        }
+        svg.arrow-icon {
+          display: none;
+        }
+        a.ut-btn-subscription {
+          background-color: transparent;
+        }
+      }
+    }
+  }
+
   &__desktop {
     font-weight: 500;
     font-size: 2rem;
@@ -1681,12 +1753,11 @@ body.interior {
 
     .btn-close-notice {
       position: absolute;
-      right: 9px;
+      margin: 12px;
+      right: 0;
       top: 0;
       cursor: pointer;
       display: block;
-      padding: 10px;
-      margin-top: 9px;
 
       svg {
         display: block;
@@ -1721,6 +1792,37 @@ body.interior {
 
       span {
         font-weight: 400;
+      }
+    }
+
+    &.user-nl-notice {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 110px;
+
+      > span.empty-element {
+        width: 90px;
+      }
+
+      svg.logo-la-diaria {
+        z-index: 1;
+        right: 80px;
+      }
+
+      &::before {
+        background-image: url(../img/bg_nl_popup.png);
+        background-blend-mode: unset;
+        background-size: 100%;
+        @media #{$medium-and-up} {
+          opacity: 1;
+        }
+      }
+
+      p .ut-btn {
+        background-color: #ffff00;
+        color: $off-black;
+        box-shadow: 4px 4px 20px 6px rgba(0, 0, 0, 0.25);
       }
     }
   }
