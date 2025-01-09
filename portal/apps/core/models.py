@@ -692,9 +692,9 @@ class Category(Model):
     def latest_articles(self, exclude=[]):
         return list(self.home.articles.exclude(id__in=exclude)) if hasattr(self, 'home') else []
 
-    def articles(self):
+    def articles(self, limit=None):
         """
-        Returns all articles published on this category
+        Returns all articles published on this category or upto limit if given
         """
         return Article.objects.filter(
             id__in=[
@@ -711,9 +711,9 @@ class Category(Model):
                         core_articlerel.edition_id = core_edition.id
                     WHERE core_section.category_id = %d
                         AND is_published AND core_edition.date_published <= CURRENT_DATE
-                    ORDER BY core_article.date_published DESC
+                    ORDER BY core_article.date_published DESC%s
                     """
-                    % self.id
+                    % (self.id, f" LIMIT {limit}" if limit else "")
                 )
             ]
         )

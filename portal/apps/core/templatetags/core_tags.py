@@ -95,6 +95,7 @@ def render_related(context, article, amp=False, publication_priority=None, title
     if publication_priority is None:
         publication_priority = settings_publication_priority
     related_default_limit = getattr(settings, 'CORE_RENDER_REALTED_DEFAULT_LIMIT', 4)
+    related_article_type_limit = getattr(settings, 'CORE_RENDER_REALTED_ARTICLE_TYPE_LIMIT', {})
 
     if publication and publication_priority:
         # 1st: give priority to publication, if defined by settings
@@ -103,14 +104,17 @@ def render_related(context, article, amp=False, publication_priority=None, title
     if not upd_dict:
         category_priority = getattr(settings, "CORE_CATEGORY_RELATED_CATEGORY_PRIORITY", False)
         category_related_limits = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', {})
+        related_article_type_limit = related_article_type_limit.get(article.type)
 
-        # 2nd: use category, if it is priorized globally or by settings
-        if category_priority or (category and category.slug in category_related_limits):
+        # 2nd: use category, if it is priorized globally or by settings but giving priority to article type limits
+        if category_priority or related_article_type_limit or (category and category.slug in category_related_limits):
 
             if category:
                 related_limit = (
-                    category_related_limits.get(category.slug, related_default_limit)
-                ) or related_default_limit
+                    related_article_type_limit
+                    or category_related_limits.get(category.slug, related_default_limit)
+                    or related_default_limit
+                )
                 upd_dict = {
                     'articles': section.latest_related_by_category(category.id, article.id, related_limit),
                     'section': category.more_link_title or category.name,
