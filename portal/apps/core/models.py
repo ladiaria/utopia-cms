@@ -973,10 +973,10 @@ class Section(Model):
         """
         return self.latest(3)
 
-    def latest4related(self, exclude_id):
+    def latest_related(self, exclude_id, limit):
         """
-        devuelve los últimos 4 articulos de la sección que acepten ser
-        relacionados excluyendo al que se le pasa por parametro.
+        Returns the last 'limit' articles from the section that accept being related,
+        excluding the article ID passed as parameter.
         """
         return Article.objects.raw(
             """
@@ -986,14 +986,12 @@ class Section(Model):
             WHERE core_articlerel.section_id=%s AND is_published
                 AND allow_related AND core_article.id!=%s
             GROUP BY id ORDER BY date_published DESC
-            LIMIT 4"""
-            % (self.id, exclude_id)
+            LIMIT %d""" % (self.id, exclude_id, limit)
         )
 
-    def latest4relatedbycategory(self, category, exclude_id):
+    def latest_related_by_category(self, category, exclude_id, limit):
         """
-        devuelve los últimos 4 articulos de la categoría que acepten ser
-        relacionados excluyendo al que se le pasa por parametro.
+        Returns the last 'limit' articles from the category that accept being related, excluding the given by param.
         """
         return Article.objects.raw(
             """
@@ -1005,26 +1003,23 @@ class Section(Model):
             WHERE is_published AND allow_related
                 AND core_section.category_id=%s AND core_article.id!=%s
             GROUP BY id ORDER BY date_published DESC
-            LIMIT 4"""
-            % (category, exclude_id)
+            LIMIT %d
+            """ % (category, exclude_id, limit)
         )
 
-    def latest4relatedbypublication(self, publication, exclude_id):
+    def latest_related_by_publication(self, publication, exclude_id, limit):
         """
-        devuelve los últimos 4 articulos de la publicacion que acepten ser
-        relacionados excluyendo al que se le pasa por parametro.
+        Returns the last 'limit' articles from the publication that accept being related,
+        excluding the article ID passed as parameter.
         """
-        return (
-            Article.objects.raw(
-                """
+        return Article.objects.raw(
+            """
             SELECT a.* FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
                 JOIN core_edition e ON ar.edition_id=e.id
             WHERE a.is_published AND a.allow_related AND e.publication_id=%s AND a.id!=%s
-            GROUP BY a.id ORDER BY a.date_published DESC LIMIT 4"""
-                % (publication, exclude_id)
-            )
-            if settings.CORE_ENABLE_RELATED_ARTICLES
-            else []
+            GROUP BY a.id ORDER BY a.date_published DESC
+            LIMIT %d
+            """ % (publication, exclude_id, limit)
         )
 
     def latest_article(self):
