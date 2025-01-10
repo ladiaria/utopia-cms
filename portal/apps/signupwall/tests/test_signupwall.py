@@ -5,18 +5,25 @@ from django.conf import settings
 from django.test import TestCase, tag
 from django.test.client import Client
 from django.contrib.auth.models import User
+from django.utils import translation
 from django.utils.lorem_ipsum import paragraph
 
 from libs.scripts.pwclear import pwclear
 from core.models import Publication, Article
 from core.factories import UserFactory
 
-from . import label_content_not_available, label_to_continue_reading, label_exclusive, label_exclusive4u
+from .. import your_account_i18n, label_content_not_available_i18n
+from . import label_to_continue_reading, label_exclusive, label_exclusive4u
 
 
 class SignupwallTestCase(TestCase):
     fixtures = ['test']
     http_host_header_param = {'HTTP_HOST': settings.SITE_DOMAIN}
+
+    def setUp(self):
+        translation.activate(settings.LOCALE_NAME_PREFIX)
+        self.your_account = str(your_account_i18n)
+        self.label_content_not_available = str(label_content_not_available_i18n)
 
     def no_redirection_for_restricted_article(self, c, restricted_msg, can_read=False, is_subscriber_any=False):
         with self.settings(CORE_RESTRICTED_PUBLICATIONS=("restrictedpub",)):
@@ -30,7 +37,7 @@ class SignupwallTestCase(TestCase):
             self.assertIn(lorem_paragraph if can_read else restricted_msg, response_content)
             assertion = self.assertNotIn if can_read else self.assertIn
             if can_read or is_subscriber_any:
-                assertion(label_content_not_available, response_content)
+                assertion(self.label_content_not_available, response_content)
 
     def no_redirection_for_full_restricted_article(self, c, restricted_msg, can_read=False, is_subscriber_any=False):
         a = Article.objects.get(slug="test-full-restricted1")
@@ -50,7 +57,7 @@ class SignupwallTestCase(TestCase):
             assertion(
                 (
                     label_exclusive if can_read else label_exclusive4u
-                ) if is_subscriber_any else label_content_not_available,
+                ) if is_subscriber_any else self.label_content_not_available,
                 response_content,
                 html2text(response_content).rstrip(),
             )
@@ -61,7 +68,7 @@ class SignupwallTestCase(TestCase):
             response = c.get(a.get_absolute_url(), **self.http_host_header_param)
             self.assertEqual(response.status_code, 200)
             response_content = response.content.decode()
-            self.assertIn("Tu cuenta", response_content)
+            self.assertIn(self.your_account, response_content)
             self.assertIn("Te queda", response_content)
             self.assertNotIn(label_to_continue_reading, response_content)
 
@@ -69,7 +76,7 @@ class SignupwallTestCase(TestCase):
         r = c.get(a.get_absolute_url(), **self.http_host_header_param)
         self.assertEqual(r.status_code, 200)
         response_content = r.content.decode()
-        self.assertIn("Tu cuenta", response_content)
+        self.assertIn(self.your_account, response_content)
         self.assertIn("Este es tu último", response_content)
 
         a = Article.objects.create(headline='test_walled', is_published=True)
@@ -127,7 +134,7 @@ class SignupwallTestCase(TestCase):
         Publication.objects.get(slug="spinoff").save()
         user.subscriber.is_subscriber("spinoff", operation="set")
         c.login(username=user.username, password=password)
-        self.user_faces_wall(c, label_content_not_available, True)
+        self.user_faces_wall(c, self.label_content_not_available, True)
 
     @tag('skippable')
     def test04_subscriber_passes_wall(self):
@@ -151,7 +158,7 @@ class SignupwallTestCase(TestCase):
             response = c.get(a.get_absolute_url(), **self.http_host_header_param)
             self.assertEqual(response.status_code, 200)
             response_content = response.content.decode()
-            self.assertIn("Tu cuenta", response_content)
+            self.assertIn(self.your_account, response_content)
             self.assertNotIn("Te queda", response_content)
 
         # no redirection for restricted /full restricted articles and can read it

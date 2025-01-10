@@ -4,10 +4,12 @@ from string import ascii_letters, digits, punctuation
 from django.conf import settings
 from django.test import TestCase
 from django.test.client import Client
+from django.utils import translation
 from django.contrib.auth.models import User
 
 from apps import mongo_db
 from libs.scripts.pwclear import phone_subscription_log_clear
+from signupwall import your_account_i18n
 from core.factories import UserFactory
 from thedaily.models import SubscriptionPrices
 
@@ -23,6 +25,10 @@ def generate_password():
 class SubscribeTestCase(TestCase):
     fixtures = getattr(settings, "THEDAILY_TEST_SUBSCRIBE_FIXTURES", ["test"])
     var = {}  # useful for child classes in custom third party apps tests
+
+    def setUp(self):
+        translation.activate(settings.LOCALE_NAME_PREFIX)
+        self.your_account = str(your_account_i18n)
 
     def check_one_entry(self, response):
         self.assertEqual(response.status_code, 200)
@@ -157,4 +163,4 @@ class SubscribeTestCase(TestCase):
             response = c.get('/usuarios/perfil/editar/')
             self.assertEqual(response.status_code, 200)
             response_content = response.content.decode()
-            self.assertIn("Tu cuenta", response_content)
+            self.assertIn(self.your_account, response_content)
