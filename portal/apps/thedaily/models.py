@@ -41,7 +41,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from libs.utils import crm_rest_api_kwargs, space_join
-from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
+from apps import mongo_db, bouncer_blocklisted, whitelisted_domains, document_type_choices
 from core.models import Edition, Publication, Category, ArticleViewedBy
 from .exceptions import UpdateCrmEx, EmailValidationError, MSG_ERR_UPDATE
 from .managers import SubscriberManager
@@ -116,6 +116,7 @@ class Subscriber(Model):
         'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
     )
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
+    document_type = PositiveSmallIntegerField(blank=True, null=True, choices=document_type_choices)
     document = CharField('documento de identidad', max_length=50, blank=True, null=True)
     phone = PhoneNumberField('teléfono', blank=True, default="", db_index=True)
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)

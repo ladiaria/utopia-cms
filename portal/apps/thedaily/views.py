@@ -111,9 +111,7 @@ from .forms import (
     GoogleSignupAddressForm,
     SubscriberSignupForm,
     SubscriberSignupAddressForm,
-    ProfileForm,
     ProfileExtraDataForm,
-    UserForm,
     PhoneSubscriptionForm,
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
@@ -1267,12 +1265,12 @@ def password_change(request, user_id=None, hash=None):
 @never_cache
 @login_required
 def edit_profile(request, user=None):
-    user = user or request.user
-    profile = get_or_create_user_profile(user)
+    user, user_formclass = user or request.user, get_formclass(request, "User")
+    profile, profile_formclass = get_or_create_user_profile(user), get_formclass(request, "Profile")
 
     if request.method == 'POST':
-        user_form = UserForm(request.POST, instance=user)
-        profile_form = ProfileForm(request.POST, instance=profile)
+        user_form = user_formclass(request.POST, instance=user)
+        profile_form = profile_formclass(request.POST, instance=profile)
 
         old_email = user.email
         if user_form.is_valid() and profile_form.is_valid():
@@ -1294,16 +1292,19 @@ def edit_profile(request, user=None):
                         get_app_template(f'notifications/{template_name}'),
                         get_signup_validation_url,
                     )
-                    if not was_sent:
-                        raise Exception(f"Error al enviar {verif_email_i18n} para el usuario %s" % user)
-                    UserSocialAuth.objects.filter(user=user, provider='google-oauth2').delete()
-                    user_form.save()
-                    profile_form.save()
-                    user.is_active = False
-                    user.save()
-                    messages.success(request, 'Perfil actualizado, revisá tu email para verificar el cambio de email.')
-                    logout(request)
-                    return HttpResponseRedirect(reverse('account-logout'))
+                    if was_sent:
+                        UserSocialAuth.objects.filter(user=user, provider='google-oauth2').delete()
+                        user_form.save()
+                        profile_form.save()
+                        user.is_active = False
+                        user.save()
+                        messages.success(
+                            request, 'Perfil actualizado, revisá tu email para verificar el cambio de email.'
+                        )
+                        logout(request)
+                        return HttpResponseRedirect(reverse('account-logout'))
+                    else:
+                        user_form.add_error("email", f"Error al enviar {verif_email_i18n} para el usuario %s" % user)
                 else:
                     user_form.save()
                     profile_form.save()
@@ -1318,13 +1319,12 @@ def edit_profile(request, user=None):
                 msg = f"Error al enviar {verif_email_i18n} para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 user_form.add_error(None, msg)
-                profile_form.add_error(None, msg)
 
         else:
             user.refresh_from_db()
     else:
-        user_form = UserForm(instance=user)
-        profile_form = ProfileForm(instance=profile)
+        user_form = user_formclass(instance=user)
+        profile_form = profile_formclass(instance=profile)
 
     # Google oauth note: disconnections are discouraged when the email used is the same as the user's email because
     #                    once disconnected, if the user has no valid password, he/she would not be able to login again
