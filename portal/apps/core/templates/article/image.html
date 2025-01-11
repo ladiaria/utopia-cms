@@ -25,10 +25,10 @@
       <!--[if IE 9]></video><![endif]-->
       {% block image %}
       <img class="responsive-img {% if image.extended.is_landscape %}landscape{% else %}portrait{% endif %}"
-          data-caption="{% if image.caption %}{{ image.caption }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-          alt="{% if image.caption %}{{ image.caption }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-          width="700"{% if image.extended.image_file_exists %} height="{{ image.get_700w_size.1 }}"{% endif %}
-          loading="lazy">
+           data-caption="{% if image.caption %}{{ image.caption }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+           alt="{% if image.caption %}{{ image.caption }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+           width="700"{% if image.extended.image_file_exists %} height="{{ image.get_700w_size.1 }}"{% endif %}
+           loading="lazy">
       {% endblock %}
     </picture>
     {% endblock %}
