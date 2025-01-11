@@ -482,7 +482,7 @@ class ProfileForm(CrispyModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.form_id = "profile_form"
-        self.helper.layout = (
+        self.helper.layout = Layout(
             Fieldset('Datos de suscriptor', 'document_type', 'document', 'phone'),
             Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
         )

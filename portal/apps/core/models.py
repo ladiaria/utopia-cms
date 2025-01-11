@@ -531,10 +531,10 @@ class Edition(PortableDocumentFormatBaseModel):
     def nl_serialize(self):
         result = {
             'publication': {
-                'newsletter_header_color': self.publication.newsletter_header_color,
                 'newsletter_campaign': self.publication.newsletter_campaign,
                 'get_absolute_url': self.publication.get_absolute_url(),
             },
+            'newsletter_header_color': self.publication.newsletter_header_color,
             'pdf': {'path': self.pdf.path} if self.pdf else None,
             'date_published': self.date_published_verbose(False),
             'date_published_iso': self.date_published.strftime("%Y-%m-%d"),

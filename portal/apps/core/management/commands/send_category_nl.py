@@ -69,7 +69,6 @@ class Command(SendNLCommand):
     def build_and_send(self):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
         export_ctx = {
-            'ctobj': self.ctobj,
             'newsletter_campaign': self.category_slug,
             'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=self.nl_delivery_dt).capitalize(),
             'hide_after_content_block': self.hide_after_content_block,
@@ -343,6 +342,8 @@ class Command(SendNLCommand):
                                 site_url, self.category_slug, hashed_id, self.category_slug
                             )
 
+                    if self.force_no_subscriber:
+                        is_subscriber = is_subscriber_any = is_subscriber_default = False
                     context.update(
                         {
                             "as_news": self.as_news,
@@ -412,8 +413,8 @@ class Command(SendNLCommand):
         try:
             c = Category.objects.get(slug=self.category_slug)
             self.category = self.category_slug if self.offline else c
-            self.newsletter_extra_context = c.newsletter_extra_context
-            self.ctobj = c.nl_serialize()
+            self.newsletter_extra_context = c.nl_serialize()
+            self.newsletter_extra_context.update(c.newsletter_extra_context)
         except Category.DoesNotExist:
             raise CommandError('No category matching the given slug found')
         self.initlog(log, self.category_slug)

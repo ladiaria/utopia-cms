@@ -131,6 +131,22 @@ def get_category_template(category_slug, template_destination="detail"):
     return template
 
 
+def nl_template_name(publication_slug, default="newsletter/newsletter.html"):
+    if publication_slug:
+        template_dirs = [getattr(settings, "CORE_PUBLICATIONS_NL_TEMPLATE_DIR", "newsletter/publication")]
+        if template_dirs[0]:
+            template_dirs.append("")
+        engine = Engine.get_default()
+        for base_dir in template_dirs:
+            template_try = join(base_dir, '%s.html' % publication_slug)
+            try:
+                engine.get_template(template_try)
+                return template_try
+            except TemplateDoesNotExist:
+                pass
+    return default
+
+
 def get_nl_featured_article_id():
     return getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', None)
 

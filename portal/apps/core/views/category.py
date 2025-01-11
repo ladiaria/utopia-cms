@@ -10,8 +10,9 @@ from hashids import Hashids
 from favit.utils import is_xhr
 
 from django.conf import settings
+from django.core.management import CommandError, call_command
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseForbidden, HttpResponsePermanentRedirect, Http404
+from django.http import HttpResponseForbidden, HttpResponsePermanentRedirect, Http404, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
 from django.contrib.sites.models import Site
 from django.contrib.auth.decorators import login_required
@@ -107,7 +108,27 @@ def newsletter_preview(request, slug):
 
     site = Site.objects.get_current()
     category = get_object_or_404(Category, slug=slug)
-    context = {'ctobj': category, 'newsletter_campaign': category.slug, "request_is_xhr": is_xhr(request)}
+
+    if request.method == "POST":
+        u = request.user
+        if u.email and hasattr(u, 'subscriber') and u.subscriber:
+            cmd_args = [category.slug, u.subscriber.id]
+            cmd_opts = {
+                "no_logfile": True,
+                "no_update_stats": True,
+                "force_no_subscriber": request.POST.get(f'is_subscriber_{settings.DEFAULT_PUB}') != "on",
+                "assert_one_email_sent": True,
+            }
+            try:
+                call_command("send_category_nl", *cmd_args, **cmd_opts)
+            except CommandError as cmde:
+                return HttpResponseBadRequest(cmde)
+
+    context = {
+        'newsletter_header_color': category.newsletter_header_color,
+        'newsletter_campaign': category.slug,
+        "request_is_xhr": is_xhr(request),
+    }
     context.update(category.newsletter_extra_context)
     render_kwargs = {"context": context}
     template_name, nowval = None, now()

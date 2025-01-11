@@ -5,12 +5,12 @@ from hashids import Hashids
 from favit.utils import is_xhr
 
 from django.conf import settings
+from django.core.management import CommandError, call_command
 from django.core.exceptions import PermissionDenied
 from django.db.utils import ProgrammingError
-from django.http import HttpResponseForbidden, Http404
+from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseBadRequest
 from django.views.generic import TemplateView
 from django.views.decorators.cache import never_cache
-from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from django.utils.timezone import now, datetime
@@ -22,35 +22,23 @@ from libs.utils import decode_hashid
 from thedaily.models import Subscriber
 from ..models import Publication, Edition, ArticleRel, DefaultNewsletter, get_latest_edition
 from ..templatetags.ldml import remove_markup
-from ..utils import serialize_wrapper
+from ..utils import serialize_wrapper, nl_template_name
+
 
 try:
     site = Site.objects.get_current()
 except (ProgrammingError, Site.DoesNotExist):
     site = None
 
+
 # Initialize the hashid object with salt from settings and custom length
 hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 
-def nl_template_name(publication_slug, default="newsletter/newsletter.html"):
-    if publication_slug:
-        template_dirs = [getattr(settings, "CORE_PUBLICATIONS_NL_TEMPLATE_DIR", "newsletter/publication")]
-        if template_dirs[0]:
-            template_dirs.append("")
-        engine = Engine.get_default()
-        for base_dir in template_dirs:
-            template_try = join(base_dir, '%s.html' % publication_slug)
-            try:
-                engine.get_template(template_try)
-                return template_try
-            except TemplateDoesNotExist:
-                pass
-    return default
-
-
 @method_decorator(never_cache, name='dispatch')
 class NewsletterPreview(TemplateView):
+    delivery_command = "send_publication_nl"
+
     def get_template_name(self, *args, **kwargs):
         return nl_template_name(kwargs.get('publication_slug'))
 
@@ -65,7 +53,7 @@ class NewsletterPreview(TemplateView):
         default_nl = self.get_default_nl(day) if default else None
         return default, default_nl
 
-    def get(self, request, *args, **kwargs):
+    def authorize(self, request):
         # allow only staff members or requests from localhost
         if not (
             request.user.is_staff
@@ -74,10 +62,13 @@ class NewsletterPreview(TemplateView):
             )
         ):
             raise PermissionDenied
+
+    def get(self, request, *args, **kwargs):
+        self.authorize(request)
         publication_slug = kwargs.get('publication_slug')
         publication = get_object_or_404(Publication, slug=publication_slug)
         context = super().get_context_data()
-        context.update({"ctobj": publication, "preview_warn": ""})
+        context.update({"newsletter_header_color": publication.newsletter_header_color, "preview_warn": ""})
         context.update(publication.extra_context.copy())
         status, template_name, template_name_default = None, None, self.template_name
         try:
@@ -223,6 +214,27 @@ class NewsletterPreview(TemplateView):
         except TemplateDoesNotExist:
             return render(request, template_name_default, **render_kwargs)
 
+    def post(self, request, *args, **kwargs):
+        """
+        A post requests tries to send the newsletter to the user who's watching the preview.
+        """
+        self.authorize(request)
+        u, publication_slug = request.user, kwargs.get('publication_slug')
+        if publication_slug and u.email and hasattr(u, 'subscriber') and u.subscriber:
+            cmd_args = [u.subscriber.id]
+            cmd_opts = {
+                "publication": publication_slug,
+                "no_logfile": True,
+                "no_update_stats": True,
+                "force_no_subscriber": request.POST.get(f'is_subscriber_{publication_slug}') != "on",
+                "assert_one_email_sent": True,
+            }
+            try:
+                call_command(self.delivery_command, *cmd_args, **cmd_opts)
+            except CommandError as cmde:
+                return HttpResponseBadRequest(cmde)
+        return HttpResponse()
+
 
 @method_decorator(never_cache, name='dispatch')
 class NewsletterBrowserPreview(TemplateView):
@@ -263,7 +275,6 @@ class NewsletterBrowserPreview(TemplateView):
         context.update(
             {
                 "browser_preview": True,
-                'ctobj': publication,
                 'newsletter_campaign': newsletter_campaign,
                 'nl_date': edition['date_published'],
             }

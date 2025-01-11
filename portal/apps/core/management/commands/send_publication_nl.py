@@ -23,9 +23,8 @@ from django.utils.timezone import datetime, make_naive
 from apps import blocklisted
 from libs.utils import smtp_connect
 from core.models import Publication, Article, Edition, DefaultNewsletter
-from core.views.publication import nl_template_name
 from core.templatetags.ldml import remove_markup
-from core.utils import serialize_wrapper, get_nl_featured_article_id
+from core.utils import serialize_wrapper, get_nl_featured_article_id, nl_template_name
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter_filter
 from . import SendNLCommand
@@ -128,7 +127,16 @@ class Command(SendNLCommand):
 
     def send_subscribers_mail(self):
         site = Site.objects.get(id=self.site_id) if self.site_id else Site.objects.get_current()
-        export_ctx, common_ctx = Publication.objects.get(slug=self.pub_slug).extra_context.copy(), {}
+
+        try:
+            publication = self.get_publication()
+        except Publication.DoesNotExist:
+            error_msg = f"Aborting, no publication with slug='{self.pub_slug}' found."
+            self.log.error(error_msg)
+            raise CommandError(error_msg)
+
+        export_ctx = publication.extra_context.copy()
+        common_ctx = {"newsletter_header_color": publication.newsletter_header_color}
         # A flag to force no delivery can be set in extra context
         if export_ctx.get("force_no_delivery"):
             self.log.info("Force to no delivery by the publication extra context, aborting.")
@@ -172,12 +180,7 @@ class Command(SendNLCommand):
 
         offline_ctx_file = join(settings.SENDNEWSLETTER_EXPORT_DIR, self.pub_slug + '_ctx.json')
         offline_csv_file = join(settings.SENDNEWSLETTER_EXPORT_DIR, self.pub_slug + '_subscribers.csv')
-        try:
-            publication = self.get_publication()
-        except Publication.DoesNotExist:
-            error_msg = "Aborting, no publicaytion with slug='%s' found." % self.pub_slug
-            self.log.error(error_msg)
-            raise CommandError(error_msg)
+
         if self.offline:
             try:
                 context = json.loads(open(offline_ctx_file).read())
@@ -189,7 +192,7 @@ class Command(SendNLCommand):
             site_url = context['site_url']
             list_id = context['list_id']
             self.newsletter_campaign = publication['newsletter_campaign']
-            context.update({'ctobj': publication, 'nl_date': self.edition['date_published']})
+            context.update({'nl_date': self.edition['date_published']})
             # de-serialize dates
             dp_cover = datetime.strptime(context['cover_article']['date_published'], '%Y-%m-%d').date()
             context['cover_article']['date_published'] = dp_cover
@@ -422,6 +425,8 @@ class Command(SendNLCommand):
                                 site_url, self.pub_slug, hashed_id, self.newsletter_campaign
                             )
                     browser_preview_url = '%s/nl/%s/%s/' % (site_url, self.pub_slug, hashed_id)
+                    if self.force_no_subscriber:
+                        is_subscriber = is_subscriber_any = is_subscriber_default = False
                     context.update(
                         {
                             'unsubscribe_url': unsubscribe_url,

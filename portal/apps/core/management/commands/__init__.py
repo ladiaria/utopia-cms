@@ -29,6 +29,26 @@ class SendNLCommand(BaseCommand):
             help='Do not send the emails, only log',
         )
         parser.add_argument(
+            '--force-no-subscriber',
+            action='store_true',
+            default=False,
+            dest='force_no_subscriber',
+            help=(
+                'Used only to send to one subscriber only using subscriber_ids argument, indicates to treat it as a '
+                'not subscriber user'
+            ),
+        )
+        parser.add_argument(
+            '--assert-one-email-sent',
+            action='store_true',
+            default=False,
+            dest='assert_one_email_sent',
+            help=(
+                'Used only to send to one subscriber only using subscriber_ids argument, it raises AssertionError if '
+                'no email is sent'
+            ),
+        )
+        parser.add_argument(
             '--no-logfile',
             action='store_true',
             default=False,
@@ -126,6 +146,8 @@ class SendNLCommand(BaseCommand):
             'delay',
             "no_logfile",
             "no_update_stats",
+            "force_no_subscriber",
+            "assert_one_email_sent",
         ):
             if getattr(self, arg, True):
                 setattr(self, arg, options.get(arg))
@@ -138,6 +160,8 @@ class SendNLCommand(BaseCommand):
         if self.partitions is None and self.mod is not None or self.mod is None and self.partitions is not None:
             raise CommandError('--partitions must be used with --mod')
         self.nl_delivery_dt = timezone.now()
+        if (self.force_no_subscriber or self.assert_one_email_sent) and len(self.subscriber_ids) != 1:
+            raise CommandError('--force-no-subscriber or --assert-one-email-sent can only be used with one subscriber')
 
     def initlog(self, log, substitution_prefix):
         log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
@@ -247,6 +271,9 @@ class SendNLCommand(BaseCommand):
         if not self.export_only:
             if not self.no_deliver:
                 smtp_quit(self.smtp_servers)
+
+            if self.assert_one_email_sent and self.user_sent + self.subscriber_sent == 0:
+                raise CommandError("No email was sent")
 
             # update log stats counters only if subscriber_ids not given and not called with --no-update-stats
             if newsletter_name and not self.subscriber_ids and not self.no_update_stats:
