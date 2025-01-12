@@ -24,6 +24,13 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
   width:100%;
 }
 
+/* "publicado en" tabular inline */
+.dynamic-articlerel_set td.field-home_top,
+.dynamic-articlerel_set td.field-main,
+.dynamic-articlerel_set td.delete {
+  padding-left: 25px;
+}
+
 /* missing (dont know why) border in collapsed inlines */
 #extensions-group div fieldset, #attachments-group div fieldset,
 #body_image-group div fieldset, #articlerel_set-group div fieldset {

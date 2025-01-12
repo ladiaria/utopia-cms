@@ -157,10 +157,7 @@ class ArticleRelAdminBaseModelForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['article'].label = 'artículo'
-        self.fields['section'].label = 'sección'
         self.fields['section'].choices = section_choices()
-        self.fields['home_top'].label = 'en portada'
 
     """ Example of how to override the clean method to change a null position to 1
     def clean(self):
@@ -198,6 +195,7 @@ class ArticleRelHomeTopForm(ArticleRelAdminBaseModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["home_top"].label = "en portada"
         self.fields['home_top'].help_text = \
             'Utilice esta opción para desmarcar y poder quitar el artículo de los artículos en portada.'
         self.initial['home_top'] = True
@@ -208,8 +206,6 @@ class ArticleRelHomeTopForm(ArticleRelAdminBaseModelForm):
 
 
 class ArticleRelHomeNoTopForm(ArticleRelAdminBaseModelForm):
-    # TODO: draggable ordering is not working, FIX asap
-
     position = IntegerField(
         label='orden',
         widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}),
@@ -222,6 +218,7 @@ class ArticleRelHomeNoTopForm(ArticleRelAdminBaseModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["home_top"].label = "en portada"
         self.fields['home_top'].help_text = 'Marque esta opción para agregar el artículo en portada.'
 
     class Meta:
