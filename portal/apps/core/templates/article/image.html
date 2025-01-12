@@ -4,33 +4,33 @@
 <div class="{% block box_classname %}inline-image-wrap article_body_image-{{ display }}{% endblock %}">
   <figure class="{% block figure_classname %}principal{% endblock %}">
     {% block picture %}
-    <picture class="{% block picture_classname %}materialboxed{% endblock %}">
-      <!--[if IE 9]><video style="display: none;"><![endif]-->
-      {% if display == "FW" %}
-        <source srcset="{{ image.get_fullscreen_url }}" media="(min-width: 1200px)">
-        <source srcset="{{ image.get_1200w_url }}" media="(min-width: 1000px)">
-        <source srcset="{{ image.get_900w_url }}" media="(min-width: 701px)">
-        <source srcset="{{ image.get_700w_url }}" media="(min-width: 260px)">
-        <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
-      {% elif display == "MD" %}
-        <source srcset="{{ image.get_1192w_url }}" media="(min-width: 901px)">
-        <source srcset="{{ image.get_900w_url }}" media="(min-width: 701px)">
-        <source srcset="{{ image.get_700w_url }}" media="(min-width: 260px)">
-        <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
-      {% elif display == "BG" %}
-        <source srcset="{{ image.get_1200w_url }}" media="(min-width: 701px)">
-        <source srcset="{{ image.get_700w_url }}" media="(min-width: 260px)">
-        <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
-      {% endif %}
-      <!--[if IE 9]></video><![endif]-->
-      {% block image %}
-      <img class="responsive-img {% if image.extended.is_landscape %}landscape{% else %}portrait{% endif %}"
-           data-caption="{% if image.caption %}{{ image.caption|remove_markup }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-           alt="{% if image.caption %}{{ image.caption|remove_markup }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-           width="700"{% if image.extended.image_file_exists %} height="{{ image.get_700w_size.1 }}"{% endif %}
-           loading="lazy">
-      {% endblock %}
-    </picture>
+      <picture class="{% block picture_classname %}materialboxed{% endblock %}">
+        <!--[if IE 9]><video style="display: none;"><![endif]-->
+        {% if display == "FW" %}
+          <source srcset="{{ image.get_fullscreen_url }}" media="(min-width: 1200px)">
+          <source srcset="{{ image.get_1200w_url }}" media="(min-width: 1000px)">
+          <source srcset="{{ image.get_900w_url }}" media="(min-width: 701px)">
+          <source srcset="{{ image.get_700w_url }}" media="(min-width: 260px)">
+          <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
+        {% elif display == "MD" %}
+          <source srcset="{{ image.get_1192w_url }}" media="(min-width: 901px)">
+          <source srcset="{{ image.get_900w_url }}" media="(min-width: 701px)">
+          <source srcset="{{ image.get_700w_url }}" media="(min-width: 260px)">
+          <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
+        {% elif display == "BG" %}
+          <source srcset="{{ image.get_1200w_url }}" media="(min-width: 701px)">
+          <source srcset="{{ image.get_700w_url }}" media="(min-width: 260px)">
+          <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
+        {% endif %}
+        <!--[if IE 9]></video><![endif]-->
+        {% block image %}
+        <img class="responsive-img {% if image.extended.is_landscape %}landscape{% else %}portrait{% endif %}"
+            data-caption="{% if image.caption %}{{ image.caption|remove_markup }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+            alt="{% if image.caption %}{{ image.caption|remove_markup }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"
+            width="700"{% if image.extended.image_file_exists %} height="{{ image.get_700w_size.1 }}"{% endif %}
+            loading="lazy">
+        {% endblock %}
+      </picture>
     {% endblock %}
 
     {% block figcaption %}
