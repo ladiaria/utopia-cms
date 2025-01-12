@@ -19,6 +19,7 @@ from decorators import decorate_if_no_auth, decorate_if_auth
 from apps import bouncer_blocklisted
 from core.models import Edition, get_current_edition, Publication, Category, CategoryHome, Article
 from core.views.category import category_detail
+from core.utils import get_app_template
 from faq.models import Topic
 from cartelera.models import LiveEmbedEvent
 from thedaily.utils import unsubscribed_newsletters
@@ -245,9 +246,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         context['site_description'] = publication.meta_description
 
     if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_CUSTOM_TEMPLATES', ()):
-        template_dir = getattr(settings, 'CORE_PUBLICATIONS_TEMPLATE_DIR', None)
-        if template_dir:
-            template = '%s/%s.html' % (template_dir, publication.slug)
+        template = get_app_template(f"publication/{publication.slug}.html")
     return render(request, template, context)
 
 
