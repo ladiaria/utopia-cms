@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # utopia-cms Markup Language
-
 import re
-
 from markdown2 import markdown
 
 from django.conf import settings
@@ -12,6 +10,8 @@ from django.template.defaultfilters import stringfilter
 from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 from django.utils.html import strip_tags
+
+from ..utils import get_app_template
 
 
 register = Library()
@@ -53,7 +53,7 @@ def get_extension(match, aid):
 
 
 def get_image_template(forkdir=""):
-    return f'core/templates/{forkdir}article/image.html'
+    return f'{forkdir}article/image.html'
 
 
 def get_image(match, aid, **kwargs):
@@ -73,15 +73,14 @@ def get_image(match, aid, **kwargs):
             try:
                 bool(article_body_image.image.image.file)
             except IOError:
-                return ''
+                pass
             else:
                 ctx = {'article': article, 'image': article_body_image.image, 'display': article_body_image.display}
                 ctx.update(kwargs.get("extra_context", {}))
-                return render_to_string(kwargs.get('template_name', get_image_template()), ctx)
-        else:
-            return ''
+                return render_to_string(get_app_template(kwargs.get('template_name', get_image_template())), ctx)
     except Article.DoesNotExist:
-        return ''
+        pass
+    return ''
 
 
 @register.simple_tag

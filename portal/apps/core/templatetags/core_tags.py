@@ -9,9 +9,8 @@ from hashids import Hashids
 
 from django.conf import settings
 from django.urls import reverse
-from django.template import Engine, Library, Node, TemplateSyntaxError, Variable, loader
+from django.template import Library, Node, TemplateSyntaxError, Variable, loader
 from django.template.defaultfilters import stringfilter, slugify
-from django.template.exceptions import TemplateDoesNotExist
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
@@ -20,7 +19,7 @@ from tagging.models import Tag, TaggedItem
 
 from core.models import Article, ArticleCollection, Supplement, Category, Section
 from core.forms import SendByEmailForm
-from core.utils import datetime_timezone
+from core.utils import datetime_timezone, get_app_template
 
 
 register = Library()
@@ -149,25 +148,7 @@ def render_related(context, article, amp=False, publication_priority=None, title
     upd_dict.update({'is_detail': False, 'amp': amp})
     flatten_ctx = context.flatten()
     flatten_ctx.update(upd_dict)
-    # search custom template by slug
-    template, engine = 'core/templates/article/related.html', Engine.get_default()
-    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
-    if template_dir:
-        template_try = join(template_dir, "article/related", slugify(section) + ".html")
-        try:
-            engine.get_template(template_try)
-        except TemplateDoesNotExist:
-            # try to fallback to a possible custom "related.html"
-            template_try = join(template_dir, "article/related.html")
-            try:
-                engine.get_template(template_try)
-            except TemplateDoesNotExist:
-                pass
-            else:
-                template = template_try
-        else:
-            template = template_try
-    return loader.render_to_string(template, flatten_ctx)
+    return loader.render_to_string(get_app_template(join("article/related", slugify(section) + ".html")), flatten_ctx)
 
 
 # Media select
@@ -243,16 +224,7 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
         template, template_try_to_override = "article_card_new.html", True
 
     if template_try_to_override:
-        engine = Engine.get_default()
-        template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
-        if template_dir:
-            template_try = join(template_dir, "article", template)
-            try:
-                engine.get_template(template_try)
-            except TemplateDoesNotExist:
-                pass
-            else:
-                template_override = template_try
+        template_override = get_app_template(join("article", template))
 
     # compute card_display if not already done
     if not card_display:

@@ -3,7 +3,7 @@ from builtins import object
 
 import re
 from datetime import datetime
-from os.path import join
+from os.path import join, dirname
 from pytz import country_timezones, country_names
 import requests
 
@@ -102,6 +102,27 @@ def get_pdfpage_snapshot_upload_to(instance, filename):
 
 def get_pdfpageimage_file_upload_to(instance, filename):
     pass
+
+
+def get_app_template(relative_path):
+    customizable_fallbacks = ["article/related", "article/detail"]
+    template, engine = join('core/templates', relative_path), Engine.get_default()
+    custom_dir = getattr(settings, "CORE_ARTICLE_DETAIL_TEMPLATE_DIR", None)
+    if custom_dir:
+        template_try = join(custom_dir, relative_path)
+        try:
+            engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            relative_dir = dirname(relative_path)
+            if relative_dir in customizable_fallbacks:
+                template = get_app_template(relative_dir + ".html")
+        else:
+            template = template_try
+    return template
+
+
+def get_hard_paywall_template():
+    return get_app_template("article/hard_paywall.html")
 
 
 def get_category_template(category_slug, template_destination="detail"):
