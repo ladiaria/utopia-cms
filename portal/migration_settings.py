@@ -129,6 +129,14 @@ INSTALLED_APPS = (
 
 SITE_ID = 1
 
+# password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 9}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
 # martor
 # disable emoji (our markdown filter not yet support this)
 MARTOR_TOOLBAR_BUTTONS = [
@@ -562,7 +570,7 @@ COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
 if locals().get("DEBUG_TOOLBAR_ENABLE"):
     # NOTE when enabled, you need to: pip install "django-debug-toolbar==4.3.0" && ./manage.py collectstatic
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE = MIDDLEWARE[:8] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[8:]
+    MIDDLEWARE = MIDDLEWARE[:9] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[9:]
 
 DEBUG = locals().get("DEBUG", False)
 if DEBUG:
