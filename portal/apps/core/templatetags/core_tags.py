@@ -330,21 +330,20 @@ def render_toolbar_for(context, toolbar_object):
     """
     Usage example: {% render_toolbar_for article %}
     """
-    toolbar_template = getattr(settings, "CORE_ARTICLE_CARD_TOOLBAR_TEMPLATE", 'core/templates/article/toolbar.html')
-    if toolbar_template:
-        user = context.get('user')
-        if user and user.is_staff and isinstance(toolbar_object, Article):
-            params = {'article': toolbar_object, 'is_detail': False}
-            if context.get('is_cover'):
-                edition = context.get('edition')
-                if edition:
-                    params['featured_order'] = ', '.join(
-                        str(tp) for tp in toolbar_object.articlerel_set.filter(
-                            edition=edition, home_top=True
-                        ).values_list('top_position', flat=True)
-                    )
-            context.update(params)
-            return loader.render_to_string(toolbar_template, context.flatten())
+    user = context.get('user')
+    toolbar_template = user and get_app_template("article/toolbar.html")
+    if toolbar_template and user.is_staff and isinstance(toolbar_object, Article):
+        params = {'article': toolbar_object, 'is_detail': False}
+        if context.get('is_cover'):
+            edition = context.get('edition')
+            if edition:
+                params['featured_order'] = ', '.join(
+                    str(tp) for tp in toolbar_object.articlerel_set.filter(
+                        edition=edition, home_top=True
+                    ).values_list('top_position', flat=True)
+                )
+        context.update(params)
+        return loader.render_to_string(toolbar_template, context.flatten())
     return ''
 
 

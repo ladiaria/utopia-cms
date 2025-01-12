@@ -105,6 +105,9 @@ def get_pdfpageimage_file_upload_to(instance, filename):
 
 
 def get_app_template(relative_path):
+    custom_template_mapped = getattr(settings, "CORE_CUSTOM_TEMPLATE_MAP", {}).get(relative_path)
+    if custom_template_mapped is not None:
+        return custom_template_mapped
     customizable_fallbacks = ["article/related", "article/detail"]
     template, engine = join('core/templates', relative_path), Engine.get_default()
     custom_dir = getattr(settings, "CORE_ARTICLE_DETAIL_TEMPLATE_DIR", None)
