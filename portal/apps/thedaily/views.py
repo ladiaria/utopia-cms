@@ -53,7 +53,6 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
-from django.contrib.sites.models import Site
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import ListView
@@ -66,7 +65,7 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 
 from apps import mongo_db, bouncer_blocklisted
-from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
+from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs, get_site_name
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
 from decorators import render_response
@@ -117,6 +116,7 @@ from .forms import (
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
     get_default_province,
+    check_password_strength,
 )
 from .utils import (
     get_or_create_user_profile,
@@ -138,7 +138,7 @@ from .tasks import send_notification, notify_subscription, send_notification_mes
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
-site_name = Site.objects.get_current().name
+account_verify_msg = 'Verificá tu cuenta de' + get_site_name()
 
 
 def no_op_decorator(func):
@@ -412,6 +412,11 @@ def login(request, product_slug=None, product_variant=None):
                 user = authenticate(username=login_form.username, password=password)
                 if user is not None:
                     if user.is_active:
+                        if user.is_staff:
+                            try:
+                                check_password_strength(password, user)
+                            except ValidationError:
+                                mail_managers("Staff user with weak password", f"User: {user}, Id: {user.id}")
                         do_login(request, user)
                         request.session.pop('next', None)
                         # also remove possible unfinished google sign-in information from the session, if not,
@@ -919,7 +924,7 @@ def subscribe(request, planslug, category_slug=None):
                         user, user_created = subscriber_form_v.signup_form.create_user(), True
                         try:
                             was_sent = send_validation_email(
-                                f'Verificá tu cuenta de {site_name}',
+                                account_verify_msg,
                                 user,
                                 'notifications/account_signup_subscribed.html',
                                 get_signup_validation_url,
@@ -1099,9 +1104,7 @@ def password_reset(request, user_id=None, hash=None):
                     notification_template = get_app_template(
                         'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
                     )
-                    send_validation_email(
-                        f'Verificá tu cuenta de {site_name}', user, notification_template, get_signup_validation_url
-                    )
+                    send_validation_email(account_verify_msg, user, notification_template, get_signup_validation_url)
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
@@ -1123,7 +1126,7 @@ def confirm_email(request):
                 user = confirm_email_form.cleaned_data["user"]
                 is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
                 send_validation_email(
-                    f'Verificá tu cuenta de {site_name}',
+                    account_verify_msg,
                     user,
                     get_app_template(
                         'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
@@ -1170,16 +1173,16 @@ def password_change(request, user_id=None, hash=None):
     post = request.POST.copy() if is_post else None
     if user_id and hash:
         user = get_object_or_404(User, id=user_id)
-        form_kwargs = {'user': user_id, 'hash': hash}
+        form_kwargs = {'user': user, 'hash': hash}
         password_change_form = PasswordResetForm(post, **form_kwargs) if is_post else PasswordResetForm(**form_kwargs)
     else:
         if not request.user.is_authenticated:
             raise Http404('Unauthorized access.')
         user = request.user
         if user.has_usable_password():
-            password_change_form = PasswordChangeForm(post, user=request.user) if is_post else PasswordChangeForm()
+            password_change_form = PasswordChangeForm(post, user=user) if is_post else PasswordChangeForm()
         else:
-            password_change_form = PasswordChangeBaseForm(post) if is_post else PasswordChangeBaseForm()
+            password_change_form = PasswordChangeBaseForm(post, user=user) if is_post else PasswordChangeBaseForm()
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])
