@@ -59,7 +59,7 @@ from django.views.generic import ListView
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.cache import never_cache, cache_control, cache_page
-from django.template import Engine, TemplateDoesNotExist
+from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
@@ -72,6 +72,7 @@ from decorators import render_response
 
 from core.models import Publication, Category, Article, ArticleUrlHistory
 from core.forms import feedback_allowed
+from core.utils import get_hard_paywall_template
 from signupwall.middleware import (
     get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access, number_to_words
 )
@@ -139,6 +140,7 @@ standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
 account_verify_msg = 'Verificá tu cuenta de' + get_site_name()
+hard_paywall_template = get_hard_paywall_template()
 
 
 def no_op_decorator(func):
@@ -174,19 +176,6 @@ def get_formclass(request, formclass_prefix):
     return locate(
         "%s.%s%s%s" % (forms_module_name, formclass_prefix, "" if no_captcha(request) else "Captcha", "Form")
     )
-
-
-def hard_paywall_template():
-    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
-    template = "hard_paywall.html"
-    template_engine, template_try = Engine.get_default(), os.path.join(template_dir, template)
-    try:
-        template_engine.get_template(template_try)
-    except TemplateDoesNotExist:
-        pass
-    else:
-        template = template_try
-    return template
 
 
 @never_cache
@@ -393,7 +382,7 @@ def login(request, product_slug=None, product_variant=None):
             next_page = article.get_absolute_url()
             if "prelogin" not in request.POST:
                 login_formclass = get_formclass(request, "PreLogin")
-            template = hard_paywall_template()
+            template = hard_paywall_template
             context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "article": article})
 
     context.update({'next_page': next_page, 'next': pathname2url(next_page.encode('utf8'))})
@@ -501,7 +490,7 @@ def signup(request):
             if request.user.is_authenticated:
                 return HttpResponseRedirect(article.get_absolute_url())
             context["article"] = article
-            template = hard_paywall_template()
+            template = hard_paywall_template
 
     next_page = request.GET.get('next')
     if request.user.is_authenticated:
@@ -687,7 +676,7 @@ def subscribe(request, planslug, category_slug=None):
             article_id = None
         else:
             context["article"] = article
-            template = hard_paywall_template()
+            template = hard_paywall_template
 
     if custom_module:
         subscribe_custom = __import__(custom_module, fromlist=['subscribe']).subscribe

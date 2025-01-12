@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 # utopia-cms Markup Language
-
 import re
-
 from markdown2 import markdown
 
 from django.conf import settings
-from django.template import Library, Engine
+from django.template import Library
 from django.template.loader import render_to_string
 from django.template.defaultfilters import stringfilter
 from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 from django.utils.html import strip_tags
-from django.template.exceptions import TemplateDoesNotExist
+
+from ..utils import get_app_template
 
 
 register = Library()
@@ -70,28 +69,15 @@ def get_image(match, aid, amp=False):
             try:
                 bool(article_body_image.image.image.file)
             except IOError:
-                return ''
+                pass
             else:
-                engine = Engine.get_default()
-                template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
-                template_override = None
-                if template_dir:
-                    template_try = template_dir + '/%sarticle/image.html' % ('amp/' if amp else '')
-                    try:
-                        engine.get_template(template_try)
-                    except TemplateDoesNotExist:
-                        pass
-                    else:
-                        template_override = template_try
-
                 return render_to_string(
-                    template_override or ('%sarticle/image.html' % ('amp/' if amp else '')),
+                    get_app_template('%sarticle/image.html' % ('amp/' if amp else '')),
                     {'article': article, 'image': article_body_image.image, 'display': article_body_image.display},
                 )
-        else:
-            return ''
     except Article.DoesNotExist:
-        return ''
+        pass
+    return ''
 
 
 @register.simple_tag

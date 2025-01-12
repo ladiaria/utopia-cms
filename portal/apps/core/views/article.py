@@ -21,7 +21,6 @@ from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache, cache_page
 from django.views.decorators.vary import vary_on_cookie
-from django.template import Engine, TemplateDoesNotExist
 from django.template.defaultfilters import slugify
 from django.utils.timezone import timedelta, now, datetime, utc
 
@@ -32,10 +31,10 @@ from tagging.models import Tag
 from apps import mongo_db
 from signupwall.middleware import signupwall_exclude, subscriber_access
 from decorators import decorate_if_no_auth, decorate_if_auth
-from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
-from core.models import Publication, Category, Article, ArticleUrlHistory
 from thedaily.templatetags.thedaily_tags import has_restricted_access
-
+from ..forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
+from ..models import Publication, Category, Article, ArticleUrlHistory
+from ..utils import get_app_template
 
 standard_library.install_aliases()
 
@@ -145,22 +144,12 @@ def article_detail(request, year, month, slug, domain_slug=None):
     signupwall_exclude_request_condition = signupwall_exclude(request)
     # If the call to the condition with the request as argument returns True, the visit is not logged to mongodb.
 
-    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
-    template_engine = Engine.get_default()
-
     # 3. render "landing facebook" if fb browser detected and previous condition is not met
     if not signupwall_exclude_request_condition:
         fb_browser_type = getattr(request, 'fb_browser_type', None)
         if fb_browser_type:
             template = "article/landing_facebook.html"
-            template_try = join(template_dir, template)
-            try:
-                template_engine.get_template(template_try)
-            except TemplateDoesNotExist:
-                pass
-            else:
-                template = template_try
-            return render(request, template, {'browser_type': fb_browser_type})
+            return render(request, get_app_template(template), {'browser_type': fb_browser_type})
 
     # 4. log article views
     is_amp_detect, user_is_authenticated = getattr(request, "is_amp_detect", False), request.user.is_authenticated
@@ -249,34 +238,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
         } if user_is_authenticated else {"signupwall_remaining_banner": settings.SIGNUPWALL_ENABLED}
     )  # NOTE: banner is rendered despite of setting for anon users
 
-    template = "article/detail"
-    # custom template support and custom article.type-based tmplates, search for the template iterations:
-    # TODO: 16 tests cases: this 4 scenarios * 2 combinations of dir custom settings * 2 cann/AMP
-    # 1- search w custom dir w tp
-    # 2- search w custom dir wo tp
-    # 3- search wo custom dir w tp
-    # 4. search wo custom dir wo tp (provided default template)
-    for dir_try in ([template_dir] if template_dir else []) + [""]:
-        template_try = join(dir_try, template + (article.type or "") + ".html")
-        try:
-            template_engine.get_template(template_try)
-        except TemplateDoesNotExist:
-            # when cases 1 or 3 fail
-            template_try = join(dir_try, template + ".html")
-            try:
-                template_engine.get_template(template_try)
-            except TemplateDoesNotExist:
-                # when case 2 fail (case 4 should never fail)
-                pass
-            else:
-                template = template_try
-                # case 4 succeed stopiteration normally or break when case 2 succeed
-                if dir_try:
-                    break
-        else:
-            template = template_try
-            break  # when cases 1 or 3 succeed
-
+    type_dirname = "article/detail"
+    template = get_app_template(join(type_dirname, f"{article.type}.html") if article.type else f"{type_dirname}.html")
     return render(request, template, context)
 
 
