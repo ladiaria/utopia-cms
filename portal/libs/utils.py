@@ -11,13 +11,21 @@ from requests.auth import HTTPBasicAuth
 from pymailcheck import split_email
 
 from django.conf import settings
-from django.db import IntegrityError
+from django.db import IntegrityError, ProgrammingError
 from django.db.models.query import QuerySet
 from django.http import HttpResponseBadRequest
+from django.contrib.sites.models import Site
 
 from tagging.models import Tag, TaggedItem
 
 from core.models import Article
+
+
+def get_site_name():
+    try:
+        return Site.objects.get_current().name
+    except ProgrammingError:
+        return settings.SITE_DOMAIN
 
 
 def crm_rest_api_kwargs(api_key, data=None):
