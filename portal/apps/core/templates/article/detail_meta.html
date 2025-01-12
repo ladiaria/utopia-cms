@@ -20,7 +20,7 @@
   {% endwith %}
 {% elif open_graph_author_img %}
   {% thumbnail open_graph_author_img "1200x630" crop="top" as im %} {# TODO: Check crop position #}
-  <meta property="og:image" content="{{ SITE_URL_SD }}{{ im.url }}">
+    <meta property="og:image" content="{{ SITE_URL_SD }}{{ im.url }}">
   {% endthumbnail %}
 {% elif default_pub.open_graph_image %}
   {% block article_photo_and_pub_og %}

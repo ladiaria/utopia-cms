@@ -240,8 +240,10 @@ def article_detail(request, year, month, slug, domain_slug=None):
         "enable_amp": settings.CORE_ARTICLE_DETAIL_ENABLE_AMP and not article.extensions_have_invalid_amp_tags(),
     }
 
-    if getattr(settings, 'ENABLE_OPEN_GRAPH_AUTHOR_IMG_IN_OP_ARTICLE', False) and article.type == "OP" and len(article.get_authors()) > 0:
-        context["open_graph_author_img"] = article.get_authors().first().image
+    if article.type in getattr(settings, 'CORE_ARTICLE_TYPES_OG_IMAGE_USE_AUTHOR_IMG', ()):
+        first_author = article.first_author()
+        if first_author and first_author.image:
+            context["open_graph_author_img"] = first_author.image
 
     context.update(
         {

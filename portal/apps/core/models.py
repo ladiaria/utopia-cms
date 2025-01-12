@@ -1407,6 +1407,9 @@ class ArticleBase(Model, CT):
     def get_authors(self):
         return self.byline.all()
 
+    def first_author(self):
+        return self.byline.first()
+
     def get_tags(self):
         return Tag.objects.get_for_object(self)
 
