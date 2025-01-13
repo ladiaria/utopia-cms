@@ -363,7 +363,10 @@ def login(request, product_slug=None, product_variant=None):
     article_id, login_formclass, response, login_error, context = None, LoginForm, None, None, {}
     default_planslug = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
     if default_planslug:
-        context["default_subscription_type"] = SubscriptionPrices.objects.get(subscription_type=default_planslug)
+        try:
+            context["default_subscription_type"] = SubscriptionPrices.objects.get(subscription_type=default_planslug)
+        except SubscriptionPrices.DoesNotExist:
+            pass
 
     market_next_page, market_next_qparams = None, {}
     if product_slug:
