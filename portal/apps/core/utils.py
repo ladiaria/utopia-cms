@@ -14,6 +14,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.deconstruct import deconstructible
 from django.utils.timezone import is_aware, make_aware, localtime
 
+from thedaily import get_app_template as thedaily_get_app_template
+
 
 def get_section_articles_sql(section_ids, excluded=[], limit=None):
     # pre: sections has at least 1 element
@@ -104,28 +106,32 @@ def get_pdfpageimage_file_upload_to(instance, filename):
     pass
 
 
-def get_app_template(relative_path):
-    custom_template_mapped = getattr(settings, "CORE_CUSTOM_TEMPLATE_MAP", {}).get(relative_path)
+def get_app_template(template):
+    custom_template_mapped = getattr(settings, "CORE_CUSTOM_TEMPLATE_MAP", {}).get(template)
     if custom_template_mapped is not None:
         return custom_template_mapped
     customizable_fallbacks = ["article/related", "article/detail"]
-    template, engine = join('core/templates', relative_path), Engine.get_default()
     custom_dir = getattr(settings, "CORE_ARTICLE_DETAIL_TEMPLATE_DIR", None)
     if custom_dir:
-        template_try = join(custom_dir, relative_path)
+        engine, template_try = Engine.get_default(), join(custom_dir, template)
         try:
             engine.get_template(template_try)
         except TemplateDoesNotExist:
-            relative_dir = dirname(relative_path)
+            relative_dir = dirname(template)
             if relative_dir in customizable_fallbacks:
                 template = get_app_template(relative_dir + ".html")
         else:
             template = template_try
+    else:
+        # when a fallback is set, it will be used allways for installations without custom templates
+        relative_dir = dirname(template)
+        if relative_dir in customizable_fallbacks:
+            template = get_app_template(relative_dir + ".html")
     return template
 
 
 def get_hard_paywall_template():
-    return get_app_template("article/hard_paywall.html")
+    return thedaily_get_app_template("hard_paywall.html")
 
 
 def get_category_template(category_slug, template_destination="detail"):

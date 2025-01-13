@@ -52,7 +52,7 @@ from .views import (
     mailtrain_lists,
     news_preview,
 )
-from .utils import get_app_template
+from . import get_app_template
 
 
 # override views

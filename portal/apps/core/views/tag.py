@@ -10,8 +10,8 @@ from django.shortcuts import render, redirect
 
 from tagging.models import Tag, TaggedItem
 
-from core.models import Article
-from core.utils import get_app_template
+from ..models import Article
+from ..utils import get_app_template
 
 
 @never_cache

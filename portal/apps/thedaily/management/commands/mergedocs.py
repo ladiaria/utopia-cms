@@ -23,8 +23,8 @@ from django.contrib.admin.util import NestedObjects
 from django.contrib.sites.models import Site
 
 from core.models import Article
+from thedaily import get_app_template
 from thedaily.models import Subscriber
-from thedaily.utils import get_app_template
 
 
 # Classes that cannot be deleted in a user or subscriber cascade deletion.

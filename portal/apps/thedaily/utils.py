@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from os.path import join
 import logging
 import random as rdm
 from operator import attrgetter
@@ -30,6 +29,7 @@ from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
 from signupwall.utils import get_ip
 from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
+from . import get_app_template
 
 
 subscribe_logfile, subscribe_logger = getattr(settings, 'THEDAILY_SUBSCRIBE_LOGFILE', None), None
@@ -254,29 +254,6 @@ def google_phone_next_page(request, is_new):
     return reverse('account-welcome') if is_new else (
         request.GET.get("next", request.POST.get("next_page")) or next_page
     )
-
-
-def get_app_template(relative_path):
-    """
-    This simplifies the use of one custom setting per file, but cannot map a known template to any file, if one day
-    this became a requirement, we can add a map setting to map the relative_path received here to whatever the custom
-    map says; for ex: relative_path = getattr(settings, "NEW_CUSTOM_SETTING", {}).get(relative_path, relative_path)
-    where NEW_CUSTOM_SETTING can be for ex: {"welcome.html": "goodbye.html"}
-    """
-    default_dir, custom_dir = "thedaily/templates", getattr(settings, "THEDAILY_ROOT_TEMPLATE_DIR", None)
-    template = join(default_dir, relative_path)  # fallback to the default
-    if custom_dir:
-        engine = Engine.get_default()
-        # search under custom and take it if found
-        template_try = join(custom_dir, relative_path)
-        try:
-            engine.get_template(template_try)
-        except TemplateDoesNotExist:
-            pass
-        else:
-            template = template_try
-    # if custom dir is not defined, no search is needed
-    return template
 
 
 def get_notification_subjects():
