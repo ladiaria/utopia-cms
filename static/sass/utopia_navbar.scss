@@ -1666,7 +1666,9 @@ body.interior {
   }
 
   &.user-nl-notice {
-    padding: 0 16px 16px;
+    &#home-notice-mobile:not(.collapsed) {
+      padding: 0 16px 16px;
+    }
 
     &::before {
       background-image: url("../img/bg_nl_popup_mobile.png");
