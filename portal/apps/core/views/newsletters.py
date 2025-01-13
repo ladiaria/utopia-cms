@@ -20,7 +20,8 @@ def index(request):
     unsubscribed_list = unsubscribed_newsletters(subscriber if user_can_subscribe else False, False)
 
     context = {
-        "unsubscribed_newsletters": unsubscribed_list
+        "unsubscribed_newsletters": unsubscribed_list,
+        "show_newsletters_pill": True,
     }
 
     # Si el usuario no cumple las condiciones, lo añadimos al contexto
@@ -28,4 +29,3 @@ def index(request):
         context["user"] = user
 
     return render(request, get_app_template("newsletters.html"), context)
-
