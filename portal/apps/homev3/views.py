@@ -30,19 +30,20 @@ decorate_auth = getattr(settings, 'HOMEV3_INDEX_AUTH_DECORATOR', decorate_if_aut
 
 def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set, articles):
     for a in articles:
-        compute_follow, a_id = True, a.id
-        if a.is_restricted(True):
-            context['restricteds'].append(a_id)
-            compute_follow = (
-                user_has_subscriber and user.subscriber.is_subscriber(a.main_section.edition.publication.slug)
-            )
-            if compute_follow:
-                context['restricteds_allowed'].append(a_id)
+        if a:
+            compute_follow, a_id = True, a.id
+            if a.is_restricted(True):
+                context['restricteds'].append(a_id)
+                compute_follow = (
+                    user_has_subscriber and user.subscriber.is_subscriber(a.main_section.edition.publication.slug)
+                )
+                if compute_follow:
+                    context['restricteds_allowed'].append(a_id)
 
-        if compute_follow:
-            context['compute_follows'].append(a_id)
-            if str(a_id) in follow_set:
-                context['follows'].append(a_id)
+            if compute_follow:
+                context['compute_follows'].append(a_id)
+                if str(a_id) in follow_set:
+                    context['follows'].append(a_id)
 
 
 @decorate_auth(decorator=never_cache)
