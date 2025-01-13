@@ -117,7 +117,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         except Publication.DoesNotExist:
             continue
         featured_section_slug = pub_item[1] if pub_item_is_tuple and len(pub_item) > 1 else None
-        ftop_articles = get_current_edition(publication=pub).top_articles
+        ftop_articles = getattr(get_current_edition(publication=pub), 'top_articles', [])
         if ftop_articles:
             if is_authenticated:
                 ctx_update_article_extradata(context, user, user_has_subscriber, follow_set, ftop_articles)
