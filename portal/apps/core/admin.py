@@ -66,7 +66,7 @@ from .models import (
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
 from .tasks import update_category_home, send_push_notification
-from .utils import update_article_url_in_coral_talk, smart_quotes
+from .utils import update_article_url_in_coral_talk, smart_quotes, article_slug_readonly
 
 
 class PrintOnlyArticleInline(TabularInline):
@@ -484,10 +484,14 @@ class ArticleAdminModelForm(ModelForm):
         self.fields['date_published'].widget.attrs['min'] = nowval.isoformat()
         self.fields['date_published'].required = False
         self.fields['date_published'].label = ""
-        if getattr(settings, "CORE_ARTICLE_SLUG_FIELD_READONLY", True):
+        slug_help = 'Se genera automáticamente en base al título'
+        if article_slug_readonly:
             self.fields['slug'].widget.attrs['readonly'] = True
             self.fields['slug'].widget.attrs['class'] = "readonly"
-            self.fields['slug'].widget.attrs['placeholder'] = 'Se genera automáticamente en base al título.'
+            self.fields['slug'].widget.attrs['placeholder'] = f"{slug_help}."
+        else:
+            self.fields['slug'].required = False
+            self.fields['slug'].help_text = f"{slug_help} en caso de dejar vacío."
 
     def clean_tags(self):
         """

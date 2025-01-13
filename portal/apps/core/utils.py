@@ -17,6 +17,9 @@ from django.utils.timezone import is_aware, make_aware, localtime
 from thedaily import get_app_template as thedaily_get_app_template
 
 
+article_slug_readonly = getattr(settings, "CORE_ARTICLE_SLUG_FIELD_READONLY", True)
+
+
 def get_section_articles_sql(section_ids, excluded=[], limit=None):
     # pre: sections has at least 1 element
     # TODO: "is_published" notion should be the same used in core.managers.get_published_kwargs

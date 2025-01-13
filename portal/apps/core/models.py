@@ -89,6 +89,7 @@ from .utils import (
     smart_quotes,
     update_article_url_in_coral_talk,
     get_category_template,
+    article_slug_readonly,
 )
 
 
@@ -1345,7 +1346,8 @@ class ArticleBase(Model, CT):
             if getattr(self, attr, None):
                 setattr(self, attr, add_punctuation(getattr(self, attr, '')))
 
-        self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
+        if article_slug_readonly or not self.slug.strip():
+            self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
 
         # full restricted / open consistency checks
         # 1. If open => full_restricted == False
