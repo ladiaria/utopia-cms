@@ -35,7 +35,7 @@ except ServerSelectionTimeoutError:
     mongo_db = None
 
 # two email block lists (bounces in last 7 days, and bounces max ammount reached)
-global blocklisted, bouncer_blocklisted
+global blocklisted, bouncer_blocklisted, document_type_choices
 blocklisted, bouncer_blocklisted = [
     (
         set(
@@ -58,3 +58,21 @@ def whitelisted_domains(update_list=None):
         fobj = open(dlist_json, "w")
         fobj.write(json.dumps({"domains": update_list}))
         fobj.close()
+
+
+def get_document_type_choices():
+    # TODO: check how many times this function is called
+    result = []
+    dtlist_json = getattr(settings, "THEDAILY_DOCUMENT_TYPE_CHOICES_JSON", None)
+    if dtlist_json:
+        try:
+            fobj = open(dtlist_json)
+            result = json.loads(fobj.read()).get("document_type", result)
+            fobj.close()
+        except FileNotFoundError as fnfe:
+            if settings.DEBUG:
+                print(fnfe)
+    return result
+
+
+document_type_choices = get_document_type_choices()

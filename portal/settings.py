@@ -4,6 +4,8 @@ from os.path import abspath, basename, dirname, join, realpath
 import mimetypes
 from freezegun import freeze_time
 from kombu import Queue
+from babel import Locale
+from pycountry import countries
 
 import django
 from django.conf.global_settings import DEFAULT_CHARSET
@@ -34,6 +36,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 PORTAL_BASE_TEMPLATE = "base.html"
 # country name in page titles
 PORTAL_TITLE_APPEND_COUNTRY = True
+# flatpages template directory, join this value with a template path, example: os.path.join(this_value, "default.html")
+PORTAL_FLATPAGES_DIR = "flatpages"
 
 # disable template settings warning until fixed migrating django-mobile to django-amp-tools
 SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
@@ -109,7 +113,6 @@ INSTALLED_APPS = (
     "star_ratings",
     "tagging_autocomplete_tagit",
     "avatar",
-    "notification",
     "django.contrib.flatpages",
     "epubparser",
     "django_filters",
@@ -126,6 +129,7 @@ INSTALLED_APPS = (
     "django_celery_beat",
     "phonenumber_field",
     "closed_site",
+    "concurrency",
 )
 
 SITE_ID = 1
@@ -204,6 +208,7 @@ MIDDLEWARE = (
     "libs.middleware.url.UrlMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.auth.middleware.RemoteUserMiddleware",
@@ -220,13 +225,11 @@ MIDDLEWARE = (
 )
 
 # Localization default settings
-LANGUAGES = (("es", "Español"),)
 USE_I18N = True
 USE_L10N = True
-
-LANGUAGE_CODE = "es"
 LOCAL_LANG = "es"
 LOCAL_COUNTRY = "UY"
+LOCALE_PATHS = [join(PROJECT_ABSOLUTE_DIR, "locale")]
 
 USE_TZ = True
 DATE_INPUT_FORMATS = (
@@ -241,7 +244,7 @@ ROOT_URLCONF = "urls"
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 
-# Default publication slug.
+# Default publication slug
 DEFAULT_PUB = "default"
 
 FIRST_DAY_OF_WEEK = 0  # 0 is Sunday
@@ -459,7 +462,9 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = ()
 THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW = ()  # newsletter slugs to disable preview in browser
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
+THEDAILY_AUTOMATIC_MAIL_LOGFILE = "/var/log/utopiacms/automatic_mail.log"
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
@@ -595,7 +600,15 @@ SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain 
 SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
-LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
+
+LANGUAGE_CODE = LOCAL_LANG
+LOCALE_NAME_PREFIX = f"{LOCAL_LANG}_{LOCAL_COUNTRY}"
+LOCALE_NAME = f"{LOCALE_NAME_PREFIX}.{DEFAULT_CHARSET}"
+
+LANG_NAME = Locale.parse(LOCAL_LANG).get_display_name().capitalize()
+COUNTRY_NAME = countries.get(alpha_2=LOCAL_COUNTRY).name
+LANGUAGES = ((LANGUAGE_CODE, LANG_NAME), (LOCALE_NAME_PREFIX.replace("_", "-"), f"{LANG_NAME} ({COUNTRY_NAME})"))
+
 COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
 
 if locals().get("DEBUG_TOOLBAR_ENABLE"):
@@ -665,3 +678,7 @@ if "THEDAILY_SUBSCRIPTION_TYPE_DEFAULT" not in locals():
         THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0] if THEDAILY_SUBSCRIPTION_TYPE_CHOICES else None
 if THEDAILY_DEBUG_SIGNALS is None:
     THEDAILY_DEBUG_SIGNALS = DEBUG
+
+# terms and conditions page related context processor
+if THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
+    TEMPLATES[0]['OPTIONS']['context_processors'].append('thedaily.context_processors.terms_and_conditions')

@@ -23,16 +23,12 @@
 {% block body_text_preview %}
   {% if cover_article %}
     {% if custom_subject %}
-      {{ cover_article.headline|ldmarkup|bleach }}
+      {{ cover_article.nl_title|ldmarkup|bleach }}
     {% else %}
-      {% if cover_article.home_lead %}
-        {{ cover_article.home_lead|ldmarkup|bleach }}
+      {% if cover_article.nl_desc %}
+        {{ cover_article.nl_desc|ldmarkup|bleach }}
       {% else %}
-        {% if cover_article.deck %}
-          {{ cover_article.deck|ldmarkup|bleach }}
-        {% else %}
-          {{ cover_article.body|ldmarkup|truncatehtml:100 }}
-        {% endif %}
+        {{ cover_article.body|ldmarkup|truncatehtml:100 }}
       {% endif %}
     {% endif %}
   {% endif %}
@@ -41,42 +37,47 @@
 {% block cover_article %}
   {% if cover_article %}
     <tr style="padding:0;text-align:left;vertical-align:top">
-      <th class="small-12 large-12 columns first last" style="color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0 auto;padding:0;padding-bottom:10px;padding-left:0;padding-right:0;text-align:left;width:588px;{% block extra_style_coverarticle %}{% endblock %}">
+      <th class="small-12 large-12 columns first last" style="color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0 auto;padding:0;{% block padding_bottom_cover_article %}padding-bottom:10px;{% endblock %}padding-left:0;padding-right:0;text-align:left;width:588px;{% block extra_style_coverarticle %}{% endblock %}">
         <table style="border-collapse:collapse;border-spacing:0;padding:0;text-align:left;vertical-align:top;width:100%;{% if cover_article_ignore_photo %}border-collapse:separate;padding-top:10px;{% endif %}">
           <tbody>
             <tr style="padding:0;text-align:left;vertical-align:top">
-              <th style="color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0;text-align:left">
+              <th style="color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0;text-align:left">
                 {% if cover_article.photo and not cover_article_ignore_photo %}
-                  <a class="main-article__link"
-                     href="{{ site_url }}{{ cover_article.get_absolute_url }}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}"
-                     style="Margin:0;color:#2199e8;font-family:Helvetica,Arial,sans-serif;font-weight:400;line-height:1.3;margin:0;padding:0 15px;text-align:left;text-decoration:none;margin-bottom:15px;display:block">
-                    <img src="{{ site_url }}{% block cover_article_photo_urlpath %}{{ cover_article.photo.get_700w_url }}{% endblock %}"
-                         style="-ms-interpolation-mode:bicubic;border:none;clear:both;display:block;max-width:100%;outline:0;text-decoration:none;width:auto"
-                         alt="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.headline|remove_markup }}'{% endif %}"
-                         align="middle">
-                  </a>
+                  {% block cover_article_photo %}
+                    <a class="main-article__link"
+                      href="{{ site_url }}{{ cover_article.get_absolute_url }}{% block cover_article_photo_query_params %}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}{% endblock %}"
+                      style="{% block cover_article_anchor_style %}margin:0;color:#2199e8;font-family:Helvetica,Arial,sans-serif;font-weight:400;line-height:1.3;margin:0;padding:0 15px;text-align:left;text-decoration:none;margin-bottom:15px;display:block;{% endblock %}">
+                      <img src="{{ site_url }}{% block cover_article_photo_urlpath %}{{ cover_article.photo.get_700w_url }}{% endblock %}"
+                          style="-ms-interpolation-mode:bicubic;border:none;clear:both;display:block;max-width:100%;outline:0;text-decoration:none;width:auto"
+                          alt="{% if cover_article.photo.caption %}{{ cover_article.photo.caption }}{% else %}Foto principal del artículo '{{ cover_article.nl_title|remove_markup }}'{% endif %}"
+                          align="middle">
+                    </a>
+                  {% endblock %}
                 {% endif %}
                 {% block section_coverarticle %}
                   {% if cover_article.section %}
-                    <span style="margin:5px 15px 0;display:block;color:#757474;font-family:Roboto,Arial,sans-serif;font-size:12px;line-height:14px;font-weight:400;text-decoration:none;text-transform:uppercase">
+                    <span style="{% block cover_article_section_style %}margin:5px 15px 0;display:block;color:#757474;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:12px;line-height:14px;font-weight:400;text-decoration:none;text-transform:uppercase;{% endblock %}">
                       {% autoescape off %}{{ cover_article.section.nl_display_name }}{% endautoescape %}
                     </span>
                   {% endif %}
                 {% endblock %}
-                <h1 style="Margin:0;color:inherit;font-family:Roboto,Arial,sans-serif;font-size:20px;line-height:1.2;font-weight:700;margin:0 15px;margin-bottom:0;margin-top:5px;padding:0;text-align:left;word-wrap:normal">
+                <h1 style="{% block cover_article_title_style %}Margin:0;color:inherit;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:20px;line-height:1.2;font-weight:700;margin:0 15px;margin-bottom:0;margin-top:5px;padding:0;text-align:left;word-wrap:normal;{% endblock %}">
                   {% block extra_cover_title %}{% endblock %}
-                  <a href="{{ site_url }}{{ cover_article.get_absolute_url }}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}" style="Margin:0;color:#262626;font-family:Roboto,Arial,sans-serif;font-size:20px;font-weight:700;line-height:1.2;margin:0;padding:0;text-align:left;text-decoration:none">
-                    {{ cover_article.headline|ldmarkup|bleach }}
+                  <a href="{{ site_url }}{{ cover_article.get_absolute_url }}{% block cover_article_title_query_params %}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}{% endblock %}" style="{% block cover_article_title_anchor_style %}Margin:0;color:#262626;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:20px;font-weight:700;line-height:1.2;margin:0;padding:0;text-align:left;text-decoration:none;{% endblock %}">
+                    {{ cover_article.nl_title|ldmarkup|bleach }}
                   </a>
                 </h1>
-                <p style="color:#0a0a0a;font-family:Roboto,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:5px 15px 10px;padding:0;text-align:left">
-                  {% if cover_article.home_lead %}{{ cover_article.home_lead|ldmarkup|bleach }}{% else %}{{ cover_article.deck|ldmarkup|bleach }}{% endif %}
-                </p>
-                <p style="font-size:12px;margin:0 15px;margin-bottom:0;margin-top:0;padding:0;text-align:left;color:#797979;line-height:14px;font-family:Roboto,Arial,sans-serif">
+                {% if cover_article.nl_desc %}
+                  <p style="{% block cover_article_lead_style %}color:{{ primary_black }};font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:16px;font-weight:400;line-height:1.3;margin:5px 15px 10px;padding:0;text-align:left;{% endblock %}">
+                    {{ cover_article.nl_desc|ldmarkup|bleach }}
+                  </p>
+                {% endif %}
+                {% block cover_article_credits %}
+                <p style="{% block cover_article_credits_style %}font-size:12px;margin:0 15px;margin-bottom:0;margin-top:0;padding:0;text-align:left;color:#797979;line-height:14px;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};{% endblock %}">
                   {% photo_byline cover_article as photo_author %}
                   {% if cover_article.has_byline %}
                     {% for author in cover_article.get_authors %}
-                      <span class="color:#797979;font-family:Roboto,Arial,sans-serif;font-size:12px;font-weight:400;text-decoration:none">{{ author.name }}</span>{% if not forloop.last %}, {% endif %}
+                      <span>{{ author.name }}</span>{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                     {% if photo_author %} | {% endif %}
                   {% endif %}
@@ -85,8 +86,9 @@
                   {% endif %}
                   {% block newsdate_coverarticle %}{% endblock %}
                 </p>
+                {% endblock %}
               </th>
-              <th class="expander" style="Margin:0;color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0!important;text-align:left;visibility:hidden;width:0">
+              <th class="expander" style="Margin:0;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0!important;text-align:left;visibility:hidden;width:0">
               </th>
             </tr>
           </tbody>
@@ -99,40 +101,42 @@
 {% block non_cover_articles %}
   {% for article, include_photo in articles %}
     {% if article.id != cover_article.id %}
-      <table style="border-bottom:solid 1px;border-left:1px solid;border-right:1px solid;border-color:{% block bottom_border_color_article %}#cecece{% endblock %};{% if forloop.last %}{% block non_cover_article_border_bottom %}border-bottom-left-radius:4px;border-bottom-right-radius:4px;{% endblock %}{% endif %}border-collapse:separate;border-spacing:0;display:table;{% block padding_bottom_article %}padding-bottom:10px;{% endblock %}{% block padding_top_article %}padding-top:10px;{% endblock %}padding-right:0;padding-left:0;position:relative;text-align:left;vertical-align:top;width:100%">
-        <tbody>
+    <table style="border-bottom:solid 1px;border-left:1px solid;border-right:1px solid;border-color:{% block bottom_border_color_article %}#cecece{% endblock %};{% if forloop.last %}{% block non_cover_article_border_bottom %}border-bottom-left-radius:4px;border-bottom-right-radius:4px;{% endblock %}{% endif %}border-collapse:separate;border-spacing:0;display:table;{% block padding_bottom_article %}padding-bottom:10px;{% endblock %}{% block padding_top_article %}padding-top:10px;{% endblock %}padding-right:0;padding-left:0;position:relative;text-align:left;vertical-align:top;width:100%">
+      <tbody>
           <tr style="padding:0;text-align:left;vertical-align:top">
-            <th class="small-12 large-12 columns first last" style="color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0 auto;padding-bottom:0px;padding-left:0;padding-right:0;text-align:left;width:588px;{% block extra_style_article %}{% endblock %}">
+            <th class="small-12 large-12 columns first last" style="color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0 auto;padding-bottom:0px;padding-left:0;padding-right:0;text-align:left;width:588px;{% block extra_style_article %}{% endblock %}">
               <table style="border-collapse:collapse;border-spacing:0;padding:0;text-align:left;vertical-align:top;width:100%">
                 <tbody>
                   <tr style="padding:0;text-align:left;vertical-align:top">
-                    <th style="color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0;text-align:left">
+                    <th style="color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0;text-align:left">
                       {% block section_article %}
                         {% if article.section %}
-                          <span style="margin:5px 15px;display:block;color:#757474;font-family:Roboto,Arial,sans-serif;font-size:12px;line-height:14px;font-weight:400;text-decoration:none;text-transform:uppercase">
+                          <span style="{% block article_section_style %}margin:5px 15px;display:block;color:#757474;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:12px;line-height:14px;font-weight:400;text-decoration:none;text-transform:uppercase{% endblock %}">
                             {% autoescape off %}{{ article.section.nl_display_name }}{% endautoescape %}
                           </span>
                         {% endif %}
                       {% endblock %}
-                      <h2 style="color:inherit;font-family:Roboto,Arial,sans-serif;font-size:20px;font-weight:700;line-height:1.2;margin:15px;margin-bottom:0;margin-top:8px;padding:0;text-align:left;word-wrap:normal">
+                      <h2 style="{% block article_title_style %}color:inherit;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:20px;font-weight:700;line-height:1.2;margin:15px;margin-bottom:0;margin-top:8px;padding:0;text-align:left;word-wrap:normal{% endblock %}">
                         {% block extra_title %}{% endblock %}
-                        <a href="{{ site_url }}{{ article.get_absolute_url }}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}" style="Margin:0;color:#262626;font-family:Roboto,Arial,sans-serif;font-size:20px;font-weight:700;line-height:1.2;margin:0;padding:0;text-align:left;text-decoration:none">
-                          {{ article.headline|ldmarkup|bleach }}
+                        <a href="{{ site_url }}{{ article.get_absolute_url }}{% block non_cover_article_title_query_params %}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}{% endblock %}" style="{% block article_title_anchor_style %}Margin:0;color:#262626;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:20px;font-weight:700;line-height:1.2;margin:0;padding:0;text-align:left;text-decoration:none;{% endblock %}">
+                          {{ article.nl_title|ldmarkup|bleach }}
                         </a>
                       </h2>
-                      <p style="color:#0a0a0a;font-family:Roboto,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:5px 15px 10px;padding:0;text-align:left">
-                        {% if article.home_lead %}{{ article.home_lead|ldmarkup|bleach }}{% else %}{{ article.deck|ldmarkup|bleach }}{% endif %}
-                      </p>
-                      <p style="font-size:12px;color:#797979;font-family:Roboto,Arial,sans-serif;font-weight:400;line-height:14px;margin:15px;margin-bottom:0;margin-top:0;padding:0;text-align:left">
+                      {% if article.nl_desc %}
+                        <p style="{% block article_lead_style %}color:{{ primary_black }};font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:16px;font-weight:400;line-height:1.3;margin:5px 15px 10px;padding:0;text-align:left;{% endblock %}">
+                          {{ article.nl_desc|ldmarkup|bleach }}
+                        </p>
+                      {% endif %}
+                      <p style="{% block article_credits_style %}font-size:12px;color:#797979;font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-weight:400;line-height:14px;margin:15px;margin-bottom:0;margin-top:0;padding:0;text-align:left;{% endblock %}">
                         {% if article.has_byline %}
                           {% for author in article.get_authors %}
-                            <span class="color:#797979;font-family:Roboto,Arial,sans-serif;font-size:12px;font-weight:400;text-decoration:none">{{ author.name }}{% if not forloop.last %}, {% endif %}</span>
+                            <span>{{ author.name }}{% if not forloop.last %}, {% endif %}</span>
                           {% endfor %}
                         {% endif %}
                         {% block newsdate_article %}{% endblock %}
                       </p>
                     </th>
-                    <th class="expander" style="Margin:0;color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0!important;text-align:left;visibility:hidden;width:0">
+                    <th class="expander" style="Margin:0;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0!important;text-align:left;visibility:hidden;width:0">
                     </th>
                   </tr>
                 </tbody>

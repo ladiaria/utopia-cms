@@ -10,7 +10,8 @@ from django.shortcuts import render, redirect
 
 from tagging.models import Tag, TaggedItem
 
-from core.models import Article
+from ..models import Article
+from ..utils import get_app_template
 
 
 @never_cache
@@ -40,7 +41,7 @@ def tag_detail(request, tag_slug):
     except (EmptyPage, InvalidPage):
         articles = paginator.page(paginator.num_pages)
     # support render a custom template
-    template = getattr(settings, "CORE_TAG_DETAIL_TEMPLATE", 'core/templates/article/list.html')
+    template = get_app_template('article/list.html')
     # support render another custom template if only one tag and the tag is a TagGroup member (first group found taken)
     gt_dir = getattr(settings, 'GROUPEDTAGS_TEMPLATE_DIR', None)
     if gt_dir and len(tags) == 1:

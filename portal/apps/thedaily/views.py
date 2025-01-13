@@ -15,6 +15,7 @@ from uuid import uuid4
 from smtplib import SMTPRecipientsRefused
 from PIL import Image
 from ga4mp import GtagMP
+from hashids import Hashids
 
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
@@ -34,7 +35,7 @@ from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.db.models.deletion import Collector
 from django.core.mail import send_mail, mail_admins, mail_managers
-from django.urls import reverse
+from django.urls import reverse, resolve
 from django.core.exceptions import MultipleObjectsReturned
 from django.http import (
     HttpResponseRedirect,
@@ -59,19 +60,21 @@ from django.views.generic import ListView
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.cache import never_cache, cache_control, cache_page
-from django.template import Engine, TemplateDoesNotExist
+from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
+from django.utils.translation import gettext as _
 
 from apps import mongo_db, bouncer_blocklisted
-from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs, get_site_name
+from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
 from decorators import render_response
 
 from core.models import Publication, Category, Article, ArticleUrlHistory
 from core.forms import feedback_allowed
+from core.utils import get_hard_paywall_template
 from signupwall.middleware import (
     get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access, number_to_words
 )
@@ -85,6 +88,7 @@ from .models import (
     OAuthState,
     MailtrainList,
     deletecrmuser,
+    email_i18n,
 )
 from .forms import (
     __name__ as forms_module_name,
@@ -108,15 +112,13 @@ from .forms import (
     GoogleSignupAddressForm,
     SubscriberSignupForm,
     SubscriberSignupAddressForm,
-    ConfirmEmailRequestForm,
-    ProfileForm,
     ProfileExtraDataForm,
-    UserForm,
     PhoneSubscriptionForm,
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
     get_default_province,
     check_password_strength,
+    custom_forms_module,
 )
 from .utils import (
     get_or_create_user_profile,
@@ -127,18 +129,23 @@ from .utils import (
     product_checkout_template,
     qparamstr,
     collector_analysis,
-    get_app_template,
     subscribe_log,
+    get_notification_subjects,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
 from .tasks import send_notification, notify_subscription, send_notification_message
+from . import get_app_template
 
 
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
-account_verify_msg = 'Verificá tu cuenta de' + get_site_name()
+verif_email_i18n = f"{email_i18n} de verificación"
+notification_subjects = get_notification_subjects()
+# Initialize the hashid object with salt from settings and custom length
+hashids = Hashids(settings.HASHIDS_SALT, 32)
+hard_paywall_template = get_hard_paywall_template()
 
 
 def no_op_decorator(func):
@@ -170,23 +177,13 @@ def no_captcha(request):
     ) in getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED', [])
 
 
+def get_custom_formclass(classname):
+    return locate(f"{custom_forms_module}.{classname}")
+
+
 def get_formclass(request, formclass_prefix):
-    return locate(
-        "%s.%s%s%s" % (forms_module_name, formclass_prefix, "" if no_captcha(request) else "Captcha", "Form")
-    )
-
-
-def hard_paywall_template():
-    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
-    template = "hard_paywall.html"
-    template_engine, template_try = Engine.get_default(), os.path.join(template_dir, template)
-    try:
-        template_engine.get_template(template_try)
-    except TemplateDoesNotExist:
-        pass
-    else:
-        template = template_try
-    return template
+    classname = "%s%s%s" % (formclass_prefix, "" if no_captcha(request) else "Captcha", "Form")
+    return get_custom_formclass(classname) or locate(f"{forms_module_name}.{classname}")
 
 
 @never_cache
@@ -290,7 +287,7 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
                 ctx['error'] = e.displaymessage
-            return render(request, 'nlsubscribe.html', ctx)
+            return render(request, get_app_template('nlsubscribe.html'), ctx)
         else:
             raise Http404
     # default behavour: go to profile or login
@@ -305,7 +302,6 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
 
 
 @never_cache
-@to_response
 def nl_category_subscribe(request, slug, hashed_id=None):
     """
     if hashed id is given, this view will do similar things than nl_subscribe with a category instead of a publication
@@ -332,7 +328,7 @@ def nl_category_subscribe(request, slug, hashed_id=None):
                 next_page = request.GET.get('next')
                 if next_page:
                     return HttpResponseRedirect(next_page)
-            return 'nlsubscribe.html', ctx
+            return render(request, get_app_template('nlsubscribe.html'), ctx)
         else:
             raise Http404
     else:
@@ -393,7 +389,7 @@ def login(request, product_slug=None, product_variant=None):
             next_page = article.get_absolute_url()
             if "prelogin" not in request.POST:
                 login_formclass = get_formclass(request, "PreLogin")
-            template = hard_paywall_template()
+            template = hard_paywall_template
             context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "article": article})
 
     context.update({'next_page': next_page, 'next': pathname2url(next_page.encode('utf8'))})
@@ -501,7 +497,7 @@ def signup(request):
             if request.user.is_authenticated:
                 return HttpResponseRedirect(article.get_absolute_url())
             context["article"] = article
-            template = hard_paywall_template()
+            template = hard_paywall_template
 
     next_page = request.GET.get('next')
     if request.user.is_authenticated:
@@ -516,17 +512,17 @@ def signup(request):
             try:
                 user = signup_form.create_user()
                 add_default_newsletters(user.subscriber)  # TODO: better call this after email confirmation success
-                # TODO: check if request is needed
                 # TODO: notifications/signup.html is also used for this purpose (2 templates to the same thing?)
+                notification_template = "account_signup.html"
                 was_sent = send_validation_email(
-                    'Verificá tu cuenta',
+                    notification_subjects[notification_template],
                     user,
-                    'notifications/account_signup.html',
+                    get_app_template(f'notifications/{notification_template}'),
                     get_signup_validation_url,
-                    {'request': request},
+                    {'request': request},  # the request is needed to be used in a further render_to_string call
                 )
                 if not was_sent:
-                    raise Exception("El email de verificación para el usuario %s no pudo ser enviado." % user)
+                    raise Exception(f"El {verif_email_i18n} para el usuario %s no pudo ser enviado." % user)
                 next_page = signup_form.cleaned_data.get('next_page')
                 if next_page:
                     return HttpResponseRedirect(next_page)
@@ -534,7 +530,7 @@ def signup(request):
                     context['signup_mail'] = user.email
                     return render(request, get_app_template("welcome.html"), context)
             except Exception as exc:
-                msg = "Error al enviar email de verificación para el usuario: %s." % user
+                msg = f"Error al enviar {verif_email_i18n} para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 if user:
                     email_to_delete = user.email
@@ -635,7 +631,13 @@ def google_phone(request):
             if is_new:
                 request.session['welcome'] = True
                 try:
-                    send_notification(oas.user, 'notifications/signup.html', '¡Te damos la bienvenida!', ctx)
+                    notification_template = 'signup.html'
+                    send_notification(
+                        oas.user,
+                        get_app_template(f'notifications/{notification_template}'),
+                        notification_subjects[notification_template],
+                        ctx
+                    )
                 except Exception as exc:
                     # fail silently in case of error when sending the email, only log or debug
                     err_msg = "welcome email message send error for user %d: %s" % (oas.user.id, exc)
@@ -687,7 +689,7 @@ def subscribe(request, planslug, category_slug=None):
             article_id = None
         else:
             context["article"] = article
-            template = hard_paywall_template()
+            template = hard_paywall_template
 
     if custom_module:
         subscribe_custom = __import__(custom_module, fromlist=['subscribe']).subscribe
@@ -799,6 +801,10 @@ def subscribe(request, planslug, category_slug=None):
             (SubscriptionPromoCodeForm if PROMOCODE_ENABLED else SubscriptionForm)
             if nocaptcha else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
         )
+        # a last transformation pipeline step if the resultant form class is customized
+        subscription_formclass = (
+            locate(f"{custom_forms_module}.{subscription_formclass.__name__}") or subscription_formclass
+        )
 
         initial = {
             'subscription_type_prices': planslug,
@@ -879,8 +885,7 @@ def subscribe(request, planslug, category_slug=None):
                 else:
                     subscription = Subscription.objects.create(email=email)
 
-                sp = SubscriptionPrices.objects.get(subscription_type=post['subscription_type_prices'])
-                subscription.subscription_type_prices.add(sp)
+                subscription.subscription_type_prices.add(subscription_price)
 
                 first_name = subscriber_form_v.cleaned_data.get("first_name")
                 if oauth2_state:
@@ -921,32 +926,61 @@ def subscribe(request, planslug, category_slug=None):
                         subscription.save()
                         oas.delete()
                     else:
-                        user, user_created = subscriber_form_v.signup_form.create_user(), True
                         try:
+                            user, user_created = subscriber_form_v.signup_form.create_user(), True
+                        except UpdateCrmEx as uce:
+                            error_log(str(uce))
+                            subscription.delete()
+                            # TODO: try delete the user also
+                            # TODO: check this error rendering in utopia-cms "solo" environment
+                            subscriber_form_v.helper.form_error_title = "Error interno de comunicación"
+                            subscriber_form_v.add_error(None, "Intente nuevamente más tarde.")
+                            context.update(
+                                {
+                                    "subscription_price": subscription_price,
+                                    "planslug": planslug,
+                                    'subscriber_form': subscriber_form_v,
+                                    'subscription_form': subscription_form_v,
+                                }
+                            )
+                            return render(request, template, context)
+                        try:
+                            notification_template = 'account_signup.html'
                             was_sent = send_validation_email(
-                                account_verify_msg,
+                                notification_subjects[notification_template],
                                 user,
-                                'notifications/account_signup_subscribed.html',
+                                get_app_template(f'notifications/{notification_template}'),
                                 get_signup_validation_url,
                             )
                             if not was_sent:
-                                raise Exception("Error al enviar email de verificación para el usuario %s" % user)
+                                raise Exception(f"Error al enviar {verif_email_i18n} para el usuario %s" % user)
                         except Exception as exc:
                             msg = str(exc)
                             error_log(msg)
                             subscription.delete()
                             errors = subscriber_form_v._errors.setdefault("email", ErrorList())
                             errors.append(
-                                'No se pudo enviar el email de verificación al crear tu cuenta, '
-                                + (
-                                    '¿lo escribiste correctamente?'
-                                    if isinstance(exc, SMTPRecipientsRefused)
-                                    else 'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
-                                    % reverse('account-confirm_email')
+                                (
+                                    'Datos de suscripción incorrectos, '
+                                    '<a class="ld-link-low" href="%s">cierre sesión</a>' % reverse("logout")
+                                    + " e intente nuevamente utilizando otra dirección de " + _("email")
+                                ) if isinstance(exc, IntegrityError) else (
+                                    f'No se pudo enviar el {verif_email_i18n} al crear tu cuenta, '
+                                    + (
+                                        '¿lo escribiste correctamente?'
+                                        if isinstance(exc, SMTPRecipientsRefused)
+                                        else 'intentá <a class="ld-link-low" href="%s">pedirlo nuevamente</a>.'
+                                        % reverse('account-confirm_email')
+                                    )
                                 )
                             )
                             context.update(
-                                {'subscriber_form': subscriber_form_v, 'subscription_form': subscription_form_v}
+                                {
+                                    "subscription_price": subscription_price,
+                                    "planslug": planslug,
+                                    'subscriber_form': subscriber_form_v,
+                                    'subscription_form': subscription_form_v,
+                                }
                             )
                             return render(request, template, context)
                         else:
@@ -954,7 +988,8 @@ def subscribe(request, planslug, category_slug=None):
                             subscription.save()
 
                 # we should save the subscription and its type in the session
-                request.session['subscription'], request.session['subscription_type'] = subscription, sp
+                request.session['subscription'] = subscription
+                request.session['subscription_type'] = subscription_price
                 # TODO (DRY_end)
 
                 if oauth2_state:
@@ -970,8 +1005,23 @@ def subscribe(request, planslug, category_slug=None):
                     )
                 else:
                     if online:
-                        context.update({"type": sp, "planslug": planslug, "user_created": user_created})
-                        # TODO: decide the best way to render the template related to the online version of "planslug"
+                        context.update(
+                            # TODO: try save the subscription form, then last entry can be removed (==form.instance)
+                            {
+                                "subscription_price": subscription_price,
+                                "planslug": planslug,
+                                "user_created": user_created,
+                                'subscriber_form': subscriber_form_v,
+                                'subscription_form': subscription_form_v,
+                                'subscription': subscription,
+                            }
+                        )
+                        try:
+                            # TODO: more customization is needed on how to use the next_page
+                            view_func = resolve(subscription_form_v.next_page).match.func
+                            return view_func(request, planslug, context)
+                        except AttributeError:
+                            pass
                         return render(request, get_app_template("online_subscription.html"), context)
                     else:
                         request.session['notify_phone_subscription'] = True
@@ -990,6 +1040,7 @@ def subscribe(request, planslug, category_slug=None):
                         'subscription_form': subscription_form_v,
                         'oauth2_button': oauth2_button,
                         'planslug': planslug,
+                        'subscription_price': subscription_price,
                     }
                 )
                 return render(request, template, context)
@@ -1061,10 +1112,11 @@ def complete_signup(request, user_id, hash):
             notify_subscription(user, subscription_type)
 
     if send_default_welcome:
+        notification_template = 'signup.html'
         send_notification(
             user,
-            'notifications/signup.html',
-            'Tu cuenta gratuita está activa',
+            get_app_template(f'notifications/{notification_template}'),
+            notification_subjects[f"{notification_template}_variant"],
             {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
 
@@ -1093,18 +1145,22 @@ def password_reset(request, user_id=None, hash=None):
             try:
                 user = reset_form.cleaned_data["user"]
                 if user.is_active:
+                    notification_template = 'password_reset_body.html'
                     send_validation_email(
-                        'Recuperación de contraseña',
+                        notification_subjects[notification_template],
                         user,
-                        get_app_template('notifications/password_reset_body.html'),
+                        get_app_template(f'notifications/{notification_template}'),
                         get_password_validation_url,
                     )
                 else:
                     is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
-                    notification_template = get_app_template(
-                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                    notification_template = 'account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                    send_validation_email(
+                        notification_subjects[notification_template],
+                        user,
+                        get_app_template(f'notifications/{notification_template}'),
+                        get_signup_validation_url,
                     )
-                    send_validation_email(account_verify_msg, user, notification_template, get_signup_validation_url)
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
@@ -1118,19 +1174,18 @@ def password_reset(request, user_id=None, hash=None):
 def confirm_email(request):
     if request.user.is_authenticated:
         raise Http404
-    ctx = {}
+    ctx, form_class = {}, get_formclass(request, "ConfirmEmailRequest")
     if request.method == 'POST':
-        confirm_email_form = ConfirmEmailRequestForm(request.POST)
+        confirm_email_form = form_class(request.POST)
         if confirm_email_form.is_valid():
             try:
                 user = confirm_email_form.cleaned_data["user"]
                 is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
+                notification_template = 'account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
                 send_validation_email(
-                    account_verify_msg,
+                    notification_subjects[notification_template],
                     user,
-                    get_app_template(
-                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
-                    ),
+                    get_app_template(f'notifications/{notification_template}'),
                     get_signup_validation_url,
                 )
             except Exception as exc:
@@ -1138,7 +1193,7 @@ def confirm_email(request):
                 ctx['error'] = delivery_err
         ctx["action_content_template"] = get_app_template("confirm_email_action_content.html")
     else:
-        ctx["form"] = ConfirmEmailRequestForm()
+        ctx["form"] = form_class()
     return render(request, get_app_template('confirm_email.html'), ctx)
 
 
@@ -1199,12 +1254,12 @@ def password_change(request, user_id=None, hash=None):
 @never_cache
 @login_required
 def edit_profile(request, user=None):
-    user = user or request.user
-    profile = get_or_create_user_profile(user)
+    user, user_formclass = user or request.user, get_formclass(request, "User")
+    profile, profile_formclass = get_or_create_user_profile(user), get_formclass(request, "Profile")
 
     if request.method == 'POST':
-        user_form = UserForm(request.POST, instance=user)
-        profile_form = ProfileForm(request.POST, instance=profile)
+        user_form = user_formclass(request.POST, instance=user)
+        profile_form = profile_formclass(request.POST, instance=profile)
 
         old_email = user.email
         if user_form.is_valid() and profile_form.is_valid():
@@ -1219,19 +1274,26 @@ def edit_profile(request, user=None):
 
                 if old_email != user.email:
                     # TODO: send the email after saving the user and take actions if it not sent
+                    template_name = 'account_signup.html'
                     was_sent = send_validation_email(
-                        'Verificá tu cuenta', user, 'notifications/account_signup.html', get_signup_validation_url
+                        notification_subjects[template_name],
+                        user,
+                        get_app_template(f'notifications/{template_name}'),
+                        get_signup_validation_url,
                     )
-                    if not was_sent:
-                        raise Exception("Error al enviar email de verificación para el usuario %s" % user)
-                    UserSocialAuth.objects.filter(user=user, provider='google-oauth2').delete()
-                    user_form.save()
-                    profile_form.save()
-                    user.is_active = False
-                    user.save()
-                    messages.success(request, 'Perfil actualizado, revisá tu email para verificar el cambio de email.')
-                    logout(request)
-                    return HttpResponseRedirect(reverse('account-logout'))
+                    if was_sent:
+                        UserSocialAuth.objects.filter(user=user, provider='google-oauth2').delete()
+                        user_form.save()
+                        profile_form.save()
+                        user.is_active = False
+                        user.save()
+                        messages.success(
+                            request, 'Perfil actualizado, revisá tu email para verificar el cambio de email.'
+                        )
+                        logout(request)
+                        return HttpResponseRedirect(reverse('account-logout'))
+                    else:
+                        user_form.add_error("email", f"Error al enviar {verif_email_i18n} para el usuario %s" % user)
                 else:
                     user_form.save()
                     profile_form.save()
@@ -1243,16 +1305,15 @@ def edit_profile(request, user=None):
 
             except Exception as exc:
                 user.refresh_from_db()
-                msg = "Error al enviar email de verificacion para el usuario: %s." % user
+                msg = f"Error al enviar {verif_email_i18n} para el usuario: %s." % user
                 error_log(msg + " Detalle: {}".format(str(exc)))
                 user_form.add_error(None, msg)
-                profile_form.add_error(None, msg)
 
         else:
             user.refresh_from_db()
     else:
-        user_form = UserForm(instance=user)
-        profile_form = ProfileForm(instance=profile)
+        user_form = user_formclass(instance=user)
+        profile_form = profile_formclass(instance=profile)
 
     # Google oauth note: disconnections are discouraged when the email used is the same as the user's email because
     #                    once disconnected, if the user has no valid password, he/she would not be able to login again
@@ -1278,7 +1339,7 @@ def edit_profile(request, user=None):
             'google_oauth2_allow_disconnect':
                 not google_oauth2_multiple and oauth2_assoc and (user.email != oauth2_assoc.uid),
             'publication_newsletters': Publication.objects.filter(has_newsletter=True),
-            'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
+            'newsletters_disabled_preview': settings.THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW,
             'newsletters': get_profile_newsletters_ordered(),
             "mailtrain_lists": MailtrainList.objects.all(),
             "incomplete_field_count": sum(
@@ -1367,9 +1428,10 @@ def lista_lectura_historial(request):
                 # the article could be removed
                 pass
     # perform the union with the ones in the model
-    historial += [
-        avb.article for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at')
-    ]
+    for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at'):
+        article = avb.get_article()
+        if article:
+            historial.append(article)
     historial_count = len(historial)
     if is_xhr(request):
         return HttpResponse(historial_count)
@@ -1651,7 +1713,8 @@ def update_user_from_crm(request):
                 new_user = User(**user_args)
                 new_user.updatefromcrm = True
                 new_user.save()
-                subscriber = new_user.subscriber
+                new_user.refresh_from_db()
+                subscriber, created = Subscriber.objects.get_or_create_deferred(user=new_user)
                 subscriber.contact_id = contact_id
                 subscriber.updatefromcrm = True
                 subscriber.save()
@@ -2239,7 +2302,7 @@ def nlunsubscribe(request, publication_slug, hashed_id):
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+        return render(request, get_app_template('nlunsubscribe.html'), ctx)
     except IndexError:
         raise Http404
 
@@ -2270,7 +2333,7 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+        return render(request, get_app_template('nlunsubscribe.html'), ctx)
     except IndexError:
         raise Http404
 
@@ -2308,15 +2371,17 @@ def nl_track_open_event(request, s8r_or_registered, hashed_id, nl_campaign, nl_d
 
 @csrf_exempt
 @never_cache
-@to_response
 def disable_profile_property(request, property_id, hashed_id):
-    """ Disables the profile bool property_id related to the subscriber matching the hashed_id argument given """
+    """
+    Disables the profile bool property_id related to the subscriber matching the hashed_id argument given
+    """
     try:
         subscriber = get_object_or_404(Subscriber, id=decode_hashid(hashed_id)[0])
         if not subscriber.user:
             raise Http404
         setattr(subscriber, property_id, False)
         ctx = {
+            'nlunsubscribe_template': get_app_template('nlunsubscribe.html'),
             'property_name': {
                 'allow_news': 'Novedades',
                 'allow_promotions': 'Promociones',
@@ -2330,9 +2395,40 @@ def disable_profile_property(request, property_id, hashed_id):
         except Exception as e:
             # for some reason UpdateCrmEx does not work in test (Python ver?)
             ctx['error'] = e.displaymessage
-        return 'disable_profile_property.html', ctx
+        return render(request, get_app_template('disable_profile_property.html'), ctx)
     except IndexError:
         raise Http404
+
+
+@never_cache
+@staff_member_required
+def news_preview(request):
+    # TODO: check/fix the logo and the feature to give any template by query param.
+    subscriber = None
+    try:
+        subscriber = Subscriber.objects.get(id=request.GET.get('subscriber_id'))
+    except (Subscriber.DoesNotExist, ValueError):
+        try:
+            subscriber = request.user.subscriber
+        except AttributeError:
+            is_subscriber, subscriber_id = False, 0
+    if subscriber:
+        is_subscriber, subscriber_id = subscriber.is_subscriber(), int(subscriber.id)
+    site_url, hashed_id = settings.SITE_URL_SD, hashids.encode(subscriber_id)
+    return render(
+        request,
+        get_app_template('news/%s' % request.GET.get('template', 'notice.html')),
+        {
+            'preview': True,
+            'is_subscriber': is_subscriber,
+            'subscriber_id': subscriber_id,
+            'hashed_id': hashed_id,
+            'logo_url': settings.HOMEV3_SECONDARY_LOGO,
+            'site_url': site_url,
+            'unsubscribe_url': '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id),
+            'minimal_footer': request.GET.get('minimal_footer', '0') == '1',
+        },
+    )
 
 
 @never_cache

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # utopia-cms Markup Language
-
 import re
-
 from markdown2 import markdown
 
 from django.conf import settings
@@ -12,6 +10,8 @@ from django.template.defaultfilters import stringfilter
 from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 from django.utils.html import strip_tags
+
+from ..utils import get_app_template
 
 
 register = Library()
@@ -52,7 +52,11 @@ def get_extension(match, aid):
     return render_to_string('core/templates/article/extension.html', {'extension': extension})
 
 
-def get_image(match, aid, amp=False):
+def get_image_template(forkdir=""):
+    return f'{forkdir}article/image.html'
+
+
+def get_image(match, aid, **kwargs):
     from core.models import Article
 
     if match.groups()[0] == '':
@@ -69,31 +73,32 @@ def get_image(match, aid, amp=False):
             try:
                 bool(article_body_image.image.image.file)
             except IOError:
-                return ''
+                pass
             else:
-                return render_to_string(
-                    'core/templates/%sarticle/image.html' % ('amp/' if amp else ''),
-                    {'article': article, 'image': article_body_image.image, 'display': article_body_image.display},
-                )
-        else:
-            return ''
+                ctx = {'article': article, 'image': article_body_image.image, 'display': article_body_image.display}
+                ctx.update(kwargs.get("extra_context", {}))
+                return render_to_string(get_app_template(kwargs.get('template_name', get_image_template())), ctx)
     except Article.DoesNotExist:
-        return ''
+        pass
+    return ''
 
 
 @register.simple_tag
-def photo_byline(article, allowed=True):
+def photo_byline(article, allowed=True, include_agency=False):
     # if allowed by setting and not disallowed by the allow arg given, it returns the article's "photo_autor" entry if
     # article arg is dict (useful in "offline" rendering), otherwise (if it is an Article object) returns the method.
     if settings.CORE_ARTICLE_ENABLE_PHOTO_BYLINE and allowed:
-        return (dict.get if isinstance(article, dict) else getattr)(article, "photo_author", "")
+        author = (dict.get if isinstance(article, dict) else getattr)(article, "photo_author", "")
+        if include_agency:
+            return (author, (dict.get if isinstance(article, dict) else getattr)(article, "photo_agency", ""))
+        return author
     else:
         return ""
 
 
 @register.filter
 @stringfilter
-def ldmarkup(value, args='', amp=False):
+def ldmarkup(value, args='', get_image_kwargs={}):
     """ Usage: {% article.body|ldmarkup:article.id %} """
     value = normalize(value)
     value = strip_tags(value)
@@ -105,13 +110,13 @@ def ldmarkup(value, args='', amp=False):
         reg = re.compile(EXTENSION_RE, re.UNICODE + re.MULTILINE)
         value = reg.sub(lambda x: get_extension(x, args), value)
         reg = re.compile(IMAGE_RE, re.UNICODE + re.MULTILINE)
-        value = reg.sub(lambda x: get_image(x, args, amp), value)
+        value = reg.sub(lambda x: get_image(x, args, **get_image_kwargs), value)
     return mark_safe(force_str(markdown(value, extras=MD_EXTRAS).strip()))
 
 
 @register.filter
 @stringfilter
-def ldmarkup_extension(value, args='', amp=False):
+def ldmarkup_extension(value, args=''):
     """ Usage: {% article.body|ldmarkup_extension %} """
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
     value = reg.sub(r'\n\n\1\n----', value)
@@ -126,7 +131,7 @@ def amp_ldmarkup(value, args=''):
     Wrapper of ldmarkup for amp
     Usage: {% article.body|amp_ldmarkup:article.id %}
     """
-    return ldmarkup(value, args, True)
+    return ldmarkup(value, args, get_image_kwargs={"template_name": get_image_template("amp/")})
 
 
 @register.filter

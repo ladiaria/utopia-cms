@@ -26,7 +26,7 @@ from django.utils.timezone import now, datetime
 
 from apps import blocklisted
 from core.models import Category, CategoryNewsletter, CategoryHome, Article, get_latest_edition
-from core.utils import get_category_template
+from core.utils import get_category_template, get_nl_featured_article_id
 from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter, subscribers_nl_iter_filter
@@ -75,7 +75,6 @@ class Command(SendNLCommand):
         }
         export_ctx.update(self.newsletter_extra_context)
         context = export_ctx.copy()
-        context['category'] = self.category
 
         try:
 
@@ -154,10 +153,11 @@ class Command(SendNLCommand):
                         cover_article = top_articles.pop(0)[0] if top_articles else None
 
                 # featured directly by article.id in settings/edition
-                featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
-                nl_featured = Article.objects.filter(
-                    id=featured_article_id
-                ) if featured_article_id else get_latest_edition().newsletter_featured_articles()
+                featured_article_id = get_nl_featured_article_id()
+                nl_featured = (
+                    Article.objects.filter(id=featured_article_id) if featured_article_id
+                    else get_latest_edition().newsletter_featured_articles()
+                )
                 opinion_article = nl_featured[0] if nl_featured else None
 
                 # featured articles by featured section in the category (by settings)
@@ -237,7 +237,7 @@ class Command(SendNLCommand):
             if not custom_subject:
                 subject_call = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(self.category_slug)
                 email_subject += \
-                    locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "headline", ""))
+                    locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "nl_title", ""))
 
             # TODO: encapsulate this in a Category model method
             email_from = (
@@ -315,7 +315,7 @@ class Command(SendNLCommand):
                         is_subscriber_default = eval(is_subscriber_default)
                     else:
                         s, is_subscriber = next(subscribers_iter)
-                        s_id, s_name, s_user_email = s.id, s.name, s.user.email
+                        s_id, s_name, s_user_email = s.id, s.get_full_name(), s.user.email
                         hashed_id = hashids.encode(int(s_id))
                         is_subscriber_any = s.is_subscriber_any()
                         is_subscriber_default = s.is_subscriber(settings.DEFAULT_PUB)
@@ -342,6 +342,8 @@ class Command(SendNLCommand):
                                 site_url, self.category_slug, hashed_id, self.category_slug
                             )
 
+                    if self.force_no_subscriber:
+                        is_subscriber = is_subscriber_any = is_subscriber_default = False
                     context.update(
                         {
                             "as_news": self.as_news,
@@ -411,7 +413,8 @@ class Command(SendNLCommand):
         try:
             c = Category.objects.get(slug=self.category_slug)
             self.category = self.category_slug if self.offline else c
-            self.newsletter_extra_context = c.newsletter_extra_context
+            self.newsletter_extra_context = c.nl_serialize()
+            self.newsletter_extra_context.update(c.newsletter_extra_context)
         except Category.DoesNotExist:
             raise CommandError('No category matching the given slug found')
         self.initlog(log, self.category_slug)

@@ -4,12 +4,14 @@ from selenium.webdriver.common.by import By
 from django.conf import settings
 from django.test import tag
 from django.contrib.auth.models import User
+from django.utils import translation
 
 from libs.scripts.pwclear import pwclear
 from core.models import Publication, Article
 from core.factories import UserFactory
 
-from . import LiveServerSeleniumTestCase, label_content_not_available, label_to_continue_reading, label_exclusive
+from .. import label_content_not_available_i18n
+from . import LiveServerSeleniumTestCase, label_to_continue_reading, label_exclusive
 
 
 @tag('selenium')
@@ -17,6 +19,10 @@ class SignupwallAMPTestCase(LiveServerSeleniumTestCase):
     # TODO: try to undouble the "//" in the URLs
 
     fixtures = ['test']
+
+    def setUp(self):
+        translation.activate(settings.LOCALE_NAME_PREFIX)
+        self.label_content_not_available = str(label_content_not_available_i18n)
 
     def get_title_displayed(self):
         result = []
@@ -111,7 +117,7 @@ class SignupwallAMPTestCase(LiveServerSeleniumTestCase):
         Publication.objects.get(slug="spinoff").save()
         user.subscriber.is_subscriber("spinoff", operation="set")
         self.login(user, password)
-        self.user_faces_wall(label_content_not_available)
+        self.user_faces_wall(self.label_content_not_available)
 
     def test04_subscriber_passes_wall(self):
         self.set_current_site_domain()

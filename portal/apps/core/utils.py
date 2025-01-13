@@ -3,7 +3,7 @@ from builtins import object
 
 import re
 from datetime import datetime
-from os.path import join
+from os.path import join, dirname
 from pytz import country_timezones, country_names
 import requests
 
@@ -13,6 +13,8 @@ from django.template.exceptions import TemplateDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from django.utils.deconstruct import deconstructible
 from django.utils.timezone import is_aware, make_aware, localtime
+
+from thedaily import get_app_template as thedaily_get_app_template
 
 
 def get_section_articles_sql(section_ids, excluded=[], limit=None):
@@ -104,6 +106,34 @@ def get_pdfpageimage_file_upload_to(instance, filename):
     pass
 
 
+def get_app_template(template):
+    custom_template_mapped = getattr(settings, "CORE_CUSTOM_TEMPLATE_MAP", {}).get(template)
+    if custom_template_mapped is not None:
+        return custom_template_mapped
+    customizable_fallbacks = ["article/related", "article/detail"]
+    custom_dir = getattr(settings, "CORE_ARTICLE_DETAIL_TEMPLATE_DIR", None)
+    if custom_dir:
+        engine, template_try = Engine.get_default(), join(custom_dir, template)
+        try:
+            engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            relative_dir = dirname(template)
+            if relative_dir in customizable_fallbacks:
+                template = get_app_template(relative_dir + ".html")
+        else:
+            template = template_try
+    else:
+        # when a fallback is set, it will be used allways for installations without custom templates
+        relative_dir = dirname(template)
+        if relative_dir in customizable_fallbacks:
+            template = get_app_template(relative_dir + ".html")
+    return template
+
+
+def get_hard_paywall_template():
+    return thedaily_get_app_template("hard_paywall.html")
+
+
 def get_category_template(category_slug, template_destination="detail"):
     default_dir = {"newsletter": "core/templates"}.get(template_destination, 'core/templates/category')
     custom_dir = getattr(settings, "CORE_CATEGORIES_TEMPLATE_DIR", None)
@@ -129,6 +159,38 @@ def get_category_template(category_slug, template_destination="detail"):
             template = template_try
     # if custom dir is not defined, no search is needed
     return template
+
+
+def nl_template_name(publication_slug, default="newsletter/newsletter.html"):
+    if publication_slug:
+        template_dirs = [getattr(settings, "CORE_PUBLICATIONS_NL_TEMPLATE_DIR", "newsletter/publication")]
+        if template_dirs[0]:
+            template_dirs.append("")
+        engine = Engine.get_default()
+        for base_dir in template_dirs:
+            template_try = join(base_dir, '%s.html' % publication_slug)
+            try:
+                engine.get_template(template_try)
+                return template_try
+            except TemplateDoesNotExist:
+                pass
+    return default
+
+
+def get_nl_featured_article_id():
+    return getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', None)
+
+
+def serialize_wrapper(article_or_list, publication, for_cover=False, dates=True):
+    if isinstance(article_or_list, list):
+        return [
+            (
+                t[0].nl_serialize(t[1], publication, dates=dates), t[1]
+            ) if isinstance(t, tuple)
+            else t.nl_serialize(publication=publication, for_cover=for_cover, dates=dates) for t in article_or_list
+        ]
+    elif article_or_list:
+        return article_or_list.nl_serialize(for_cover, publication, dates=dates)
 
 
 def add_punctuation(text):
@@ -166,6 +228,7 @@ class CT(object):
 
 
 def smart_quotes(value):
+    # TODO: explain this function and try to change it at least to eliminate the warnings of "invalid escape sequence"
     value = re.sub(r"(?![^<>]*>)(\")\b", "“", value)
     value = re.sub(r"\b(?![^<>]*>)(\")", "”", value)
     value = re.sub("\"(?=[¿¡\‘\'\(\[ÑÁÉÍÓÚñáéíóú])", "“", value)

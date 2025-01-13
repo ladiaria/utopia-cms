@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import sys
 from os.path import join
 import locale
@@ -11,8 +10,9 @@ from hashids import Hashids
 from favit.utils import is_xhr
 
 from django.conf import settings
+from django.core.management import CommandError, call_command
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseForbidden, HttpResponsePermanentRedirect, Http404
+from django.http import HttpResponseForbidden, HttpResponsePermanentRedirect, Http404, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
 from django.contrib.sites.models import Site
 from django.contrib.auth.decorators import login_required
@@ -24,7 +24,7 @@ from libs.utils import decode_hashid, nl_serialize_multi
 from thedaily.models import Subscriber
 from faq.models import Topic
 from ..models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
-from ..utils import get_category_template
+from ..utils import get_category_template, get_nl_featured_article_id
 from ..templatetags.ldml import remove_markup
 
 
@@ -108,8 +108,24 @@ def newsletter_preview(request, slug):
 
     site = Site.objects.get_current()
     category = get_object_or_404(Category, slug=slug)
+
+    if request.method == "POST":
+        u = request.user
+        if u.email and hasattr(u, 'subscriber') and u.subscriber:
+            cmd_args = [category.slug, u.subscriber.id]
+            cmd_opts = {
+                "no_logfile": True,
+                "no_update_stats": True,
+                "force_no_subscriber": request.POST.get(f'is_subscriber_{settings.DEFAULT_PUB}') != "on",
+                "assert_one_email_sent": True,
+            }
+            try:
+                call_command("send_category_nl", *cmd_args, **cmd_opts)
+            except CommandError as cmde:
+                return HttpResponseBadRequest(cmde)
+
     context = {
-        'category': category,
+        'newsletter_header_color': category.newsletter_header_color,
         'newsletter_campaign': category.slug,
         "request_is_xhr": is_xhr(request),
     }
@@ -154,10 +170,9 @@ def newsletter_preview(request, slug):
                     cover_article = top_articles.pop(0)[0] if top_articles else None
 
             # featured directly by article.id in settings
-            featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
+            featured_article_id = get_nl_featured_article_id()
             nl_featured = (
-                Article.objects.filter(id=featured_article_id)
-                if featured_article_id
+                Article.objects.filter(id=featured_article_id) if featured_article_id
                 else get_latest_edition().newsletter_featured_articles()
             )
             opinion_article = nl_featured[0] if nl_featured else None
@@ -185,7 +200,7 @@ def newsletter_preview(request, slug):
         if not custom_subject:
             subject_call = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category.slug, None)
             email_subject += \
-                locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "headline", ""))
+                locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "nl_title", ""))
 
         email_from = '%s <%s>' % (
             category.newsletter_from_name or (
@@ -248,7 +263,7 @@ def newsletter_preview(request, slug):
 
 @never_cache
 def newsletter_browser_preview(request, slug, hashed_id=None):
-    category = get_object_or_404(Category, slug=slug)
+    get_object_or_404(Category, slug=slug)  # only to assert that the category exists
     if hashed_id:
         decoded = decode_hashid(hashed_id)
         # TODO: if authenticated => assert same logged in user
@@ -307,7 +322,6 @@ def newsletter_browser_preview(request, slug, hashed_id=None):
     # TODO: obtain missing vars from hashed_id subscriber (TODO: which are those vars?)
     context.update(
         {
-            "category": category,
             "browser_preview": True,
             "as_news": as_news,
             'hashed_id': hashed_id,

@@ -1,0 +1,97 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-01-06 19:08-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: apps/comunidad/admin.py:16
+msgid "Usado"
+msgstr "Usado"
+
+#: apps/comunidad/admin.py:22
+msgid "Used"
+msgstr "Usado"
+
+#: apps/comunidad/admin.py:23
+msgid "Not Used"
+msgstr "No usado"
+
+#: apps/core/templates/edition/download_email_sent.html:12
+#: apps/thedaily/forms.py:175 apps/thedaily/forms.py:342
+msgid "Email"
+msgstr "Email"
+
+#: apps/core/templates/edition/download_email_sent.html:14
+#: apps/thedaily/models.py:51 apps/thedaily/views.py:970
+msgid "email"
+msgstr "email"
+
+#: apps/thedaily/exceptions.py:8
+msgid "contactate"
+msgstr "contactate"
+
+#: apps/thedaily/models.py:144
+msgid "name"
+msgstr "nombre"
+
+#: apps/thedaily/models.py:314
+msgid "user id"
+msgstr "id de usuario"
+
+#: apps/thedaily/models.py:519
+msgid "tus datos"
+msgstr "tus datos"
+
+#: apps/thedaily/models.py:538
+msgid "tu perfil"
+msgstr "tu perfil"
+
+#: apps/thedaily/templates/disable_profile_property.html:8
+msgid "recibirás"
+msgstr "recibirás"
+
+#: templates/admin/app_list.html:11
+#, python-format
+msgid "Models in the %(name)s application"
+msgstr "Modelos en la aplicación %(name)s"
+
+#: templates/admin/app_list.html:40 templates/admin/app_list.html:60
+#: templates/admin/app_list.html:73
+msgid "Add"
+msgstr "Agregar"
+
+#: templates/admin/app_list.html:47
+msgid "View"
+msgstr "Ver"
+
+#: templates/admin/app_list.html:49 templates/admin/app_list.html:65
+#: templates/admin/app_list.html:78
+msgid "Change"
+msgstr "Cambiar"
+
+#: templates/admin/app_list.html:88
+msgid "You don’t have permission to view or edit anything."
+msgstr "No tienes permisos para ver o editar nada."
+
+#: templates/admin/change_form_object_tools.html:6
+#: templates/admin/core/article/change_form_object_tools.html:8
+msgid "History"
+msgstr "Histórico"
+
+#: templates/admin/change_form_object_tools.html:9
+#: templates/admin/change_form_object_tools.html:10
+msgid "View on site"
+msgstr "Ver en el sitio"

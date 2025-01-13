@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import re
 import json
 import requests
@@ -39,14 +38,17 @@ from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
-from libs.utils import crm_rest_api_kwargs
-from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
+from libs.utils import crm_rest_api_kwargs, space_join
+from apps import mongo_db, bouncer_blocklisted, whitelisted_domains, document_type_choices
 from core.models import Edition, Publication, Category, ArticleViewedBy
-from .exceptions import UpdateCrmEx, EmailValidationError
+from .exceptions import UpdateCrmEx, EmailValidationError, MSG_ERR_UPDATE
+from .managers import SubscriberManager
 
 
 GA_CATEGORY_CHOICES, MIN0, MAX100 = (('D', 'Digital'), ('P', 'Papel')), MinValueValidator(0), MaxValueValidator(100)
+email_i18n = _("email")
 
 
 class SubscriptionPrices(Model):
@@ -87,59 +89,60 @@ alphanumeric = RegexValidator(
     '^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$',
     'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.',
 )
+user_noname_result = "Usuario sin nombre"
+
+
+def user_fullname(user):
+    result = user_noname_result
+    if user:
+        fullname = user.get_full_name().strip()
+        if fullname:
+            result = fullname
+    return result
 
 
 class Subscriber(Model):
     """
-    TODO:
-     - Create an "extra" JSON field to save custom-bussiness-related subscriber data. (using plan_id for this now)
-     - Many ladiaria custom fields like "lento_pdf" should be removed (ladiaria will be using them in "extra").
-     - Keep newsletters M2M relations for those newsletters that were discontinued (their publication or category have
-       changed its has_newsletter attr from True to False) now this M2M rows are removed when the subscriber is saved,
-       for example in the admin or by the user itself using the edit profile page.
+    TODO: document this model
     """
-
     contact_id = PositiveIntegerField('CRM id', unique=True, editable=True, blank=True, null=True)
     user = OneToOneField(
         User, on_delete=CASCADE, verbose_name='usuario', related_name='subscriber', blank=True, null=True
     )
-
-    # TODO: ver la posibilidad de eliminarlo ya que es el "first_name" del modelo django.contrib.auth.models.User
-    name = CharField('nombre', max_length=255, validators=[alphanumeric])
-
-    # agregamos estos campos para unificar la info de User y Subscriber
     address = CharField('dirección', max_length=255, blank=True, null=True)
     country = CharField('país de residencia', max_length=50, blank=True, null=True)
     city = CharField('ciudad de residencia', max_length=64, blank=True, null=True)
     province = CharField(
         'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
     )
-
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
+    document_type = PositiveSmallIntegerField(blank=True, null=True, choices=document_type_choices)
     document = CharField('documento de identidad', max_length=50, blank=True, null=True)
     phone = PhoneNumberField('teléfono', blank=True, default="", db_index=True)
-
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
     downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
-
     terms_and_conds_accepted = BooleanField(default=False)
-    pdf = BooleanField(default=False)
-    lento_pdf = BooleanField('pdf L.', default=False)
-    ruta = PositiveSmallIntegerField(blank=True, null=True)
+    # can be useful for third party apps to identify the subscription plan in a custom way
     plan_id = TextField(blank=True, null=True)
-    ruta_lento = PositiveSmallIntegerField(blank=True, null=True)
-    ruta_fs = PositiveSmallIntegerField(blank=True, null=True)
+    # extra information about the subscription
+    extra_info = JSONField("información extra", default=dict, help_text='Diccionario Python en formato JSON')
     newsletters = ManyToManyField(Publication, blank=True, limit_choices_to={'has_newsletter': True})
     category_newsletters = ManyToManyField(Category, blank=True, limit_choices_to={'has_newsletter': True})
     allow_news = BooleanField('acepta novedades', default=True)
     allow_promotions = BooleanField('acepta promociones', default=True)
     allow_polls = BooleanField('acepta encuestas', default=True)
-    # TODO: explain the utility of this field or remove it.
+    # can be useful for third party apps to distinguish subscription particular characteristics (free, staff, etc)
     subscription_mode = CharField(max_length=1, null=True, blank=True, default=None)
     last_paid_subscription = DateTimeField('Ultima subscripcion comienzo', null=True, blank=True)
+    objects = SubscriberManager()
 
     def __str__(self):
-        return self.name or self.get_full_name()
+        return self.get_full_name()
+
+    def repr(self):
+        return '%s' % self
+
+    repr.short_description = _("name")
 
     def save(self, *args, **kwargs):
         # TODO: this should be reviewed ASAP (a new field 'doc type' may be added resulting incompatibilities)
@@ -147,6 +150,23 @@ class Subscriber(Model):
             non_decimal = re.compile(r'[^\d]+')
             self.document = non_decimal.sub('', self.document)
         super(Subscriber, self).save(*args, **kwargs)
+
+    def has_user(self):
+        try:
+            return bool(self.user)
+        except User.DoesNotExist:
+            return False
+
+    @property
+    def first_name(self):
+        return (self.user.first_name or '').strip()
+
+    @property
+    def last_name(self):
+        return (self.user.last_name or '').strip()
+
+    def get_full_name(self):
+        return user_fullname(self.user)
 
     def download(self, pdfinstance):
         try:
@@ -162,31 +182,25 @@ class Subscriber(Model):
         self.save()
 
     def is_subscriber(self, pub_slug=settings.DEFAULT_PUB, operation="get"):
-        try:
+        if self.has_user():
 
-            if self.user:
+            if self.user.is_staff:
+                return True
 
-                if self.user.is_staff:
+            elif pub_slug in getattr(settings, 'THEDAILY_IS_SUBSCRIBER_CUSTOM_PUBLICATIONS', ()):
+                is_subscriber_custom = __import__(
+                    settings.THEDAILY_IS_SUBSCRIBER_CUSTOM_MODULE, fromlist=['is_subscriber']
+                ).is_subscriber
+                return is_subscriber_custom(self, pub_slug, operation)
+
+            else:
+                if operation == "get":
+                    return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
+                elif operation == "set":
+                    self.user.user_permissions.add(Permission.objects.get(codename='es_suscriptor_' + pub_slug))
                     return True
-
-                elif pub_slug in getattr(settings, 'THEDAILY_IS_SUBSCRIBER_CUSTOM_PUBLICATIONS', ()):
-                    is_subscriber_custom = __import__(
-                        settings.THEDAILY_IS_SUBSCRIBER_CUSTOM_MODULE, fromlist=['is_subscriber']
-                    ).is_subscriber
-                    return is_subscriber_custom(self, pub_slug, operation)
-
                 else:
-                    if operation == "get":
-                        return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
-                    elif operation == "set":
-                        self.user.user_permissions.add(Permission.objects.get(codename='es_suscriptor_' + pub_slug))
-                        return True
-                    else:
-                        raise ValueError("Unknown operation")
-
-        except User.DoesNotExist:
-            # rare, but we saw once this exception happen
-            pass
+                    raise ValueError("Unknown operation")
 
         return False
 
@@ -207,7 +221,7 @@ class Subscriber(Model):
         return True
 
     def user_is_active(self):
-        return self.user and self.user.is_active
+        return self.has_user() and self.user.is_active
 
     user_is_active.short_description = 'user act.'
     user_is_active.boolean = True
@@ -274,12 +288,6 @@ class Subscriber(Model):
             else:
                 return qs[0].downloads
 
-    def get_full_name(self):
-        if not self.user.first_name and not self.user.last_name:
-            return "Usuario sin nombre"
-        else:
-            return self.user.get_full_name()
-
     def get_latest_article_visited(self):
         """
         Returns info about the latest visit to an article from this subscriber.
@@ -299,7 +307,12 @@ class Subscriber(Model):
 
     @property
     def user_email(self):
-        return self.user.email if self.user else None
+        return self.user.email if self.has_user() else None
+
+    def user_id(self):
+        return self.user.id if self.has_user() else None
+
+    user_id.short_description = _("user id")
 
     def email_is_bouncer(self):
         return self.user_email in bouncer_blocklisted
@@ -390,9 +403,9 @@ def updatecrmuser(contact_id, field, value):
     return put_data_to_crm(api_url, data)
 
 
-def createcrmuser(name, email):
+def createcrmuser(first_name, last_name, email):
     api_url = settings.CRM_API_UPDATE_USER_URI
-    return post_data_to_crm(api_url=api_url, data={"name": name, "email": email})
+    return post_data_to_crm(api_url=api_url, data={"name": first_name, "last_name": last_name, "email": email})
 
 
 def deletecrmuser(email):
@@ -409,9 +422,9 @@ def existscrmuser(email, contact_id=None):
 
 
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
-    msg, error_msg_prefix, error_code = None, "El email ingresado ", None
-    error_msg_invalid = error_msg_prefix + 'no es un email válido.'
-    error_msg_exists = error_msg_prefix + "ya posee una cuenta de usuario"
+    msg, error_msg_prefix, error_code = None, f"El {email_i18n} ingresado ", None
+    error_msg_invalid = error_msg_prefix + "no es válido."
+    error_msg_exists = error_msg_prefix + "ya posee una cuenta"
     error_msg_next = ("?next=" + next_page) if next_page else ""
     exclude_kwargs_user = {'id': instance_id} if instance_id else {}
     exclude_kwargs_user_sa = {'user_id': instance_id} if instance_id else {}
@@ -493,14 +506,18 @@ def user_pre_save(sender, instance, **kwargs):
         return
 
     api_uri = settings.CRM_API_UPDATE_USER_URI
-    if actualusr.email != instance.email:
+    changeset = {}
+    if actualusr.first_name != instance.first_name:
+        changeset['first_name'] = instance.first_name
+    if actualusr.last_name != instance.last_name:
+        changeset['last_name'] = instance.last_name
+    if changeset or actualusr.email != instance.email:
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
-            data = {'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
-            put_data_to_crm(api_uri, data)
+            changeset.update({'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email})
+            put_data_to_crm(api_uri, changeset)
         except requests.exceptions.RequestException:
-            err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
-            raise UpdateCrmEx(err_msg)
+            raise UpdateCrmEx(MSG_ERR_UPDATE % _("tus datos"))
 
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
@@ -511,13 +528,15 @@ def subscriber_pre_save(sender, instance, **kwargs):
         return True
     try:
         actual_sub = sender.objects.get(pk=instance.id)
-        # TODO: change this 1-field-per-request approach to a new 1-request-only approach with all chanmges
+        changeset = {}
         for crm_field, f in list(settings.CRM_UPDATE_SUBSCRIBER_FIELDS.items()):
             if getattr(actual_sub, f) != getattr(instance, f):
-                try:
-                    updatecrmuser(instance.contact_id, crm_field, getattr(instance, f))
-                except requests.exceptions.RequestException:
-                    raise UpdateCrmEx("No se ha podido actualizar tu perfil, contactate con nosotros")
+                changeset[crm_field] = getattr(instance, f)
+        if changeset:
+            try:
+                updatecrmuser(instance.contact_id, None, changeset)
+            except requests.exceptions.RequestException:
+                raise UpdateCrmEx(MSG_ERR_UPDATE % _("tu perfil"))
     except Subscriber.DoesNotExist:
         # this happens only on creation
         pass
@@ -556,19 +575,38 @@ def createUserProfile(sender, instance, created, **kwargs):
     Creates a UserProfile object each time a User is created.
     Also keep sync the email field on Subscriptions.
     """
-    subscriber, created = Subscriber.objects.get_or_create(user=instance)
+    debug = settings.THEDAILY_DEBUG_SIGNALS and "DEBUG: createUserProfile (user post_save signal) - "
     if instance.email:
         try:
             instance.suscripciones.exclude(email=instance.email).update(email=instance.email)
-        except Exception:
-            pass
-        if not settings.CRM_UPDATE_USER_CREATE_CONTACT or getattr(instance, "updatefromcrm", False):
-            return True
+        except Exception as exc:
+            if debug:
+                print(f"{debug}error updating user email: {exc}")
+        subscriber, created = Subscriber.objects.get_or_create_deferred(user=instance)
         if created:
-            res = createcrmuser(instance.get_full_name(), instance.email)
-            contact_id = res.get('contact_id') if res else None
-            if not subscriber.contact_id:
-                subscriber.contact_id = contact_id
+            if not settings.CRM_UPDATE_USER_CREATE_CONTACT or getattr(instance, "updatefromcrm", False):
+                if debug:
+                    print(f"{debug}skipping CRM sync")
+                subscriber.save()
+                return True
+            try:
+                res = createcrmuser(instance.first_name, instance.last_name, instance.email)
+            except Exception as exc:
+                if debug:
+                    print(f"{debug}communication error trying to create the CRM Contact: {exc}")
+            else:
+                contact_id = res.get('contact_id')
+                # if contact_id is returned by CRM, perform some consistency checks before saving
+                if contact_id:
+                    # 1. there is no subscriber with this contact_id yet
+                    # 2. if there is one, TODO: call dedupe to make its magic ("dedupe" must be opensourced first)
+                    if Subscriber.objects.filter(contact_id=contact_id).exists():
+                        if debug:
+                            print(f"{debug}contact_id ({contact_id}) returned by CRM already used by other subscriber")
+                    else:
+                        subscriber.contact_id = contact_id
+                elif debug:
+                    print(f"{debug}contact_id not returned by CRM, value retuned was: {res}")
                 subscriber.save()
 
 
@@ -692,10 +730,11 @@ class Subscription(Model):
         return self.get_full_name()
 
     def get_full_name(self):
-        if not self.first_name and not self.last_name:
-            return "Usuario sin nombre"
+        if self.first_name or self.last_name:
+            return space_join(self.first_name, self.last_name)
         else:
-            return '%s %s' % (self.first_name, self.last_name)
+            append = ("fullname: " + user_fullname(self.subscriber)) if self.subscriber else "null"
+            return f"Sin nombre en suscripción, user_fk_{append}"
 
     def get_subscription_type_prices(self):
         return ', '.join('%s' % stp for stp in self.subscription_type_prices.all())

@@ -14,6 +14,7 @@ from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib.messages import constants as messages
 
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
+from core.models import Publication
 from .models import (
     Subscription,
     ExteriorSubscription,
@@ -29,6 +30,7 @@ from .models import (
 )
 from .utils import collector_analysis
 from .exceptions import UpdateCrmEx
+from . import get_app_template
 
 
 class UserAdmin(BaseUserAdmin):
@@ -90,32 +92,35 @@ class ExteriorSubscriptionAdmin(SubscriptionAdmin):
 
 class SubscriberAdmin(ModelAdmin):
     list_display = (
-        'id', 'contact_id', 'user', 'user_is_active', 'user_email', 'name', 'pdf', 'get_newsletters'
+        'id', 'contact_id', "repr", 'user_id', 'user_is_active', 'user_email', 'get_newsletters'
     )
-    search_fields = ("id", "user__id", 'user__username', 'name', 'user__email', 'contact_id', 'document', 'phone')
-    raw_id_fields = ('user', )
-    readonly_fields = (
-        'pdf',
-        'lento_pdf',
-        'ruta',
-        'plan_id',
-        'ruta_lento',
-        'ruta_fs',
-        'get_latest_article_visited',
+    search_fields = (
+        "id",
+        "user__id",
+        'user__username',
+        'user__first_name',
+        'user__last_name',
+        'user__email',
+        'contact_id',
+        'document',
+        'phone'
     )
-    list_filter = ['newsletters', 'category_newsletters', 'pdf', 'allow_news', 'allow_promotions', 'allow_polls']
+    raw_id_fields = ('user',)
+    readonly_fields = ("extra_info", 'plan_id', 'get_latest_article_visited')
+    list_filter = ['newsletters', 'category_newsletters', 'allow_news', 'allow_promotions', 'allow_polls']
     actions = ['send_account_info', "delete_user"]  # TODO: new action: sync_plan_id_from_activos_csv
     fieldsets = (
         (None, {
             'fields': (
-                ('contact_id', 'user', 'name'),
-                ('address', 'country', 'city', 'province'),
+                ('contact_id', 'user'),
+                ('address', 'country'),
+                ('city', 'province'),
                 ('document', 'phone'),
                 ('newsletters', 'category_newsletters'),
                 ('allow_news', 'allow_promotions', 'allow_polls'),
-                ('pdf', 'ruta'),
-                ('plan_id', ),
-                ('get_latest_article_visited', ),
+                ('extra_info',),
+                ('plan_id',),
+                ('get_latest_article_visited',),
             ),
         }),
     )
@@ -127,9 +132,8 @@ class SubscriberAdmin(ModelAdmin):
                 was_sent = send_validation_email(
                     'Ingreso al sitio web',
                     s.user,
-                    'notifications/account_info.html',
+                    get_app_template('notifications/account_info.html'),
                     get_signup_validation_url,
-                    {'user_email': s.user.email},
                 )
                 if not was_sent:
                     raise Exception("El email de notificación para el usuario: %s no pudo ser enviado." % s.user)
@@ -190,8 +194,8 @@ class SubscriberAdmin(ModelAdmin):
 
 class SubscriptionPricesAdmin(ModelAdmin):
     list_display = (
-        '__str__', 'order', 'months', 'price', 'price_total', "discount", 'auth_group', 'publication'
-    )
+        '__str__', 'order', 'months', 'price', 'price_total', "discount", 'auth_group'
+    ) + (('publication',) if Publication.objects.count() > 1 else ())
     list_editable = list_display[1:]
 
     def formfield_for_dbfield(self, db_field, **kwargs):

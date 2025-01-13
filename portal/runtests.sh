@@ -6,7 +6,7 @@ SVACTIVE="systemctl is-active --quiet supervisord"
 python -W ignore manage.py test --settings=test_settings --exclude-tag celery --keepdb ${TEST_MODULES} thedaily.tests.test_crmsync
 # separated because fails on "transaction"
 python -W ignore manage.py test --settings=test_settings --exclude-tag skippable --exclude-tag celery --keepdb signupwall
-python -W ignore manage.py test --settings=test_settings --exclude-tag celery --keepdb thedaily.tests.test_subscribe
+python -W ignore manage.py test --settings=test_settings --exclude-tag celery --keepdb --failfast thedaily.tests.test_subscribe
 `$SVACTIVE` && (
     supervisorctl stop utopiacms_w1 utopiacms_w2 utopiacms_w3 utopiacms_beat
     supervisorctl start utopiacms_test

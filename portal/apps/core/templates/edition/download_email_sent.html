@@ -1,19 +1,16 @@
 {% extends "base.html" %}
-{% load core_tags %}
+{% load i18n core_tags %}
 
 {% block page_title %}{% title_joinparts 'Descargar edición' %}{% endblock %}
+
 {% block body_class %}edition{% endblock %}
 
 {% block content %}
-    <div class="titlebar">
-        <h2>
-            Descargar edición
-        </h2>
-    </div>
-    <h1>
-        Correo enviado
-    </h1>
-    <p>
-        Se te acaba de enviar un correo electrónico a tu casilla el cual contiene un link para hacer la descarga.
-    </p>
+  <div class="titlebar">
+    <h2>Descargar edición</h2>
+  </div>
+  <h1>{% trans 'Email' %} enviado</h1>
+  <p>
+    Se te acaba de enviar un {% trans 'email' %} a tu casilla el cual contiene un link para hacer la descarga.
+  </p>
 {% endblock %}

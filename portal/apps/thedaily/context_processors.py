@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.urls import resolve, Resolver404
+from django.contrib.flatpages.models import FlatPage
 
 from core.models import Article, ArticleUrlHistory, Publication
 from signupwall.middleware import get_article_by_url_kwargs, subscriber_access
@@ -91,4 +92,14 @@ def permissions(request):
             settings.TALK_JWT_SECRET,
         )
 
+    return result
+
+
+def terms_and_conditions(request):
+    result, fp_id = {}, settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID
+    if fp_id:
+        try:
+            result['terms_and_conditions_url'] = FlatPage.objects.get(id=fp_id).get_absolute_url()
+        except FlatPage.DoesNotExist:
+            pass
     return result
