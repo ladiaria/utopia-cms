@@ -86,11 +86,13 @@
 {% endblock %}
 
 {% block page_header %}
-  <div id="bn-module"></div>
+  {% if bn_module_published_count %}<div id="bn-module"></div>{% endif %}
   <div id="live_embed_event_notification"></div>
 {% endblock %}
 
 {% block content %}
+  {% include 'profile/notification_box.html' %}
+
   <main>
     <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
 
@@ -1070,18 +1072,24 @@
 {% endblock %}
 
 {% block footer_scripts_extra %}
+  <script src="{% static 'js/switch_change_events.js' %}"></script>
   <script type="text/javascript">
     $(function(){
-      $('#bn-module').load("{% url 'bn-content' %}", function(response){
-        if(response){
-          $('.btn-close', this).click(function(){
-            notification_close(this);
-          });
-        }else{
-          $(window).trigger("live_embed_event_notification_show");
-        }
-      });
+      {% if bn_module_published_count %}
+        $('#bn-module').load("{% url 'bn-content' %}", function(response){
+          if(response){
+            $('.btn-close', this).click(function(){
+              notification_close(this);
+            });
+          }else{
+            $(window).trigger("live_embed_event_notification_show");
+          }
+        });
+      {% else %}
+        $(window).trigger("live_embed_event_notification_show");
+      {% endif %}
     });
+    switch_change_events($('.switch-container'));{# used in article/subscribe_box.html file #}
   </script>
 {% endblock %}
 

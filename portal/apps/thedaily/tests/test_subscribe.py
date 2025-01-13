@@ -1,4 +1,5 @@
 # coding:utf-8
+from string import ascii_letters, digits, punctuation
 
 from django.conf import settings
 from django.test import TestCase
@@ -8,6 +9,12 @@ from django.contrib.auth.models import User
 from apps import mongo_db
 from libs.scripts.pwclear import phone_subscription_log_clear
 from core.factories import UserFactory
+from thedaily.models import SubscriptionPrices
+
+
+def generate_password():
+    allowed = ascii_letters + digits + punctuation
+    return User.objects.make_random_password(allowed_chars=allowed)
 
 
 class SubscribeTestCase(TestCase):
@@ -37,11 +44,14 @@ class SubscribeTestCase(TestCase):
             "first_name": "User One",
             "email": my_email,
             "phone": good_phone,
-            "password": User.objects.make_random_password(),
+            "password": generate_password(),
             "preferred_time": 1,
             "terms_and_conds_accepted": True,
             "subscription_type_prices": planslug,
             "payment_type": "tel",
+            "province": "Montevideo",
+            "city": "Montevideo",
+            "address": "Treinta y Tres 1479",
         }
         post_data.update(self.var.get("test01_extra_post_data", {}))
         response = c.post('/usuarios/suscribite/%s/' % planslug, post_data, follow=True)
@@ -87,6 +97,11 @@ class SubscribeTestCase(TestCase):
         self.assertNotIn(display_msg, response_content)
 
     def test01_subscribe_landing(self):
+        # change the category of default price to use a no online default price
+        # but TODO: write this test version for "online" also ASAP
+        sp = SubscriptionPrices.objects.get(subscription_type=self.var["test01_planslug"])
+        sp.ga_category = "P"
+        sp.save()
         c, blocked_phone_prefix = Client(), "+598966555"
         with self.settings(DEBUG=True, TELEPHONES_BLOCKLIST=[blocked_phone_prefix]):
             # anon requests

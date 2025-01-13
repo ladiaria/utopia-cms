@@ -24,7 +24,7 @@ from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sitemaps import ping_google
-from django.db import IntegrityError, connection
+from django.db import IntegrityError, ProgrammingError, connection
 from django.db.models import (
     Q,
     Manager,
@@ -71,7 +71,13 @@ from tagging.models import Tag
 import thedaily
 from videologue.models import Video, YouTubeVideo
 
-from .managers import get_published_kwargs, PublishedArticleManager, EditionManager, SlugNaturalManager
+from .managers import (
+    get_published_kwargs,
+    PublishedArticleManager,
+    EditionManager,
+    SlugNaturalManager,
+    PublishedBreakingNewsModuleManager,
+)
 from .templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from .utils import (
     datetime_isoformat,
@@ -201,7 +207,10 @@ class Publication(Model):
 
     @staticmethod
     def multi():
-        return Publication.objects.count() > 1
+        try:
+            return Publication.objects.count() > 1
+        except ProgrammingError:
+            return False
 
     def newsletter_preview_url(self):
         """
@@ -2464,6 +2473,8 @@ class BreakingNewsModule(Model):
     embed14_content = TextField('contenido de incrustado 14', blank=True, null=True)
     publications = ManyToManyField(Publication, verbose_name='portada de publicaciones', blank=True)
     categories = ManyToManyField(Category, verbose_name='portada de áreas', blank=True)
+
+    published = PublishedBreakingNewsModuleManager()
 
     def __str__(self):
         return self.headline or ''

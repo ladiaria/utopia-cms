@@ -658,7 +658,7 @@ class Subscription(Model):
     )
     first_name = CharField('nombres', max_length=150)
     last_name = CharField('apellidos', max_length=150)
-    document = CharField('documento', max_length=11, blank=False, null=True)
+    document = CharField('documento', max_length=11, blank=False, null=True)  # TODO: remove default blank=False usage
     telephone = CharField('teléfono', max_length=20, blank=False, null=False)
     email = EmailField('email')
     address = CharField('dirección', max_length=255, blank=True, null=True)
