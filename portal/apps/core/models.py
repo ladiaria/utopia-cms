@@ -2187,16 +2187,16 @@ class ArticleRel(Model):
           the row as main (another row can exist).
     """
 
-    article = ForeignKey(Article, on_delete=CASCADE)
-    edition = ForeignKey(Edition, on_delete=CASCADE)
-    section = ForeignKey(Section, on_delete=CASCADE)
+    article = ForeignKey(Article, verbose_name='artículo', on_delete=CASCADE)
+    edition = ForeignKey(Edition, verbose_name='edición', on_delete=CASCADE)
+    section = ForeignKey(Section, verbose_name='sección', on_delete=CASCADE)
     position = PositiveSmallIntegerField('orden en la sección', default=None, null=True)
     home_top = BooleanField(
         'destacado en portada',
         default=False,
-        help_text='Marque esta opción para que esta nota aparezca en los destacados de la edición.',
+        help_text='Si está marcado, el artículo aparecerá en los destacados de la edición correspondiente.',
     )
-    top_position = PositiveSmallIntegerField('orden', blank=True, null=True)
+    top_position = PositiveSmallIntegerField('orden en destacados de portada', blank=True, null=True)
 
     def __str__(self):
         return '%s - %s' % (self.edition, self.section)

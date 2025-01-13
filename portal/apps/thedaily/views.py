@@ -129,13 +129,13 @@ from .utils import (
     product_checkout_template,
     qparamstr,
     collector_analysis,
-    get_app_template,
     subscribe_log,
     get_notification_subjects,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
 from .tasks import send_notification, notify_subscription, send_notification_message
+from . import get_app_template
 
 
 standard_library.install_aliases()

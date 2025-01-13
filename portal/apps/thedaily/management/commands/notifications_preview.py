@@ -5,10 +5,11 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
+from thedaily import get_app_template
 from thedaily.views import get_password_validation_url
 from thedaily.tasks import notify_subscription, send_notification
 from thedaily.management.commands.automatic_mail_paywall import send_message
-from thedaily.utils import get_app_template, get_notification_subjects
+from thedaily.utils import get_notification_subjects
 
 
 class Command(BaseCommand):

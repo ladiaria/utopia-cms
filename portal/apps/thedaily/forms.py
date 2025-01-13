@@ -33,8 +33,9 @@ from phonenumber_field.formfields import PhoneNumberField
 from phonenumber_field.widgets import RegionalPhoneNumberWidget
 
 from .models import Subscription, Subscriber, email_extra_validations, email_i18n
-from .utils import get_all_newsletters, get_app_template
+from .utils import get_all_newsletters
 from .exceptions import EmailValidationError
+from . import get_app_template
 
 
 CSS_CLASS = 'form-input1'

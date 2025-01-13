@@ -8,8 +8,9 @@ from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 
 from libs.utils import smtp_connect, prefix_notification_subject
-from thedaily.models import SentMail, SubscriptionPrices
-from thedaily.utils import get_app_template, get_notification_subjects
+from .models import SentMail, SubscriptionPrices
+from .utils import get_notification_subjects
+from . import get_app_template
 
 
 notifications_template_dir = getattr(settings, 'THEDAILY_NOTIFICATIONS_TEMPLATE_DIR', 'notifications/')

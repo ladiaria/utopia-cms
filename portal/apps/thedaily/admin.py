@@ -28,8 +28,9 @@ from .models import (
     RemainingContent,
     MailtrainList,
 )
-from .utils import collector_analysis, get_app_template
+from .utils import collector_analysis
 from .exceptions import UpdateCrmEx
+from . import get_app_template
 
 
 class UserAdmin(BaseUserAdmin):
