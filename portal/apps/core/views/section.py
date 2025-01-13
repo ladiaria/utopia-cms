@@ -91,8 +91,6 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
             articles = paginator.page(paginator.num_pages)
         context["articles"] = articles
 
-    context["allow_ads"] = section.category and section.category.slug in getattr(settings, 'CATEGORIES_ADS_ENABLED', ())
-
     template = "core/templates/section/detail.html"
     # custom template support
     template_dir = getattr(settings, "CORE_SECTION_TEMPLATE_DIR", None)
