@@ -59,6 +59,24 @@ body.user-newsletters {
     }
   }
 
+  @media #{$medium-and-down} {
+    #main-header .header-pill--newsletters {
+      left: 3px;
+      top: 11.5px;
+      svg {
+        max-width: 148px;
+      }
+    }
+  }
+
+  @media only screen and (max-width: 359px) {
+    #main-header .header-pill--newsletters {
+      svg {
+        max-width: 134px;
+      }
+    }
+  }
+
   .edit_profile_card {
     &__inner-section {
       box-shadow: 2px 2px 4px 0px rgba(0, 0, 0, 0.25);
