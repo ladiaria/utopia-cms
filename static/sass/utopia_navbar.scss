@@ -1590,8 +1590,8 @@ body.interior {
 
   #btn-toggle-banner {
     position: absolute;
-    right: 7px;
-    top: 3px;
+    right: -5px;
+    top: 0;
     width: 40px;
     height: 40px;
     cursor: pointer;
@@ -1825,6 +1825,16 @@ body.interior {
         background-color: #ffff00;
         color: $off-black;
         box-shadow: 4px 4px 20px 6px rgba(0, 0, 0, 0.25);
+
+        &:hover {
+          background-color: #ffff75;
+          box-shadow: none;
+        }
+        &:active {
+          outline: 1px solid $off-black;
+          background-color: #ffff75;
+          box-shadow: none;
+        }
       }
     }
   }
