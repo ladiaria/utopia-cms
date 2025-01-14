@@ -113,7 +113,7 @@
             <span class="bold">Teléfono: </span>
             <span class="value">
               {% if subscriber.phone %}
-                {{ subscriber.phone }}
+                {{ subscriber.phone.as_national }}
               {% else %}
                 sin asignar <span class="needs-attention-icon"></span>
               {% endif %}
