@@ -241,6 +241,7 @@ nav ul a:hover {
 
       .suscribirse {
         margin-left: 15px;
+        background-color: #56e3ce;
       }
 
       .ingresar {
@@ -1622,6 +1623,7 @@ body.interior {
 
     svg.arrow-icon {
       flex: 1;
+      max-width: min-content;
     }
 
     @media screen and (max-width: 340px) {
