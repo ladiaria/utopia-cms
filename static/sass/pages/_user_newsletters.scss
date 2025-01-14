@@ -16,7 +16,10 @@ body.user-newsletters {
 
   .header-pill--newsletters {
     left: 142px;
-    top: 21px;
+    top: 16.5px;
+    svg {
+      max-width: 170px;
+    }
   }
 
   h1 {
