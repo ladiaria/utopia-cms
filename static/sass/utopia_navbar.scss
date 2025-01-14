@@ -1618,6 +1618,11 @@ body.interior {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 20px;
+
+    svg.arrow-icon {
+      flex: 1;
+    }
 
     @media screen and (max-width: 340px) {
       svg {
