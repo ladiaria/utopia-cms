@@ -25,13 +25,15 @@ function phone_widget(
       if (extra_options) {
         Object.assign(options, extra_options);
       }
-      const iti = window.intlTelInput(input, options);
+      const intlTelInput = window.intlTelInput(input, options);
       input.addEventListener("countrychange", function (e) {
-        e.target.value = "";
+        if (e.target.value.indexOf("+") === -1) {
+          e.target.value = "";
+        }
       });
       input.addEventListener("keyup", function (e) {
-        let val = iti.getNumber();
-        input.setCustomValidity(required && !val || val && !iti.isValidNumber() ? "Formato incorrecto" : "");
+        let value = intlTelInput.getNumber();
+        input.setCustomValidity(required && !value || value && !intlTelInput.isValidNumber() ? "Formato incorrecto" : "");
       });
     }
   });
