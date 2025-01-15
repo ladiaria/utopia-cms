@@ -20,6 +20,7 @@ from django.db.models import CASCADE
 from django.db.models import (
     BooleanField,
     CharField,
+    DateField,
     DateTimeField,
     EmailField,
     ForeignKey,
@@ -40,13 +41,14 @@ from django.dispatch import receiver
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-from libs.utils import crm_rest_api_kwargs, space_join
+from libs.utils import crm_rest_api_kwargs
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains, document_type_choices
 from core.models import Edition, Publication, Category, ArticleViewedBy
 from .exceptions import UpdateCrmEx, EmailValidationError, MSG_ERR_UPDATE
 from .managers import SubscriberManager
 
 
+ALPHANUM_STR = "^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _'.-]*$"
 GA_CATEGORY_CHOICES, MIN0, MAX100 = (('D', 'Digital'), ('P', 'Papel')), MinValueValidator(0), MaxValueValidator(100)
 email_i18n = _("email")
 
@@ -86,7 +88,7 @@ class SubscriptionPrices(Model):
 
 
 alphanumeric = RegexValidator(
-    '^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$',
+    ALPHANUM_STR,
     'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.',
 )
 user_noname_result = "Usuario sin nombre"
@@ -676,65 +678,29 @@ class EditionDownload(Model):
 
 
 class Subscription(Model):
-    SUBSCRIPTION_CHOICES = (
-        ('PAP', 'Edición papel + Digital'),
-        ('DIG', 'Digital (Edición web)'),
-    )
-    MONTHLY = 'MO'
-    QUARTERLY = 'Q'
-    BIANNUAL = 'BA'
-    ANNUAL = 'AN'
-    SUBSCRIPTION_PLAN_CHOICES = (
-        (MONTHLY, 'Mensual'),
-        (QUARTERLY, 'Trimestral'),
-        (BIANNUAL, 'Semestral'),
-        (ANNUAL, 'Anual'),
-    )
-
-    subscriber = ForeignKey(
-        User, on_delete=CASCADE, related_name='suscripciones', verbose_name='usuario', null=True, blank=True
-    )
-    first_name = CharField('nombres', max_length=150)
-    last_name = CharField('apellidos', max_length=150)
-    document = CharField('documento', max_length=11, blank=False, null=True)  # TODO: remove default blank=False usage
-    telephone = CharField('teléfono', max_length=20, blank=False, null=False)
-    email = EmailField('email')
+    SUBSCRIPTION_CHOICES = (('PAP', 'Edición papel + Digital'), ('DIG', 'Digital (Edición web)'))
+    subscriber = ForeignKey(Subscriber, on_delete=CASCADE, related_name='subscriptions', null=True, blank=True)
+    billing_name = CharField(_('billing name'), max_length=255)
+    billing_id_doc = CharField(_("billing identification document"), max_length=31, null=True)
+    billing_phone = PhoneNumberField(blank=True, default="", verbose_name=_("billing phone"), db_index=True)
+    billing_email = EmailField(blank=True, null=True, verbose_name=_("billing email"))
     address = CharField('dirección', max_length=255, blank=True, null=True)
     country = CharField('país', max_length=50)
     city = CharField('ciudad', max_length=64, blank=True, null=True)
     province = CharField(
-        'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
+        'departamento', max_length=64, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
     )
-
-    observations = TextField('observaciones para la entrega', blank=True, null=True)
-    subscription_type = CharField('suscripción', max_length=3, choices=SUBSCRIPTION_CHOICES, default='DIG')
-    subscription_plan = CharField('plan', max_length=2, choices=SUBSCRIPTION_PLAN_CHOICES)
-    subscription_end = DateTimeField('última fecha de suscripción', auto_now_add=True, editable=False)
-    friend1_name = CharField('nombre', max_length=150, blank=True, null=True)
-    friend1_email = CharField('email', max_length=150, blank=True, null=True)
-    friend1_telephone = CharField('teléfono', max_length=20, blank=True, null=True)
-    friend2_name = CharField('nombre', max_length=150, blank=True, null=True)
-    friend2_email = CharField('email', max_length=150, blank=True, null=True)
-    friend2_telephone = CharField('teléfono', max_length=20, blank=True, null=True)
-    friend3_name = CharField('nombre', max_length=150, blank=True, null=True)
-    friend3_email = CharField('email', max_length=150, blank=True, null=True)
-    friend3_telephone = CharField('teléfono', max_length=20, blank=True, null=True)
+    subscription_type = CharField('tipo de suscripción', max_length=3, choices=SUBSCRIPTION_CHOICES, default='DIG')
+    end_date = DateField(_("end date"), blank=True, null=True)
+    next_billing = DateField(_("next billing"), blank=True, null=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, editable=False)
-
-    public_profile = BooleanField('perfíl comunidad', default=True)
-
-    subscription_type_prices = ManyToManyField(SubscriptionPrices, verbose_name='tipo de subscripcion', blank=True)
+    subscription_type_prices = ManyToManyField(SubscriptionPrices, verbose_name='productos', blank=True)
     promo_code = CharField(max_length=8, blank=True, null=True)
 
     def __str__(self):
-        return self.get_full_name()
-
-    def get_full_name(self):
-        if self.first_name or self.last_name:
-            return space_join(self.first_name, self.last_name)
-        else:
-            append = ("fullname: " + user_fullname(self.subscriber)) if self.subscriber else "null"
-            return f"Sin nombre en suscripción, user_fk_{append}"
+        return _("%s subscription for %s") % (
+            f"{self.subscription_type} ({self.get_subscription_type_prices()})", self.subscriber.get_full_name()
+        )
 
     def get_subscription_type_prices(self):
         return ', '.join('%s' % stp for stp in self.subscription_type_prices.all())
@@ -744,7 +710,7 @@ class Subscription(Model):
 
     class Meta:
         get_latest_by = 'date_created'
-        ordering = ('-date_created', 'first_name', 'last_name')
+        ordering = ('-date_created',)
         verbose_name = 'suscripción'
         verbose_name_plural = 'suscripciones'
 

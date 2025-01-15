@@ -52,40 +52,34 @@ class UserAdmin(BaseUserAdmin):
 
 
 class SubscriptionAdmin(ModelAdmin):
-    list_display = ('id', 'subscriber', 'first_name', 'telephone', 'email', 'get_subscription_type_prices')
-    search_fields = ('first_name', 'email', 'subscriber__email')
-    raw_id_fields = ('subscriber', )
-    exclude = ('subscription_type', )
+    list_display = (
+        'id',
+        'subscriber',
+        'billing_name',
+        'billing_phone',
+        'billing_email',
+        'get_subscription_type_prices'
+    )
+    search_fields = ('billing_name', 'billing_email', 'subscriber__email')
+    raw_id_fields = ('subscriber',)
+    exclude = ('subscription_type',)
 
 
 class ExteriorSubscriptionAdmin(SubscriptionAdmin):
     list_display = (
         'id',
         'subscriber',
-        'first_name',
-        'document',
-        'email',
-        'telephone',
+        'billing_name',
+        'billing_id_doc',
+        'billing_email',
+        'billing_phone',
         'country',
         'city',
         'address',
-        'observations',
     )
     exclude = (
         'subscription_type',
-        'last_name',
         'province',
-        'subscription_plan',
-        'friend1_name',
-        'friend1_email',
-        'friend1_telephone',
-        'friend2_name',
-        'friend2_email',
-        'friend2_telephone',
-        'friend3_name',
-        'friend3_email',
-        'friend3_telephone',
-        'public_profile',
         'subscription_type_prices',
     )
 

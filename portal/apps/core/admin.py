@@ -623,23 +623,21 @@ class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
     list_display = (
-        'id',
-        'headline',
-        'type',
-        'get_publications',
-        'get_sections',
-        'creation_date',
-        'publication_date',
-        "published_status",
-        has_photo,
-        'surl',
+        ('id', 'headline', 'type')
+        + (('get_publications',) if Publication.multi() else ())
+        + ('get_sections', 'creation_date', 'publication_date', "published_status", has_photo, 'surl')
     )
     list_select_related = True
     list_filter = (
-        'type', 'date_created', 'is_published',
+        'type',
+        'date_created',
+        'is_published',
         # 'to_be_published',  # TODO: add this filter when the field gets fully implemented
-        'date_published', 'newsletter_featured', 'byline'
-    )
+        'date_published',
+        "public",
+        "allow_comments",
+        'newsletter_featured',
+    ) + (('byline',) if getattr(settings, 'CORE_ARTICLE_ADMIN_BYLINE_FILTER_ENABLED', False) else ())
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
     ordering = ('-date_created',)
@@ -895,14 +893,6 @@ class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
                     )
                 )
         return super().change_view(request, object_id, form_url, extra_context)
-
-    def changelist_view(self, request, extra_context=None):
-        if 'type__exact' not in request.GET:
-            q = request.GET.copy()
-            q['type__exact'] = 'NE'  # Setea el filtro por defecto a noticias
-            request.GET = q
-            request.META['QUERY_STRING'] = request.GET.urlencode()
-        return super().changelist_view(request, extra_context=extra_context)
 
     def delete_view(self, request, object_id, extra_context=None):
         # actstream does not return unicode when rendering an Action if the target object has non-ascii chars,

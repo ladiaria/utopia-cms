@@ -32,14 +32,14 @@ from crispy_forms.utils import get_template_pack
 from phonenumber_field.formfields import PhoneNumberField
 from phonenumber_field.widgets import RegionalPhoneNumberWidget
 
-from .models import Subscription, Subscriber, email_extra_validations, email_i18n
+from .models import Subscription, Subscriber, email_extra_validations, email_i18n, ALPHANUM_STR
 from .utils import get_all_newsletters
 from .exceptions import EmailValidationError
 from . import get_app_template
 
 
 CSS_CLASS = 'form-input1'
-RE_ALPHANUM = re.compile('^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$')
+RE_ALPHANUM = re.compile(ALPHANUM_STR)
 SUBSCRIPTION_PHONE_TIME_CHOICES = (
     ('1', 'Cualquier hora (9:00 a 20:00)'),
     ('2', 'En la mañana (9:00 a 12:00)'),
