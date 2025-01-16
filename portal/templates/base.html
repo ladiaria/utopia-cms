@@ -173,7 +173,6 @@
       <!-- End Meta tags Twitter -->
     {% endblock %}
 
-    {% block critical_header_scripts %}{% endblock %}
     <!-- Schema (https://schema.org) -->
     {% block json_ld %}
       <script type='application/ld+json'>
@@ -227,6 +226,7 @@
     {% endif %}
 
     <!-- JavaScript -->
+    {% block critical_header_scripts %}{% endblock %}
     <script src="{% static 'js/index_functions.js' %}"></script>
     {% if PWA_ENABLED %}<script src="{% static 'js/index_pwa_function.js' %}"></script>{% endif %}
     <script src="{% static 'js/index_sw_call.js' %}"></script>
