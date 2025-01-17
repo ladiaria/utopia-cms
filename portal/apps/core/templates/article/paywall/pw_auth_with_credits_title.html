@@ -2,11 +2,11 @@
 {% if signupwall_enabled %}
   {% if request.credits %}
     {% if request.credits > 1 %}
-      Te quedan {{ request.credits }} artículos gratuitos
+      {% block credits_title %}Te quedan {{ request.credits }} artículos gratuitos{% endblock %}
     {% else %}
-      Te queda {{ request.credits }} artículo gratuito
+      {% block credit_title %}Te queda {{ request.credits }} artículo gratuito{% endblock %}
     {% endif %}
   {% else %}
-    Este es tu último artículo gratuito
+      {% block last_credit_title %}Este es tu último artículo gratuito{% endblock %}
   {% endif %}
 {% endif %}
