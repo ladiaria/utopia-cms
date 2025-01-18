@@ -10,7 +10,6 @@ from django.views.decorators.cache import never_cache
 from .views import (
     SubscriptionPricesListView,
     subscribe,
-    referrals,
     google_phone,
     user_profile,
     users_api,
@@ -170,9 +169,6 @@ urlpatterns = [
         never_cache(TemplateView.as_view(template_name=get_app_template('phone_subscription_thankyou.html'))),
         name="telsubscribe_success",
     ),
-
-    # TODO: "referidos" template should be de-customized
-    re_path(r'^referidos/(?P<hashed_id>\w+)/$', referrals, name="referrals"),
 
     re_path(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
     path('nlsubscribe/', nl_subscribe, name="nl-subscribe"),  # can be useful if a "next" session variable was set

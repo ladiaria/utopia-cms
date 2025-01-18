@@ -11,7 +11,7 @@ from social_django.models import UserSocialAuth
 from phonenumber_field.modelfields import PhoneNumberField
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group, Permission
+from django.contrib.auth.models import User, Group
 from django.core.mail import mail_managers
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, validate_email
 from django.core.exceptions import ValidationError
@@ -40,6 +40,7 @@ from django.db.utils import IntegrityError
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.utils.timezone import now
 
 from libs.utils import crm_rest_api_kwargs
 from apps import mongo_db, bouncer_blocklisted, whitelisted_domains, document_type_choices
@@ -183,7 +184,33 @@ class Subscriber(Model):
         self.downloads += 1
         self.save()
 
+    def active_subscriptions(self):
+        return self.subscriptions.filter(end_date__gte=now().date())
+
+    def active_subscriptions_pub_slugs(self):
+        slug_set = set()
+        for s in self.active_subscriptions():
+            slug_set.update(s.related_publications_slugs())
+        return slug_set
+
+    def add_subscription(self, pub_slug=settings.DEFAULT_PUB, planslug=None):
+        # this method will:
+        # create a subscription ending today, add a SubscriptionPrice having the given type_slug or pub_slug
+        # add the subscription to this subscriber
+        if planslug:
+            try:
+                tp = SubscriptionPrices.objects.get(type=planslug)
+            except (SubscriptionPrices.DoesNotExist, SubscriptionPrices.MultipleObjectsReturned):
+                pass
+        else:
+            tp = SubscriptionPrices.objects.filter(publication__slug="default").first()
+        if tp:
+            s = Subscription.objects.create(subscriber=self, end_date=now().date(), billing_email=self.user.email)
+            s.subscription_type_prices.add(tp)
+            return True
+
     def is_subscriber(self, pub_slug=settings.DEFAULT_PUB, operation="get"):
+        # TODO: (doing) deprecate "permissions"
         if self.has_user():
 
             if self.user.is_staff:
@@ -196,11 +223,12 @@ class Subscriber(Model):
                 return is_subscriber_custom(self, pub_slug, operation)
 
             else:
+                result = pub_slug in self.active_subscriptions_pub_slugs()
                 if operation == "get":
-                    return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
+                    return result
                 elif operation == "set":
-                    self.user.user_permissions.add(Permission.objects.get(codename='es_suscriptor_' + pub_slug))
-                    return True
+                    if not result:
+                        return self.add_subscription(pub_slug) is True
                 else:
                     raise ValueError("Unknown operation")
 
@@ -579,11 +607,6 @@ def createUserProfile(sender, instance, created, **kwargs):
     """
     debug = settings.THEDAILY_DEBUG_SIGNALS and "DEBUG: createUserProfile (user post_save signal) - "
     if instance.email:
-        try:
-            instance.suscripciones.exclude(email=instance.email).update(email=instance.email)
-        except Exception as exc:
-            if debug:
-                print(f"{debug}error updating user email: {exc}")
         subscriber, created = Subscriber.objects.get_or_create_deferred(user=instance)
         if created:
             if not settings.CRM_UPDATE_USER_CREATE_CONTACT or getattr(instance, "updatefromcrm", False):
@@ -610,6 +633,14 @@ def createUserProfile(sender, instance, created, **kwargs):
                 elif debug:
                     print(f"{debug}contact_id not returned by CRM, value retuned was: {res}")
                 subscriber.save()
+        else:
+            try:
+                instance.subscriber.subscriptions.exclude(
+                    billing_email=instance.email
+                ).update(billing_email=instance.email)
+            except Exception as exc:
+                if debug:
+                    print(f"{debug}error updating user email: {exc}")
 
 
 class OAuthState(Model):
@@ -707,6 +738,9 @@ class Subscription(Model):
 
     def get_absolute_url(self):
         return '/admin/thedaily/subscription/%i/' % self.id
+
+    def related_publications_slugs(self):
+        return self.subscription_type_prices.values_list('publication__slug', flat=True).distinct()
 
     class Meta:
         get_latest_by = 'date_created'

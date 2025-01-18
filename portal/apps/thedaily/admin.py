@@ -14,7 +14,6 @@ from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib.messages import constants as messages
 
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
-from core.models import Publication
 from .models import (
     Subscription,
     ExteriorSubscription,
@@ -188,8 +187,8 @@ class SubscriberAdmin(ModelAdmin):
 
 class SubscriptionPricesAdmin(ModelAdmin):
     list_display = (
-        '__str__', 'order', 'months', 'price', 'price_total', "discount", 'auth_group'
-    ) + (('publication',) if Publication.objects.count() > 1 else ())
+        '__str__', "subscription_type", 'order', 'months', 'price', 'price_total', "discount", 'publication'
+    )
     list_editable = list_display[1:]
 
     def formfield_for_dbfield(self, db_field, **kwargs):

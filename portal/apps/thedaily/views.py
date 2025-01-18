@@ -10,7 +10,7 @@ from functools import wraps
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from urllib.request import pathname2url
-from urllib.parse import urljoin, urlparse, urlencode
+from urllib.parse import urlparse, urlencode
 from uuid import uuid4
 from smtplib import SMTPRecipientsRefused
 from PIL import Image
@@ -867,7 +867,7 @@ def subscribe(request, planslug, category_slug=None):
                 if not email:
                     # TODO: decide what to do in this case
                     pass
-                subscriptions = Subscription.objects.filter(email=email)
+                subscriptions = Subscription.objects.filter(billing_email=email)
 
                 if subscriptions:
                     try:
@@ -875,18 +875,18 @@ def subscribe(request, planslug, category_slug=None):
                     except Subscription.DoesNotExist:
                         try:
                             if user_is_auth:
-                                subscription = subscriptions.get(subscriber=user)
+                                subscription = subscriptions.get(subscriber=user.subscriber)
                             else:
-                                subscription = subscriptions.get(subscriber__email=email)
+                                subscription = subscriptions.get(subscriber__user__email=email)
                         except Subscription.DoesNotExist:
                             # TODO: notify managers/admin "Data inconsistency in subscriptions"
-                            subscription = Subscription.objects.create(email=email)
+                            subscription = Subscription.objects.create(billing_email=email)
                         except Subscription.MultipleObjectsReturned:
                             subscription = subscriptions.latest()
                     except Subscription.MultipleObjectsReturned:
                         subscription = subscriptions.latest()
                 else:
-                    subscription = Subscription.objects.create(email=email)
+                    subscription = Subscription.objects.create(billing_email=email)
 
                 subscription.subscription_type_prices.add(subscription_price)
 
@@ -919,13 +919,13 @@ def subscribe(request, planslug, category_slug=None):
                     ):
                         subscriber.terms_and_conds_accepted = True
                         subscriber.save()
-                    subscription.subscriber = user
+                    subscription.subscriber = subscriber
                     subscription.save()
                 else:
                     if oauth2_state:
                         # succesfull google sigin usage (form saved lines above), we can remove the oas object (just
                         # like the google_phone view does after a succesfull POST)
-                        subscription.subscriber = user
+                        subscription.subscriber = user.subscriber
                         subscription.save()
                         oas.delete()
                     else:
@@ -987,7 +987,7 @@ def subscribe(request, planslug, category_slug=None):
                             )
                             return render(request, template, context)
                         else:
-                            subscription.subscriber = user
+                            subscription.subscriber = user.subscriber
                             subscription.save()
 
                 # we should save the subscription and its type in the session
@@ -2243,42 +2243,6 @@ def custom_api(request):
     return HttpResponseBadRequest(msg)
 
 
-@never_cache
-@to_response
-def referrals(request, hashed_id):
-    decoded, user = decode_hashid(hashed_id), None
-    if decoded:
-        sub = get_object_or_404(Subscriber, contact_id=int(decoded[0]))
-        user = sub.user
-    if not (decoded or user):
-        raise Http404
-    if request.method == 'POST':
-        if user.suscripciones.all():
-            subscription = user.suscripciones.all()[0]
-        else:
-            subscription = Subscription()
-            subscription.first_name = user.first_name
-            subscription.email = user.email
-            subscription.subscriber = user
-        subscription.friend1_name = request.POST['ref1_name']
-        subscription.friend1_telephone = request.POST['ref1_tel']
-        subscription.friend2_name = request.POST['ref2_name']
-        subscription.friend2_telephone = request.POST['ref2_tel']
-        subscription.friend3_name = request.POST['ref3_name']
-        subscription.friend3_telephone = request.POST['ref3_tel']
-        subscription.save()
-        # se envía un correo alertando de los nuevos referidos
-        subject = "Un usuario ha enviado referidos"
-        rcv = settings.SUBSCRIPTION_EMAIL_TO
-        from_mail = getattr(settings, 'DEFAULT_FROM_EMAIL')
-        send_mail(
-            subject, urljoin(settings.SITE_URL, subscription.get_absolute_url()), from_mail, rcv, fail_silently=True
-        )
-        return 'referrals_thankyou.html'
-    else:
-        return 'form_referral.html'
-
-
 @csrf_exempt
 @never_cache
 @to_response
@@ -2511,7 +2475,7 @@ def phone_subscription(request):
         if is_authenticated:
             user = request.user
         else:
-            user = subscription.subscriber
+            user = subscription.subscriber.user
         user.subscriber.address = subscription.address
         user.subscriber.city = subscription.city
         user.subscriber.province = subscription.province
@@ -2569,7 +2533,9 @@ def phone_subscription_log(request, user=None):
 
 
 def telephone_subscription_msg(user, preferred_time):
-    """ Returns a body message for the subscriprion request notiffication """
+    """
+    Returns a body message for the subscriprion request notiffication
+    """
     name = user.get_full_name() or user.subscriber.name
     return (
         (
@@ -2579,7 +2545,7 @@ def telephone_subscription_msg(user, preferred_time):
         ) % (
             name,
             dict(settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES).get(
-                user.suscripciones.all()[0].subscription_type_prices.all()[0].subscription_type, '-'
+                user.subscriber.subscriptions.all()[0].subscription_type_prices.all()[0].subscription_type, '-'
             ),
             user.email,
             user.subscriber.phone,

@@ -480,6 +480,8 @@ class PreLoginCaptchaForm(PreLoginForm):
 
 
 class ProfileForm(CrispyModelForm):
+    phone = phone_field()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.form_id = "profile_form"
@@ -575,7 +577,7 @@ class SubscriberForm(CrispyModelForm):
             # continue validation to check for repeated email and subsc. type, for "tel" subscriptions in same day:
             try:
                 s = Subscription.objects.get(
-                    email__iexact=self.cleaned_data.get('email'), date_created__date=now().date()
+                    billing_email__iexact=self.cleaned_data.get('email'), date_created__date=now().date()
                 )
                 if subscription_type in s.subscription_type_prices.values_list('subscription_type', flat=True):
                     self.add_error('email', ValidationError(f"Su {email_i18n} ya posee una suscripción en proceso."))

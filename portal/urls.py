@@ -21,7 +21,7 @@ from core.views.sw import service_worker
 from core.views.subscribe import subscribe
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
-from thedaily.models import Subscriber
+from thedaily.models import Subscriber, Subscription
 from comunidad.models import Url, Recommendation
 from homev3.views import index
 from cartelera.views import vivo
@@ -101,6 +101,12 @@ class UrlSerializer(serializers.ModelSerializer):
     class Meta:
         model = Url
         fields = ('recommendation_set',)
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ("id", "end_date")
 
 
 class SubscriberSerializer(serializers.ModelSerializer):
@@ -205,6 +211,12 @@ class UrlViewSet(viewsets.ModelViewSet):
     filter_fields = ('url',)
 
 
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+    http_method_names = ["get", "head", "put"]
+
+
 class SubscriberViewSet(viewsets.ModelViewSet):
     queryset = Subscriber.objects.all()
     serializer_class = SubscriberSerializer
@@ -228,6 +240,7 @@ router.register(r'articles', ArticleViewSet)
 router.register(r'home', HomeArticleViewSet)
 router.register(r'journalists', JournalistViewSet)
 router.register(r'urls', UrlViewSet)
+router.register(r'subscriptions', SubscriptionViewSet)
 router.register(r'subscribers', SubscriberViewSet)
 router.register(r'dollar_exchange', DollarExchangeViewSet)
 
