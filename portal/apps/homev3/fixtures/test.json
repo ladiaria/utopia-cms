@@ -43,7 +43,8 @@
     "ga_category": "D",
     "price": "350.00",
     "ga_name": "suscripción digital",
-    "order": 1
+    "order": 1,
+    "publication": 1
   }
 },
 {
@@ -54,7 +55,20 @@
     "ga_category": "P",
     "price": "790.00",
     "ga_name": "papel lunes a viernes",
-    "order": 2
+    "order": 2,
+    "publication": 1
+  }
+},
+{
+  "pk": 3,
+  "model": "thedaily.subscriptionprices",
+  "fields": {
+    "subscription_type": "spinoff",
+    "ga_category": "D",
+    "price": "350.00",
+    "ga_name": "spinoff digital",
+    "order": 3,
+    "publication": 2
   }
 },
 {
