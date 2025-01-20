@@ -3,6 +3,7 @@ import re
 from os.path import join
 from generator.views import contribute
 from rest_framework import serializers, viewsets, routers
+from rest_framework_api_key.permissions import HasAPIKey
 
 from django.conf import settings
 from django.urls import include, path, re_path
@@ -212,6 +213,7 @@ class UrlViewSet(viewsets.ModelViewSet):
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
+    permission_classes = [HasAPIKey]
     queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
     http_method_names = ["get", "head", "put"]
