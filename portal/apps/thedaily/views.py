@@ -1107,8 +1107,8 @@ def complete_signup(request, user_id, hash):
 
     is_subscriber_any = subscriber.is_subscriber_any()
 
-    if send_default_welcome and is_subscriber_any and user.suscripciones.count() == 1:
-        st = user.suscripciones.all()[0].subscription_type_prices
+    if send_default_welcome and is_subscriber_any and subscriber.subscriptions.count() == 1:
+        st = subscriber.subscriptions.all()[0].subscription_type_prices
         if st.count() == 1:
             subscription_type = st.all()[0].subscription_type
             send_default_welcome = False
