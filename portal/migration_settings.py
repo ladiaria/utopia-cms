@@ -558,6 +558,8 @@ FREEZE_TIME = None
 CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 PHONENUMBER_DEFAULT_REGION = None
+CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
+ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 
 
 # ====================================================================================== visual separator =============
@@ -630,7 +632,7 @@ if CRM_UPDATE_USER_CREATE_CONTACT is None:
     # defaults to the same value of the "base sync"
     CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED
 
-if locals().get("ENV_HTTP_BASIC_AUTH") and "API_KEY_CUSTOM_HEADER" not in locals():
+if ENV_HTTP_BASIC_AUTH and "API_KEY_CUSTOM_HEADER" not in locals():
     # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
     API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
 
