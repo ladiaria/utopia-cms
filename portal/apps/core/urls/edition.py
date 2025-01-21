@@ -8,7 +8,10 @@ from core.views.edition import edition_detail, edition_download, rawpic_cover
 urlpatterns = [
     re_path(r'^(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/$', edition_detail, name='edition_detail'),
     re_path(
-        r'^descargar/(?P<publication_slug>\w+)/(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})/(?P<filename>[-\w\.]+)$',
+        (
+            r'^descargar/(?P<publication_slug>[\w-]+)/(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})'
+            r'/(?P<filename>[-\w\.]+)$'
+        ),
         edition_download,
         name='edition_download',
     ),
