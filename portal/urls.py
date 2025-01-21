@@ -213,6 +213,7 @@ class UrlViewSet(viewsets.ModelViewSet):
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
+    authentication_classes = [] if settings.ENV_HTTP_BASIC_AUTH else viewsets.ModelViewSet.authentication_classes
     permission_classes = [HasAPIKey]
     queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
