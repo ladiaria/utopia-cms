@@ -8,7 +8,7 @@ from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 
 from libs.utils import smtp_connect, prefix_notification_subject
-from .models import SentMail, SubscriptionPrices
+from .models import SentMail
 from .utils import get_notification_subjects
 from . import get_app_template
 
@@ -50,10 +50,10 @@ def send_notification(user, email_template, email_subject, extra_context={}):
     send_notification_message(email_subject, msg, user.email)
 
 
-def notify_subscription(user, subscription_type, seller_fullname=None):
-    site = Site.objects.get_current()
+def notify_subscription(user, subscription_prices_instance, seller_fullname=None):
+    site, subscription_type = Site.objects.get_current(), subscription_prices_instance.subscription_type
     subj_inner = getattr(settings, "THEDAILY_WELCOME_EMAIL_SUBJECT_INNER", {}).get(subscription_type, f"a {site.name}")
-    extra_context = {"sp": SubscriptionPrices.objects.get(subscription_type=subscription_type[0])}
+    extra_context = {"sp": subscription_prices_instance}
     if seller_fullname:
         extra_context["seller_fullname"] = seller_fullname
     template_file = "new_subscription.html"

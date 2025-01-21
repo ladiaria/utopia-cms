@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
 from thedaily import get_app_template
+from thedaily.models import SubscriptionPrices
 from thedaily.views import get_password_validation_url
 from thedaily.tasks import notify_subscription, send_notification
 from thedaily.management.commands.automatic_mail_paywall import send_message
@@ -85,9 +86,9 @@ class Command(BaseCommand):
         #     '[%s] Tu cuenta de usuario' % site.name, message=markdownify(html_message), html_message=html_message
         # )
 
-        for subscription_type in settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES:
-            notify_subscription(u, subscription_type)
-            notify_subscription(u, subscription_type, "Vendedornombre Vendedorapellido")
+        for sp in SubscriptionPrices.objects.filter(extra_info__preview_command_allowed=True):
+            notify_subscription(u, sp)
+            notify_subscription(u, sp, "Vendedornombre Vendedorapellido")
 
         # password_reset_body.html
         template_name = 'password_reset_body.html'

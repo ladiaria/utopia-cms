@@ -1122,11 +1122,10 @@ def complete_signup(request, user_id, hash):
     is_subscriber_any = subscriber.is_subscriber_any()
 
     if send_default_welcome and is_subscriber_any and subscriber.subscriptions.count() == 1:
-        st = subscriber.subscriptions.all()[0].subscription_type_prices
-        if st.count() == 1:
-            subscription_type = st.all()[0].subscription_type
+        sp = subscriber.subscriptions.first().subscription_type_prices
+        if sp.count() == 1:
             send_default_welcome = False
-            notify_subscription(user, subscription_type)
+            notify_subscription(user, sp.first())
 
     if send_default_welcome:
         notification_template = 'signup.html'
