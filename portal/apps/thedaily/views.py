@@ -56,7 +56,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.cache import never_cache, cache_control, cache_page
@@ -65,6 +65,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.translation import gettext as _
+from django.utils.decorators import method_decorator
 
 from apps import mongo_db, bouncer_blocklisted
 from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
@@ -676,28 +677,31 @@ class SubscriptionPricesListView(ListView):
     template_name = get_app_template("subscribe-landing.html")
 
 
-@never_cache
-def subscribe(request, planslug, category_slug=None):
+@method_decorator(never_cache, name='dispatch')
+class SubscribeView(TemplateView):
     """
     This view handles the plan subscriptions.
     """
-    custom_module, article_id = getattr(settings, 'THEDAILY_VIEWS_CUSTOM_MODULE', None), request.GET.get("article")
+    def subscribers_flow(self, request, *args, **kwargs):
+        pass
 
-    context, article = {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}, None
-    template = get_app_template("subscribe.html")
-    if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
-        try:
-            article = Article.objects.get(id=article_id)
-        except (ValueError, Article.DoesNotExist):
-            article_id = None
-        else:
-            context["article"] = article
-            template = hard_paywall_template
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**kwargs)
 
-    if custom_module:
-        subscribe_custom = __import__(custom_module, fromlist=['subscribe']).subscribe
-        return subscribe_custom(request, planslug, category_slug, article_id)
-    else:
+    def dispatch(self, request, planslug, category_slug=None):
+        article_id = request.GET.get("article")
+
+        context, article = {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}, None
+        template = get_app_template("subscribe.html")
+        if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
+            try:
+                article = Article.objects.get(id=article_id)
+            except (ValueError, Article.DoesNotExist):
+                article_id = None
+            else:
+                context["article"] = article
+                template = hard_paywall_template
+
         # category_slug is allowed only if custom_module is defined
         if category_slug:
             raise Http404
@@ -741,8 +745,13 @@ def subscribe(request, planslug, category_slug=None):
             subscriber = user.subscriber
             is_subscriber = subscriber.is_subscriber()
 
-            if is_subscriber and article:
-                return HttpResponseRedirect(article.get_absolute_url())
+            if is_subscriber:
+                if article:
+                    return HttpResponseRedirect(article.get_absolute_url())
+                else:
+                    subscribers_flow = self.subscribers_flow(request, planslug=planslug)
+                    if subscribers_flow:
+                        return subscribers_flow
 
             if oauth2_state:
                 oauth2_button = False
@@ -755,13 +764,13 @@ def subscribe(request, planslug, category_slug=None):
                     subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
                 initial = {
-                    'email': user.email, 'first_name': user.first_name.strip() or subscriber.name or user.username
+                    'email': user.email, 'first_name': user.first_name.strip(), "last_name": user.last_name.strip()
                 }
                 if subscriber.phone:
                     initial['phone'] = subscriber.phone
 
                 if online:
-                    subscriber_form = SubscriberForm(initial=initial)
+                    subscriber_form = get_formclass(request, "Subscriber")(initial=initial)
                 else:
                     initial.update({'address': subscriber.address, 'city': subscriber.city})
                     if subscriber.province:
@@ -946,6 +955,7 @@ def subscribe(request, planslug, category_slug=None):
                                     'subscription_form': subscription_form_v,
                                 }
                             )
+                            context.update(self.get_context_data())
                             return render(request, template, context)
                         try:
                             notification_template = 'account_signup.html'
@@ -985,6 +995,7 @@ def subscribe(request, planslug, category_slug=None):
                                     'subscription_form': subscription_form_v,
                                 }
                             )
+                            context.update(self.get_context_data())
                             return render(request, template, context)
                         else:
                             subscription.subscriber = user.subscriber
@@ -1019,6 +1030,7 @@ def subscribe(request, planslug, category_slug=None):
                                 'subscription': subscription,
                             }
                         )
+                        context.update(self.get_context_data())
                         try:
                             # TODO: more customization is needed on how to use the next_page
                             view_func = resolve(subscription_form_v.next_page).match.func
@@ -1046,6 +1058,7 @@ def subscribe(request, planslug, category_slug=None):
                         'subscription_price': subscription_price,
                     }
                 )
+                context.update(self.get_context_data())
                 return render(request, template, context)
 
         context.update(
@@ -1060,6 +1073,7 @@ def subscribe(request, planslug, category_slug=None):
                 'subscription_in_process': subscription_in_process,
             }
         )
+        context.update(self.get_context_data())
         return render(request, template, context)
 
 

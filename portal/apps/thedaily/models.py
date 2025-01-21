@@ -16,8 +16,8 @@ from django.core.mail import mail_managers
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, validate_email
 from django.core.exceptions import ValidationError
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
-from django.db.models import CASCADE
 from django.db.models import (
+    CASCADE,
     BooleanField,
     CharField,
     DateField,
@@ -57,7 +57,7 @@ email_i18n = _("email")
 class SubscriptionPrices(Model):
     # TODO: this first field can be migrated to 2 new fields; name and slug (both unique and required)
     subscription_type = CharField(
-        'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, blank=True, null=True
+        'tipo', max_length=31, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, blank=True, null=True
     )
     order = PositiveSmallIntegerField('orden', null=True)
     months = PositiveSmallIntegerField('meses', default=1)
@@ -65,13 +65,21 @@ class SubscriptionPrices(Model):
     price_total = DecimalField(
         'precio total', max_digits=9, decimal_places=2, blank=True, null=True, validators=[MIN0]
     )
+    currency_id = CharField(
+        'moneda',
+        max_length=3,
+        null=True,
+        blank=True,
+        choices=settings.THEDAILY_CURRENCY_CHOICES,
+        default=settings.THEDAILY_CURRENCY_CHOICES_DEFAULT,
+    )
     discount = DecimalField(
         'descuento (%)', max_digits=5, decimal_places=2, blank=True, null=True, validators=[MIN0, MAX100]
     )
     extra_info = JSONField("información extra", default=dict, help_text='Diccionario Python en formato JSON')
     paypal_button_id = CharField(max_length=13, null=True, blank=True)
     auth_group = ForeignKey(Group, on_delete=CASCADE, verbose_name='Grupo asociado al permiso', blank=True, null=True)
-    publication = ForeignKey(Publication, on_delete=CASCADE, blank=True, null=True)
+    publication = ForeignKey(Publication, on_delete=CASCADE, blank=True, null=True, verbose_name='publicación')
     ga_sku = CharField(max_length=10, blank=True, null=True)
     ga_name = CharField(max_length=64, blank=True, null=True)
     ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
@@ -81,6 +89,8 @@ class SubscriptionPrices(Model):
 
     def periodicity(self):
         return "Mensual" if self.months == 1 else f"{self.months} meses"
+
+    periodicity.short_description = 'periodicidad'
 
     class Meta:
         verbose_name = 'Precio'

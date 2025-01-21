@@ -149,7 +149,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     filter_fields = ('name', 'slug')
 
 
-RE_SLUG_APP_COMPAT = re.compile(r'([\w-]+)-ladiaria$')
+RE_SLUG_APP_COMPAT = re.compile(rf'(\w+)-{settings.DEFAULT_PUB}$')
 
 
 class SectionViewSet(viewsets.ModelViewSet):
@@ -160,7 +160,7 @@ class SectionViewSet(viewsets.ModelViewSet):
 
     def filter_queryset(self, queryset):
         """
-        Mobile APP compatibility (slugs ending with "-ladiaria")
+        Mobile APP compatibility (slugs ending with "-$DEFAULT_PUB_SLUG")
         https://stackoverflow.com/a/39849686
         WARNING: filtering by name will be ignored here
         """
