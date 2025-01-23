@@ -57,7 +57,9 @@ class SubscriptionAdmin(ModelAdmin):
         'billing_name',
         'billing_phone',
         'billing_email',
-        'get_subscription_type_prices'
+        'get_subscription_type_prices',
+        "start_date",
+        "end_date",
     )
     search_fields = ('billing_name', 'billing_email', 'subscriber__email')
     raw_id_fields = ('subscriber',)

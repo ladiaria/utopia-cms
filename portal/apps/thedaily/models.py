@@ -62,9 +62,7 @@ class SubscriptionPrices(Model):
     order = PositiveSmallIntegerField('orden', null=True)
     months = PositiveSmallIntegerField('meses', default=1)
     price = DecimalField('precio', max_digits=9, decimal_places=2, validators=[MIN0])
-    price_total = DecimalField(
-        'precio total', max_digits=9, decimal_places=2, blank=True, null=True, validators=[MIN0]
-    )
+    price_total = DecimalField('precio total', max_digits=9, decimal_places=2, validators=[MIN0])
     currency_id = CharField(
         'moneda',
         max_length=3,
@@ -732,6 +730,7 @@ class Subscription(Model):
         'departamento', max_length=64, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
     )
     subscription_type = CharField('tipo de suscripción', max_length=3, choices=SUBSCRIPTION_CHOICES, default='DIG')
+    start_date = DateField(_("start date"), blank=True, null=True)
     end_date = DateField(_("end date"), blank=True, null=True)
     next_billing = DateField(_("next billing"), blank=True, null=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, editable=False)

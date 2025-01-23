@@ -682,11 +682,41 @@ class SubscribeView(TemplateView):
     """
     This view handles the plan subscriptions.
     """
-    def subscribers_flow(self, request, *args, **kwargs):
+    def auth_alt_flow(self, request, *args, **kwargs):
         pass
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(**kwargs)
+
+    def is_subscriber(self, subscriber):
+        return subscriber.is_subscriber()
+
+    def is_subscriber_for_article(self, subscriber, article):
+        return self.is_subscriber(subscriber)
+
+    def get_subscription(self, user, email, user_is_auth):
+        subscriptions = Subscription.objects.filter(billing_email=email)
+
+        if subscriptions:
+            try:
+                subscription = subscriptions.get(subscriber=None)
+            except Subscription.DoesNotExist:
+                try:
+                    if user_is_auth:
+                        subscription = subscriptions.get(subscriber=user.subscriber)
+                    else:
+                        subscription = subscriptions.get(subscriber__user__email=email)
+                except Subscription.DoesNotExist:
+                    # TODO: notify managers/admin "Data inconsistency in subscriptions"
+                    subscription = Subscription.objects.create(billing_email=email)
+                except Subscription.MultipleObjectsReturned:
+                    subscription = subscriptions.latest()
+            except Subscription.MultipleObjectsReturned:
+                subscription = subscriptions.latest()
+        else:
+            subscription = Subscription.objects.create(billing_email=email)
+
+        return subscription
 
     def dispatch(self, request, planslug, category_slug=None):
         article_id = request.GET.get("article")
@@ -742,16 +772,15 @@ class SubscribeView(TemplateView):
         online = subscription_price.ga_category == 'D'
 
         if user_is_auth:
-            subscriber = user.subscriber
-            is_subscriber = subscriber.is_subscriber()
+            auth_alt_flow = self.auth_alt_flow(request, planslug=planslug)
+            if auth_alt_flow:
+                return auth_alt_flow
 
-            if is_subscriber:
-                if article:
-                    return HttpResponseRedirect(article.get_absolute_url())
-                else:
-                    subscribers_flow = self.subscribers_flow(request, planslug=planslug)
-                    if subscribers_flow:
-                        return subscribers_flow
+            subscriber = user.subscriber
+            is_subscriber = self.is_subscriber(subscriber)
+
+            if article and self.is_subscriber_for_article(subscriber, article):
+                return HttpResponseRedirect(article.get_absolute_url())
 
             if oauth2_state:
                 oauth2_button = False
@@ -876,26 +905,8 @@ class SubscribeView(TemplateView):
                 if not email:
                     # TODO: decide what to do in this case
                     pass
-                subscriptions = Subscription.objects.filter(billing_email=email)
 
-                if subscriptions:
-                    try:
-                        subscription = subscriptions.get(subscriber=None)
-                    except Subscription.DoesNotExist:
-                        try:
-                            if user_is_auth:
-                                subscription = subscriptions.get(subscriber=user.subscriber)
-                            else:
-                                subscription = subscriptions.get(subscriber__user__email=email)
-                        except Subscription.DoesNotExist:
-                            # TODO: notify managers/admin "Data inconsistency in subscriptions"
-                            subscription = Subscription.objects.create(billing_email=email)
-                        except Subscription.MultipleObjectsReturned:
-                            subscription = subscriptions.latest()
-                    except Subscription.MultipleObjectsReturned:
-                        subscription = subscriptions.latest()
-                else:
-                    subscription = Subscription.objects.create(billing_email=email)
+                subscription = self.get_subscription(user, email, user_is_auth)
 
                 subscription.subscription_type_prices.add(subscription_price)
 
