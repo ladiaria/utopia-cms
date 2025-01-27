@@ -188,6 +188,7 @@ class Command(SendNLCommand):
         f_ads = []
 
         if not self.offline:
+            # TODO: extra arg to include more kwargs to this next line filter
             receivers = Subscriber.objects.filter(user__is_active=True).exclude(user__email='')
             if self.subscriber_ids:
                 receivers = receivers.filter(id__in=self.subscriber_ids)
