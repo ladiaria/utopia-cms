@@ -737,7 +737,7 @@ class SubscribeView(TemplateView):
             raise Http404
         user, auth, qparams = request.user, request.GET.get('auth'), {}
         user_is_auth = user.is_authenticated
-        if article_id:
+        if article:
             if not user_is_auth:
                 return HttpResponseRedirect(reverse("account-login") + "?article=%s" % article_id)
             qparams["article"] = article_id

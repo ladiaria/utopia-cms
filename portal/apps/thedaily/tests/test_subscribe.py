@@ -124,7 +124,7 @@ class SubscribeTestCase(TestCase):
             user.set_password(password)
             user.save()
             c.login(username=user.username, password=password)
-            self.subscribe_requests(c, blocked_phone_prefix)  # TODO: this test is failing at least for CAMBIO fix ASAP
+            self.subscribe_requests(c, blocked_phone_prefix)
 
     def test02_subscribe_landing_logged_in(self):
         self.assertIsNotNone(sp_default)

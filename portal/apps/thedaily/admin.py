@@ -6,6 +6,8 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.db import IntegrityError
 from django.db.models.deletion import Collector
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -53,7 +55,7 @@ class UserAdmin(BaseUserAdmin):
 class SubscriptionAdmin(ModelAdmin):
     list_display = (
         'id',
-        'subscriber',
+        'get_subscriber',
         'billing_name',
         'billing_phone',
         'billing_email',
@@ -64,6 +66,14 @@ class SubscriptionAdmin(ModelAdmin):
     search_fields = ('billing_name', 'billing_email', 'subscriber__email')
     raw_id_fields = ('subscriber',)
     exclude = ('subscription_type',)
+
+    def get_subscriber(self, obj):
+        return mark_safe(
+            "<a href='%s'>%s</a>" % (
+                reverse('admin:thedaily_subscriber_change', args=[obj.subscriber.id]), obj.subscriber.get_full_name()
+            )
+        )
+    get_subscriber.short_description = 'Suscriptor'
 
 
 class ExteriorSubscriptionAdmin(SubscriptionAdmin):
@@ -87,7 +97,7 @@ class ExteriorSubscriptionAdmin(SubscriptionAdmin):
 
 class SubscriberAdmin(ModelAdmin):
     list_display = (
-        'id', 'contact_id', "repr", 'user_id', 'user_is_active', 'user_email', 'get_newsletters'
+        'id', 'contact_id', "repr", 'get_user_id', 'user_is_active', 'user_email', 'get_newsletters'
     )
     search_fields = (
         "id",
@@ -119,6 +129,10 @@ class SubscriberAdmin(ModelAdmin):
             ),
         }),
     )
+
+    def get_user_id(self, obj):
+        return mark_safe("<a href='%s'>%s</a>" % (reverse('admin:auth_user_change', args=[obj.user.id]), obj.user.id))
+    get_user_id.short_description = 'user id'
 
     def send_account_info(self, request, queryset):
         success_counter, errors = 0, []
