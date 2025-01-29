@@ -166,16 +166,48 @@ def add_default_mailtrain_lists(subscriber):
                 pass
 
 
-def add_default_newsletters(subscriber):
-    default_category_nls = settings.THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS
-    for default_category_slug in default_category_nls:
+def add_default_publication_newsletters(subscriber):
+    default_publication_nls = settings.THEDAILY_DEFAULT_PUBLICATION_NEWSLETTERS
+    for publication_slug in default_publication_nls:
         try:
-            category = Category.objects.get(slug=default_category_slug)
+            publication = Publication.objects.get(slug=publication_slug)
+            if publication.has_newsletter:
+                subscriber.newsletters.add(publication)
+        except Publication.DoesNotExist:
+            pass
+
+
+def add_default_category_newsletters(subscriber, planslug=None, extra=None):
+    """
+    Adds the default category newsletters to the subscriber given, based on the planslug given.
+    Calls with planslug=None came from signup (free subscriprions).
+    Extra is a category slug to be added also, if given.
+    """
+    if planslug not in getattr(settings, "THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS_EXCLUDED_PLANS", []):
+        default_category_nls = settings.THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS
+        for category_slug in default_category_nls:
+            try:
+                category = Category.objects.get(slug=category_slug)
+                if category.has_newsletter:
+                    subscriber.category_newsletters.add(category)
+            except Category.DoesNotExist:
+                pass
+            if extra and extra == category_slug:
+                # extra already added (or attempted to add), set it to None
+                extra = None
+    if extra:
+        try:
+            category = Category.objects.get(slug=extra)
             if category.has_newsletter:
                 subscriber.category_newsletters.add(category)
         except Category.DoesNotExist:
             pass
     add_default_mailtrain_lists(subscriber)
+
+
+def add_default_newsletters(subscriber):
+    add_default_publication_newsletters(subscriber)
+    add_default_category_newsletters(subscriber)
 
 
 def unsubscribed_newsletters(subscriber):

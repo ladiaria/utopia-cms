@@ -1125,6 +1125,7 @@ def complete_signup(request, user_id, hash):
         mail_admins('New user', '%i - %s' % (user.id, user.get_full_name()))
 
     # If a delayed email is required, this code can schedule a task for that:
+    # DEPRECATED, this commented example code should be migrated to celery usage.
     # task = notify_user(user.id) #(from tasks import notify_user)
     # Need to remove the "apps." at the beggining of the task name
     # task.task_name = re.sub(r'^apps\.', '', task.task_name) #(import re)
