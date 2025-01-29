@@ -239,8 +239,11 @@ nav ul a:hover {
         text-transform: uppercase;
       }
 
-      .homepage & .suscribirse {
+      .suscribirse {
         margin-left: 15px;
+      }
+
+      .homepage & .suscribirse {
         background-color: #56e3ce;
       }
 
@@ -1533,10 +1536,10 @@ body.interior {
 
 @keyframes notice-animation-desktop {
   0% {
-    bottom: -140px;
+    bottom: -230px;
   }
   66% {
-    bottom: -140px;
+    bottom: -230px;
   }
   100% {
     bottom: 0px;
@@ -1551,7 +1554,7 @@ body.interior {
     bottom: 0px;
   }
   100% {
-    bottom: -140px;
+    bottom: -230px;
   }
 }
 
@@ -1573,6 +1576,10 @@ body.interior {
   &#home-notice-mobile {
     height: 215px;
     transition: height 0.3s ease-in-out;
+
+    @media only screen and (max-width: 368px) {
+      height: 255px;
+    }
   }
 
   &::before {
@@ -1782,7 +1789,7 @@ body.interior {
 
     &.hidden {
       animation: notice-animation-desktop-hidden 3s;
-      bottom: -140px;
+      bottom: -230px;
     }
 
     .btn-close-notice {
@@ -1805,18 +1812,10 @@ body.interior {
 
     p {
       margin-bottom: 0;
-
-      @media screen and (min-width: 601px) and (max-width: 720px) {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        a {
-          margin-top: 10px;
-        }
-      }
-      @media #{$medium-and-down} {
-        margin: 5px 0;
-        font-size: 20px;
+      display: flex;
+      align-items: center;
+      span {
+        flex: 1;
       }
     }
 
@@ -1835,8 +1834,40 @@ body.interior {
       align-items: center;
       gap: 110px;
 
+      // @media only screen and (max-width: 1324px) {
+      //   gap: 10px;
+      //   justify-content: space-around;
+      // }
       > span.empty-element {
-        width: 90px;
+        display: none;
+      }
+
+      @media only screen and (min-width: 1325px) {
+        > span.empty-element {
+          width: 90px;
+          display: inline;
+        }
+      }
+
+      @media only screen and (max-width: 1234px) {
+        gap: 10px;
+        justify-content: space-around;
+      }
+
+      @media only screen and (max-width: 1024px) {
+        p {
+          font-size: 1.5rem;
+        }
+      }
+
+      @media only screen and (max-width: 872px) {
+        p {
+          flex-direction: column;
+        }
+      }
+
+      @media only screen and (max-width: 620px) {
+        padding: 32px 0;
       }
 
       svg.logo-la-diaria {

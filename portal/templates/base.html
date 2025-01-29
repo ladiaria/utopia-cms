@@ -258,7 +258,7 @@
       function home_notice_show(home_notice){
         home_notice.removeClass("hide");
         $('.btn-close-notice', home_notice).click(function(){
-          $.post("{% url 'subscribe-notice-closed' %}", function(data){
+          $.post("{% url 'home-notice-closed' %}", function(data){
             home_notice.hide();
           });
         });
@@ -274,7 +274,7 @@
           {% if user.is_authenticated %}
             home_notice_show(home_notice);
           {% else %}
-            $.get("{% url 'subscribe-notice-closed' %}", function(data){
+            $.get("{% url 'home-notice-closed' %}", function(data){
               if(!data.closed){
                 home_notice_show(home_notice);
               }
@@ -282,11 +282,11 @@
           {% endif %}
         }
 
-        setTimeout(() => {
+        /*setTimeout(() => {
           $(".home-notice__desktop").toggleClass("hidden");
           $("#home-notice-mobile").toggleClass("collapsed expanded");
           $(".home-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
-        }, 20000);
+        }, 20000);*/
 
         $("#btn-toggle-banner").click(function(){
           $("#home-notice-mobile").toggleClass("collapsed expanded");
@@ -355,7 +355,7 @@
           {% endif %}
         {% endif %}
       {% elif user_newsletters_notice_template %}
-        {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
+        {% if not request.session.subscribe_notice_closed %}
           {% if is_portada and publication == default_pub or is_detail %}
             {% include user_newsletters_notice_template %}
           {% endif %}
