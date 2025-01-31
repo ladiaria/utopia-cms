@@ -1709,6 +1709,10 @@ body.interior {
       padding: 0 16px 16px;
     }
 
+    p {
+      font-size: px-to-rem(30px);
+    }
+
     &::before {
       background-image: url("../img/bg_nl_popup_mobile.png");
       opacity: 1;
@@ -1859,6 +1863,9 @@ body.interior {
           font-size: 1.5rem;
         }
       }
+      @media only screen and (max-width: 896px) {
+        padding: 32px 16px;
+      }
 
       @media only screen and (max-width: 872px) {
         p {
@@ -1867,7 +1874,7 @@ body.interior {
       }
 
       @media only screen and (max-width: 620px) {
-        padding: 32px 0;
+        padding: 32px 8px;
       }
 
       svg.logo-la-diaria {
