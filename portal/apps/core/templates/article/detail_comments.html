@@ -1,0 +1,33 @@
+{% if TALK_URL and article.allow_comments %}
+  <div id="comentarios">
+    <div class="container">
+
+      <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}"
+              data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}"
+              data-article-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
+              data-login-url="{{ SITE_URL_SD }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
+        <span class="title">Comentar este artículo</span>
+        <button class="ut-btn">
+          {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
+        </button>
+      </section>
+
+      <div class="talk-login align-center display-hidden">
+        {% block talk_login %}
+          {% if user.is_authenticated %}
+            {% if not is_subscriber %}
+              <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+            {% endif %}
+          {% else %}
+            <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+            <span class="ld-caption ld-caption-subscribe-to-comment">
+              ¿Ya tenés suscripción?
+              <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
+            </span>
+          {% endif %}
+        {% endblock %}
+      </div>
+
+    </div>
+  </div>
+{% endif %}
