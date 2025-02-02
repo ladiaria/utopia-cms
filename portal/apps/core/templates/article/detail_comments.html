@@ -1,3 +1,5 @@
+{% load i18n %}
+
 {% if TALK_URL and article.allow_comments %}
   <div id="comentarios">
     <div class="container">
@@ -15,14 +17,14 @@
       <div class="talk-login align-center display-hidden">
         {% block talk_login %}
           {% if user.is_authenticated %}
-            {% if not is_subscriber %}
-              <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+            {% if not is_subscriber and talk_subscribers_only %}
+              <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">{% trans "Suscribite" %} para comentar</a>
             {% endif %}
           {% else %}
-            <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+            <a href="{% if talk_subscribers_only %}{% url 'subscribe-default' %}{% else %}{% url 'account-login' %}{% endif %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">{% if talk_subscribers_only %}{% trans "Suscribite" %}{% else %}{% trans "Registrate" %}{% endif %} para comentar</a>
             <span class="ld-caption ld-caption-subscribe-to-comment">
-              ¿Ya tenés suscripción?
-              <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
+              ¿Ya {% trans "tenés" %} {% if talk_subscribers_only %}suscripción{% else %}cuenta{% endif %}?
+              <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">{% trans "Ingresá" %}</a>
             </span>
           {% endif %}
         {% endblock %}

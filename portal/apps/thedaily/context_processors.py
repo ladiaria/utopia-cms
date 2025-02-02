@@ -15,8 +15,8 @@ from signupwall.middleware import get_article_by_url_kwargs, subscriber_access
 
 def permissions(request):
     result, is_subscriber, is_subscriber_default = {}, False, False
-
-    if request.user.is_authenticated and hasattr(request.user, 'subscriber'):
+    has_subscriber = hasattr(request.user, 'subscriber')
+    if has_subscriber:
 
         subscriber = request.user.subscriber
 
@@ -65,9 +65,10 @@ def permissions(request):
 
     # A poll url path in google forms
     pu_path = getattr(settings, 'THEDAILY_POLL_URL_PATH', None) if request.user.is_authenticated else None
-
+    talk_subscribers_only = getattr(settings, 'TALK_SUBSCRIBERS_ONLY', False)
     result.update(
         {
+            'talk_subscribers_only': talk_subscribers_only,
             'is_subscriber': is_subscriber,
             'is_subscriber_default': is_subscriber_default,
             'is_subscriber_any': is_subscriber_any,
@@ -75,9 +76,11 @@ def permissions(request):
         }
     )
 
-    # if is_subscriber generate the JWT for Coral Talk integration (if TALK_URL is set)
+    # if user is authenticated (or is_subscriber if configured by settings) generate the JWT for Coral Talk integration
+    # (if TALK_URL is set). TODO: talk_url is beeing taken "by getattr" and set a None by default in many places, this
+    # is an anti-pattern, please, fix ASAP.
     talk_url = getattr(settings, 'TALK_URL', None)
-    if is_subscriber and talk_url:
+    if talk_url and (is_subscriber or not talk_subscribers_only and has_subscriber):
         jti, exp = str(uuid4()), int(time()) + 60
         result['talk_auth_token'] = jwt.encode(
             {
