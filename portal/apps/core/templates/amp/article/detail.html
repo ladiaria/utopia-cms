@@ -328,7 +328,9 @@
     {# Talk comments #}
 
     {% if article.allow_comments %}
-      <div class="container" amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
+      <div class="container"
+           amp-access="access{% if talk_subscribers_only %} AND (article_allowed OR NOT article_restricted){% endif %}"
+           amp-access-hide>
         <div class="talk-login align-center">
         <span class="title">Comentar este artículo</span>
           <a href="{{ request.path }}#comentarios" class="ld-btn--sm ld-btn-subscribe-to-comment">

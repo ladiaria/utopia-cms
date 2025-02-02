@@ -707,9 +707,15 @@
 
       {% endif %}
 
+      {% if not talk_subscribers_only %}
+        {% include 'article/detail_comments.html' %}
+      {% endif %}
+
       {% if not article_restricted_cf or restricted_access %}{# begin restricted content2 #}
 
-        {% include 'article/detail_comments.html' %}
+        {% if talk_subscribers_only %}
+          {% include 'article/detail_comments.html' %}
+        {% endif %}
 
         <section class="col s12 center ld-share-widget ld-block">
           <span class="small ld-share-widget__title" aria-label="Compartir">Compartir este artículo</span>
