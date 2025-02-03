@@ -3,7 +3,6 @@ from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
 import locale
 import tempfile
-import operator
 import json
 from pydoc import locate
 from collections import OrderedDict
@@ -252,7 +251,10 @@ class Publication(Model):
             return self.newsletter_name or self.name
 
     def latest_edition(self):
-        return self.core_edition.latest()
+        try:
+            return self.core_edition.latest()
+        except Edition.DoesNotExist:
+            return None
 
     def get_menu_order(self):
         return getattr(settings, 'CORE_PUBLICATIONS_SECTIONS_MENU_ORDER', {}).get(self.slug)
@@ -266,15 +268,12 @@ class Publication(Model):
         if menu_order:
             return self.section_set.filter(home_order__gte=menu_order)
 
-    def latest_articles(self):
-        edition, cover_article = get_latest_edition(self), None
-        try:
-            cover_article = edition.articlerel_set.get(home_top=True, top_position=1).article
-        except (ArticleRel.DoesNotExist, ArticleRel.MultipleObjectsReturned):
-            pass
-        top_arts = edition.top_articles[:12]
-        top_arts.sort(key=operator.attrgetter('section.home_order'))
-        return ([cover_article] + top_arts) if cover_article else top_arts
+    def latest_articles(self, limit=None):
+        edition = get_current_edition(self)
+        return (edition.top_articles_sliced(limit) if limit else edition.top_articles) if edition else []
+
+    def latest4articles(self):
+        return self.latest_articles(4)
 
     def subscriber_count(self):
         return len(
@@ -467,26 +466,26 @@ class Edition(PortableDocumentFormatBaseModel):
             result = False
         return result
 
-    @property
-    def top_articles(self):
+    def top_articles_sliced(self, limit=None):
         try:
-            return list(
-                OrderedDict.fromkeys(
-                    [
-                        ar.article
-                        for ar in self.articlerel_set.prefetch_related(
-                            'article__main_section__edition__publication',
-                            'article__main_section__section',
-                            'article__photo__extended__photographer',
-                            'article__byline',
-                        )
-                        .filter(article__is_published=True, home_top=True)
-                        .order_by('top_position')
-                    ]
-                )
-            )
+            qs = self.articlerel_set.prefetch_related(
+                'article__main_section__edition__publication',
+                'article__main_section__section',
+                'article__photo__extended__photographer',
+                'article__byline',
+            ).filter(article__is_published=True, home_top=True).order_by('top_position')
+            if limit:
+                qs = qs[:limit]
+            return list(OrderedDict.fromkeys([ar.article for ar in qs]))
         except OperationalError:
             return []
+
+    @property
+    def top_articles(self):
+        return self.top_articles_sliced()
+
+    def top4articles(self):
+        return self.top_articles_sliced(4)
 
     def get_articles_in_section(self, section):
         return list(

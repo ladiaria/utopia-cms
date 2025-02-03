@@ -23,7 +23,9 @@ from django.utils.timezone import now, datetime
 from libs.utils import decode_hashid, nl_serialize_multi
 from thedaily.models import Subscriber
 from faq.models import Topic
-from ..models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
+from ..models import (
+    Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition, get_current_edition
+)
 from ..utils import get_category_template, get_nl_featured_article_id
 from ..templatetags.ldml import remove_markup
 
@@ -74,7 +76,7 @@ def category_detail(request, slug):
             'featured_section2': featured_section2,
             'featured_section3': featured_section3,
             'inner_sections': inner_sections,
-            'edition': get_latest_edition(),
+            'edition': get_current_edition(),
             'questions_topic': questions_topic,
             'big_photo': category.full_width_cover_image,
             'site_description': (
@@ -169,12 +171,13 @@ def newsletter_preview(request, slug):
                 if getattr(cover_article_section, "slug", None) != listonly_section:
                     cover_article = top_articles.pop(0)[0] if top_articles else None
 
-            # featured directly by article.id in settings
+            # featured directly by article.id in settings/edition
             featured_article_id = get_nl_featured_article_id()
-            nl_featured = (
-                Article.objects.filter(id=featured_article_id) if featured_article_id
-                else get_latest_edition().newsletter_featured_articles()
-            )
+            if featured_article_id:
+                nl_featured = Article.objects.filter(id=featured_article_id)
+            else:
+                latest_edition = get_latest_edition()
+                nl_featured = latest_edition.newsletter_featured_articles() if latest_edition else None
             opinion_article = nl_featured[0] if nl_featured else None
 
             # featured articles by featured section in the category (by settings)

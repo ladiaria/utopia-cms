@@ -154,10 +154,11 @@ class Command(SendNLCommand):
 
                 # featured directly by article.id in settings/edition
                 featured_article_id = get_nl_featured_article_id()
-                nl_featured = (
-                    Article.objects.filter(id=featured_article_id) if featured_article_id
-                    else get_latest_edition().newsletter_featured_articles()
-                )
+                if featured_article_id:
+                    nl_featured = Article.objects.filter(id=featured_article_id)
+                else:
+                    latest_edition = get_latest_edition()
+                    nl_featured = latest_edition.newsletter_featured_articles() if latest_edition else None
                 opinion_article = nl_featured[0] if nl_featured else None
 
                 # featured articles by featured section in the category (by settings)

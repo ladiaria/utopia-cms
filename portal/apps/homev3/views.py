@@ -228,8 +228,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         if is_authenticated:
             ctx_update_article_extradata(context, user, user_has_subscriber, follow_set, top_articles)
 
-        cover_article = top_articles[0]
-        top_articles.pop(0)
+        cover_article = top_articles.pop(0)
 
     else:
         cover_article = None
