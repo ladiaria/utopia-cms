@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-02 07:25-0300\n"
+"POT-Creation-Date: 2025-02-02 23:17-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -46,6 +46,14 @@ msgstr "tiene"
 #: apps/core/templates/article/detail_comments.html:27
 msgid "Ingresá"
 msgstr "Ingrese"
+
+#: apps/core/templates/article/paywall/pw_auth_with_credits_title.html:6
+msgid "Te queda"
+msgstr "Le queda"
+
+#: apps/core/templates/article/paywall/pw_auth_with_credits_title.html:8
+msgid "Este es tu último artículo gratuito"
+msgstr "Este es su último artículo gratuito"
 
 #: apps/core/templates/edition/download_email_sent.html:12
 #: apps/thedaily/forms.py:176 apps/thedaily/forms.py:343
