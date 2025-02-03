@@ -10,6 +10,7 @@
         {{ site.name }} - {{ newsletter_campaign }} - newsletter {% if browser_preview %}browser {% endif %}preview
       {% endif %}
     {% endspaceless %}</title>
+    {% block head_style %}{% endblock %}
   </head>{% spaceless %}
   <body style="-moz-box-sizing:border-box;-ms-text-size-adjust:100%;-webkit-box-sizing:border-box;-webkit-text-size-adjust:100%;Margin:0;box-sizing:border-box;color:{{ primary_black }};font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;min-width:100%;padding:0;text-align:left;width:100%!important">
     <div style="display:none;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden">
@@ -123,13 +124,13 @@
                                                                   {{ nl_date }}
                                                                 </th>
                                                               </tr>
-                                                              <tr style="padding:0;text-align:left;vertical-align:top">
+                                                              <tr style="padding:0;text-align:left;vertical-align:top;{{ spacer_logo_extra_style|default:"" }}">
                                                                 <th style="height:8px"></th>
                                                               </tr>
                                                               {% if not is_subscriber_any and support_message_template %}
                                                                 {% include support_message_template %}
                                                               {% endif %}
-                                                              <tr style="padding:0;text-align:left;vertical-align:top">
+                                                              <tr style="padding:0;text-align:left;vertical-align:top;{{ spacer_logo_extra_style|default:"" }}">
                                                                 <th style="height:8px; background:{{ newsletter_header_color }};"></th>
                                                               </tr>
                                                             </tbody>
