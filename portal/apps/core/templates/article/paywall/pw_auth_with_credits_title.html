@@ -1,12 +1,10 @@
+{% load i18n %}
+
 {# show credits popup only if signupwall is enabled #}
 {% if signupwall_enabled %}
   {% if request.credits %}
-    {% if request.credits > 1 %}
-      {% block credits_title %}Te quedan {{ request.credits }} artículos gratuitos{% endblock %}
-    {% else %}
-      {% block credit_title %}Te queda {{ request.credits }} artículo gratuito{% endblock %}
-    {% endif %}
+    {% trans "Te queda" %}{{ request.credits|pluralize:'n' }} {{ request.credits }} artículo{{ request.credits|pluralize }} gratuito{{ request.credits|pluralize }}
   {% else %}
-      {% block last_credit_title %}Este es tu último artículo gratuito{% endblock %}
+    {% trans "Este es tu último artículo gratuito" %}
   {% endif %}
 {% endif %}
