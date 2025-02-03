@@ -36,6 +36,7 @@ from django.utils import timezone
 from django.utils.text import Truncator
 from django.utils.safestring import mark_safe
 
+from thedaily import get_talk_url
 from .models import (
     Article,
     ArticleCollection,
@@ -851,9 +852,7 @@ class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
         if url_changed:
             self.obj.url_path = new_url_path
             self.obj.save()
-
-            talk_url = getattr(settings, 'TALK_URL', None)
-            if change and talk_url and not settings.DEBUG:
+            if change and get_talk_url() and not settings.DEBUG:
                 # the article has a new url, we need to update it in Coral-Talk using the API
                 # but don't do this in DEBUG mode to avoid updates with local urls in Coral
                 # TODO: do not message user if the story is not found in coral (use "code" value in response.errors)

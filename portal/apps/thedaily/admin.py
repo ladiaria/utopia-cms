@@ -8,6 +8,7 @@ from django.db import IntegrityError
 from django.db.models.deletion import Collector
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -16,6 +17,7 @@ from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib.messages import constants as messages
 
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
+from core.models import Publication
 from .models import (
     Subscription,
     ExteriorSubscription,
@@ -97,7 +99,9 @@ class ExteriorSubscriptionAdmin(SubscriptionAdmin):
 
 class SubscriberAdmin(ModelAdmin):
     list_display = (
-        'id', 'contact_id', "repr", 'get_user_id', 'user_is_active', 'user_email', 'get_newsletters'
+        ('id', 'contact_id', "repr", 'get_user_id', 'user_is_active', "staff", 'user_email')
+        + (("subscribed",) if not Publication.multi() else ())
+        + ('get_newsletters',)
     )
     search_fields = (
         "id",
@@ -133,6 +137,15 @@ class SubscriberAdmin(ModelAdmin):
     def get_user_id(self, obj):
         return mark_safe("<a href='%s'>%s</a>" % (reverse('admin:auth_user_change', args=[obj.user.id]), obj.user.id))
     get_user_id.short_description = 'user id'
+
+    def staff(self, obj):
+        return obj.user.is_staff
+    staff.boolean = True
+
+    def subscribed(self, obj):
+        return obj.is_subscriber()
+    subscribed.short_description = _('subscribed')
+    subscribed.boolean = True
 
     def send_account_info(self, request, queryset):
         success_counter, errors = 0, []

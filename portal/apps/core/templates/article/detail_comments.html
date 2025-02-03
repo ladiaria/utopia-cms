@@ -9,7 +9,7 @@
               data-article-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
               data-login-url="{{ SITE_URL_SD }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
         <span class="title">Comentar este artículo</span>
-        <button class="ut-btn">
+        <button class="ut-btn{% if talk_auth_token %} authorized{% endif %}">
           {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
         </button>
       </section>
@@ -17,13 +17,13 @@
       <div class="talk-login align-center display-hidden">
         {% block talk_login %}
           {% if user.is_authenticated %}
-            {% if not is_subscriber and talk_subscribers_only %}
+            {% if not is_subscriber and not talk_auth_allowed %}
               <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">{% trans "Suscribite" %} para comentar</a>
             {% endif %}
           {% else %}
-            <a href="{% if talk_subscribers_only %}{% url 'subscribe-default' %}{% else %}{% url 'account-login' %}{% endif %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">{% if talk_subscribers_only %}{% trans "Suscribite" %}{% else %}{% trans "Registrate" %}{% endif %} para comentar</a>
+            <a href="{% if not talk_auth_allowed %}{% url 'subscribe-default' %}{% else %}{% url 'account-login' %}{% endif %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">{% if not talk_auth_allowed %}{% trans "Suscribite" %}{% else %}{% trans "Registrate" %}{% endif %} para comentar</a>
             <span class="ld-caption ld-caption-subscribe-to-comment">
-              ¿Ya {% trans "tenés" %} {% if talk_subscribers_only %}suscripción{% else %}cuenta{% endif %}?
+              ¿Ya {% trans "tenés" %} {% if not talk_auth_allowed %}suscripción{% else %}cuenta{% endif %}?
               <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">{% trans "Ingresá" %}</a>
             </span>
           {% endif %}

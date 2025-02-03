@@ -117,7 +117,7 @@
         $('.talk-login').addClass('active');
       });
     }
-    $('#coral_talk_stream button').on('click', function () {
+    $('#coral_talk_stream button.authorized').on('click', function () {
       loadComments();
     });
     // Load comments if coming from AMP version

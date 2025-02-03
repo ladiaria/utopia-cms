@@ -31,6 +31,7 @@ from tagging.models import Tag
 from apps import mongo_db
 from signupwall.middleware import signupwall_exclude, subscriber_access
 from decorators import decorate_if_no_auth, decorate_if_auth
+from thedaily import get_talk_url
 from thedaily.templatetags.thedaily_tags import has_restricted_access
 from ..forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
 from ..models import Publication, Category, Article, ArticleUrlHistory
@@ -185,7 +186,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
 
     # comments count/widget
     try:
-        talk_url = getattr(settings, 'TALK_URL', None)
+        talk_url = get_talk_url()
         if talk_url and article.allow_comments:
             talk_story = requests.post(
                 talk_url + 'api/graphql',

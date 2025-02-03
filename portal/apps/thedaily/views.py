@@ -136,7 +136,7 @@ from .utils import (
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
 from .tasks import send_notification, notify_subscription, send_notification_message
-from . import get_app_template
+from . import get_app_template, get_talk_url
 
 
 standard_library.install_aliases()
@@ -2225,7 +2225,7 @@ def user_comments_api(request):
         email = request.POST['email']
         if not email:
             return HttpResponseForbidden()
-        talk_url = getattr(settings, 'TALK_URL', None)
+        talk_url = get_talk_url()
         if talk_url:
             result.update(
                 requests.post(

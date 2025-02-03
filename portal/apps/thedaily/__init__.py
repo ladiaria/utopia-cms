@@ -8,6 +8,10 @@ from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 
 
+def get_talk_url():
+    return getattr(settings, 'TALK_URL', None)
+
+
 @register()
 def conf_check(app_configs, **kwargs):
     errors, api_uri_varname, api_key_varname = [], "CRM_API_UPDATE_USER_URI", "CRM_UPDATE_USER_API_KEY"

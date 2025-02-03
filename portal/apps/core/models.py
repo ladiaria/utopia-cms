@@ -1812,9 +1812,8 @@ class Article(ArticleBase):
                 self.url_path = new_url_path
                 self.do_ipfs_upload()
                 super().save(*args, **kwargs)
-                talk_url = getattr(settings, 'TALK_URL', None)
                 # if this is an insert, old_url_path is '', then skip talk update
-                if old_url_path and talk_url and not settings.DEBUG:
+                if old_url_path and thedaily.get_talk_url() and not settings.DEBUG:
                     # the article has a new url, we need to update it in Coral-Talk using the API
                     # but don't do this in DEBUG mode to avoid updates with local urls in Coral
                     try:
