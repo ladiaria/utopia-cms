@@ -72,6 +72,7 @@ class Command(SendNLCommand):
             'newsletter_campaign': self.category_slug,
             'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=self.nl_delivery_dt).capitalize(),
             'hide_after_content_block': self.hide_after_content_block,
+            "newsletter_header_color": self.category.newsletter_header_color,
         }
         export_ctx.update(self.newsletter_extra_context)
         context = export_ctx.copy()
