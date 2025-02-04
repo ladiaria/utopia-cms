@@ -12,7 +12,7 @@ from libs.scripts.pwclear import pwclear
 from core.models import Publication, Article
 from core.factories import UserFactory
 
-from .. import your_account_i18n, label_content_not_available_i18n
+from .. import your_account_i18n, label_content_not_available_i18n, label_articles_left_i18n, label_last_article_i18n
 from . import label_to_continue_reading, label_exclusive, label_exclusive4u
 
 
@@ -24,6 +24,8 @@ class SignupwallTestCase(TestCase):
         translation.activate(settings.LOCALE_NAME_PREFIX)
         self.your_account = str(your_account_i18n)
         self.label_content_not_available = str(label_content_not_available_i18n)
+        self.label_articles_left = str(label_articles_left_i18n)
+        self.label_last_article = str(label_last_article_i18n)
 
     def no_redirection_for_restricted_article(self, c, restricted_msg, can_read=False, is_subscriber_any=False):
         with self.settings(CORE_RESTRICTED_PUBLICATIONS=("restrictedpub",)):
@@ -69,7 +71,7 @@ class SignupwallTestCase(TestCase):
             self.assertEqual(response.status_code, 200)
             response_content = response.content.decode()
             self.assertIn(self.your_account, response_content)
-            self.assertIn("Te queda", response_content)
+            self.assertIn(self.label_articles_left, response_content)
             self.assertNotIn(label_to_continue_reading, response_content)
 
         a = Article.objects.create(type="NE", headline='test_last', is_published=True)
@@ -77,7 +79,7 @@ class SignupwallTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         response_content = r.content.decode()
         self.assertIn(self.your_account, response_content)
-        self.assertIn("Este es tu último", response_content)
+        self.assertIn(self.label_last_article, response_content)
 
         a = Article.objects.create(headline='test_walled', is_published=True)
         r = c.get(a.get_absolute_url(), **self.http_host_header_param)
@@ -158,7 +160,7 @@ class SignupwallTestCase(TestCase):
             self.assertEqual(response.status_code, 200)
             response_content = response.content.decode()
             self.assertIn(self.your_account, response_content)
-            self.assertNotIn("Te queda", response_content)
+            self.assertNotIn(self.label_articles_left, response_content)
 
         # no redirection for restricted /full restricted articles and can read it
         self.no_redirection_for_restricted_article(c, label_exclusive, True)
