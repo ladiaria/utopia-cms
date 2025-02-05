@@ -35,7 +35,7 @@ class SignupwallAMPTestCase(LiveServerSeleniumTestCase):
         self.selenium.get(f"{self.server_url}{settings.LOGIN_URL}")
 
         username_input = self.selenium.find_element(By.NAME, "name_or_mail")
-        username_input.send_keys(user.username)
+        username_input.send_keys(user.email)
         password_input = self.selenium.find_element(By.NAME, "password")
         password_input.send_keys(password)
 

@@ -1,8 +1,10 @@
 from settings import *  # noqa
 
 
-# This can be useful to debug segmentation fault errors:
+# next line can be useful to debug segmentation fault errors:
 # import faulthandler; faulthandler.enable()
+
+AMP_SIMULATE = True  # Tests will allways run "locally", then this variable must be True
 
 if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_CHOICES"):
     print("NOTE: filling THEDAILY_SUBSCRIPTION_TYPE_CHOICES with some default values for testing purposes")
