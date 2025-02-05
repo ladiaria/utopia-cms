@@ -175,7 +175,7 @@ def no_captcha(request):
     # TODO: do not asume CF for getting the country (do it like signupwall gets the ip_address)
     return not getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_ENABLED', True) or request.headers.get(
         'cf-ipcountry', settings.THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY
-    ) in getattr(settings, 'THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED', [])
+    ) in settings.THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED
 
 
 def get_custom_formclass(classname):

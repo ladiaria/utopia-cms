@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-06 19:08-0300\n"
+"POT-Creation-Date: 2025-02-04 22:30-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -29,39 +29,115 @@ msgstr "Usado"
 msgid "Not Used"
 msgstr "No usado"
 
+#: apps/core/templates/article/detail_comments.html:21
+#: apps/core/templates/article/detail_comments.html:24
+msgid "Suscribite"
+msgstr "Suscribite"
+
+#: apps/core/templates/article/detail_comments.html:24
+msgid "Registrate"
+msgstr "Registrate"
+
+#: apps/core/templates/article/detail_comments.html:26
+msgid "tenés"
+msgstr "tenés"
+
+#: apps/core/templates/article/detail_comments.html:27
+msgid "Ingresá"
+msgstr "Ingresá"
+
+#: apps/core/templates/article/paywall/pw_auth_with_credits_title.html:6
+#: apps/signupwall/__init__.py:6
+msgid "Te queda"
+msgstr ""
+
+#: apps/core/templates/article/paywall/pw_auth_with_credits_title.html:8
+#: apps/signupwall/__init__.py:7
+msgid "Este es tu último artículo gratuito"
+msgstr ""
+
 #: apps/core/templates/edition/download_email_sent.html:12
-#: apps/thedaily/forms.py:175 apps/thedaily/forms.py:342
+#: apps/thedaily/forms.py:176 apps/thedaily/forms.py:343
 msgid "Email"
 msgstr "Email"
 
 #: apps/core/templates/edition/download_email_sent.html:14
-#: apps/thedaily/models.py:51 apps/thedaily/views.py:970
+#: apps/thedaily/models.py:54 apps/thedaily/views.py:990
 msgid "email"
 msgstr "email"
+
+#: apps/signupwall/__init__.py:4
+msgid "Tu cuenta"
+msgstr "Tu cuenta"
+
+#: apps/signupwall/__init__.py:5
+msgid "Contenido no disponible con tu suscripción actual"
+msgstr "Contenido no disponible con tu suscripción actual"
+
+#: apps/thedaily/admin.py:147
+msgid "subscribed"
+msgstr "suscripto"
 
 #: apps/thedaily/exceptions.py:8
 msgid "contactate"
 msgstr "contactate"
 
-#: apps/thedaily/models.py:144
+#: apps/thedaily/models.py:156
 msgid "name"
 msgstr "nombre"
 
-#: apps/thedaily/models.py:314
+#: apps/thedaily/models.py:353
 msgid "user id"
-msgstr "id de usuario"
+msgstr "user id"
 
-#: apps/thedaily/models.py:519
+#: apps/thedaily/models.py:558
 msgid "tus datos"
 msgstr "tus datos"
 
-#: apps/thedaily/models.py:538
+#: apps/thedaily/models.py:577
 msgid "tu perfil"
 msgstr "tu perfil"
+
+#: apps/thedaily/models.py:722
+msgid "billing name"
+msgstr "nombre facturación"
+
+#: apps/thedaily/models.py:723
+msgid "billing identification document"
+msgstr "documento facturación"
+
+#: apps/thedaily/models.py:724
+msgid "billing phone"
+msgstr "teléfono facturación"
+
+#: apps/thedaily/models.py:725
+msgid "billing email"
+msgstr "email facturación"
+
+#: apps/thedaily/models.py:733
+msgid "start date"
+msgstr "fecha inicio"
+
+#: apps/thedaily/models.py:734
+msgid "end date"
+msgstr "fecha fin"
+
+#: apps/thedaily/models.py:735
+msgid "next billing"
+msgstr "próxima facturación"
+
+#: apps/thedaily/models.py:741
+#, python-format
+msgid "%s subscription for %s"
+msgstr "suscripción %s para %s"
 
 #: apps/thedaily/templates/disable_profile_property.html:8
 msgid "recibirás"
 msgstr "recibirás"
+
+#: apps/thedaily/templates/nlunsubscribe.html:40
+msgid "Configurar todas tus newsletters"
+msgstr "Configurar todas tus newsletters"
 
 #: templates/admin/app_list.html:11
 #, python-format

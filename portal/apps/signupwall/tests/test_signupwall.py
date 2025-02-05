@@ -87,7 +87,7 @@ class SignupwallTestCase(TestCase):
             self.assertEqual(r.status_code, 302)
             r = c.get(r.headers["location"],  **self.http_host_header_param)
             response_content = r.content.decode()
-            self.assertIn("Suscribite para continuar leyendo este artículo", response_content)
+            self.assertIn("Suscribite para continuar leyendo este artículo", response_content, "string not found")
 
         # no redirection for restricted / full restricted articles
         self.no_redirection_for_restricted_article(c, restricted_msg, is_subscriber_any=is_subscriber_any)

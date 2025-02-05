@@ -185,7 +185,7 @@ class Publication(Model):
         DEFAULT_PUB = settings.DEFAULT_PUB
         try:
             default_pub_name = Publication.objects.get(slug=DEFAULT_PUB).name
-        except Publication.DoesNotExist:
+        except (ProgrammingError, Publication.DoesNotExist):
             default_pub_name = DEFAULT_PUB
         return default_pub_name
 

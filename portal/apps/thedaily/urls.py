@@ -97,7 +97,7 @@ urlpatterns = [
         ),
     ] if default_planslug else [
         # ensure an url with name "subscribe-default" is available
-        path("suscribite/", RedirectView.as_view(url=reverse_lazy("subscribe-landing")), name="subscribe-default")
+        path("suscribite/", RedirectView.as_view(url=reverse_lazy("subscribe_landing")), name="subscribe-default")
     ]
 ) + [
     re_path(r'^suscribite/(?P<planslug>[\w-]+)/$', subscribe, name="subscribe"),

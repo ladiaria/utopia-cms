@@ -28,7 +28,7 @@ class SignupwallAMPTestCase(LiveServerSeleniumTestCase):
         result = []
         for css_sel in (".signupwall-header p", ".ld-snackbar__title"):
             result.extend([e.text for e in self.selenium.find_elements(By.CSS_SELECTOR, css_sel) if e.is_displayed()])
-        return "".join(result)
+        return "".join(result).strip()
 
     def login(self, user, password):
         self.selenium.get(f"{self.server_url}{settings.LOGOUT_URL}")
