@@ -114,7 +114,7 @@ def fb_browser_type(request):
         os_is_android, os_is_ios = ua_os.startswith("Android"), ua_os.startswith("iOS")
         browser_is_fb = ua_browser.startswith("Facebook")
         browser_is_ig = ua_browser.startswith("Instagram") or (
-            os_is_android and ua_browser.startswith("Chrome Mobile WebView")
+            os_is_android and (ua_browser.startswith("Chrome Mobile WebView") or request.GET.get("fbclid"))
         )
         # definitions taken from core/article/landing_facebook.html template
         if browser_is_fb or (os_is_ios and browser_is_ig):
