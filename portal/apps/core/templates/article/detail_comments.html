@@ -9,7 +9,7 @@
               data-article-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
               data-login-url="{{ SITE_URL_SD }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
         <span class="title">Comentar este artículo</span>
-        <button class="ut-btn{% if talk_auth_token %} authorized{% endif %}">
+        <button class="ut-btn">
           {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
         </button>
       </section>
