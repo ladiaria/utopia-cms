@@ -204,6 +204,16 @@
           {% endcomment %}
           {% if include_after_headline %}{% include include_after_headline %}{% endif %}
         {% endif %}
+
+        {% if article.has_deck or article.has_lead %}
+          {% if article.has_deck %}
+            {% block article_deck %}
+              <p class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</p>
+            {% endblock %}
+          {% endif %}
+          {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
+        {% endif %}
+
         {% if article.date_published %}
           <div class="article-date-author">
             Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
@@ -218,25 +228,6 @@
             {% endif %}
           </div>
         {% endif %}
-        <div class="article-date-author">
-          {% with authors=article.get_authors %}
-            {% if authors %}
-              Escribe
-              {% for author in authors %}
-                <span class="small"><a href="{{ author.get_absolute_url }}">{{ author.name }}</a></span>
-                {% if not forloop.last %}, {% endif %}
-              {% endfor %}
-              {% if section %} <span class="small">en </span>{% endif %}
-            {% endif %}
-          {% endwith %}
-          {% if section %}
-            <span class="small">
-              {% block byline_section %}
-                <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
-              {% endblock %}
-            </span>
-          {% endif %}
-        </div>
         {% if not article_restricted_cf or restricted_access %}
           <div class="reading-time">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
@@ -300,19 +291,30 @@
         </div>{# opened in line 102 #}
       {% endif %}
 
-      {% if article.has_deck or article.has_lead %}
-        {% if article.has_deck %}
-          {% block article_deck %}
-            <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
-          {% endblock %}
-        {% endif %}
-        {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
-      {% endif %}
-
       {# begin restricted content #}
       {% if not request.signupwall or not article_restricted_cf or restricted_access %}
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
+
+        <div class="article-author">
+          {% with authors=article.get_authors %}
+            {% if authors %}
+              Escribe
+              {% for author in authors %}
+                <span class="small"><a href="{{ author.get_absolute_url }}">{{ author.name }}</a></span>
+                {% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              {% if section %} <span class="small">en </span>{% endif %}
+            {% endif %}
+          {% endwith %}
+          {% if section %}
+            <span class="small">
+              {% block byline_section %}
+                <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
+              {% endblock %}
+            </span>
+          {% endif %}
+        </div>
 
         {% if not request.signupwall %}{# closed in line 676 #}
 
