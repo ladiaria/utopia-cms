@@ -147,6 +147,11 @@ def article_detail(request, year, month, slug, domain_slug=None):
 
     # 3. render "landing facebook" if fb browser detected and previous condition is not met
     if not signupwall_exclude_request_condition:
+        """
+        this code can be migrated to the middleware itself, this way you can use the same logic for all the views, not
+        only for the article detail view, it will cover the use case of links clicked mostly on IG that is more often
+        editors put non-article links there. middleware has already comments about this "ref_core.views.article.py:153"
+        """
         fb_browser_type = getattr(request, 'fb_browser_type', None)
         if fb_browser_type:
             template = "article/landing_facebook.html"
