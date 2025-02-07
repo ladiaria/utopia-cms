@@ -201,6 +201,11 @@ class SignupwallMiddleware(MiddlewareMixin):
                     )
                 if ignored:
                     return
+                elif fb_browser_type(request):
+                    # ref_core.views.article.py:153
+                    # ignore also if the browser is facebook-type (article detail will render related info)
+                    # Also same comment of line 218 (that's why elif instead of "or" directly in the "if" part)
+                    return
             except Article.DoesNotExist:
                 # ignore signupwall for not-found articles (core.views.article.article_detail will redirect if the
                 # article is found in article's URL history)
@@ -209,10 +214,8 @@ class SignupwallMiddleware(MiddlewareMixin):
             # ignore signupwall for non article_detail paths
             if debug:
                 print('DEBUG: signupwall.middleware.process_request - non article_detail path')
-            return
-
-        # ignore also if the browser is facebook-type (article detail will render steps to open other browser)
-        if fb_browser_type(request):
+            # ref_core.views.article.py:153
+            # here you can return a "render" to the "fb landing" if using the "fb check" for all pages
             return
 
         user = request.user
