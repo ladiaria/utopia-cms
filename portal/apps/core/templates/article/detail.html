@@ -100,7 +100,7 @@
       {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 299 #}
+          <div>{# closed in line 300 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -127,7 +127,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 299 #}
+          {# missing close div here is closed correctly in line 300 #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -297,7 +297,7 @@
         {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
-        </div>{# opened in line 102 #}
+        </div>{# opened in line 103 #}
       {% endif %}
 
       {% if article.has_deck or article.has_lead %}
@@ -314,7 +314,7 @@
 
         {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 676 #}
+        {% if not request.signupwall %}{# closed in line 677 #}
 
           {% include 'article/paywall/pw_not_in_request.html' %}
 
@@ -674,7 +674,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 316 #}
+        {% endif %}{# opened in line 317 #}
 
       {% else %}{# restricted content message #}
 
@@ -691,7 +691,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 822 #}
+    {% if not request.signupwall %}{# closed in line 823 #}
 
       {% if article.public %}
 
@@ -789,7 +789,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 693 #}
+    {% endif %}{# opened in line 694 #}
 
     {% block article_extra %}{% endblock %}
 
