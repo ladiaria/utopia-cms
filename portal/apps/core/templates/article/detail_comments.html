@@ -2,8 +2,9 @@
 
 {% if TALK_URL and article.allow_comments %}
   <div id="comentarios">
-    <div class="container">
+    <div class="{% block talk_container_classnames %}container{% endblock %}">
 
+      {% block talk_info_container %}
       <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}"
               data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}"
               data-article-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
@@ -13,7 +14,9 @@
           {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
         </button>
       </section>
+      {% endblock %}
 
+      {% block talk_login_container %}
       <div class="talk-login align-center display-hidden">
         {% block talk_login %}
           {% if user.is_authenticated %}
@@ -29,6 +32,7 @@
           {% endif %}
         {% endblock %}
       </div>
+      {% endblock %}
 
     </div>
   </div>
