@@ -3,11 +3,30 @@
 
 {% block page_title %}Abrir en un navegador externo{% endblock %}
 
-{% block navbar %}{% with disable_nav=True %}{{ block.super }}{% endwith %}{% endblock %}
+{# block left commented, can be used to redirect to the article in the browser #}
+{% comment %}
+{% block header_scripts %}
+  <script>
+    $(function(){
+      try {
+        window.location = "intent://{{ site.domain }}{{ request.get_full_path }}#Intent;scheme=https;package=com.android.chrome;end";
+        $(".open-external-browser-loading").hide();
+        $(".open-external-browser-success").show();
+      } catch(e) {
+        // Will fall through to show instructions if the redirect fails
+        $(".open-external-browser-loading").hide();
+        $(".open-external-browser-container").show();
+      }
+    });
+  </script>
+{% endblock %}
+{% endcomment %}
 
 {% block css %}
   <link href="{% static 'sass/landing_facebook.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
+
+{% block navbar %}{% with disable_nav=True %}{{ block.super }}{% endwith %}{% endblock %}
 
 {% comment %}
   Tenemos 2 situaciones que mostrar segun valor de "browser_type":
@@ -16,6 +35,18 @@
 {% endcomment %}
 
 {% block content %}
+  {% comment "uncomment if you want to use what line 6 says" %}
+  <div class="open-external-browser-loading">
+    <div class="open-external-browser__header">
+      <p>Cargando...</p>
+    </div>
+  </div>
+  <div class="open-external-browser-success" style="display: none;">
+    <div class="open-external-browser__header">
+      <p>La nota se abrió en el navegador externo.</p>
+    </div>
+  </div>
+  {% endcomment %}
   <div class="open-external-browser-container">
     <div class="open-external-browser__header">
       <p>Abrí la nota en dos simples pasos:</p>
