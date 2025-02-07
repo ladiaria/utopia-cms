@@ -210,8 +210,43 @@ article {
   }
 
   .article-caption {
-    text-align: center;
-    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+
+    > p {
+      flex: 1;
+      margin: 0;
+    }
+    > p:first-child {
+      text-align: right;
+    }
+    > p:last-child {
+      text-align: left;
+    }
+
+    span.separator {
+      border-right: 1px solid #d8d8d8;
+      height: 16px;
+    }
+
+    &.vertical {
+      flex-direction: column;
+
+      > span {
+        display: none;
+      }
+    }
+
+    @media #{$medium-and-down} {
+      flex-direction: column;
+
+      > span {
+        display: none;
+      }
+    }
   }
 
   // collection header
@@ -600,12 +635,6 @@ article {
   &__deck {
     font-family: "Meta Serif", serif;
     line-height: 1.5;
-    padding-left: 20px;
-    padding-right: 20px;
-    @media (min-width: 720px) {
-      padding-left: 0;
-      padding-right: 0;
-    }
   }
 
   &__bottom-ad {
@@ -705,7 +734,6 @@ body.article {
       margin-top: 0;
     }
 
-    .article-date-author,
     .reading-time,
     .premium {
       text-align: center;
@@ -713,24 +741,23 @@ body.article {
       font-size: px-to-rem(18px);
     }
 
-    .article-author {
-      font-size: px-to-rem(18px);
-    }
-
-    .article-date-author,
-    .article-author {
+    .article-author,
+    .article-date {
       max-width: var(--max-article-width);
       margin: 0 auto;
+      font-size: px-to-rem(18px);
+
+      @media #{$medium-and-down} {
+        padding: 0 20px;
+      }
 
       a {
         text-decoration: underline;
+        font-size: px-to-rem(18px);
 
         &:hover {
           color: $off-black-3;
         }
-      }
-      + .article-date-author {
-        margin-top: 10px;
       }
       .ld-info-tooltip {
         width: 16px;
@@ -747,6 +774,11 @@ body.article {
         }
       }
     }
+
+    .article-date {
+      padding-top: 8px;
+    }
+
     .reading-time {
       margin-top: 10px;
       svg {
@@ -778,9 +810,9 @@ body.article {
     }
 
     .article-header {
-      margin: 40px 0;
+      padding: 40px 20px;
 
-      @media (min-width: 769px) {
+      @media #{$medium-and-up} {
         margin: 80px 0;
       }
     }
@@ -789,12 +821,6 @@ body.article {
     .article-lead {
       margin-top: 48px;
       font-size: 20px;
-      padding-left: 20px;
-      padding-right: 20px;
-      @media (min-width: 720px) {
-        padding-left: 0;
-        padding-right: 0;
-      }
 
       @media (min-width: 769px) {
         font-size: px-to-rem(28px);
@@ -866,25 +892,8 @@ body.article {
     }
 
     .ld-caption {
-      p {
-        margin: 10px 0;
-        line-height: 1.5;
-
-        + p {
-          margin-top: 0;
-        }
-      }
-    }
-
-    figure.principal {
-      .ld-caption {
-        p {
-          margin: 10px 0 6px;
-
-          + p {
-            margin-top: 0;
-          }
-        }
+      p + p {
+        margin-top: 0;
       }
     }
 

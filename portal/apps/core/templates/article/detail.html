@@ -179,8 +179,9 @@
                   <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
                        data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
                 </picture>
-                <figcaption class="article-caption container ld-caption">
+                <figcaption class="article-caption ld-caption{% if article.photo.caption|length > 47 %} vertical{% endif %}">
                   {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+                  <span class="separator"></span>
                   {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
                 </figcaption>
               </figure>
@@ -214,20 +215,6 @@
           {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
         {% endif %}
 
-        {% if article.date_published %}
-          <div class="article-date-author">
-            Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
-            {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
-              {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
-                <span class="ld-info-tooltip time">
-                  <span class="ld-info-tooltip-content">
-                    {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
-                  </span>
-                </span>
-              {% endif %}
-            {% endif %}
-          </div>
-        {% endif %}
         {% if not article_restricted_cf or restricted_access %}
           <div class="reading-time">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
@@ -315,6 +302,32 @@
             </span>
           {% endif %}
         </div>
+
+        {% if article.date_published %}
+          <div class="article-date">
+            Publicado
+            {% if date_published_use_main_publication %}
+              el <span>{{ article.main_section.edition.date_published_verbose }}</span>
+            {% else %}
+              {% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %}
+                el
+              {% endif %}
+              <span>
+                <time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time>
+              </span>
+            {% endif %}
+
+            {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
+              {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
+                <span class="ld-info-tooltip time">
+                  <span class="ld-info-tooltip-content">
+                    {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+                  </span>
+                </span>
+              {% endif %}
+            {% endif %}
+          </div>
+        {% endif %}
 
         {% if not request.signupwall %}{# closed in line 676 #}
 
