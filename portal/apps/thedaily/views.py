@@ -396,7 +396,7 @@ def login(request, product_slug=None, product_variant=None):
             template = hard_paywall_template
             context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "article": article})
 
-    context.update({'next_page': next_page, 'next': pathname2url(next_page.encode('utf8'))})
+    context.update({'next_page': next_page, 'next': pathname2url(next_page.encode('utf8').decode())})
 
     initial, name_or_mail = {}, request.GET.get('name_or_mail')
     if name_or_mail:
