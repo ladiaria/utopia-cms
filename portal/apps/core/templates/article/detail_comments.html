@@ -17,8 +17,7 @@
       {% endblock %}
 
       {% block talk_login_container %}
-      <div class="talk-login align-center display-hidden">
-        {% block talk_login %}
+        <div class="talk-login align-center display-hidden">
           {% if user.is_authenticated %}
             {% if not is_subscriber and not talk_auth_allowed %}
               <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">{% trans "Suscribite" %} para comentar</a>
@@ -30,8 +29,7 @@
               <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">{% trans "Ingresá" %}</a>
             </span>
           {% endif %}
-        {% endblock %}
-      </div>
+        </div>
       {% endblock %}
 
     </div>
