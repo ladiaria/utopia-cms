@@ -650,10 +650,14 @@ class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
             {
                 'fields': (
                     'type',
-                    ('headline', 'alt_title_metadata', 'alt_title_newsletters'),
+                    'headline',
+                    'alt_title_metadata',
+                    'alt_title_newsletters',
                     'slug',
                     'keywords',
-                    ('deck', "alt_desc_metadata", "alt_desc_newsletters"),
+                    'deck',
+                    'alt_desc_metadata',
+                    'alt_desc_newsletters',
                     'lead',
                     'body',
                 ),

@@ -31,12 +31,6 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
   padding-left: 25px;
 }
 
-/* missing (dont know why) border in collapsed inlines */
-#extensions-group div fieldset, #attachments-group div fieldset,
-#body_image-group div fieldset, #articlerel_set-group div fieldset {
-  border: 1px solid var(--hairline-color);
-}
-
 /* paywall radio */
 .form-row.field-pw_radio_choice div {
   display: block !important;
@@ -64,35 +58,46 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
   padding-top: 8px;
 }
 
-/* alternative title and description fields */
-#id_keywords, #id_headline {
+/* border in collapsed inlines */
+#extensions-group div fieldset,
+#attachments-group div fieldset,
+#body_image-group div fieldset,
+#articlerel_set-group div fieldset,
+fieldset.collapse {
+  border: 1px solid var(--hairline-color);
+}
+
+/* more width to martor editor*/
+.main-martor {width: 80%;}
+
+/* others */
+div.field-deck div.charcounter,
+div.field-lead div.charcounter,
+div.field-home_lead div.charcounter,
+div.field-home_top_deck div.charcounter,
+div.field-alt_title_metadata div.charcounter,
+div.field-alt_title_newsletters div.charcounter,
+div.field-alt_desc_metadata div.charcounter,
+div.field-alt_desc_newsletters div.charcounter {
+  margin-left: 10px;
+}
+#id_keywords, #id_headline, #id_alt_title_metadata, #id_alt_title_newsletters {
   @media (min-width: 880px) {
     width: 600px;
   }
 }
-.field-deck textarea, .field-lead textarea, .field-home_top_deck textarea {
+.field-deck textarea, .field-lead textarea, .field-home_lead textarea, .field-home_top_deck textarea {
   height: 120px;
 }
 
-.fieldBox.field-alt_title_metadata input, .fieldBox.field-alt_title_newsletters input {
-  @media (min-width: 880px) {
-    margin-left: 200px !important;
-    width: 600px;
-  }
-}
-#id_home_lead, #id_alt_desc_metadata, #id_alt_desc_newsletters {
-  @media (min-width: 880px) {
-    margin-left: 200px;
-  }
-}
-.field-home_lead textarea, .field-alt_desc_metadata textarea, .field-alt_desc_newsletters textarea {
+.field-alt_desc_metadata textarea, .field-alt_desc_newsletters textarea {
   @media (min-width: 880px) {
     width: 600px;
   }
   height: 120px;
 }
 .field-alt_title_metadata, .field-alt_title_newsletters,
-.field-alt_desc_metadata, .field-alt_desc_newsletters, .field-home_lead {
+.field-alt_desc_metadata, .field-alt_desc_newsletters {
   margin-top: 20px;
 }
 
@@ -106,30 +111,6 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
 .field-alt_desc_newsletters .fieldBox.field-deck {
   @media (max-width: 767px) {
     flex-grow: 1;
-  }
-}
-
-#id_home_lead_helptext,
-#id_alt_desc_metadata_helptext,
-#id_alt_desc_newsletters_helptext {
-  @media (min-width: 880px) {
-    margin-left: 165px;
-  }
-}
-#id_headline_helptext, #id_alt_title_metadata_helptext, #id_alt_title_newsletters_helptext,
-#id_slug_helptext, #id_keywords_helptext {
-  padding-left: 0px;
-}
-label[for="id_headline"] { float: left; }
-label[for="id_alt_title_metadata"],
-label[for="id_alt_title_newsletters"],
-label[for="id_home_lead"],
-label[for="id_alt_desc_metadata"],
-label[for="id_alt_desc_newsletters"] {
-  @media (min-width: 880px) {
-    float: initial;
-    margin-left: 200px;
-    width: 25em;
   }
 }
 
