@@ -738,9 +738,9 @@ class Subscription(Model):
     promo_code = CharField(max_length=8, blank=True, null=True)
 
     def __str__(self):
-        return _("%s subscription for %s") % (
-            f"{self.subscription_type} ({self.get_subscription_type_prices()})", self.subscriber.get_full_name()
-        )
+        subscription_type = f"{self.subscription_type} ({self.get_subscription_type_prices()})"
+        subscriber_name = self.subscriber.get_full_name()
+        return _(f"{subscription_type} subscription for {subscriber_name}")
 
     def get_subscription_type_prices(self):
         return ', '.join('%s' % stp for stp in self.subscription_type_prices.all())

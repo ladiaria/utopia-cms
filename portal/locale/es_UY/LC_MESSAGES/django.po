@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-04 22:30-0300\n"
+"POT-Creation-Date: 2025-02-10 08:01-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -29,20 +29,20 @@ msgstr "Usado"
 msgid "Not Used"
 msgstr "No usado"
 
-#: apps/core/templates/article/detail_comments.html:21
-#: apps/core/templates/article/detail_comments.html:24
+#: apps/core/templates/article/detail_comments.html:23
+#: apps/core/templates/article/detail_comments.html:26
 msgid "Suscribite"
 msgstr "Suscribite"
 
-#: apps/core/templates/article/detail_comments.html:24
+#: apps/core/templates/article/detail_comments.html:26
 msgid "Registrate"
 msgstr "Registrate"
 
-#: apps/core/templates/article/detail_comments.html:26
+#: apps/core/templates/article/detail_comments.html:28
 msgid "tenés"
 msgstr "tenés"
 
-#: apps/core/templates/article/detail_comments.html:27
+#: apps/core/templates/article/detail_comments.html:29
 msgid "Ingresá"
 msgstr "Ingresá"
 
@@ -126,11 +126,6 @@ msgstr "fecha fin"
 msgid "next billing"
 msgstr "próxima facturación"
 
-#: apps/thedaily/models.py:741
-#, python-format
-msgid "%s subscription for %s"
-msgstr "suscripción %s para %s"
-
 #: apps/thedaily/templates/disable_profile_property.html:8
 msgid "recibirás"
 msgstr "recibirás"
@@ -171,3 +166,7 @@ msgstr "Histórico"
 #: templates/admin/change_form_object_tools.html:10
 msgid "View on site"
 msgstr "Ver en el sitio"
+
+#, python-format
+#~ msgid "%s subscription for %s"
+#~ msgstr "suscripción %s para %s"
