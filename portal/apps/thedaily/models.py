@@ -18,6 +18,7 @@ from django.core.exceptions import ValidationError
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from django.db.models import (
     CASCADE,
+    Q,
     BooleanField,
     CharField,
     DateField,
@@ -193,7 +194,13 @@ class Subscriber(Model):
         self.save()
 
     def active_subscriptions(self):
-        return self.subscriptions.filter(end_date__gte=now().date())
+        today = now().date()
+        return self.subscriptions.filter(
+            Q(
+                Q(start_date__isnull=False), Q(end_date__isnull=True) | Q(end_date__isnull=False, end_date__gte=today)
+            )
+            | Q(start_date__isnull=True, end_date__isnull=False, end_date__gte=today)
+        )
 
     def active_subscriptions_pub_slugs(self):
         slug_set = set()
@@ -739,11 +746,13 @@ class Subscription(Model):
 
     def __str__(self):
         subscription_type = f"{self.subscription_type} ({self.get_subscription_type_prices()})"
-        subscriber_name = self.subscriber.get_full_name()
-        return _(f"{subscription_type} subscription for {subscriber_name}")
+        return subscription_type + _(" subscription for ") + self.subscriber.get_full_name()
 
     def get_subscription_type_prices(self):
         return ', '.join('%s' % stp for stp in self.subscription_type_prices.all())
+
+    def total_cost(self):
+        return sum(stp.price_total for stp in self.subscription_type_prices.all())
 
     def get_absolute_url(self):
         return '/admin/thedaily/subscription/%i/' % self.id
