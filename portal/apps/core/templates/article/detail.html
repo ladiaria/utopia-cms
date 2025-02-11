@@ -190,6 +190,14 @@
         {% endif %}
       {% endif %}
 
+      {% if not article_restricted_cf or restricted_access %}
+        <div class="reading-time">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+            <path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/>
+          </svg> <span class="eta">{{ article.reading_time }}</span> de lectura
+        </div>
+      {% endif %}
+
       <div class="article-header">
         {% if section.is_satirical %}
           <div class="align-center">
@@ -215,13 +223,6 @@
           {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
         {% endif %}
 
-        {% if not article_restricted_cf or restricted_access %}
-          <div class="reading-time">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-              <path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/>
-            </svg> <span class="eta">{{ article.reading_time }}</span> de lectura
-          </div>
-        {% endif %}
         {% if article_restricted_cf and restricted_access %}
           {% include 'article/paywall/pw_premium.html' %}
         {% endif %}
@@ -277,6 +278,44 @@
       {% if photo_render_allowed and header_display == 'FW' %}
         </div>{# opened in line 103 #}
       {% endif %}
+
+      <div class="article-action-bar">
+        <div class="left-buttons">
+          <button class="read-later__add">
+            <svg title="Bookmark" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M6 6.2C6 5.08 6 4.52 6.218 4.092C6.40974 3.71569 6.71569 3.40974 7.092 3.218C7.52 3 8.08 3 9.2 3H14.8C15.92 3 16.48 3 16.908 3.218C17.2843 3.40974 17.5903 3.71569 17.782 4.092C18 4.52 18 5.08 18 6.2V19.505C18 19.991 18 20.234 17.899 20.367C17.8554 20.4248 17.7997 20.4725 17.7358 20.5067C17.6719 20.5409 17.6013 20.5608 17.529 20.565C17.362 20.575 17.16 20.44 16.756 20.171L12 17L7.244 20.17C6.84 20.44 6.638 20.575 6.47 20.565C6.39784 20.5606 6.32748 20.5407 6.26377 20.5065C6.20007 20.4723 6.14453 20.4247 6.101 20.367C6 20.234 6 19.991 6 19.505V6.2Z" stroke="#262626" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Leer después
+          </button>
+          <button class="read-later__saved hide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M6 6.2C6 5.08 6 4.52 6.218 4.092C6.40974 3.71569 6.71569 3.40974 7.092 3.218C7.52 3 8.08 3 9.2 3H14.8C15.92 3 16.48 3 16.908 3.218C17.2843 3.40974 17.5903 3.71569 17.782 4.092C18 4.52 18 5.08 18 6.2V19.505C18 19.991 18 20.234 17.899 20.367C17.8554 20.4248 17.7997 20.4725 17.7358 20.5067C17.6719 20.5409 17.6013 20.5608 17.529 20.565C17.362 20.575 17.16 20.44 16.756 20.171L12 17L7.244 20.17C6.84 20.44 6.638 20.575 6.47 20.565C6.39784 20.5606 6.32748 20.5407 6.26377 20.5065C6.20007 20.4723 6.14453 20.4247 6.101 20.367C6 20.234 6 19.991 6 19.505V6.2Z" fill="#262626" stroke="#262626" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Guardado
+          </button>
+          <button>
+            <svg title="Icono de reproducir" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M9.5 15.5842V8.41616C9.50015 8.32648 9.52442 8.23848 9.57026 8.1614C9.61611 8.08432 9.68184 8.02099 9.76057 7.97804C9.83931 7.9351 9.92814 7.91412 10.0178 7.91731C10.1074 7.9205 10.1945 7.94773 10.27 7.99616L15.846 11.5792C15.9166 11.6244 15.9747 11.6867 16.0149 11.7602C16.0552 11.8338 16.0763 11.9163 16.0763 12.0002C16.0763 12.084 16.0552 12.1665 16.0149 12.2401C15.9747 12.3137 15.9166 12.3759 15.846 12.4212L10.27 16.0052C10.1945 16.0536 10.1074 16.0808 10.0178 16.084C9.92814 16.0872 9.83931 16.0662 9.76057 16.0233C9.68184 15.9803 9.61611 15.917 9.57026 15.8399C9.52442 15.7628 9.50015 15.6748 9.5 15.5852V15.5842Z" fill="#262626"/>
+              <path d="M1 12C1 5.925 5.925 1 12 1C18.075 1 23 5.925 23 12C23 18.075 18.075 23 12 23C5.925 23 1 18.075 1 12ZM12 2.5C9.48044 2.5 7.06408 3.50089 5.28249 5.28249C3.50089 7.06408 2.5 9.48044 2.5 12C2.5 14.5196 3.50089 16.9359 5.28249 18.7175C7.06408 20.4991 9.48044 21.5 12 21.5C14.5196 21.5 16.9359 20.4991 18.7175 18.7175C20.4991 16.9359 21.5 14.5196 21.5 12C21.5 9.48044 20.4991 7.06408 18.7175 5.28249C16.9359 3.50089 14.5196 2.5 12 2.5Z" fill="#262626"/>
+            </svg>
+            Escuchar
+          </button>
+        </div>
+        <div class="right-buttons">
+          <button>
+            <svg title="Compartir" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M18.8 8.19969H16V6.99969H19.001C19.551 6.99969 20 7.44569 20 7.99569V21.0037C19.9989 21.2675 19.8937 21.5203 19.7071 21.7068C19.5206 21.8934 19.2678 21.9986 19.004 21.9997H4.996C4.73217 21.9986 4.47944 21.8934 4.29289 21.7068C4.10633 21.5203 4.00105 21.2675 4 21.0037V7.99569C4.00106 7.73134 4.10674 7.47817 4.29395 7.29152C4.48115 7.10488 4.73465 6.99996 4.999 6.99969H8V8.19969H5.2V20.7997H18.8V8.19969ZM12.6 4.26169V13.4997H11.4V4.26169L9.313 6.34869L8.464 5.49969L11.293 2.67169C11.4805 2.48422 11.7348 2.37891 12 2.37891C12.2652 2.37891 12.5195 2.48422 12.707 2.67169L15.536 5.49969L14.687 6.34869L12.6 4.26169Z" fill="#262626"/>
+            </svg>
+            Compartir
+          </button>
+          <button>
+            <svg title="Icono de comentar" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 21C10.22 21 8.47991 20.4722 6.99987 19.4832C5.51983 18.4943 4.36627 17.0887 3.68508 15.4442C3.00389 13.7996 2.82566 11.99 3.17293 10.2442C3.5202 8.49836 4.37737 6.89472 5.63604 5.63604C6.89471 4.37737 8.49836 3.5202 10.2442 3.17294C11.99 2.82567 13.7996 3.0039 15.4442 3.68509C17.0887 4.36628 18.4943 5.51983 19.4832 6.99987C20.4722 8.47991 21 10.22 21 12C21 13.488 20.64 14.89 20 16.127L21 21L16.127 20C14.891 20.639 13.487 21 12 21Z" stroke="#262626" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Comentar
+          </button>
+        </div>
+      </div>
 
       {# begin restricted content #}
       {% if not request.signupwall or not article_restricted_cf or restricted_access %}
@@ -932,15 +971,18 @@
         });
       {% endif %}
 
-      $('a.read-later__add').click(function(){
+      $('.read-later__add').click(function(){
         {% if user.is_authenticated %}
           $.get("{% url 'actstream_follow' content_type_id=article_ct_id object_id=article.id %}", function(data){
             $('a.read-later__add').addClass('hide');
             $('.read-later__add__info').addClass('hide');
             $('.read-later__saved__info:eq(1)').removeClass('hide');
-            $('a.read-later__saved:eq(1)').removeClass('hide');
+            $('.read-later__saved').removeClass('hide');
             $('.read-later__saved__info.first').removeClass('hide');
             $('a.read-later__saved.first').removeClass('hide');
+
+            // New read later button
+
           });
         {% else %}
           $('.modal').modal('open');

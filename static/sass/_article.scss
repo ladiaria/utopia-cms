@@ -787,6 +787,38 @@ body.article {
         top: 2px;
       }
     }
+
+    .article-action-bar {
+      max-width: var(--max-article-width);
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #d9d9d9;
+      padding-top: 24px;
+
+      > div {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      button {
+        background: transparent;
+        border: 1px solid #d8d8d8;
+        border-radius: 150px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        text-transform: uppercase;
+        padding: 10px 16px;
+        line-height: normal;
+
+        &:hover {
+          background: #ebebeb;
+        }
+      }
+    }
+
     .premium {
       text-transform: uppercase;
       font-size: 15px;
@@ -810,10 +842,10 @@ body.article {
     }
 
     .article-header {
-      padding: 40px 20px;
+      padding: 40px 10px;
 
       @media #{$medium-and-up} {
-        margin: 80px 0;
+        margin: 80px 0 0;
       }
     }
 
@@ -1318,9 +1350,6 @@ body.article {
 
     .lg-icons {
       float: left;
-    }
-
-    .lg-close {
     }
   }
 }
