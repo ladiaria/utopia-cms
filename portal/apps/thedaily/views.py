@@ -855,6 +855,7 @@ class SubscribeView(TemplateView):
             ),
         }
         subscription_form = subscription_formclass(initial=initial)
+        context["is_already_subscribed"] = is_subscriber
 
         if not is_subscriber and request.method == 'POST':
             post = request.POST.copy()
@@ -1077,7 +1078,6 @@ class SubscribeView(TemplateView):
                 'subscriber_form': subscriber_form,
                 'oauth2_button': oauth2_button,
                 'subscription_form': subscription_form,
-                'is_already_subscribed': is_subscriber,
                 'product': product,
                 'planslug': planslug,
                 'subscription_price': SubscriptionPrices.objects.get(subscription_type=planslug),
