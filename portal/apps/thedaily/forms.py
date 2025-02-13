@@ -962,15 +962,19 @@ class GoogleSigninForm(CrispyModelForm):
     next_page = CharField(required=False, widget=HiddenInput())
 
     def __init__(self, *args, **kwargs):
+        google_signin_is_new = kwargs.get("is_new", False)
         submit_label = 'crear cuenta' if kwargs.pop("is_new", None) else "continuar"
         assume_tnc_accepted = kwargs.pop("assume_tnc_accepted", False)
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'google_signin'
-        self.helper.layout = Layout(
-            *('phone', "next_page")
-            + terms_and_conditions_layout_tuple(**({"type": "hidden"} if assume_tnc_accepted else {}))
-            + (FormActions(Submit('save', submit_label, css_class='ut-btn ut-btn-l')),)
+        self.helper.layout = (
+            custom_layout(self.helper.form_id, google_signin_is_new, assume_tnc_accepted)
+            or Layout(
+              *('phone', "next_page")
+              + terms_and_conditions_layout_tuple(**({"type": "hidden"} if assume_tnc_accepted else {}))
+              + (FormActions(Submit('save', submit_label, css_class='ut-btn ut-btn-l')),)
+            )
         )
 
     class Meta:
