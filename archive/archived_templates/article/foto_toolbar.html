@@ -16,7 +16,7 @@
 				<li class="twitter" data-url="http://{{ site.domain }}{{ photo.get_absolute_url }}" data-text="{{ photo.caption|escape|truncatechars:40 }}"></li>
 				<li class="facebook" data-url="http://{{ site.domain }}{{ photo.get_absolute_url }}" data-text="{{ article.caption|escape|truncatechars:40 }}"></li>
         <li class="whatsapp">
-          <a href="whatsapp://send?text={{ "Artículo en ladiaria.com.uy: "|urlencode }}{{ article.headline|urlencode }}{{ " - http://"|urlencode }}{{ site.domain }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share"><span class="fa fa-2x fa-whatsapp"></span></a>
+          <a href="https://wa.me/?text={{ 'Artículo en '|add:site.name|add:': '|add:article.headline|add:' - SITE_URL_SD|add:article.get_absolute_url|urlencode }}" data-action="share/whatsapp/share"><span class="fa fa-2x fa-whatsapp"></span></a>
         </li>
 {% else %}
 
