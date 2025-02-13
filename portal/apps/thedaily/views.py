@@ -668,7 +668,6 @@ def google_phone(request):
         google_signin_form = GoogleSigninForm(**form_kwargs)
     subscribe_log(request, 'google_phone end')
     ctx.update({'google_signin_form': google_signin_form, "is_new": is_new})
-
     return render(request, get_app_template("google_signup.html"), ctx)
 
 
