@@ -3,7 +3,7 @@
 <ul class="nav"{% if is_detail %} id="toolbar"{% endif %}>
   <li class="pin_icon">
     <a class="pin{% if user|is_following:evento %} selected{% endif %}" href="{% url 'actstream_follow' content_type_id=evento.contenttype_id object_id=evento.id %}">
-      <span class="icon-ladiaria" title="Guardar este evento en tu cuenta">p</span>
+      <span class="icon-{{ SITE_DOMAIN_CLASS }}" title="Guardar este evento en tu cuenta">p</span>
     </a>
   </li>
 
@@ -11,7 +11,7 @@
     <li class="comment_icon">
       {# Comentarios #}
       <a href="{{ evento.get_absolute_url }}#comments"><span
-        class="icon-ladiaria" title="Ver y hacer comentarios sobre este artículo">c</span>
+        class="icon-{{ SITE_DOMAIN_CLASS }}" title="Ver y hacer comentarios sobre este artículo">c</span>
         {% if evento.comment_count %}<span class="count">{{ evento.comment_count }}</span>{% endif %}
       </a>
     </li>
@@ -20,7 +20,7 @@
   <li class="share dropdown">
     {% if not is_detail %}
       <a href="#share" class="dropdown-toggle" data-toggle="dropdown" title="Comparti este evento en redes sociales o envialo por email">
-        <span class="icon-ladiaria">s</span><span class="count global">0</span>
+        <span class="icon-{{ SITE_DOMAIN_CLASS }}">s</span><span class="count global">0</span>
       </a>
       <div class="dropdown-menu">
         <ul class="nav icons">
@@ -30,14 +30,9 @@
               <span class="count"{% if not evento.mail_count %} style="display: none;"{% endif %}>{{ article.mail_count }}</span>
             </a>
           </li>
-          {% if not debug %}
-            <li class="twitter" data-url="http://{{ site.domain }}{{ article.get_absolute_url }}" data-text="{{ article.headline|urlencode:40 }}"></li>
-            <li class="facebook" data-url="http://{{ site.domain }}{{ article.get_absolute_url }}" data-text="{{ article.headline|urlencode:40 }}"></li>
-            <li class="googlePlus" data-url="http://{{ site.domain }}{{ article.get_absolute_url }}" data-text="{{ article.headline|urlencode:40 }}"></li>
-            <li class="linkedin" data-url="http://{{ site.domain }}{{ article.get_absolute_url }}" data-text="{{ article.headline|urlencode:40 }}"></li>
-          {% else %}
-            <li>social icons placeholder</li>
-          {% endif %}
+          <li class="twitter" data-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}" data-text="{{ article.headline|urlencode:40 }}"></li>
+          <li class="facebook" data-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}" data-text="{{ article.headline|urlencode:40 }}"></li>
+          <li class="linkedin" data-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}" data-text="{{ article.headline|urlencode:40 }}"></li>
         </ul>
       </div>
     {% endif %}
