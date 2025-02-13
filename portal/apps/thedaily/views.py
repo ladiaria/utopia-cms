@@ -582,7 +582,6 @@ def welcome(request, signup=False, subscribed=False):
 
 
 @never_cache
-@to_response
 @require_http_methods(["GET", "POST"])
 def google_phone(request):
     """
@@ -669,7 +668,7 @@ def google_phone(request):
         google_signin_form = GoogleSigninForm(**form_kwargs)
     subscribe_log(request, 'google_phone end')
     ctx.update({'google_signin_form': google_signin_form, "is_new": is_new})
-    return 'google_signup.html', ctx
+    return render(request, get_app_template('google_signup.html'), ctx)
 
 
 class SubscriptionPricesListView(ListView):

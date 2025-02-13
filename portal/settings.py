@@ -518,6 +518,7 @@ LOGIN_URL = "/usuarios/entrar/"  # login_required decorator redirects here
 LOGOUT_URL = "/usuarios/salir/"
 SIGNUP_URL = "/usuarios/registro/"
 LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = LOGOUT_URL  # To be consistent on what url render after any logout, included admin's
 LOGIN_ERROR_URL = "/usuarios/error/login/"
 
 MESSAGETAGS = {messages.ERROR: "danger"}
