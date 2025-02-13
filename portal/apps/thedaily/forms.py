@@ -83,8 +83,8 @@ def custom_layout(form_id, *args, **kwargs):
                     print(f"Error calling the custom layout function for '{form_id}' form: {exc}")
 
 
-def terms_and_conditions_field(required=False):
-    return BooleanField(label=mark_safe('Leí y acepto los <a>términos y condiciones</a>'), required=required)
+def terms_and_conditions_field(label="Leí y acepto los <a>términos y condiciones</a>", required=False):
+    return BooleanField(label=mark_safe(label), required=required)
 
 
 def terms_and_conds_accepted_field(**extra_kwargs):
