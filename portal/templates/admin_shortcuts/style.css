@@ -1,0 +1,3 @@
+{% extends "admin_shortcuts/style.css" %}
+
+{% block dark_mode %}{% endblock %}
