@@ -312,7 +312,7 @@
       {# begin restricted content #}
       {% if not request.signupwall or not article_restricted_cf or restricted_access %}
 
-        {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
+        {% if article.audio %}{% include audio_template %}{% endif %}
 
         {% if not request.signupwall %}{# closed in line 677 #}
 

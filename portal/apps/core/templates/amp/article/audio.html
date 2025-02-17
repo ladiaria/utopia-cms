@@ -1,21 +1,23 @@
 <div class="ld-block ld-block--sm">
   <div class="container">
     <div class="ld-audio ld-card card">
-        <div amp-access="NOT authenticated" amp-access-hide>
+        <div amp-access="{% block amp_access_denied1 %}NOT authenticated{% endblock %}" amp-access-hide>
           <div class="ld-audio__overlay active">
             <div class="ld-audio__overlay-content">
               <div class="ld-audio__overlay-title">
-                Podrán escuchar este artículo quienes estén registrados.
+                {% block overlay_title %}Podrán escuchar este artículo quienes estén registrados.{% endblock %}
               </div>
               <div class="ld-audio__overlay-links">
-                <a href="{% url 'account-signup' %}?utm_source=web&utm_medium=audio-banner">Creá tu cuenta</a>
-                o <a on="tap:amp-access.login">Ingresá</a>
+                {% block overlay_links %}
+                  <a href="{% url 'account-signup' %}?utm_source=web&utm_medium=audio-banner">Creá tu cuenta</a>
+                  o <a on="tap:amp-access.login">Ingresá</a>
+                {% endblock %}
               </div>
             </div>
           </div>
         </div>
         <div class="ld-audio__title">{{ article.audio.title }}</div>
-        <amp-audio class="ld-audio__audio" amp-access="authenticated" amp-access-hide
+        <amp-audio class="ld-audio__audio" amp-access="{% block amp_access_allowed %}authenticated{% endblock %}" amp-access-hide
                    width="auto"
                    height="50"
                    preload="metadata"
@@ -28,7 +30,7 @@
             <p>Tu navegador no soporta audios HTML5.</p>
           </div>
         </amp-audio>
-        <amp-audio class="ld-audio__audio" amp-access="NOT authenticated" amp-access-hide
+        <amp-audio class="ld-audio__audio" amp-access="{% block amp_access_denied2 %}NOT authenticated{% endblock %}" amp-access-hide
                    width="auto"
                    height="50"
                    preload="metadata"
