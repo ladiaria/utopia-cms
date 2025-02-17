@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from os.path import join
-
 from future import standard_library
 from builtins import str
 import requests
@@ -31,7 +30,7 @@ from favit.models import Favorite
 
 from tagging.models import Tag
 from apps import mongo_db
-from signupwall.middleware import subscriber_access
+from signupwall.middleware import signupwall_exclude, subscriber_access
 from decorators import decorate_if_no_auth, decorate_if_auth
 from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
 from core.models import Publication, Category, Article, ArticleUrlHistory
@@ -143,6 +142,48 @@ def article_detail(request, year, month, slug, domain_slug=None):
     if not article.is_published and not request.user.is_staff:
         raise Http404
 
+    signupwall_exclude_request_condition = signupwall_exclude(request)
+    # If the call to the condition with the request as argument returns True, the visit is not logged to mongodb.
+
+    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
+    template_engine = Engine.get_default()
+
+    # 3. render "landing facebook" if fb browser detected and previous condition is not met
+    if not signupwall_exclude_request_condition:
+        """
+        this code can be migrated to the middleware itself, this way you can use the same logic for all the views, not
+        only for the article detail view, it will cover the use case of links clicked mostly on IG that is more often
+        editors put non-article links there. middleware has already comments about this "ref_core.views.article.py:153"
+        """
+        fb_browser_type = getattr(request, 'fb_browser_type', None)
+        if fb_browser_type:
+            template = "article/landing_facebook.html"
+            template_try = join(template_dir, template)
+            try:
+                template_engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template = template_try
+            return render(request, template, {'browser_type': fb_browser_type})
+
+    # 4. log article views
+    is_amp_detect, user_is_authenticated = getattr(request, "is_amp_detect", False), request.user.is_authenticated
+    if settings.CORE_LOG_ARTICLE_VIEWS and not (
+        signupwall_exclude_request_condition or getattr(request, 'restricted_article', False) or is_amp_detect
+    ):
+        if request.user.is_authenticated and mongo_db is not None:
+            # register this view
+            set_values = {'viewed_at': now()}
+            if getattr(request, 'article_allowed', False):
+                set_values['allowed'] = True
+            mongo_db.core_articleviewedby.update_one(
+                {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
+            )
+        # inc this article visits
+        if mongo_db is not None:
+            mongo_db.core_articlevisits.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
+
     # render/handle feedback/feedback_sent, if any
     report_form, report_form_sent = None, False
     if feedback_allowed(request, article):
@@ -158,25 +199,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         else:
             report_form = feedback_form(article=article, request=request)
 
-    signupwall_exclude_request_condition = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
-    # If the call to the condition with the request as argument returns True, the visit is not logged to mongodb.
-
-    is_amp_detect, user_is_authenticated = getattr(request, "is_amp_detect", False), request.user.is_authenticated
-    if settings.CORE_LOG_ARTICLE_VIEWS and not (
-        signupwall_exclude_request_condition(request) or getattr(request, 'restricted_article', False) or is_amp_detect
-    ):
-        if request.user.is_authenticated and mongo_db is not None:
-            # register this view
-            set_values = {'viewed_at': now()}
-            if getattr(request, 'article_allowed', False):
-                set_values['allowed'] = True
-            mongo_db.core_articleviewedby.update_one(
-                {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
-            )
-        # inc this article visits
-        if mongo_db is not None:
-            mongo_db.core_articlevisits.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
-
+    # comments count/widget
     try:
         talk_url = getattr(settings, 'TALK_URL', None)
         if talk_url and article.allow_comments:
@@ -220,6 +243,11 @@ def article_detail(request, year, month, slug, domain_slug=None):
             and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())
         ),
         "enable_amp": settings.CORE_ARTICLE_DETAIL_ENABLE_AMP and not article.extensions_have_invalid_amp_tags(),
+        "audio_template": (
+            "article/audio"
+            + ("_subscribers_only" if settings.CORE_ARTICLE_DETAIL_AUDIO_TRANSCRIPT_ONLY_SUBSCRIBERS else "")
+            + ".html"
+        )
     }
 
     context.update(
@@ -231,10 +259,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         } if user_is_authenticated else {"signupwall_remaining_banner": settings.SIGNUPWALL_ENABLED}
     )  # NOTE: banner is rendered despite of setting for anon users
 
-    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
     template = "article/detail"
-    template_engine = Engine.get_default()
-
     # custom template support and custom article.type-based tmplates, search for the template iterations:
     # TODO: 16 tests cases: this 4 scenarios * 2 combinations of dir custom settings * 2 cann/AMP
     # 1- search w custom dir w tp

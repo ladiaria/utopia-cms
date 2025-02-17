@@ -22,6 +22,12 @@ class PhotoExtendedModelForm(forms.ModelForm):
         if self.instance.id:
             self.initial['date_taken'] = self.instance.image.date_taken
 
+    def clean_radius_length(self):
+        radius_length = self.cleaned_data.get('radius_length')
+        if radius_length == 0:
+            raise forms.ValidationError('El radio de recorte debe estar en blanco o ser un número mayor que cero.')
+        return radius_length
+
     def save(self, commit=True):
         instance = super().save(commit=commit)
         instance.image.date_taken = self.cleaned_data['date_taken']
