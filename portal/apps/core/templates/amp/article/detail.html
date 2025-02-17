@@ -233,7 +233,7 @@
       </div>
     {% endif %}
 
-    {% if article.audio %}{% include 'article/audio.html' %}{% endif %}{# TODO: not restricted only #}
+    {% if article.audio %}{% include audio_template %}{% endif %}{# TODO: not restricted only #}
 
     {% if not article.public %}
       <div amp-access="authenticated AND NOT subscriber AND NOT access AND (article_allowed OR NOT article_restricted)" amp-access-hide>

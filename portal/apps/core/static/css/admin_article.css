@@ -68,8 +68,9 @@ fieldset.collapse {
   border: 1px solid var(--hairline-color);
 }
 
-/* more width to martor editor*/
+/* more width to martor editor and let its buttons adjust to small widths */
 .main-martor {width: 80%;}
+.main-martor .btn-group.btn-group-sm {flex-wrap: wrap;}
 
 /* others */
 div.field-deck div.charcounter,
