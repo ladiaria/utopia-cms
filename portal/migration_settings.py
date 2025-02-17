@@ -59,8 +59,8 @@ STATICFILES_FINDERS = (
 
 INSTALLED_APPS = (
     "amp_tools",
-    "django.contrib.staticfiles",
     "admin_shortcuts",
+    "django.contrib.staticfiles",
     "django.contrib.admin",
     "django.contrib.admindocs",
     "django.contrib.auth",
@@ -164,15 +164,15 @@ ADMIN_SHORTCUTS = [
     {
         "title": "Links directos (edición)",
         "shortcuts": [
-            {"url_name": "admin:core_publication_changelist", "title": "Publicaciones", "icon": "newspaper"},
-            {"url_name": "admin:core_edition_changelist", "title": "Ediciones", "icon": "newspaper"},
+            {"url_name": "admin:core_publication_changelist", "title": "Publicaciones", "icon": "📰"},
+            {"url_name": "admin:core_edition_changelist", "title": "Ediciones", "icon": "📰"},
             {"url_name": "admin:core_edition_add", "title": "Crear edición"},
             {"url_name": "admin:core_article_add", "title": "Crear Artículo"},
         ],
     },
     {
         "title": "Reportes y otras utilidades",
-        "shortcuts": [{"url": "/dashboard/", "title": 'Reportes, estadísticas y "previews"', "icon": "chart-line"}],
+        "shortcuts": [{"url": "/dashboard/", "title": 'Reportes, estadísticas y "previews"', "icon": "📊"}],
     },
 ]
 
@@ -409,6 +409,9 @@ CORE_ARTICLE_DETAIL_DATE_TOOLTIP = True
 # override to False to show the tooltip only since "Yesterday" dates
 CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 
+# audio transcript only for subscribers by default, change to False to enable for all registered users
+CORE_ARTICLE_DETAIL_AUDIO_TRANSCRIPT_ONLY_SUBSCRIBERS = True
+
 # show or hide photo credits in article cards
 CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 
@@ -568,7 +571,7 @@ LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
 COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
 
 if locals().get("DEBUG_TOOLBAR_ENABLE"):
-    # NOTE when enabled, you need to: pip install "django-debug-toolbar==4.3.0" && ./manage.py collectstatic
+    # NOTE when enabled, you need to: pip install django-debug-toolbar && ./manage.py collectstatic
     INSTALLED_APPS += ('debug_toolbar',)
     MIDDLEWARE = MIDDLEWARE[:9] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[9:]
 
