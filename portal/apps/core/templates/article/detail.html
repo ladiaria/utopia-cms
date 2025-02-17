@@ -190,14 +190,6 @@
         {% endif %}
       {% endif %}
 
-      {% if not article_restricted_cf or restricted_access %}
-        <div class="reading-time">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-            <path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/>
-          </svg> <span class="eta">{{ article.reading_time }}</span> de lectura
-        </div>
-      {% endif %}
-
       <div class="article-header">
         {% if section.is_satirical %}
           <div class="align-center">
@@ -274,6 +266,9 @@
             </div>
           {% endif %}
         {% endif %}
+        {% if not article_restricted_cf or restricted_access %}
+          <p class="reading-time">{{ article.reading_time }} de lectura</p>
+        {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
         </div>{# opened in line 103 #}
@@ -293,13 +288,211 @@
             </svg>
             Guardado
           </button>
-          <button>
-            <svg title="Icono de reproducir" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M9.5 15.5842V8.41616C9.50015 8.32648 9.52442 8.23848 9.57026 8.1614C9.61611 8.08432 9.68184 8.02099 9.76057 7.97804C9.83931 7.9351 9.92814 7.91412 10.0178 7.91731C10.1074 7.9205 10.1945 7.94773 10.27 7.99616L15.846 11.5792C15.9166 11.6244 15.9747 11.6867 16.0149 11.7602C16.0552 11.8338 16.0763 11.9163 16.0763 12.0002C16.0763 12.084 16.0552 12.1665 16.0149 12.2401C15.9747 12.3137 15.9166 12.3759 15.846 12.4212L10.27 16.0052C10.1945 16.0536 10.1074 16.0808 10.0178 16.084C9.92814 16.0872 9.83931 16.0662 9.76057 16.0233C9.68184 15.9803 9.61611 15.917 9.57026 15.8399C9.52442 15.7628 9.50015 15.6748 9.5 15.5852V15.5842Z" fill="#262626"/>
-              <path d="M1 12C1 5.925 5.925 1 12 1C18.075 1 23 5.925 23 12C23 18.075 18.075 23 12 23C5.925 23 1 18.075 1 12ZM12 2.5C9.48044 2.5 7.06408 3.50089 5.28249 5.28249C3.50089 7.06408 2.5 9.48044 2.5 12C2.5 14.5196 3.50089 16.9359 5.28249 18.7175C7.06408 20.4991 9.48044 21.5 12 21.5C14.5196 21.5 16.9359 20.4991 18.7175 18.7175C20.4991 16.9359 21.5 14.5196 21.5 12C21.5 9.48044 20.4991 7.06408 18.7175 5.28249C16.9359 3.50089 14.5196 2.5 12 2.5Z" fill="#262626"/>
-            </svg>
-            Escuchar
-          </button>
+          {% if article.audio %}
+            <button id="ld-audio__action-bar-play-button" class="action-bar__audio">
+              <svg title="Icono de reproducir" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M9.5 15.5842V8.41616C9.50015 8.32648 9.52442 8.23848 9.57026 8.1614C9.61611 8.08432 9.68184 8.02099 9.76057 7.97804C9.83931 7.9351 9.92814 7.91412 10.0178 7.91731C10.1074 7.9205 10.1945 7.94773 10.27 7.99616L15.846 11.5792C15.9166 11.6244 15.9747 11.6867 16.0149 11.7602C16.0552 11.8338 16.0763 11.9163 16.0763 12.0002C16.0763 12.084 16.0552 12.1665 16.0149 12.2401C15.9747 12.3137 15.9166 12.3759 15.846 12.4212L10.27 16.0052C10.1945 16.0536 10.1074 16.0808 10.0178 16.084C9.92814 16.0872 9.83931 16.0662 9.76057 16.0233C9.68184 15.9803 9.61611 15.917 9.57026 15.8399C9.52442 15.7628 9.50015 15.6748 9.5 15.5852V15.5842Z" fill="#262626"/>
+                <path d="M1 12C1 5.925 5.925 1 12 1C18.075 1 23 5.925 23 12C23 18.075 18.075 23 12 23C5.925 23 1 18.075 1 12ZM12 2.5C9.48044 2.5 7.06408 3.50089 5.28249 5.28249C3.50089 7.06408 2.5 9.48044 2.5 12C2.5 14.5196 3.50089 16.9359 5.28249 18.7175C7.06408 20.4991 9.48044 21.5 12 21.5C14.5196 21.5 16.9359 20.4991 18.7175 18.7175C20.4991 16.9359 21.5 14.5196 21.5 12C21.5 9.48044 20.4991 7.06408 18.7175 5.28249C16.9359 3.50089 14.5196 2.5 12 2.5Z" fill="#262626"/>
+              </svg>
+              Escuchar
+            </button>
+            <div class="audio-container">
+              <div class="audio-timeline-container">
+                <!-- Botón de Reproducir -->
+                <button id="ld-audio__play-button" style="display: none;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 12.3876V3.61118C4.00018 3.50137 4.0297 3.39363 4.08547 3.29925C4.14124 3.20488 4.22121 3.12733 4.31699 3.07475C4.41277 3.02217 4.52083 2.99648 4.62986 3.00039C4.7389 3.00429 4.84488 3.03764 4.9367 3.09693L11.7199 7.48392C11.8058 7.53931 11.8764 7.61555 11.9254 7.70562C11.9743 7.7957 12 7.89672 12 7.99939C12 8.10206 11.9743 8.20308 11.9254 8.29315C11.8764 8.38323 11.8058 8.45947 11.7199 8.51486L4.9367 12.9031C4.84488 12.9624 4.7389 12.9957 4.62986 12.9996C4.52083 13.0035 4.41277 12.9778 4.31699 12.9252C4.22121 12.8727 4.14124 12.7951 4.08547 12.7007C4.0297 12.6064 4.00018 12.4986 4 12.3888V12.3876Z" fill="#262626"/>
+                  </svg>
+                </button>
+
+                <!-- Botón de Pausa -->
+                <button id="ld-audio__pause-button">
+                  <svg title="Icono pausar" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 3.3335H4.66667C4.29848 3.3335 4 3.63197 4 4.00016V12.0002C4 12.3684 4.29848 12.6668 4.66667 12.6668H6C6.36819 12.6668 6.66667 12.3684 6.66667 12.0002V4.00016C6.66667 3.63197 6.36819 3.3335 6 3.3335Z" fill="#262626"/>
+                    <path d="M11.334 3.3335H10.0007C9.63246 3.3335 9.33398 3.63197 9.33398 4.00016V12.0002C9.33398 12.3684 9.63246 12.6668 10.0007 12.6668H11.334C11.7022 12.6668 12.0007 12.3684 12.0007 12.0002V4.00016C12.0007 3.63197 11.7022 3.3335 11.334 3.3335Z" fill="#262626"/>
+                  </svg>
+                </button>
+
+                <p class="elapsed-time"><span id="audio-current-time">0:00</span> / <span id="audio-total-time">0:00</span></p>
+                <!-- Línea de tiempo -->
+                <input type="range" id="audio-timeline" min="0" max="100" value="0" />
+
+                <!-- Botón de opciones adicionales -->
+                <button id="ld-audio__options-button">
+                  <svg title="Icono tres puntos vertical" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M7.99935 10.6665C8.35297 10.6665 8.69211 10.807 8.94216 11.057C9.19221 11.3071 9.33268 11.6462 9.33268 11.9998C9.33268 12.3535 9.19221 12.6926 8.94216 12.9426C8.69211 13.1927 8.35297 13.3332 7.99935 13.3332C7.64573 13.3332 7.30659 13.1927 7.05654 12.9426C6.80649 12.6926 6.66602 12.3535 6.66602 11.9998C6.66602 11.6462 6.80649 11.3071 7.05654 11.057C7.30659 10.807 7.64573 10.6665 7.99935 10.6665ZM7.99935 6.6665C8.35297 6.6665 8.69211 6.80698 8.94216 7.05703C9.19221 7.30708 9.33268 7.64622 9.33268 7.99984C9.33268 8.35346 9.19221 8.6926 8.94216 8.94265C8.69211 9.19269 8.35297 9.33317 7.99935 9.33317C7.64573 9.33317 7.30659 9.19269 7.05654 8.94265C6.80649 8.6926 6.66602 8.35346 6.66602 7.99984C6.66602 7.64622 6.80649 7.30708 7.05654 7.05703C7.30659 6.80698 7.64573 6.6665 7.99935 6.6665ZM7.99935 2.6665C8.35297 2.6665 8.69211 2.80698 8.94216 3.05703C9.19221 3.30708 9.33268 3.64622 9.33268 3.99984C9.33268 4.35346 9.19221 4.6926 8.94216 4.94265C8.69211 5.19269 8.35297 5.33317 7.99935 5.33317C7.64573 5.33317 7.30659 5.19269 7.05654 4.94265C6.80649 4.6926 6.66602 4.35346 6.66602 3.99984C6.66602 3.64622 6.80649 3.30708 7.05654 3.05703C7.30659 2.80698 7.64573 2.6665 7.99935 2.6665Z" fill="#262626"/>
+                  </svg>
+                </button>
+                <!-- Tooltip con opciones de velocidad -->
+                <div id="ld-audio__options-tooltip" class="tooltip hidden">
+                  <button id="playback-speed-button">Playback Speed</button>
+                  <div id="speed-options" class="hidden">
+                    <button class="speed-option" data-speed="0.25">0.25</button>
+                    <button class="speed-option" data-speed="0.5">0.5</button>
+                    <button class="speed-option" data-speed="0.75">0.75</button>
+                    <button class="speed-option" data-speed="1">Normal <span class="checkmark"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.75 8.75L6.25 12.25L13.25 4.75" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+                    <button class="speed-option" data-speed="1.25">1.25</button>
+                    <button class="speed-option" data-speed="1.5">1.5</button>
+                    <button class="speed-option" data-speed="1.75">1.75</button>
+                    <button class="speed-option" data-speed="2">2</button>
+                  </div>
+                </div>
+
+                <audio class="ld-audio__audio"
+                  preload="metadata"
+                  controls
+                  controlsList="nodownload"
+                  src="{% if not user.is_anonymous %}{{ SITE_URL }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}">
+                  Tu navegador no soporta este elemento de <code>audio</code>.
+                </audio>
+              </div>
+              <p class="read-by">Leído por Andrés Alba</p>
+            </div>
+            <script>
+              $(function(){
+                const audioElement = document.querySelector("audio.ld-audio__audio");
+                const timeline = document.getElementById("audio-timeline");
+                const actionBarPlayButton = document.getElementById("ld-audio__action-bar-play-button");
+                const playButton = document.getElementById("ld-audio__play-button");
+                const pauseButton = document.getElementById("ld-audio__pause-button");
+                const currentTimeDisplay = document.getElementById("audio-current-time");
+                const totalTimeDisplay = document.getElementById("audio-total-time");
+                const optionsButton = document.getElementById("ld-audio__options-button");
+                const optionsTooltip = document.getElementById("ld-audio__options-tooltip");
+                const playbackSpeedButton = document.getElementById("playback-speed-button");
+                const speedOptions = document.getElementById("speed-options");
+                const speedButtons = document.querySelectorAll(".speed-option");
+
+                let currentSpeed = 1; // Iniciamos en velocidad normal
+
+
+                // Reproducir audio por primera vez
+                actionBarPlayButton.addEventListener("click", () => {
+                  document.querySelector(".audio-container").classList.toggle("show");
+                  document.querySelector(".action-bar__audio").classList.toggle("hidden");
+                  audioElement.play();
+                });
+
+                // Reproducir audio
+                playButton.addEventListener("click", () => {
+                  audioElement.play();
+                  playButton.style.display = "none";
+                  pauseButton.style.display = "flex";
+                });
+
+                // Pausar audio
+                pauseButton.addEventListener("click", () => {
+                  audioElement.pause();
+                  playButton.style.display = "flex";
+                  pauseButton.style.display = "none";
+                });
+
+                // Actualizar timeline en tiempo real
+                audioElement.addEventListener("timeupdate", () => {
+                  const progress = (audioElement.currentTime / audioElement.duration) * 100;
+                  timeline.value = progress;
+                  updateTimelineBackground(progress);
+                  updateCurrentTime();
+                });
+
+                // Permitir al usuario buscar en el audio
+                timeline.addEventListener("input", () => {
+                  const seekTime = (timeline.value / 100) * audioElement.duration;
+                  audioElement.currentTime = seekTime;
+                  updateTimelineBackground(timeline.value);
+                  updateCurrentTime();
+                });
+
+                // Reiniciar botones al finalizar el audio
+                audioElement.addEventListener("ended", () => {
+                  playButton.style.display = "flex";
+                  pauseButton.style.display = "none";
+                  timeline.value = 0;
+                  updateTimelineBackground(0);
+                  updateCurrentTime();
+                });
+
+                // Asegurarse de que el timeline comience correctamente
+                audioElement.addEventListener("loadedmetadata", () => {
+                  timeline.value = 0;
+                  updateTimelineBackground(0);
+                  totalTimeDisplay.textContent = formatTime(audioElement.duration);
+                  updateCurrentTime();
+                });
+
+                // Actualizar el color del timeline dinámicamente
+                function updateTimelineBackground(value) {
+                  timeline.style.setProperty("--progression-range-percentage", value + "%");
+                }
+                // Actualizar el tiempo transcurrido
+                function updateCurrentTime() {
+                  currentTimeDisplay.textContent = formatTime(audioElement.currentTime);
+                }
+
+                // Formatear tiempo en mm:ss
+                function formatTime(time) {
+                  if (isNaN(time)) return "0:00";
+                  const minutes = Math.floor(time / 60);
+                  const seconds = Math.floor(time % 60);
+                  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+                }
+
+                // Mostrar el tooltip al hacer clic en el botón de opciones
+                optionsButton.addEventListener("click", () => {
+                  optionsTooltip.classList.toggle("hidden");
+                  playbackSpeedButton.classList.remove("hidden");
+                  speedOptions.classList.add("hidden");
+                });
+
+                // Mostrar las opciones de velocidad y ocultar el botón "Playback Speed"
+                playbackSpeedButton.addEventListener("click", () => {
+                  playbackSpeedButton.classList.add("hidden");
+                  speedOptions.classList.remove("hidden");
+                });
+
+                // Cambiar la velocidad del audio al hacer clic en una opción
+                speedButtons.forEach(button => {
+                  button.addEventListener("click", (e) => {
+                    const speed = parseFloat(e.target.getAttribute("data-speed"));
+                    audioElement.playbackRate = speed;
+                    updateSpeedIndicator(speed);
+                    optionsTooltip.classList.add("hidden");
+                    playbackSpeedButton.classList.remove("hidden");
+                    speedOptions.classList.add("hidden");
+                  });
+                });
+
+                // Ocultar el tooltip si se hace clic fuera
+                document.addEventListener("click", (event) => {
+                  if (
+                    !optionsButton.contains(event.target) &&
+                    !optionsTooltip.contains(event.target)
+                  ) {
+                    optionsTooltip.classList.add("hidden");
+                    playbackSpeedButton.classList.remove("hidden");
+                    speedOptions.classList.add("hidden");
+                  }
+                });
+
+                // Actualizar el ícono de check en la velocidad actual
+                function updateSpeedIndicator(selectedSpeed) {
+                  speedButtons.forEach(btn => {
+                    const speed = parseFloat(btn.getAttribute("data-speed"));
+                    const checkmark = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.75 8.75L6.25 12.25L13.25 4.75" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                    btn.querySelector(".checkmark")?.remove();
+
+                    if (speed === selectedSpeed) {
+                      const iconSpan = document.createElement("span");
+                      iconSpan.classList.add("checkmark");
+                      iconSpan.innerHTML = checkmark;
+                      btn.appendChild(iconSpan);
+                    }
+                  });
+                  currentSpeed = selectedSpeed;
+                }
+            });
+            </script>
+          {% endif %}
         </div>
         <div class="right-buttons">
           <button>
@@ -320,7 +513,7 @@
       {# begin restricted content #}
       {% if not request.signupwall or not article_restricted_cf or restricted_access %}
 
-        {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
+        {% comment %} {% if article.audio %}{% include 'article/audio.html' %}{% endif %} {% endcomment %}
 
         <div class="article-author">
           {% with authors=article.get_authors %}

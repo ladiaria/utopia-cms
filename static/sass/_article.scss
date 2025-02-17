@@ -238,10 +238,14 @@ article {
       > span {
         display: none;
       }
+      > p {
+        text-align: center;
+      }
     }
 
     @media #{$medium-and-down} {
       flex-direction: column;
+      padding: 0 20px;
 
       > span {
         display: none;
@@ -730,11 +734,14 @@ article {
 
 body.article {
   article#main-article {
-    h1 {
+    .article-header {
+      padding: 48px 20px 24px;
+    }
+
+    h1.article-title {
       margin-top: 0;
     }
 
-    .reading-time,
     .premium {
       text-align: center;
       padding: 0 20px;
@@ -780,12 +787,12 @@ body.article {
     }
 
     .reading-time {
-      margin-top: 10px;
-      svg {
-        display: inline-block;
-        position: relative;
-        top: 2px;
-      }
+      font-family: Roboto, sans-serif;
+      max-width: var(--max-article-width);
+      margin: 0 auto;
+      text-transform: uppercase;
+      font-size: px-to-rem(14px);
+      color: #727272;
     }
 
     .article-action-bar {
@@ -794,7 +801,8 @@ body.article {
       display: flex;
       justify-content: space-between;
       border-top: 1px solid #d9d9d9;
-      padding-top: 24px;
+      padding: 24px 0 60px;
+      gap: 16px;
 
       > div {
         display: flex;
@@ -813,8 +821,111 @@ body.article {
         padding: 10px 16px;
         line-height: normal;
 
+        &.hidden {
+          display: none;
+        }
+
         &:hover {
           background: #ebebeb;
+        }
+      }
+    }
+
+    .audio-container {
+      display: none;
+      width: 100%;
+
+      &.show {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .audio-timeline-container {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .read-by,
+      .elapsed-time {
+        font-family: Roboto, sans-serif;
+        font-size: px-to-rem(14px);
+        line-height: normal;
+        margin: 0;
+      }
+      audio {
+        display: none;
+      }
+      button {
+        border: none;
+        padding: 0;
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      input[type="range"] {
+        --progression-range-percentage: 0%;
+        --progression-bar-height: 3px;
+        --progression-bar-completed-color: #262626;
+        --progression-bar-uncompleted-color: #b0b0b0;
+        width: 100%;
+        flex: 1;
+        height: var(--progression-bar-height);
+        border: none;
+        border-radius: 3px;
+        margin: 0;
+        background: linear-gradient(
+          to right,
+          var(--progression-bar-completed-color) var(--progression-range-percentage),
+          var(--progression-bar-uncompleted-color) var(--progression-range-percentage)
+        );
+        appearance: none;
+        cursor: pointer;
+
+        &::-webkit-slider-runnable-track {
+          height: var(--progression-bar-height);
+          border-radius: 3px;
+          background: transparent;
+        }
+
+        &::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 0;
+          height: 0;
+          border: none;
+          background: transparent;
+        }
+
+        &::-moz-range-thumb {
+          width: 0;
+          height: 0;
+          border: none;
+          background: transparent;
+        }
+      }
+      .tooltip {
+        position: absolute;
+        width: 200px;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+
+        button {
+          width: 100%;
+          justify-content: space-between;
+          border-radius: 0;
+          padding: 14px;
+          padding-right: 30px;
+          height: auto;
+          text-transform: none;
+        }
+
+        &.hidden,
+        .hidden {
+          display: none;
         }
       }
     }
@@ -841,17 +952,9 @@ body.article {
       }
     }
 
-    .article-header {
-      padding: 40px 10px;
-
-      @media #{$medium-and-up} {
-        margin: 80px 0 0;
-      }
-    }
-
     .article-deck,
     .article-lead {
-      margin-top: 48px;
+      margin: 20px auto 40px;
       font-size: 20px;
 
       @media (min-width: 769px) {
@@ -859,7 +962,6 @@ body.article {
       }
     }
 
-    .article-deck,
     .article-lead,
     .article-body p {
       margin: 20px auto;
