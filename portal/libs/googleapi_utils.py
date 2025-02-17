@@ -11,6 +11,7 @@ def build_youtube_api():
     """
     Builds a YouTube API client using the credentials defined in settings.
     """
+    print(1)  # TODO: removeme
     auth_method, cred = getattr(settings, "UTOPIA_CMS_YOUTUBE_API_AUTH_METHOD", None), None
     build_kwargs = {}
     if auth_method:
@@ -32,13 +33,16 @@ def build_youtube_api():
         return build('youtube', 'v3', **build_kwargs)
 
 
-def youtube_api_playlistItems(youtube_api, playlistId, maxResults=8, reverse=False):
+def youtube_api_playlistItems(youtube_api, playlistId, maxResults=8, reverse=False, include_description=False):
     """
     Returns a list of tuples with the video id, title and type of the playlist items.
     """
+    print(2)  # TODO: removeme
     items = [
         (
-            v["snippet"]["resourceId"]["videoId"], v["snippet"]["title"], "playlist"
+            (v["snippet"]["resourceId"]["videoId"], v["snippet"]["title"])
+            + ((v["snippet"]["description"],) if include_description else ())
+            + ("playlist",)
         ) for v in youtube_api.playlistItems().list(
             part="snippet", playlistId=playlistId, maxResults=maxResults
         ).execute()["items"]
@@ -53,6 +57,7 @@ def youtube_api_embeds(youtube_api, video_ids):
     Returns generator of the "iframe" html tags for a list of videos
     @param: vids iterable of videos ids
     """
+    print(3)  # TODO: removeme
     return (
         p["player"]["embedHtml"] for p in youtube_api.videos().list(
             part='player', id=",".join(video_ids), maxHeight=210
@@ -60,11 +65,14 @@ def youtube_api_embeds(youtube_api, video_ids):
     )
 
 
-def youtube_api_search(channelId=None, search_q=None, playlistId=None, maxResults=None, embeds=False):
+def youtube_api_search(
+    channelId=None, search_q=None, playlistId=None, maxResults=None, embeds=False, include_description=False
+):
     """
     Returns a list of tuples with the video id, title and type of the search results inside a channel or all videos
     from a playlist. TODO: documnet embed param.
     """
+    print(4)  # TODO: removeme
     items = []
     if channelId and search_q or playlistId:
 
@@ -93,7 +101,9 @@ def youtube_api_search(channelId=None, search_q=None, playlistId=None, maxResult
                 ]
 
             elif playlistId:
-                items += youtube_api_playlistItems(youtube_api, playlistId, maxResults)
+                items += youtube_api_playlistItems(
+                    youtube_api, playlistId, maxResults, include_description=include_description
+                )
             if embeds:
                 items = youtube_api_embeds(youtube_api, [item[0] for item in items])
     return items
