@@ -412,15 +412,11 @@
                   updateCurrentTime();
                 });
 
-                console.log('before loaded metadata');
-                console.log(audioElement);
                 totalTimeDisplay.textContent = formatTime(audioElement.duration);
                 // Asegurarse de que el timeline comience correctamente
                 audioElement.addEventListener("loadedmetadata", () => {
-                  console.log('loaded metadata');
                   timeline.value = 0;
                   updateTimelineBackground(0);
-
                   updateCurrentTime();
                 });
 
