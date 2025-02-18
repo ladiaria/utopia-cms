@@ -423,6 +423,11 @@
                   updateCurrentTime();
                 });
 
+
+                audioElement.addEventListener('error', (e) => {
+                  console.error('Error al cargar el audio:', e);
+                });
+
                 // Actualizar el color del timeline dinámicamente
                 function updateTimelineBackground(value) {
                   timeline.style.setProperty("--progression-range-percentage", value + "%");
