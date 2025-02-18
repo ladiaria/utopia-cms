@@ -10,9 +10,14 @@
 
 - System packages:
 
-  The following list (ames can vary by OS/distribution) contains Linux/MacOS packages needed for a full functional environment, not all are 100% required because they can be replaced or dicarded depending each environment and local infrastructure:
+  The following list (ames can vary by OS/distribution) contains Linux/MacOS packages needed for a full functional environment, not all are 100% required because they can be replaced or discarded depending each environment and local infrastructure:
 
-  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel rubygem-sass npm gcc libmaxminddb-devel rabbitmq
+  ```
+  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel rubygem-sass npm gcc libmaxminddb-devel
+  rabbitmq memcached
+  ```
+
+  - Ubuntu/Debian notes: `rubygem-sass` is named `ruby-sass`
 
 - npm (Node.js packages):
 
@@ -103,6 +108,7 @@ Then create your nginx conf file using the sample provided (edit it after copy, 
 ```
 (utopiacms) user@host:~/utopia-cms/portal $ sudo cp ../docs/nginx_example_conf/utopia-cms-dev.conf /etc/nginx/conf.d
 (utopiacms) user@host:~/utopia-cms/portal $ sudo systemctl restart nginx
+(utopiacms) user@host:~/utopia-cms/portal $ sudo systemctl start memcached
 (utopiacms) user@host:~/utopia-cms/portal $ ./runserver yoogle.com:8000
 ```
 
