@@ -1,6 +1,7 @@
 <div class="ld-block ld-block--sm">
   <div class="container">
     <div class="ld-audio ld-card card">
+      {% block audio_overlay %}
         {% if user.is_anonymous %}
           <div class="ld-audio__overlay">
             <button class="ld-audio__overlay-close-btn" aria-label="Cerrar">
@@ -18,15 +19,13 @@
             </div>
           </div>
         {% endif %}
-        <div class="ld-audio__title">{{ article.audio.title }}</div>
-        <audio class="ld-audio__audio"
-            preload="metadata"
-            controls
-            controlsList="nodownload"
-            src="{% if not user.is_anonymous %}{{ SITE_URL }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}">
-            Tu navegador no soporta este elemento de <code>audio</code>.
-        </audio>
-        <div class="ld-audio__description">{{ article.audio.description }}</div>
+      {% endblock %}
+      <div class="ld-audio__title">{{ article.audio.title }}</div>
+      <audio class="ld-audio__audio" preload="metadata" controls controlsList="nodownload"
+             src="{% block audio_src %}{% if not user.is_anonymous %}{{ SITE_URL_SD }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}{% endblock %}">
+        Tu navegador no soporta este elemento de <code>audio</code>.
+      </audio>
+      <div class="ld-audio__description">{{ article.audio.description }}</div>
     </div>
   </div>
 </div>
