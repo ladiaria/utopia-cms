@@ -11,29 +11,29 @@
 {% endblock %}
 
 {% block content %}
-<div id="#content-main">
-<form action="" method="post">
-  {% csrf_token %}
-  <p>¿Está seguro que desea publicar / despublicar los siguientes {{ articles.count }} artículo(s)?</p>
-  <table class="module full-width">
-    {% for article in articles %}
-      <tr class="form-row">
-        <td>&bull; {{ article }}</td>
-        <td class="result">
-          &rarr;
-          <span class="{% if article.is_published %}un{% endif %}publish">
-            {% if article.is_published %}No {% endif %}Publicado
-          </span>
-          <input type="hidden" name="_selected_action" value="{{ article.pk }}" />
-        </td>
-      </tr>
-    {% endfor %}
-  </table>
-  <input type="hidden" name="action" value="toggle_published" />
-  <div class="submit-row">
-    <input type="submit" name="cancel" value="Cancelar"/>
-    <input type="submit" class="default" name="apply" value="Aplicar cambios"/>
+  <div id="#content-main">
+    <form action="" method="post">
+      {% csrf_token %}
+      <p>¿Está seguro que desea publicar / despublicar los siguientes {{ articles.count }} artículo(s)?</p>
+      <table class="module full-width">
+        {% for article in articles %}
+          <tr class="form-row">
+            <td>&bull; {{ article }}</td>
+            <td class="result">
+              &rarr;
+              <span class="{% if article.is_published %}un{% endif %}publish">
+                {% if article.is_published %}No {% endif %}Publicado
+              </span>
+              <input type="hidden" name="_selected_action" value="{{ article.pk }},{{ article.version }}" />
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+      <input type="hidden" name="action" value="toggle_published" />
+      <div class="submit-row">
+        <input type="submit" name="cancel" value="Cancelar"/>
+        <input type="submit" class="default" name="apply" value="Aplicar cambios"/>
+      </div>
+    </form>
   </div>
-</form>
-</div>
 {% endblock %}

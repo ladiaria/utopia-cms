@@ -178,16 +178,19 @@ class Publication(Model):
         self.__original_slug = self.slug
 
     @staticmethod
+    def default():
+        try:
+            return Publication.objects.get(slug=settings.DEFAULT_PUB)
+        except (ProgrammingError, Publication.DoesNotExist):
+            pass
+
+    @staticmethod
     def default_name():
         default_pub_name = getattr(settings, 'DEFAULT_PUB_NAME', None)
         if default_pub_name:
             return default_pub_name
-        DEFAULT_PUB = settings.DEFAULT_PUB
-        try:
-            default_pub_name = Publication.objects.get(slug=DEFAULT_PUB).name
-        except (ProgrammingError, Publication.DoesNotExist):
-            default_pub_name = DEFAULT_PUB
-        return default_pub_name
+        default_pub = Publication.default()
+        return default_pub.name if default_pub else settings.DEFAULT_PUB
 
     def save(self, *args, **kwargs):
         # needed for articles url update

@@ -205,7 +205,9 @@ def article_detail(request, year, month, slug, domain_slug=None):
     except (ConnectionError, ValueError, KeyError):
         comments_count = 0
 
-    publication = article.main_section.edition.publication if article.main_section else None
+    publication = article.main_section.edition.publication if article.main_section else (
+        Publication.default() if not Publication.multi() else None
+    )
     context = {
         "DEBUG": settings.DEBUG,
         'article': article,

@@ -231,9 +231,61 @@ class CT(object):
 
 
 def smart_quotes(value):
-    # TODO: explain this function and try to change it at least to eliminate the warnings of "invalid escape sequence"
+    """
+    # TODO: run the test function defined after this function to see errors when input is html, fix them
+    # TODO: use compiled regex
+    Replace straight double quotes (") with curly double quotes ("") in the given string.
+
+    Handles special cases for:
+    - HTML tags (preserves quotes inside tags)
+    - Spanish language characters and punctuation (¿¡ÑÁÉÍÓÚñáéíóú)
+
+    Args:
+        value (str): Input string containing straight quotes
+
+    Returns:
+        str: String with appropriate curly quotes substituted
+    """
     value = re.sub(r"(?![^<>]*>)(\")\b", "“", value)
     value = re.sub(r"\b(?![^<>]*>)(\")", "”", value)
-    value = re.sub("\"(?=[¿¡\‘\'\(\[ÑÁÉÍÓÚñáéíóú])", "“", value)
-    value = re.sub("(?<=[?!\’\'\)ÑÁÉÍÓÚñáéíóú\.\%\]])\"", "”", value)
+    value = re.sub(r"\"(?=[¿¡‘'\(\[ÑÁÉÍÓÚñáéíóú])", "“", value)
+    value = re.sub(r"(?<=[\?\!’'\)ÑÁÉÍÓÚñáéíóú\.\%\]])\"", "”", value)
     return value
+
+
+def test_smart_quotes():
+    """Test cases where smart_quotes change/unchange the input"""
+    test_cases = [
+        # tuples of cases with 2 elements, first should be changed, second not
+        # Basic quote replacement
+        ('This is a "quote"', 'This is a <a href="quote">'),
+
+        # Quote before Spanish characters
+        ('"ítem!"', 'This is a <a href="item" title="ítem!">ítem!</a>'),
+
+        # Quote after Spanish characters
+        ('surubí"', 'surubí<a href="surubi" title="surubí">surubí</a>'),
+
+        # Quote with punctuation
+        ('Something?"', '<a href="something" title="Something?">Something?</a>'),
+
+        # Multiple quotes
+        ('He said "hello" and "goodbye"', 'He said <a href="hello" title="hello">hello</a> and <a href="goodbye">'),
+    ]
+
+    for to_be_changed, to_be_unchanged in test_cases:
+        result = smart_quotes(to_be_changed)
+        if result == to_be_changed:
+            print(f"❌ No change when expected: '{to_be_changed}'")
+        else:
+            print(f"✓ Changed: '{to_be_changed}' -> '{result}'")
+        result = smart_quotes(to_be_unchanged)
+        if result != to_be_unchanged:
+            print(f"❌ changed when not expected: '{to_be_unchanged}' -> '{result}'")
+        else:
+            print(f"✓ Unchanged: '{to_be_unchanged}'")
+
+
+if __name__ == "__main__":
+    # Run tests
+    test_smart_quotes()

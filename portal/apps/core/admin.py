@@ -67,7 +67,7 @@ from .models import (
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
 from .tasks import update_category_home, send_push_notification
-from .utils import update_article_url_in_coral_talk, smart_quotes, article_slug_readonly
+from .utils import update_article_url_in_coral_talk, article_slug_readonly
 
 
 class PrintOnlyArticleInline(TabularInline):
@@ -558,10 +558,13 @@ class ArticleAdminModelForm(ModelForm):
             ),
             timezone.utc,
         )
+        slug = cleaned_data.get('slug').strip()
+        if article_slug_readonly or not slug:
+            slug = slugify(cleanhtml(ldmarkup(cleaned_data.get('headline'))))
         targets = Article.objects.filter(
             Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
             | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
-            slug=slugify(cleanhtml(ldmarkup(smart_quotes(cleaned_data.get('headline'))))),
+            slug=slug,
         )
         if self.instance.id:
             targets = targets.exclude(id=self.instance.id)
