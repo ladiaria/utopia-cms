@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
-
 import re
 
 from django.db.models import (
     BooleanField, CharField, DateTimeField, FileField, Model, PositiveIntegerField, SlugField, TextField, URLField
 )
-from django.utils import timezone
 
 
-YT_RE = re.compile(r'(?:v|embed)[=\/]([\w_-]{11})')
+YT_RE = re.compile(r'(?:v|embed|youtu.be)[=\/]([\w_-]{11})')
 
 
 class Video(Model):
@@ -18,15 +16,9 @@ class Video(Model):
     caption = CharField('Pie', max_length=255, null=True, blank=True)
     byline = CharField('Autor/es', max_length=255, null=True, blank=True)
     description = TextField('Descripción', null=True, blank=True)
-    date_uploaded = DateTimeField('Subido', null=True, blank=True,
-                                  editable=False)
+    date_uploaded = DateTimeField('Subido', null=True, blank=True, auto_now_add=True, editable=False)
     times_viewed = PositiveIntegerField('Visto', default=0, editable=False)
     is_public = BooleanField('Público', default=True)
-
-    def save(self):
-        if not self.id:
-            self.date_uploaded = timezone.now()
-        super(Video, self).save()
 
     def __str__(self):
         if self.title:
@@ -36,22 +28,26 @@ class Video(Model):
 
 
 class YouTubeVideo(Model):
-    url = URLField(u'URL de YouTube', unique=True)
-    title = CharField(u'Título', max_length=50, blank=True, null=True)
-    description = TextField(u'Descripción', blank=True, null=True)
-    date_created = DateTimeField(u'Fecha de creación', auto_now_add=True)
-    yt_id = CharField(u'ID Youtube', max_length=11, blank=True, null=True)
+    url = URLField('URL de YouTube', unique=True)
+    title = CharField('Título', max_length=50, blank=True, null=True)
+    description = TextField('Descripción', blank=True, null=True)
+    date_created = DateTimeField('Fecha de creación', auto_now_add=True)
+    yt_id = CharField('ID Youtube', max_length=11, blank=True, null=True)
+
+    @staticmethod
+    def format_url(yid):
+        return f'https://www.youtube.com/watch?v={yid}'
 
     def save(self, *args, **kwargs):
         yid = YT_RE.findall(self.url)[0]
-        self.url = 'https://www.youtube.com/embed/%s' % yid
         self.yt_id = yid
-        super(YouTubeVideo, self).save(*args, **kwargs)
+        self.url = YouTubeVideo.format_url(yid)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title if self.title else 'Video #%i' % self.id
 
     class Meta:
         get_latest_by = 'date_created'
-        verbose_name = u'Video YouTube'
-        verbose_name_plural = u'Videos YouTube'
+        verbose_name = 'Video YouTube'
+        verbose_name_plural = 'Videos YouTube'

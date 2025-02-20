@@ -1,11 +1,6 @@
-import re
-
 from django import forms
 
-from .models import YouTubeVideo
-
-
-YT_RE = re.compile(r'(?:v|embed)[=\/]([\w_-]{11})')
+from .models import YouTubeVideo, YT_RE
 
 
 class YouTubeVideoForm(forms.ModelForm):
@@ -13,11 +8,10 @@ class YouTubeVideoForm(forms.ModelForm):
         model = YouTubeVideo
         fields = "__all__"
 
-    def clean(self):
-        cleaned_data = super(YouTubeVideoForm, self).clean()
-        url = cleaned_data.get("url")
-        if not url or not YT_RE.findall(url):
-            msg = u"No es una url de youtube valida"
-            self._errors["url"] = self.error_class([msg])
-
-        return cleaned_data
+    def clean_url(self):
+        url = self.cleaned_data.get("url")
+        yt_id = YT_RE.findall(url)
+        if url and yt_id:
+            return YouTubeVideo.format_url(yt_id[0])
+        else:
+            self.add_error("url", "No es una url de youtube válida")
