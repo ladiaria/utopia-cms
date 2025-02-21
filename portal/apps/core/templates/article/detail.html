@@ -218,7 +218,11 @@
         {% if article_restricted_cf and restricted_access %}
           {% include 'article/paywall/pw_premium.html' %}
         {% endif %}
+
+        {% comment %} TODO: Revisar condiciones
+        <!-- si el artículo no es full restrictivo o el artículo tiene acceso restrictivo -->
         {% if not article_restricted_cf or restricted_access %}
+          <!-- si el usuario está autenticado y no "sigue" al artículo -->
           {% if user.is_authenticated and not followed %}
             <div class="read-later top">
               <a class="read-later__btn read-later__add">
@@ -266,6 +270,7 @@
             </div>
           {% endif %}
         {% endif %}
+        {% endcomment %}
         {% if not article_restricted_cf or restricted_access %}
           <p class="reading-time">{{ article.reading_time }} de lectura</p>
         {% endif %}
@@ -276,241 +281,83 @@
 
       <div class="article-action-bar">
         <div class="left-buttons">
-          <button class="read-later__add">
-            <svg title="Bookmark" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M6 6.2C6 5.08 6 4.52 6.218 4.092C6.40974 3.71569 6.71569 3.40974 7.092 3.218C7.52 3 8.08 3 9.2 3H14.8C15.92 3 16.48 3 16.908 3.218C17.2843 3.40974 17.5903 3.71569 17.782 4.092C18 4.52 18 5.08 18 6.2V19.505C18 19.991 18 20.234 17.899 20.367C17.8554 20.4248 17.7997 20.4725 17.7358 20.5067C17.6719 20.5409 17.6013 20.5608 17.529 20.565C17.362 20.575 17.16 20.44 16.756 20.171L12 17L7.244 20.17C6.84 20.44 6.638 20.575 6.47 20.565C6.39784 20.5606 6.32748 20.5407 6.26377 20.5065C6.20007 20.4723 6.14453 20.4247 6.101 20.367C6 20.234 6 19.991 6 19.505V6.2Z" stroke="#262626" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Leer después
-          </button>
-          <button class="read-later__saved hide">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M6 6.2C6 5.08 6 4.52 6.218 4.092C6.40974 3.71569 6.71569 3.40974 7.092 3.218C7.52 3 8.08 3 9.2 3H14.8C15.92 3 16.48 3 16.908 3.218C17.2843 3.40974 17.5903 3.71569 17.782 4.092C18 4.52 18 5.08 18 6.2V19.505C18 19.991 18 20.234 17.899 20.367C17.8554 20.4248 17.7997 20.4725 17.7358 20.5067C17.6719 20.5409 17.6013 20.5608 17.529 20.565C17.362 20.575 17.16 20.44 16.756 20.171L12 17L7.244 20.17C6.84 20.44 6.638 20.575 6.47 20.565C6.39784 20.5606 6.32748 20.5407 6.26377 20.5065C6.20007 20.4723 6.14453 20.4247 6.101 20.367C6 20.234 6 19.991 6 19.505V6.2Z" fill="#262626" stroke="#262626" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Guardado
-          </button>
+          {% if user.is_authenticated %}
+            {% if not article_restricted_cf or restricted_access %}
+              <button class="ld-audio__action-bar-read-later{% if followed %} hidden{% endif %}">
+                <svg title="Bookmark" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 6.2C6 5.08 6 4.52 6.218 4.092C6.40974 3.71569 6.71569 3.40974 7.092 3.218C7.52 3 8.08 3 9.2 3H14.8C15.92 3 16.48 3 16.908 3.218C17.2843 3.40974 17.5903 3.71569 17.782 4.092C18 4.52 18 5.08 18 6.2V19.505C18 19.991 18 20.234 17.899 20.367C17.8554 20.4248 17.7997 20.4725 17.7358 20.5067C17.6719 20.5409 17.6013 20.5608 17.529 20.565C17.362 20.575 17.16 20.44 16.756 20.171L12 17L7.244 20.17C6.84 20.44 6.638 20.575 6.47 20.565C6.39784 20.5606 6.32748 20.5407 6.26377 20.5065C6.20007 20.4723 6.14453 20.4247 6.101 20.367C6 20.234 6 19.991 6 19.505V6.2Z" stroke="#262626" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Leer después
+              </button>
+              <button class="ld-audio__action-bar-read-later-saved{% if not followed %} hidden{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 6.2C6 5.08 6 4.52 6.218 4.092C6.40974 3.71569 6.71569 3.40974 7.092 3.218C7.52 3 8.08 3 9.2 3H14.8C15.92 3 16.48 3 16.908 3.218C17.2843 3.40974 17.5903 3.71569 17.782 4.092C18 4.52 18 5.08 18 6.2V19.505C18 19.991 18 20.234 17.899 20.367C17.8554 20.4248 17.7997 20.4725 17.7358 20.5067C17.6719 20.5409 17.6013 20.5608 17.529 20.565C17.362 20.575 17.16 20.44 16.756 20.171L12 17L7.244 20.17C6.84 20.44 6.638 20.575 6.47 20.565C6.39784 20.5606 6.32748 20.5407 6.26377 20.5065C6.20007 20.4723 6.14453 20.4247 6.101 20.367C6 20.234 6 19.991 6 19.505V6.2Z" fill="#262626" stroke="#262626" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Guardado
+              </button>
+            {% endif %}
+          {% endif %}
           {% if article.audio %}
-            <button id="ld-audio__action-bar-play-button" class="action-bar__audio">
-              <svg title="Icono de reproducir" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M9.5 15.5842V8.41616C9.50015 8.32648 9.52442 8.23848 9.57026 8.1614C9.61611 8.08432 9.68184 8.02099 9.76057 7.97804C9.83931 7.9351 9.92814 7.91412 10.0178 7.91731C10.1074 7.9205 10.1945 7.94773 10.27 7.99616L15.846 11.5792C15.9166 11.6244 15.9747 11.6867 16.0149 11.7602C16.0552 11.8338 16.0763 11.9163 16.0763 12.0002C16.0763 12.084 16.0552 12.1665 16.0149 12.2401C15.9747 12.3137 15.9166 12.3759 15.846 12.4212L10.27 16.0052C10.1945 16.0536 10.1074 16.0808 10.0178 16.084C9.92814 16.0872 9.83931 16.0662 9.76057 16.0233C9.68184 15.9803 9.61611 15.917 9.57026 15.8399C9.52442 15.7628 9.50015 15.6748 9.5 15.5852V15.5842Z" fill="#262626"/>
-                <path d="M1 12C1 5.925 5.925 1 12 1C18.075 1 23 5.925 23 12C23 18.075 18.075 23 12 23C5.925 23 1 18.075 1 12ZM12 2.5C9.48044 2.5 7.06408 3.50089 5.28249 5.28249C3.50089 7.06408 2.5 9.48044 2.5 12C2.5 14.5196 3.50089 16.9359 5.28249 18.7175C7.06408 20.4991 9.48044 21.5 12 21.5C14.5196 21.5 16.9359 20.4991 18.7175 18.7175C20.4991 16.9359 21.5 14.5196 21.5 12C21.5 9.48044 20.4991 7.06408 18.7175 5.28249C16.9359 3.50089 14.5196 2.5 12 2.5Z" fill="#262626"/>
-              </svg>
-              Escuchar
-            </button>
-            <div class="audio-container">
-              <div class="audio-timeline-container">
-                <!-- Botón de Reproducir -->
-                <button id="ld-audio__play-button" style="display: none;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M4 12.3876V3.61118C4.00018 3.50137 4.0297 3.39363 4.08547 3.29925C4.14124 3.20488 4.22121 3.12733 4.31699 3.07475C4.41277 3.02217 4.52083 2.99648 4.62986 3.00039C4.7389 3.00429 4.84488 3.03764 4.9367 3.09693L11.7199 7.48392C11.8058 7.53931 11.8764 7.61555 11.9254 7.70562C11.9743 7.7957 12 7.89672 12 7.99939C12 8.10206 11.9743 8.20308 11.9254 8.29315C11.8764 8.38323 11.8058 8.45947 11.7199 8.51486L4.9367 12.9031C4.84488 12.9624 4.7389 12.9957 4.62986 12.9996C4.52083 13.0035 4.41277 12.9778 4.31699 12.9252C4.22121 12.8727 4.14124 12.7951 4.08547 12.7007C4.0297 12.6064 4.00018 12.4986 4 12.3888V12.3876Z" fill="#262626"/>
-                  </svg>
-                </button>
-
-                <!-- Botón de Pausa -->
-                <button id="ld-audio__pause-button">
-                  <svg title="Icono pausar" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M6 3.3335H4.66667C4.29848 3.3335 4 3.63197 4 4.00016V12.0002C4 12.3684 4.29848 12.6668 4.66667 12.6668H6C6.36819 12.6668 6.66667 12.3684 6.66667 12.0002V4.00016C6.66667 3.63197 6.36819 3.3335 6 3.3335Z" fill="#262626"/>
-                    <path d="M11.334 3.3335H10.0007C9.63246 3.3335 9.33398 3.63197 9.33398 4.00016V12.0002C9.33398 12.3684 9.63246 12.6668 10.0007 12.6668H11.334C11.7022 12.6668 12.0007 12.3684 12.0007 12.0002V4.00016C12.0007 3.63197 11.7022 3.3335 11.334 3.3335Z" fill="#262626"/>
-                  </svg>
-                </button>
-
-                <p class="elapsed-time"><span id="audio-current-time">0:00</span> / <span id="audio-total-time">0:00</span></p>
-                <!-- Línea de tiempo -->
-                <input type="range" id="audio-timeline" min="0" max="100" value="0" />
-
-                <!-- Botón de opciones adicionales -->
-                <button id="ld-audio__options-button">
-                  <svg title="Icono tres puntos vertical" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M7.99935 10.6665C8.35297 10.6665 8.69211 10.807 8.94216 11.057C9.19221 11.3071 9.33268 11.6462 9.33268 11.9998C9.33268 12.3535 9.19221 12.6926 8.94216 12.9426C8.69211 13.1927 8.35297 13.3332 7.99935 13.3332C7.64573 13.3332 7.30659 13.1927 7.05654 12.9426C6.80649 12.6926 6.66602 12.3535 6.66602 11.9998C6.66602 11.6462 6.80649 11.3071 7.05654 11.057C7.30659 10.807 7.64573 10.6665 7.99935 10.6665ZM7.99935 6.6665C8.35297 6.6665 8.69211 6.80698 8.94216 7.05703C9.19221 7.30708 9.33268 7.64622 9.33268 7.99984C9.33268 8.35346 9.19221 8.6926 8.94216 8.94265C8.69211 9.19269 8.35297 9.33317 7.99935 9.33317C7.64573 9.33317 7.30659 9.19269 7.05654 8.94265C6.80649 8.6926 6.66602 8.35346 6.66602 7.99984C6.66602 7.64622 6.80649 7.30708 7.05654 7.05703C7.30659 6.80698 7.64573 6.6665 7.99935 6.6665ZM7.99935 2.6665C8.35297 2.6665 8.69211 2.80698 8.94216 3.05703C9.19221 3.30708 9.33268 3.64622 9.33268 3.99984C9.33268 4.35346 9.19221 4.6926 8.94216 4.94265C8.69211 5.19269 8.35297 5.33317 7.99935 5.33317C7.64573 5.33317 7.30659 5.19269 7.05654 4.94265C6.80649 4.6926 6.66602 4.35346 6.66602 3.99984C6.66602 3.64622 6.80649 3.30708 7.05654 3.05703C7.30659 2.80698 7.64573 2.6665 7.99935 2.6665Z" fill="#262626"/>
-                  </svg>
-                </button>
-                <!-- Tooltip con opciones de velocidad -->
-                <div id="ld-audio__options-tooltip" class="tooltip hidden">
-                  <button id="playback-speed-button">Playback Speed</button>
-                  <div id="speed-options" class="hidden">
-                    <button class="speed-option" data-speed="0.25">0.25</button>
-                    <button class="speed-option" data-speed="0.5">0.5</button>
-                    <button class="speed-option" data-speed="0.75">0.75</button>
-                    <button class="speed-option" data-speed="1">Normal <span class="checkmark"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.75 8.75L6.25 12.25L13.25 4.75" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
-                    <button class="speed-option" data-speed="1.25">1.25</button>
-                    <button class="speed-option" data-speed="1.5">1.5</button>
-                    <button class="speed-option" data-speed="1.75">1.75</button>
-                    <button class="speed-option" data-speed="2">2</button>
-                  </div>
-                </div>
-
-                <audio class="ld-audio__audio"
-                  preload="metadata"
-                  controls
-                  controlsList="nodownload"
-                  src="{% if not user.is_anonymous %}{{ SITE_URL }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}">
-                  Tu navegador no soporta este elemento de <code>audio</code>.
-                </audio>
-              </div>
-              <p class="read-by">Leído por Andrés Alba</p>
-            </div>
-            <script>
-              document.addEventListener("DOMContentLoaded", () => {
-                const audioElement = document.querySelector("audio.ld-audio__audio");
-                const timeline = document.getElementById("audio-timeline");
-                const actionBarPlayButton = document.getElementById("ld-audio__action-bar-play-button");
-                const playButton = document.getElementById("ld-audio__play-button");
-                const pauseButton = document.getElementById("ld-audio__pause-button");
-                const currentTimeDisplay = document.getElementById("audio-current-time");
-                const totalTimeDisplay = document.getElementById("audio-total-time");
-                const optionsButton = document.getElementById("ld-audio__options-button");
-                const optionsTooltip = document.getElementById("ld-audio__options-tooltip");
-                const playbackSpeedButton = document.getElementById("playback-speed-button");
-                const speedOptions = document.getElementById("speed-options");
-                const speedButtons = document.querySelectorAll(".speed-option");
-
-                let currentSpeed = 1; // Iniciamos en velocidad normal
-
-
-                // Reproducir audio por primera vez
-                actionBarPlayButton.addEventListener("click", () => {
-                  document.querySelector(".audio-container").classList.toggle("show");
-                  document.querySelector(".action-bar__audio").classList.toggle("hidden");
-                  audioElement.play();
-                });
-
-                // Reproducir audio
-                playButton.addEventListener("click", () => {
-                  audioElement.play();
-                  playButton.style.display = "none";
-                  pauseButton.style.display = "flex";
-                });
-
-                // Pausar audio
-                pauseButton.addEventListener("click", () => {
-                  audioElement.pause();
-                  playButton.style.display = "flex";
-                  pauseButton.style.display = "none";
-                });
-
-                // Actualizar timeline en tiempo real
-                audioElement.addEventListener("timeupdate", () => {
-                  const progress = (audioElement.currentTime / audioElement.duration) * 100;
-                  timeline.value = progress;
-                  updateTimelineBackground(progress);
-                  updateCurrentTime();
-                });
-
-                // Permitir al usuario buscar en el audio
-                timeline.addEventListener("input", () => {
-                  const seekTime = (timeline.value / 100) * audioElement.duration;
-                  audioElement.currentTime = seekTime;
-                  updateTimelineBackground(timeline.value);
-                  updateCurrentTime();
-                });
-
-                // Reiniciar botones al finalizar el audio
-                audioElement.addEventListener("ended", () => {
-                  playButton.style.display = "flex";
-                  pauseButton.style.display = "none";
-                  timeline.value = 0;
-                  updateTimelineBackground(0);
-                  updateCurrentTime();
-                });
-
-                totalTimeDisplay.textContent = formatTime(audioElement.duration);
-                // Asegurarse de que el timeline comience correctamente
-                audioElement.addEventListener("loadedmetadata", () => {
-                  timeline.value = 0;
-                  updateTimelineBackground(0);
-                  updateCurrentTime();
-                });
-
-
-                audioElement.addEventListener('error', (e) => {
-                  console.error('Error al cargar el audio:', e);
-                });
-
-                // Actualizar el color del timeline dinámicamente
-                function updateTimelineBackground(value) {
-                  timeline.style.setProperty("--progression-range-percentage", value + "%");
-                }
-                // Actualizar el tiempo transcurrido
-                function updateCurrentTime() {
-                  currentTimeDisplay.textContent = formatTime(audioElement.currentTime);
-                }
-
-                // Formatear tiempo en mm:ss
-                function formatTime(time) {
-                  if (isNaN(time)) return "0:00";
-                  const minutes = Math.floor(time / 60);
-                  const seconds = Math.floor(time % 60);
-                  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-                }
-
-                // Mostrar el tooltip al hacer clic en el botón de opciones
-                optionsButton.addEventListener("click", () => {
-                  optionsTooltip.classList.toggle("hidden");
-                  playbackSpeedButton.classList.remove("hidden");
-                  speedOptions.classList.add("hidden");
-                });
-
-                // Mostrar las opciones de velocidad y ocultar el botón "Playback Speed"
-                playbackSpeedButton.addEventListener("click", () => {
-                  playbackSpeedButton.classList.add("hidden");
-                  speedOptions.classList.remove("hidden");
-                });
-
-                // Cambiar la velocidad del audio al hacer clic en una opción
-                speedButtons.forEach(button => {
-                  button.addEventListener("click", (e) => {
-                    const speed = parseFloat(e.target.getAttribute("data-speed"));
-                    audioElement.playbackRate = speed;
-                    updateSpeedIndicator(speed);
-                    optionsTooltip.classList.add("hidden");
-                    playbackSpeedButton.classList.remove("hidden");
-                    speedOptions.classList.add("hidden");
-                  });
-                });
-
-                // Ocultar el tooltip si se hace clic fuera
-                document.addEventListener("click", (event) => {
-                  if (
-                    !optionsButton.contains(event.target) &&
-                    !optionsTooltip.contains(event.target)
-                  ) {
-                    optionsTooltip.classList.add("hidden");
-                    playbackSpeedButton.classList.remove("hidden");
-                    speedOptions.classList.add("hidden");
-                  }
-                });
-
-                // Actualizar el ícono de check en la velocidad actual
-                function updateSpeedIndicator(selectedSpeed) {
-                  speedButtons.forEach(btn => {
-                    const speed = parseFloat(btn.getAttribute("data-speed"));
-                    const checkmark = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.75 8.75L6.25 12.25L13.25 4.75" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-                    btn.querySelector(".checkmark")?.remove();
-
-                    if (speed === selectedSpeed) {
-                      const iconSpan = document.createElement("span");
-                      iconSpan.classList.add("checkmark");
-                      iconSpan.innerHTML = checkmark;
-                      btn.appendChild(iconSpan);
-                    }
-                  });
-                  currentSpeed = selectedSpeed;
-                }
-            });
-            </script>
+            {% include "article/custom_audio_component.html" %}
           {% endif %}
         </div>
         <div class="right-buttons">
-          <button>
+          <button id="action-bar__share-button" class="">
             <svg title="Compartir" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M18.8 8.19969H16V6.99969H19.001C19.551 6.99969 20 7.44569 20 7.99569V21.0037C19.9989 21.2675 19.8937 21.5203 19.7071 21.7068C19.5206 21.8934 19.2678 21.9986 19.004 21.9997H4.996C4.73217 21.9986 4.47944 21.8934 4.29289 21.7068C4.10633 21.5203 4.00105 21.2675 4 21.0037V7.99569C4.00106 7.73134 4.10674 7.47817 4.29395 7.29152C4.48115 7.10488 4.73465 6.99996 4.999 6.99969H8V8.19969H5.2V20.7997H18.8V8.19969ZM12.6 4.26169V13.4997H11.4V4.26169L9.313 6.34869L8.464 5.49969L11.293 2.67169C11.4805 2.48422 11.7348 2.37891 12 2.37891C12.2652 2.37891 12.5195 2.48422 12.707 2.67169L15.536 5.49969L14.687 6.34869L12.6 4.26169Z" fill="#262626"/>
             </svg>
-            Compartir
+            <span>Compartir</span>
           </button>
-          <button>
+          <div class="popup-compartir">
+            <ul>
+              <li>
+                <span href="#" onclick="copyToClipboard('#url', '.tooltip-navbar')" aria-label="Copiar enlace">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="21" height="10" viewBox="0 0 21 10" fill="none">
+                    <path d="M9.5 10H5.5C4.11667 10 2.93767 9.51233 1.963 8.537C0.988334 7.56167 0.500667 6.38267 0.500001 5C0.499334 3.61733 0.987001 2.43833 1.963 1.463C2.939 0.487667 4.118 0 5.5 0H9.5V2H5.5C4.66667 2 3.95833 2.29167 3.375 2.875C2.79167 3.45833 2.5 4.16667 2.5 5C2.5 5.83333 2.79167 6.54167 3.375 7.125C3.95833 7.70833 4.66667 8 5.5 8H9.5V10ZM6.5 6V4H14.5V6H6.5ZM11.5 10V8H15.5C16.3333 8 17.0417 7.70833 17.625 7.125C18.2083 6.54167 18.5 5.83333 18.5 5C18.5 4.16667 18.2083 3.45833 17.625 2.875C17.0417 2.29167 16.3333 2 15.5 2H11.5V0H15.5C16.8833 0 18.0627 0.487667 19.038 1.463C20.0133 2.43833 20.5007 3.61733 20.5 5C20.4993 6.38267 20.0117 7.562 19.037 8.538C18.0623 9.514 16.8833 10.0013 15.5 10H11.5Z" fill="#262626"/>
+                  </svg>Copiar link</li>
+                </span>
+              <li>
+                <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}" target="_blank" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" viewBox="0 0 21 20" fill="none">
+                    <path d="M10.5 0C16.023 0 20.5 4.477 20.5 10C20.5 15.523 16.023 20 10.5 20C8.73277 20.003 6.9966 19.5353 5.47002 18.645L0.504015 20L1.85602 15.032C0.964974 13.5049 0.496918 11.768 0.500015 10C0.500015 4.477 4.97702 0 10.5 0ZM7.09202 5.3L6.89201 5.308C6.76271 5.31691 6.63636 5.35087 6.52002 5.408C6.41159 5.46951 6.31258 5.5463 6.22602 5.636C6.10602 5.749 6.03802 5.847 5.96502 5.942C5.59514 6.4229 5.39599 7.01331 5.39902 7.62C5.40102 8.11 5.52902 8.587 5.72902 9.033C6.13802 9.935 6.81102 10.89 7.69902 11.775C7.91302 11.988 8.12302 12.202 8.34902 12.401C9.45245 13.3724 10.7673 14.073 12.189 14.447L12.757 14.534C12.942 14.544 13.127 14.53 13.313 14.521C13.6042 14.5056 13.8885 14.4268 14.146 14.29C14.2769 14.2223 14.4047 14.1489 14.529 14.07C14.529 14.07 14.5714 14.0413 14.654 13.98C14.789 13.88 14.872 13.809 14.984 13.692C15.068 13.6053 15.138 13.5047 15.194 13.39C15.272 13.227 15.35 12.916 15.382 12.657C15.406 12.459 15.399 12.351 15.396 12.284C15.392 12.177 15.303 12.066 15.206 12.019L14.624 11.758C14.624 11.758 13.754 11.379 13.222 11.137C13.1663 11.1128 13.1067 11.0989 13.046 11.096C12.9776 11.0888 12.9084 11.0965 12.8432 11.1184C12.778 11.1403 12.7182 11.176 12.668 11.223C12.663 11.221 12.596 11.278 11.873 12.154C11.8315 12.2098 11.7744 12.2519 11.7088 12.2751C11.6433 12.2982 11.5723 12.3013 11.505 12.284C11.4398 12.2666 11.376 12.2446 11.314 12.218C11.19 12.166 11.147 12.146 11.062 12.11C10.4879 11.8599 9.95646 11.5215 9.48702 11.107C9.36102 10.997 9.24402 10.877 9.12402 10.761C8.73063 10.3842 8.38777 9.95799 8.10401 9.493L8.04501 9.398C8.00328 9.3338 7.96905 9.26501 7.94302 9.193C7.90502 9.046 8.00402 8.928 8.00402 8.928C8.00402 8.928 8.24702 8.662 8.36002 8.518C8.47002 8.378 8.56301 8.242 8.62302 8.145C8.74102 7.955 8.77802 7.76 8.71602 7.609C8.43602 6.925 8.14668 6.24467 7.84802 5.568C7.78902 5.434 7.61402 5.338 7.45502 5.319C7.40102 5.31233 7.34701 5.307 7.29302 5.303C7.15874 5.2953 7.02411 5.29664 6.89002 5.307L7.09202 5.3Z" fill="#262626"/>
+                  </svg>WhatsApp</li>
+                </a>
+              <li>
+                <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ SITE_URL_SD }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="21" height="16" viewBox="0 0 21 16" fill="none">
+                    <path d="M2.5 16C1.95 16 1.47933 15.8043 1.088 15.413C0.696667 15.0217 0.500667 14.5507 0.5 14V2C0.5 1.45 0.696 0.979333 1.088 0.588C1.48 0.196666 1.95067 0.000666667 2.5 0H18.5C19.05 0 19.521 0.196 19.913 0.588C20.305 0.98 20.5007 1.45067 20.5 2V14C20.5 14.55 20.3043 15.021 19.913 15.413C19.5217 15.805 19.0507 16.0007 18.5 16H2.5ZM10.5 9L18.5 4V2L10.5 7L2.5 2V4L10.5 9Z" fill="#262626"/>
+                  </svg>Mail</li>
+                </a>
+              <li>
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL_SD }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" viewBox="0 0 21 20" fill="none">
+                    <path d="M20.5 10C20.5 4.48 16.02 0 10.5 0C4.98 0 0.5 4.48 0.5 10C0.5 14.84 3.94 18.87 8.5 19.8V13H6.5V10H8.5V7.5C8.5 5.57 10.07 4 12 4H14.5V7H12.5C11.95 7 11.5 7.45 11.5 8V10H14.5V13H11.5V19.95C16.55 19.45 20.5 15.19 20.5 10Z" fill="#262626"/>
+                  </svg>Facebook</li>
+                </a>
+              <li>
+                <a href="https://twitter.com/intent/tweet?original_referer={{ SITE_URL_SD }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ SITE_URL_SD }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}" rel="noopener" aria-label="Compartir en Twitter">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
+                    <mask id="mask0_1246_1082" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="17" height="17">
+                      <path d="M0.5 0.950195H16.5V16.9502H0.5V0.950195Z" fill="white"/>
+                    </mask>
+                    <g mask="url(#mask0_1246_1082)">
+                      <path d="M13.1 1.69971H15.5537L10.1937 7.84142L16.5 16.2003H11.5629L7.69314 11.1317L3.27029 16.2003H0.814286L6.54686 9.62885L0.5 1.70085H5.56286L9.05543 6.33285L13.1 1.69971ZM12.2371 14.7283H13.5971L4.82 3.09514H3.36171L12.2371 14.7283Z" fill="#262626"/>
+                    </g>
+                  </svg>X</li>
+                </a>
+              <li>
+                <a href="#">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25" fill="none">
+                    <path d="M20.2778 3C20.8671 3 21.4324 3.23413 21.8491 3.65087C22.2659 4.06762 22.5 4.63285 22.5 5.22222V20.7778C22.5 21.3671 22.2659 21.9324 21.8491 22.3491C21.4324 22.7659 20.8671 23 20.2778 23H4.72222C4.13285 23 3.56762 22.7659 3.15087 22.3491C2.73413 21.9324 2.5 21.3671 2.5 20.7778V5.22222C2.5 4.63285 2.73413 4.06762 3.15087 3.65087C3.56762 3.23413 4.13285 3 4.72222 3H20.2778ZM19.7222 20.2222V14.3333C19.7222 13.3727 19.3406 12.4513 18.6613 11.772C17.982 11.0927 17.0607 10.7111 16.1 10.7111C15.1556 10.7111 14.0556 11.2889 13.5222 12.1556V10.9222H10.4222V20.2222H13.5222V14.7444C13.5222 13.8889 14.2111 13.1889 15.0667 13.1889C15.4792 13.1889 15.8749 13.3528 16.1666 13.6445C16.4583 13.9362 16.6222 14.3319 16.6222 14.7444V20.2222H19.7222ZM6.81111 9.17778C7.30618 9.17778 7.78098 8.98111 8.13104 8.63104C8.48111 8.28098 8.67778 7.80618 8.67778 7.31111C8.67778 6.27778 7.84444 5.43333 6.81111 5.43333C6.31309 5.43333 5.83547 5.63117 5.48332 5.98332C5.13117 6.33547 4.93333 6.81309 4.93333 7.31111C4.93333 8.34444 5.77778 9.17778 6.81111 9.17778ZM8.35556 20.2222V10.9222H5.27778V20.2222H8.35556Z" fill="#262626"/>
+                  </svg>LinkedIn</li>
+                </a>
+            </ul>
+          </div>
+          <button class="">
             <svg title="Icono de comentar" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path d="M12 21C10.22 21 8.47991 20.4722 6.99987 19.4832C5.51983 18.4943 4.36627 17.0887 3.68508 15.4442C3.00389 13.7996 2.82566 11.99 3.17293 10.2442C3.5202 8.49836 4.37737 6.89472 5.63604 5.63604C6.89471 4.37737 8.49836 3.5202 10.2442 3.17294C11.99 2.82567 13.7996 3.0039 15.4442 3.68509C17.0887 4.36628 18.4943 5.51983 19.4832 6.99987C20.4722 8.47991 21 10.22 21 12C21 13.488 20.64 14.89 20 16.127L21 21L16.127 20C14.891 20.639 13.487 21 12 21Z" stroke="#262626" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Comentar
+            <span>Comentar</span>
           </button>
         </div>
       </div>
@@ -1092,6 +939,8 @@
             <span class="title">Compartir este artículo</span>
             <ul class="inline share">
               <li class="whatsapp">
+
+
                 <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
                   <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#595959"/>
@@ -1169,10 +1018,31 @@
         });
       {% endif %}
 
+      $('.ld-audio__action-bar-read-later').click(function(){
+        {% if user.is_authenticated %}
+          $.get("{% url 'actstream_follow' content_type_id=article_ct_id object_id=article.id %}", function(data){
+            $('.ld-audio__action-bar-read-later').addClass('hidden');
+            $('.ld-audio__action-bar-read-later-saved').removeClass('hidden');
+          });
+        {% else %}
+          $('.modal').modal('open');
+        {% endif %}
+      });
+      $('.ld-audio__action-bar-read-later-saved').click(function() {
+        {% if user.is_authenticated %}
+          $.get("{% url 'actstream_unfollow' content_type_id=article_ct_id object_id=article.id %}", function(data){
+            $('.ld-audio__action-bar-read-later').removeClass('hidden');
+            $('.ld-audio__action-bar-read-later-saved').addClass('hidden');
+          });
+        {% else %}
+          $('.modal').modal('open');
+        {% endif %}
+      })
+
       $('.read-later__add').click(function(){
         {% if user.is_authenticated %}
           $.get("{% url 'actstream_follow' content_type_id=article_ct_id object_id=article.id %}", function(data){
-            $('a.read-later__add').addClass('hide');
+            $('.read-later__add').addClass('hide');
             $('.read-later__add__info').addClass('hide');
             $('.read-later__saved__info:eq(1)').removeClass('hide');
             $('.read-later__saved').removeClass('hide');
@@ -1185,6 +1055,10 @@
         {% else %}
           $('.modal').modal('open');
         {% endif %}
+      });
+
+      $('#action-bar__share-button').click(function(){
+        $('.popup-compartir').toggleClass('visible');
       });
 
       $('a.open-ipfs').click(function(){
