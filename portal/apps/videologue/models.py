@@ -38,6 +38,10 @@ class YouTubeVideo(Model):
     def format_url(yid):
         return f'https://www.youtube.com/watch?v={yid}'
 
+    @property
+    def embed_url(self):
+        return f'https://www.youtube.com/embed/{self.yt_id}'
+
     def save(self, *args, **kwargs):
         yid = YT_RE.findall(self.url)[0]
         self.yt_id = yid
