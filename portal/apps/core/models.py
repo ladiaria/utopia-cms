@@ -432,7 +432,7 @@ class Edition(PortableDocumentFormatBaseModel):
     edition_pub.short_description = 'Fecha publicada'
 
     def is_for_today(self):
-        return self.date_published.date() == now().date()
+        return self.date_published == now().date()
 
     def get_supplements(self):
         return self.supplements.values_list('pdf', 'cover') or ''

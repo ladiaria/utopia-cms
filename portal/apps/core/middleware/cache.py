@@ -41,15 +41,15 @@ class AnonymousRequest(MiddlewareMixin):
             if clear:
                 request.META['HTTP_COOKIE'] = None
                 request.META['HTTP_ACCEPT_ENCODING'] = 'identity'
-                if debug_cache:
-                    GREEN = '\033[92m'
-                    WARNC = '\033[93m'  # Yellow
-                    ENDC = '\033[0m'  # Reset color
-                    cache_state = f"{GREEN} cache HIT" if cache.get(get_cache_key(request)) else f"{WARNC} cache MISS"
-                    print(
-                        f"[{now().strftime('%Y-%m-%d %H:%M:%S')}] DEBUG: {cache_state}{ENDC}: ({url_name_resolved}) "
-                        f"{request.path}"
-                    )
+            if debug_cache:
+                GREEN = '\033[92m'
+                WARNC = '\033[93m'  # Yellow
+                ENDC = '\033[0m'  # Reset color
+                cache_state = f"{GREEN} cache HIT" if cache.get(get_cache_key(request)) else f"{WARNC} cache MISS"
+                print(
+                    f"[{now().strftime('%Y-%m-%d %H:%M:%S')}] DEBUG: {cache_state}{ENDC}: ({url_name_resolved}) "
+                    f"{request.path}"
+                )
 
 
 class AnonymousResponse(MiddlewareMixin):
@@ -57,6 +57,8 @@ class AnonymousResponse(MiddlewareMixin):
         """
         idem as above (to make the page cache not be updated)
         """
+        if response.status_code == 404:
+            return response
         if debug_cache and request.path == '/':
             print(
                 "DEBUG: cache.process_response: anon=%s, COOKIE header=%s, session_key=%s"

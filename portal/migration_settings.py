@@ -202,11 +202,11 @@ MIDDLEWARE = (
     "closed_site.middleware.RestrictedAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.cache.UpdateCacheMiddleware",  # runs during the response phase (top -> last)
-    "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)
     "django.contrib.sessions.middleware.SessionMiddleware",
     "libs.middleware.url.UrlMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -446,8 +446,12 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = ()
 THEDAILY_CURRENCY_CHOICES = ()
 THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
-THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
-THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW = ()  # newsletter slugs to disable preview in browser
+# default newsletters for new accounts
+THEDAILY_DEFAULT_PUBLICATION_NEWSLETTERS = []  # publication slugs for default publication newsletters
+THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for default category newsletters
+# newsletter slugs to disable its preview in browser
+THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW = ()
+# debug signals
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 THEDAILY_AUTOMATIC_MAIL_LOGFILE = "/var/log/utopiacms/automatic_mail.log"
 
@@ -497,6 +501,7 @@ LOGIN_URL = "/usuarios/entrar/"  # login_required decorator redirects here
 LOGOUT_URL = "/usuarios/salir/"
 SIGNUP_URL = "/usuarios/registro/"
 LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = LOGOUT_URL  # To be consistent on what url render after any logout, included admin's
 LOGIN_ERROR_URL = "/usuarios/error/login/"
 
 MESSAGETAGS = {messages.ERROR: "danger"}
@@ -565,7 +570,9 @@ CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is r
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 
 
-# ====================================================================================== visual separator =============
+# =====================================================================================================================
+# =================      V I S U A L   S E P A R A T O R      =========================================================
+# =====================================================================================================================
 
 
 # Override previous settings with values in local_migration_settings.py settings file

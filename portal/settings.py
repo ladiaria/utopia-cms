@@ -203,11 +203,11 @@ MIDDLEWARE = (
     "closed_site.middleware.RestrictedAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.cache.UpdateCacheMiddleware",  # runs during the response phase (top -> last)
-    "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)
     "django.contrib.sessions.middleware.SessionMiddleware",
     "libs.middleware.url.UrlMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
