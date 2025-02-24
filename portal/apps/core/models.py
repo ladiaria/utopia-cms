@@ -2416,6 +2416,8 @@ class CategoryNewsletter(Model):
 
 
 class ArticleExtension(Model):
+    # since no position property is defined, the ordering of an article extension may vary depending on the extension
+    # headline, this can be a problem if headlines are edited and saved without an editor review. TODO: check this
     SIZE_CHOICES = (
         ('R', 'Regular'),
         ('M', 'Mediano'),
