@@ -1057,9 +1057,24 @@
         {% endif %}
       });
 
-      $('#action-bar__share-button').click(function(){
-        $('.popup-compartir').toggleClass('visible');
-      });
+      /* Botón de compartir */
+      function actionBarShareButtonEvents() {
+        $('#action-bar__share-button').click(function(){
+          $('.popup-compartir').toggleClass('visible');
+        });
+              // Al hacer click en cualquier parte del documento
+        $(document).click(function(e) {
+          // Si el click no se realizó dentro del popup ni en el botón de acción
+          if (!$(e.target).closest('.popup-compartir, #action-bar__share-button').length) {
+            $('.popup-compartir').removeClass('visible');
+          }
+        });
+        // Opcional: Evitar que los clicks dentro del popup cierren el popup
+        $('.popup-compartir').click(function(e){
+          e.stopPropagation();
+        });
+      }
+      actionBarShareButtonEvents();
 
       $('a.open-ipfs').click(function(){
         window.open("{% url 'ipfs-article-detail' article_id=article.id %}", 'Ver en IPFS');
