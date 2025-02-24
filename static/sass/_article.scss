@@ -1,5 +1,5 @@
 :root {
-  --max-article-width: 750px;
+  --max-article-width: 46.875rem; /* 750px */
 }
 
 .talk-login {
@@ -825,7 +825,6 @@ body.article {
         display: flex;
         align-items: center;
         gap: 4px;
-        text-transform: uppercase;
         padding: 10px 16px;
         line-height: normal;
         overflow: hidden;
@@ -840,6 +839,7 @@ body.article {
         }
 
         > span {
+          text-transform: uppercase;
           transition: all 0.4s ease-in-out;
           width: px-to-rem(87px);
           opacity: 1;
@@ -848,9 +848,14 @@ body.article {
         &.compressed {
           padding: 8px;
           gap: 0;
-          span {
+          > span {
             width: 0;
             opacity: 0;
+          }
+
+          .popup-compartir {
+            left: -35px;
+            width: max-content;
           }
         }
 
@@ -860,9 +865,6 @@ body.article {
           }
         }
       }
-      button.compressed + .popup-compartir {
-        left: -35px;
-      }
       .popup-compartir {
         --border-radius: 8px;
         position: absolute;
@@ -871,7 +873,7 @@ body.article {
         z-index: 1;
         background-color: white;
         max-width: 148px;
-        width: max-content;
+        width: 100%;
         border-radius: var(--border-radius);
         box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.25);
         display: none;
