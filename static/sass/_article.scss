@@ -814,6 +814,9 @@ body.article {
       .left-buttons {
         flex: 1;
       }
+      .right-buttons {
+        position: relative;
+      }
 
       button {
         background: transparent;
@@ -843,6 +846,7 @@ body.article {
         }
 
         &.compressed {
+          padding: 8px;
           gap: 0;
           span {
             width: 0;
@@ -856,10 +860,14 @@ body.article {
           }
         }
       }
+      button.compressed + .popup-compartir {
+        left: -35px;
+      }
       .popup-compartir {
         --border-radius: 8px;
         position: absolute;
-        bottom: -185px;
+        top: 55px;
+        left: 0;
         z-index: 1;
         background-color: white;
         max-width: 148px;
@@ -918,6 +926,9 @@ body.article {
         font-size: px-to-rem(14px);
         line-height: normal;
         margin: 0;
+      }
+      .read-by {
+        padding-left: 2px;
       }
       audio {
         display: none;
