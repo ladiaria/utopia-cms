@@ -14,14 +14,6 @@ body.user-newsletters {
     padding: 60px 0;
   }
 
-  .header-pill--newsletters {
-    left: 142px;
-    top: 16.5px;
-    svg {
-      max-width: 168px;
-    }
-  }
-
   h1 {
     font-size: px-to-rem(28px);
   }
@@ -61,50 +53,48 @@ body.user-newsletters {
       padding-top: 40px;
     }
   }
-  @media only screen and (max-width: 1010px) {
-    #main-header .header-pill--newsletters {
+  #main-header .header-pill--newsletters {
+    --small-width: 115px;
+    --small-top: 20.5px;
+
+    --medium-width: 148px;
+    --medium-top: 18.5px;
+
+    --large-width: 168px;
+    --large-top: 16.5px;
+
+    left: 3px;
+    top: 11.5px;
+    svg {
+      max-width: var(--medium-width);
+    }
+
+    @media (min-width: 600px) {
       left: 142px;
-      top: 20.5px;
+      top: var(--large-top);
       svg {
-        max-width: 113px;
+        max-width: var(--large-width);
       }
     }
-  }
-
-  @media only screen and (min-width: 600px) and (max-width: 804px) {
-    #main-header .header-pill--newsletters {
-      left: 142px;
-      top: 18px;
+    @media (min-width: 805px) {
+      top: var(--medium-top);
       svg {
-        max-width: 148px;
+        max-width: var(--medium-width);
       }
     }
-  }
-
-  @media #{$small-and-down} {
-    #main-header .header-pill--newsletters {
-      left: 3px;
-      top: 11.5px;
+    @media (min-width: 805px) and (max-width: 845px),
+      (min-width: 890px) and (max-width: 915px),
+      (min-width: 980px) and (max-width: 1000px),
+      (min-width: 1060px) and (max-width: 1080px) {
+      top: var(--small-top);
       svg {
-        max-width: 148px;
+        max-width: var(--small-width);
       }
     }
-  }
-
-  @media only screen and (max-width: 372px) {
-    #main-header .header-pill--newsletters {
-      top: 12.5px;
+    @media (min-width: 1180px) {
+      top: var(--large-top);
       svg {
-        max-width: 134px;
-      }
-    }
-  }
-
-  @media only screen and (max-width: 340px) {
-    #main-header .header-pill--newsletters {
-      top: 13.5px;
-      svg {
-        max-width: 100px;
+        max-width: var(--large-width);
       }
     }
   }
