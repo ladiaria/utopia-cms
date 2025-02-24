@@ -1029,7 +1029,7 @@ body.article {
       font-weight: 500;
 
       @media (min-width: 769px) {
-        font-size: 52px;
+        font-size: px-to-rem(48px);
       }
     }
 
