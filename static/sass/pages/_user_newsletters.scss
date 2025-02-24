@@ -18,7 +18,7 @@ body.user-newsletters {
     left: 142px;
     top: 16.5px;
     svg {
-      max-width: 170px;
+      max-width: 168px;
     }
   }
 
@@ -61,8 +61,27 @@ body.user-newsletters {
       padding-top: 40px;
     }
   }
+  @media only screen and (max-width: 1010px) {
+    #main-header .header-pill--newsletters {
+      left: 142px;
+      top: 20.5px;
+      svg {
+        max-width: 113px;
+      }
+    }
+  }
 
-  @media #{$medium-and-down} {
+  @media only screen and (min-width: 600px) and (max-width: 804px) {
+    #main-header .header-pill--newsletters {
+      left: 142px;
+      top: 18px;
+      svg {
+        max-width: 148px;
+      }
+    }
+  }
+
+  @media #{$small-and-down} {
     #main-header .header-pill--newsletters {
       left: 3px;
       top: 11.5px;
