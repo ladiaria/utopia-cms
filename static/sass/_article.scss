@@ -838,7 +838,7 @@ body.article {
 
         > span {
           transition: all 0.4s ease-in-out;
-          width: 87px;
+          width: px-to-rem(87px);
           opacity: 1;
         }
 
@@ -920,6 +920,9 @@ body.article {
         margin: 0;
       }
       audio {
+        display: none;
+      }
+      .thumb.active {
         display: none;
       }
       button {
