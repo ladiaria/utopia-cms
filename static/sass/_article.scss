@@ -244,11 +244,15 @@ article {
     }
 
     @media #{$medium-and-down} {
-      flex-direction: column;
+      margin-top: 8px;
       padding: 0 20px;
 
-      > span {
-        display: none;
+      &.vertical {
+        gap: 8px;
+      }
+
+      p {
+        font-size: px-to-rem(14px);
       }
     }
   }
@@ -325,6 +329,10 @@ article {
 
     .article-caption {
       padding: 0;
+
+      @media #{$medium-and-down} {
+        padding: 0 20px;
+      }
     }
   }
 
@@ -860,6 +868,11 @@ body.article {
 
         @media #{$medium-and-down} {
           padding: 8px 12px;
+          font-size: px-to-rem(12px);
+          svg {
+            width: 20px;
+            height: 20px;
+          }
           &#action-bar__share-button {
             display: none;
           }

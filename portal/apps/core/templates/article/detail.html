@@ -179,11 +179,19 @@
                   <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
                        data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
                 </picture>
-                <figcaption class="article-caption ld-caption{% if article.photo.caption|length > 47 %} vertical{% endif %}">
-                  {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+                <figcaption class="article-caption ld-caption">
+                  {% if article.photo.caption %}<p id="photo-caption">{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
                   <span class="separator"></span>
                   {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
                 </figcaption>
+                <script type="text/javascript">
+                  $(function(){
+                    const captionHeight = $('#photo-caption').height();
+                    if (captionHeight > 20) {
+                      $('.article-caption').addClass('vertical');
+                    }
+                  });
+                </script>
               </figure>
             </div>
           {% endif %}
