@@ -129,6 +129,7 @@ INSTALLED_APPS = (
     "phonenumber_field",
     "closed_site",
     "concurrency",
+    "adminsortable2",
 )
 
 SITE_ID = 1

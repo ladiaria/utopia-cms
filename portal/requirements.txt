@@ -4,6 +4,7 @@ babel
 bleach
 bleach-whitelist
 django-admin-shortcuts
+django-admin-sortable2
 django-activity-stream==1.4.2
 django-bleach==3.0.1
 freezegun

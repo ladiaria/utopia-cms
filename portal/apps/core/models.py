@@ -2493,11 +2493,19 @@ class DefaultNewsletterArticleBase(Model):
 
     def __str__(self):
         # also a custom text version to be useful in the DefaultNewsletter admin change form
-        return date_format(
-            self.article.last_published_by_publication_slug(settings.DEFAULT_PUB),
-            format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shorter format
-            use_l10n=True,
-        ) if self.article.is_published else "NP"
+        return (
+            self.position_label()
+            + mark_safe(
+                date_format(
+                    self.article.last_published_by_publication_slug(settings.DEFAULT_PUB),
+                    format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shorter format
+                    use_l10n=True,
+                ) if self.article.is_published else "NP"
+            )
+        )
+
+    def position_label(self):
+        return mark_safe(f'<span class="position-label">#{self.order or ""}</span>')
 
     class Meta:
         abstract = True
@@ -2515,7 +2523,7 @@ class DefaultNewsletterArticle(DefaultNewsletterArticleBase):
     include_photo = BooleanField('incluir foto', default=False)
 
     def __str__(self):
-        return super().__str__() + ('-F' if self.article.photo else '')
+        return super().__str__() + mark_safe('-F' if self.article.photo else '')
 
 
 default_pub_name = Publication.default_name()
