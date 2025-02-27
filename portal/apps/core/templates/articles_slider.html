@@ -1,0 +1,71 @@
+{% load core_tags %}
+
+{% if articles %}
+  <div id="home-section-{{ slug }}" class="frontpage-section">
+    <div class="container">
+      <div class="section-detail__head">
+        <h2 class="section-detail__title">{{ name }}</h2>
+        {% if description %}<p class="section-detail__subtitle">{{ description }}</p>{% endif %}
+      </div>
+      <div class="hide-on-small-and-down">
+        <div class="col s12 art_count_{{ art_count }}">
+          <div class="ld-grid-simple">
+            {% for article in articles %}
+              <div class="ld-grid-simple__area">
+                {% render_article_card article=article media=article.home_display card_size="FD" card_type="AC" %}
+              </div>
+            {% endfor %}
+          </div>
+          <div class="row footer-section">
+            <div class="col s12 multi-buttons">
+              {% block cta_desktop %}{% endblock %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="slider-container-{{ slug }}" class="slider-container hide-on-med-and-up">
+      <div class="slider">
+        {% for article in articles %}
+          {% render_article_card article=article media=article.home_display card_size="FD" card_type="AC" %}
+        {% endfor %}
+        {% block cta_card_mobile %}{% endblock %}
+      </div>
+      <div id="indicator-container-{{ slug}}" class="indicator-container">
+        {% for article in articles %}
+          <span></span>
+        {% endfor %}
+        <span></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    $(function(){
+      if (document.getElementById("slider-container-{{ slug }}").length === 0) return;
+
+      const mySiema = new Siema({
+        selector: '#slider-container-{{ slug }} .slider',
+        perPage: {
+          0: 1.1
+        },
+        onInit: printSlideIndex,
+        onChange: printSlideIndex,
+      });
+
+      function printSlideIndex() {
+        const dots = document.querySelectorAll('#indicator-container-{{ slug }} span');
+        const slides = document.querySelectorAll("#slider-container-{{ slug }} .slide");
+
+        for (let i = 0; i < dots.length; i++) {
+          dots[i].classList.remove('active');
+          slides[i].classList.remove('active');
+
+          dots[Math.round(this.currentSlide)].classList.add('active');
+          slides[Math.round(this.currentSlide)].classList.add('active');
+        }
+      }
+    });
+  </script>
+
+{% endif %}

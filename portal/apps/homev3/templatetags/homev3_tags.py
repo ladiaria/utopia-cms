@@ -171,6 +171,39 @@ class RenderCategoryRowNode(Node):
                 return ''
 
 
+class RenderArticlesSliderNode(Node):
+    def __init__(self, context, type, slug, limit):
+        self.type = type
+        self.slug = slug
+        self.limit = limit
+
+    def render(self, context):
+        if self.type == 'category':
+            category = Category.objects.get(slug=self.slug)
+            latest_articles = category.latest_articles()[:self.limit]
+            flatten_ctx = context.flatten()
+            flatten_ctx.update(
+                {
+                    'category': category,
+                    'articles': latest_articles,
+                    'edition': get_current_edition(),
+                    'is_portada': True,
+                    'slug': self.slug,
+                    'name': category.name,
+                    'description': category.description,
+                    'art_count': len(latest_articles),
+                }
+            )
+
+        # Intentar usar el template personalizado si existe
+        custom_template = f'utopia_cms_ladiaria/articles_slider_{self.slug}.html'
+
+        try:
+            return loader.render_to_string(custom_template, flatten_ctx)
+        except TemplateDoesNotExist:
+            return loader.render_to_string('articles_slider.html', flatten_ctx)
+
+
 @register.simple_tag(takes_context=True)
 def render_publication_grid(context, data):
     publication, section_slug, flatten_ctx = data[0], data[3], context.flatten()
@@ -194,6 +227,11 @@ def render_publication_grid(context, data):
 @register.simple_tag(takes_context=True)
 def render_category_row(context, category_slug, limit=getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT', 4)):
     return RenderCategoryRowNode(category_slug, limit).render(context)
+
+
+@register.simple_tag(takes_context=True)
+def render_category_slider(context, type, slug, limit=getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT', 4)):
+    return RenderArticlesSliderNode(context, type, slug, limit).render(context)
 
 
 @register.simple_tag(takes_context=True)
