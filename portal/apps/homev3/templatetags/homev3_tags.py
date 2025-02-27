@@ -194,6 +194,9 @@ class RenderArticlesSliderNode(Node):
                     'art_count': len(latest_articles),
                 }
             )
+        # TODO: Implement this simple_tag for the templates section/apuntes-del-dia.html and section/conexion-ganadera.html.
+        else:
+            return
 
         # Intentar usar el template personalizado si existe
         custom_template = f'utopia_cms_ladiaria/articles_slider_{self.slug}.html'
