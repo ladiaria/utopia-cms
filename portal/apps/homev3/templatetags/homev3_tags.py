@@ -5,7 +5,7 @@ from django.template import Library, Engine, TemplateDoesNotExist, loader
 from django.template.base import Node
 
 from core.models import Section, Publication, Category, get_current_edition
-from core.utils import get_category_template
+from core.utils import get_category_template, get_articles_slider_template
 
 
 register = Library()
@@ -199,10 +199,8 @@ class RenderArticlesSliderNode(Node):
             # TODO: and section/conexion-ganadera.html.
             return
 
-        custom_template = f'utopia_cms_ladiaria/articles_slider_{self.slug}.html'
-
         try:
-            return loader.render_to_string(custom_template, flatten_ctx)
+            return loader.render_to_string(get_articles_slider_template(self.slug), flatten_ctx)
         except TemplateDoesNotExist:
             return loader.render_to_string('articles_slider.html', flatten_ctx)
 
