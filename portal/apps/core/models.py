@@ -538,6 +538,7 @@ class Edition(PortableDocumentFormatBaseModel):
         result = {
             'publication': {
                 'newsletter_campaign': self.publication.newsletter_campaign,
+                'newsletter_name': self.publication.newsletter_name,
                 'get_absolute_url': self.publication.get_absolute_url(),
             },
             'newsletter_header_color': self.publication.newsletter_header_color,

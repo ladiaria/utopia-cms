@@ -272,10 +272,12 @@ class NewsletterBrowserPreview(TemplateView):
 
         site_url, publication = context['site_url'], edition['publication']
         newsletter_campaign = publication['newsletter_campaign']
+        newsletter_name = publication['newsletter_name']
         context.update(
             {
                 "browser_preview": True,
                 'newsletter_campaign': newsletter_campaign,
+                'newsletter_name': newsletter_name,
                 'nl_date': edition['date_published'],
             }
         )
