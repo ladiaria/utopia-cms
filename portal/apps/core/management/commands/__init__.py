@@ -18,6 +18,7 @@ class NoSuitableServer(Exception):
 class SendNLCommand(BaseCommand):
 
     retry_last_delivery, ignore_on_retrying, subscriber_sent, user_sent, smtp_servers = False, None, 0, 0, []
+    default_common_ctx = {"use_utm_links": settings.PORTAL_USE_UTM_LINKS}
 
     def add_arguments(self, parser):
         parser.add_argument('subscriber_ids', nargs='*', type=int)

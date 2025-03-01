@@ -26,7 +26,7 @@ from django.utils.timezone import now, datetime
 
 from apps import blocklisted
 from core.models import Category, CategoryNewsletter, CategoryHome, Article, get_latest_edition
-from core.utils import get_category_template, get_nl_featured_article_id
+from core.utils import get_category_template, get_nl_featured_article_id, nl_utm_params
 from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter, subscribers_nl_iter_filter
@@ -68,13 +68,16 @@ class Command(SendNLCommand):
 
     def build_and_send(self):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
-        export_ctx = {
-            'newsletter_campaign': self.category_slug,
-            'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=self.nl_delivery_dt).capitalize(),
-            'hide_after_content_block': self.hide_after_content_block,
-            'newsletter_name': self.category.newsletter_name,
-            "newsletter_header_color": self.category.newsletter_header_color,
-        }
+        export_ctx = self.default_common_ctx.copy()
+        export_ctx.update(
+            {
+                'newsletter_campaign': self.category_slug,
+                'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=self.nl_delivery_dt).capitalize(),
+                'hide_after_content_block': self.hide_after_content_block,
+                'newsletter_name': self.category.newsletter_name,
+                "newsletter_header_color": self.category.newsletter_header_color,
+            }
+        )
         export_ctx.update(self.newsletter_extra_context)
         context = export_ctx.copy()
 
@@ -341,10 +344,9 @@ class Command(SendNLCommand):
                     if self.as_news:
                         unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
                     else:
-                        unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                            '&utm_campaign=%s&utm_content=unsubscribe' % (
-                                site_url, self.category_slug, hashed_id, self.category_slug
-                            )
+                        unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/%s' % (
+                            site_url, self.category_slug, hashed_id, nl_utm_params(self.category_slug)
+                        )
 
                     if self.force_no_subscriber:
                         is_subscriber = is_subscriber_any = is_subscriber_default = False

@@ -22,7 +22,7 @@ from libs.utils import decode_hashid
 from thedaily.models import Subscriber
 from ..models import Publication, Edition, ArticleRel, DefaultNewsletter, get_latest_edition
 from ..templatetags.ldml import remove_markup
-from ..utils import serialize_wrapper, nl_template_name
+from ..utils import serialize_wrapper, nl_template_name, nl_utm_params
 
 
 try:
@@ -148,10 +148,9 @@ class NewsletterPreview(TemplateView):
                     if as_news:
                         unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
                     else:
-                        unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                            '&utm_campaign=%s&utm_content=unsubscribe' % (
-                                site_url, publication_slug, hashed_id, publication.newsletter_campaign
-                            )
+                        unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/%s' % (
+                            site_url, publication_slug, hashed_id, nl_utm_params(publication.newsletter_campaign)
+                        )
                     headers['List-Unsubscribe'] = '<%s>' % unsubscribe_url
                     headers['List-Unsubscribe-Post'] = "List-Unsubscribe=One-Click"
 
@@ -299,10 +298,9 @@ class NewsletterBrowserPreview(TemplateView):
             if as_news:
                 unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
             else:
-                unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                    '&utm_campaign=%s&utm_content=unsubscribe' % (
-                        site_url, publication_slug, hashed_id, newsletter_campaign
-                    )
+                unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/%s' % (
+                    site_url, publication_slug, hashed_id, nl_utm_params(newsletter_campaign)
+                )
             context.update(
                 {
                     'unsubscribe_url': unsubscribe_url,

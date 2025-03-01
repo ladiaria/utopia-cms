@@ -58,17 +58,18 @@ def index(request):
 @to_response
 def load_table(request, table_id):
 
-    month = request.GET.get('month')
-    year = request.GET.get('year')
-    today = now().date()
+    month, year, today = request.GET.get('month'), request.GET.get('year'), now().date()
+    context = {'month': month, 'year': year}
 
     if table_id in ('activity', 'activity_only_digital'):
         # Alow only admins or member of seller group
-        if not (
+        if (
             request.user.is_superuser
             or get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None))
             in request.user.groups.all()
         ):
+            context['extra_columns'] = getattr(settings, 'DASHBOARD_ACTIVITY_EXTRA_COLUMNS', [])
+        else:
             return HttpResponseForbidden()
 
     if month and year and table_id not in ('activity', 'activity_only_digital', 'subscribers'):
@@ -98,8 +99,6 @@ def load_table(request, table_id):
         {
             'rows': rows,
             'table_id': table_id,
-            'month': month,
-            'year': year,
             'date_start': date_start,
             'date_end': date_end,
         },

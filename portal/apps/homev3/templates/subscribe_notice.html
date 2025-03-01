@@ -14,14 +14,14 @@
       <svg width="78" height="16" viewBox="0 0 78 16" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M77.7071 8.70711C78.0976 8.31658 78.0976 7.68342 77.7071 7.29289L71.3431 0.928932C70.9526 0.538408 70.3195 0.538408 69.9289 0.928932C69.5384 1.31946 69.5384 1.95262 69.9289 2.34315L75.5858 8L69.9289 13.6569C69.5384 14.0474 69.5384 14.6805 69.9289 15.0711C70.3195 15.4616 70.9526 15.4616 71.3431 15.0711L77.7071 8.70711ZM0 9H77V7H0V9Z" fill="#262626"/>
       </svg>
-      <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=mobile-banner" class="ut-btn">
+      <a href="{% url 'subscribe-default' %}{% if use_utm_links %}?utm_source=web&utm_medium=mobile-banner{% endif %}" class="ut-btn">
         <span class="subscribe-word">Suscribite</span> por ${{ subscription_price }}/mes
       </a>
     </div>
   </div>
   <div class="subscribe-notice subscribe-notice__desktop hide-on-small-and-down hide">
     <p>{% if default_pub.description %}{{ default_pub.description }} {% endif %}
-      <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=desktop-banner" class="ut-btn">
+      <a href="{% url 'subscribe-default' %}{% if use_utm_links %}?utm_source=web&utm_medium=desktop-banner{% endif %}" class="ut-btn">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g clip-path="url(#clip0_485_1697)"><path d="M4.92016 14.0067C5.24682 14.3334 5.77349 14.3334 6.10016 14.0067L11.6402 8.4667C11.9002 8.2067 11.9002 7.7867 11.6402 7.5267L6.10016 1.9867C5.77349 1.66003 5.24682 1.66003 4.92016 1.9867C4.59349 2.31337 4.59349 2.84003 4.92016 3.1667L9.74682 8.00003L4.91349 12.8334C4.59349 13.1534 4.59349 13.6867 4.92016 14.0067Z" fill="white"/></g>
           <defs><clipPath id="clip0_485_1697"><rect width="16" height="16" fill="white"/></clipPath></defs>

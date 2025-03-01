@@ -11,10 +11,8 @@
           Este audio es una característica exclusiva para suscripciones.
         </div>
         <div class="ld-audio__overlay-links">
-          {% if user.is_authenticated and not is_subscriber %}
-            <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=audio-banner">Suscribite</a>
-          {% else %}
-            <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=audio-banner">Suscribite</a>
+          <a href="{% url 'subscribe-default' %}{% if use_utm_links %}?utm_source=web&utm_medium=audio-banner{% endif %}">Suscribite</a>
+          {% if not user.is_authenticated %}
             o
             <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
           {% endif %}

@@ -206,7 +206,7 @@
                               </a>
                               &nbsp;&nbsp;|&nbsp;&nbsp;
                               <a style="margin:0;display:inline-block;font-size:14px;color:#686868;text-decoration:underline"
-                                href="{{ site_url }}/usuarios/perfil/editar/?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}&utm_content=subscribemore#id_newsletters_wrapper">
+                                href="{{ site_url }}/usuarios/perfil/editar/{% if use_utm_links %}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}&utm_content=subscribemore{% endif %}#id_newsletters_wrapper">
                                 Recibir otras newsletters
                               </a>
                             </td>
