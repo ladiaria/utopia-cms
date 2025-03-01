@@ -127,6 +127,7 @@ def newsletter_preview(request, slug):
                 return HttpResponseBadRequest(cmde)
 
     context = {
+        'newsletter_name': category.newsletter_name,
         'newsletter_header_color': category.newsletter_header_color,
         'newsletter_campaign': category.slug,
         "request_is_xhr": is_xhr(request),

@@ -118,9 +118,7 @@ class NewsletterPreview(TemplateView):
                         publication.newsletter_logo or publication.image, 'url', '/static/img/logo-white.png'
                     )
 
-                    if site and default:
-                        email_from_name = site.name
-                    elif publication.slug in getattr(settings, 'CORE_PUBLICATIONS_NL_FROM_NAME_NAMEONLY', ()):
+                    if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_NL_FROM_NAME_NAMEONLY', ()):
                         email_from_name = publication.name
                     else:
                         try:
@@ -272,12 +270,12 @@ class NewsletterBrowserPreview(TemplateView):
 
         site_url, publication = context['site_url'], edition['publication']
         newsletter_campaign = publication['newsletter_campaign']
-        newsletter_name = publication['newsletter_name']
         context.update(
             {
                 "browser_preview": True,
                 'newsletter_campaign': newsletter_campaign,
-                'newsletter_name': newsletter_name,
+                'newsletter_name': publication['newsletter_name'],
+                'publication_name': publication['name'],
                 'nl_date': edition['date_published'],
             }
         )

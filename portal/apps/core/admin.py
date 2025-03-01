@@ -1184,6 +1184,7 @@ class PublicationAdminForm(CustomSubjectAdminForm):
         model = Publication
         fields = "__all__"
         widgets = {
+            'newsletter_name': TextInput(attrs={'size': 160}),
             'newsletter_tagline': TextInput(attrs={'size': 160}),
             'newsletter_subject': TextInput(attrs={'size': 160}),
             'html_title': TextInput(attrs={'size': 128}),
@@ -1323,7 +1324,7 @@ class CategoryAdmin(ModelAdmin):
                     ('has_newsletter', "newsletter_new_pill"),
                     ('newsletter_header_color',),
                     ("newsletter_from_name", "newsletter_from_email"),
-                    ('newsletter_tagline',),
+                    ("newsletter_name", "newsletter_tagline"),
                     ('newsletter_periodicity',),
                     ('subscribe_box_question',),
                     ('subscribe_box_nl_subscribe_auth',),
