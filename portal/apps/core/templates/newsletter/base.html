@@ -28,7 +28,13 @@
     {% if request_is_xhr %}
       <div class="tab-pane fade show active" id="nl" role="tabpanel" aria-labelledby="nl-tab">
         <div class="col-md-9 ml-sm-auto col-lg-10 px-4 pt-2">
-          <p><strong>Preview URL: </strong><a id="loaded_url" href=""></a></p>
+          <p>
+            <strong>Preview URL:</strong>
+            <a id="loaded_url" href="" data-nl-type="{{ nl_type }}"{% spaceless %}
+               {% block preview_nl_date_obj %}
+                 {% if nl_date_obj %}data-nl-date="{{ nl_date_obj|date:"Y-m-d" }}"{% endif %}
+               {% endblock %}{% endspaceless %}></a>
+          </p>
     {% endif %}
     {% if headers_preview %}
       <table style="margin:0 auto;padding:7px;border:1px solid #eee;border-collapse:collapse;max-width:580px">
@@ -125,7 +131,7 @@
                                                               </tr>
                                                               <tr style="padding:0;text-align:left;vertical-align:top">
                                                                 <th style="Margin:0;color:{{ date_color|default:"#686868" }};font-family:{{ main_font|default:'Roboto,Arial,sans-serif' }};font-size:{{ date_size|default:"12px" }};font-weight:400;line-height:1.3;margin:0;padding:{{ date_padding|default:"8px 0 0 0" }};text-align:center; display:block;">
-                                                                  {{ nl_date }}
+                                                                  {% block nl_date %}{{ nl_date }}{% endblock %}
                                                                 </th>
                                                               </tr>
                                                               <tr style="padding:0;text-align:left;vertical-align:top;{{ spacer_logo_extra_style|default:"" }}">

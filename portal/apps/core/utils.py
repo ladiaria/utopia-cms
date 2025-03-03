@@ -192,6 +192,10 @@ def nl_utm_params(campaign):
     return result
 
 
+def format_nl_date(dd):
+    return "{d:%A} {d.day} de {d:%B de %Y}".format(d=dd).capitalize()
+
+
 def serialize_wrapper(article_or_list, publication, for_cover=False, dates=True):
     if isinstance(article_or_list, list):
         return [

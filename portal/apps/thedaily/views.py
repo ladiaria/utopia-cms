@@ -2,6 +2,7 @@
 from future import standard_library
 from builtins import str
 import os
+import logging
 from pydoc import locate
 import json
 import requests
@@ -90,6 +91,7 @@ from .models import (
     MailtrainList,
     deletecrmuser,
     email_i18n,
+    sync_log,
 )
 from .forms import (
     __name__ as forms_module_name,
@@ -2293,8 +2295,8 @@ def nlunsubscribe(request, publication_slug, hashed_id):
             try:
                 subscriber.newsletters.remove(publication)
             except Exception as e:
-                # for some reason UpdateCrmEx does not work in test (Python ver?)
-                ctx['error'] = e.displaymessage
+                ctx['error'] = err_msg = str(e)
+                sync_log('nlunsubscribe: ' + err_msg, logging.ERROR, request)
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
@@ -2324,8 +2326,8 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
             try:
                 subscriber.category_newsletters.remove(category)
             except Exception as e:
-                # for some reason UpdateCrmEx does not work in test (Python ver?)
-                ctx['error'] = e.displaymessage
+                ctx['error'] = err_msg = str(e)
+                sync_log('nl_category_unsubscribe: ' + err_msg, logging.ERROR, request)
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email

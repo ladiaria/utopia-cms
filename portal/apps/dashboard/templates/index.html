@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" href="{% static 'favicon.ico' %}">
 
     <title>{{ site.name }} - Panel de estadísticas de usuarios y previsualización de newsletters</title>
 
@@ -77,6 +76,8 @@
       function nl_switches(hash){
         $('#control-content').html(`
           <form id="nl_switches" onsubmit="return nl_switches_submit('` + hash + `')">{% csrf_token %}
+            <input type="hidden" id="nl_date" name="nl_date" value="">
+            <input type="hidden" id="nl_type" name="nl_type" value="">
             <fieldset class="border-bottom">
               <div style="float:left;margin-right:10px">
                 <input type="checkbox" id="nl_switches_1" name="is_subscriber_default" checked="checked">
@@ -132,7 +133,6 @@
         });
         // show and set test newsletter click handler (if button is found)
         $('#control-content').show().find("#send_test").on("click", function(){
-          console.log("send_test pressed");/**/
           nl_switches_submit(hash, true);
         });
       }
@@ -174,7 +174,10 @@
               $('#control-content').hide();
             }
             let abs_url = "{{ site_url }}" + content_url;
-            $(this).find("#loaded_url").html(abs_url).attr("href", abs_url);
+            let loaded_url = $(this).find("#loaded_url");
+            loaded_url.html(abs_url).attr("href", abs_url);
+            $("#nl_date").val(loaded_url.data("nl-date"));
+            $("#nl_type").val(loaded_url.data("nl-type"));
           });
         });
 

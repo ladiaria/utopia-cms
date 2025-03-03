@@ -26,7 +26,7 @@ from django.utils.timezone import now, datetime
 
 from apps import blocklisted
 from core.models import Category, CategoryNewsletter, CategoryHome, Article, get_latest_edition
-from core.utils import get_category_template, get_nl_featured_article_id, nl_utm_params
+from core.utils import get_category_template, get_nl_featured_article_id, nl_utm_params, format_nl_date
 from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter, subscribers_nl_iter_filter
@@ -47,6 +47,7 @@ hashids = Hashids(settings.HASHIDS_SALT, 32)
 
 class Command(SendNLCommand):
     help = 'Sends the last category newsletter by email to all subscribers of the category given or those given by id.'
+    nl_date = None
 
     def add_arguments(self, parser):
         parser.add_argument('category_slug', nargs=1, type=str)
@@ -56,6 +57,13 @@ class Command(SendNLCommand):
             type=int,
             dest='site_id',
             help='Use another site instead of the current site to build the URLs inside the message',
+        )
+        parser.add_argument(
+            '--nl-date',
+            action='store',
+            type=str,
+            dest='nl_date',
+            help='Date shown in the newsletter content header: YYYY-mm-dd (default: today)',
         )
         parser.add_argument(
             '--hide-after-content-block',
@@ -72,7 +80,7 @@ class Command(SendNLCommand):
         export_ctx.update(
             {
                 'newsletter_campaign': self.category_slug,
-                'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=self.nl_delivery_dt).capitalize(),
+                'nl_date': format_nl_date(self.nl_date),
                 'hide_after_content_block': self.hide_after_content_block,
                 'newsletter_name': self.category.newsletter_name,
                 "newsletter_header_color": self.category.newsletter_header_color,
@@ -415,6 +423,11 @@ class Command(SendNLCommand):
         if self.category_slug in getattr(settings, "SENDNEWSLETTER_CATEGORY_DISALLOW_DEFAULT_CMD", ()):
             raise CommandError("The newsletter of this category is not allowed to be sent using this command")
         self.load_options(options)
+        try:
+            nl_date = options.get('nl_date')
+            self.nl_date = datetime.strptime(nl_date, '%Y-%m-%d').date() if nl_date else self.nl_delivery_dt
+        except ValueError:
+            raise CommandError("Invalid date format for argument --nl-date, use YYYY-mm-dd")
         self.hide_after_content_block = options.get('hide_after_content_block')
         try:
             c = Category.objects.get(slug=self.category_slug)

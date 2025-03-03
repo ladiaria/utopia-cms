@@ -63,6 +63,9 @@ class NewsletterPreview(TemplateView):
         ):
             raise PermissionDenied
 
+    def get_edition(self, publication):
+        return get_latest_edition(publication)
+
     def get(self, request, *args, **kwargs):
         self.authorize(request)
         publication_slug = kwargs.get('publication_slug')
@@ -72,7 +75,7 @@ class NewsletterPreview(TemplateView):
         context.update(publication.extra_context.copy())
         status, template_name, template_name_default = None, None, self.template_name
         try:
-            edition = get_latest_edition(publication)
+            edition = self.get_edition(publication)
         except Edition.DoesNotExist as edne:
             context.update({"headers_preview": True, "preview_err": edne})
             template_name, status = "newsletter/error.html", 406
@@ -178,7 +181,9 @@ class NewsletterPreview(TemplateView):
                                 'custom_subject': custom_subject,
                                 'headers_preview': headers,
                                 "request_is_xhr": is_xhr(request),
+                                'nl_date_obj': edition.date_published,
                                 'nl_date': edition.date_published_verbose(False),
+                                'nl_type': 'p',
                             }
                         )
 
@@ -226,6 +231,9 @@ class NewsletterPreview(TemplateView):
                 "force_no_subscriber": request.POST.get(f'is_subscriber_{publication_slug}') != "on",
                 "assert_one_email_sent": True,
             }
+            nl_date, nl_type = request.POST.get('nl_date'), request.POST.get('nl_type')
+            if nl_type == 'p' and nl_date:
+                cmd_opts['edition_date'] = nl_date
             try:
                 call_command(self.delivery_command, *cmd_args, **cmd_opts)
             except CommandError as cmde:
