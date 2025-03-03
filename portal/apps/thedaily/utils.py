@@ -113,7 +113,7 @@ def subscribe_log(request, message, level=logging.INFO):
         log_session_keys = getattr(settings, "THEDAILY_SUBSCRIBE_LOG_SESSION_KEYS", False)
         subscribe_logger.log(
             level,
-            '[%s]\t%c%s %s\t(%s)\tuser: %s, "%s", session keys: %s' % (
+            '[%s]\t%s%s %s\t(%s)\tuser: %s, "%s", session keys: %s' % (
                 get_ip(request),
                 'X' if is_xhr(request) else '',
                 request.method,
