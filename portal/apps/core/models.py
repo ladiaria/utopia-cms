@@ -18,7 +18,7 @@ from concurrency.api import apply_concurrency_check
 from concurrency.fields import IntegerVersionField
 
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 from django.http import HttpResponse, Http404
@@ -2428,6 +2428,11 @@ class ArticleExtension(Model):
     body = TextField('cuerpo')
     size = CharField('size', max_length=1, choices=SIZE_CHOICES, default='R')
     background_color = CharField('background color', max_length=7, default='#eaeaea', null=True, blank=True)
+    position = PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False,
+    )
 
     def __str__(self):
         return self.headline or ''
@@ -2438,7 +2443,8 @@ class ArticleExtension(Model):
     is_published = property(_is_published)
 
     class Meta:
-        ordering = ('article', 'headline')
+        # ordering = ('article', 'headline')
+        ordering = ['position']
         verbose_name = 'recuadro'
         verbose_name_plural = 'recuadros'
 

@@ -404,6 +404,8 @@ class ArticleExtensionInline(TabularInline):
     model = ArticleExtension
     extra = 1
     classes = ["collapse"]
+    ordering = ['position']
+    fields = ['position', 'headline', 'body', 'size', 'background_color']
 
 
 class ArticleBodyImageInline(TabularInline):
