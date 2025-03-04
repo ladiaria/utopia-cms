@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0057_alter_articlerel_article_alter_articlerel_edition_and_more'),
+        ('core', '0058_category_newsletter_name'),
     ]
 
     operations = [
