@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from adminsortable2.admin import SortableTabularInline
 from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
@@ -400,7 +401,7 @@ class SectionAdmin(ModelAdmin):
         update_category_home()
 
 
-class ArticleExtensionInline(TabularInline):
+class ArticleExtensionInline(SortableTabularInline):
     model = ArticleExtension
     extra = 1
     classes = ["collapse"]
