@@ -10,7 +10,10 @@ from core.models import Publication, Category, Article
 
 
 def urls(request):
-    url_dict = {"SITE_DOMAIN_CLASS": settings.SITE_DOMAIN.replace('.', '-')}
+    url_dict = {
+        "SITE_DOMAIN_CLASS": settings.SITE_DOMAIN.replace('.', '-'),
+        "use_utm_links": settings.PORTAL_USE_UTM_LINKS,
+    }
     for attr in dir(settings):
         if attr.endswith('_URL'):
             try:

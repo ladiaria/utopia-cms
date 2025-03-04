@@ -537,7 +537,9 @@ class Edition(PortableDocumentFormatBaseModel):
     def nl_serialize(self):
         result = {
             'publication': {
+                'name': self.publication.name,
                 'newsletter_campaign': self.publication.newsletter_campaign,
+                'newsletter_name': self.publication.newsletter_name,
                 'get_absolute_url': self.publication.get_absolute_url(),
             },
             'newsletter_header_color': self.publication.newsletter_header_color,
@@ -634,6 +636,7 @@ class Category(Model):
     order = PositiveSmallIntegerField('orden', blank=True, null=True)
     has_newsletter = BooleanField('tiene NL', default=False)
     newsletter_new_pill = BooleanField('pill de "nuevo" para la newsletter en el perfil de usuario', default=False)
+    newsletter_name = CharField(max_length=64, blank=True, null=True)
     newsletter_tagline = CharField(max_length=128, blank=True, null=True)
     newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
     newsletter_header_color = CharField('color de cabezal para NL', max_length=7, default='#262626')
@@ -801,14 +804,13 @@ class Category(Model):
     def profile_newsletter_name(self):
         """
         Returns the newsletter name to show in the edit profile view
-        TODO: instead of use a setting to customize (due an urgent req), this should be done like in Pubs, using a
-              new field "newsletter_name", this needs some time-work to propagate the impact of adding this new field,
+        TODO: propagate (if needed) the impact of add the new field newsletter_name,
               because, for ex. nl subject should also use it prior to object name, etc.
         """
         if self.slug in getattr(settings, "THEDAILY_EDIT_PROFILE_CATEGORY_NL_USE_FROM_NAME", []):
             return self.newsletter_from_name
         else:
-            return self.name
+            return self.newsletter_name or self.name
 
     def nl_featured_section_articles(self):
         """

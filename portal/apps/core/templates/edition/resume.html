@@ -49,7 +49,7 @@
         </li>
         {% if not is_subscriber_any %}
           <li class="ld-main-menu__item small">
-            <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=headerbtn">Suscribite</a>
+            <a href="{% url 'subscribe-default' %}{% if use_utm_links %}?utm_source=web&utm_medium=headerbtn{% endif %}">Suscribite</a>
           </li>
         {% endif %}
         {% if poll_url %}

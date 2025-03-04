@@ -184,6 +184,18 @@ def get_nl_featured_article_id():
     return getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', None)
 
 
+def nl_utm_params(campaign):
+    if settings.PORTAL_USE_UTM_LINKS:
+        result = f'?utm_source=newsletter&utm_medium=email&utm_campaign={campaign}&utm_content=unsubscribe'
+    else:
+        result = ''
+    return result
+
+
+def format_nl_date(dd):
+    return "{d:%A} {d.day} de {d:%B de %Y}".format(d=dd).capitalize()
+
+
 def serialize_wrapper(article_or_list, publication, for_cover=False, dates=True):
     if isinstance(article_or_list, list):
         return [

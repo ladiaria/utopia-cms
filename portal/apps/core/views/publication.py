@@ -22,7 +22,7 @@ from libs.utils import decode_hashid
 from thedaily.models import Subscriber
 from ..models import Publication, Edition, ArticleRel, DefaultNewsletter, get_latest_edition
 from ..templatetags.ldml import remove_markup
-from ..utils import serialize_wrapper, nl_template_name
+from ..utils import serialize_wrapper, nl_template_name, nl_utm_params
 
 
 try:
@@ -63,6 +63,9 @@ class NewsletterPreview(TemplateView):
         ):
             raise PermissionDenied
 
+    def get_edition(self, publication):
+        return get_latest_edition(publication)
+
     def get(self, request, *args, **kwargs):
         self.authorize(request)
         publication_slug = kwargs.get('publication_slug')
@@ -72,7 +75,7 @@ class NewsletterPreview(TemplateView):
         context.update(publication.extra_context.copy())
         status, template_name, template_name_default = None, None, self.template_name
         try:
-            edition = get_latest_edition(publication)
+            edition = self.get_edition(publication)
         except Edition.DoesNotExist as edne:
             context.update({"headers_preview": True, "preview_err": edne})
             template_name, status = "newsletter/error.html", 406
@@ -118,9 +121,7 @@ class NewsletterPreview(TemplateView):
                         publication.newsletter_logo or publication.image, 'url', '/static/img/logo-white.png'
                     )
 
-                    if site and default:
-                        email_from_name = site.name
-                    elif publication.slug in getattr(settings, 'CORE_PUBLICATIONS_NL_FROM_NAME_NAMEONLY', ()):
+                    if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_NL_FROM_NAME_NAMEONLY', ()):
                         email_from_name = publication.name
                     else:
                         try:
@@ -150,10 +151,9 @@ class NewsletterPreview(TemplateView):
                     if as_news:
                         unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
                     else:
-                        unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                            '&utm_campaign=%s&utm_content=unsubscribe' % (
-                                site_url, publication_slug, hashed_id, publication.newsletter_campaign
-                            )
+                        unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/%s' % (
+                            site_url, publication_slug, hashed_id, nl_utm_params(publication.newsletter_campaign)
+                        )
                     headers['List-Unsubscribe'] = '<%s>' % unsubscribe_url
                     headers['List-Unsubscribe-Post'] = "List-Unsubscribe=One-Click"
 
@@ -181,7 +181,9 @@ class NewsletterPreview(TemplateView):
                                 'custom_subject': custom_subject,
                                 'headers_preview': headers,
                                 "request_is_xhr": is_xhr(request),
+                                'nl_date_obj': edition.date_published,
                                 'nl_date': edition.date_published_verbose(False),
+                                'nl_type': 'p',
                             }
                         )
 
@@ -229,6 +231,9 @@ class NewsletterPreview(TemplateView):
                 "force_no_subscriber": request.POST.get(f'is_subscriber_{publication_slug}') != "on",
                 "assert_one_email_sent": True,
             }
+            nl_date, nl_type = request.POST.get('nl_date'), request.POST.get('nl_type')
+            if nl_type == 'p' and nl_date:
+                cmd_opts['edition_date'] = nl_date
             try:
                 call_command(self.delivery_command, *cmd_args, **cmd_opts)
             except CommandError as cmde:
@@ -276,6 +281,8 @@ class NewsletterBrowserPreview(TemplateView):
             {
                 "browser_preview": True,
                 'newsletter_campaign': newsletter_campaign,
+                'newsletter_name': publication['newsletter_name'],
+                'publication_name': publication['name'],
                 'nl_date': edition['date_published'],
             }
         )
@@ -299,10 +306,9 @@ class NewsletterBrowserPreview(TemplateView):
             if as_news:
                 unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
             else:
-                unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                    '&utm_campaign=%s&utm_content=unsubscribe' % (
-                        site_url, publication_slug, hashed_id, newsletter_campaign
-                    )
+                unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/%s' % (
+                    site_url, publication_slug, hashed_id, nl_utm_params(newsletter_campaign)
+                )
             context.update(
                 {
                     'unsubscribe_url': unsubscribe_url,

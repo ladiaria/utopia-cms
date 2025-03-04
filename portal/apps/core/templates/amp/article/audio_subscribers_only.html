@@ -5,7 +5,7 @@
 {% block overlay_title %}Este audio es una característica exclusiva para suscripciones.{% endblock %}
 
 {% block overlay_links %}
-  <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=audio-banner">Suscribite</a>
+  <a href="{% url 'subscribe-default' %}{% if use_utm_links %}?utm_source=web&utm_medium=audio-banner{% endif %}">Suscribite</a>
   <span class="d-inline-block" amp-access="NOT authenticated" amp-access-hide>
     o <a on="tap:amp-access.login">Ingresá</a>
   </span>

@@ -9,6 +9,7 @@ import requests
 from actstream.models import Follow
 from actstream.registry import check
 from favit.models import Favorite
+from favit.utils import is_xhr
 from social_django.models import UserSocialAuth
 from django_amp_readerid.models import UserReaderId
 from phonenumber_field.phonenumber import PhoneNumber
@@ -29,7 +30,7 @@ from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
 from signupwall.utils import get_ip
 from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
-from . import get_app_template
+from . import get_app_template, log_formatter
 
 
 subscribe_logfile, subscribe_logger = getattr(settings, 'THEDAILY_SUBSCRIBE_LOGFILE', None), None
@@ -37,7 +38,7 @@ if subscribe_logfile:
     subscribe_logger = logging.getLogger(__name__)
     subscribe_logger.setLevel(logging.DEBUG)
     file_handler = logging.FileHandler(filename=subscribe_logfile)
-    file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S'))
+    file_handler.setFormatter(log_formatter)
     subscribe_logger.addHandler(file_handler)
 
 
@@ -108,13 +109,13 @@ def move_data(s0, s1):
 
 
 def subscribe_log(request, message, level=logging.INFO):
-    # TODO: indicate wether if the request is ajax.
     if subscribe_logger and not request.user_agent.is_bot:
         log_session_keys = getattr(settings, "THEDAILY_SUBSCRIBE_LOG_SESSION_KEYS", False)
         subscribe_logger.log(
             level,
-            '[%s]\t%s %s\t(%s)\tuser: %s, "%s", session keys: %s' % (
+            '[%s]\t%s%s %s\t(%s)\tuser: %s, "%s", session keys: %s' % (
                 get_ip(request),
+                'X' if is_xhr(request) else '',
                 request.method,
                 request.get_full_path(),
                 request.user_agent,

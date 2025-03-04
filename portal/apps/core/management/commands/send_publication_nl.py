@@ -24,7 +24,7 @@ from apps import blocklisted
 from libs.utils import smtp_connect
 from core.models import Publication, Article, Edition, DefaultNewsletter
 from core.templatetags.ldml import remove_markup
-from core.utils import serialize_wrapper, get_nl_featured_article_id, nl_template_name
+from core.utils import serialize_wrapper, get_nl_featured_article_id, nl_template_name, nl_utm_params
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter_filter
 from . import SendNLCommand
@@ -40,7 +40,7 @@ class Command(SendNLCommand):
     #       - elif all args are emails => direct email address receipts
     help = """
         Sends the default publication's newsletter (or the newsletter of the publication given by slug) to all
-        subscribers, or to those given by id.
+        its NL subscribers, or a superset of them considering other(s) publications, or to those given by id.
     """
     nlobj_pubs = (settings.DEFAULT_PUB,)  # The slugs of the publications that have a custom NL Model.
 
@@ -49,6 +49,9 @@ class Command(SendNLCommand):
 
     # A way to disallow this base command to be used for some publications. (to be overriden in child commands)
     disallowed_publications = getattr(settings, "CORE_PUBLICATIONS_NL_DISALLOW_BASE_CMD", ())
+
+    # A list of publication slugs to include in the delivery
+    include_other_publications = []
 
     edition, nlobj, subscriber_extra_info_keys, log = None, None, (), logging.getLogger(__name__)
 
@@ -83,6 +86,14 @@ class Command(SendNLCommand):
             dest='publication_slug',
             help='Use another publication instead the default one',
         )
+        parser.add_argument(
+            "--include-other-publications",
+            action='store',
+            type=str,
+            dest='include_other_publications',
+            default=None,
+            help='Include subscribers of other publication newsletters in the delivery, comma separated list of slugs',
+        )
 
     def get_template_name(self, default=None):
         return nl_template_name(self.pub_slug, **({"default": default} if default else {}))
@@ -95,8 +106,14 @@ class Command(SendNLCommand):
         else:
             return Publication.objects.get(slug=self.pub_slug)
 
+    def default_receivers_qobj(self):
+        q_obj = Q(newsletters__slug=self.pub_slug) | Q(user__is_staff=True)
+        for pub_slug in self.include_other_publications:
+            q_obj |= Q(newsletters__slug=pub_slug)
+        return q_obj
+
     def default_receivers(self, receivers):
-        return receivers.filter(Q(newsletters__slug=self.pub_slug) | Q(user__is_staff=True))
+        return receivers.filter(self.default_receivers_qobj())
 
     def extra_context(self):
         return {}
@@ -136,7 +153,8 @@ class Command(SendNLCommand):
             raise CommandError(error_msg)
 
         export_ctx = publication.extra_context.copy()
-        common_ctx = {"newsletter_header_color": publication.newsletter_header_color}
+        common_ctx = self.default_common_ctx.copy()
+        common_ctx.update({"newsletter_header_color": publication.newsletter_header_color})
         # A flag to force no delivery can be set in extra context
         if export_ctx.get("force_no_delivery"):
             self.log.info("Force to no delivery by the publication extra context, aborting.")
@@ -163,13 +181,14 @@ class Command(SendNLCommand):
                 if self.as_news:
                     receivers = receivers.filter(allow_news=True).exclude(newsletters__slug=self.pub_slug)
                 else:
-                    receivers = receivers.filter(newsletters__slug=self.pub_slug)
+                    if self.only_supplements:
+                        if hasattr(self, 'only_supplement_receivers'):
+                            receivers = self.only_supplement_receivers(receivers)
+                        else:
+                            receivers = receivers.filter(newsletters__slug=self.pub_slug)
+                    else:
+                        receivers = self.default_receivers(receivers)
                 receivers = receivers.exclude(user__email__in=blocklisted)
-                if self.only_supplements:
-                    if hasattr(self, 'only_supplement_receivers'):
-                        receivers = self.only_supplement_receivers(receivers)
-                else:
-                    receivers = self.default_receivers(receivers)
                 # if both "starting_from" we can filter now with the minimum
                 if self.starting_from_s and self.starting_from_ns:
                     receivers = receivers.filter(user__email__gt=min(self.starting_from_s, self.starting_from_ns))
@@ -420,10 +439,9 @@ class Command(SendNLCommand):
                     if self.as_news:
                         unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
                     else:
-                        unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                            '&utm_campaign=%s&utm_content=unsubscribe' % (
-                                site_url, self.pub_slug, hashed_id, self.newsletter_campaign
-                            )
+                        unsubscribe_url = '%s/usuarios/nlunsubscribe/%s/%s/%s' % (
+                            site_url, self.pub_slug, hashed_id, nl_utm_params(self.newsletter_campaign)
+                        )
                     browser_preview_url = '%s/nl/%s/%s/' % (site_url, self.pub_slug, hashed_id)
                     if self.force_no_subscriber:
                         is_subscriber = is_subscriber_any = is_subscriber_default = False
@@ -497,6 +515,12 @@ class Command(SendNLCommand):
 
         if (self.offline or self.export_subscribers) and ed_date:
             raise CommandError('--edition-date can not be used with --offline or --export-subscribers')
+
+        include_other_publications = options.get('include_other_publications')
+        if include_other_publications:
+            self.include_other_publications = include_other_publications.split(',')
+            if self.pub_slug in self.include_other_publications:
+                raise CommandError("The publication which is set to be delivered can't be included in 'others'")
 
         self.initlog(self.log, self.pub_slug)
 

@@ -12,8 +12,9 @@
                 Podrán escuchar este artículo quienes estén registrados.
               </div>
               <div class="ld-audio__overlay-links">
-                <a href="{% url 'account-signup' %}?utm_source=web&utm_medium=audio-banner">Creá tu cuenta</a>
-                o
+                <a href="{% url 'account-signup' %}{% if use_utm_links %}?utm_source=web&utm_medium=audio-banner{% endif %}">
+                  Creá tu cuenta
+                </a> o
                 <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
               </div>
             </div>

@@ -26,7 +26,7 @@ from faq.models import Topic
 from ..models import (
     Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition, get_current_edition
 )
-from ..utils import get_category_template, get_nl_featured_article_id
+from ..utils import get_category_template, get_nl_featured_article_id, nl_utm_params, format_nl_date
 from ..templatetags.ldml import remove_markup
 
 
@@ -121,15 +121,20 @@ def newsletter_preview(request, slug):
                 "force_no_subscriber": request.POST.get(f'is_subscriber_{settings.DEFAULT_PUB}') != "on",
                 "assert_one_email_sent": True,
             }
+            nl_date, nl_type = request.POST.get('nl_date'), request.POST.get('nl_type')
+            if nl_type == 'c' and nl_date:
+                cmd_opts['nl_date'] = nl_date
             try:
                 call_command("send_category_nl", *cmd_args, **cmd_opts)
             except CommandError as cmde:
                 return HttpResponseBadRequest(cmde)
 
     context = {
+        'newsletter_name': category.newsletter_name,
         'newsletter_header_color': category.newsletter_header_color,
         'newsletter_campaign': category.slug,
         "request_is_xhr": is_xhr(request),
+        "nl_type": "c",
     }
     context.update(category.newsletter_extra_context)
     render_kwargs = {"context": context}
@@ -221,8 +226,9 @@ def newsletter_preview(request, slug):
         if as_news:
             unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
         else:
-            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
+            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/%s' % (
+                site_url, category.slug, hashed_id, nl_utm_params(category.slug)
+            )
         headers['List-Unsubscribe'] = '<%s>' % unsubscribe_url
         headers['List-Unsubscribe-Post'] = "List-Unsubscribe=One-Click"
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
@@ -235,7 +241,7 @@ def newsletter_preview(request, slug):
                 'unsubscribe_url': unsubscribe_url,
                 'custom_subject': custom_subject,
                 'headers_preview': headers,
-                'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=nowval.date()).capitalize(),
+                'nl_date': format_nl_date(nowval.date()),
                 'cover_article': nl_serialize_multi(cover_article, category, True, False),
                 'featured_article': nl_serialize_multi(featured_article, category, True, False),
             }
@@ -319,8 +325,7 @@ def newsletter_browser_preview(request, slug, hashed_id=None):
         if as_news:
             unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
         else:
-            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, slug, hashed_id, slug)
+            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/%s' % (site_url, slug, hashed_id, nl_utm_params(slug))
         context['unsubscribe_url'] = unsubscribe_url
     # TODO: obtain missing vars from hashed_id subscriber (TODO: which are those vars?)
     context.update(

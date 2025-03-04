@@ -1,11 +1,15 @@
 from os.path import join
 import locale
+import logging
 from pycountry import countries
 
 from django.conf import settings
 from django.core.checks import Error, Warning, register
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
+
+
+log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S')
 
 
 def get_talk_url():

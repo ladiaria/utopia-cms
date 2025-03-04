@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+import sys
 import re
 import json
+import logging
 import requests
 import pymongo
 from hashids import Hashids
@@ -9,6 +11,7 @@ from pyisemail import is_email
 
 from social_django.models import UserSocialAuth
 from phonenumber_field.modelfields import PhoneNumberField
+from favit.utils import is_xhr
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
@@ -48,11 +51,38 @@ from apps import mongo_db, bouncer_blocklisted, whitelisted_domains, document_ty
 from core.models import Edition, Publication, Category, ArticleViewedBy
 from .exceptions import UpdateCrmEx, EmailValidationError, MSG_ERR_UPDATE
 from .managers import SubscriberManager
+from . import log_formatter
 
 
 ALPHANUM_STR = "^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _'.-]*$"
 GA_CATEGORY_CHOICES, MIN0, MAX100 = (('D', 'Digital'), ('P', 'Papel')), MinValueValidator(0), MaxValueValidator(100)
 email_i18n = _("email")
+
+sync_logfile, sync_logger = getattr(settings, 'THEDAILY_SYNC_LOGFILE', None), None
+sync_logger = logging.getLogger(__name__)
+sync_logger.setLevel(logging.DEBUG)
+if sync_logfile:
+    file_handler = logging.FileHandler(filename=sync_logfile)
+    file_handler.setFormatter(log_formatter)
+    sync_logger.addHandler(file_handler)
+if settings.DEBUG:
+    # print also errors to stderr in DEBUG mode
+    err_handler = logging.StreamHandler(sys.stderr)
+    err_handler.setLevel(logging.ERROR)
+    err_handler.setFormatter(log_formatter)
+    sync_logger.addHandler(err_handler)
+
+
+def sync_log(message, level=logging.INFO, request=None):
+    if sync_logger:
+        extra = ''
+        if request:
+            extra = ' request: {is_ajax}{method} user={user}'.format(
+                is_ajax="X" if is_xhr(request) else '',
+                method=request.method,
+                user=getattr(request.user, 'id', 'not_set'),
+            )
+        sync_logger.log(level, message + extra)
 
 
 class SubscriptionPrices(Model):
@@ -594,7 +624,9 @@ def subscriber_pre_save(sender, instance, **kwargs):
 def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
     if settings.THEDAILY_DEBUG_SIGNALS:
         print(
-            'DEBUG: thedaily.models.subscriber_newsletters_changed called with action=%s, pk_set=%s' % (action, pk_set)
+            'DEBUG: thedaily.models.subscriber_newsletters_changed called with: '
+            'instance=%s, instance.contact_id=%s, action=%s, pk_set=%s'
+            % (instance, instance.contact_id, action, pk_set)
         )
     if getattr(instance, "updatefromcrm", False):
         return True
@@ -609,9 +641,8 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
                     + ('_remove' if action == 'post_remove' else ''),
                     json.dumps(list(pk_set)) if pk_set else None,
                 )
-            except requests.exceptions.RequestException:
-                # TODO: write to error log, then this errors can be monitored someway
-                pass
+            except requests.exceptions.RequestException as req_exc:
+                sync_log('subscriber_newsletters_changed' + str(req_exc), logging.ERROR)
 
 
 @receiver(post_save, sender=User, dispatch_uid="createUserProfile")
