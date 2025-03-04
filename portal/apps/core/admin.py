@@ -3,6 +3,7 @@ from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
 from pydoc import locate
+import traceback
 from kombu.exceptions import OperationalError
 
 from actstream.models import Action
@@ -14,6 +15,7 @@ from martor.models import MartorField
 from martor.widgets import AdminMartorWidget
 from concurrency.api import disable_concurrency
 from concurrency.admin import ConcurrentModelAdmin
+from adminsortable2.admin import SortableAdminBase
 
 from django.conf import settings
 from django.urls import path
@@ -619,7 +621,7 @@ def get_editions():
 
 
 @admin.register(Article, site=site)
-class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
+class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
@@ -802,7 +804,9 @@ class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
                 self.obj = obj
             except Exception as e:
                 if settings.DEBUG:
-                    print("DEBUG: error in core.admin.ArticleAdmin.save_model: %s" % e)
+                    print(f"DEBUG: error in core.admin.ArticleAdmin.save_model: {e}")
+                    print(f"DEBUG: form.errors: {form.errors.as_json()}")
+                    print(f"DEBUG: full traceback: {traceback.format_exc()}")
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)

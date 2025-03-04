@@ -34,6 +34,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # default filename for the bse_template used to extend by variable
 PORTAL_BASE_TEMPLATE = "base.html"
+# use utm in links (for tracking purposes)
+PORTAL_USE_UTM_LINKS = True
 # country name in page titles
 PORTAL_TITLE_APPEND_COUNTRY = True
 # flatpages template directory, join this value with a template path, example: os.path.join(this_value, "default.html")
