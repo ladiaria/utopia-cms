@@ -8,6 +8,8 @@ from builtins import str
 import os
 import datetime
 
+from PIL import Image
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
@@ -179,3 +181,31 @@ class BannerAd(AdBase):
 
     def mobile_content_basename(self):
         return os.path.basename(str(self.mobile_content))
+
+    def clean(self):
+        super().clean()
+
+        self._validate_duplicate_zone()
+        self._validate_image_dimensions(self.content, 970, 250, "content")
+        self._validate_image_dimensions(self.mobile_content, 300, 250, "mobile_content")
+
+
+    def _validate_duplicate_zone(self):
+        duplicate_query = BannerAd.objects.filter(zone_id=self.zone_id)
+        if self.pk:
+            duplicate_query = duplicate_query.exclude(pk=self.pk)
+        if duplicate_query.exists():
+            raise ValidationError({
+                "zone": f"Un BannerAd con la zona '{self.zone}' ya existe. "
+                        "Por favor, seleccione otra zona."
+            })
+
+    def _validate_image_dimensions(self, image, required_width, required_height, field_name):
+        if image:
+            img = Image.open(image)
+            width, height = img.size
+            if width != required_width or height != required_height:
+                raise ValidationError({
+                    field_name: f"La imagen debe tener dimensiones de {required_width}×{required_height}px, "
+                                f"pero tiene {width}×{height}px."
+                })
