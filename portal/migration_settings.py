@@ -425,6 +425,9 @@ CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 # class to use for the body field in articles
 CORE_ARTICLE_BODY_FIELD_CLASS = "martor.models.MartorField"
 
+# enable sortable inlines for article admin inlines
+CORE_ARTICLE_ADMIN_INLINES_SORTABLE = True
+
 # use job to build journalist absolute url
 CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
 

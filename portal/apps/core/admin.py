@@ -73,6 +73,9 @@ from .tasks import update_category_home, send_push_notification
 from .utils import update_article_url_in_coral_talk, article_slug_readonly
 
 
+INLINES_SORTABLE = settings.CORE_ARTICLE_ADMIN_INLINES_SORTABLE
+
+
 class PrintOnlyArticleInline(TabularInline):
     model = PrintOnlyArticle
     extra = 10
@@ -403,38 +406,59 @@ class SectionAdmin(ModelAdmin):
         update_category_home()
 
 
-class ArticleExtensionInline(SortableTabularInline):
+class SortableArticleExtensionInlineForm(ModelForm):
+    order = IntegerField(widget=HiddenInput(attrs={'class': '_reorder_'}), required=False)
+
+    class Meta:
+        fields = "__all__"
+
+
+class SortableArticleExtensionInline(SortableTabularInline):
     model = ArticleExtension
-    extra = 1
+    form = SortableArticleExtensionInlineForm
+    extra = 0
     classes = ["collapse"]
-    ordering = ['position']
-    fields = ['position', 'headline', 'body', 'size', 'background_color']
+    fields = ["order", "position", 'headline', 'body', 'size', 'background_color']
+    readonly_fields = ['position']
+
+    @admin.display(description='posición')
+    def position(self, instance):
+        return instance.order or ""
 
 
-class ArticleBodyImageInline(TabularInline):
+class ArticleExtensionInline(SortableArticleExtensionInline):
+    class Media:
+        css = {'all': ('css/admin_article_hide_draggable_inlines.css',)}
+
+
+class SortableArticleBodyImageInline(SortableTabularInline):
     model = ArticleBodyImage
     extra = 0
     raw_id_fields = ('image', )
-    readonly_fields = ['photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
+    readonly_fields = ["position", 'photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
+    fields = ['order', "position", "image", "display"] + readonly_fields[1:]
     classes = ["collapse"]
 
-    @admin.display(
-        description='thumbnail'
-    )
+    @admin.display(description='posición')
+    def position(self, instance):
+        return instance.order or ""
+
+    @admin.display(description='thumbnail')
     def photo_admin_thumbnail(self, instance):
         return instance.image.admin_thumbnail()
 
-    @admin.display(
-        description='tomada el'
-    )
+    @admin.display(description='tomada el')
     def photo_date_taken(self, instance):
         return instance.image.date_taken
 
-    @admin.display(
-        description='fecha de creación'
-    )
+    @admin.display(description='fecha de creación')
     def photo_date_added(self, instance):
         return instance.image.date_added
+
+
+class ArticleBodyImageInline(SortableArticleBodyImageInline):
+    class Media:
+        css = {'all': ('css/admin_article_hide_draggable_inlines.css',)}
 
 
 class ArticleRelAdminModelForm(ArticleRelAdminBaseModelForm):
@@ -651,7 +675,10 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
     date_hierarchy = 'date_published'
     ordering = ('-date_created',)
     raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
-    inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
+    inlines = (
+        [SortableArticleExtensionInline, SortableArticleBodyImageInline] if INLINES_SORTABLE else
+        [ArticleExtensionInline, ArticleBodyImageInline]
+    ) + [ArticleEditionInline]
     fieldsets = (
         (
             None,
