@@ -186,8 +186,8 @@ class BannerAd(AdBase):
         super().clean()
 
         self._validate_duplicate_zone()
-        self._validate_image_dimensions(self.content, 970, 250, "content")
-        self._validate_image_dimensions(self.mobile_content, 300, 250, "mobile_content")
+        self._validate_image_dimensions(self.content, 980, 150, "content")
+        self._validate_image_dimensions(self.mobile_content, 320, 100, "mobile_content")
 
 
     def _validate_duplicate_zone(self):
