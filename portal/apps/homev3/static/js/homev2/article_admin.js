@@ -44,15 +44,6 @@ var main_section_row_selected = function(radio_field){
 };
 if (window.jQuery) {
   $(function(){
-    // update position labels for inlines  // TODO: let selector of tr be a parameter
-    function update_pos_labels(child, selector='.has_original') {
-      $.each($('tr' + selector, $(child).closest('tbody')), function(i, row) {
-        const position = i + 1;
-        $("td.field-position p", $(row)).text(position);
-        // also update the sortable hidden value (no problem if sortableadmin2 also tries to update it)
-        $("input._reorder_", $(row)).val(position);
-      });
-    }
     prepareFields();
     $("#id_type").on("change", prepareFields);
     $.each($(".field-main input"), function(index, value){
