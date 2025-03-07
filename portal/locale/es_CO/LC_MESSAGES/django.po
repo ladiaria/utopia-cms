@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 23:58-0300\n"
+"POT-Creation-Date: 2025-03-05 16:25-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -37,6 +37,14 @@ msgstr "Usado"
 #: apps/comunidad/admin.py:23
 msgid "Not Used"
 msgstr "No usado"
+
+#: apps/core/models.py:2435
+msgid "size"
+msgstr "tamaño"
+
+#: apps/core/models.py:2436
+msgid "background color"
+msgstr "color de fondo"
 
 #: apps/core/templates/article/detail_comments.html:23
 #: apps/core/templates/article/detail_comments.html:26
@@ -71,7 +79,7 @@ msgid "Email"
 msgstr "Correo electrónico"
 
 #: apps/core/templates/edition/download_email_sent.html:14
-#: apps/thedaily/models.py:55 apps/thedaily/views.py:990
+#: apps/thedaily/models.py:59 apps/thedaily/views.py:992
 msgid "email"
 msgstr "correo electrónico"
 
@@ -91,51 +99,51 @@ msgstr "suscrito"
 msgid "contactate"
 msgstr "contáctese"
 
-#: apps/thedaily/models.py:157
+#: apps/thedaily/models.py:187
 msgid "name"
 msgstr "nombre"
 
-#: apps/thedaily/models.py:360
+#: apps/thedaily/models.py:390
 msgid "user id"
 msgstr "id de usuario"
 
-#: apps/thedaily/models.py:565
+#: apps/thedaily/models.py:595
 msgid "tus datos"
 msgstr "sus datos"
 
-#: apps/thedaily/models.py:584
+#: apps/thedaily/models.py:614
 msgid "tu perfil"
 msgstr "su perfil"
 
-#: apps/thedaily/models.py:729
+#: apps/thedaily/models.py:760
 msgid "billing name"
 msgstr "nombre facturación"
 
-#: apps/thedaily/models.py:730
+#: apps/thedaily/models.py:761
 msgid "billing identification document"
 msgstr "documento facturación"
 
-#: apps/thedaily/models.py:731
+#: apps/thedaily/models.py:762
 msgid "billing phone"
 msgstr "teléfono facturación"
 
-#: apps/thedaily/models.py:732
+#: apps/thedaily/models.py:763
 msgid "billing email"
 msgstr "correo electrónico facturación"
 
-#: apps/thedaily/models.py:740
+#: apps/thedaily/models.py:771
 msgid "start date"
 msgstr "fecha inicio"
 
-#: apps/thedaily/models.py:741
+#: apps/thedaily/models.py:772
 msgid "end date"
 msgstr "fecha fin"
 
-#: apps/thedaily/models.py:742
+#: apps/thedaily/models.py:773
 msgid "next billing"
 msgstr "próxima facturación"
 
-#: apps/thedaily/models.py:749
+#: apps/thedaily/models.py:780
 msgid " subscription for "
 msgstr " suscripción para "
 

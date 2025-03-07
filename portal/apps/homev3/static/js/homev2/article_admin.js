@@ -34,9 +34,9 @@ var prepareFields = function(){
     $('.inline-group').show();
   }
   $('#homearticle_set-group').hide();
-  // custom position for the "extensions" inline (below martor or ckeditor widget, the body field)
+  // custom position for "recuadros" inline (below martor or ckeditor widget, the body field)
   var fset_body = $('.main-martor,div.ck').closest('fieldset');
-  fset_body.after($('#extensions-group'));
+  fset_body.after($('#recuadros-group'));
 };
 var main_section_row_selected = function(radio_field){
   radio_field.parents("tr").addClass('row-articlerel-selected');
@@ -62,5 +62,24 @@ if (window.jQuery) {
         main_section_row_selected($(this));
       });
     });
+    // sortable inlines handlers (to show the position updated after sorting, to save the position for new rows)
+    function sortable2_dragend_handler(table_container_selector) {
+      $(table_container_selector + ' tr.has_original').on('dragend', function(event) {
+        // update widgets positions labels in the inline
+        update_pos_labels(event.target);
+      });
+    }
+    // new/delete rows handlers.
+    document.addEventListener('formset:added', (event) => {
+      if (event.detail.formsetName == 'recuadros') {
+        update_pos_labels(event.target, "");
+      }
+    });
+    document.addEventListener('formset:removed', (event) => {
+      if (event.detail.formsetName == 'recuadros') {
+        update_pos_labels("#recuadros-group tr", "");
+      }
+    });
+    sortable2_dragend_handler('#recuadros-group');
   });
 }

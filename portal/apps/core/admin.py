@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+from adminsortable2.admin import SortableTabularInline
 from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
 from pydoc import locate
+import traceback
 from kombu.exceptions import OperationalError
 
 from actstream.models import Action
@@ -14,6 +16,7 @@ from martor.models import MartorField
 from martor.widgets import AdminMartorWidget
 from concurrency.api import disable_concurrency
 from concurrency.admin import ConcurrentModelAdmin
+from adminsortable2.admin import SortableAdminBase
 
 from django.conf import settings
 from django.urls import path
@@ -68,6 +71,9 @@ from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
 from .tasks import update_category_home, send_push_notification
 from .utils import update_article_url_in_coral_talk, article_slug_readonly
+
+
+INLINES_SORTABLE = settings.CORE_ARTICLE_ADMIN_INLINES_SORTABLE
 
 
 class PrintOnlyArticleInline(TabularInline):
@@ -400,36 +406,59 @@ class SectionAdmin(ModelAdmin):
         update_category_home()
 
 
-class ArticleExtensionInline(TabularInline):
+class SortableArticleExtensionInlineForm(ModelForm):
+    order = IntegerField(widget=HiddenInput(attrs={'class': '_reorder_'}), required=False)
+
+    class Meta:
+        fields = "__all__"
+
+
+class SortableArticleExtensionInline(SortableTabularInline):
     model = ArticleExtension
-    extra = 1
+    form = SortableArticleExtensionInlineForm
+    extra = 0
     classes = ["collapse"]
+    fields = ["order", "position", 'headline', 'body', 'size', 'background_color']
+    readonly_fields = ['position']
+
+    @admin.display(description='posición')
+    def position(self, instance):
+        return instance.order or ""
 
 
-class ArticleBodyImageInline(TabularInline):
+class ArticleExtensionInline(SortableArticleExtensionInline):
+    class Media:
+        css = {'all': ('css/admin_article_hide_draggable_inlines.css',)}
+
+
+class SortableArticleBodyImageInline(SortableTabularInline):
     model = ArticleBodyImage
     extra = 0
     raw_id_fields = ('image', )
-    readonly_fields = ['photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
+    readonly_fields = ["position", 'photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
+    fields = ['order', "position", "image", "display"] + readonly_fields[1:]
     classes = ["collapse"]
 
-    @admin.display(
-        description='thumbnail'
-    )
+    @admin.display(description='posición')
+    def position(self, instance):
+        return instance.order or ""
+
+    @admin.display(description='thumbnail')
     def photo_admin_thumbnail(self, instance):
         return instance.image.admin_thumbnail()
 
-    @admin.display(
-        description='tomada el'
-    )
+    @admin.display(description='tomada el')
     def photo_date_taken(self, instance):
         return instance.image.date_taken
 
-    @admin.display(
-        description='fecha de creación'
-    )
+    @admin.display(description='fecha de creación')
     def photo_date_added(self, instance):
         return instance.image.date_added
+
+
+class ArticleBodyImageInline(SortableArticleBodyImageInline):
+    class Media:
+        css = {'all': ('css/admin_article_hide_draggable_inlines.css',)}
 
 
 class ArticleRelAdminModelForm(ArticleRelAdminBaseModelForm):
@@ -619,7 +648,7 @@ def get_editions():
 
 
 @admin.register(Article, site=site)
-class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
+class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
@@ -646,7 +675,10 @@ class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
     date_hierarchy = 'date_published'
     ordering = ('-date_created',)
     raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
-    inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
+    inlines = (
+        [SortableArticleExtensionInline, SortableArticleBodyImageInline] if INLINES_SORTABLE else
+        [ArticleExtensionInline, ArticleBodyImageInline]
+    ) + [ArticleEditionInline]
     fieldsets = (
         (
             None,
@@ -802,7 +834,9 @@ class ArticleAdmin(ConcurrentModelAdmin, VersionAdmin):
                 self.obj = obj
             except Exception as e:
                 if settings.DEBUG:
-                    print("DEBUG: error in core.admin.ArticleAdmin.save_model: %s" % e)
+                    print(f"DEBUG: error in core.admin.ArticleAdmin.save_model: {e}")
+                    print(f"DEBUG: form.errors: {form.errors.as_json()}")
+                    print(f"DEBUG: full traceback: {traceback.format_exc()}")
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)

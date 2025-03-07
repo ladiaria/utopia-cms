@@ -62,6 +62,7 @@ from django.utils.timezone import datetime, timedelta, make_aware, now, template
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 from django.utils.html import escape
+from django.utils.translation import gettext_lazy as _
 
 from apps import blocklisted
 from photologue_ladiaria.models import PhotoExtended
@@ -1721,6 +1722,11 @@ class Article(ArticleBase):
         through='ArticleRel',
         related_name='articles_%(app_label)s',
     )
+    body_images = ManyToManyField(
+        Photo,
+        through='ArticleBodyImage',
+        related_name='related_articles_%(app_label)s',
+    )
     main_section = ForeignKey(
         'ArticleRel',
         verbose_name='publicación principal',
@@ -2418,21 +2424,20 @@ class CategoryNewsletter(Model):
 
 
 class ArticleExtension(Model):
-    # since no position property is defined, the ordering of an article extension may vary depending on the extension
-    # headline, this can be a problem if headlines are edited and saved without an editor review. TODO: check this
     SIZE_CHOICES = (
         ('R', 'Regular'),
         ('M', 'Mediano'),
         ('F', 'Full'),
     )
-    article = ForeignKey(Article, on_delete=CASCADE, verbose_name='artículo', related_name='extensions')
+    article = ForeignKey(Article, on_delete=CASCADE, verbose_name='artículo', related_name='recuadros')
     headline = CharField('título', max_length=100, null=True, blank=True)
     body = TextField('cuerpo')
-    size = CharField('size', max_length=1, choices=SIZE_CHOICES, default='R')
-    background_color = CharField('background color', max_length=7, default='#eaeaea', null=True, blank=True)
+    size = CharField(_('size'), max_length=1, choices=SIZE_CHOICES, default='R')
+    background_color = CharField(_('background color'), max_length=7, default='#eaeaea', null=True, blank=True)
+    order = PositiveSmallIntegerField('orden', null=True, blank=True)
 
     def __str__(self):
-        return self.headline or ''
+        return self.headline or ""
 
     def _is_published(self):
         return self.article.is_published
@@ -2440,7 +2445,7 @@ class ArticleExtension(Model):
     is_published = property(_is_published)
 
     class Meta:
-        ordering = ('article', 'headline')
+        ordering = ['order']
         verbose_name = 'recuadro'
         verbose_name_plural = 'recuadros'
 
@@ -2454,13 +2459,15 @@ class ArticleBodyImage(Model):
     article = ForeignKey(Article, on_delete=CASCADE, verbose_name='artículo', related_name='body_image')
     image = ForeignKey(Photo, on_delete=CASCADE, verbose_name='foto', related_name='photo')
     display = CharField('display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
+    order = PositiveSmallIntegerField('orden', null=True, blank=True)
 
     def __str__(self):
         return (self.image.title or '') if self.image else ''
 
     class Meta:
+        ordering = ['order']
         verbose_name = 'imagen'
-        verbose_name_plural = 'imagenes'
+        verbose_name_plural = 'imágenes'
 
 
 class PrintOnlyArticle(Model):

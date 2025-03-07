@@ -18,9 +18,9 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
 /* .change-form .object-tools{margin-top: -100px;} */  /* TODO: Check the purpose of this */
 
 /* textareas inside inlines */
-.dynamic-extensions td.field-body{width:50%;}
+.dynamic-recuadros td.field-body{width:50%;}
 .dynamic-attachments td.field-description{width:45%;}
-.dynamic-extensions td.field-body textarea, .dynamic-attachments td.field-description textarea {
+.dynamic-recuadros td.field-body textarea, .dynamic-attachments td.field-description textarea {
   width:100%;
 }
 
