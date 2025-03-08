@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-11-25 05:09-0300\n"
+"POT-Creation-Date: 2025-03-08 13:36-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,118 +17,120 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-#: apps/adzone/models.py:34
+
+#: apps/adzone/models.py:26
 msgid "Company Name"
 msgstr "Empresa"
 
-#: apps/adzone/models.py:35
+#: apps/adzone/models.py:27
 msgid "Company Site"
 msgstr "Sitio web"
 
-#: apps/adzone/models.py:39 apps/adzone/models.py:108
+#: apps/adzone/models.py:31 apps/adzone/models.py:98
 msgid "Ad Provider"
 msgstr "Proveedor de anuncios"
 
-#: apps/adzone/models.py:40
+#: apps/adzone/models.py:32
 msgid "Advertisers"
 msgstr "Anunciantes"
 
-#: apps/adzone/models.py:52 apps/adzone/models.py:67 apps/adzone/models.py:86
+#: apps/adzone/models.py:44 apps/adzone/models.py:59 apps/adzone/models.py:78
 msgid "Title"
 msgstr "Título"
 
-#: apps/adzone/models.py:53 apps/adzone/models.py:68
+#: apps/adzone/models.py:45 apps/adzone/models.py:60
 msgid "Slug"
 msgstr "Slug"
 
-#: apps/adzone/models.py:54 apps/adzone/models.py:69
+#: apps/adzone/models.py:46 apps/adzone/models.py:61
 msgid "Description"
 msgstr "Descripción"
 
-#: apps/adzone/models.py:89
+#: apps/adzone/models.py:81
 msgid "Advertised URL"
 msgstr "URL destino"
 
-#: apps/adzone/models.py:90
+#: apps/adzone/models.py:82
 #, python-format
 msgid ""
 "Siempre debe comenzar con http:// o https:// y si se necesita un timestamp "
 "usar %(timestamp)d"
-msgstr "Siempre debe comenzar con http:// o https:// y si se necesita un timestamp "
+msgstr ""
+"Siempre debe comenzar con http:// o https:// y si se necesita un timestamp "
 "usar %(timestamp)d"
 
-#: apps/adzone/models.py:95
+#: apps/adzone/models.py:87
 msgid "Alternative Advertised URL for mobile."
 msgstr "URL destino alternativa para móviles"
 
-#: apps/adzone/models.py:96
+#: apps/adzone/models.py:88
 msgid "Ídem anterior. Si es la misma dejar en blanco."
 msgstr "Ídem anterior. Si es la misma dejar en blanco."
 
-#: apps/adzone/models.py:99
+#: apps/adzone/models.py:91
 msgid "Since"
 msgstr "Desde"
 
-#: apps/adzone/models.py:100
+#: apps/adzone/models.py:92
 msgid "Updated"
 msgstr "Actualizado"
 
-#: apps/adzone/models.py:102
+#: apps/adzone/models.py:94
 msgid "Start showing"
 msgstr "Comenzar a mostrar"
 
-#: apps/adzone/models.py:104
+#: apps/adzone/models.py:95
 msgid "Stop showing"
 msgstr "Dejar de mostrar"
 
-#: apps/adzone/models.py:110
+#: apps/adzone/models.py:100
 msgid "Category"
 msgstr "Categoría"
 
-#: apps/adzone/models.py:113
+#: apps/adzone/models.py:103
 msgid "Zone"
 msgstr "Zona"
 
-#: apps/adzone/models.py:121
+#: apps/adzone/models.py:111
 msgid "Ad Base"
 msgstr "Anuncio Base"
 
-#: apps/adzone/models.py:122
-msgid "Ad Bases"
+#: apps/adzone/models.py:112
+msgid "Ads Base"
 msgstr "Anuncios Base"
 
-#: apps/adzone/models.py:136 apps/adzone/models.py:151
+#: apps/adzone/models.py:131 apps/adzone/models.py:146
 msgid "When"
 msgstr "Cuándo"
 
-#: apps/adzone/models.py:138 apps/adzone/models.py:153
+#: apps/adzone/models.py:133 apps/adzone/models.py:148
 msgid "Who"
 msgstr "Quién"
 
-#: apps/adzone/models.py:142
+#: apps/adzone/models.py:137
 msgid "Ad Impression"
 msgstr "Impresión de anuncio"
 
-#: apps/adzone/models.py:143
+#: apps/adzone/models.py:138
 msgid "Ad Impressions"
 msgstr "Impresiones de anuncios"
 
-#: apps/adzone/models.py:157
+#: apps/adzone/models.py:152
 msgid "Ad Click"
 msgstr "Click de anuncio"
 
-#: apps/adzone/models.py:158
+#: apps/adzone/models.py:153
 msgid "Ad Clicks"
 msgstr "Clicks de anuncios"
 
-#: apps/adzone/models.py:164
+#: apps/adzone/models.py:159
 msgid "Content"
 msgstr "Contenido"
 
-#: apps/adzone/models.py:170
+#: apps/adzone/models.py:164
 msgid "Banner escritorio"
 msgstr "Banner escritorio"
 
-#: apps/adzone/models.py:173
+#: apps/adzone/models.py:166
 msgid "Banner móvil"
 msgstr "Banner móvil"

@@ -22,6 +22,9 @@ from adzone.models import AdBase, AdImpression
 register = template.Library()
 
 
+tag_template = getattr(settings, 'ADZONE_TAG_TEMPLATE', 'adzone/ad_tag.html')
+
+
 @register.simple_tag(takes_context=True, name='random_zone_ad')
 def random_zone_ad(context, ad_zone):
     """
@@ -60,12 +63,12 @@ def random_zone_ad(context, ad_zone):
                 pass
 
         context.update({'ad': ad})
-        return template.loader.render_to_string('adzone/ad_tag.html', context=context.flatten())
+        return template.loader.render_to_string(tag_template, context=context.flatten())
     else:
         return ''
 
 
-@register.inclusion_tag('adzone/ad_tag.html', takes_context=True)
+@register.inclusion_tag(tag_template, takes_context=True)
 def rr_zone_ad(context, ad_zone, index=0):
     """
     Returns a rr advert for ``ad_zone`` based on index.
@@ -96,7 +99,7 @@ def rr_zone_ad(context, ad_zone, index=0):
     return {'ad': ad}
 
 
-@register.inclusion_tag('adzone/ad_tag.html', takes_context=True)
+@register.inclusion_tag(tag_template, takes_context=True)
 def random_category_ad(context, ad_zone, ad_category):
     """
     Returns a random advert from the specified category.
@@ -122,7 +125,7 @@ def random_category_ad(context, ad_zone, ad_category):
     return {'ad': ad}
 
 
-@register.inclusion_tag('adzone/ad_tag.html', takes_context=True)
+@register.inclusion_tag(tag_template, takes_context=True)
 def rr_category_ad(context, ad_zone, ad_category, index=0):
     """
     Returns a rr advert from the specified category based on index.

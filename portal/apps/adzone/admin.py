@@ -130,11 +130,6 @@ class TextAdAdmin(AdBaseAdmin):
 @admin.register(BannerAd)
 class BannerAdAdmin(AdBaseAdmin):
     form = UploadFileForm
-    list_display = ['title', 'start_showing', 'stop_showing', 'zone_display']
+    list_display = ['title', 'start_showing', 'stop_showing', "category", 'zone']
 
     search_fields = ['title', 'url', 'content', 'mobile_content']
-
-    def zone_display(self, obj):
-        return obj.zone
-
-    zone_display.short_description = "Posición en portada principal"

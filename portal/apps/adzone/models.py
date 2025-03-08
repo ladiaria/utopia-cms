@@ -4,30 +4,20 @@
 # This script is licensed under the BSD Open Source Licence
 # Please see the text file LICENCE for more information
 # If this script is distributed, it must be accompanied by the Licence
-from builtins import str
 import os
-import datetime
 
-from PIL import Image
-from django.core.exceptions import ValidationError
 from django.db import models
-from django.contrib.auth.models import User
-from django.utils.translation import gettext_lazy as _
-
-from adzone.managers import AdManager
-
-from django.contrib.sites.models import Site
 from django.urls import reverse
+from django.utils.timezone import now, timedelta
+from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
 
-# Use a datetime a few days before the max to that timezone changes don't
-# cause an OverflowError.
-MAX_DATETIME = datetime.datetime.max - datetime.timedelta(days=2)
-try:
-    from django.utils.timezone import now, make_aware, utc
-except ImportError:
-    now = datetime.datetime.now
-else:
-    MAX_DATETIME = make_aware(MAX_DATETIME, utc)
+from .managers import AdManager
+
+
+def get_default_stop_showing():
+    return now() + timedelta(days=30)
 
 
 class Advertiser(models.Model):
@@ -101,10 +91,8 @@ class AdBase(models.Model):
     since = models.DateTimeField(verbose_name=_('Since'), auto_now_add=True)
     updated = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
 
-    start_showing = models.DateTimeField(verbose_name=_('Start showing'),
-                                         default=now)
-    stop_showing = models.DateTimeField(verbose_name=_('Stop showing'),
-                                        default=MAX_DATETIME)
+    start_showing = models.DateTimeField(verbose_name=_('Start showing'), default=now)
+    stop_showing = models.DateTimeField(verbose_name=_('Stop showing'), default=get_default_stop_showing)
 
     # Relations
     advertiser = models.ForeignKey(Advertiser, on_delete=models.CASCADE, verbose_name=_("Ad Provider"))
@@ -117,17 +105,22 @@ class AdBase(models.Model):
     # Our Custom Manager
     objects = AdManager()
 
-    sites = models.ManyToManyField(Site, verbose_name=(u"Sites"))
+    sites = models.ManyToManyField(Site)
 
     class Meta:
         verbose_name = _('Ad Base')
-        verbose_name_plural = _('Ad Bases')
+        verbose_name_plural = _('Ads Base')
 
     def __str__(self):
         return self.title
 
     def get_absolute_url(self):
         return reverse('adzone_ad_view', args=[self.id, self.analytics_tracking])
+
+    def intersects_show_interval(self, start_showing, stop_showing):
+        latest_start = max(self.start_showing, start_showing)
+        earliest_end = min(self.stop_showing, stop_showing)
+        return latest_start <= earliest_end
 
 
 class AdImpression(models.Model):
@@ -168,13 +161,10 @@ class TextAd(AdBase):
 
 class BannerAd(AdBase):
     """ A standard banner Ad """
-    content = models.ImageField(
-        verbose_name=_('Banner escritorio'), upload_to="adzone/bannerads/",
-        help_text='Dimensiones: 970×250px</br>Tamaño máximo permitido: 150kb</br>Formato: JPG, GIF, PNG')
+    content = models.ImageField(verbose_name=_('Banner escritorio'), upload_to="adzone/bannerads/")
     mobile_content = models.ImageField(
-        verbose_name=_('Banner móvil'), upload_to="adzone/bannerads/",
-        help_text='Dimensiones: 300×250px</br>Tamaño máximo permitido: 150kb</br>Formato: JPG, GIF, PNG',
-        null=True, blank=True)
+        verbose_name=_('Banner móvil'), upload_to="adzone/bannerads/", null=True, blank=True
+    )
 
     def content_basename(self):
         return os.path.basename(str(self.content))
@@ -182,30 +172,6 @@ class BannerAd(AdBase):
     def mobile_content_basename(self):
         return os.path.basename(str(self.mobile_content))
 
-    def clean(self):
-        super().clean()
-
-        self._validate_duplicate_zone()
-        self._validate_image_dimensions(self.content, 980, 150, "content")
-        self._validate_image_dimensions(self.mobile_content, 320, 100, "mobile_content")
-
-
-    def _validate_duplicate_zone(self):
-        duplicate_query = BannerAd.objects.filter(zone_id=self.zone_id)
-        if self.pk:
-            duplicate_query = duplicate_query.exclude(pk=self.pk)
-        if duplicate_query.exists():
-            raise ValidationError({
-                "zone": f"Un BannerAd con la zona '{self.zone}' ya existe. "
-                        "Por favor, seleccione otra zona."
-            })
-
-    def _validate_image_dimensions(self, image, required_width, required_height, field_name):
-        if image:
-            img = Image.open(image)
-            width, height = img.size
-            if width != required_width or height != required_height:
-                raise ValidationError({
-                    field_name: f"La imagen debe tener dimensiones de {required_width}×{required_height}px, "
-                                f"pero tiene {width}×{height}px."
-                })
+    class Meta:
+        verbose_name = "banner"
+        verbose_name_plural = "banners"

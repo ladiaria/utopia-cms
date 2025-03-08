@@ -64,8 +64,8 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
 #body_image-group div fieldset,
 #articlerel_set-group div fieldset,
 #linked_articles-group div fieldset,
-fieldset.collapse {
-  border: 1px solid var(--hairline-color);
+fieldset.module {
+  border: 1px solid var(--hairline-color) !important;
 }
 
 /* more width to martor editor and let its buttons adjust to small widths */
