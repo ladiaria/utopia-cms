@@ -71,6 +71,10 @@
         {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.1 %}{% endwith %}
       {% endif %}
 
+      {% if featured_publications.2 %}
+        {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.2 %}{% endwith %}
+      {% endif %}
+
       {% with prefetched_article_data=False %}
         {% for section in featured_sections.2 %}{% render_section section %}{% endfor %}
       {% endwith %}
