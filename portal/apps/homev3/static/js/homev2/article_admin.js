@@ -71,16 +71,19 @@ if (window.jQuery) {
     }
     // new/delete rows handlers.
     document.addEventListener('formset:added', (event) => {
-      if (event.detail.formsetName == 'recuadros') {
+      const fsetName = event.detail.formsetName;
+      if (fsetName == 'recuadros' || fsetName == 'body_image') {
         update_pos_labels(event.target, "");
       }
     });
     document.addEventListener('formset:removed', (event) => {
-      if (event.detail.formsetName == 'recuadros') {
-        update_pos_labels("#recuadros-group tr", "");
+      const fsetName = event.detail.formsetName;
+      if (fsetName == 'recuadros' || fsetName == 'body_image') {
+        update_pos_labels("#" + fsetName + "-group tr", "");
       }
     });
     sortable2_dragend_handler('#recuadros-group');
+    sortable2_dragend_handler('#body_image-group');
     // put the unpublish radio beeing part of the publish radio choice group
     $('#id_unpublish_radio_choice_0').prop("name", "publish_radio_choice");
   });

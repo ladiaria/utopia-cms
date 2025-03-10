@@ -1063,6 +1063,7 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
             'js/utopiacms_martor_semantic.js',
             'js/utopiacms_martor_fullheight.js',
             'js/homev2/article_admin.js',
+            "js/sortable2_common.js",
         )
 
 
