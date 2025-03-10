@@ -37,17 +37,20 @@ def to_p(value):
     return value
 
 
-def get_extension(match, aid):
-    from core.models import ArticleExtension
-
+def kw_idx(match):
     if match.groups()[0] == '':
-        count = 0
+        idx = 1
     else:
-        count = int(match.groups()[0]) - 1
-    extensions = ArticleExtension.objects.filter(article__id=aid)
-    if extensions.count() > count and count >= 0:
-        extension = extensions[count]
-    else:
+        idx = int(match.groups()[0])
+    return idx
+
+
+def get_extension(match, aid):
+    from ..models import ArticleExtension
+    idx = kw_idx(match)
+    try:
+        extension = ArticleExtension.objects.get(article_id=aid, order=idx)
+    except ArticleExtension.DoesNotExist:
         return ''
     return render_to_string('core/templates/article/extension.html', {'extension': extension})
 
@@ -57,28 +60,25 @@ def get_image_template(forkdir=""):
 
 
 def get_image(match, aid, **kwargs):
-    from core.models import Article
-
-    if match.groups()[0] == '':
-        count = 0
-    else:
-        count = int(match.groups()[0]) - 1
-
+    # TODO: same as get_extension also here?
+    from ..models import ArticleBodyImage
+    idx = kw_idx(match)
     try:
-        article = Article.objects.prefetch_related('body_image__image').get(id=aid)
-        images = article.body_image.all()
-        if images.count() > count and count >= 0:
-            article_body_image = images[count]
-            # ensure the image file exists
-            try:
-                bool(article_body_image.image.image.file)
-            except IOError:
-                pass
-            else:
-                ctx = {'article': article, 'image': article_body_image.image, 'display': article_body_image.display}
-                ctx.update(kwargs.get("extra_context", {}))
-                return render_to_string(get_app_template(kwargs.get('template_name', get_image_template())), ctx)
-    except Article.DoesNotExist:
+        article_body_image = ArticleBodyImage.objects.get(article_id=aid, order=idx)
+        # ensure the image file exists
+        try:
+            bool(article_body_image.image.image.file)
+        except IOError:
+            pass
+        else:
+            ctx = {
+                'article': article_body_image.article,
+                'image': article_body_image.image,
+                'display': article_body_image.display,
+            }
+            ctx.update(kwargs.get("extra_context", {}))
+            return render_to_string(get_app_template(kwargs.get('template_name', get_image_template())), ctx)
+    except ArticleBodyImage.DoesNotExist:
         pass
     return ''
 
@@ -99,7 +99,10 @@ def photo_byline(article, allowed=True, include_agency=False):
 @register.filter
 @stringfilter
 def ldmarkup(value, args='', get_image_kwargs={}):
-    """ Usage: {% article.body|ldmarkup:article.id %} """
+    """
+    Usage: {% article.body|ldmarkup:article.id %}
+    TODO: generalize even more to allow custom (keyword-callable) pairs to render custom content
+    """
     value = normalize(value)
     value = strip_tags(value)
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)

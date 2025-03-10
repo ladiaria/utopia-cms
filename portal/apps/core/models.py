@@ -1797,12 +1797,23 @@ class Article(ArticleBase):
     sp_id = CharField(max_length=100, null=True, blank=True)
 
     def save(self, *args, **kwargs):
-
-        if self.pk and self.sections:
-            # If already saved, sets the article at the last position in all its sections where it has no position yet.
-            for ar in ArticleRel.objects.filter(article=self):
-                if not ar.position:
-                    ar.position = ArticleRel.objects.filter(edition=ar.edition, section=ar.section).count() + 1
+        if self.pk:
+            if self.sections:
+                # If already saved, sets the article at the last position in all its sections with no position yet.
+                for ar in ArticleRel.objects.filter(article=self):
+                    if not ar.position:
+                        ar.position = ArticleRel.objects.filter(edition=ar.edition, section=ar.section).count() + 1
+            old_instance = Article.objects.get(pk=self.pk)
+            if (
+                old_instance.to_be_published
+                and self.to_be_published
+                and old_instance.date_published != self.date_published
+            ):
+                if settings.DEBUG:
+                    print(
+                        f"DEBUG: article {self.id} rescheduled {old_instance.date_published} to {self.date_published}"
+                    )
+                # TODO: find celery task and change its scheduled date to the new date given
 
         # TODO: next commented "if" block should be reviewed (broken)
         # if self.home_top and self.top_position is None:

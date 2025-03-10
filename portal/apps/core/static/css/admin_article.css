@@ -59,12 +59,12 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
 }
 
 /* border in collapsed inlines */
-#extensions-group div fieldset,
+#recuadros-group div fieldset,
 #attachments-group div fieldset,
 #body_image-group div fieldset,
 #articlerel_set-group div fieldset,
 #linked_articles-group div fieldset,
-fieldset.module {
+fieldset.module:has(fieldset.module) {
   border: 1px solid var(--hairline-color) !important;
 }
 
@@ -133,6 +133,34 @@ div.field-alt_desc_newsletters div.charcounter {
 }
 
 /* published status row */
+.field-publish_radio_choice label.inline,
+.field-publish_radio_choice label:not(:has(input)),
+.form-row.field-date_published:has(.hidden) label {
+  font-weight: bold;
+}
+#id_publish_radio_choice input, #id_unpublish_radio_choice input, input[id="id_unpublish_radio_choice"] {
+  margin-top: -4px;
+  margin-right: 5px;
+}
+.form-row.field-publish_radio_choice, .form-row.field-date_published {
+  border-bottom: unset;
+  padding-bottom: 0px;
+}
+.form-row.field-date_published:has(.hidden) #id_date_published_helptext {
+  font-size: unset;
+  margin-top: -26px;
+  padding-bottom: 20px;
+}
+.form-row.field-date_published:not(:has(.hidden)) {
+  padding-top: 0px;
+  margin-left: 30px;
+}
+.form-row.field-unpublish_radio_choice.field-is_published.field-to_be_published {
+  padding-top: 0px;
+}
+.fieldBox.field-unpublish_radio_choice:has(input[type="checkbox"]) {
+  margin-left: 200px;
+}
 .field-is_published, .field-to_be_published, .field-date_published {
   width: unset !important;
   display: block !important;

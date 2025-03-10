@@ -32,14 +32,15 @@ from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
 from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
-from django.forms.widgets import TextInput, HiddenInput
+from django.forms.widgets import TextInput, HiddenInput, CheckboxInput
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.utils.text import Truncator
 from django.utils.safestring import mark_safe
-
+from django.utils.translation import gettext_lazy as _
 from thedaily import get_talk_url
+
 from .models import (
     Article,
     ArticleCollection,
@@ -495,25 +496,62 @@ class ArticleAdminModelForm(ModelForm):
         ('full_restricted_true', 'Hard (solamente para suscriptores)'),
         ('public_true', 'Sin paywall (libre acceso)'),
     )
+    PUBLISH_OPTIONS = (('none', 'Publicar ahora'), ('scheduled', 'Programar publicación'))
+    UNPUBLISH_OPTIONS = (('unpublished', 'Guardar como borrador'),)
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
     pw_radio_choice = ChoiceField(
         label="paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
     )
+    publish_radio_choice = ChoiceField(
+        required=False, label=_("Published"), choices=PUBLISH_OPTIONS, widget=RadioSelect(),
+    )
+    unpublish_radio_choice = ChoiceField(required=False, label="", choices=UNPUBLISH_OPTIONS, widget=RadioSelect())
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # paywall initial values resolution
         if self.instance.full_restricted and not self.instance.public:
             self.initial['pw_radio_choice'] = 'full_restricted_true'
         elif not self.instance.full_restricted and self.instance.public:
             self.initial['pw_radio_choice'] = 'public_true'
         else:
             self.initial['pw_radio_choice'] = 'none'
+
+        # published status fields transformations and initial values resolution
         nowval = timezone.now()
-        if not self.instance.pk:
+        self.fields["is_published"].widget = HiddenInput()
+        self.fields["to_be_published"].widget = HiddenInput()
+        self.fields["is_published"].label = self.fields["to_be_published"].label = ""
+        if self.instance.pk:
+            if self.instance.is_published:
+                self.fields["date_published"] = CharField(
+                    required=False,
+                    label=_("Published"),
+                    help_text=self.instance.datetime_published_verbose(),
+                    disabled=True,
+                    widget=TextInput(attrs={'class': 'hidden'}),
+                )
+                self.fields["publish_radio_choice"].widget = HiddenInput()
+                self.initial["publish_radio_choice"] = "none"
+                self.fields["unpublish_radio_choice"].label = "Despublicar y guardar como borrador"
+                self.fields["unpublish_radio_choice"].choices = ((False, "none"), (True, "unpublished"))
+                self.fields["unpublish_radio_choice"].widget = CheckboxInput()
+            elif self.instance.to_be_published:
+                self.initial["publish_radio_choice"] = 'scheduled'
+            else:
+                self.initial["unpublish_radio_choice"] = 'unpublished'
+                self.initial['date_published'] = nowval
+        else:
+            self.initial["publish_radio_choice"] = 'none'
             self.initial['date_published'] = nowval
-        self.fields['date_published'].widget.attrs['min'] = nowval.isoformat()
-        self.fields['date_published'].required = False
-        self.fields['date_published'].label = ""
+
+        if not (self.instance.pk and self.instance.is_published):
+            self.fields['date_published'].widget.attrs['min'] = nowval.isoformat()
+            self.fields['date_published'].required = False
+            self.fields['date_published'].label = ""
+
+        # slug initial values resolution
         slug_help = 'Se genera automáticamente en base al título'
         if article_slug_readonly:
             self.fields['slug'].widget.attrs['readonly'] = True
@@ -545,32 +583,87 @@ class ArticleAdminModelForm(ModelForm):
                 self.add_error(None, ValidationError("La versión del artículo no coincide con la versión actual."))
         return version
 
+    def published_current_status(self):
+        if not self.instance.id:
+            return 'new'
+        elif self.instance.is_published:
+            return 'published'
+        elif self.instance.to_be_published:
+            return 'scheduled'
+        else:
+            return 'unpublished'
+
+    def published_desired_status(self, current_status, cleaned_data):
+        if current_status == "published":
+            return '%spublished' % ("un" if eval(cleaned_data.get("unpublish_radio_choice")) else "")
+        publish_choice = cleaned_data.get("publish_radio_choice")
+        if publish_choice == 'none':
+            return 'published'
+        elif publish_choice == 'scheduled':
+            return 'scheduled'
+        else:
+            return 'unpublished'
+
+    def to_be_published_check(self, cleaned_data):
+        date_published, err_msg = cleaned_data.get("date_published"), None
+        if not date_published:
+            err_msg = 'Para programar la publicación de un artículo se debe especificar la fecha'
+        elif date_published <= timezone.now():
+            err_msg = 'La fecha de publicación programada no puede estar en el pasado'
+        if err_msg:
+            self.add_error(None, err_msg)
+            self.add_error("date_published", err_msg)
+
     def clean(self):
-        # TODO: "add" errors right way (as django doc says) instead of raising them
+        publish_choice = self.data.get("publish_radio_choice")
+        cleaned_data = super().clean()  # clean will remove erroneous values
+        self.errors.pop("publish_radio_choice", None)  # remove error because we added values without django's knoledge
+        if publish_choice == "unpublished":
+            cleaned_data["publish_radio_choice"] = "unpublished"  # insert the removed value again
+        if not self.errors:
+            if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
+                self.add_error(None, "La configuración necesaria para publicar en IPFS no está definida.")
+            else:
+                # TODO: (Article.save method should be checked/updated to do the same logic)
+                nowval = timezone.now()
+
+                current_status = self.published_current_status()
+                desired_status = self.published_desired_status(current_status, cleaned_data)
+                if current_status == "new":
+                    if desired_status == "unpublished":
+                        cleaned_data["is_published"] = False
+                    elif desired_status == "published":
+                        cleaned_data["is_published"] = True
+                        cleaned_data["date_published"] = nowval
+                    elif desired_status == "scheduled":
+                        self.to_be_published_check(cleaned_data)
+                        cleaned_data["to_be_published"] = True
+                elif current_status == "published":
+                    cleaned_data["date_published"] = self.instance.date_published
+                    if desired_status == "unpublished":
+                        cleaned_data["is_published"] = False
+                    elif desired_status == "scheduled":
+                        self.add_error(None, "No se permite programar la publicación de un artículo ya publicado")
+                elif current_status == "scheduled":
+                    if desired_status == "unpublished":
+                        cleaned_data["is_published"] = False
+                        cleaned_data["to_be_published"] = False
+                    elif desired_status == "published":
+                        cleaned_data["is_published"] = True
+                        cleaned_data["to_be_published"] = False
+                        cleaned_data["date_published"] = nowval
+                elif current_status == "unpublished":
+                    if desired_status == "published":
+                        cleaned_data["is_published"] = True
+                        cleaned_data["date_published"] = nowval
+                    elif desired_status == "scheduled":
+                        self.to_be_published_check(cleaned_data)
+                        cleaned_data["to_be_published"] = True
+
         if self.errors:
-            raise ValidationError("")
+            return cleaned_data
 
-        cleaned_data = super().clean()
-        if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
-            raise ValidationError("La configuración necesaria para publicar en IPFS no está definida.")
-
-        # TODO: DRY (Article.save does the same logic)
-        nowval = timezone.now()
-        date_published = cleaned_data.get('date_published')
-        is_published, to_be_published = cleaned_data.get('is_published'), cleaned_data.get('to_be_published')
-
-        if is_published:
-            if to_be_published:
-                self.add_error(None, 'No se permite programar publicación de un artículo ya publicado')
-        elif to_be_published:
-            if not date_published:
-                self.add_error(None, 'Para programar la publicación de un artículo se debe especificar la fecha')
-            elif date_published <= nowval:
-                self.add_error(None, 'La fecha de publicación programada no puede estar en el pasado')
-
-        if self.errors:
-            raise ValidationError("")
-
+        is_published, date_published = cleaned_data.get("is_published"), cleaned_data.get("date_published")
         date_value = (date_published if is_published else cleaned_data.get('date_created')) or nowval
         # conversion to UTC is needed, it's not done automatically like Article.save does.
         # (save gets values from obj and not from the form), TODO: improve or investigate to explain better the cause.
@@ -665,7 +758,7 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
         'type',
         'date_created',
         'is_published',
-        # 'to_be_published',  # TODO: add this filter when the field gets fully implemented
+        'to_be_published',
         'date_published',
         "public",
         "allow_comments",
@@ -710,11 +803,9 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
             'Metadatos',
             {
                 'fields': (
-                    (
-                        'is_published',
-                        # 'to_be_published',  # TODO: add this field when it gets fully implemented
-                        'date_published'
-                    ),
+                    "publish_radio_choice",
+                    'date_published',
+                    ('unpublish_radio_choice', 'is_published', 'to_be_published'),
                     'tags',
                     'main_section'
                 )
@@ -741,6 +832,13 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
             },
         ),
     )
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # only if we are on the base class (this class), the class registered to handle the Article model, that also
+        # can be our child, but not when we are registered to handle an Article's child model (like ArticleCollection)
+        # because those child objects will not have the lookup we're using here and an error will be raised.
+        return qs.filter(articlecollection__isnull=True) if self == site._registry[Article] else qs
 
     @admin.action(description="Intercambiar estado de publicación: publicado <-> borrador")
     def toggle_published(self, request, queryset):
@@ -918,7 +1016,7 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
         """
         try:
             article = Article.objects.get(id=object_id)
-        except Article.DoesNotExist:
+        except (ValueError, Article.DoesNotExist):
             pass
         else:
             if (

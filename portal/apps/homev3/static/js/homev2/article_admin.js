@@ -81,5 +81,7 @@ if (window.jQuery) {
       }
     });
     sortable2_dragend_handler('#recuadros-group');
+    // put the unpublish radio beeing part of the publish radio choice group
+    $('#id_unpublish_radio_choice_0').prop("name", "publish_radio_choice");
   });
 }
