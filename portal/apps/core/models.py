@@ -1021,14 +1021,15 @@ class Section(Model):
         Returns the last 'limit' articles from the publication that accept being related,
         excluding the article ID passed as parameter.
         """
+        extra_where = getattr(settings, 'CORE_RENDER_RELATED_PUB_EXTRA_WHERE', '')
         return Article.objects.raw(
             """
             SELECT a.* FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
                 JOIN core_edition e ON ar.edition_id=e.id
-            WHERE a.is_published AND a.allow_related AND e.publication_id=%s AND a.id!=%s
+            WHERE a.is_published AND a.allow_related AND e.publication_id=%s AND a.id!=%s%s
             GROUP BY a.id ORDER BY a.date_published DESC
             LIMIT %d
-            """ % (publication, exclude_id, limit)
+            """ % (publication, exclude_id, extra_where, limit)
         )
 
     def latest_article(self):
