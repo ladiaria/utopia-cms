@@ -1,5 +1,5 @@
 <ul class="pagination{% if extra_class %} {{ extra_class }}{% endif %}">
-  {% with pager=pager|default:page_obj page_param=page_param|default:'pagina' page_label=page_label|default:'Página' previous_label=previous_label|default:'Más recientes' next_label=next_label|default:'Más antiguos' %}
+  {% with pager=page_obj page_param=page_param|default:'pagina' page_label=page_label|default:'Página' previous_label=previous_label|default:'Más recientes' next_label=next_label|default:'Más antiguos' %}
     {% if pager.has_previous %}
       <li>
         <a href="?{% if token %}q={{ token }}&{% endif %}{% if search_query %}s={{ search_query }}&{% endif %}{{ page_param }}={{ pager.previous_page_number }}"

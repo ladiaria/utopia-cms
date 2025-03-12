@@ -72,7 +72,7 @@
   </div>
 
   {% if results.object_list %}
-    {% include "pagination.html" with pager=results %}
+    {% include "pagination.html" with page_obj=results %}
   {% endif %}
 
 {% endblock %}
