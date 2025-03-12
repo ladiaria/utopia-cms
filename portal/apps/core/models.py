@@ -167,6 +167,9 @@ class Publication(Model):
     publisher_logo = CharField(max_length=128, blank=True, null=True)
     publisher_logo_width = PositiveSmallIntegerField(blank=True, null=True)
     publisher_logo_height = PositiveSmallIntegerField(blank=True, null=True)
+    youtube_video = ForeignKey(
+        YouTubeVideo, on_delete=SET_NULL, blank=True, null=True, verbose_name='Video de YouTube en la portada'
+    )
 
     __original_slug = None  # needed for articles url update on save
 
@@ -694,6 +697,9 @@ class Category(Model):
         max_length=256,
         blank=True,
         null=True,
+    )
+    youtube_video = ForeignKey(
+        YouTubeVideo, on_delete=SET_NULL, blank=True, null=True, verbose_name='Video de YouTube en la portada de área'
     )
 
     def __str__(self):
