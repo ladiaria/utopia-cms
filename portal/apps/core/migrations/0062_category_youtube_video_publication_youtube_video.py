@@ -15,11 +15,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='category',
             name='youtube_video',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='videologue.youtubevideo', verbose_name='Video en la portada de área'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='videologue.youtubevideo', verbose_name='Video de YouTube en la portada de área'),
         ),
         migrations.AddField(
             model_name='publication',
             name='youtube_video',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='videologue.youtubevideo', verbose_name='Video en la portada principal'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='videologue.youtubevideo', verbose_name='Video de YouTube en la portada'),
         ),
     ]
