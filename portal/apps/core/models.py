@@ -185,7 +185,7 @@ class Publication(Model):
     def default():
         try:
             return Publication.objects.get(slug=settings.DEFAULT_PUB)
-        except (ProgrammingError, Publication.DoesNotExist):
+        except (OperationalError, ProgrammingError, Publication.DoesNotExist):
             pass
 
     @staticmethod
