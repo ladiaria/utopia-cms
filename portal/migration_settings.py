@@ -219,11 +219,11 @@ MIDDLEWARE = (
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_user_agents.middleware.UserAgentMiddleware",
     "signupwall.middleware.SignupwallMiddleware",
+    "django.contrib.redirects.middleware.RedirectFallbackMiddleware",  # Before flatpages (fp does not propagate 404)
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
     "core.middleware.cache.AnonymousRequest",  # hacks cookie header for anon users (req phase)
     "django.middleware.cache.FetchFromCacheMiddleware",  # runs during the request phase (top -> first)
     "social_django.middleware.SocialAuthExceptionMiddleware",
-    "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
 )
 
 # Localization default settings

@@ -57,7 +57,9 @@ class AnonymousResponse(MiddlewareMixin):
         """
         idem as above (to make the page cache not be updated)
         """
-        if response.status_code == 404:
+        if response.status_code in [404, 301, 302]:
+            if debug_cache:
+                print(f"DEBUG: cache.process_response(begin): {response.status_code}: {request.path}")
             return response
         if debug_cache and request.path == '/':
             print(
@@ -73,7 +75,7 @@ class AnonymousResponse(MiddlewareMixin):
             if not request.user.is_authenticated:
                 clear = request.path == '/'
                 if not (clear or settings.SIGNUPWALL_ENABLED):
-                    # TODO: maybe a try-except is not neccesary if we have the response status code
+                    # TODO: maybe a try-except is not neccesary if we have the response status code (only if 200?)
                     try:
                         url_name_resolved = resolve(request.path_info).url_name
                         clear = url_name_resolved == 'article_detail'
@@ -85,4 +87,6 @@ class AnonymousResponse(MiddlewareMixin):
             if clear:
                 request.META['HTTP_COOKIE'] = None
                 request.META['HTTP_ACCEPT_ENCODING'] = 'identity'
+        if debug_cache:
+            print(f"DEBUG: cache.process_response(end): {response.status_code}: {request.path}")
         return response
