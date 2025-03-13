@@ -1,0 +1,13 @@
+
+{% if live_yt_video %}
+  {% block live_video_container %}
+    <section class="container">
+      {% block live_video_label %}<h2 class="h4">{{ live_yt_video.label|default:"Evento en vivo" }}</h2>{% endblock %}
+      {% block live_video_content %}
+      <div>
+        <iframe src="{{ live_yt_video.url }}" title="{{ live_yt_video.title }}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      </div>
+      {% endblock %}
+    </section>
+  {% endblock %}
+{% endif %}
