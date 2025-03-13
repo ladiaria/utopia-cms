@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from adminsortable2.admin import SortableTabularInline
 from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
@@ -16,7 +15,7 @@ from martor.models import MartorField
 from martor.widgets import AdminMartorWidget
 from concurrency.api import disable_concurrency
 from concurrency.admin import ConcurrentModelAdmin
-from adminsortable2.admin import SortableAdminBase
+from adminsortable2.admin import SortableAdminBase, SortableTabularInline
 
 from django.conf import settings
 from django.urls import path
