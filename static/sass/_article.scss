@@ -861,7 +861,7 @@ body.article {
           }
 
           .popup-compartir {
-            left: -35px;
+            left: -50%;
             width: px-to-rem(148px);
           }
         }
@@ -934,6 +934,7 @@ body.article {
         display: flex;
         align-items: center;
         gap: 4px;
+        position: relative;
       }
       .read-by,
       .elapsed-time {
@@ -1004,11 +1005,12 @@ body.article {
       }
       .tooltip {
         position: absolute;
-        width: 200px;
+        width: 240px;
         background-color: white;
         border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-
+        z-index: 1;
+        right: 0;
         button {
           width: 100%;
           justify-content: space-between;
@@ -1017,6 +1019,10 @@ body.article {
           padding-right: 30px;
           height: auto;
           text-transform: none;
+        }
+
+        > button {
+          justify-content: center;
         }
 
         &.hidden,
