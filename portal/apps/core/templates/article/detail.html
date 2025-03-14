@@ -318,10 +318,10 @@
             <div class="popup-compartir">
               <ul>
                 <li>
-                  <span href="#" onclick="copyToClipboard('#url', '.tooltip-navbar')" aria-label="Copiar enlace">
+                  <span class="copy-link-to-clipboard" onclick="copyToClipboard('#url', '', true)" aria-label="Copiar enlace">
                     <svg xmlns="http://www.w3.org/2000/svg" width="21" height="10" viewBox="0 0 21 10" fill="none">
                       <path d="M9.5 10H5.5C4.11667 10 2.93767 9.51233 1.963 8.537C0.988334 7.56167 0.500667 6.38267 0.500001 5C0.499334 3.61733 0.987001 2.43833 1.963 1.463C2.939 0.487667 4.118 0 5.5 0H9.5V2H5.5C4.66667 2 3.95833 2.29167 3.375 2.875C2.79167 3.45833 2.5 4.16667 2.5 5C2.5 5.83333 2.79167 6.54167 3.375 7.125C3.95833 7.70833 4.66667 8 5.5 8H9.5V10ZM6.5 6V4H14.5V6H6.5ZM11.5 10V8H15.5C16.3333 8 17.0417 7.70833 17.625 7.125C18.2083 6.54167 18.5 5.83333 18.5 5C18.5 4.16667 18.2083 3.45833 17.625 2.875C17.0417 2.29167 16.3333 2 15.5 2H11.5V0H15.5C16.8833 0 18.0627 0.487667 19.038 1.463C20.0133 2.43833 20.5007 3.61733 20.5 5C20.4993 6.38267 20.0117 7.562 19.037 8.538C18.0623 9.514 16.8833 10.0013 15.5 10H11.5Z" fill="#262626"/>
-                    </svg>Copiar link</li>
+                    </svg><span>Copiar link</span></li>
                   </span>
                 <li>
                   <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}" target="_blank" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
@@ -1070,11 +1070,12 @@
         $('#action-bar__share-button').click(function(){
           $('.popup-compartir').toggleClass('visible');
         });
-              // Al hacer click en cualquier parte del documento
+        // Al hacer click en cualquier parte del documento
         $(document).click(function(e) {
           // Si el click no se realizó dentro del popup ni en el botón de acción
           if (!$(e.target).closest('.popup-compartir, #action-bar__share-button').length) {
             $('.popup-compartir').removeClass('visible');
+            $(`.copy-link-to-clipboard span`).text('Copiar link');
           }
         });
         // Opcional: Evitar que los clicks dentro del popup cierren el popup
@@ -1190,9 +1191,9 @@
     });
 
     // copy to clipboard
-    function copyToClipboard(element, tooltipclass) {
-      var tooltip = $(tooltipclass);
-      var $temp = $("<input>");
+    function copyToClipboard(element, tooltipclass, withTooltip) {
+      const tooltip = $(tooltipclass);
+      const $temp = $("<input>");
       $("body").append($temp);
       $temp.val($(element).text()).select();
       document.execCommand("copy");
@@ -1205,6 +1206,10 @@
       setTimeout(function() {
         tooltip.text('');
       }, 1200);
+
+      if (withTooltip) {
+        $(`.copy-link-to-clipboard span`).text('Link copiado');
+      }
     }
   </script>
 {% endblock %}
