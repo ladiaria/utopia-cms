@@ -9,5 +9,9 @@ document.addEventListener('DOMContentLoaded', function () {
         $("input._reorder_", $(row)).val(position);
       });
     }
+    // handler for "click" event on sortable2 up-down buttons
+    $("span.sort i").on('click', function(event) {
+      update_pos_labels(event.target);
+    });
   });
 });
