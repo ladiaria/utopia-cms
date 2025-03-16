@@ -365,6 +365,7 @@ CELERY_QUEUES = {
 }
 CELERY_TASK_ROUTES = {
     "update-category-home": {"queue": "upd_category_home"},
+    "article-publishing": {"queue": "upd_category_home"},
     "update-article-urls": {"queue": "upd_articles_url"},
     "send-push-notification": {"queue": "concurrent_tasks"},
 }

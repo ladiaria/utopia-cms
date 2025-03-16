@@ -49,7 +49,7 @@ def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set,
 
 @decorate_auth(decorator=never_cache)
 @decorate_if_no_auth(decorator=vary_on_cookie)
-@decorate_if_no_auth(decorator=cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=cache_maxage))
+@cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=cache_maxage)
 def index(request, year=None, month=None, day=None, domain_slug=None):
     """
     View to display the current edition page. Or the edition in the date and publication matching domain_slug.

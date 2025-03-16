@@ -20,10 +20,17 @@ th.column-home_top, td.field-top_position, td.field-position, td.field-home_top,
 	text-align: center;
 }
 th.column-top_position {
+	width: 65px;
 	max-width: 93px;
 }
 th.column-position {
 	max-width: 72px;
+}
+th.column-section {
+	width: 290px;
+}
+th.column-home_top {
+	width: 80px;
 }
 td.field-top_position, td.field-position {
     text-align: center;

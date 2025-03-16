@@ -19,6 +19,7 @@ from concurrency.fields import IntegerVersionField
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.core.management import call_command
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 from django.http import HttpResponse, Http404
@@ -53,6 +54,7 @@ from django.db.models import (
 )
 from django.db.models.signals import post_save
 from django.db.utils import OperationalError
+from django.core.exceptions import ValidationError
 from django.template import Engine, Context
 from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
@@ -65,6 +67,7 @@ from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
 
 from apps import blocklisted
+from celeryapp import celery_app
 from photologue_ladiaria.models import PhotoExtended
 from photologue.models import Gallery, Photo
 from audiologue.models import Audio
@@ -82,6 +85,7 @@ from .managers import (
 )
 from .templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from .utils import (
+    add_punctuation,
     datetime_isoformat,
     get_pdf_pdf_upload_to,
     get_pdf_cover_upload_to,
@@ -90,7 +94,28 @@ from .utils import (
     update_article_url_in_coral_talk,
     get_category_template,
     article_slug_readonly,
+    revoke_scheduled_tasks,
 )
+
+
+@celery_app.task(name="article-publishing")
+def article_publishing(article_id):
+    # publish a scheduled article
+    result = None
+    try:
+        article = Article.objects.get(pk=article_id, is_published=False, to_be_published=True)
+    except Article.DoesNotExist:
+        result = f"Article with id {article_id} does not exist or not ready to be published."
+    else:
+        article.is_published, article.to_be_published = True, False
+        try:
+            article.save()
+            call_command("update_category_home")
+        except Exception as e:
+            result = f"Article {article} (id: {article.id}) could not be published: {e}"
+        else:
+            result = f"Article {article} (id: {article.id}) scheduled for publishing was published correctly."
+    return result
 
 
 def remove_media_root(path):
@@ -1351,7 +1376,6 @@ class ArticleBase(Model, CT):
         return self.headline
 
     def save(self, *args, **kwargs):
-        from .utils import add_punctuation
 
         for attr in ('headline', 'deck', 'lead', 'body'):
             if getattr(self, attr, None):
@@ -1373,7 +1397,6 @@ class ArticleBase(Model, CT):
             )
 
         # other checks
-
         nowval = now()
 
         if self.is_published:
@@ -1391,9 +1414,6 @@ class ArticleBase(Model, CT):
                 raise Exception("Para programar la publicación de un artículo se debe especificar la fecha")
             elif self.date_published <= nowval:
                 raise Exception("La fecha de publicación programada no puede estar en el pasado")
-            else:
-                # TODO: update/create schedule task associated with this article
-                pass
         else:
             self.date_published = None
 
@@ -1409,17 +1429,25 @@ class ArticleBase(Model, CT):
             | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
             slug=self.slug,
         )
-        if self.id:
-            targets = targets.exclude(id=self.id)
+        if self.pk:
+            targets, old_instance = targets.exclude(id=self.id), Article.objects.get(pk=self.id)
+            if self.to_be_published:
+                if not (old_instance.to_be_published and old_instance.date_published == self.date_published):
+                    revoke_scheduled_tasks(article_publishing.name, task_args=[self.id])
+                    article_publishing.apply_async(args=(self.id,), eta=self.date_published)
+            else:
+                revoke_scheduled_tasks(article_publishing.name, task_args=[self.id])
+        else:
+            old_instance = None
         if targets:
             # TODO: IntegrityError may be better exception to raise
             raise Exception('Ya existe un artículo en ese mes con el mismo título')
 
         super(ArticleBase, self).save(*args, **kwargs)
 
-        if not self.to_be_published:
-            # TODO: delete any scheduled task associated with this article
-            pass
+        # schedule publish for "new" instances only
+        if not old_instance and self.to_be_published:
+            article_publishing.apply_async(args=(self.id,), eta=self.date_published)
 
     def is_photo_article(self):
         return self.type == settings.CORE_PHOTO_ARTICLE
@@ -1810,17 +1838,6 @@ class Article(ArticleBase):
                 for ar in ArticleRel.objects.filter(article=self):
                     if not ar.position:
                         ar.position = ArticleRel.objects.filter(edition=ar.edition, section=ar.section).count() + 1
-            old_instance = Article.objects.get(pk=self.pk)
-            if (
-                old_instance.to_be_published
-                and self.to_be_published
-                and old_instance.date_published != self.date_published
-            ):
-                if settings.DEBUG:
-                    print(
-                        f"DEBUG: article {self.id} rescheduled {old_instance.date_published} to {self.date_published}"
-                    )
-                # TODO: find celery task and change its scheduled date to the new date given
 
         # TODO: next commented "if" block should be reviewed (broken)
         # if self.home_top and self.top_position is None:
@@ -1828,13 +1845,18 @@ class Article(ArticleBase):
         if self.type == settings.CORE_HTML_ARTICLE:
             self.headline = 'HTML | %s | %s | %s' % (str(self.edition), str(self.section), str(self.section_position))
 
-        old_url_path = self.url_path
-        super().save(*args, **kwargs)
+        old_version, old_url_path, from_admin = self.version, self.url_path, getattr(self, 'admin', False)
+        try:
+            super().save(*args, **kwargs)
+        except Exception as e:
+            if from_admin:
+                raise ValidationError("".join(e.args))
+            elif old_version == self.version:
+                print("WARNING: Article version has not changed, article may not be saved")
         # the instance has already been saved, force_insert should be turned into False if a save is called again
         kwargs['force_insert'] = False
 
         # execute this steps only if not called from admin, admin already does this work in a similar way and order.
-        from_admin = getattr(self, 'admin', False)
         if not from_admin:
             self.refresh_from_db()
             new_url_path = self.build_url_path()

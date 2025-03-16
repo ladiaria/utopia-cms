@@ -651,6 +651,9 @@ class ArticleAdminModelForm(ModelForm):
                         cleaned_data["is_published"] = True
                         cleaned_data["to_be_published"] = False
                         cleaned_data["date_published"] = nowval
+                    elif desired_status == "scheduled":
+                        self.to_be_published_check(cleaned_data)
+                        cleaned_data["to_be_published"] = True
                 elif current_status == "unpublished":
                     if desired_status == "published":
                         cleaned_data["is_published"] = True
@@ -929,6 +932,8 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
                 obj.admin = True  # tell model's save method that we are calling it from the admin
                 super().save_model(request, obj, form, change)
                 self.obj = obj
+            except ValidationError as ve:
+                form.add_error(None, ve)
             except Exception as e:
                 if settings.DEBUG:
                     print(f"DEBUG: error in core.admin.ArticleAdmin.save_model: {e}")

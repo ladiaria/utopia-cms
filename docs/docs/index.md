@@ -176,3 +176,35 @@ To use the Youtube API, you have to create a credentials file to use the oauth a
 Under development, the plan is to use CKEditor as the main editor for the body field of articles, but for now, the martor editor will be used. Right now the support to use CKEditor overriding the target field class and setting some variables is available, documentation in that way will be added soon here.
 
 The approach is using a completely in-repo CKeditor which must be built using npm before a collectstatic is performed. We already have this scenario working using a custom app and it will migrated as soon as possible to this open source project.
+
+## Article publishing
+
+TODO: Generar versión en español de esta doc y llevar esta sección a la versión en español creada, traducir al inglés esta section y pegarla aquí.
+
+TODO: Intro contando sobre la feature de progaramar publicación.
+
+Casos de prueba para la transición de posibles estados de publicación de un artículo:
+
+| Caso | Estado | Acción | Resultado | Celery tasks |
+|------|--------|--------|-----------|--------------|
+| 1 | Nuevo | Publicar ahora | Se publica | 0 |
+| 2 | Nuevo | Programar con fecha válida | Se programa | 1 |
+| 3 | Nuevo | Programar con fecha inválida | Error, no se crea el artículo | 0 |
+| 4 | Nuevo | Borrador | Queda como borrador | 0 |
+| 5 | Existente publicado | Despublicar | Queda como borrador | 0 |
+| 6 | Existente publicado | Guardar sin tocar nada | Se mantiene publicado | 0 |
+| 7 | Existente borrador | Publicar ahora | Se publica | 0 |
+| 8 | Existente borrador | Programar con fecha válida | Se programa | 1 |
+| 9 | Existente borrador | Programar con fecha inválida | Error, se mantiene en borrador | 0 |
+| 10 | Existente borrador | Guardar sin tocar nada | Se mantiene en borrador | 0 |
+| 11 | Existente programado | Modifica fecha con una fecha válida | Se reprograma | 2(1Revoked) |
+| 12 | Existente programado | Modifica fecha con una fecha inválida | Error, se mantiene programado | 1 |
+| 13 | Existente programado | Guardar sin tocar nada | Se mantiene programado | 1 |
+| 14 | Existente programado | Publicar ahora | Se publica | 1Revoked |
+| 15 | Existente programado | Borrador | Queda como borrador | 1Revoked |
+
+Más casos: (16-20) para los casos 11 a 15, probar lo mismo en cada uno de ellos pero accediendo a su change form antes de que se ejecute la tarea de publicación y presionar botón de guardar después que la tarea de publicación haya terminado.
+
+| Casos | Resultado | Celery tasks |
+|-------|-----------|--------------|
+| 16 a 20 | Error, se mantiene publicado | 0 |

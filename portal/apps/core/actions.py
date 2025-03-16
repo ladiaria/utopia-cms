@@ -57,8 +57,9 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                 else []
             )
 
+    debug = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DEBUG', False)
     if categories_to_fill:
-        if settings.DEBUG:
+        if debug:
             result.append('DEBUG: update_category_home begin')
 
         lowest_date, max_date = Edition.objects.last().date_published, now().date()
@@ -165,18 +166,18 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                 old_pos, date_pub, art = category_content[i]
 
                 if ipos:
-                    if settings.DEBUG or dry_run:
+                    if debug or dry_run:
                         result.append('DEBUG: update %s home position %d: %s' % (home.category, ipos, art))
                     if not dry_run:
                         home.set_article(art, ipos)
                 else:
-                    if settings.DEBUG or dry_run:
+                    if debug or dry_run:
                         result.append('DEBUG: update %s home cover: %s' % (home.category, art))
                     if not dry_run:
                         home.set_article(art, 1)
             except IndexError:
                 pass
 
-    if settings.DEBUG:
+    if debug:
         result.append('DEBUG: update_category_home completed in %.0f seconds' % (time() - start_time))
     return "\n".join(result)

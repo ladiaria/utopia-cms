@@ -6,6 +6,8 @@ from datetime import datetime
 from os.path import join, dirname
 from pytz import country_timezones, country_names
 import requests
+from kombu.exceptions import OperationalError
+from celery.result import AsyncResult
 
 from django.conf import settings
 from django.template import Engine
@@ -14,10 +16,65 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.deconstruct import deconstructible
 from django.utils.timezone import is_aware, make_aware, localtime
 
+from celeryapp import celery_app
 from thedaily import get_app_template as thedaily_get_app_template
 
 
 article_slug_readonly = getattr(settings, "CORE_ARTICLE_SLUG_FIELD_READONLY", True)
+inspector = celery_app.control.inspect()
+
+
+def get_workers_for_queue(queue_name):
+    # Get the list of all registered workers and their queues
+    active_queues = inspector.active_queues() or {}
+    workers_handling_queue = set()
+    for worker, queues in active_queues.items():
+        for queue in queues:
+            if queue['name'] == queue_name:
+                workers_handling_queue.add(worker)
+    return list(workers_handling_queue)
+
+
+# - workers may allways be the same, thats why this code is not inside a function, to be called only once per py proc.
+# - if you are not running celery you should set CELERY_QUEUES = {} in your local_settings.py, then CELERY_TASK_ROUTES
+#   will not be populated and a KeyError will be raised and handled here.
+try:
+    update_category_home_workers = get_workers_for_queue(settings.CELERY_TASK_ROUTES["update-category-home"]["queue"])
+except (AttributeError, KeyError, OperationalError):
+    update_category_home_workers = []
+
+
+def get_active_tasks(task_name, task_args=None):
+    result = []
+    if update_category_home_workers:
+        active_tasks = inspector.active() or {}
+        if active_tasks:
+            for w in update_category_home_workers:
+                for task in active_tasks.get(w, []):
+                    r = task.get('request', {})
+                    if r.get('name') == task_name and (not task_args or r.get('args') == task_args):
+                        result.append(task)
+    return result
+
+
+def get_scheduled_tasks(task_name, task_args=None):
+    result = []
+    if update_category_home_workers:
+        scheduled_tasks = inspector.scheduled() or {}
+        if scheduled_tasks:
+            for w in update_category_home_workers:
+                for task in scheduled_tasks.get(w, []):
+                    r = task.get('request', {})
+                    if r.get('name') == task_name and (not task_args or r.get('args') == task_args):
+                        result.append(task)
+    return result
+
+
+def revoke_scheduled_tasks(task_name, task_args=None):
+    for sched_task in get_scheduled_tasks(task_name, task_args):
+        task_id = sched_task.get("request", {}).get("id")
+        if task_id:
+            AsyncResult(task_id).revoke()
 
 
 def get_section_articles_sql(section_ids, excluded=[], limit=None):
