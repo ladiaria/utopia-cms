@@ -93,7 +93,7 @@ from .utils import (
     smart_quotes,
     update_article_url_in_coral_talk,
     get_category_template,
-    article_slug_readonly,
+    article_slug_customizable,
     revoke_scheduled_tasks,
 )
 
@@ -1375,6 +1375,10 @@ class ArticleBase(Model, CT):
     def __str__(self):
         return self.headline
 
+    @property
+    def from_admin(self):
+        return getattr(self, 'admin', False)
+
     def save(self, *args, **kwargs):
 
         for attr in ('headline', 'deck', 'lead', 'body'):
@@ -1385,8 +1389,11 @@ class ArticleBase(Model, CT):
             if getattr(self, attr, None):
                 setattr(self, attr, add_punctuation(getattr(self, attr, '')))
 
-        if article_slug_readonly or not self.slug.strip():
-            self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
+        if not self.from_admin:
+            if not article_slug_customizable or not self.slug.strip():
+                self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
+            else:
+                self.slug = slugify(self.slug)
 
         # full restricted / open consistency checks
         # 1. If open => full_restricted == False
@@ -1845,7 +1852,7 @@ class Article(ArticleBase):
         if self.type == settings.CORE_HTML_ARTICLE:
             self.headline = 'HTML | %s | %s | %s' % (str(self.edition), str(self.section), str(self.section_position))
 
-        old_version, old_url_path, from_admin = self.version, self.url_path, getattr(self, 'admin', False)
+        old_version, old_url_path, from_admin = self.version, self.url_path, self.from_admin
         try:
             super().save(*args, **kwargs)
         except Exception as e:

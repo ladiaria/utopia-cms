@@ -28,7 +28,9 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
-from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget
+from django.forms import (
+    ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget, SlugField
+)
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
 from django.forms.widgets import TextInput, HiddenInput, CheckboxInput
@@ -70,7 +72,7 @@ from .models import (
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
 from .tasks import update_category_home, send_push_notification
-from .utils import update_article_url_in_coral_talk, article_slug_readonly
+from .utils import update_article_url_in_coral_talk, article_slug_customizable
 
 
 INLINES_SORTABLE = settings.CORE_ARTICLE_ADMIN_INLINES_SORTABLE
@@ -479,7 +481,6 @@ class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
     Overrided to use a custom js, because we found this error in the upstream project:
     https://github.com/agusmakmun/django-markdown-editor/pull/217
     """
-
     @property
     def media(self):
         result = super().media
@@ -497,6 +498,24 @@ class ArticleAdminModelForm(ModelForm):
     )
     PUBLISH_OPTIONS = (('none', 'Publicar ahora'), ('scheduled', 'Programar publicación'))
     UNPUBLISH_OPTIONS = (('unpublished', 'Guardar como borrador'),)
+    if article_slug_customizable:
+        slug_radio_choice = ChoiceField(
+            label="Título en url",
+            choices=(("slug", "En base al título principal (por defecto)"),),
+            required=False,
+            widget=RadioSelect(),
+        )
+        SLUG_CHOICE_CUSTOM = ("custom", "Personalizado")
+        slug_radio_choice_custom = ChoiceField(
+            label="", choices=(SLUG_CHOICE_CUSTOM,), required=False, widget=RadioSelect(),
+        )
+        slug_custom = SlugField(
+            label="",
+            help_text=(
+                "Los espacios u otros caracteres no soportados serán eliminados o reemplazados por guiones al guardar"
+            ),
+            required=False,
+        )
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
     pw_radio_choice = ChoiceField(
         label="paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
@@ -551,14 +570,23 @@ class ArticleAdminModelForm(ModelForm):
             self.fields['date_published'].label = ""
 
         # slug initial values resolution
-        slug_help = 'Se genera automáticamente en base al título'
-        if article_slug_readonly:
-            self.fields['slug'].widget.attrs['readonly'] = True
-            self.fields['slug'].widget.attrs['class'] = "readonly"
-            self.fields['slug'].widget.attrs['placeholder'] = f"{slug_help}."
-        else:
+        self.fields['slug'].widget.attrs['readonly'] = True
+        self.fields['slug'].widget.attrs['class'] = "readonly"
+        if article_slug_customizable:
             self.fields['slug'].required = False
-            self.fields['slug'].help_text = f"{slug_help} en caso de dejar vacío."
+            self.fields["slug"].label = ""
+            self.fields["slug_radio_choice"].choices.append(self.SLUG_CHOICE_CUSTOM)
+            slug_from_headline = slugify(cleanhtml(ldmarkup(self.instance.headline)))
+            if self.instance.pk and self.instance.slug != slug_from_headline:
+                self.initial["slug_radio_choice"] = self.initial["slug_radio_choice_custom"] = "custom"
+                self.initial["slug_custom"] = self.instance.slug
+                self.initial["slug"] = slug_from_headline
+            else:
+                self.initial["slug_radio_choice"] = "slug"
+                self.fields["slug_custom"].widget.attrs['disabled'] = True
+
+    def clean_slug_custom(self):
+        return slugify(self.cleaned_data.get('slug_custom'))
 
     def clean_tags(self):
         """
@@ -682,9 +710,13 @@ class ArticleAdminModelForm(ModelForm):
             ),
             timezone.utc,
         )
-        slug = cleaned_data.get('slug').strip()
-        if article_slug_readonly or not slug:
+        if cleaned_data.get('slug_radio_choice') == 'custom':
+            slug = slugify(cleaned_data.get('slug_custom'))
+            if not slug:
+                self.add_error("slug_custom", "Este campo es requerido")
+        else:
             slug = slugify(cleanhtml(ldmarkup(cleaned_data.get('headline'))))
+        cleaned_data['slug'] = slug
         targets = Article.objects.filter(
             Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
             | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),

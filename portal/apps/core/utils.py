@@ -20,7 +20,7 @@ from celeryapp import celery_app
 from thedaily import get_app_template as thedaily_get_app_template
 
 
-article_slug_readonly = getattr(settings, "CORE_ARTICLE_SLUG_FIELD_READONLY", True)
+article_slug_customizable = getattr(settings, "CORE_ARTICLE_SLUG_FIELD_CUSTOMIZABLE", False)
 inspector = celery_app.control.inspect()
 
 
