@@ -512,7 +512,11 @@ class ArticleAdminModelForm(ModelForm):
         slug_custom = SlugField(
             label="",
             help_text=(
-                "Los espacios u otros caracteres no soportados serán eliminados o reemplazados por guiones al guardar"
+                'Redactar en formato url. En minúsculas y sin espacios ni caracteres especiales (ejemplo: '
+                '"titulo-personalizado-de-articulo").'
+                # TODO: decide if we change to a CharField instead and make the conversion to slug in the save method
+                #       then, the help text will be this one that is commented in the next line
+                # Los espacios u otros caracteres no soportados serán eliminados o reemplazados por guiones al guardar
             ),
             required=False,
         )
@@ -586,7 +590,9 @@ class ArticleAdminModelForm(ModelForm):
                 self.fields["slug_custom"].widget.attrs['disabled'] = True
 
     def clean_slug_custom(self):
-        return slugify(self.cleaned_data.get('slug_custom'))
+        # TODO: if type of field changes to CharField we need the commented return (using slugify)
+        # return slugify(self.cleaned_data.get('slug_custom'))
+        return self.cleaned_data.get('slug_custom')
 
     def clean_tags(self):
         """
@@ -711,7 +717,7 @@ class ArticleAdminModelForm(ModelForm):
             timezone.utc,
         )
         if cleaned_data.get('slug_radio_choice') == 'custom':
-            slug = slugify(cleaned_data.get('slug_custom'))
+            slug = cleaned_data.get('slug_custom')
             if not slug:
                 self.add_error("slug_custom", "Este campo es requerido")
         else:

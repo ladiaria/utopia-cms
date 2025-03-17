@@ -1392,8 +1392,6 @@ class ArticleBase(Model, CT):
         if not self.from_admin:
             if not article_slug_customizable or not self.slug.strip():
                 self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
-            else:
-                self.slug = slugify(self.slug)
 
         # full restricted / open consistency checks
         # 1. If open => full_restricted == False
