@@ -492,7 +492,7 @@ class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
 
 class ArticleAdminModelForm(ModelForm):
     PW_OPTIONS = (
-        ('none', 'Metered (por defecto)'),
+        ('none', f'Metered ({settings.PORTAL_LABEL_DEFAULT})'),
         ('full_restricted_true', 'Hard (solamente para suscriptores)'),
         ('public_true', 'Sin paywall (libre acceso)'),
     )
@@ -500,8 +500,8 @@ class ArticleAdminModelForm(ModelForm):
     UNPUBLISH_OPTIONS = (('unpublished', 'Guardar como borrador'),)
     if article_slug_customizable:
         slug_radio_choice = ChoiceField(
-            label="Título en url",
-            choices=(("slug", "En base al título principal (por defecto)"),),
+            label=Article.SLUG_LABEL,
+            choices=(("slug", f"En base al título principal ({settings.PORTAL_LABEL_DEFAULT})"),),
             required=False,
             widget=RadioSelect(),
         )
@@ -514,8 +514,8 @@ class ArticleAdminModelForm(ModelForm):
             help_text=(
                 'Redactar en formato url. En minúsculas y sin espacios ni caracteres especiales (ejemplo: '
                 '"titulo-personalizado-de-articulo").'
-                # TODO: decide if we change to a CharField instead and make the conversion to slug in the save method
-                #       then, the help text will be this one that is commented in the next line
+                # If for any reason we change this field to a CharField and make the conversion to slug somewhere, then
+                # the help text should also change and it can be something like this next line:
                 # Los espacios u otros caracteres no soportados serán eliminados o reemplazados por guiones al guardar
             ),
             required=False,
@@ -588,9 +588,12 @@ class ArticleAdminModelForm(ModelForm):
             else:
                 self.initial["slug_radio_choice"] = "slug"
                 self.fields["slug_custom"].widget.attrs['disabled'] = True
+        else:
+            self.fields["slug"].label = Article.SLUG_LABEL
 
     def clean_slug_custom(self):
-        # TODO: if type of field changes to CharField we need the commented return (using slugify)
+        # Kept this method only to say that if for any reason we change this field to a CharField, we can use this
+        # method to convert its value to a valid slug value using slugify, line doing this left commented (next line).
         # return slugify(self.cleaned_data.get('slug_custom'))
         return self.cleaned_data.get('slug_custom')
 
@@ -812,6 +815,9 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
         [SortableArticleExtensionInline, SortableArticleBodyImageInline] if INLINES_SORTABLE else
         [ArticleExtensionInline, ArticleBodyImageInline]
     ) + [ArticleEditionInline]
+    slug_fields = (
+        "slug_radio_choice", "slug", "slug_radio_choice_custom", "slug_custom"
+    ) if article_slug_customizable else ("slug",)
     fieldsets = (
         (
             None,
@@ -821,7 +827,7 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
                     'headline',
                     'alt_title_metadata',
                     'alt_title_newsletters',
-                    'slug',
+                    *slug_fields,
                     'keywords',
                     'deck',
                     'alt_desc_metadata',
@@ -1099,7 +1105,8 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
         return super().recover_view(request, version_id, extra_context)
 
     class Media:
-        css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
+        slug_customizable_css = ('css/admin_article_slug_customizable.css',) if article_slug_customizable else ()
+        css = {'all': ('css/charcounter.css', 'css/admin_article.css', *slug_customizable_css)}
         js = (
             'js/jquery.charcounter-orig.js',
             'js/utopiacms_martor_semantic.js',

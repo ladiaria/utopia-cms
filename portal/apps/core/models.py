@@ -1226,24 +1226,14 @@ class Location(Model):
 
 
 class ArticleBase(Model, CT):
+    SLUG_LABEL = getattr(settings, 'CORE_ARTICLE_SLUG_LABEL', "slug")
     TYPE_CHOICES = settings.CORE_ARTICLE_TYPES
-
-    DISPLAY_CHOICES = (
-        ('I', 'Imagen'),
-        ('A', 'Audio'),
-        ('V', 'Video'),
-    )
-
+    DISPLAY_CHOICES = (('I', 'Imagen'), ('A', 'Audio'), ('V', 'Video'))
     HEADER_DISPLAY_CHOICES = (
         ('FW', getattr(settings, 'CORE_ARTICLE_HEADER_DISPLAY_CHOICES_FW', 'Ancho completo')),
         ('BG', getattr(settings, 'CORE_ARTICLE_HEADER_DISPLAY_CHOICES_BG', 'Grande')),
     )
-
-    HOME_HEADER_DISPLAY_CHOICES = (
-        ('FW', 'Ancho completo'),
-        ('FF', 'Medio y medio'),
-        ('SM', 'Chico'),
-    )
+    HOME_HEADER_DISPLAY_CHOICES = (('FW', 'Ancho completo'), ('FF', 'Medio y medio'), ('SM', 'Chico'))
 
     publication = ForeignKey(
         Publication,
@@ -1258,7 +1248,7 @@ class ArticleBase(Model, CT):
     keywords = CharField(
         'titulín', max_length=45, blank=True, null=True, help_text='Se muestra encima del título en portada.'
     )
-    slug = SlugField('slug', max_length=200)
+    slug = SlugField(SLUG_LABEL, max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
         'descripción',

@@ -40,6 +40,8 @@ PORTAL_USE_UTM_LINKS = True
 PORTAL_TITLE_APPEND_COUNTRY = True
 # flatpages template directory, join this value with a template path, example: os.path.join(this_value, "default.html")
 PORTAL_FLATPAGES_DIR = "flatpages"
+# string to use when a label wants to indicate that is the default value of something
+PORTAL_LABEL_DEFAULT = "predeterminado"
 
 # disable template settings warning until fixed migrating django-mobile to django-amp-tools
 SILENCED_SYSTEM_CHECKS = ["1_8.W001"]

@@ -53,6 +53,7 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
 }
 .form-row.field-slug input.readonly {
   color: gray;
+  border: none;
   padding-left: 0px;
   padding-top: 8px;
 }
@@ -150,7 +151,6 @@ input[id="id_slug_radio_choice_custom"] {
 .form-row.field-publish_radio_choice,
 .form-row.field-date_published,
 .form-row.field-slug_radio_choice,
-.form-row.field-slug,
 .form-row.field-slug_radio_choice_custom {
   border-bottom: unset;
   padding-bottom: 0px;
@@ -167,7 +167,7 @@ input[id="id_slug_radio_choice_custom"] {
   padding-top: 0px;
   margin-left: 30px;
 }
-.form-row.field-unpublish_radio_choice.field-is_published.field-to_be_published, .form-row.field-slug {
+.form-row.field-unpublish_radio_choice.field-is_published.field-to_be_published {
   padding-top: 0px;
 }
 .fieldBox.field-unpublish_radio_choice:has(input[type="checkbox"]) {
