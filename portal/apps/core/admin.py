@@ -1040,9 +1040,10 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
             self.obj.url_path = new_url_path
             self.obj.save()
             if change and get_talk_url() and not settings.DEBUG:
-                # the article has a new url, we need to update it in Coral-Talk using the API
-                # but don't do this in DEBUG mode to avoid updates with local urls in Coral
-                # TODO: do not message user if the story is not found in coral (use "code" value in response.errors)
+                # The article has a new url, we need to update it in Coral-Talk using the API but we don't do this in
+                # DEBUG mode to avoid updates using local development environments urls.
+                # TODO: Also try to update the title in Coral-Talk. (title is under the title key in the story
+                #       metadata)
                 try:
                     update_article_url_in_coral_talk(form.instance.id, new_url_path)
                 except (ConnectionError, ValueError, KeyError, AssertionError, TypeError):

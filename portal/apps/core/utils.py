@@ -274,16 +274,15 @@ def add_punctuation(text):
 
 
 def update_article_url_in_coral_talk(article_id, new_url_path):
-    # TODO: should be reviewed
-    talk_api_response = requests.post(
+    talk_api_response_data = requests.post(
         settings.TALK_URL + 'api/graphql',
         headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
         data='{"operationName":"updateStory","variables":{"input":{"id":%d,"story":{"url":"%s"}'
         ',"clientMutationId":"url updated"}},"query":"mutation updateStory($input: UpdateStoryInput!)'
         '{updateStory(input:$input){story{id}}}"}' % (article_id, settings.SITE_URL_SD + new_url_path),
-    )
-    if talk_api_response.status_code == 200:
-        return talk_api_response.json()['data']['updateStory']['story']
+    ).json()['data']
+    if talk_api_response_data:
+        return talk_api_response_data['updateStory']['story']
 
 
 @deconstructible
