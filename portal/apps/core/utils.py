@@ -265,6 +265,30 @@ def serialize_wrapper(article_or_list, publication, for_cover=False, dates=True)
         return article_or_list.nl_serialize(for_cover, publication, dates=dates)
 
 
+def get_articles_slider_template(slug):
+    default_dir = "/core/templates"
+    custom_dir = getattr(settings, "ARTICLES_SLIDER_TEMPLATE_DIR", None)
+    template = join(default_dir, "articles_slider.html")
+
+    if custom_dir:
+        engine = Engine.get_default()
+        template_try = join(custom_dir, f"articles_slider_{slug}.html")
+        try:
+            engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            template_try = join(custom_dir, "articles_slider.html")
+            try:
+                engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template = template_try
+        else:
+            template = template_try
+
+    return template
+
+
 def add_punctuation(text):
     valid_chars = 'AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789"'
     if text != '':
