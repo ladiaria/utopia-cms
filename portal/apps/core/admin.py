@@ -447,7 +447,11 @@ class SortableArticleBodyImageInline(SortableTabularInline):
 
     @admin.display(description='thumbnail')
     def photo_admin_thumbnail(self, instance):
-        return instance.image.admin_thumbnail()
+        if instance.image_file_exists():
+            return instance.image.admin_thumbnail()
+        else:
+            # TODO: maybe good to render some placeholder "not available" thumbnail
+            pass
 
     @admin.display(description='tomada el')
     def photo_date_taken(self, instance):

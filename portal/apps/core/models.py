@@ -2499,6 +2499,19 @@ class ArticleBodyImage(Model):
     def __str__(self):
         return (self.image.title or '') if self.image else ''
 
+    def has_image(self):
+        try:
+            return bool(self.image)
+        except PhotoExtended.DoesNotExist:
+            return False
+
+    def image_file_exists(self):
+        try:
+            result = self.has_image() and bool(self.image.image.file)
+        except IOError:
+            result = False
+        return result
+
     class Meta:
         ordering = ['order']
         verbose_name = 'imagen'
