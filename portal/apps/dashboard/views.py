@@ -32,6 +32,10 @@ to_response = render_response('dashboard/templates/')
 @permission_required('thedaily.change_subscriber')
 @to_response
 def index(request):
+    # TODO: the decorator requiring change_subscriber permission should be changed and the parts where sensitive
+    #       subscriber data is shown should be protected giving at least an equal auth treatment that it has now before
+    #       the decorator is changed, the main issue to solve with that is the access to NL previews to people that has
+    #       nothing to do with subscriber data.
     is_admin, is_seller, is_financial = request.user.is_superuser, False, False
     if not is_admin:
         user_groups = request.user.groups.all()
