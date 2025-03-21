@@ -20,7 +20,7 @@ from django.contrib.auth.decorators import login_required
 
 from libs.utils import decode_hashid
 from thedaily.models import Subscriber
-from ..models import Publication, Edition, ArticleRel, DefaultNewsletter, get_latest_edition
+from ..models import Publication, ArticleRel, DefaultNewsletter, get_latest_edition
 from ..templatetags.ldml import remove_markup
 from ..utils import serialize_wrapper, nl_template_name, nl_utm_params
 
@@ -74,10 +74,9 @@ class NewsletterPreview(TemplateView):
         context.update({"newsletter_header_color": publication.newsletter_header_color, "preview_warn": ""})
         context.update(publication.extra_context.copy())
         status, template_name, template_name_default = None, None, self.template_name
-        try:
-            edition = self.get_edition(publication)
-        except Edition.DoesNotExist as edne:
-            context.update({"headers_preview": True, "preview_err": edne})
+        edition = self.get_edition(publication)
+        if not edition:
+            context.update({"headers_preview": True, "preview_err": "No se encontraron ediciones para la publicación"})
             template_name, status = "newsletter/error.html", 406
         else:
             default, default_nl = self.get_defaults(publication.slug, edition.date_published)
