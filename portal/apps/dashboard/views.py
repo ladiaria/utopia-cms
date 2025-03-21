@@ -12,8 +12,8 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequ
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
 from django.core.exceptions import ValidationError
-from django.contrib.auth.models import Group
-from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.decorators import permission_required, user_passes_test
+from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now, datetime
@@ -26,28 +26,36 @@ from .models import AudioStatistics, NewsletterDelivery
 
 
 to_response = render_response('dashboard/templates/')
+seller_group = getattr(settings, 'DASHBOARD_SELLER_GROUP', None)
+financial_group = getattr(settings, 'DASHBOARD_FINANCIAL_GROUP', None)
+
+
+def is_member(user, group_name=None):
+    if user.is_superuser:
+        return True
+    if not group_name:
+        group_name = getattr(settings, 'DASHBOARD_ACCESS_GROUP', "Dashboard Access")
+    return user.groups.filter(name=group_name).exists()
+
+
+def is_seller(user):
+    return user.is_superuser or (seller_group and is_member(user, seller_group))
+
+
+def is_financial(user):
+    return user.is_superuser or (financial_group and is_member(user, financial_group))
 
 
 @never_cache
-@permission_required('thedaily.change_subscriber')
+@staff_member_required
+@user_passes_test(is_member)
 @to_response
 def index(request):
-    # TODO: the decorator requiring change_subscriber permission should be changed and the parts where sensitive
-    #       subscriber data is shown should be protected giving at least an equal auth treatment that it has now before
-    #       the decorator is changed, the main issue to solve with that is the access to NL previews to people that has
-    #       nothing to do with subscriber data.
-    is_admin, is_seller, is_financial = request.user.is_superuser, False, False
-    if not is_admin:
-        user_groups = request.user.groups.all()
-        is_seller = get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None)) in user_groups
-        is_financial = (
-            get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_FINANCIAL_GROUP', None)) in user_groups
-        )
     return (
         'index.html',
         {
-            'activity_rows': is_admin or is_seller,
-            'is_financial': is_admin or is_financial,
+            'activity_rows': is_seller(request.user),
+            'is_financial': is_financial(request.user),
             'financial_extra_items_template': getattr(settings, 'DASHBOARD_FINANCIAL_EXTRA_ITEMS_TEMPLATE', None),
             "newsletters": get_profile_newsletters_ordered(),
             "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
@@ -56,7 +64,8 @@ def index(request):
 
 
 @never_cache
-@permission_required('thedaily.change_subscriber')
+@staff_member_required
+@user_passes_test(is_member)
 @to_response
 def load_table(request, table_id):
 
@@ -65,12 +74,8 @@ def load_table(request, table_id):
     today = now().date()
 
     if table_id in ('activity', 'activity_only_digital'):
-        # Alow only admins or member of seller group
-        if not (
-            request.user.is_superuser
-            or get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None))
-            in request.user.groups.all()
-        ):
+        # Allow only admins or member of seller group
+        if not is_seller(request.user):
             return HttpResponseForbidden()
 
     if month and year and table_id not in ('activity', 'activity_only_digital', 'subscribers'):
@@ -109,6 +114,8 @@ def load_table(request, table_id):
 
 
 @never_cache
+@staff_member_required
+@user_passes_test(is_member)
 @permission_required('thedaily.change_subscriber')
 def export_csv(request, table_id):
     month = request.GET.get('month')
