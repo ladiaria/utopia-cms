@@ -26,16 +26,13 @@ from .models import AudioStatistics, NewsletterDelivery
 
 
 to_response = render_response('dashboard/templates/')
+access_group = getattr(settings, 'DASHBOARD_ACCESS_GROUP', "Dashboard access")
 seller_group = getattr(settings, 'DASHBOARD_SELLER_GROUP', None)
 financial_group = getattr(settings, 'DASHBOARD_FINANCIAL_GROUP', None)
 
 
 def is_member(user, group_name=None):
-    if user.is_superuser:
-        return True
-    if not group_name:
-        group_name = getattr(settings, 'DASHBOARD_ACCESS_GROUP', "Dashboard Access")
-    return user.groups.filter(name=group_name).exists()
+    return user.is_superuser or user.groups.filter(name=group_name or access_group).exists()
 
 
 def is_seller(user):
