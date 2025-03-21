@@ -123,7 +123,7 @@ class Command(BaseCommand):
                 elif key is Article:
                     for subset in (
                         obj.get_authors(),
-                        obj.extensions.all(),
+                        obj.recuadros.all(),
                         obj.body_image.all(),
                         set([x for x in (obj.audio, obj.location) if x]),
                     ):

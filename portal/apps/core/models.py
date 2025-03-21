@@ -1671,7 +1671,7 @@ class ArticleBase(Model, CT):
         art_sec = result.seconds
 
         exts_sec = 0
-        for extension in self.extensions.all():
+        for extension in self.recuadros.all():
             ext_res = readtime.of_markdown(extension.body, wpm=wpm)
             exts_sec = exts_sec + ext_res.seconds
 
@@ -2103,7 +2103,7 @@ class Article(ArticleBase):
         """
         invalid_tags = "base img picture video audio iframe frame frameset object param applet embed".split()
         invalid_filters = {"script": lambda node: "instagram.com/embed.js" in node.get("src", "")}
-        for e in self.extensions.iterator():
+        for e in self.recuadros.iterator():
             try:
                 soup = BeautifulSoup(e.body, 'html.parser')
                 for tag in invalid_tags:
