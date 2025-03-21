@@ -78,6 +78,13 @@ from .utils import update_article_url_in_coral_talk, article_slug_customizable
 INLINES_SORTABLE = settings.CORE_ARTICLE_ADMIN_INLINES_SORTABLE
 
 
+def register_custom(register_map):
+    for model_class, admin_class in register_map.items():
+        if model_class in admin.site._registry:
+            admin.site.unregister(model_class)
+        admin.site.register(model_class, admin_class)
+
+
 class PrintOnlyArticleInline(TabularInline):
     model = PrintOnlyArticle
     extra = 10
