@@ -1840,45 +1840,49 @@ class Article(ArticleBase):
         if self.type == settings.CORE_HTML_ARTICLE:
             self.headline = 'HTML | %s | %s | %s' % (str(self.edition), str(self.section), str(self.section_position))
 
-        old_version, old_url_path, from_admin = self.version, self.url_path, self.from_admin
+        old_url_path, from_admin = self.url_path, self.from_admin
         try:
             super().save(*args, **kwargs)
         except Exception as e:
+            error_message = "".join(e.args)
             if from_admin:
-                raise ValidationError("".join(e.args))
-            elif old_version == self.version:
-                print("WARNING: Article version has not changed, article may not be saved")
-        # the instance has already been saved, force_insert should be turned into False if a save is called again
-        kwargs['force_insert'] = False
+                raise ValidationError(error_message)
+            else:
+                # TODO: shouldn't we also raise the original exception here?
+                print(f"ERROR: Article {self.pk or '(new)'} not saved: {error_message}")
+        else:
+            # the instance has already been saved, force_insert should be turned into False if a save is called again
+            kwargs['force_insert'] = False
 
-        # execute this steps only if not called from admin, admin already does this work in a similar way and order.
-        if not from_admin:
-            self.refresh_from_db()
-            new_url_path = self.build_url_path()
-            url_changed = old_url_path != new_url_path
+            # execute this steps only if not called from admin, admin already does this work in a similar way and order
+            if not from_admin:
 
-            if url_changed:
-                self.url_path = new_url_path
-                self.do_ipfs_upload()
-                super().save(*args, **kwargs)
-                # if this is an insert, old_url_path is '', then skip talk update
-                if old_url_path and thedaily.get_talk_url() and not settings.DEBUG:
-                    # the article has a new url, we need to update it in Coral-Talk using the API
-                    # but don't do this in DEBUG mode to avoid updates with local urls in Coral
-                    try:
-                        update_article_url_in_coral_talk(self.id, new_url_path)
-                    except (ConnectionError, ValueError, KeyError, AssertionError, TypeError):
-                        # fail silently because we should not break any script or shell that is saving the article
-                        pass
+                self.refresh_from_db()
+                new_url_path = self.build_url_path()
+                url_changed = old_url_path != new_url_path
+
+                if url_changed:
+                    self.url_path = new_url_path
+                    self.do_ipfs_upload()
+                    super().save(*args, **kwargs)
+                    # if this is an insert, old_url_path is '', then skip talk update
+                    if old_url_path and thedaily.get_talk_url() and not settings.DEBUG:
+                        # the article has a new url, we need to update it in Coral-Talk using the API
+                        # but don't do this in DEBUG mode to avoid updates with local urls in Coral
+                        try:
+                            update_article_url_in_coral_talk(self.id, new_url_path)
+                        except (ConnectionError, ValueError, KeyError, AssertionError, TypeError):
+                            # fail silently because we should not break any script or shell that is saving the article
+                            pass
+                elif self.do_ipfs_upload():
+                    super().save(*args, **kwargs)
+
+                # add to history the new url
+                if not ArticleUrlHistory.objects.filter(article=self, absolute_url=new_url_path).exists():
+                    ArticleUrlHistory.objects.create(article=self, absolute_url=new_url_path)
+
             elif self.do_ipfs_upload():
                 super().save(*args, **kwargs)
-
-            # add to history the new url
-            if not ArticleUrlHistory.objects.filter(article=self, absolute_url=new_url_path).exists():
-                ArticleUrlHistory.objects.create(article=self, absolute_url=new_url_path)
-
-        elif self.do_ipfs_upload():
-            super().save(*args, **kwargs)
 
     def do_ipfs_upload(self):
         """
