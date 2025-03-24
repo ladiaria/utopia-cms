@@ -1562,6 +1562,8 @@ class ArticleBase(Model, CT):
     def photo_image_file_exists(self):
         try:
             result = self.has_photo() and bool(self.photo.image.file)
+            # TODO: try also to read this file and assert PermissionError will not be raised
+            #       (can be reproduced in categories homes rendering articles with photos in unreadable files)
         except IOError:
             result = False
         return result
