@@ -1,0 +1,25 @@
+{% extends "article/audio.html" %}
+
+{% block audio_overlay %}
+  {% if not is_subscriber %}
+    <div class="ld-audio__overlay">
+      <button class="ld-audio__overlay-close-btn" aria-label="Cerrar">
+        <svg tabindex="0" xmlns="http://www.w3.org/2000/svg" width="15.472" height="15.471" viewBox="0 0 15.472 15.471"><path d="M653.472,11679.547l-1.547-1.547-6.189,6.188-6.189-6.187-1.547,1.547,6.189,6.189-6.189,6.188,1.547,1.547,6.189-6.187,6.189,6.188,1.547-1.547-6.189-6.187,6.189-6.189" transform="translate(-638 -11678)" fill="#fff" fill-rule="evenodd"/><title>Cerrar</title></svg>
+      </button>
+      <div class="ld-audio__overlay-content">
+        <div class="ld-audio__overlay-title">
+          Este audio es una característica exclusiva para suscripciones.
+        </div>
+        <div class="ld-audio__overlay-links">
+          <a href="{% url 'subscribe-default' %}{% if use_utm_links %}?utm_source=web&utm_medium=audio-banner{% endif %}">Suscribite</a>
+          {% if not user.is_authenticated %}
+            o
+            <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block audio_src %}{% if is_subscriber %}{{ SITE_URL }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}{% endblock %}

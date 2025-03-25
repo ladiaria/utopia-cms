@@ -100,7 +100,7 @@
       {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
         {% if header_display == 'FW' %}
-          <div>{# closed in line 299 #}
+          <div>{# closed in line 300 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <div>
@@ -127,7 +127,7 @@
                 </div>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 299 #}
+          {# missing close div here is closed correctly in line 300 #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -297,7 +297,7 @@
         {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
-        </div>{# opened in line 102 #}
+        </div>{# opened in line 103 #}
       {% endif %}
 
       {% if article.has_deck or article.has_lead %}
@@ -312,9 +312,9 @@
       {# begin restricted content #}
       {% if not request.signupwall or not article_restricted_cf or restricted_access %}
 
-        {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
+        {% if article.audio %}{% include audio_template %}{% endif %}
 
-        {% if not request.signupwall %}{# closed in line 676 #}
+        {% if not request.signupwall %}{# closed in line 677 #}
 
           {% include 'article/paywall/pw_not_in_request.html' %}
 
@@ -674,7 +674,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 316 #}
+        {% endif %}{# opened in line 317 #}
 
       {% else %}{# restricted content message #}
 
@@ -691,7 +691,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 822 #}
+    {% if not request.signupwall %}{# closed in line 823 #}
 
       {% if article.public %}
 
@@ -707,46 +707,15 @@
 
       {% endif %}
 
+      {% include 'article/detail_comments.html' %}
+
       {% if not article_restricted_cf or restricted_access %}{# begin restricted content2 #}
-
-        {% if TALK_URL and article.allow_comments %}
-          <div id="comentarios">
-            <div class="container">
-
-              <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}"
-                       data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}"
-                       data-article-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
-                       data-login-url="{{ SITE_URL_SD }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
-                <span class="title">Comentar este artículo</span>
-                <button class="ut-btn">
-                  {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
-                </button>
-              </section>
-
-              <div class="talk-login align-center display-hidden">
-                {% if user.is_authenticated %}
-                  {% if not is_subscriber %}
-                    <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
-                  {% endif %}
-                {% else %}
-                  <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
-                  <span class="ld-caption ld-caption-subscribe-to-comment">
-                    ¿Ya tenés suscripción?
-                    <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
-                  </span>
-                {% endif %}
-              </div>
-
-            </div>
-          </div>
-        {% endif %}
-
         <section class="col s12 center ld-share-widget ld-block">
           <span class="small ld-share-widget__title" aria-label="Compartir">Compartir este artículo</span>
           <ul class="inline share ld-share-widget__list">
             <li class="whatsapp">
-              <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
-                 data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
+              <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
+                 data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp" rel="noopener noreferrer">
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#262626"/>
                   <title>Compartir en WhatsApp</title>
@@ -754,7 +723,7 @@
               </a>
             </li>
             <li>
-              <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL_SD }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
+              <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL_SD }}{{ article.get_absolute_url }}" rel="noopener" aria-label="Compartir en Facebook">
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#262626"/>
                   <title>Compartir en Facebook</title>
@@ -762,7 +731,7 @@
               </a>
             </li>
             <li>
-              <a href="https://twitter.com/intent/tweet?original_referer={{ SITE_URL_SD }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ SITE_URL_SD }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}" target="_blank" rel="noopener" aria-label="Compartir en Twitter">
+              <a href="https://twitter.com/intent/tweet?original_referer={{ SITE_URL_SD }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ SITE_URL_SD }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}" rel="noopener" aria-label="Compartir en Twitter">
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#262626"/>
                   <title>Compartir en Twitter</title>
@@ -820,7 +789,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 693 #}
+    {% endif %}{# opened in line 694 #}
 
     {% block article_extra %}{% endblock %}
 
@@ -840,7 +809,7 @@
             <span class="title">Compartir este artículo</span>
             <ul class="inline share">
               <li class="whatsapp">
-                <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
+                <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
                   <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#595959"/>
                     <title>Compartir en WhatsApp</title>
@@ -848,7 +817,7 @@
                 </a>
               </li>
               <li>
-                <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL_SD }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL_SD }}{{ article.get_absolute_url }}" rel="noopener" aria-label="Compartir en Facebook">
                   <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#595959"/>
                     <title>Compartir en Facebook</title>
@@ -857,7 +826,7 @@
               </li>
               <li>
                 <a href="https://twitter.com/intent/tweet?original_referer={{ SITE_URL_SD }}{{ article.get_absolute_url|urlencode }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ SITE_URL_SD }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}"
-                   target="_blank" rel="noopener" aria-label="Compartir en Twitter">
+                   rel="noopener" aria-label="Compartir en Twitter">
                   <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#595959"/>
                     <title>Compartir en Twitter</title>

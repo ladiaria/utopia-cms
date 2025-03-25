@@ -9,10 +9,10 @@
     {% if article.date_published %}"datePublished": "{{ article.date_published_isoformat }}",{% endif %}
     "dateModified": "{{ article.last_modified_isoformat }}",
     "description": "{% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
-    "isAccessibleForFree": "{{ article.public }}",
+    "isAccessibleForFree": {{ article.public|lower }},
     "hasPart": {
       "@type": "WebPageElement",
-      "isAccessibleForFree": "{{ article.public }}",
+      "isAccessibleForFree": {{ article.public|lower }},
       "cssSelector" : ".paywalled-content"
     },
     "isPartOf": {
@@ -22,7 +22,8 @@
     "author":{% if article.get_authors|length > 1 %} [{% endif %}{% for author in article.get_authors %}
       {
         "@type": "Person",
-        "name": "{{ author.name }}"
+        "name": "{{ author.name }}",
+        "url": "{{ SITE_URL_SD }}{{ author.get_absolute_url }}"
       }{% if not forloop.last or article.get_authors|length == 1 %},{% endif %}{% endfor %}
     {% if article.get_authors|length > 1 %}],{% endif %}{% else %}
     "author": {

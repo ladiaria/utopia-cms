@@ -1,0 +1,170 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-12-10 06:58-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: apps/faq/__init__.py:10
+msgid "faq"
+msgstr "faq"
+
+#: apps/faq/actions.py:21
+#, python-format
+msgid "Changed status to '%s'."
+msgstr "Status cambiado a '%s'."
+
+#: apps/faq/actions.py:33
+#, python-format
+msgid "%(rows_updated)s %(verbose_name)s was successfully %(verb)s."
+msgid_plural ""
+"%(rows_updated)s  %(verbose_name_plural)s were successfully %(verb)s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: apps/faq/actions.py:47
+#, python-format
+msgid "Draft selected %(verbose_name_plural)s"
+msgstr "Borrador seleccionado %(verbose_name_plural)s"
+
+#: apps/faq/actions.py:53
+#, python-format
+msgid "Publish selected %(verbose_name_plural)s"
+msgstr "Publicado seleccionado %(verbose_name_plural)s"
+
+#: apps/faq/actions.py:59
+#, python-format
+msgid "Remove selected %(verbose_name_plural)s"
+msgstr "Eliminado seleccionado %(verbose_name_plural)s"
+
+#: apps/faq/admin.py:41
+msgid "Drafted"
+msgstr "Borrador"
+
+#: apps/faq/admin.py:46
+msgid "Published"
+msgstr "Publicado"
+
+#: apps/faq/admin.py:51
+msgid "Removed"
+msgstr "Eliminado"
+
+#: apps/faq/admin.py:56
+msgid "Total"
+msgstr "Total"
+
+#: apps/faq/constants.py:10
+msgid "drafted"
+msgstr "borrador"
+
+#: apps/faq/constants.py:11
+msgid "published"
+msgstr "publicado"
+
+#: apps/faq/constants.py:12
+msgid "removed"
+msgstr "eliminado"
+
+#: apps/faq/models.py:16
+msgid "date created"
+msgstr "fecha de creación"
+
+#: apps/faq/models.py:17
+msgid "date modified"
+msgstr "fecha de modificación"
+
+#: apps/faq/models.py:19
+msgid "status"
+msgstr "estado"
+
+#: apps/faq/models.py:23
+#, python-format
+msgid "Only %(class)s with \"published\" status will be displayed publicly."
+msgstr "Sólo se mostrarán los %(class)s con estado \"publicado\"."
+
+#: apps/faq/models.py:45
+msgid "title"
+msgstr "título"
+
+#: apps/faq/models.py:46 apps/faq/models.py:75
+msgid "slug"
+msgstr "slug"
+
+#: apps/faq/models.py:46
+msgid "Used in the URL for the topic. Must be unique."
+msgstr "Usado en la URL para el tema. Debe ser único."
+
+#: apps/faq/models.py:47
+msgid "description"
+msgstr "descripción"
+
+#: apps/faq/models.py:47
+msgid "A short description of this topic."
+msgstr "Una descripción corta de este tema."
+
+#: apps/faq/models.py:48
+msgid "sites"
+msgstr "sitios"
+
+#: apps/faq/models.py:50
+msgid "template name"
+msgstr "nombre del template"
+
+#: apps/faq/models.py:54
+msgid ""
+"Optional template to use for this topic's detail page, e.g., \"faq/topics/"
+"special.html\". If not             given the standard template will be used."
+msgstr ""
+"Plantilla opcional para usar en la página de detalle de este tema, por "
+"ejemplo, \"faq/topics/special.html\". Si no se proporciona, se usará la "
+"plantilla estándar."
+
+#: apps/faq/models.py:61 apps/faq/models.py:77
+msgid "topic"
+msgstr "tema"
+
+#: apps/faq/models.py:62
+msgid "topics"
+msgstr "temas"
+
+#: apps/faq/models.py:74 apps/faq/models.py:90
+msgid "question"
+msgstr "pregunta"
+
+#: apps/faq/models.py:75
+msgid "Used in the URL for the Question. Must be unique."
+msgstr "Usado en la URL para la pregunta. Debe ser único."
+
+#: apps/faq/models.py:76
+msgid "answer"
+msgstr "respuesta"
+
+#: apps/faq/models.py:79
+msgid "ordering"
+msgstr "orden"
+
+#: apps/faq/models.py:83
+msgid ""
+"An integer used to order the question amongst others related to the same "
+"topic. If not given this             question will be last in the list."
+msgstr ""
+"Un número entero usado para ordenar la pregunta entre otras relacionadas con "
+"el mismo tema. Si no se proporciona, esta pregunta se mostrará al final de "
+"la lista."
+
+#: apps/faq/models.py:91
+msgid "questions"
+msgstr "preguntas"

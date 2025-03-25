@@ -50,7 +50,7 @@
   <div class="row">
     {% if editions.paginator.num_pages != 1 %}
       <div class="pagination">
-        {% if editions.has_other_pages %}{% include "pagination.html" with pager=editions %}{% endif %}
+        {% if editions.has_other_pages %}{% include "pagination.html" with page_obj=editions %}{% endif %}
       </div>
     {% endif %}
   </div>

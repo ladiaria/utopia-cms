@@ -111,7 +111,7 @@
           }
         };
         if (coral_options.accessToken) {
-          coral_options.bodyClassName = 'logged-in';
+          coral_options.containerClassName = 'logged-in';
         }
         Coral.createStreamEmbed(coral_options);
         $('.talk-login').addClass('active');

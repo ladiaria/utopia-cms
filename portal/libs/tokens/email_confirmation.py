@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from builtins import str
 import traceback
 
@@ -13,14 +12,14 @@ from django.contrib.sites.models import Site
 from django.contrib.auth.tokens import default_token_generator
 from django.template import loader
 
-from libs.utils import smtp_connect
+from libs.utils import smtp_connect, prefix_notification_subject
 from utils.error_log import error_log
 
 
 def send_confirmation_link(*args, **kwargs):
     result = False
     request = args[0]
-    subject = kwargs['subject']
+    subject = prefix_notification_subject(kwargs['subject'])
     message_template = kwargs['message_template']
     user = kwargs['user']
     if 'edition' in kwargs:
@@ -28,10 +27,11 @@ def send_confirmation_link(*args, **kwargs):
     else:
         generator_params = {'user': kwargs['user']}
     url_generator = kwargs['url_generator']
+    from_mail = (
+        settings.NOTIFICATIONS_FROM_NAME, getattr(settings, "NOTIFICATIONS_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL)
+    )
+    context = {'user': user, 'validation_url': url_generator(**generator_params)}
     extra_context = kwargs['extra_context']
-    from_mail = getattr(settings, 'DEFAULT_FROM_EMAIL')
-    subject = '%s %s' % (getattr(settings, 'EMAIL_SUBJECT_PREFIX', ''), subject)
-    context = {'validation_url': url_generator(**generator_params)}
     if extra_context:
         context.update(extra_context)
     message = Message(

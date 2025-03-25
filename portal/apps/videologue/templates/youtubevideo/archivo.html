@@ -15,7 +15,7 @@
     {% for video in videos %}
 
     <div class="videologue col-xs-12 col-sm-6">
-	    <div class="video-container"> <iframe src="{{ video.url }}" frameborder="0" width="560" height="315"></iframe> </div>
+	    <div class="video-container"> <iframe src="{{ video.embed_url }}" frameborder="0" width="560" height="315"></iframe> </div>
 	    <h2>
 	        {{ video.title }}
 	    </h2>

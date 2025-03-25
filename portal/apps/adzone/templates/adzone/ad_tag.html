@@ -1,6 +1,8 @@
 {# "ad" is an instance of AdBase is passed to this tag. #}
 
-<span class="ld-caption article__bottom-ad-title" aria-label="Espacio publicitario">Espacio publicitario</span>
+{% block header %}
+  <span class="ld-caption article__bottom-ad-title" aria-label="Espacio publicitario">Espacio publicitario</span>
+{% endblock %}
 
 {% if ad.textad %}
   <div class="ad_text pub">
@@ -9,23 +11,25 @@
 {% endif %}
 
 {% if ad.bannerad %}
-  <div class="ad_banner pub {% if not ad.bannerad.mobile_content_basename %}desktop-only{% endif %}">
-    <a target="_blank" href="{{ ad.get_absolute_url }}" rel="sponsored">
-      {% if is_amp_detect %}
-        <amp-img layout="responsive" class="responsive-img" width="300" height="250" src="{% if ad.bannerad.mobile_content_basename %}{{ ad.bannerad.mobile_content.url }}{% else %}{{ ad.bannerad.content.url }}{% endif %}" alt="{{ ad.title }}" />
-      {% else %}
-        {% if ad.bannerad.mobile_content_basename %}
+  {% block bannerad %}
+    <div class="ad_banner pub {% if not ad.bannerad.mobile_content_basename %}desktop-only{% endif %}">
+      <a target="_blank" href="{{ ad.get_absolute_url }}" rel="sponsored">
+        {% if is_amp_detect %}
+          <amp-img layout="responsive" class="responsive-img" width="300" height="250" src="{% if ad.bannerad.mobile_content_basename %}{{ ad.bannerad.mobile_content.url }}{% else %}{{ ad.bannerad.content.url }}{% endif %}" alt="{{ ad.title }}" />
+        {% else %}
+          {% if ad.bannerad.mobile_content_basename %}
+            <picture>
+              <img class="responsive-img ad-mobile" loading="lazy" src="{{ ad.bannerad.mobile_content.url }}"
+                  width="{{ ad.bannerad.mobile_content.width }}" height="{{ ad.bannerad.mobile_content.height }}"
+                  alt="{{ ad.title }}">
+            </picture>
+          {% endif %}
           <picture>
-            <img class="responsive-img ad-mobile" loading="lazy" src="{{ ad.bannerad.mobile_content.url }}"
-                 width="{{ ad.bannerad.mobile_content.width }}" height="{{ ad.bannerad.mobile_content.height }}"
-                 alt="{{ ad.title }}">
+            <img class="responsive-img ad-desktop" loading="lazy" src="{{ ad.bannerad.content.url }}"
+                width="{{ ad.bannerad.content.width }}" height="{{ ad.bannerad.content.height }}" alt="{{ ad.title }}">
           </picture>
         {% endif %}
-        <picture>
-          <img class="responsive-img ad-desktop" loading="lazy" src="{{ ad.bannerad.content.url }}"
-               width="{{ ad.bannerad.content.width }}" height="{{ ad.bannerad.content.height }}" alt="{{ ad.title }}">
-        </picture>
-      {% endif %}
-    </a>
-  </div>
+      </a>
+    </div>
+  {% endblock %}
 {% endif %}

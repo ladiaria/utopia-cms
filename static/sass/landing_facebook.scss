@@ -2,6 +2,14 @@ body {
   background: #edf6f5;
 }
 
+body header #main-header .nav-wrapper {
+  justify-content: center;
+
+  .header-logo img {
+    margin-left: 0;
+  }
+}
+
 body main {
   padding-inline: 24px;
   min-height: 75dvh;

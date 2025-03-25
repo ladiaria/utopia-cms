@@ -4,17 +4,20 @@
 
 - Python:
 
-  The Python version we recomend to use is any version from 3.10.6 to 3.12.3
+  The Python version supported is any version starting from 3.10.6 to 3.12.8 (the highest version suported by the Django version we have as dependency, Django 4.2.19). But of course this will depend on the extra modules you plan to integrate in your project, since it's a Django project, you can install any Django app you want.
 
-  If your system has a native Python installation in version 3.10.6 - 3.12.3 you can use it, and no installing another Python version may be required.
-
-  If not, we recommend install the version 3.12.3 using pyenv: https://github.com/pyenv/pyenv
+  If your system has a native Python installation in version 3.10.6 - 3.12.8 you can use it, without installing another Python version. If not, or even if you want to keep this project isolated from the rest of your system, you may consider installing version 3.12.8 (or any other supported version) using [pyenv](https://github.com/pyenv/pyenv)
 
 - System packages:
 
-  The following list (ames can vary by OS/distribution) contains Linux/MacOS packages needed for a full functional environment, not all are 100% required because they can be replaced or dicarded depending each environment and local infrastructure:
+  The following list (ames can vary by OS/distribution) contains Linux/MacOS packages needed for a full functional environment, not all are 100% required because they can be replaced or discarded depending each environment and local infrastructure:
 
-  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel rubygem-sass npm gcc libmaxminddb-devel rabbitmq
+  ```
+  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel rubygem-sass npm gcc libmaxminddb-devel
+  rabbitmq memcached
+  ```
+
+  - Ubuntu/Debian notes: `rubygem-sass` is named `ruby-sass`
 
 - npm (Node.js packages):
 
@@ -105,6 +108,7 @@ Then create your nginx conf file using the sample provided (edit it after copy, 
 ```
 (utopiacms) user@host:~/utopia-cms/portal $ sudo cp ../docs/nginx_example_conf/utopia-cms-dev.conf /etc/nginx/conf.d
 (utopiacms) user@host:~/utopia-cms/portal $ sudo systemctl restart nginx
+(utopiacms) user@host:~/utopia-cms/portal $ sudo systemctl start memcached
 (utopiacms) user@host:~/utopia-cms/portal $ ./runserver yoogle.com:8000
 ```
 

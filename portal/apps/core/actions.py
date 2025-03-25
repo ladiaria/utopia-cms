@@ -1,6 +1,7 @@
 from time import time
 import operator
 from copy import copy
+from pydoc import locate
 
 from django.conf import settings
 from django.template.defaultfilters import slugify
@@ -56,8 +57,9 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                 else []
             )
 
+    debug = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DEBUG', False)
     if categories_to_fill:
-        if settings.DEBUG:
+        if debug:
             result.append('DEBUG: update_category_home begin')
 
         lowest_date, max_date = Edition.objects.last().date_published, now().date()
@@ -136,7 +138,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
         if not free_places:
             continue
 
-        # make list with the new articles based on the free places
+        # make list with the new articles based on the free places (TODO: why "new" articles? what does "new" mean?)
         free_places2, category_content = copy(free_places), []
         for article, date_published_tuple in articles:
 
@@ -150,7 +152,12 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                 break
 
         # sort new articles
-        category_content.sort(key=operator.itemgetter(1), reverse=True)
+        custom_sort_path = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_SORT_FUNCTION', {}).get(category_slug, None)
+        custom_sort_function = locate(custom_sort_path) if custom_sort_path else None
+        if custom_sort_function:
+            category_content = custom_sort_function(category_content)
+        else:
+            category_content.sort(key=operator.itemgetter(1), reverse=True)
 
         # update the content
         for i, ipos in enumerate(free_places2):
@@ -159,18 +166,18 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                 old_pos, date_pub, art = category_content[i]
 
                 if ipos:
-                    if settings.DEBUG or dry_run:
+                    if debug or dry_run:
                         result.append('DEBUG: update %s home position %d: %s' % (home.category, ipos, art))
                     if not dry_run:
                         home.set_article(art, ipos)
                 else:
-                    if settings.DEBUG or dry_run:
+                    if debug or dry_run:
                         result.append('DEBUG: update %s home cover: %s' % (home.category, art))
                     if not dry_run:
                         home.set_article(art, 1)
             except IndexError:
                 pass
 
-    if settings.DEBUG:
+    if debug:
         result.append('DEBUG: update_category_home completed in %.0f seconds' % (time() - start_time))
     return "\n".join(result)

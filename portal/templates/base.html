@@ -226,6 +226,7 @@
     {% endif %}
 
     <!-- JavaScript -->
+    {% block critical_header_scripts %}{% endblock %}
     <script src="{% static 'js/index_functions.js' %}"></script>
     {% if PWA_ENABLED %}<script src="{% static 'js/index_pwa_function.js' %}"></script>{% endif %}
     <script src="{% static 'js/index_sw_call.js' %}"></script>
@@ -434,8 +435,8 @@
         <script defer src="{% static 'js/read_later_events.js' %}"></script>
       {% endif %}
 
-      {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
-      <script defer src="{% static 'js/ld.js' %}"></script>
+      <script defer src="{% static 'js/ld.js' %}"></script>{# used to handle many events: menus, talk comments, etc. #}
+      {# TODO: check usage of all the following scripts loaded (from resizeSubnav.js to picturefill.js) #}
       <script defer src="{% static 'js/resizeSubnav.js' %}"></script>
 
       {# Modernizr - Detect CSS Grid #}

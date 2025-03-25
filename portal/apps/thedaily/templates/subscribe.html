@@ -65,53 +65,59 @@
 
     {% else %}
 
-      <div class="ld-content">
+      {% if subscribe_formblock_template %}
+        {% include subscribe_formblock_template %}
+      {% else %}
 
-        <div class="row">
-          <div class="subscribe-header center-align">
-            {% if planslug %}
-              <h1 class="ld-title-big">Suscripción a {{ product }}</h1>
-              <div class="price">{{ subscription_price }}</div>
-              {% comment "TODO 2nd release: explanation and description new fields" %}
-                <small class="exp"></small>
-                <span class="ld-text-secondary"></span>
-              {% endcomment %}
-            {% endif %}
-          </div>
-          <div class="col s12 m8 offset-m2{% if user.is_authenticated %} u-mt-50{% endif %}">
-            <div class="row">
-              {% if not user.is_authenticated and oauth2_button %}
-                <h2 class="center-align u-mt-50">Creá tu cuenta</h2>
+        <div class="ld-content">
+
+          <div class="row">
+            <div class="subscribe-header center-align">
+              {% if planslug %}
+                <h1 class="ld-title-big">Suscripción a {{ product }}</h1>
+                <div class="price">{{ subscription_price }}</div>
+                {% comment "TODO 2nd release: explanation and description new fields" %}
+                  <small class="exp"></small>
+                  <span class="ld-text-secondary"></span>
+                {% endcomment %}
               {% endif %}
-              <div class="col s12">
-                <form id="subscribe" method="post" class="form-{{ planslug }}">
+            </div>
+            <div class="col s12 m8 offset-m2{% if user.is_authenticated %} u-mt-50{% endif %}">
+              <div class="row">
+                {% if not user.is_authenticated and oauth2_button %}
+                  <h2 class="center-align u-mt-50">Creá tu cuenta</h2>
+                {% endif %}
+                <div class="col s12">
+                  <form id="subscribe" method="post" class="form-{{ planslug }}">
 
-                  {% if oauth2_button and not user.is_authenticated %}
-                    <div class="row">
-                      <div class="col s12 align-center ld-block--sm">
-                        <a href="?auth=google-oauth2" class="ld-btn-google">con Google</a>
+                    {% if oauth2_button and not user.is_authenticated %}
+                      <div class="row">
+                        <div class="col s12 align-center ld-block--sm">
+                          <a href="?auth=google-oauth2" class="ld-btn-google">con Google</a>
+                        </div>
                       </div>
-                    </div>
-                    <div class="row">
-                      <div class="col s12 align-center ld-text-secondary">
-                        O con tu email
+                      <div class="row">
+                        <div class="col s12 align-center ld-text-secondary">
+                          O con tu email
+                        </div>
                       </div>
-                    </div>
-                  {% endif %}
+                    {% endif %}
 
-                  {% crispy subscriber_form %}
+                    {% crispy subscriber_form %}
 
-                  {% if subscription_form %}
-                    {% crispy subscription_form %}{{ subscription_form.media }}
-                  {% endif %}
+                    {% if subscription_form %}
+                      {% crispy subscription_form %}{{ subscription_form.media }}
+                    {% endif %}
 
-                </form>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
+
         </div>
 
-      </div>
+      {% endif %}
 
     {% endif %}
 

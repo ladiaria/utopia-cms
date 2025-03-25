@@ -23,7 +23,7 @@ from django.forms import (
 from django.urls import reverse
 from django.utils.timezone import now
 from django.utils.safestring import mark_safe
-
+from django.utils.translation import gettext_lazy as _
 from django_recaptcha.fields import ReCaptchaField
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, BaseInput, Field, Fieldset, HTML
@@ -32,13 +32,14 @@ from crispy_forms.utils import get_template_pack
 from phonenumber_field.formfields import PhoneNumberField
 from phonenumber_field.widgets import RegionalPhoneNumberWidget
 
-from .models import Subscription, Subscriber, email_extra_validations
-from .utils import get_all_newsletters, get_app_template
+from .models import Subscription, Subscriber, email_extra_validations, email_i18n, ALPHANUM_STR
+from .utils import get_all_newsletters
 from .exceptions import EmailValidationError
+from . import get_app_template
 
 
 CSS_CLASS = 'form-input1'
-RE_ALPHANUM = re.compile('^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$')
+RE_ALPHANUM = re.compile(ALPHANUM_STR)
 SUBSCRIPTION_PHONE_TIME_CHOICES = (
     ('1', 'Cualquier hora (9:00 a 20:00)'),
     ('2', 'En la mañana (9:00 a 12:00)'),
@@ -59,6 +60,7 @@ if PASSWORD_VALIDATORS:
         if min_len_found:
             break
 PASSWORD_MIN_LENGTH = PASSWORD_MIN_LENGTH or 8
+custom_forms_module = getattr(settings, "THEDAILY_FORMS_MODULE", None)
 
 
 def get_default_province():
@@ -66,9 +68,13 @@ def get_default_province():
 
 
 def custom_layout(form_id, *args, **kwargs):
-    custom_layout_module = getattr(settings, "THEDAILY_CRISPY_CUSTOM_LAYOUTS_MODULE", None)
-    if custom_layout_module:
-        layout_function = locate(f"{custom_layout_module}.{form_id}")
+    """
+    Maybe this feature can be better migrated to a third party module which override the forms or directly redefine
+    them. And make a function to be called from the views to get the customized forms, if any, and default to the ones
+    defined here.
+    """
+    if custom_forms_module:
+        layout_function = locate(f"{custom_forms_module}.{form_id}")
         if callable(layout_function):
             try:
                 return layout_function(*args, **kwargs)
@@ -77,8 +83,8 @@ def custom_layout(form_id, *args, **kwargs):
                     print(f"Error calling the custom layout function for '{form_id}' form: {exc}")
 
 
-def terms_and_conditions_field():
-    return BooleanField(label=mark_safe('Leí y acepto los <a>términos y condiciones</a>'), required=False)
+def terms_and_conditions_field(label="Leí y acepto los <a>términos y condiciones</a>", required=False):
+    return BooleanField(label=mark_safe(label), required=required)
 
 
 def terms_and_conds_accepted_field(**extra_kwargs):
@@ -88,7 +94,7 @@ def terms_and_conds_accepted_field(**extra_kwargs):
 def terms_and_conditions_layout_tuple(**extra_kwargs):
     return (
         terms_and_conds_accepted_field(**extra_kwargs),
-    ) if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID else ()
+    ) if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID or extra_kwargs.get('required', False) else ()
 
 
 terms_and_conditions_prelogin = (
@@ -151,23 +157,23 @@ class CrispyModelFormHelper(CrispyFormHelper):
     field_class = 'col-sm-8'
 
 
-class CrispyForm(Form):
+custom_helper_class = getattr(settings, "THEDAILY_FORMS_HELPER_CLASS", None)
 
+
+class CrispyForm(Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = CrispyFormHelper()
+        self.helper = (locate(custom_helper_class) if custom_helper_class else CrispyFormHelper)()
 
 
 class CrispyModelForm(ModelForm):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        custom_helper_class = getattr(settings, "THEDAILY_CRISPY_CUSTOM_MODEL_FORM_HELPER_CLASS", None)
         self.helper = (locate(custom_helper_class) if custom_helper_class else CrispyModelFormHelper)()
 
 
 class PreLoginForm(CrispyForm):
-    email = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
+    email = CharField(label=_('Email'), widget=TextInput(attrs={'class': CSS_CLASS}))
     if terms_and_conditions_prelogin:
         terms_and_conds_accepted = terms_and_conditions_field()
 
@@ -216,7 +222,7 @@ class LoginForm(CrispyForm):
         super().__init__(*args, **kwargs)
         self.helper.form_id = 'account_login'
         self.helper.layout = (
-            custom_layout(self.helper.form_id)
+            custom_layout(self.helper.form_id, self)
             or Layout(
                 Field(
                     'name_or_mail',
@@ -321,13 +327,20 @@ class UserForm(BaseUserForm):
 def first_name_field():
     return CharField(
         label='Nombre',
-        widget=TextInput(attrs={'autocomplete': 'name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
+        widget=TextInput(attrs={'autocomplete': 'given-name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
+    )
+
+
+def last_name_field():
+    return CharField(
+        label='Apellido',
+        widget=TextInput(attrs={'autocomplete': 'family-name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
     )
 
 
 def email_field():
     return EmailField(
-        label='Email',
+        label=_('Email'),
         widget=EmailInput(
             attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
         ),
@@ -349,6 +362,7 @@ class SignupForm(BaseUserForm):
     Formulario con campos para crear una instancia del modelo User
     """
     first_name = first_name_field()
+    last_name = last_name_field()
     email = email_field()
     phone = phone_field()
     if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
@@ -359,26 +373,24 @@ class SignupForm(BaseUserForm):
         super().__init__(*args, **kwargs)
         self.helper.form_id = 'signup_form'
         self.helper.form_tag = True
-        self.helper.layout = (
-            custom_layout(self.helper.form_id)
-            or Layout(
-                *(
-                    'first_name',
-                    'email',
-                    'phone',
-                    Field(
-                        'password',
-                        minlength=str(PASSWORD_MIN_LENGTH),
-                        template='materialize_css_forms/layout/password.html',
-                    ),
-                )
-                + terms_and_conditions_layout_tuple()
-                + (
-                    'next_page',
-                    HTML('<div class="align-center">'),
-                    Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
-                    HTML('</div>'),
-                )
+        self.helper.layout = Layout(
+            *(
+                'first_name',
+                'last_name',
+                'email',
+                Field(
+                    'password',
+                    minlength=str(PASSWORD_MIN_LENGTH),
+                    template='materialize_css_forms/layout/password.html',
+                ),
+                'phone',
+            )
+            + terms_and_conditions_layout_tuple()
+            + (
+                'next_page',
+                HTML('<div class="align-center">'),
+                Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
+                HTML('</div>'),
             )
         )
         # uncomment next lines to test error rendering without interaction
@@ -386,6 +398,7 @@ class SignupForm(BaseUserForm):
         # self.add_error(None, ValidationError(mark_safe("this is a global error <em>test</em> one")))
         # self.add_error(None, ValidationError(mark_safe("this is a global error <em>test</em> two")))
         # self.add_error("first_name", ValidationError(mark_safe("this is a <em>test</em> error for field")))
+        # self.add_error("last_name", ValidationError(mark_safe("this is a <em>test</em> error for field")))
         # self.add_error("email", ValidationError(mark_safe("this is a <em>test</em> error for field")))
         # self.add_error("password", ValidationError(mark_safe("this is a <em>test</em> error for field")))
         # self.add_error("terms_and_conds_accepted", ValidationError(mark_safe("im a <em>test</em> error for field")))
@@ -401,26 +414,22 @@ class SignupForm(BaseUserForm):
     def create_user(self):
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
-        # TODO: next commented lines are proposed but it should come with an explanation because:
-        #       an exception can be handled somewhere in the save(L323) and the result now is a user object without
-        #       first_name, if the same thing happens with this new lines, we have to explain why a resultant user with
-        #       first_name is better or needed instead of the one without this field.
-        # first_name = self.cleaned_data.get('first_name')
-        # user = User.objects.create_user(email, email, password, first_name=first_name)
         user = User.objects.create_user(email, email, password)
+        if not getattr(user, 'subscriber', None):
+            user.subscriber, created = Subscriber.objects.get_or_create_deferred(user=user)
         if not user.subscriber.phone:
             user.subscriber.phone = self.cleaned_data.get('phone', '')
         if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
             user.subscriber.terms_and_conds_accepted = self.cleaned_data.get('terms_and_conds_accepted')
         user.subscriber.save()
         user.first_name = self.cleaned_data.get('first_name')
-        user.last_name = self.cleaned_data.get('last_name', '')
+        user.last_name = self.cleaned_data.get('last_name')
         user.is_active = False
         user.save()
         return user
 
     class Meta(BaseUserForm.Meta):
-        fields = ('first_name', 'email', 'password')
+        fields = ('first_name', 'last_name', 'email', 'password')
         widgets = {
             'password': PasswordInput(
                 attrs={
@@ -440,7 +449,13 @@ class SignupCaptchaForm(SignupForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
-            *('first_name', 'email', 'phone', Field('password', template='materialize_css_forms/layout/password.html'))
+            *(
+                'first_name',
+                'last_name',
+                'email',
+                Field('password', template='materialize_css_forms/layout/password.html'),
+                'phone',
+            )
             + terms_and_conditions_layout_tuple()
             + (
                 HTML('<strong>Comprobá que no sos un robot</strong>'),
@@ -465,21 +480,19 @@ class PreLoginCaptchaForm(PreLoginForm):
 
 
 class ProfileForm(CrispyModelForm):
+    phone = phone_field()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.form_id = "profile_form"
-        self.helper.layout = (
-            custom_layout(self.helper.form_id)
-            or Layout(
-                Fieldset('Datos de suscriptor', 'document', 'phone'),
-                Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
-            )
+        self.helper.layout = Layout(
+            Fieldset('Datos de suscriptor', 'document_type', 'document', 'phone'),
+            Fieldset('Ubicación', 'country', 'province', 'city', 'address'),
         )
 
     class Meta:
         model = Subscriber
-        fields = ('address', 'country', 'city', 'province', 'document', 'phone')
+        fields = ('address', 'country', 'city', 'province', "document_type", 'document', 'phone')
 
 
 class ProfileExtraDataForm(CrispyModelForm):
@@ -508,10 +521,12 @@ class ProfileExtraDataForm(CrispyModelForm):
         fields = ('allow_news', 'allow_promotions', 'allow_polls', "newsletters")
 
 
-# TODO: from this line on, s/first_name/name
+# NOTE: first and last name fields are used in the subscriber form, but allways to fill its related User object because
+#       the subscriber object has no name fields (it uses the User's instead).
 
 class SubscriberForm(CrispyModelForm):
     first_name = first_name_field()
+    last_name = last_name_field()
     email = email_field()
     phone = phone_field()
     next_page = CharField(required=False, widget=HiddenInput())
@@ -519,24 +534,35 @@ class SubscriberForm(CrispyModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
-            Fieldset('Datos personales', Field('first_name'), Field('email', readonly=True), Field('phone')),
+            Fieldset(
+                'Datos personales',
+                Field('first_name'),
+                Field('last_name'),
+                Field('email', readonly=True),
+                Field('phone'),
+            )
         )
 
     class Meta:
         model = Subscriber
-        fields = ('first_name', 'email', 'phone')
+        fields = ('first_name', 'last_name', 'email', 'phone')
 
-    def clean_first_name(self):
-        first_name = self.cleaned_data.get('first_name')
-        if not RE_ALPHANUM.match(first_name):
+    def clean_namefield(self, field_name):
+        field_value = self.cleaned_data.get(field_name)
+        if not RE_ALPHANUM.match(field_value):
             self.add_error(
-                "first_name",
+                field_name,
                 ValidationError(
-                    'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
+                    'El nombre/apellido sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
                 ),
             )
-        else:
-            return first_name
+        return field_value
+
+    def clean_first_name(self):
+        return self.clean_namefield('first_name')
+
+    def clean_last_name(self):
+        return self.clean_namefield('last_name')
 
     def clean_phone(self):
         return clean_phone_field(self)
@@ -551,15 +577,17 @@ class SubscriberForm(CrispyModelForm):
             # continue validation to check for repeated email and subsc. type, for "tel" subscriptions in same day:
             try:
                 s = Subscription.objects.get(
-                    email__iexact=self.cleaned_data.get('email'), date_created__date=now().date()
+                    billing_email__iexact=self.cleaned_data.get('email'), date_created__date=now().date()
                 )
                 if subscription_type in s.subscription_type_prices.values_list('subscription_type', flat=True):
-                    self.add_error('email', ValidationError("Su email ya posee una suscripción en proceso."))
+                    self.add_error('email', ValidationError(f"Su {email_i18n} ya posee una suscripción en proceso."))
                     result = False
             except Subscription.MultipleObjectsReturned:
                 # TODO: this can be relaxed using the same "if" above and only invalidate when all objects found
                 #       evaluates the "if" to True, and also the view should be changed to be aware of this.
-                self.add_error('email', ValidationError("Su email ya posee más de una suscripción en proceso."))
+                self.add_error(
+                    'email', ValidationError(f"Su {email_i18n} ya posee más de una suscripción en proceso.")
+                )
                 result = False
             except Subscription.DoesNotExist:
                 pass
@@ -582,6 +610,7 @@ class SubscriberAddressForm(SubscriberForm):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             Field('first_name'),
+            Field('last_name'),
             Field('email', readonly=True),
             Field('phone'),
             HTML(
@@ -596,7 +625,7 @@ class SubscriberAddressForm(SubscriberForm):
 
     class Meta:
         model = Subscriber
-        fields = ('first_name', 'email', 'phone', 'address', 'city', 'province')
+        fields = ('first_name', 'last_name', 'email', 'phone', 'address', 'city', 'province')
 
 
 class SubscriberSubmitForm(SubscriberForm):
@@ -606,7 +635,7 @@ class SubscriberSubmitForm(SubscriberForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
-            Fieldset('Datos personales', 'first_name', 'email', 'phone'),
+            Fieldset('Datos personales', 'first_name', 'last_name', 'email', 'phone'),
             FormActions(Submit('save', 'Enviar suscripción')),
         )
 
@@ -632,12 +661,13 @@ class SubscriberSignupForm(SubscriberForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
+        self.helper.layout = custom_layout("subscriber_signup_form") or Layout(
             'first_name',
+            'last_name',
             'email',
+            Field('password', template='materialize_css_forms/layout/password.html'),
             'phone',
             'next_page',
-            Field('password', template='materialize_css_forms/layout/password.html'),
         )
 
     def is_valid(self, subscription_type, payment_type=None):
@@ -648,9 +678,10 @@ class SubscriberSignupForm(SubscriberForm):
             signup_form = SignupForm(
                 {
                     'first_name': self.cleaned_data.get('first_name'),
+                    'last_name': self.cleaned_data.get('last_name'),
                     'email': self.cleaned_data.get('email'),
-                    'phone': self.cleaned_data.get('phone'),
                     'password': self.cleaned_data.get('password'),
+                    'phone': self.cleaned_data.get('phone'),
                     "terms_and_conds_accepted": self.cleaned_data.get("terms_and_conds_accepted"),
                     'next_page': self.cleaned_data.get('next_page'),
                 }
@@ -692,10 +723,11 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             'first_name',
+            'last_name',
             'email',
+            Field('password', template='materialize_css_forms/layout/password.html'),
             'phone',
             'next_page',
-            Field('password', template='materialize_css_forms/layout/password.html'),
             HTML(
                 '<div class="validate col s12">'
                 '  <h3 class="medium" style="color:black;">Información de entrega</h3>'
@@ -714,9 +746,10 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
             signup_form = SignupForm(
                 {
                     'first_name': self.cleaned_data.get('first_name'),
+                    'last_name': self.cleaned_data.get('last_name'),
                     'email': self.cleaned_data.get('email'),
-                    'phone': self.cleaned_data.get('phone'),
                     'password': self.cleaned_data.get('password'),
+                    'phone': self.cleaned_data.get('phone'),
                     "terms_and_conds_accepted": self.cleaned_data.get("terms_and_conds_accepted"),
                     'next_page': self.cleaned_data.get('next_page'),
                 }
@@ -745,7 +778,7 @@ class PhoneSubscriptionForm(CrispyForm):
         widget=TextInput(
             attrs={
                 "class": "textinput textInput",
-                'autocomplete': 'name',
+                'autocomplete': 'given-name',
                 'autocapitalize': 'sentences',
                 'spellcheck': 'false',
             }
@@ -770,14 +803,13 @@ class PhoneSubscriptionForm(CrispyForm):
         )
 
 
-class WebSubscriptionForm(ModelForm):
+class WebSubscriptionForm(CrispyModelForm):
     subscription_type_prices = ChoiceField(choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, widget=HiddenInput())
     if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
         terms_and_conds_accepted = terms_and_conditions_field()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = CrispyFormHelper()
         self.helper.layout = Layout(
             *terms_and_conditions_layout_tuple()
             + (
@@ -819,7 +851,6 @@ class SubscriptionForm(WebSubscriptionForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = CrispyFormHelper()
         self.helper.layout = Layout(
             *(
                 HTML('<div class="col s12" style="margin-top: 30px; margin-bottom: 50px;">'),
@@ -931,15 +962,19 @@ class GoogleSigninForm(CrispyModelForm):
     next_page = CharField(required=False, widget=HiddenInput())
 
     def __init__(self, *args, **kwargs):
+        google_signin_is_new = kwargs.get("is_new", False)
         submit_label = 'crear cuenta' if kwargs.pop("is_new", None) else "continuar"
         assume_tnc_accepted = kwargs.pop("assume_tnc_accepted", False)
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'google_signin'
-        self.helper.layout = Layout(
-            *('phone', "next_page")
-            + terms_and_conditions_layout_tuple(**({"type": "hidden"} if assume_tnc_accepted else {}))
-            + (FormActions(Submit('save', submit_label, css_class='ut-btn ut-btn-l')),)
+        self.helper.layout = (
+            custom_layout(self.helper.form_id, google_signin_is_new, assume_tnc_accepted)
+            or Layout(
+              *('phone', "next_page")
+              + terms_and_conditions_layout_tuple(**({"type": "hidden"} if assume_tnc_accepted else {}))
+              + (FormActions(Submit('save', submit_label, css_class='ut-btn ut-btn-l')),)
+            )
         )
 
     class Meta:
@@ -1017,7 +1052,7 @@ class PasswordResetRequestForm(CrispyForm):
         self.helper.form_id = 'reset_password'
         self.helper.form_action = reverse('account-password_reset')
         self.helper.layout = (
-            custom_layout(self.helper.form_id)
+            custom_layout(self.helper.form_id, self)
             or Layout(
                 Field(
                     'username_or_email',
@@ -1185,14 +1220,12 @@ class PasswordResetForm(PasswordChangeBaseForm):
     gonzo = CharField(widget=HiddenInput())
 
     def __init__(self, *args, **kwargs):
-        initial = {}
         if 'hash' not in kwargs:
             raise AttributeError('Missing hash')
-        self.hash = kwargs.get('hash')
-        initial['hash'] = self.hash
+        self.hash = kwargs.pop('hash')
+        initial = {'hash': self.hash}
         initial['gonzo'] = self.gen_gonzo()
         kwargs['initial'] = initial
-        del kwargs['hash']
 
         super().__init__(*args, **kwargs)
 
@@ -1201,8 +1234,8 @@ class PasswordResetForm(PasswordChangeBaseForm):
             or Layout(
                 Field('new_password_1', template='materialize_css_forms/layout/password.html'),
                 Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-                Field('gonzo', type='hidden', value=initial['gonzo']),
-                Field('hash', type='hidden', value=initial['gonzo']),
+                Field('gonzo', value=initial['gonzo']),
+                Field('hash', value=initial['gonzo']),
                 HTML('<div class="align-center">'),
                 FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
                 HTML('</div>'),

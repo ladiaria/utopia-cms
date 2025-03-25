@@ -19,6 +19,7 @@ from decorators import decorate_if_no_auth, decorate_if_auth
 from apps import bouncer_blocklisted
 from core.models import Edition, get_current_edition, Publication, Category, CategoryHome, Article
 from core.views.category import category_detail
+from core.utils import get_app_template
 from faq.models import Topic
 from cartelera.models import LiveEmbedEvent
 from thedaily.utils import unsubscribed_newsletters
@@ -30,24 +31,25 @@ decorate_auth = getattr(settings, 'HOMEV3_INDEX_AUTH_DECORATOR', decorate_if_aut
 
 def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set, articles):
     for a in articles:
-        compute_follow, a_id = True, a.id
-        if a.is_restricted(True):
-            context['restricteds'].append(a_id)
-            compute_follow = (
-                user_has_subscriber and user.subscriber.is_subscriber(a.main_section.edition.publication.slug)
-            )
-            if compute_follow:
-                context['restricteds_allowed'].append(a_id)
+        if a:
+            compute_follow, a_id = True, a.id
+            if a.is_restricted(True):
+                context['restricteds'].append(a_id)
+                compute_follow = (
+                    user_has_subscriber and user.subscriber.is_subscriber(a.main_section.edition.publication.slug)
+                )
+                if compute_follow:
+                    context['restricteds_allowed'].append(a_id)
 
-        if compute_follow:
-            context['compute_follows'].append(a_id)
-            if str(a_id) in follow_set:
-                context['follows'].append(a_id)
+            if compute_follow:
+                context['compute_follows'].append(a_id)
+                if str(a_id) in follow_set:
+                    context['follows'].append(a_id)
 
 
 @decorate_auth(decorator=never_cache)
 @decorate_if_no_auth(decorator=vary_on_cookie)
-@decorate_if_no_auth(decorator=cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=cache_maxage))
+@cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=cache_maxage)
 def index(request, year=None, month=None, day=None, domain_slug=None):
     """
     View to display the current edition page. Or the edition in the date and publication matching domain_slug.
@@ -117,7 +119,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         except Publication.DoesNotExist:
             continue
         featured_section_slug = pub_item[1] if pub_item_is_tuple and len(pub_item) > 1 else None
-        ftop_articles = get_current_edition(publication=pub).top_articles
+        ftop_articles = getattr(get_current_edition(publication=pub), 'top_articles', [])
         if ftop_articles:
             if is_authenticated:
                 ctx_update_article_extradata(context, user, user_has_subscriber, follow_set, ftop_articles)
@@ -226,8 +228,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         if is_authenticated:
             ctx_update_article_extradata(context, user, user_has_subscriber, follow_set, top_articles)
 
-        cover_article = top_articles[0]
-        top_articles.pop(0)
+        cover_article = top_articles.pop(0)
 
     else:
         cover_article = None
@@ -245,9 +246,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         context['site_description'] = publication.meta_description
 
     if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_CUSTOM_TEMPLATES', ()):
-        template_dir = getattr(settings, 'CORE_PUBLICATIONS_TEMPLATE_DIR', None)
-        if template_dir:
-            template = '%s/%s.html' % (template_dir, publication.slug)
+        template = get_app_template(f"publication/{publication.slug}.html")
     return render(request, template, context)
 
 

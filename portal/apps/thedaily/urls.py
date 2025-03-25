@@ -9,8 +9,7 @@ from django.views.decorators.cache import never_cache
 
 from .views import (
     SubscriptionPricesListView,
-    subscribe,
-    referrals,
+    SubscribeView,
     google_phone,
     user_profile,
     users_api,
@@ -50,8 +49,9 @@ from .views import (
     subscribe_notice_closed,
     nl_track_open_event,
     mailtrain_lists,
+    news_preview,
 )
-from .utils import get_app_template
+from . import get_app_template
 
 
 # override views
@@ -65,10 +65,16 @@ if views_custom_module:
 
 # override urls
 urls_custom_module = getattr(settings, 'THEDAILY_URLS_CUSTOM_MODULE', None)
+viewclass_custom = getattr(settings, 'THEDAILY_VIEWCLASSES_CUSTOM_MODULE', None)
 custom_patterns = (locate(".".join([urls_custom_module, 'urlpatterns'])) if urls_custom_module else []) or []
 # and also ensure an url with name "subscribe_landing" is available
-custom_patterns += [path('planes/', SubscriptionPricesListView.as_view(), name="subscribe_landing")]
+sp_listview = (
+    locate(f"{viewclass_custom}.SubscriptionPricesListView") if viewclass_custom else SubscriptionPricesListView
+).as_view()
+custom_patterns.append(path('planes/', sp_listview, name="subscribe_landing"))
 
+# SubscribeView class can also be overrided "alone"
+subscribe = (locate(f"{viewclass_custom}.SubscribeView") if viewclass_custom else SubscribeView).as_view()
 default_planslug = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
 
 urlpatterns = [
@@ -76,7 +82,6 @@ urlpatterns = [
     path('comentarios/', never_cache(TemplateView.as_view(template_name='thedaily/templates/comments.html'))),
 ] + custom_patterns + (
     [
-        # path("suscribite/", RedirectView.as_view(url=f"/usuarios/suscribite/{default_planslug}/")),
         path("suscribite/", RedirectView.as_view(url=reverse_lazy("subscribe-default"))),
         path(
             f"suscribite/{default_planslug}/",
@@ -85,18 +90,18 @@ urlpatterns = [
             kwargs={"planslug": default_planslug},
         ),
         re_path(
-            rf"suscribite/{default_planslug}/(?P<category_slug>\w+)/$",
+            rf"suscribite/{default_planslug}/(?P<category_slug>[\w-]+)/$",
             subscribe,
             name="subscribe-default",
             kwargs={"planslug": default_planslug},
         ),
     ] if default_planslug else [
         # ensure an url with name "subscribe-default" is available
-        path("suscribite/", RedirectView.as_view(url=reverse_lazy("subscribe-landing")), name="subscribe-default")
+        path("suscribite/", RedirectView.as_view(url=reverse_lazy("subscribe_landing")), name="subscribe-default")
     ]
 ) + [
-    re_path(r'^suscribite/(?P<planslug>\w+)/$', subscribe, name="subscribe"),
-    re_path(r'^suscribite/(?P<planslug>\w+)/(?P<category_slug>\w+)/$', subscribe, name="subscribe"),
+    re_path(r'^suscribite/(?P<planslug>[\w-]+)/$', subscribe, name="subscribe"),
+    re_path(r'^suscribite/(?P<planslug>[\w-]+)/(?P<category_slug>[\w-]+)/$', subscribe, name="subscribe"),
     path('api/', users_api),
     path('api/custom/', custom_api),
     path('api/email_check/', email_check_api),
@@ -116,7 +121,7 @@ urlpatterns = [
     # Profile
     path('perfil/editar/', edit_profile, name="edit-profile"),
     re_path(
-        r'^perfil/disable/(?P<property_id>[\w_]+)/(?P<hashed_id>\w+)/$',
+        r'^perfil/disable/(?P<property_id>\w+)/(?P<hashed_id>\w+)/$',
         disable_profile_property,
         name="disable-profile-property",
     ),
@@ -170,35 +175,37 @@ urlpatterns = [
         name="telsubscribe_success",
     ),
 
-    # TODO: "referidos" template should be de-customized
-    re_path(r'^referidos/(?P<hashed_id>\w+)/$', referrals, name="referrals"),
-
-    re_path(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
+    re_path(r'^nlunsubscribe/(?P<publication_slug>[\w-]+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
     path('nlsubscribe/', nl_subscribe, name="nl-subscribe"),  # can be useful if a "next" session variable was set
-    re_path(r'^nlsubscribe/(?P<nltype>[pcm])\.(?P<nlslug>\w+)/$', nl_auth_subscribe, name="nl-auth-subscribe"),
-    re_path(r'^nlsubscribe/c/(?P<slug>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
-    re_path(r'^nlsubscribe/c/(?P<slug>\w+)/(?P<hashed_id>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
-    re_path(r'^nlsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nl_subscribe, name="nl-subscribe"),
+    re_path(r'^nlsubscribe/(?P<nltype>[pcm])\.(?P<nlslug>[\w-]+)/$', nl_auth_subscribe, name="nl-auth-subscribe"),
+    re_path(r'^nlsubscribe/c/(?P<slug>[\w-]+)/$', nl_category_subscribe, name="nl-category-subscribe"),
     re_path(
-        r'^nlunsubscribe/c/(?P<category_slug>\w+)/(?P<hashed_id>\w+)/$',
+        r'^nlsubscribe/c/(?P<slug>[\w-]+)/(?P<hashed_id>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"
+    ),
+    re_path(r'^nlsubscribe/(?P<publication_slug>[\w-]+)/(?P<hashed_id>\w+)/$', nl_subscribe, name="nl-subscribe"),
+    re_path(
+        r'^nlunsubscribe/c/(?P<category_slug>[\w-]+)/(?P<hashed_id>\w+)/$',
         nl_category_unsubscribe,
         name="nl-category-unsubscribe",
     ),
     re_path(
-        r'^nl_track/(?P<s8r_or_registered>[sr])_(?P<hashed_id>\w+)_(?P<nl_campaign>\w+)_(?P<nl_date>\d{8}).gif$',
+        r'^nl_track/(?P<s8r_or_registered>[sr])_(?P<hashed_id>\w+)_(?P<nl_campaign>[\w-]+)_(?P<nl_date>\d{8}).gif$',
         nl_track_open_event,
         name="nl-track-open-event",
     ),
-    re_path(r'^communication-subscribe/(?P<com_type>\w+)/$', communication_subscribe, name="communication-subscribe"),
+    re_path(
+        r'^communication-subscribe/(?P<com_type>[\w-]+)/$', communication_subscribe, name="communication-subscribe"
+    ),
 
     path('amp-access/authorization', amp_access_authorization, name="amp-access-authorization"),
     path('amp-access/pingback', amp_access_pingback, name="amp-access-pingback"),
 
     path('suscribite-por-telefono/', phone_subscription, name="phone-subscription"),
 
-    re_path(r'^notification_preview/(?P<template>[\w]+)/$', notification_preview, name="notification_preview"),
+    path('news_preview/', news_preview, name="news-preview"),
+    re_path(r'^notification_preview/(?P<template>[\w-]+)/$', notification_preview, name="notification_preview"),
     re_path(
-        r'^notification_preview/(?P<template>[\w]+)/days/$',
+        r'^notification_preview/(?P<template>[\w-]+)/days/$',
         notification_preview,
         {'days': True},
         name="notification_preview",

@@ -6,6 +6,9 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.db import IntegrityError
 from django.db.models.deletion import Collector
+from django.urls import reverse
+from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -14,6 +17,7 @@ from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib.messages import constants as messages
 
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
+from core.models import Publication
 from .models import (
     Subscription,
     ExteriorSubscription,
@@ -29,6 +33,7 @@ from .models import (
 )
 from .utils import collector_analysis
 from .exceptions import UpdateCrmEx
+from . import get_app_template
 
 
 class UserAdmin(BaseUserAdmin):
@@ -50,75 +55,97 @@ class UserAdmin(BaseUserAdmin):
 
 
 class SubscriptionAdmin(ModelAdmin):
-    list_display = ('id', 'subscriber', 'first_name', 'telephone', 'email', 'get_subscription_type_prices')
-    search_fields = ('first_name', 'email', 'subscriber__email')
-    raw_id_fields = ('subscriber', )
-    exclude = ('subscription_type', )
+    list_display = (
+        'id',
+        'get_subscriber',
+        'billing_name',
+        'billing_phone',
+        'billing_email',
+        'get_subscription_type_prices',
+        "start_date",
+        "end_date",
+    )
+    search_fields = ('billing_name', 'billing_email', 'subscriber__email')
+    raw_id_fields = ('subscriber',)
+    exclude = ('subscription_type',)
+
+    def get_subscriber(self, obj):
+        return mark_safe(
+            "<a href='%s'>%s</a>" % (
+                reverse('admin:thedaily_subscriber_change', args=[obj.subscriber.id]), obj.subscriber.get_full_name()
+            )
+        )
+    get_subscriber.short_description = 'Suscriptor'
 
 
 class ExteriorSubscriptionAdmin(SubscriptionAdmin):
     list_display = (
         'id',
         'subscriber',
-        'first_name',
-        'document',
-        'email',
-        'telephone',
+        'billing_name',
+        'billing_id_doc',
+        'billing_email',
+        'billing_phone',
         'country',
         'city',
         'address',
-        'observations',
     )
     exclude = (
         'subscription_type',
-        'last_name',
         'province',
-        'subscription_plan',
-        'friend1_name',
-        'friend1_email',
-        'friend1_telephone',
-        'friend2_name',
-        'friend2_email',
-        'friend2_telephone',
-        'friend3_name',
-        'friend3_email',
-        'friend3_telephone',
-        'public_profile',
         'subscription_type_prices',
     )
 
 
 class SubscriberAdmin(ModelAdmin):
     list_display = (
-        'id', 'contact_id', 'user', 'user_is_active', 'user_email', 'name', 'pdf', 'get_newsletters'
+        ('id', 'contact_id', "repr", 'get_user_id', 'user_is_active', "staff", 'user_email')
+        + (("subscribed",) if not Publication.multi() else ())
+        + ('get_newsletters',)
     )
-    search_fields = ("id", "user__id", 'user__username', 'name', 'user__email', 'contact_id', 'document', 'phone')
-    raw_id_fields = ('user', )
-    readonly_fields = (
-        'pdf',
-        'lento_pdf',
-        'ruta',
-        'plan_id',
-        'ruta_lento',
-        'ruta_fs',
-        'get_latest_article_visited',
+    search_fields = (
+        "id",
+        "user__id",
+        'user__username',
+        'user__first_name',
+        'user__last_name',
+        'user__email',
+        'contact_id',
+        'document',
+        'phone'
     )
-    list_filter = ['newsletters', 'category_newsletters', 'pdf', 'allow_news', 'allow_promotions', 'allow_polls']
+    raw_id_fields = ('user',)
+    readonly_fields = ("extra_info", 'plan_id', 'get_latest_article_visited')
+    list_filter = ['newsletters', 'category_newsletters', 'allow_news', 'allow_promotions', 'allow_polls']
     actions = ['send_account_info', "delete_user"]  # TODO: new action: sync_plan_id_from_activos_csv
     fieldsets = (
         (None, {
             'fields': (
-                ('contact_id', 'user', 'name'),
-                ('address', 'country', 'city', 'province'),
+                ('contact_id', 'user'),
+                ('address', 'country'),
+                ('city', 'province'),
                 ('document', 'phone'),
                 ('newsletters', 'category_newsletters'),
                 ('allow_news', 'allow_promotions', 'allow_polls'),
-                ('pdf', 'ruta'),
-                ('plan_id', ),
-                ('get_latest_article_visited', ),
+                ('extra_info',),
+                ('plan_id',),
+                ('get_latest_article_visited',),
             ),
         }),
     )
+
+    def get_user_id(self, obj):
+        return mark_safe("<a href='%s'>%s</a>" % (reverse('admin:auth_user_change', args=[obj.user.id]), obj.user.id))
+    get_user_id.short_description = 'user id'
+
+    def staff(self, obj):
+        return obj.user.is_staff
+    staff.boolean = True
+
+    def subscribed(self, obj):
+        return obj.is_subscriber()
+    subscribed.short_description = _('subscribed')
+    subscribed.boolean = True
 
     def send_account_info(self, request, queryset):
         success_counter, errors = 0, []
@@ -127,9 +154,8 @@ class SubscriberAdmin(ModelAdmin):
                 was_sent = send_validation_email(
                     'Ingreso al sitio web',
                     s.user,
-                    'notifications/account_info.html',
+                    get_app_template('notifications/account_info.html'),
                     get_signup_validation_url,
-                    {'user_email': s.user.email},
                 )
                 if not was_sent:
                     raise Exception("El email de notificación para el usuario: %s no pudo ser enviado." % s.user)
@@ -190,7 +216,15 @@ class SubscriberAdmin(ModelAdmin):
 
 class SubscriptionPricesAdmin(ModelAdmin):
     list_display = (
-        '__str__', 'order', 'months', 'price', 'price_total', "discount", 'auth_group', 'publication'
+        'periodicity',
+        "subscription_type",
+        'order',
+        'months',
+        'price',
+        "currency_id",
+        'price_total',
+        "discount",
+        'publication',
     )
     list_editable = list_display[1:]
 

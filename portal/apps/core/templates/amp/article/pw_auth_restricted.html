@@ -15,7 +15,8 @@
         Actualizá tu suscripción para tener acceso ilimitado a todos los contenidos del sitio
       </div>
       <div class="ld-snackbar__block">
-        <a href="{{ upgrade_subscription_link|default:'/ayuda/' }}" class="ld-btn-default">Actualizá tu suscripción</a>
+        <a href="{% if upgrade_subscription_link %}{{ upgrade_subscription_link }}{% else %}{% url 'help' %}{% endif %}"
+           class="ld-btn-default">Actualizá tu suscripción</a>
       </div>
     </div>
     <div amp-access="NOT subscriber_any" amp-access-hide>

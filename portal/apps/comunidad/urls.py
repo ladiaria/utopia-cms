@@ -36,7 +36,7 @@ urlpatterns = [
     ),
     re_path(r'^formaparte', TemplateView.as_view(template_name='comunidad/formaparte.html'), name='formaparte'),
     re_path(r'beneficios', beneficios, name='beneficios'),
-    re_path(r'^registro/(?P<beneficio_id>\d+)/(?P<hashed_subscriber_id>[\w]+)/$', add_registro),
+    re_path(r'^registro/(?P<beneficio_id>\d+)/(?P<hashed_subscriber_id>\w+)/$', add_registro),
     path('verify-registro/<str:hashed_id>/', VerifyQRView.as_view(), name='verify_registro'),
     path('send-qr-by-email/<str:registro_id>/', SendQRByEmailView.as_view(), name='send_qr_by_email'),
     path('scan-qr/', ScanQRView.as_view(), name='scan_qr'),

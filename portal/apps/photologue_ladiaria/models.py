@@ -27,7 +27,7 @@ class Agency(models.Model):
 
 class Photographer(models.Model):
     name = models.CharField('nombre', max_length=50, unique=True)
-    email = models.EmailField('correo electrónico', blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
     date_created = models.DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
