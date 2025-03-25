@@ -28,7 +28,7 @@ class Video(Model):
 
 
 class YouTubeVideo(Model):
-    url = URLField('URL de YouTube', unique=True)
+    url = URLField('URL de YouTube')
     title = CharField('Título', max_length=50, blank=True, null=True)
     description = TextField('Descripción', blank=True, null=True)
     date_created = DateTimeField('Fecha de creación', auto_now_add=True)
@@ -52,6 +52,7 @@ class YouTubeVideo(Model):
         return self.title if self.title else 'Video #%i' % self.id
 
     class Meta:
+        unique_together = ('url', 'title')
         get_latest_by = 'date_created'
         verbose_name = 'Video YouTube'
         verbose_name_plural = 'Videos YouTube'
