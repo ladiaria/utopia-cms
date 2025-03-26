@@ -2372,8 +2372,13 @@ class CategoryHome(Model):
     def set_article(self, article, position):
         try:
             actual_article = CategoryHomeArticle.objects.get(home=self, position=position)
-            if actual_article.article != article:
-                actual_article.article = article
+            save = False
+            try:
+                if actual_article.article != article:
+                    actual_article.article, save = article, True
+            except Article.DoesNotExist:
+                actual_article.article, save = article, True
+            if save:
                 actual_article.save()
         except CategoryHomeArticle.DoesNotExist:
             CategoryHomeArticle.objects.create(home=self, article=article, position=position)
