@@ -42,23 +42,13 @@
         "width": "{{ default_pub.publisher_logo_width }}",
         "height": "{{ default_pub.publisher_logo_height }}"{% endif %}
       }{% endif %}
-    }{% if article.photo %},
+    }{% block json_ld_image %}{% if photo_render_allowed %},
     "image": {
       "@type": "ImageObject",
       "url": "{{ SITE_URL_SD }}{{ article.photo.get_1200w_url }}",
       "width": "1200"
     },
     "thumbnailUrl": "{{ SITE_URL_SD }}{{ article.photo.get_1200w_url }}"
-    {% elif open_graph_author_img %}
-    {% thumbnail open_graph_author_img "1200x675" crop="top" as im %}
-    "image": {
-      "@type": "ImageObject",
-      "url": "{{ SITE_URL_SD }}{{ im.url }}",
-      "width": "1200"
-      "height": "675"
-    },
-    "thumbnailUrl": "{{ SITE_URL_SD }}{{ im.url }}"
-    {% endthumbnail %}
     {% elif default_pub.open_graph_image %},
     "image": {
       "@type": "ImageObject",
@@ -66,6 +56,6 @@
       "width": "{{ default_pub.open_graph_image_width }}",
       "height" : "{{ default_pub.open_graph_image_height }}"
     },
-    "thumbnailUrl": "{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}"{% endif %}
+    "thumbnailUrl": "{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}"{% endif %}{% endblock %}
   }
 </script>

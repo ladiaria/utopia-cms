@@ -1370,6 +1370,8 @@ class ArticleBase(Model, CT):
         return getattr(self, 'admin', False)
 
     def save(self, *args, **kwargs):
+        if self.from_admin:
+            self.full_clean()
 
         for attr in ('headline', 'deck', 'lead', 'body'):
             if getattr(self, attr, None):
@@ -1849,7 +1851,7 @@ class Article(ArticleBase):
         try:
             super().save(*args, **kwargs)
         except Exception as e:
-            error_message = "".join(e.args)
+            error_message = str(e)
             if from_admin:
                 raise ValidationError(error_message)
             else:

@@ -184,13 +184,9 @@ class Registro(models.Model):
             subscriber_circuit_registros = Registro.objects.filter(
                 subscriber=self.subscriber, benefit__circuit=self.benefit.circuit
             ).count()
-            if (
-                self.benefit.circuit.general_quota is not None
-                and subscriber_circuit_registros >= self.benefit.circuit.general_quota
-            ):
-                raise ValidationError(
-                    f"Subscriber has reached the general quota for this circuit ({self.benefit.circuit.general_quota})."
-                )
+            gen_quota = self.benefit.circuit.general_quota
+            if gen_quota is not None and subscriber_circuit_registros >= gen_quota:
+                raise ValidationError(f"Subscriber has reached the general quota for this circuit ({gen_quota}).")
 
         # Check benefit's overall limit, regardless of subscriber or email
         if self.benefit.limit is not None:

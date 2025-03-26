@@ -84,12 +84,16 @@ if (window.jQuery) {
     });
     sortable2_dragend_handler('#recuadros-group');
     sortable2_dragend_handler('#body_image-group');
-    // put the unpublish radio beeing part of the publish radio choice group
-    $('#id_unpublish_radio_choice_0').prop("name", "publish_radio_choice");
+    // put the unpublish radio beeing part of the publish radio choice group and check it if unpublished & unscheduled
+    $('#id_unpublish_radio_choice_0').prop(
+      {"name": "publish_radio_choice", "checked": !$('[id^="id_publish_radio_choice_"]').prop("checked")}
+    );
     // also for custom slug (if customizable) and its change events
     let slug_radio_choice_custom = $("#id_slug_radio_choice_custom_0");
     if (slug_radio_choice_custom.length) {
-      slug_radio_choice_custom.prop("name", "slug_radio_choice");
+      slug_radio_choice_custom.prop(
+        {"name": "slug_radio_choice", "checked": !$('[id^="id_slug_radio_choice_"]').prop("checked")}
+      );
     }
     $("#id_slug_radio_choice, #id_slug_radio_choice_custom").on("change", function(){
       $("#id_slug_custom").prop("disabled", $("#id_slug_radio_choice_0").prop("checked"));

@@ -709,6 +709,8 @@ class ArticleAdminModelForm(ModelForm):
                     elif desired_status == "scheduled":
                         self.to_be_published_check(cleaned_data)
                         cleaned_data["to_be_published"] = True
+                    elif desired_status == "unpublished":
+                        pass  # TODO: do we need to set any values here?
 
         if self.errors:
             return cleaned_data
@@ -745,7 +747,10 @@ class ArticleAdminModelForm(ModelForm):
         if self.instance.id:
             targets = targets.exclude(id=self.instance.id)
         if targets:
-            raise ValidationError('Ya existe un artículo en ese mes con el mismo título.')
+            self.add_error(
+                "headline",
+                ValidationError('Ya existe un artículo en ese mes con el mismo título.', "slug_within_month_unique"),
+            )
 
         # pw options:
         pw_choice = cleaned_data.get('pw_radio_choice')
