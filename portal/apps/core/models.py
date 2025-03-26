@@ -54,7 +54,7 @@ from django.db.models import (
 )
 from django.db.models.signals import post_save
 from django.db.utils import OperationalError
-from django.core.exceptions import ValidationError
+from django.forms import ValidationError
 from django.template import Engine, Context
 from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
@@ -1370,8 +1370,9 @@ class ArticleBase(Model, CT):
         return getattr(self, 'admin', False)
 
     def save(self, *args, **kwargs):
-        if self.from_admin:
-            self.full_clean()
+
+        # WARNING: Do not call self.full_clean() here at this point, even if you think it's a good idea.
+        #          If you really need to call it, try to do it at the end of this method.
 
         for attr in ('headline', 'deck', 'lead', 'body'):
             if getattr(self, attr, None):
@@ -2835,11 +2836,11 @@ class DeviceSubscribed(Model):
 
 
 class PushNotification(Model):
-    message = CharField(u'Mensaje', max_length=500)
-    article = ForeignKey(Article, on_delete=CASCADE, verbose_name=u'Articulo')
-    sent = DateTimeField(u'Fecha de envio', null=True)
-    tag = CharField(u'Tag', max_length=15, null=True, blank=True)
-    overwrite = BooleanField(u'Sobrescribir notificacion', default=False)
+    message = CharField('Mensaje', max_length=500)
+    article = ForeignKey(Article, on_delete=CASCADE, verbose_name='Articulo')
+    sent = DateTimeField('Fecha de envio', null=True)
+    tag = CharField('Tag', max_length=15, null=True, blank=True)
+    overwrite = BooleanField('Sobrescribir notificacion', default=False)
 
     def __str__(self):
         return "%s - %s" % (self.tag, self.message)
