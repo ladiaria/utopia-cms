@@ -7,7 +7,7 @@ from django.conf import settings
 from django.template.defaultfilters import slugify
 from django.utils.timezone import now, timedelta
 
-from .models import Category, ArticleRel, Section, Edition, CategoryHome, CategoryHomeArticle
+from .models import Category, Article, ArticleRel, Section, Edition, CategoryHome, CategoryHomeArticle
 
 
 def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run=False, sql_debug=False):
@@ -128,7 +128,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                         category_fixed_content.append(aid)
                     else:
                         free_places.append(i)
-                except CategoryHomeArticle.DoesNotExist:
+                except (CategoryHomeArticle.DoesNotExist, Article.DoesNotExist):
                     free_places.append(i)
 
         except IndexError:
