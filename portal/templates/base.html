@@ -16,6 +16,28 @@
       <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
       <!-- End Progressive Web App (PWA) -->
     {% endif %}
+
+    {% if not debug %}
+      <!-- User data -->
+      <script>
+        {% block head_lduser %}
+          LDUser = {};
+          {% if user.is_authenticated %}
+            LDUser.is_authenticated = true;
+            LDUser.id = {{ user.id }};
+            LDUser.subscriber = {{ is_subscriber|lower }};
+            LDUser.subscriber_id = {{ user.subscriber.id }};
+            LDUser.firstName = "{{ user.first_name }}";
+            LDUser.lastName = "{{ user.last_name }}";
+          {% else %}
+            LDUser.is_authenticated = false;
+          {% endif %}
+        {% endblock %}
+        {% block head_extra_ld %}{% endblock %}
+      </script>
+      <!-- End user data -->
+    {% endif %}
+
     {% if not debug %}
       {# The preferred way to load GA is using GTM #}
       {% if GTM_CONTAINER_ID %}
@@ -206,24 +228,6 @@
       <script src="{% static 'js/vendor/html5shiv.min.js' %}"></script>
     <![endif]-->
     <!-- End legacy browsers support  -->
-
-    {% if not debug %}
-      <!-- User data -->
-      <script>
-        LDUser = {};
-        {% if user.is_authenticated %}
-          LDUser.is_authenticated = true;
-          LDUser.id = {{ user.id }};
-          LDUser.subscriber = {{ is_subscriber|lower }};
-          LDUser.subscriber_id = {{ user.subscriber.id }};
-          LDUser.firstName = "{{ user.first_name }}";
-          LDUser.lastName = "{{ user.last_name }}";
-        {% else %}
-          LDUser.is_authenticated = false;
-        {% endif %}
-      </script>
-      <!-- End user data -->
-    {% endif %}
 
     <!-- JavaScript -->
     {% block critical_header_scripts %}{% endblock %}
