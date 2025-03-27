@@ -195,9 +195,9 @@ class RenderArticlesSliderNode(Node):
                 }
             )
         else:
-            # TODO: Implement this simple_tag for the templates section/apuntes-del-dia.html
-            # TODO: and section/conexion-ganadera.html.
-            return
+            # TODO: maybe we can call get_articles_slider_template with a second argument like type="section" and use
+            #       the analogous logic for sections.
+            return ""
 
         try:
             return loader.render_to_string(get_articles_slider_template(self.slug), flatten_ctx)
