@@ -1003,6 +1003,9 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
 
+        if settings.DEBUG:
+            print(form.errors)
+
         # main "main" section radiobutton in inline (also has js hacks) mapped to main_section attribute:
         save = False
         # TODO: message_user is not working in development env

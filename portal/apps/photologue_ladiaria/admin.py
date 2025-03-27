@@ -175,13 +175,21 @@ class PhotographerFilter(admin.SimpleListFilter):
 
 
 class PhotoAdmin(PhotoAdminDefault):
-    list_display = ('id', 'title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public')
+    list_display = ('id', 'title', 'thumbnail', 'date_taken', 'date_added', 'is_public')
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
     fieldsets = (
         (None, {'fields': ('title', 'image', 'caption')}),
         ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}),
     )
     inlines = [PhotoExtendedInline]
+
+    @admin.display(description="miniatura")
+    def thumbnail(self, obj):
+        try:
+            return obj.admin_thumbnail()
+        except Exception:
+            # TODO: find some thumb placeholder to show to all photos without thumbnail or with thumbnail error
+            pass
 
 
 admin.site.unregister(Photo)
