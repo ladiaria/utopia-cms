@@ -1602,6 +1602,10 @@ class CategoryHomeAdmin(admin.ModelAdmin):
 
 class CategoryNewsletterArticleForm(ModelForm):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['order'].label = ''  # TODO: explain why
+
     class Meta:
         fields = ['order', 'featured', 'article']
         model = CategoryNewsletterArticle
