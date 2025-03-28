@@ -93,8 +93,8 @@ def render_related(context, article, amp=False, publication_priority=None, title
     settings_publication_priority = getattr(settings, "CORE_RENDER_RELATED_PUBLICATION_PRIORITY", False)
     if publication_priority is None:
         publication_priority = settings_publication_priority
-    related_default_limit = getattr(settings, 'CORE_RENDER_REALTED_DEFAULT_LIMIT', 4)
-    related_article_type_limit = getattr(settings, 'CORE_RENDER_REALTED_ARTICLE_TYPE_LIMIT', {})
+    related_default_limit = getattr(settings, 'CORE_RENDER_RELATED_DEFAULT_LIMIT', 4)
+    related_article_type_limit = getattr(settings, 'CORE_RENDER_RELATED_ARTICLE_TYPE_LIMIT', {})
 
     if publication and publication_priority:
         # 1st: give priority to publication, if defined by settings
@@ -102,7 +102,7 @@ def render_related(context, article, amp=False, publication_priority=None, title
 
     if not upd_dict:
         category_priority = getattr(settings, "CORE_CATEGORY_RELATED_CATEGORY_PRIORITY", False)
-        category_related_limits = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', {})
+        category_related_limits = getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY', {})
         related_article_type_limit = related_article_type_limit.get(article.type)
 
         # 2nd: use category, if it is priorized globally or by settings but giving priority to article type limits
@@ -121,7 +121,7 @@ def render_related(context, article, amp=False, publication_priority=None, title
 
         if not upd_dict:
             # 3rd: A conditional category-priorized (only for the sections specified in the setting)
-            use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY_SKIPPING_SECTIONS', [])
+            use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY_SKIPPING_SECTIONS', [])
             if use_category_skip_sections:
                 article_categories = article.get_categories_slugs()
                 for category_slug, section_slugs in use_category_skip_sections:

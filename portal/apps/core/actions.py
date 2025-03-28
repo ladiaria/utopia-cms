@@ -25,6 +25,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
     # TODO: calculate not fixed count before and better stop algorithm.
     buckets, category_sections, cat_needed_defaults, cat_needed, start_time, result = {}, {}, {}, {}, time(), []
     categories_to_fill = []
+    debug, pre_begin_debug = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DEBUG', False), []
 
     for cat in categories:
         needed = getattr(
@@ -44,6 +45,8 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
         if articles_count:
             categories_to_fill.append(cat.slug)
             buckets[cat.slug], cat_needed[cat.slug] = [], articles_count
+            if debug:
+                pre_begin_debug.append(f"DEBUG: {cat.slug} needed: {articles_count}")
             category_sections[cat.slug] = set(
                 list(cat.section_set.values_list('id', flat=True))
                 + (
@@ -57,11 +60,10 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                 else []
             )
 
-    debug = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DEBUG', False)
     if categories_to_fill:
         if debug:
             result.append('DEBUG: update_category_home begin')
-
+            result.extend(pre_begin_debug)
         lowest_date, max_date = Edition.objects.last().date_published, now().date()
         days_step = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DAYS_STEP', 30)
         exclude_tags = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_TAGS', {})
@@ -117,17 +119,25 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
         cover_id = home_cover.article_id if home_cover else None
         cover_fixed = home_cover.fixed if home_cover else False
         category_fixed_content, free_places = ([cover_id], []) if cover_fixed else ([], [0])
-
+        needed = cat_needed[category_slug]
         try:
             for i in range(2, cat_needed_defaults[category_slug] + 1):
                 try:
                     position_i = CategoryHomeArticle.objects.get(home=home, position=i)
                     a = position_i.article
-                    aid, afixed = a.id, position_i.fixed
-                    if afixed:
-                        category_fixed_content.append(aid)
+                    if i > needed:
+                        if debug:
+                            result.append(
+                                f"DEBUG: {category_slug} position {i} val {a.id} over limit ({needed}) will be cleaned"
+                            )
+                        if not dry_run:
+                            position_i.delete()
                     else:
-                        free_places.append(i)
+                        aid, afixed = a.id, position_i.fixed
+                        if afixed:
+                            category_fixed_content.append(aid)
+                        else:
+                            free_places.append(i)
                 except (CategoryHomeArticle.DoesNotExist, Article.DoesNotExist):
                     free_places.append(i)
 
