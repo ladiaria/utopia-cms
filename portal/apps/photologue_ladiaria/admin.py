@@ -179,6 +179,7 @@ class PhotoAdmin(PhotoAdminDefault):
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
     fieldsets = (
         (None, {'fields': ('title', 'image', 'caption')}),
+        # (None, {'fields': ('title', 'image', 'caption', "alt_text")}),  # TODO: alt_text awaiting feedback for impl.
         ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}),
     )
     inlines = [PhotoExtendedInline]
