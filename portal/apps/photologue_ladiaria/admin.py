@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from photologue.models import Photo, Gallery, PhotoEffect, PhotoSize, Watermark
+from photologue.admin import PhotoAdmin as PhotoAdminDefault, GalleryAdmin as GalleryAdminDefault, PhotoAdminForm
+
 from django import forms
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 
-from photologue.models import Photo, Gallery, PhotoEffect, PhotoSize, Watermark
-from photologue.admin import PhotoAdmin as PhotoAdminDefault
-from photologue.admin import GalleryAdmin as GalleryAdminDefault
-
+from core.admin import register_custom
 from .models import PhotoExtended, Agency, Photographer
 
 
@@ -47,6 +48,7 @@ class PhotoExtendedInline(admin.StackedInline):
     form = PhotoExtendedModelForm
     can_delete = False
     fieldsets = (
+        (None, {'fields': ('alt_text',)}),
         ('Metadatos', {'fields': ('date_taken', 'type', 'photographer', 'agency')}),
         (
             'Recorte para versión cuadrada',
@@ -174,12 +176,26 @@ class PhotographerFilter(admin.SimpleListFilter):
         ) if photographer else queryset
 
 
+class UtopiaPhotoAdminForm(PhotoAdminForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["caption"].label = "Leyenda (caption, pie de foto)"
+        self.fields["caption"].help_text = mark_safe(
+            "Texto que se mostrará debajo de la imagen para dar contexto. Evitar repetir información ya evidente en "
+            "la imagen.<br>"
+            "Longitud recomendada:<br>"
+            "Ideal: menos de 125 caracteres.<br>"
+            "Máxima: menos de 250 caracteres<br>"
+            "Exceptional: más de 250 caracteres si es fundamental para complementar el contexto."
+        )
+
+
 class PhotoAdmin(PhotoAdminDefault):
+    form = UtopiaPhotoAdminForm
     list_display = ('id', 'title', 'thumbnail', 'date_taken', 'date_added', 'is_public')
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
     fieldsets = (
         (None, {'fields': ('title', 'image', 'caption')}),
-        # (None, {'fields': ('title', 'image', 'caption', "alt_text")}),  # TODO: alt_text awaiting feedback for impl.
         ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}),
     )
     inlines = [PhotoExtendedInline]
@@ -193,18 +209,12 @@ class PhotoAdmin(PhotoAdminDefault):
             pass
 
 
-admin.site.unregister(Photo)
-admin.site.register(Photo, PhotoAdmin)
-
-admin.site.unregister(Gallery)
-admin.site.register(Gallery, GalleryAdmin)
-
-
-admin.site.unregister(PhotoEffect)
-admin.site.register(PhotoEffect, PhotoEffectAdmin)
-
-admin.site.unregister(PhotoSize)
-admin.site.register(PhotoSize, PhotoSizeAdmin)
-
-admin.site.unregister(Watermark)
-admin.site.register(Watermark, WatermarkAdmin)
+register_custom(
+    {
+        Photo: PhotoAdmin,
+        Gallery: GalleryAdmin,
+        PhotoEffect: PhotoEffectAdmin,
+        PhotoSize: PhotoSizeAdmin,
+        Watermark: WatermarkAdmin,
+    }
+)

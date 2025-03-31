@@ -161,9 +161,6 @@ MARTOR_TOOLBAR_BUTTONS = [
 ]
 MARTOR_ENABLE_LABEL = True  # enable field labels
 
-# photologue app need to add a custom migration
-MIGRATION_MODULES = {"photologue": "photologue_ladiaria.photologue_migrations"}
-
 ADMIN_SHORTCUTS = [
     {
         "title": "Links directos (edición)",

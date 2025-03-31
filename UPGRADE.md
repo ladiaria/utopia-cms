@@ -3,10 +3,14 @@
 Before start, make your database server timezone-aware using the first step described in the database section of `INSTALL.md`.
 
 ```
+# activate your virtual env
+cd portal
+./manage.py dbshell
+-- inside the dbshell run this sentence:
+UPDATE django_migrations SET name='0011_auto_20190223_2138' WHERE app='photologue' AND name='0011_auto_20201220_1312';
+-- exit dbshell with ctrl+d
 git pull
 git checkout 0.4.8
-cd portal
-# activate your virtual env
 pip uninstall django4-background-tasks
 # The tables `background_task_completedtask` and `background_task` can also be droped from the database.
 pip install celery django-celery-results django-celery-beat selenium
