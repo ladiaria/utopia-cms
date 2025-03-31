@@ -254,7 +254,8 @@ class DefaultArticleDetailView(ArticleDetailView):
                 'domain': self.domain,
                 'category': self.category,
                 'category_signup':
-                    self.domain == (
+                    self.category
+                    and self.domain == (
                         'category' and self.category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_SIGNUP', ())
                     ),
                 'section': article.publication_section(),
