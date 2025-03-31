@@ -64,7 +64,12 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
         if debug:
             result.append('DEBUG: update_category_home begin')
             result.extend(pre_begin_debug)
-        lowest_date, max_date = Edition.objects.last().date_published, now().date()
+        lowest_date = Edition.objects.last().date_published
+        max_date = (
+            Edition.objects.first().date_published
+            if getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ALLOW_FUTURE', False)
+            else now().date()
+        )
         days_step = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DAYS_STEP', 30)
         exclude_tags = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_TAGS', {})
         min_date_iter, max_date_iter, stop = max_date - timedelta(days_step), max_date, False

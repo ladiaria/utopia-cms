@@ -461,6 +461,7 @@ class Edition(PortableDocumentFormatBaseModel):
     edition_pub.short_description = 'Fecha publicada'
 
     def is_for_today(self):
+        # TODO: check if this is correct, because now() is not localtime (may localdate() be better?)
         return self.date_published == now().date()
 
     def get_supplements(self):
@@ -521,6 +522,9 @@ class Edition(PortableDocumentFormatBaseModel):
 
     def top4articles(self):
         return self.top_articles_sliced(4)
+
+    def top_article(self):
+        return self.top_articles_sliced(1)
 
     def get_articles_in_section(self, section):
         return list(
