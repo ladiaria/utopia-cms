@@ -116,6 +116,8 @@ Then create your nginx conf file using the sample provided (edit it after copy, 
 
 Point your preferred web browser to https://yoogle.com/admin/sites/site/1/ and you will be redirected to the Django's admin site login page, after login you will be redirected again to the default site change form, change its domain to `yoogle.com` and optionally also change its display name to any name you want, save the changes and then go to https://yoogle.com/admin/core/publication/add/ fill the form to create the new publication, save it and then you will be able to see the home page working at https://yoogle.com/.
 
+TODO: This steps (site+pub) can be done also using an interactive command/script for example to improve the UX, another idea is to show a welcome page
+      with doc/instructions to follow when no editions neither articles found in the home page.
 
 ## Further reading
 

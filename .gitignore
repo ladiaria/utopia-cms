@@ -28,7 +28,6 @@ cache
 .python-eggs
 .DS_Store
 /uwsgi.ini
-/wsgi.py
 /static/lightGallery
 /static/css/ladiaria.*
 /static/js/ld.min.js
