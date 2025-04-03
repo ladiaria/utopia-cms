@@ -1637,6 +1637,10 @@ class ArticleBase(Model, CT):
             result += ' · %s: %s' % (self.photo_type, self.photo_author)
         return result
 
+    @property
+    def photo_alt_text(self):
+        return self.photo.extended.alt_text or self.photo.caption or "Imagen principal del artículo '%s'" % remove_markup(self.headline)
+
     def gallery_photos(self):
         """
         Return only those photos whose image file exists

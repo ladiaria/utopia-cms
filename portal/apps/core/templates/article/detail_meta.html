@@ -30,7 +30,7 @@
   <meta property="og:image" content="{{ SITE_URL_SD }}{{ article.photo.get_article_main_url }}?r={% randomgen %}">
 {% endif %}
 {% if photo_render_allowed %}
-  <meta property="og:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+  <meta property="og:image:alt" content="{{ article.photo_alt_text|remove_markup }}">
 {% endif %}
 <!-- End Open Graph (http://ogp.me) -->
 
@@ -44,6 +44,6 @@
   <meta name="twitter:site" content="@{{ HOMEV3_TWITTER_SITE_META }}">
 {% endif %}
 {% if photo_render_allowed %}
-  <meta name="twitter:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+  <meta name="twitter:image:alt" content="{{ article.photo_alt_text|remove_markup }}">
 {% endif %}
 <!-- End Meta tags Twitter -->
