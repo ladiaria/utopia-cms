@@ -332,7 +332,9 @@ NEWSLETTERS_FROM_MX = NOTIFICATIONS_FROM_MX
 NEWSLETTER_IMG_FORMAT = "jpg"
 
 SENDNEWSLETTER_EXPORT_DIR = "/var/local/utopiacms/sendnewsletter_export"
-SENDNEWSLETTER_LOGFILE = "/var/log/utopiacms/sendnewsletter/%s-%s.log"
+# TODO: make this log basepath be customizable
+PORTAL_LOG_BASE_DIR = "/var/log/utopiacms"
+SENDNEWSLETTER_LOGFILE = f"{PORTAL_LOG_BASE_DIR}/sendnewsletter/%s-%s.log"
 
 # celery
 CELERY_RESULT_BACKEND = "django-db"
@@ -444,7 +446,7 @@ CORE_PUSH_NOTIFICATIONS_OFFER = True  # offer to allow push notifications on all
 CORE_PUSH_NOTIFICATIONS_VAPID_PRIVKEY = None
 CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY = None
 CORE_PUSH_NOTIFICATIONS_VAPID_CLAIMS = {"sub": "mailto:YourNameHere@example.com"}
-CORE_PUSH_NOTIFICATIONS_LOGFILE = "/var/log/utopiacms/push_notifications.log"
+CORE_PUSH_NOTIFICATIONS_LOGFILE = f"{PORTAL_LOG_BASE_DIR}/push_notifications.log"
 CORE_PUSH_NOTIFICATIONS_OPTIONS = {
     "icon": "/static/meta/utopia-192x192.png",
     "vibrate": [100, 50, 100],
@@ -481,7 +483,7 @@ THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW = ()
 # debug signals
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 # automatic mail logfile
-THEDAILY_AUTOMATIC_MAIL_LOGFILE = "/var/log/utopiacms/automatic_mail.log"
+THEDAILY_AUTOMATIC_MAIL_LOGFILE = f"{PORTAL_LOG_BASE_DIR}/automatic_mail.log"
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."

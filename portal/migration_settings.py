@@ -327,7 +327,8 @@ NEWSLETTERS_FROM_MX = NOTIFICATIONS_FROM_MX
 NEWSLETTER_IMG_FORMAT = "jpg"
 
 SENDNEWSLETTER_EXPORT_DIR = "/var/local/utopiacms/sendnewsletter_export"
-SENDNEWSLETTER_LOGFILE = "/var/log/utopiacms/sendnewsletter/%s-%s.log"
+PORTAL_LOG_BASE_DIR = "/var/log/utopiacms"
+SENDNEWSLETTER_LOGFILE = f"{PORTAL_LOG_BASE_DIR}/sendnewsletter/%s-%s.log"
 
 # celery
 CELERY_RESULT_BACKEND = "django-db"
@@ -456,7 +457,7 @@ THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for default categor
 THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW = ()
 # debug signals
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
-THEDAILY_AUTOMATIC_MAIL_LOGFILE = "/var/log/utopiacms/automatic_mail.log"
+THEDAILY_AUTOMATIC_MAIL_LOGFILE = f"{PORTAL_LOG_BASE_DIR}/automatic_mail.log"
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
