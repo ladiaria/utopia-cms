@@ -156,7 +156,7 @@ urlpatterns = [
     path('entrar/', login, name="account-login"),
     path(
         'error/login/',
-        never_cache(TemplateView.as_view(template_name='thedaily/templates/login_error.html')),
+        never_cache(TemplateView.as_view(template_name=get_app_template('login_error.html'))),
         name="login-error",
     ),
     path(
