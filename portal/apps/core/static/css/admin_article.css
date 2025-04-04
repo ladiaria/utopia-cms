@@ -160,8 +160,10 @@ input[id="id_slug_radio_choice_custom"] {
 }
 .form-row.field-date_published:has(.hidden) #id_date_published_helptext {
   font-size: unset;
-  margin-top: -26px;
   padding-bottom: 20px;
+  @media (min-width: 767px) {
+    margin-top: -26px;
+  }
 }
 .form-row.field-date_published:not(:has(.hidden)) {
   padding-top: 0px;
@@ -171,10 +173,14 @@ input[id="id_slug_radio_choice_custom"] {
   padding-top: 0px;
 }
 .fieldBox.field-unpublish_radio_choice:has(input[type="checkbox"]) {
-  margin-left: 200px;
+  @media (min-width: 767px) {
+    margin-left: 200px;
+  }
 }
 .field-is_published, .field-to_be_published, .field-date_published {
   width: unset !important;
+}
+.field-is_published:not(.hidden), .field-to_be_published:not(.hidden), .field-date_published:not(.hidden) {
   display: block !important;
 }
 label[for="id_slug_radio_choice_0"], label[for="id_slug_radio_choice_custom_0"] {
