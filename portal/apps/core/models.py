@@ -1639,7 +1639,11 @@ class ArticleBase(Model, CT):
 
     @property
     def photo_alt_text(self):
-        return self.photo.extended.alt_text or self.photo.caption or "Imagen principal del artículo '%s'" % remove_markup(self.headline)
+        return (
+            self.photo.extended.alt_text
+            or self.photo.caption
+            or "Imagen principal del artículo '%s'" % remove_markup(self.headline)
+        )
 
     def gallery_photos(self):
         """
