@@ -20,6 +20,7 @@ __pycache__
 /portal/.pydevproject
 /portal/.settings
 cache
+.local_rev_*
 .editorconfig
 .idea
 .env*

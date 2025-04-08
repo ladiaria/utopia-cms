@@ -86,13 +86,13 @@ if (window.jQuery) {
     sortable2_dragend_handler('#body_image-group');
     // put the unpublish radio beeing part of the publish radio choice group and check it if unpublished & unscheduled
     $('#id_unpublish_radio_choice_0').prop(
-      {"name": "publish_radio_choice", "checked": !$('[id^="id_publish_radio_choice_"]').prop("checked")}
+      {"name": "publish_radio_choice", "checked": !$('[id^="id_publish_radio_choice_"]:checked').length}
     );
     // also for custom slug (if customizable) and its change events
     let slug_radio_choice_custom = $("#id_slug_radio_choice_custom_0");
     if (slug_radio_choice_custom.length) {
       slug_radio_choice_custom.prop(
-        {"name": "slug_radio_choice", "checked": !$('[id^="id_slug_radio_choice_"]').prop("checked")}
+        {"name": "slug_radio_choice", "checked": !$('[id^="id_slug_radio_choice_"]:checked').length}
       );
     }
     $("#id_slug_radio_choice, #id_slug_radio_choice_custom").on("change", function(){
