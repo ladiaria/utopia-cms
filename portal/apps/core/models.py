@@ -735,8 +735,7 @@ class Category(Model):
         return self.name
 
     def latest_articles(self, exclude=[], home_ordered=False):
-        method = "articles" + ("_ordered" if home_ordered else "")
-        return list(getattr(self.home, method)().exclude(id__in=exclude)) if hasattr(self, 'home') else []
+        return list(self.home.get_articles(home_ordered).exclude(id__in=exclude)) if hasattr(self, 'home') else []
 
     def articles(self, limit=None):
         """
@@ -2368,6 +2367,9 @@ class CategoryHome(Model):
 
     def __str__(self):
         return '%s - %s' % (self.category, self.cover())
+
+    def get_articles(self, home_ordered=False):
+        return self.articles_ordered() if home_ordered else self.articles
 
     def articles_ordered(self):
         return self.articles.filter(is_published=True).order_by('home_articles').prefetch_related(
