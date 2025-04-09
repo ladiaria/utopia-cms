@@ -1107,6 +1107,8 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
         Action.__str__ = lambda x: 'Article followed by user'
         response = super().delete_view(request, object_id, extra_context)
         del Action.__str__
+        # also call update_category_home
+        update_category_home()
         return response
 
     def adminlog_history_view(self, request, object_id, extra_context=None):

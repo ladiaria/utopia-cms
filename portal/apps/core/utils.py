@@ -265,6 +265,10 @@ def serialize_wrapper(article_or_list, publication, for_cover=False, dates=True)
         return article_or_list.nl_serialize(for_cover, publication, dates=dates)
 
 
+def get_related_article_type_limits():
+    return getattr(settings, 'CORE_RENDER_RELATED_ARTICLE_TYPE_LIMIT', {})
+
+
 def get_articles_slider_template(slug):
     default_dir = "/core/templates"
     custom_dir = getattr(settings, "ARTICLES_SLIDER_TEMPLATE_DIR", None)

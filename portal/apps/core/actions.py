@@ -26,6 +26,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
     buckets, category_sections, cat_needed_defaults, cat_needed, start_time, result = {}, {}, {}, {}, time(), []
     categories_to_fill = []
     debug, pre_begin_debug = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DEBUG', False), []
+    w_authors_only_categories = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_WITH_AUTHORS_ONLY', ())
 
     for cat in categories:
         needed = getattr(
@@ -33,14 +34,17 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
         ).get(cat.slug, getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_NEEDED_DEFAULT', 10))
         cat_needed_defaults[cat.slug] = needed
         exclude_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_SECTIONS', {}).get(cat.slug, [])
-        articles_count = cat.articles_count(needed, exclude_sections, sql_debug)
+        w_authors_only = cat.slug in w_authors_only_categories
+        articles_count = cat.articles_count(needed, exclude_sections, w_authors_only, sql_debug)
         include_extra_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_INCLUDE_EXTRA_SECTIONS', {}).get(
             cat.slug, []
         )
 
         # NOTICE: tag exclude filtering (if defined by settings) is ignored to evaluate this needed limits
         if articles_count < needed and include_extra_sections:
-            articles_count += ArticleRel.articles_count(needed - articles_count, include_extra_sections, sql_debug)
+            articles_count += ArticleRel.articles_count(
+                needed - articles_count, include_extra_sections, w_authors_only, sql_debug
+            )
 
         if articles_count:
             categories_to_fill.append(cat.slug)
@@ -87,6 +91,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                     # insert the article (if matches criteria) limiting upto needed quantity with no dupe articles
                     article = ar.article
                     for cat_slug in categories_to_fill:
+                        w_authors_only = cat_slug in w_authors_only_categories
                         if (
                             article not in [x[0] for x in buckets[cat_slug]]
                             and ar.section_id in category_sections[cat_slug]
@@ -94,6 +99,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                                 cat_slug in exclude_tags
                                 and any(slugify(t.name) in exclude_tags[cat_slug] for t in article.get_tags())
                             )
+                            and (not w_authors_only or article.has_byline())
                         ):
                             buckets[cat_slug].append((article, (ar.edition.date_published, article.date_published)))
                             if len(buckets[cat_slug]) == cat_needed[cat_slug]:

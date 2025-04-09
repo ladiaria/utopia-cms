@@ -734,8 +734,9 @@ class Category(Model):
     def __str__(self):
         return self.name
 
-    def latest_articles(self, exclude=[]):
-        return list(self.home.articles.exclude(id__in=exclude)) if hasattr(self, 'home') else []
+    def latest_articles(self, exclude=[], home_ordered=False):
+        method = "articles" + ("_ordered" if home_ordered else "")
+        return list(getattr(self.home, method)().exclude(id__in=exclude)) if hasattr(self, 'home') else []
 
     def articles(self, limit=None):
         """
@@ -763,7 +764,7 @@ class Category(Model):
             ]
         )
 
-    def articles_count(self, max=None, exclude_sections=[], debug=False):
+    def articles_count(self, max=None, exclude_sections=[], w_authors_only=False, debug=False):
         """
         Returns the number of articles published in this category.
         If max is given, the result will be allways less or equal this max value.
@@ -772,15 +773,15 @@ class Category(Model):
             subquery_part = (
                 """
                 FROM core_article
-                JOIN core_articlerel ON
-                    core_article.id = core_articlerel.article_id
-                JOIN core_section ON
-                    core_articlerel.section_id = core_section.id
-                JOIN core_edition ON
-                    core_articlerel.edition_id = core_edition.id
+                JOIN core_articlerel ON core_article.id = core_articlerel.article_id
+                %sJOIN core_section ON core_articlerel.section_id = core_section.id
+                JOIN core_edition ON core_articlerel.edition_id = core_edition.id
                 WHERE core_section.category_id = %d AND is_published AND core_edition.date_published <= CURRENT_DATE
-            """
-                % self.id
+                """ % (
+                    "JOIN core_article_byline ON core_article_byline.article_id = core_article.id "
+                    if w_authors_only else "",
+                    self.id,
+                )
             )
             if exclude_sections:
                 subquery_part += "AND core_section.slug NOT IN (%s)" % ",".join("'%s'" % s for s in exclude_sections)
@@ -1632,18 +1633,17 @@ class ArticleBase(Model, CT):
 
     @property
     def photo_caption(self):
-        result = self.photo.caption or "Foto principal del artículo '%s'" % remove_markup(self.headline)
-        if self.photo_author:
+        result = self.photo.caption
+        if not result:
+            photo_noun = getattr(settings, 'CORE_ARTICLE_PHOTO_CAPTION_PREFIX', 'Foto')
+            result = "%s principal del artículo '%s'" % (photo_noun, remove_markup(self.headline))
+        if self.photo_author and getattr(settings, 'CORE_ARTICLE_PHOTO_CAPTION_SHOW_AUTHOR', True):
             result += ' · %s: %s' % (self.photo_type, self.photo_author)
         return result
 
     @property
     def photo_alt_text(self):
-        return (
-            self.photo.extended.alt_text
-            or self.photo.caption
-            or "Imagen principal del artículo '%s'" % remove_markup(self.headline)
-        )
+        return self.photo.extended.alt_text or self.photo_caption
 
     def gallery_photos(self):
         """
@@ -2277,18 +2277,18 @@ class ArticleRel(Model):
         return '%s - %s' % (self.edition, self.section)
 
     @staticmethod
-    def articles_count(max=None, section_slugs_only=[], debug=False):
+    def articles_count(max=None, section_slugs_only=[], w_authors_only=False, debug=False):
         with connection.cursor() as cursor:
             subquery_part = """
                 FROM core_article
-                JOIN core_articlerel ON
-                    core_article.id = core_articlerel.article_id
-                JOIN core_section ON
-                    core_articlerel.section_id = core_section.id
-                JOIN core_edition ON
-                    core_articlerel.edition_id = core_edition.id
+                JOIN core_articlerel ON core_article.id = core_articlerel.article_id
+                %sJOIN core_section ON core_articlerel.section_id = core_section.id
+                JOIN core_edition ON core_articlerel.edition_id = core_edition.id
                 WHERE is_published AND core_edition.date_published <= CURRENT_DATE
-            """
+            """ % (
+                "JOIN core_article_byline ON core_article_byline.article_id = core_article.id "
+                if w_authors_only else ""
+            )
             if section_slugs_only:
                 subquery_part += "AND core_section.slug IN (%s)" % ",".join("'%s'" % s for s in section_slugs_only)
             if max:

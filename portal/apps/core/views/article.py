@@ -110,7 +110,7 @@ class DefaultArticleDetailView(ArticleDetailView):
     def get_object(self, queryset=None):
         if self.object:
             return self.object
-        request = self.request
+        request, article = self.request, None
         year, month, slug, domain_slug = (getattr(self, k) for k in self.arglist)
 
         if settings.DEBUG:
@@ -154,20 +154,26 @@ class DefaultArticleDetailView(ArticleDetailView):
                     self.redirect = urlunsplit((settings.URL_SCHEME, netloc, last_by_hist_url, s.query, s.fragment))
                 else:
                     # show "draft" only for staff users (TODO: message uuser to "take action?")
+                    if settings.DEBUG:
+                        debug_msg_part1 = (
+                            'DEBUG: core.views.article.article_detail: last_by_hist == article.get_absolute_url(), not'
+                            'redirecting to avoid loop.'
+                        )
                     if request.user.is_staff:
                         article = last_by_hist.article
+                        if settings.DEBUG:
+                            print(f'{debug_msg_part1} Rendering draft article (user is staff).')
                     else:
                         if settings.DEBUG:
-                            print('DEBUG: core.views.article.article_detail: last_by_hist and article url are equal')
+                            print(f'{debug_msg_part1} Raising 404 (user is not staff)')
                         raise Http404
             else:
                 raise Http404
 
-        # 2. access to staff only if the article is not published
-        if not article.is_published and not request.user.is_staff:
+        # 2. if it was found, access to staff only if the article is not published
+        if article and not article.is_published and not request.user.is_staff:
             raise Http404
-        if not self.redirect:
-            return article
+        return article
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
