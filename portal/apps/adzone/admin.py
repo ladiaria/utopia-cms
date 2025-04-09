@@ -130,7 +130,6 @@ class TextAdAdmin(AdBaseAdmin):
 @admin.register(BannerAd)
 class BannerAdAdmin(AdBaseAdmin):
     form = UploadFileForm
-    list_display = [
-        'title', 'content_basename', 'mobile_content_basename',
-        'start_showing', 'stop_showing', 'category', 'zone']
+    list_display = ['title', 'start_showing', 'stop_showing', "category", 'zone']
+
     search_fields = ['title', 'url', 'content', 'mobile_content']

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from photologue.models import Photo, Gallery, PhotoEffect, PhotoSize, Watermark
+from photologue.admin import PhotoAdmin as PhotoAdminDefault, GalleryAdmin as GalleryAdminDefault, PhotoAdminForm
+
 from django import forms
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 
-from photologue.models import Photo, Gallery, PhotoEffect, PhotoSize, Watermark
-from photologue.admin import PhotoAdmin as PhotoAdminDefault
-from photologue.admin import GalleryAdmin as GalleryAdminDefault
-
+from core.admin import register_custom
 from .models import PhotoExtended, Agency, Photographer
 
 
@@ -21,6 +22,12 @@ class PhotoExtendedModelForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.id:
             self.initial['date_taken'] = self.instance.image.date_taken
+
+    def clean_radius_length(self):
+        radius_length = self.cleaned_data.get('radius_length')
+        if radius_length == 0:
+            raise forms.ValidationError('El radio de recorte debe estar en blanco o ser un número mayor que cero.')
+        return radius_length
 
     def save(self, commit=True):
         instance = super().save(commit=commit)
@@ -41,6 +48,7 @@ class PhotoExtendedInline(admin.StackedInline):
     form = PhotoExtendedModelForm
     can_delete = False
     fieldsets = (
+        (None, {'fields': ('alt_text',)}),
         ('Metadatos', {'fields': ('date_taken', 'type', 'photographer', 'agency')}),
         (
             'Recorte para versión cuadrada',
@@ -168,8 +176,23 @@ class PhotographerFilter(admin.SimpleListFilter):
         ) if photographer else queryset
 
 
+class UtopiaPhotoAdminForm(PhotoAdminForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["caption"].label = "Leyenda (caption, pie de foto)"
+        self.fields["caption"].help_text = mark_safe(
+            "Texto que se mostrará debajo de la imagen para dar contexto. Evitar repetir información ya evidente en "
+            "la imagen.<br>"
+            "Longitud recomendada:<br>"
+            "Ideal: menos de 125 caracteres.<br>"
+            "Máxima: menos de 250 caracteres<br>"
+            "Exceptional: más de 250 caracteres si es fundamental para complementar el contexto."
+        )
+
+
 class PhotoAdmin(PhotoAdminDefault):
-    list_display = ('id', 'title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public')
+    form = UtopiaPhotoAdminForm
+    list_display = ('id', 'title', 'thumbnail', 'date_taken', 'date_added', 'is_public')
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
     fieldsets = (
         (None, {'fields': ('title', 'image', 'caption')}),
@@ -177,19 +200,21 @@ class PhotoAdmin(PhotoAdminDefault):
     )
     inlines = [PhotoExtendedInline]
 
+    @admin.display(description="miniatura")
+    def thumbnail(self, obj):
+        try:
+            return obj.admin_thumbnail()
+        except Exception:
+            # TODO: find some thumb placeholder to show to all photos without thumbnail or with thumbnail error
+            pass
 
-admin.site.unregister(Photo)
-admin.site.register(Photo, PhotoAdmin)
 
-admin.site.unregister(Gallery)
-admin.site.register(Gallery, GalleryAdmin)
-
-
-admin.site.unregister(PhotoEffect)
-admin.site.register(PhotoEffect, PhotoEffectAdmin)
-
-admin.site.unregister(PhotoSize)
-admin.site.register(PhotoSize, PhotoSizeAdmin)
-
-admin.site.unregister(Watermark)
-admin.site.register(Watermark, WatermarkAdmin)
+register_custom(
+    {
+        Photo: PhotoAdmin,
+        Gallery: GalleryAdmin,
+        PhotoEffect: PhotoEffectAdmin,
+        PhotoSize: PhotoSizeAdmin,
+        Watermark: WatermarkAdmin,
+    }
+)

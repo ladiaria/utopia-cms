@@ -4,5 +4,15 @@
 {% block page_title %}{% title_joinparts 'Suscripciones' %}{% endblock %}
 
 {% block content %}
-  TODO: render this received data: <pre>{{ object_list }}</pre>
+  {% for subscription_type_price in object_list %}
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">{{ subscription_type_price.get_subscription_type_display }}</h5>
+        <p class="card-text">{{ subscription_type_price.price }}</p>
+        <a href="{% url 'subscribe' subscription_type_price.subscription_type %}" class="btn --secondary | w-100">Suscribirse<span class="visually-hidden"> al plan {{ subscription_type_price.subscription_type }}</span></a>
+      </div>
+    </div>
+  {% empty %}
+    <p>No hay planes de suscripción disponibles.</p>
+  {% endfor %}
 {% endblock %}

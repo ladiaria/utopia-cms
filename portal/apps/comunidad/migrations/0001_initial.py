@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('videologue', '0001_initial'),
-        ('photologue', '0011_auto_20201220_1312'),
+        ('photologue', '0011_auto_20190223_2138'),
         ('thedaily', '0004_auto_20210615_1304'),
         ('cartelera', '0001_initial'),
         ('audiologue', '__first__'),

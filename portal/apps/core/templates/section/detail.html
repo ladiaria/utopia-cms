@@ -24,7 +24,7 @@
       {% endif %}
     {% endfor %}
     {% if articles.has_other_pages %}
-      {% with pager=articles %}{% include "pagination.html" %}{% endwith %}
+      {% with page_obj=articles %}{% include "pagination.html" %}{% endwith %}
     {% endif %}
   </section>
 {% endblock %}

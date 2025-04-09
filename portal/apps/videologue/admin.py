@@ -10,6 +10,7 @@ class VideoAdmin(ModelAdmin):
 
 
 class YouTubeVideoAdmin(ModelAdmin):
+    search_fields = list_display = ('title', 'url', 'date_created', "yt_id")
     form = YouTubeVideoForm
     exclude = ('yt_id', )
 

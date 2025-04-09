@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# utopia-cms 2020-2023. Aníbal Pacheco.
+# utopia-cms 2020-2025. Aníbal Pacheco.
 
 from builtins import str
 

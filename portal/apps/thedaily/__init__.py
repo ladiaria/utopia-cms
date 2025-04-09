@@ -1,8 +1,19 @@
+from os.path import join
 import locale
+import logging
 from pycountry import countries
 
 from django.conf import settings
 from django.core.checks import Error, Warning, register
+from django.template import Engine
+from django.template.exceptions import TemplateDoesNotExist
+
+
+log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S')
+
+
+def get_talk_url():
+    return getattr(settings, 'TALK_URL', None)
 
 
 @register()
@@ -45,3 +56,26 @@ def conf_check(app_configs, **kwargs):
             )
         )
     return errors
+
+
+def get_app_template(relative_path):
+    """
+    This simplifies the use of one custom setting per file, but cannot map a known template to any file, if one day
+    this became a requirement, we can add a map setting to map the relative_path received here to whatever the custom
+    map says; for ex: relative_path = getattr(settings, "NEW_CUSTOM_SETTING", {}).get(relative_path, relative_path)
+    where NEW_CUSTOM_SETTING can be for ex: {"welcome.html": "goodbye.html"}
+    """
+    default_dir, custom_dir = "thedaily/templates", getattr(settings, "THEDAILY_ROOT_TEMPLATE_DIR", None)
+    template = join(default_dir, relative_path)  # fallback to the default
+    if custom_dir:
+        engine = Engine.get_default()
+        # search under custom and take it if found
+        template_try = join(custom_dir, relative_path)
+        try:
+            engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            pass
+        else:
+            template = template_try
+    # if custom dir is not defined, no search is needed
+    return template

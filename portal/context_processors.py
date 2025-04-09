@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import pycountry
+from os.path import join
 
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -9,7 +10,10 @@ from core.models import Publication, Category, Article
 
 
 def urls(request):
-    url_dict = {}
+    url_dict = {
+        "SITE_DOMAIN_CLASS": settings.SITE_DOMAIN.replace('.', '-'),
+        "use_utm_links": settings.PORTAL_USE_UTM_LINKS,
+    }
     for attr in dir(settings):
         if attr.endswith('_URL'):
             try:
@@ -34,6 +38,7 @@ def site(request):
         "local_lang": settings.LOCAL_LANG,
         'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
         "base_template": getattr(settings, "PORTAL_BASE_TEMPLATE", "base.html"),
+        "flatpages_base": join(settings.PORTAL_FLATPAGES_DIR, "default.html"),
         "title_append_country": settings.PORTAL_TITLE_APPEND_COUNTRY,
         "admin_dark_mode_vars_template": getattr(
             settings, "PORTAL_ADMIN_DARK_MODE_VARS_TEMPLATE", "admin/admin_dark_mode_vars_template.html",

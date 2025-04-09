@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('costumer_id', models.PositiveIntegerField(blank=True, null=True, unique=True, verbose_name='ID ss')),
-                ('name', models.CharField(max_length=255, validators=[django.core.validators.RegexValidator("^[A-Za-z0-9\xf1\xfc\xe1\xe9\xed\xf3\xfa\xd1\xdc\xc1\xc9\xcd\xd3\xda _'.\\-]*$", 'El nombre s\xf3lo admite caracteres alfanum\xe9ricos, ap\xf3strofes, espacios, guiones y puntos.')], verbose_name='nombre')),
+                ('name', models.CharField(max_length=255, validators=[django.core.validators.RegexValidator("^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _'.-]*$", 'El nombre s\xf3lo admite caracteres alfanum\xe9ricos, ap\xf3strofes, espacios, guiones y puntos.')], verbose_name='nombre')),
                 ('address', models.CharField(blank=True, max_length=255, null=True, verbose_name='direcci\xf3n')),
                 ('country', models.CharField(blank=True, max_length=50, null=True, verbose_name='pa\xeds')),
                 ('city', models.CharField(blank=True, max_length=64, null=True, verbose_name='ciudad')),

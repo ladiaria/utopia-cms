@@ -2,13 +2,13 @@
 
 ## About this documentation site
 
-Starting a documentation site for this project, the main goal is to create docs here as better as possible to help anyone who wants to install or use this Django project, but also this first (an minimal) version of the documentation site was created specially to write about the next release that will support from this commit and up, the basic integration with our another main project, Utopía CRM, both using its default installations and requiering only a few steps of configuration.
+Starting a documentation site for this project, the main goal is to create documentation that is as good as possible to help anyone who wants to install or use this Django project, but also this first (and minimal) version of the documentation site was created specially to write about the next release that will support from this commit and up, the basic integration with our another main project, Utopía CRM, both using its default installations and requiering only a few steps of configuration.
 
-So, the following section (Utopía CRM integration), will talk about this integration and of course, with the time, this documentation home page will include all the docs that we have now and the many others that we must create.
+So, the following section (Utopía CRM integration), will cover this integration and, over time, this documentation home page will include all the docs that we have now and the many others that we must create.
 
 TODO: make separated md files for each next `##` and link them here.
 
-### How-to build this documentation site (for this project mantainers)
+### How-to build this documentation site (for this project maintainers)
 
 Standing in a working tree, on `main` branch and in the `docs` directory (a subdirectory of the project root), with the "venv" activated, install the `mkdocs` module using `pip` (if not already installed) and run this command:
 
@@ -66,6 +66,48 @@ This is an skel of steps that we will describe better on next commits, but is a 
 
 We hope have much more documentation in the next commits, for this topic and many others.
 
+## Caching using the cache backend configured in Django
+
+### Intro
+
+TODO: write about caching and why it is important to use it and very hard to do it right.
+
+### Configuration
+
+TODO: Explain why we had to write a custom middleware to handle the cache control headers, instead of only using the settings and middlewares that already exist in Django.
+
+tl;dr: Obtain the results you want working with caching requirements is hard, and it is even harder to do it right.
+
+#### AnonymousRequest and Response middlewares
+
+TODO: Explain what they do.
+
+#### Decorators
+
+TODO: Explain what they do.
+
+#### Home (url `/`)
+
+Utopia-cms default cache settings are ready to cache any part of the home (url `/`), for anonymous users only and also for authenticated users changing one of those settings, Since this configuration is made relying in __Django's cache framework__ (doc linked at the end of this section), it depends on all lower level caching conditions Django's cache framework has, for example the UserAgent (mobile/desktop) and the value of the path in the request url. By default for 2 minutes, but this __max_age__ can be changed overriding the `HOMEV3_INDEX_CACHE_MAXAGE` setting.
+
+To deploy this cache in the home, you have to generate a custom template for the default publication (TODO: write and refer documentation for this, giving a tutorial for creating and configuring an utopia-cms customization Django app) and make it work as the template being rendered when the / url is requested, the html code in this template that you want to cache, must be encapsulated around `{% cache max_age_value key_name %} ... {% endcache %}` the explanation about the `max_age_value` and `key_name` can be found in the [Django's cache framework documentation](https://docs.djangoproject.com/en/4.2/topics/cache/).
+
+#### Any other url
+
+The included support to cache any other url that utopia-cms can serve among with the conditions to make it work are described in the following item list:
+
+* The url or urls you want to cache should render exactly the same result to all users, regardless of the user's authentication status, anonymous or authenticated, if not, you probably will be render missing or wrong results for at least one of this kinds of users.
+* The url must be named and its name must be included in the `PORTAL_ANON_REQUEST_URL_NAMES_INCLUDE_AUTH` setting.
+* The url must be handled by a view and the view must be under your control to decorate it with this two decorators:
+    * `@cache_control(max_age=seconds, public=True)`
+    * `@vary_on_headers("Cookie")`
+
+When all this conditions are met, the url will be cached using the cache backend configured in Django and return the same response content for any request that matches the conditions to be cached.
+
+This is what we can confirm that works with the current configuration, of course many other set of configurations can also work, and all the expert Django developers who are reading this words (hope one can do it someday ;) can be thinking in "why this people made such a complicated strategy instead of xyz?", as said before, cache is very hard to do it right, other "easy" strategies were also tested and they didn't work as expected, so we decided to do it the way we did.
+
+TODO: add example of how to do it with the most-read articles block maybe is the first candidate to "fix" the cache that we believe was well configured but it wasn't.
+
 ## Newsletters
 
 ### Intro
@@ -82,7 +124,7 @@ Featured articles are selected, meaning those that would appear on the publicati
 
 * Areas:
 
-Priority is given to the "area newsletter" object that may exist with valid validity (there is a "valid until" datetime field) for the respective area. If the former is not valid or does not exist, articles from the "area cover" object associated with the respective area are then selected.
+Priority is given to the "area newsletter" object that may exist with valid dates (using the "valid until" datetime field) for the respective area. If the former is not valid or does not exist, articles from the "area cover" object associated with the respective area are then selected.
 
 ## Management commands
 
@@ -91,7 +133,7 @@ Like any other Django management command, these commands must be executed callin
 ### core.dump_articles
 
 Dumps the Articles given by id or filter expression to a JSON file, the generated file can then be loaded using `loaddata` command.
-The command will also copy all images related to the articles beeing dumped to the `photos` subdirectory under the dump directory that was given to the command by argument.
+The command will also copy all images related to the articles being dumped to the `photos` subdirectory under the dump directory that was given to the command by argument.
 
 * positional arguments:
 
@@ -121,16 +163,48 @@ The command will also copy all images related to the articles beeing dumped to t
   cp ~/article_dumps/photos/* media/photologue/photos
   ```
 
-## Youtube API
+## YouTube API
 
-Utopia CMS backend uses the Youtube Data API to offer a feature to get youtube video information and rendering, the functionality is quite basic but it might be cover many needs, since youtube API itself is quite limited and also for the purpose of this information system, things to be done with videos rarely need much sophistication.
+Utopia CMS backend uses the Youtube Data API to offer a feature to get youtube video information and rendering, the functionality is quite basic but it might be cover many needs, since youtube API itself is quite limited and also for the purpose of this information system, video functionality rarely requires complex implementations.
 
 ### Usage
 
-To use the Youtube API, you have to create a credentials file to use the oauth authentication or use an API key, you can follow the instructions in Youtube API official docs to achieve this requirement. We also have a [python script](videos.py) that exlpains how to obtain a credentials file and use oauth, this script was the result of many hours of trial and error, so take a look at it to avoid some headaches.
+To use the Youtube API, you have to create a credentials file to use the oauth authentication or use an API key, you can follow the instructions in Youtube API official docs to achieve this requirement. We also have a [python script](videos.py) that exlpains how to obtain a credentials file and use oauth, this script was developed through many hours of trial and error. Taking a look at it may help you avoid some headaches.
 
 ## CKEditor
 
 Under development, the plan is to use CKEditor as the main editor for the body field of articles, but for now, the martor editor will be used. Right now the support to use CKEditor overriding the target field class and setting some variables is available, documentation in that way will be added soon here.
 
 The approach is using a completely in-repo CKeditor which must be built using npm before a collectstatic is performed. We already have this scenario working using a custom app and it will migrated as soon as possible to this open source project.
+
+## Article publishing
+
+TODO: Generar versión en español de esta doc y llevar esta sección a la versión en español creada, traducir al inglés esta section y pegarla aquí.
+
+TODO: Intro contando sobre la feature de progaramar publicación.
+
+Casos de prueba para la transición de posibles estados de publicación de un artículo:
+
+| Caso | Estado | Acción | Resultado | Celery tasks |
+|------|--------|--------|-----------|--------------|
+| 1 | Nuevo | Publicar ahora | Se publica | 0 |
+| 2 | Nuevo | Programar con fecha válida | Se programa | 1 |
+| 3 | Nuevo | Programar con fecha inválida | Error, no se crea el artículo | 0 |
+| 4 | Nuevo | Borrador | Queda como borrador | 0 |
+| 5 | Existente publicado | Despublicar | Queda como borrador | 0 |
+| 6 | Existente publicado | Guardar sin tocar nada | Se mantiene publicado | 0 |
+| 7 | Existente borrador | Publicar ahora | Se publica | 0 |
+| 8 | Existente borrador | Programar con fecha válida | Se programa | 1 |
+| 9 | Existente borrador | Programar con fecha inválida | Error, se mantiene en borrador | 0 |
+| 10 | Existente borrador | Guardar sin tocar nada | Se mantiene en borrador | 0 |
+| 11 | Existente programado | Modifica fecha con una fecha válida | Se reprograma | 2(1Revoked) |
+| 12 | Existente programado | Modifica fecha con una fecha inválida | Error, se mantiene programado | 1 |
+| 13 | Existente programado | Guardar sin tocar nada | Se mantiene programado | 1 |
+| 14 | Existente programado | Publicar ahora | Se publica | 1Revoked |
+| 15 | Existente programado | Borrador | Queda como borrador | 1Revoked |
+
+Más casos: (16-20) para los casos 11 a 15, probar lo mismo en cada uno de ellos pero accediendo a su change form antes de que se ejecute la tarea de publicación y presionar botón de guardar después que la tarea de publicación haya terminado.
+
+| Casos | Resultado | Celery tasks |
+|-------|-----------|--------------|
+| 16 a 20 | Error, se mantiene publicado | 0 |

@@ -18,16 +18,17 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
 /* .change-form .object-tools{margin-top: -100px;} */  /* TODO: Check the purpose of this */
 
 /* textareas inside inlines */
-.dynamic-extensions td.field-body{width:50%;}
+.dynamic-recuadros td.field-body{width:50%;}
 .dynamic-attachments td.field-description{width:45%;}
-.dynamic-extensions td.field-body textarea, .dynamic-attachments td.field-description textarea {
+.dynamic-recuadros td.field-body textarea, .dynamic-attachments td.field-description textarea {
   width:100%;
 }
 
-/* missing (dont know why) border in collapsed inlines */
-#extensions-group div fieldset, #attachments-group div fieldset,
-#body_image-group div fieldset, #articlerel_set-group div fieldset {
-  border: 1px solid var(--hairline-color);
+/* "publicado en" tabular inline */
+.dynamic-articlerel_set td.field-home_top,
+.dynamic-articlerel_set td.field-main,
+.dynamic-articlerel_set td.delete {
+  padding-left: 25px;
 }
 
 /* paywall radio */
@@ -41,7 +42,7 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
   float: none !important;
   width: auto;
 }
-.form-row.field-slug input {
+.form-row.field-slug input, .form-row.field-slug_custom input {
   display: block !important;
   float: none !important;
   width: auto;
@@ -50,9 +51,39 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
     width: 600px;
   }
 }
+.form-row.field-slug input.readonly {
+  color: gray;
+  border: none;
+  padding-left: 0px;
+  padding-top: 8px;
+}
 
-/* alternative title and description fields */
-#id_keywords, #id_headline {
+/* border in collapsed inlines */
+#recuadros-group div fieldset,
+#attachments-group div fieldset,
+#body_image-group div fieldset,
+#articlerel_set-group div fieldset,
+#linked_articles-group div fieldset,
+fieldset.module:has(fieldset.module) {
+  border: 1px solid var(--hairline-color) !important;
+}
+
+/* more width to martor editor and let its buttons adjust to small widths */
+.main-martor {width: 80%;}
+.main-martor .btn-group.btn-group-sm {flex-wrap: wrap;}
+
+/* others */
+div.field-deck div.charcounter,
+div.field-lead div.charcounter,
+div.field-home_lead div.charcounter,
+div.field-home_top_deck div.charcounter,
+div.field-alt_title_metadata div.charcounter,
+div.field-alt_title_newsletters div.charcounter,
+div.field-alt_desc_metadata div.charcounter,
+div.field-alt_desc_newsletters div.charcounter {
+  margin-left: 10px;
+}
+#id_keywords, #id_headline, #id_alt_title_metadata, #id_alt_title_newsletters {
   @media (min-width: 880px) {
     width: 600px;
   }
@@ -61,17 +92,6 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
   height: 120px;
 }
 
-.fieldBox.field-alt_title_metadata input, .fieldBox.field-alt_title_newsletters input {
-  @media (min-width: 880px) {
-    margin-left: 200px !important;
-    width: 600px;
-  }
-}
-#id_alt_desc_metadata, #id_alt_desc_newsletters{
-  @media (min-width: 880px) {
-    margin-left: 200px;
-  }
-}
 .field-alt_desc_metadata textarea, .field-alt_desc_newsletters textarea {
   @media (min-width: 880px) {
     width: 600px;
@@ -96,28 +116,6 @@ fieldset.collapse textarea,fieldset.collapsed textarea {
   }
 }
 
-#id_alt_desc_metadata_helptext,
-#id_alt_desc_newsletters_helptext {
-  @media (min-width: 880px) {
-    margin-left: 165px;
-  }
-}
-#id_headline_helptext, #id_alt_title_metadata_helptext, #id_alt_title_newsletters_helptext,
-#id_slug_helptext, #id_keywords_helptext {
-  padding-left: 0px;
-}
-label[for="id_headline"] { float: left; }
-label[for="id_alt_title_metadata"],
-label[for="id_alt_title_newsletters"],
-label[for="id_alt_desc_metadata"],
-label[for="id_alt_desc_newsletters"] {
-  @media (min-width: 880px) {
-    float: initial;
-    margin-left: 200px;
-    width: 20em;
-  }
-}
-
 .form-row:not(.empty-form) {
   @media (max-width: 767px) {
     td {
@@ -134,10 +132,59 @@ label[for="id_alt_desc_newsletters"] {
   }
 }
 
-/* published status row */
+/* published status row, slug options block */
+.field-publish_radio_choice label.inline,
+.field-publish_radio_choice label:not(:has(input)),
+.form-row.field-date_published:has(.hidden) label,
+.form-row.field-slug_radio_choice label:not([for="id_slug_radio_choice_0"]) {
+  font-weight: bold;
+}
+#id_publish_radio_choice input,
+#id_unpublish_radio_choice input,
+input[id="id_unpublish_radio_choice"],
+#id_slug_radio_choice input,
+#id_slug_radio_choice_custom input,
+input[id="id_slug_radio_choice_custom"] {
+  margin-top: -4px;
+  margin-right: 5px;
+}
+.form-row.field-publish_radio_choice,
+.form-row.field-date_published,
+.form-row.field-slug_radio_choice,
+.form-row.field-slug_radio_choice_custom {
+  border-bottom: unset;
+  padding-bottom: 0px;
+}
+#id_slug_custom_helptext {
+  width: revert;
+}
+.form-row.field-date_published:has(.hidden) #id_date_published_helptext {
+  font-size: unset;
+  padding-bottom: 20px;
+  @media (min-width: 767px) {
+    margin-top: -26px;
+  }
+}
+.form-row.field-date_published:not(:has(.hidden)) {
+  padding-top: 0px;
+  margin-left: 30px;
+}
+.form-row.field-unpublish_radio_choice.field-is_published.field-to_be_published {
+  padding-top: 0px;
+}
+.fieldBox.field-unpublish_radio_choice:has(input[type="checkbox"]) {
+  @media (min-width: 767px) {
+    margin-left: 200px;
+  }
+}
 .field-is_published, .field-to_be_published, .field-date_published {
   width: unset !important;
+}
+.field-is_published:not(.hidden), .field-to_be_published:not(.hidden), .field-date_published:not(.hidden) {
   display: block !important;
+}
+label[for="id_slug_radio_choice_0"], label[for="id_slug_radio_choice_custom_0"] {
+  display: revert;
 }
 .fieldBox.field-date_published label{
   display: none !important;

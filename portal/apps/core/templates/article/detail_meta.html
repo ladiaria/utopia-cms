@@ -1,4 +1,4 @@
-{% load static core_tags ldml %}
+{% load static core_tags ldml thumbnail %}
 
 <meta property="og:type" content="article">
 <meta property="article:author" content="{% if article.get_authors %}{% for author in article.get_authors %}{{ SITE_URL_SD }}{{ author.get_absolute_url }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ site.name }}{% endif %}">
@@ -18,6 +18,10 @@
   {% with satirical_social_img='img/'|add:section.slug|add:'-social.png' %}
     <meta property="og:image" content="{{ SITE_URL_SD }}{% static satirical_social_img %}">
   {% endwith %}
+{% elif open_graph_author_img %}
+  {% thumbnail open_graph_author_img "1200x630" crop="top" as im %} {# TODO: Check crop position #}
+    <meta property="og:image" content="{{ SITE_URL_SD }}{{ im.url }}">
+  {% endthumbnail %}
 {% elif default_pub.open_graph_image %}
   {% block article_photo_and_pub_og %}
     <meta property="og:image" content="{{ SITE_URL_SD }}{% if photo_render_allowed %}{{ article.photo.get_article_main_url }}?r={% randomgen %}{% else %}{% static default_pub.open_graph_image %}{% endif %}">
@@ -26,7 +30,7 @@
   <meta property="og:image" content="{{ SITE_URL_SD }}{{ article.photo.get_article_main_url }}?r={% randomgen %}">
 {% endif %}
 {% if photo_render_allowed %}
-  <meta property="og:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+  <meta property="og:image:alt" content="{{ article.photo_alt_text }}">
 {% endif %}
 <!-- End Open Graph (http://ogp.me) -->
 
@@ -40,6 +44,6 @@
   <meta name="twitter:site" content="@{{ HOMEV3_TWITTER_SITE_META }}">
 {% endif %}
 {% if photo_render_allowed %}
-  <meta name="twitter:image:alt" content="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+  <meta name="twitter:image:alt" content="{{ article.photo_alt_text }}">
 {% endif %}
 <!-- End Meta tags Twitter -->

@@ -186,7 +186,7 @@
         </div>
         {% block help_body %}{% endblock %}
         <div class="edit_profile_card__inner-section_footer">
-          <a class="link" href="/ayuda/">Ir al centro de ayuda</a>
+          <a class="link" href="{% url 'help' %}">Ir al centro de ayuda</a>
         </div>
       </div>
       <div class="edit_profile_card__inner-section">
@@ -271,8 +271,7 @@
 
       phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");
 
-      // mailtrain "nl" switches events
-      {% if mailtrain_lists %}
+      {% if mailtrain_lists %} // mailtrain "nl" switches events
         const target = $('#mailtrain-lists');
         const observer = new IntersectionObserver((entries, observer) => {
           entries.forEach(entry => {
@@ -294,8 +293,7 @@
         observer.observe(target[0]);
       {% endif %}
 
-      // open modal on errors
-      {% if user_form.errors or profile_form.phone.errors %}
+      {% if user_form.errors or profile_form.phone.errors %} // open modal on errors
         edit_profile_open_modal();
       {% endif %}
 

@@ -6,7 +6,7 @@ from PIL import Image
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.utils.safestring import mark_safe
 from photologue.models import Photo, PhotoSize, get_storage_path
 
 
@@ -27,7 +27,7 @@ class Agency(models.Model):
 
 class Photographer(models.Model):
     name = models.CharField('nombre', max_length=50, unique=True)
-    email = models.EmailField('correo electrónico', blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
     date_created = models.DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
@@ -46,6 +46,19 @@ class PhotoExtended(models.Model):
     TYPE = (
         (FOTO, 'Foto'),
         (ILUSTRACION, 'Ilustración'),
+    )
+    alt_text = models.TextField(
+        'texto alternativo (alt text)',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            "Descripción de la imagen para quienes no puedan verla. Mejora accesibilidad y SEO. Si se deja vacío se "
+            "utilizará la leyenda.<br>"
+            "Longitud recomendada:<br>"
+            "Ideal: menos de 125 caracteres.<br>"
+            "Máxima: menos de 250 caracteres<br>"
+            "Exceptional: más de 250 caracteres para describir un gráfico por ejemplo."
+        ),
     )
     type = models.CharField('tipo', max_length=1, choices=TYPE, default=FOTO)
     image = models.OneToOneField(Photo, on_delete=models.CASCADE, related_name='extended')
