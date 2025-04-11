@@ -1373,6 +1373,14 @@ class ArticleBase(Model, CT):
     def from_admin(self):
         return getattr(self, 'admin', False)
 
+    @staticmethod
+    def collisions(slug, date_value):
+        return Article.objects.filter(
+            Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
+            | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
+            slug=slug,
+        )
+
     def save(self, *args, **kwargs):
 
         # WARNING: Do not call self.full_clean() here at this point, even if you think it's a good idea.
@@ -1426,11 +1434,7 @@ class ArticleBase(Model, CT):
             # needed if for example, assigning from a shell using strings for dates.
             # TODO: this only works if elasticsearch is off (improve this)
             date_value = datetime.strptime(date_value, "%Y-%m-%d %H:%M:%S")
-        targets = Article.objects.filter(
-            Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
-            | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
-            slug=self.slug,
-        )
+        targets = Article.collisions(self.slug, date_value)
         if self.pk:
             targets, old_instance = targets.exclude(id=self.id), Article.objects.get(pk=self.id)
             if self.to_be_published:
