@@ -29,7 +29,7 @@
     "author": {
       "@type": "Organization",
       "name": "{{ site.name }}"
-    },{% endif %}
+    },{% endif %}{% spaceless %}{% block json_ld_publisher %}
     "publisher": {
       "@type": "Organization",
       "name": "{{ site.name }}"{% if publication.publisher_logo or default_pub.publisher_logo %},
@@ -42,7 +42,7 @@
         "width": "{{ default_pub.publisher_logo_width }}",
         "height": "{{ default_pub.publisher_logo_height }}"{% endif %}
       }{% endif %}
-    }{% block json_ld_image %}{% if photo_render_allowed %},
+    }{% endblock %}{% endspaceless %}{% spaceless %}{% block json_ld_image %}{% if photo_render_allowed %},
     "image": {
       "@type": "ImageObject",
       "url": "{{ SITE_URL_SD }}{{ article.photo.get_1200w_url }}",
@@ -56,6 +56,6 @@
       "width": "{{ default_pub.open_graph_image_width }}",
       "height" : "{{ default_pub.open_graph_image_height }}"
     },
-    "thumbnailUrl": "{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}"{% endif %}{% endblock %}
+    "thumbnailUrl": "{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}"{% endif %}{% endblock %}{% endspaceless %}
   }
 </script>
