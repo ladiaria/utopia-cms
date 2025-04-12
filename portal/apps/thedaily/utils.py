@@ -150,7 +150,10 @@ def recent_following(user, *models):
     for model in models:
         check(model)
         qs = qs.filter(content_type=ContentType.objects.get_for_model(model))
-    return [follow.follow_object for follow in qs.fetch_generic_relations('follow_object').order_by('-started')]
+    return [
+        follow.follow_object for follow in qs.fetch_generic_relations('follow_object').order_by('-started')
+        if follow.follow_object
+    ]
 
 
 def add_default_mailtrain_lists(subscriber):

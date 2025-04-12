@@ -7,12 +7,12 @@ import locale
 
 from django.conf import settings
 from django.template import Library, Node, NodeList, TemplateSyntaxError, Variable
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.flatpages.models import FlatPage
 from django.utils import timezone
 
 from core.models import Article
-from thedaily.models import SubscriptionPrices
+from ..models import SubscriptionPrices
+from ..utils import recent_following
 
 
 register = Library()
@@ -58,7 +58,7 @@ class TimeNode(Node):
 
 @register.filter(name='count_following')
 def count_following(user):
-    return user.follow_set.filter(content_type=ContentType.objects.get_for_model(Article)).count()
+    return len(recent_following(user, Article))
 
 
 @register.filter(name='has_restricted_access')
