@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from os.path import join
 
 from hashids import Hashids
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.urls import reverse
@@ -347,6 +348,14 @@ def render_toolbar_for(context, toolbar_object):
 
 
 @register.simple_tag
+def get_category(category_slug):
+    try:
+        return Category.objects.get(slug=category_slug)
+    except Category.DoesNotExist:
+        pass
+
+
+@register.simple_tag
 def get_section(section_slug):
     try:
         return Section.objects.get(slug=section_slug)
@@ -662,6 +671,20 @@ def truncatehtml_chars(string, length):
 
 
 truncatehtml_chars.is_safe = True
+
+
+@register.simple_tag(takes_context=True)
+def social_profile_link(context, network):
+    publication = context.get('publication_obj') or context.get('publication') or context.get('default_pub')
+    publication_slug = publication.slug if publication else settings.DEFAULT_PUB
+    if publication_slug:
+        for profile in content_settings.SOCIAL_PROFILES.get(publication_slug, []):
+            properties = profile.get(network)
+            if properties:
+                href = properties.get("href")
+                if href:
+                    return href
+    return ""
 
 
 @register.simple_tag

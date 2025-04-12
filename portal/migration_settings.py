@@ -129,6 +129,7 @@ INSTALLED_APPS = (
     "closed_site",
     "concurrency",
     "adminsortable2",
+    "content_settings",
 )
 
 SITE_ID = 1
@@ -299,6 +300,7 @@ TEMPLATES = [
                 "adzone.context_processors.get_source_ip",
                 "apps.thedaily.context_processors.permissions",
                 "django.template.context_processors.csrf",
+                "content_settings.context_processors.content_settings",
             ],
             "loaders": [
                 "amp_tools.loader.Loader",
