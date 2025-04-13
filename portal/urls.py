@@ -12,6 +12,7 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView, RedirectView
 from django.contrib import admin
 from django.contrib.sites.models import Site
+from django.contrib.flatpages.views import flatpage
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.static import serve
 
@@ -415,3 +416,6 @@ if settings.DEBUG:
     # )
 else:
     urlpatterns.append(re_path(r'^.*.css$', TemplateView.as_view(template_name='devnull.html')))
+
+# and after all, a catchall for flatpages
+urlpatterns.append(re_path(r"^(?P<url>.*/)$", flatpage))
