@@ -44,7 +44,7 @@
 
 {% block content %}
 
-  {# next include can changes this variables, so we backup them, and restore them later using the backed values #}
+  {# next include can change these variables, so we backup them, and restore them later using the backed values #}
   {% with publication_bak=publication category_bak=category %}
 
     {% if fcategory %}

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-
-from datetime import datetime, date
+from datetime import date
 
 from django_user_agents.utils import get_user_agent
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.urls import reverse
@@ -127,23 +127,33 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             ftop_articles.pop(0)
             context['featured_publications'].append((pub, ftop_articles, fcover_article, featured_section_slug))
 
-    # Context variables for the featured category component
-    featured_category_slug = getattr(settings, 'HOMEV3_FEATURED_CATEGORY', None)
-    if featured_category_slug:
-        category = get_object_or_404(Category, slug=featured_category_slug)
-        category_home = get_object_or_404(CategoryHome, category=category)
-        category_cover_article, category_destacados = category_home.cover(), category_home.non_cover_articles()
-        if is_authenticated:
-            ctx_update_article_extradata(
-                context, user, user_has_subscriber, follow_set, [category_cover_article] + list(category_destacados)
-            )
-        context.update(
-            {
-                'fcategory': category,
-                'category_cover_article': category_cover_article,
-                'category_destacados': category_destacados,
-            }
-        )
+    # Context variables for the featured category component, TODO: extend to use all defined in the setting
+    featured_categories = content_settings.FEATURED_CATEGORIES
+    if featured_categories:
+        context['featured_categories'] = featured_categories
+        featured_category_slug = featured_categories[0]
+        if featured_category_slug:
+            try:
+                category_home = CategoryHome.objects.get(category__slug=featured_category_slug)
+            except CategoryHome.DoesNotExist:
+                pass
+            else:
+                category_cover_article, category_destacados = category_home.cover(), category_home.non_cover_articles()
+                if is_authenticated:
+                    ctx_update_article_extradata(
+                        context,
+                        user,
+                        user_has_subscriber,
+                        follow_set,
+                        [category_cover_article] + list(category_destacados),
+                    )
+                context.update(
+                    {
+                        'fcategory': category_home.category,
+                        'category_cover_article': category_cover_article,
+                        'category_destacados': category_destacados,
+                    }
+                )
 
     questions_topic_slug, questions_topic = getattr(settings, 'HOMEV3_QUESTIONS_TOPIC_SLUG', None), None
     if questions_topic_slug:
@@ -155,7 +165,9 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     if year and month and day:
         # case when a particular edition by date is requested
         date_published = timezone.make_aware(
-            datetime(year=int(year), month=int(month), day=int(day), hour=publishing_hour, minute=publishing_minute)
+            timezone.datetime(
+                year=int(year), month=int(month), day=int(day), hour=publishing_hour, minute=publishing_minute
+            )
         )
         # Optionally a custom setting can determine whether editions older than it are available.
         oldest_allowed = getattr(settings, "HOMEV3_EDITION_BY_DATE_OLDEST_ALLOWED", None)
