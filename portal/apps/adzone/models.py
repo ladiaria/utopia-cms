@@ -78,16 +78,17 @@ class AdBase(models.Model):
     title = models.CharField(verbose_name=_('Title'), max_length=255)
     url = models.URLField(
         max_length=500,
-        verbose_name=_('Advertised URL'), help_text=_(
-            'Siempre debe comenzar con http:// o https:// y si se '
-            'necesita un timestamp usar %(timestamp)d'))
+        verbose_name=_('Advertised URL'),
+        help_text=_('Siempre debe comenzar con http:// o https:// y si se necesita un timestamp usar %(timestamp)d'),
+    )
     mobile_url = models.URLField(
         max_length=500,
-        blank=True, null=True,
+        blank=True,
+        null=True,
         verbose_name=_('Alternative Advertised URL for mobile.'),
-        help_text=_('Ídem anterior. Si es la misma dejar en blanco.'))
-    analytics_tracking = models.CharField(
-        verbose_name='Trackeo analytics', max_length=255, blank=True)
+        help_text=_('Ídem anterior. Si es la misma dejar en blanco.'),
+    )
+    analytics_tracking = models.CharField(verbose_name='Trackeo analytics', max_length=255, blank=True)
     since = models.DateTimeField(verbose_name=_('Since'), auto_now_add=True)
     updated = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
 
@@ -96,10 +97,9 @@ class AdBase(models.Model):
 
     # Relations
     advertiser = models.ForeignKey(Advertiser, on_delete=models.CASCADE, verbose_name=_("Ad Provider"))
-    category = models.ForeignKey(AdCategory, on_delete=models.CASCADE,
-                                 verbose_name=_("Category"),
-                                 blank=True,
-                                 null=True)
+    category = models.ForeignKey(
+        AdCategory, on_delete=models.CASCADE, verbose_name=_("Category"), blank=True, null=True
+    )
     zone = models.ForeignKey(AdZone, on_delete=models.CASCADE, verbose_name=_("Zone"))
 
     # Our Custom Manager
@@ -116,6 +116,14 @@ class AdBase(models.Model):
 
     def get_absolute_url(self):
         return reverse('adzone_ad_view', args=[self.id, self.analytics_tracking])
+
+    def impressions_count(self):
+        return self.adimpression_set.count()
+    impressions_count.short_description = _('impressions')
+
+    def clicks_count(self):
+        return self.adclick_set.count()
+    clicks_count.short_description = _('clicks')
 
     def intersects_show_interval(self, start_showing, stop_showing):
         latest_start = max(self.start_showing, start_showing)

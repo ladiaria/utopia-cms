@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-03-08 13:36-0300\n"
+"POT-Creation-Date: 2025-04-13 17:04-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,7 +26,7 @@ msgstr "Empresa"
 msgid "Company Site"
 msgstr "Sitio web"
 
-#: apps/adzone/models.py:31 apps/adzone/models.py:98
+#: apps/adzone/models.py:31 apps/adzone/models.py:99
 msgid "Ad Provider"
 msgstr "Proveedor de anuncios"
 
@@ -59,31 +59,31 @@ msgstr ""
 "Siempre debe comenzar con http:// o https:// y si se necesita un timestamp "
 "usar %(timestamp)d"
 
-#: apps/adzone/models.py:87
+#: apps/adzone/models.py:88
 msgid "Alternative Advertised URL for mobile."
 msgstr "URL destino alternativa para móviles"
 
-#: apps/adzone/models.py:88
+#: apps/adzone/models.py:89
 msgid "Ídem anterior. Si es la misma dejar en blanco."
 msgstr "Ídem anterior. Si es la misma dejar en blanco."
 
-#: apps/adzone/models.py:91
+#: apps/adzone/models.py:92
 msgid "Since"
 msgstr "Desde"
 
-#: apps/adzone/models.py:92
+#: apps/adzone/models.py:93
 msgid "Updated"
 msgstr "Actualizado"
 
-#: apps/adzone/models.py:94
+#: apps/adzone/models.py:95
 msgid "Start showing"
 msgstr "Comenzar a mostrar"
 
-#: apps/adzone/models.py:95
+#: apps/adzone/models.py:96
 msgid "Stop showing"
 msgstr "Dejar de mostrar"
 
-#: apps/adzone/models.py:100
+#: apps/adzone/models.py:101
 msgid "Category"
 msgstr "Categoría"
 
@@ -99,38 +99,46 @@ msgstr "Anuncio Base"
 msgid "Ads Base"
 msgstr "Anuncios Base"
 
-#: apps/adzone/models.py:131 apps/adzone/models.py:146
+#: apps/adzone/models.py:122
+msgid "impressions"
+msgstr "impresiones"
+
+#: apps/adzone/models.py:126
+msgid "clicks"
+msgstr "clicks"
+
+#: apps/adzone/models.py:139 apps/adzone/models.py:154
 msgid "When"
 msgstr "Cuándo"
 
-#: apps/adzone/models.py:133 apps/adzone/models.py:148
+#: apps/adzone/models.py:141 apps/adzone/models.py:156
 msgid "Who"
 msgstr "Quién"
 
-#: apps/adzone/models.py:137
+#: apps/adzone/models.py:145
 msgid "Ad Impression"
 msgstr "Impresión de anuncio"
 
-#: apps/adzone/models.py:138
+#: apps/adzone/models.py:146
 msgid "Ad Impressions"
 msgstr "Impresiones de anuncios"
 
-#: apps/adzone/models.py:152
+#: apps/adzone/models.py:160
 msgid "Ad Click"
 msgstr "Click de anuncio"
 
-#: apps/adzone/models.py:153
+#: apps/adzone/models.py:161
 msgid "Ad Clicks"
 msgstr "Clicks de anuncios"
 
-#: apps/adzone/models.py:159
+#: apps/adzone/models.py:167
 msgid "Content"
 msgstr "Contenido"
 
-#: apps/adzone/models.py:164
+#: apps/adzone/models.py:172
 msgid "Banner escritorio"
 msgstr "Banner escritorio"
 
-#: apps/adzone/models.py:166
+#: apps/adzone/models.py:174
 msgid "Banner móvil"
 msgstr "Banner móvil"

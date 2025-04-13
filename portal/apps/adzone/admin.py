@@ -33,10 +33,31 @@ class AdZoneAdmin(admin.ModelAdmin):
 
 
 class AdBaseAdmin(admin.ModelAdmin):
-    list_display = [
-        'title', 'start_showing', 'stop_showing', 'category', 'zone']
+    list_display = ['title', 'start_showing', 'stop_showing', 'category', 'zone']
     list_filter = ['start_showing', 'stop_showing', 'category', 'zone']
     search_fields = ['title', 'url']
+    readonly_fields = ['impressions_count', 'clicks_count']
+    fieldsets = (
+        (
+            None, {
+                'fields': (
+                    'title',
+                    'url',
+                    'mobile_url',
+                    "analytics_tracking",
+                    'start_showing',
+                    'stop_showing',
+                    'advertiser',
+                    'category',
+                    'zone',
+                    "sites",
+                    "content",
+                    "mobile_content",
+                )
+            },
+        ),
+        ('Statistics', {'fields': ('impressions_count', 'clicks_count')})
+    )
 
     class Media:
         js = ('admin/js/jquery.init.js', 'js/adbase_admin.js')
@@ -131,5 +152,4 @@ class TextAdAdmin(AdBaseAdmin):
 class BannerAdAdmin(AdBaseAdmin):
     form = UploadFileForm
     list_display = ['title', 'start_showing', 'stop_showing', "category", 'zone']
-
     search_fields = ['title', 'url', 'content', 'mobile_content']
