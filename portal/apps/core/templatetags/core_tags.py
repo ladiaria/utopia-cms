@@ -6,12 +6,12 @@ from datetime import datetime, timedelta
 from os.path import join
 
 from hashids import Hashids
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.urls import reverse
-from django.template import Engine, Library, Node, TemplateSyntaxError, Variable, loader
+from django.template import Library, Node, TemplateSyntaxError, Variable, loader
 from django.template.defaultfilters import stringfilter, slugify
-from django.template.exceptions import TemplateDoesNotExist
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
@@ -20,7 +20,7 @@ from tagging.models import Tag, TaggedItem
 
 from core.models import Article, ArticleCollection, Supplement, Category, Section
 from core.forms import SendByEmailForm
-from core.utils import datetime_timezone
+from core.utils import datetime_timezone, get_app_template, get_related_article_type_limits
 
 
 register = Library()
@@ -59,18 +59,7 @@ def published_articles(context, **kwargs):
     return articles[:limit] if limit else articles
 
 
-@register.simple_tag(takes_context=True)
-def render_related(context, article, amp=False):
-
-    if not getattr(settings, "CORE_ARTICLE_DETAIL_ENABLE_RELATED", True):
-        return ""
-
-    article, section = context.get('article'), context.get('section')
-    if not section:
-        return ''
-
-    category, publication, upd_dict = section.category, context.get('publication'), None
-
+def related_data_using_publication(publication, section, article, limit, title=None):
     if (
         publication
         and section.slug not in getattr(settings, 'CORE_SECTIONS_EXCLUDE_RELATED', ())
@@ -78,58 +67,88 @@ def render_related(context, article, amp=False):
     ):
         # use the publication
         upd_dict = {
-            'articles': section.latest4relatedbypublication(publication.id, article.id),
-            'section': publication.headline if publication.slug in getattr(
-                settings, 'CORE_PUBLICATIONS_RELATED_USE_HEADLINE', ()
-            ) else publication.name,
+            'articles': section.latest_related_by_publication(publication.id, article.id, limit),
+            'section': title or (
+                publication.headline
+                if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_RELATED_USE_HEADLINE', ())
+                else publication.name
+            ),
         }
+        if title:
+            upd_dict['title_no_prefix'] = True
+        return upd_dict
 
-    elif category and category.slug in getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', ()):
-        # use the category
-        upd_dict = {
-            'articles': section.latest4relatedbycategory(category.id, article.id),
-            'section': category.more_link_title or category.name,
-        }
 
-    else:
-        # use a category also, defined in settings and if it belongs to the article and the section is not skipped.
-        use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY_SKIPPING_SECTIONS', [])
-        if use_category_skip_sections:
-            article_categories = article.get_categories_slugs()
-            for category_slug, section_slugs in use_category_skip_sections:
-                if category_slug in article_categories and section.slug not in section_slugs:
-                    category = Category.objects.get(slug=category_slug)
-                    upd_dict = {
-                        'articles': section.latest4relatedbycategory(category.id, article.id),
-                        'section': category.name,
-                    }
-                    break
+@register.simple_tag(takes_context=True)
+def render_related(context, article, amp=False, publication_priority=None, title=None):
+
+    if not settings.CORE_ENABLE_RELATED_ARTICLES:
+        return ""
+
+    section = context.get('section')
+    if not section:
+        return ''
+
+    category, publication, upd_dict = section.category, context.get('publication'), None
+
+    settings_publication_priority = getattr(settings, "CORE_RENDER_RELATED_PUBLICATION_PRIORITY", False)
+    if publication_priority is None:
+        publication_priority = settings_publication_priority
+    related_default_limit = getattr(settings, 'CORE_RENDER_RELATED_DEFAULT_LIMIT', 4)
+
+    if publication and publication_priority:
+        # 1st: give priority to publication, if defined by settings
+        upd_dict = related_data_using_publication(publication, section, article, related_default_limit, title)
 
     if not upd_dict:
-        upd_dict = {'articles': section.latest4related(article.id), 'section': section.name}
+        category_priority = getattr(settings, "CORE_CATEGORY_RELATED_CATEGORY_PRIORITY", False)
+        category_related_limits = getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY', {})
+        related_article_type_limit = get_related_article_type_limits().get(article.type)
+
+        # 2nd: use category, if it is priorized globally or by settings but giving priority to article type limits
+        if category_priority or related_article_type_limit or (category and category.slug in category_related_limits):
+
+            if category:
+                related_limit = (
+                    related_article_type_limit
+                    or category_related_limits.get(category.slug, related_default_limit)
+                    or related_default_limit
+                )
+                upd_dict = {
+                    'articles': section.latest_related_by_category(category.id, article.id, related_limit),
+                    'section': category.more_link_title or category.name,
+                }
+
+        if not upd_dict:
+            # 3rd: A conditional category-priorized (only for the sections specified in the setting)
+            use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY_SKIPPING_SECTIONS', [])
+            if use_category_skip_sections:
+                article_categories = article.get_categories_slugs()
+                for category_slug, section_slugs in use_category_skip_sections:
+                    if category_slug in article_categories and section.slug not in section_slugs:
+                        category = Category.objects.get(slug=category_slug)
+                        related_limit = category_related_limits.get(category.slug, related_default_limit)
+                        if related_limit:
+                            upd_dict = {
+                                'articles': section.latest_related_by_category(category.id, article.id, related_limit),
+                                'section': category.name,
+                            }
+                            break
+
+        # 4th, if still blank, now is the turn of the default behavior, use the section
+        if not upd_dict:
+            upd_dict = {'articles': section.latest_related(article.id, related_default_limit), 'section': section.name}
+
+        if not (upd_dict or publication_priority):
+            # 5th: use the publication now, if it was not prioritized in the 1st "call"
+            # NOTE: if the pub was prioritized, we already know here that it returns nothing,
+            #       that's why we only call it "again" only if we know that it was not prioritized.
+            upd_dict = related_data_using_publication(publication, section, article, related_default_limit, title)
 
     upd_dict.update({'is_detail': False, 'amp': amp})
     flatten_ctx = context.flatten()
     flatten_ctx.update(upd_dict)
-    # search custom template by slug
-    template, engine = 'core/templates/article/related.html', Engine.get_default()
-    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
-    if template_dir:
-        template_try = join(template_dir, "article/related", slugify(section) + ".html")
-        try:
-            engine.get_template(template_try)
-        except TemplateDoesNotExist:
-            # try to fallback to a possible custom "related.html"
-            template_try = join(template_dir, "article/related.html")
-            try:
-                engine.get_template(template_try)
-            except TemplateDoesNotExist:
-                pass
-            else:
-                template = template_try
-        else:
-            template = template_try
-    return loader.render_to_string(template, flatten_ctx)
+    return loader.render_to_string(get_app_template(join("article/related", slugify(section) + ".html")), flatten_ctx)
 
 
 # Media select
@@ -205,16 +224,7 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
         template, template_try_to_override = "article_card_new.html", True
 
     if template_try_to_override:
-        engine = Engine.get_default()
-        template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
-        if template_dir:
-            template_try = join(template_dir, "article", template)
-            try:
-                engine.get_template(template_try)
-            except TemplateDoesNotExist:
-                pass
-            else:
-                template_override = template_try
+        template_override = get_app_template(join("article", template))
 
     # compute card_display if not already done
     if not card_display:
@@ -320,26 +330,29 @@ def render_toolbar_for(context, toolbar_object):
     """
     Usage example: {% render_toolbar_for article %}
     """
-    if getattr(settings, "CORE_ENABLE_ARTICLE_TOOLBAR", True):
-        user = context.get('user')
-        if user and user.is_staff and isinstance(toolbar_object, Article):
-            toolbar_template = 'core/templates/article/toolbar.html'
-            params = {'article': toolbar_object, 'is_detail': False}
-            if context.get('is_cover'):
-                edition = context.get('edition')
-                if edition:
-                    params.update(
-                        {
-                            'featured_order': ', '.join(
-                                str(tp) for tp in toolbar_object.articlerel_set.filter(
-                                    edition=edition, home_top=True
-                                ).values_list('top_position', flat=True)
-                            ),
-                        }
-                    )
-            context.update(params)
-            return loader.render_to_string(toolbar_template, context.flatten())
+    user = context.get('user')
+    toolbar_template = user and get_app_template("article/toolbar.html")
+    if toolbar_template and user.is_staff and isinstance(toolbar_object, Article):
+        params = {'article': toolbar_object, 'is_detail': False}
+        if context.get('is_cover'):
+            edition = context.get('edition')
+            if edition:
+                params['featured_order'] = ', '.join(
+                    str(tp) for tp in toolbar_object.articlerel_set.filter(
+                        edition=edition, home_top=True
+                    ).values_list('top_position', flat=True)
+                )
+        context.update(params)
+        return loader.render_to_string(toolbar_template, context.flatten())
     return ''
+
+
+@register.simple_tag
+def get_category(category_slug):
+    try:
+        return Category.objects.get(slug=category_slug)
+    except Category.DoesNotExist:
+        pass
 
 
 @register.simple_tag
@@ -658,6 +671,20 @@ def truncatehtml_chars(string, length):
 
 
 truncatehtml_chars.is_safe = True
+
+
+@register.simple_tag(takes_context=True)
+def social_profile_link(context, network):
+    publication = context.get('publication_obj') or context.get('publication') or context.get('default_pub')
+    publication_slug = publication.slug if publication else settings.DEFAULT_PUB
+    if publication_slug:
+        for profile in content_settings.SOCIAL_PROFILES.get(publication_slug, []):
+            properties = profile.get(network)
+            if properties:
+                href = properties.get("href")
+                if href:
+                    return href
+    return ""
 
 
 @register.simple_tag

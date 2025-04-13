@@ -1,12 +1,13 @@
 from time import time
 import operator
 from copy import copy
+from pydoc import locate
 
 from django.conf import settings
 from django.template.defaultfilters import slugify
 from django.utils.timezone import now, timedelta
 
-from .models import Category, ArticleRel, Section, Edition, CategoryHome, CategoryHomeArticle
+from .models import Category, Article, ArticleRel, Section, Edition, CategoryHome, CategoryHomeArticle
 
 
 def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run=False, sql_debug=False):
@@ -24,6 +25,8 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
     # TODO: calculate not fixed count before and better stop algorithm.
     buckets, category_sections, cat_needed_defaults, cat_needed, start_time, result = {}, {}, {}, {}, time(), []
     categories_to_fill = []
+    debug, pre_begin_debug = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DEBUG', False), []
+    w_authors_only_categories = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_WITH_AUTHORS_ONLY', ())
 
     for cat in categories:
         needed = getattr(
@@ -31,18 +34,23 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
         ).get(cat.slug, getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_NEEDED_DEFAULT', 10))
         cat_needed_defaults[cat.slug] = needed
         exclude_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_SECTIONS', {}).get(cat.slug, [])
-        articles_count = cat.articles_count(needed, exclude_sections, sql_debug)
+        w_authors_only = cat.slug in w_authors_only_categories
+        articles_count = cat.articles_count(needed, exclude_sections, w_authors_only, sql_debug)
         include_extra_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_INCLUDE_EXTRA_SECTIONS', {}).get(
             cat.slug, []
         )
 
         # NOTICE: tag exclude filtering (if defined by settings) is ignored to evaluate this needed limits
         if articles_count < needed and include_extra_sections:
-            articles_count += ArticleRel.articles_count(needed - articles_count, include_extra_sections, sql_debug)
+            articles_count += ArticleRel.articles_count(
+                needed - articles_count, include_extra_sections, w_authors_only, sql_debug
+            )
 
         if articles_count:
             categories_to_fill.append(cat.slug)
             buckets[cat.slug], cat_needed[cat.slug] = [], articles_count
+            if debug:
+                pre_begin_debug.append(f"DEBUG: {cat.slug} needed: {articles_count}")
             category_sections[cat.slug] = set(
                 list(cat.section_set.values_list('id', flat=True))
                 + (
@@ -57,10 +65,15 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
             )
 
     if categories_to_fill:
-        if settings.DEBUG:
+        if debug:
             result.append('DEBUG: update_category_home begin')
-
-        lowest_date, max_date = Edition.objects.last().date_published, now().date()
+            result.extend(pre_begin_debug)
+        lowest_date = Edition.objects.last().date_published
+        max_date = (
+            Edition.objects.first().date_published
+            if getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ALLOW_FUTURE', False)
+            else now().date()
+        )
         days_step = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DAYS_STEP', 30)
         exclude_tags = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_TAGS', {})
         min_date_iter, max_date_iter, stop = max_date - timedelta(days_step), max_date, False
@@ -78,6 +91,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                     # insert the article (if matches criteria) limiting upto needed quantity with no dupe articles
                     article = ar.article
                     for cat_slug in categories_to_fill:
+                        w_authors_only = cat_slug in w_authors_only_categories
                         if (
                             article not in [x[0] for x in buckets[cat_slug]]
                             and ar.section_id in category_sections[cat_slug]
@@ -85,6 +99,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                                 cat_slug in exclude_tags
                                 and any(slugify(t.name) in exclude_tags[cat_slug] for t in article.get_tags())
                             )
+                            and (not w_authors_only or article.has_byline())
                         ):
                             buckets[cat_slug].append((article, (ar.edition.date_published, article.date_published)))
                             if len(buckets[cat_slug]) == cat_needed[cat_slug]:
@@ -115,18 +130,26 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
         cover_id = home_cover.article_id if home_cover else None
         cover_fixed = home_cover.fixed if home_cover else False
         category_fixed_content, free_places = ([cover_id], []) if cover_fixed else ([], [0])
-
+        needed = cat_needed[category_slug]
         try:
             for i in range(2, cat_needed_defaults[category_slug] + 1):
                 try:
                     position_i = CategoryHomeArticle.objects.get(home=home, position=i)
                     a = position_i.article
-                    aid, afixed = a.id, position_i.fixed
-                    if afixed:
-                        category_fixed_content.append(aid)
+                    if i > needed:
+                        if debug:
+                            result.append(
+                                f"DEBUG: {category_slug} position {i} val {a.id} over limit ({needed}) will be cleaned"
+                            )
+                        if not dry_run:
+                            position_i.delete()
                     else:
-                        free_places.append(i)
-                except CategoryHomeArticle.DoesNotExist:
+                        aid, afixed = a.id, position_i.fixed
+                        if afixed:
+                            category_fixed_content.append(aid)
+                        else:
+                            free_places.append(i)
+                except (CategoryHomeArticle.DoesNotExist, Article.DoesNotExist):
                     free_places.append(i)
 
         except IndexError:
@@ -136,7 +159,7 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
         if not free_places:
             continue
 
-        # make list with the new articles based on the free places
+        # make list with the new articles based on the free places (TODO: why "new" articles? what does "new" mean?)
         free_places2, category_content = copy(free_places), []
         for article, date_published_tuple in articles:
 
@@ -150,7 +173,12 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                 break
 
         # sort new articles
-        category_content.sort(key=operator.itemgetter(1), reverse=True)
+        custom_sort_path = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_SORT_FUNCTION', {}).get(category_slug, None)
+        custom_sort_function = locate(custom_sort_path) if custom_sort_path else None
+        if custom_sort_function:
+            category_content = custom_sort_function(category_content)
+        else:
+            category_content.sort(key=operator.itemgetter(1), reverse=True)
 
         # update the content
         for i, ipos in enumerate(free_places2):
@@ -159,18 +187,18 @@ def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run
                 old_pos, date_pub, art = category_content[i]
 
                 if ipos:
-                    if settings.DEBUG or dry_run:
+                    if debug or dry_run:
                         result.append('DEBUG: update %s home position %d: %s' % (home.category, ipos, art))
                     if not dry_run:
                         home.set_article(art, ipos)
                 else:
-                    if settings.DEBUG or dry_run:
+                    if debug or dry_run:
                         result.append('DEBUG: update %s home cover: %s' % (home.category, art))
                     if not dry_run:
                         home.set_article(art, 1)
             except IndexError:
                 pass
 
-    if settings.DEBUG:
+    if debug:
         result.append('DEBUG: update_category_home completed in %.0f seconds' % (time() - start_time))
     return "\n".join(result)

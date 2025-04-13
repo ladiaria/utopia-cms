@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" href="{% static 'favicon.ico' %}">
 
     <title>{{ site.name }} - Panel de estadísticas de usuarios y previsualización de newsletters</title>
 
@@ -28,7 +27,7 @@
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/js/bootstrap-datepicker.min.js"></script>
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker.min.css">
     <script>
-      function nl_switches_submit(hash){
+      function nl_switches_submit(hash, send_test=false){
         let a_elem = $("a[href='" + hash + "']");
         let [c1, c2, c3, c4] = $("#nl_switches :checkbox");
         let c1_checked = $(c1).is(":checked");
@@ -36,8 +35,12 @@
           let qparam = "";
           // only when "as news" or not subscribed to default pub (staff user is always subscribed)
           if(!c1_checked){
-            // case 0-1: is_subscriber_default=0; case 0-0: is_subscriber_any=0
-            qparam += ($(c2).is(":checked") ? c1.name : c2.name) + "=0";
+            {% if multi_publication %}
+              // case 0-1: is_subscriber_default=0; case 0-0: is_subscriber_any=0
+              qparam += ($(c2).is(":checked") ? c1.name : c2.name) + "=0";
+            {% else %}
+              qparam += "is_subscriber_any=0";
+            {% endif %}
           }
           $.each([c3, c4], function(i, c_elem){
             if($(c_elem).is(":checked")){
@@ -45,11 +48,25 @@
             }
           });
           // change url and click (use a post-hook to revert the changes, otherwise the item in sidebar left dirty)
-          a_elem.data(
-            {"url": a_elem.data("url") + "?" + qparam, "control": "nl_item_data_defaults"}
-          );
+          if(!send_test){
+            a_elem.data(
+              {"url": a_elem.data("url") + "?" + qparam, "control": "nl_item_data_defaults"}
+            );
+          }
         }
-        a_elem.trigger("click");
+        if(send_test){
+          $.post(a_elem.data("url"), $("#nl_switches").serialize(), function(){
+            $("#send_test_result").html("Enviando prueba...").attr("class", "alert alert-info");
+          }).done(function(){
+            $("#send_test_result").html("Envío de prueba realizado con éxito").attr("class", "alert alert-success");
+          }).fail(function(data){
+            $("#send_test_result").html(
+              "<strong>Error al enviar prueba</strong><br>" + data.responseText).attr("class", "alert alert-danger"
+            );
+          });
+        }else{
+          a_elem.trigger("click");
+        }
         return false;
       }
       function nl_item_data_defaults(hash){
@@ -58,37 +75,66 @@
       }
       function nl_switches(hash){
         $('#control-content').html(`
-          <form id="nl_switches" onsubmit="return nl_switches_submit('` + hash + `')">
+          <form id="nl_switches" onsubmit="return nl_switches_submit('` + hash + `')">{% csrf_token %}
+            <input type="hidden" id="nl_date" name="nl_date" value="">
+            <input type="hidden" id="nl_type" name="nl_type" value="">
             <fieldset class="border-bottom">
-              <input type="checkbox" id="nl_switches_1" name="is_subscriber_default" checked="checked">
-              <label class="pr-2 align-middle" for="nl_switches_1">Suscriptor pago de {{ DEFAULT_PUB }}</label>
-              <input type="checkbox" id="nl_switches_2" name="is_subscriber_any" checked="checked" disabled="disabled">
-              <label class="pr-2 align-middle" for="nl_switches_2">Suscriptor pago de al menos una publicación</label>
-              <input type="checkbox" id="nl_switches_3" name="as_news">
-              <label class="pr-2 align-middle" for="nl_switches_3">"as news"</label>
-              <input type="checkbox" id="nl_switches_4" name="s_pdf">
-              <label class="pr-2 align-middle" for="nl_switches_4">"s_pdf"</label>
-              <button type="submit" class="btn btn-primary mb-2" style="padding-top:3px">`
-                + feather.icons["refresh-cw"].toSvg() + ` Recargar
-              </button>
+              <div style="float:left;margin-right:10px">
+                <input type="checkbox" id="nl_switches_1" name="is_subscriber_default" checked="checked">
+                <label class="pr-2 align-middle" for="nl_switches_1">
+                  Suscriptor pago{% if multi_publication %} de {{ default_pub.name }}{% endif %}
+                </label><br>
+                {% if multi_publication %}
+                  <input type="checkbox" id="nl_switches_2" name="is_subscriber_any" checked="checked" disabled="disabled">
+                  <label class="pr-2 align-middle" for="nl_switches_2">Suscriptor pago de al menos una publicación</label>
+                {% endif %}
+                <input type="checkbox" id="nl_switches_3" name="as_news">
+                <label class="pr-2 align-middle" for="nl_switches_3">"as news"</label><br>
+                <input type="checkbox" id="nl_switches_4" name="s_pdf">
+                <label class="pr-2 align-middle" for="nl_switches_4">"s_pdf"</label>
+              </div>
+              <div style="float:left;margin-right:10px">
+                <button type="submit" id="reload" class="btn btn-primary mb-2" style="padding-top:3px">`
+                  + feather.icons["refresh-cw"].toSvg() + ` Recargar
+                </button>
+              </div>
+              {% if request.user.email %}
+                <div style="float:left;margin-bottom:10px">
+                  <button type="button" id="send_test" class="btn btn-secondary mb-2"
+                          style="padding-top:3px;margin-bottom:0px !important;margin-right:10px">`
+                  + feather.icons["mail"].toSvg() + ` Enviar prueba a <strong>&lt;{{ request.user.email }}&gt;</strong>
+                  </button>
+                  <span id="send_test_result" class="alert" role="alert" style="padding:.2rem .5rem;float:right"></span>
+                  <br>
+                  <small style="color:#333">
+                    Cada prueba envía un sólo email con destinatario único (usted), nunca enviará emails a otros
+                    usuarios.
+                  </small>
+                </div>
+              {% endif %}
             </fieldset>
           </form>
         `);
-        $("#nl_switches_1").on("change", function(){
-          if($(this).is(":checked")){
-            $("#nl_switches_2").prop({"checked": true, "disabled": true});
-          }else{
-            $("#nl_switches_2").prop("disabled", false);
-          }
-        });
-        $("#nl_switches_2").on("change", function(){
+        {% if multi_publication %}
+          $("#nl_switches_1").on("change", function(){
+            if($(this).is(":checked")){
+              $("#nl_switches_2").prop({"checked": true, "disabled": true});
+            }else{
+              $("#nl_switches_2").prop("disabled", false);
+            }
+          });
+        {% endif %}
+        $("#nl_switches_{% if multi_publication %}2{% else %}1{% endif %}").on("change", function(){
           if($(this).is(":checked")){
             $("#nl_switches_4").prop("disabled", false);
           }else{
             $("#nl_switches_4").prop({"checked": false, "disabled": true});
           }
         });
-        $('#control-content').show();
+        // show and set test newsletter click handler (if button is found)
+        $('#control-content').show().find("#send_test").on("click", function(){
+          nl_switches_submit(hash, true);
+        });
       }
       $(function(){
         var current_date = new Date()  // will be used as "last month" date
@@ -128,7 +174,10 @@
               $('#control-content').hide();
             }
             let abs_url = "{{ site_url }}" + content_url;
-            $(this).find("#loaded_url").html(abs_url).attr("href", abs_url);
+            let loaded_url = $(this).find("#loaded_url");
+            loaded_url.html(abs_url).attr("href", abs_url);
+            $("#nl_date").val(loaded_url.data("nl-date"));
+            $("#nl_type").val(loaded_url.data("nl-type"));
           });
         });
 
@@ -241,10 +290,10 @@
                       {% with preview_url=nlobj.newsletter_preview_url %}
                         {% if preview_url %}
                           <li>
-                            <a href="#{{ nlobj.nltype }}-{{ nlobj.slug }}-nl-preview" class="embed nav-link"
-                               data-url="{{ preview_url }}" data-control="nl_switches">
-                              <span data-feather="eye"></span>
-                              {{ nlobj.profile_newsletter_name|default:nlobj.name }}
+                            <a id="{{ nlobj.nltype }}-{{ nlobj.slug }}-nl-preview"
+                               href="#{{ nlobj.nltype }}-{{ nlobj.slug }}-nl-preview"
+                               class="embed nav-link" data-url="{{ preview_url }}" data-control="nl_switches">
+                              <span data-feather="eye"></span> {{ nlobj.profile_newsletter_name|default:nlobj.name }}
                             </a>
                           </li>
                         {% endif %}
@@ -268,9 +317,9 @@
     </div>
 
     <!-- Icons -->
-    <script src="//unpkg.com/feather-icons/dist/feather.min.js"></script>
+    <script src="//unpkg.com/feather-icons"></script>
     <script>
-      feather.replace()
+      feather.replace();
     </script>
 
   </body>

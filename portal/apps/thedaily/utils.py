@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from os.path import join
 import logging
 import random as rdm
 from operator import attrgetter
@@ -10,6 +9,7 @@ import requests
 from actstream.models import Follow
 from actstream.registry import check
 from favit.models import Favorite
+from favit.utils import is_xhr
 from social_django.models import UserSocialAuth
 from django_amp_readerid.models import UserReaderId
 from phonenumber_field.phonenumber import PhoneNumber
@@ -25,11 +25,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 
-from libs.utils import crm_rest_api_kwargs
+from libs.utils import crm_rest_api_kwargs, get_site_name
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
 from signupwall.utils import get_ip
 from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
+from . import get_app_template, log_formatter
 
 
 subscribe_logfile, subscribe_logger = getattr(settings, 'THEDAILY_SUBSCRIBE_LOGFILE', None), None
@@ -37,7 +38,7 @@ if subscribe_logfile:
     subscribe_logger = logging.getLogger(__name__)
     subscribe_logger.setLevel(logging.DEBUG)
     file_handler = logging.FileHandler(filename=subscribe_logfile)
-    file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S'))
+    file_handler.setFormatter(log_formatter)
     subscribe_logger.addHandler(file_handler)
 
 
@@ -108,13 +109,13 @@ def move_data(s0, s1):
 
 
 def subscribe_log(request, message, level=logging.INFO):
-    # TODO: indicate wether if the request is ajax.
     if subscribe_logger and not request.user_agent.is_bot:
         log_session_keys = getattr(settings, "THEDAILY_SUBSCRIBE_LOG_SESSION_KEYS", False)
         subscribe_logger.log(
             level,
-            '[%s]\t%s %s\t(%s)\tuser: %s, "%s", session keys: %s' % (
+            '[%s]\t%s%s %s\t(%s)\tuser: %s, "%s", session keys: %s' % (
                 get_ip(request),
+                'X' if is_xhr(request) else '',
                 request.method,
                 request.get_full_path(),
                 request.user_agent,
@@ -149,7 +150,10 @@ def recent_following(user, *models):
     for model in models:
         check(model)
         qs = qs.filter(content_type=ContentType.objects.get_for_model(model))
-    return [follow.follow_object for follow in qs.fetch_generic_relations('follow_object').order_by('-started')]
+    return [
+        follow.follow_object for follow in qs.fetch_generic_relations('follow_object').order_by('-started')
+        if follow.follow_object
+    ]
 
 
 def add_default_mailtrain_lists(subscriber):
@@ -166,16 +170,48 @@ def add_default_mailtrain_lists(subscriber):
                 pass
 
 
-def add_default_newsletters(subscriber):
-    default_category_nls = settings.THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS
-    for default_category_slug in default_category_nls:
+def add_default_publication_newsletters(subscriber):
+    default_publication_nls = settings.THEDAILY_DEFAULT_PUBLICATION_NEWSLETTERS
+    for publication_slug in default_publication_nls:
         try:
-            category = Category.objects.get(slug=default_category_slug)
+            publication = Publication.objects.get(slug=publication_slug)
+            if publication.has_newsletter:
+                subscriber.newsletters.add(publication)
+        except Publication.DoesNotExist:
+            pass
+
+
+def add_default_category_newsletters(subscriber, planslug=None, extra=None):
+    """
+    Adds the default category newsletters to the subscriber given, based on the planslug given.
+    Calls with planslug=None came from signup (free subscriprions).
+    Extra is a category slug to be added also, if given.
+    """
+    if planslug not in getattr(settings, "THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS_EXCLUDED_PLANS", []):
+        default_category_nls = settings.THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS
+        for category_slug in default_category_nls:
+            try:
+                category = Category.objects.get(slug=category_slug)
+                if category.has_newsletter:
+                    subscriber.category_newsletters.add(category)
+            except Category.DoesNotExist:
+                pass
+            if extra and extra == category_slug:
+                # extra already added (or attempted to add), set it to None
+                extra = None
+    if extra:
+        try:
+            category = Category.objects.get(slug=extra)
             if category.has_newsletter:
                 subscriber.category_newsletters.add(category)
         except Category.DoesNotExist:
             pass
     add_default_mailtrain_lists(subscriber)
+
+
+def add_default_newsletters(subscriber):
+    add_default_publication_newsletters(subscriber)
+    add_default_category_newsletters(subscriber)
 
 
 def unsubscribed_newsletters(subscriber):
@@ -256,27 +292,19 @@ def google_phone_next_page(request, is_new):
     )
 
 
-def get_app_template(relative_path):
-    """
-    This simplifies the use of one custom setting per file, but cannot map a known template to any file, if one day
-    this became a requirement, we can add a map setting to map the relative_path received here to whatever the custom
-    map says; for ex: relative_path = getattr(settings, "NEW_CUSTOM_SETTING", {}).get(relative_path, relative_path)
-    where NEW_CUSTOM_SETTING can be for ex: {"welcome.html": "goodbye.html"}
-    """
-    default_dir, custom_dir = "thedaily/templates", getattr(settings, "THEDAILY_ROOT_TEMPLATE_DIR", None)
-    template = join(default_dir, relative_path)  # fallback to the default
-    if custom_dir:
-        engine = Engine.get_default()
-        # search under custom and take it if found
-        template_try = join(custom_dir, relative_path)
-        try:
-            engine.get_template(template_try)
-        except TemplateDoesNotExist:
-            pass
-        else:
-            template = template_try
-    # if custom dir is not defined, no search is needed
-    return template
+def get_notification_subjects():
+    account_verify_msg_subject_nosite = "Verificá tu cuenta"
+    account_verify_msg_subject = " de ".join((account_verify_msg_subject_nosite, get_site_name()))
+    notification_subjects = {
+        "account_signup.html": account_verify_msg_subject_nosite,
+        "account_signup_subscribed.html": account_verify_msg_subject,
+        "password_reset_body.html": "Recuperación de contraseña",
+        "signup.html": "¡Te damos la bienvenida!",
+        "signup.html_variant": "Tu cuenta gratuita está activa",
+        "signup_wall.html": 'Llegaste al límite de artículos gratuitos',
+    }
+    notification_subjects.update(getattr(settings, "NOTIFICATION_SUBJECTS", {}))
+    return notification_subjects
 
 
 def product_checkout_template(product_slug, steps=False):

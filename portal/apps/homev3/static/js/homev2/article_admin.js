@@ -34,9 +34,9 @@ var prepareFields = function(){
     $('.inline-group').show();
   }
   $('#homearticle_set-group').hide();
-  // custom position for the "extensions" inline (below martor or ckeditor widget, the body field)
+  // custom position for "recuadros" inline (below martor or ckeditor widget, the body field)
   var fset_body = $('.main-martor,div.ck').closest('fieldset');
-  fset_body.after($('#extensions-group'));
+  fset_body.after($('#recuadros-group'));
 };
 var main_section_row_selected = function(radio_field){
   radio_field.parents("tr").addClass('row-articlerel-selected');
@@ -61,6 +61,42 @@ if (window.jQuery) {
         }
         main_section_row_selected($(this));
       });
+    });
+    // sortable inlines handlers (to show the position updated after sorting, to save the position for new rows)
+    function sortable2_dragend_handler(table_container_selector) {
+      $(table_container_selector + ' tr.has_original').on('dragend', function(event) {
+        // update widgets positions labels in the inline
+        update_pos_labels(event.target);
+      });
+    }
+    // new/delete rows handlers.
+    document.addEventListener('formset:added', (event) => {
+      const fsetName = event.detail.formsetName;
+      if (fsetName == 'recuadros' || fsetName == 'body_image') {
+        update_pos_labels(event.target, "");
+      }
+    });
+    document.addEventListener('formset:removed', (event) => {
+      const fsetName = event.detail.formsetName;
+      if (fsetName == 'recuadros' || fsetName == 'body_image') {
+        update_pos_labels("#" + fsetName + "-group tr", "");
+      }
+    });
+    sortable2_dragend_handler('#recuadros-group');
+    sortable2_dragend_handler('#body_image-group');
+    // put the unpublish radio beeing part of the publish radio choice group and check it if unpublished & unscheduled
+    $('#id_unpublish_radio_choice_0').prop(
+      {"name": "publish_radio_choice", "checked": !$('[id^="id_publish_radio_choice_"]:checked').length}
+    );
+    // also for custom slug (if customizable) and its change events
+    let slug_radio_choice_custom = $("#id_slug_radio_choice_custom_0");
+    if (slug_radio_choice_custom.length) {
+      slug_radio_choice_custom.prop(
+        {"name": "slug_radio_choice", "checked": !$('[id^="id_slug_radio_choice_"]:checked').length}
+      );
+    }
+    $("#id_slug_radio_choice, #id_slug_radio_choice_custom").on("change", function(){
+      $("#id_slug_custom").prop("disabled", $("#id_slug_radio_choice_0").prop("checked"));
     });
   });
 }

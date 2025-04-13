@@ -6,47 +6,51 @@
 <div id="main-header" class="nav-down{% if user.is_authenticated %} logged-in{% endif %}{% block header_extra_class %}{% if publication.is_emergente %} emergente{% endif %}{% if is_subscriber_any %} subscriber{% endif %}{% endblock %}">
   <div class="nav-wrapper">
     {% spaceless %}
-      <a class="header-logo emergentes" href="{% url 'home' %}"><img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_WIDTH }}" height="42"></a>
+      <a class="header-logo emergentes"{% if not disable_nav %} href="{% url 'home' %}"{% endif %}>
+        <img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_WIDTH }}" height="42">
+      </a>
       {% block header_pill %}{% endblock %}
     {% endspaceless %}
     <div id="nav-principal">
       <nav>
-        {% block menu %}{% include "menu.html" %}{% endblock %}
-        <ul class="navbar-right-tools right">
-          {% if user.is_authenticated %}
-            <li class="{% if is_subscriber_any %}hide-on-med-and-down{% else %}hide-on-small-only{% endif %}">
-              <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="user-dropdown">
-                <span class="inner">
-                  Tu cuenta<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z" class="nav-fill" fill="#a4a4a4"/></svg>
-                </span>
-              </a>
-            </li>
-            {% if not is_subscriber_any %}
+        {% block menu %}{% if not disable_nav %}{% include "menu.html" %}{% endif %}{% endblock %}
+        {% if not disable_nav %}
+          <ul class="navbar-right-tools right">
+            {% if user.is_authenticated %}
+              <li class="{% if is_subscriber_any %}hide-on-med-and-down{% else %}hide-on-small-only{% endif %}">
+                <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="user-dropdown">
+                  <span class="inner">
+                    Tu cuenta<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z" class="nav-fill" fill="#a4a4a4"/></svg>
+                  </span>
+                </a>
+              </li>
+              {% if not is_subscriber_any %}
+                <li class="hide-on-small-only">
+                  <a class="ut-btn ut-btn-s ut-btn-light suscribirse" href="{% url 'subscribe_landing' %}">Suscribite</a>
+                </li>
+              {% else %}
+                {% if is_portada and publication == default_pub %}
+                  <li class="hide-on-med-and-up a2hs-section-top" style="display: none;">
+                    <a class="ut-btn ut-btn-light ut-btn-outline ut-btn-s ingresar instalar-app a2hs-btn-top" href="#">Instalar App</a>
+                  </li>
+                {% endif %}
+              {% endif %}
+            {% else %}
+              <li>
+                <a href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}" class="ut-btn ut-btn-light ut-btn-outline ut-btn-s ingresar">Ingresá</a>
+              </li>
               <li class="hide-on-small-only">
                 <a class="ut-btn ut-btn-s ut-btn-light suscribirse" href="{% url 'subscribe_landing' %}">Suscribite</a>
               </li>
-            {% else %}
-              {% if is_portada and publication == default_pub %}
-                <li class="hide-on-med-and-up a2hs-section-top" style="display: none;">
-                  <a class="ut-btn ut-btn-light ut-btn-outline ut-btn-s ingresar instalar-app a2hs-btn-top" href="#">Instalar App</a>
-                </li>
-              {% endif %}
             {% endif %}
-          {% else %}
-            <li>
-              <a href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}" class="ut-btn ut-btn-light ut-btn-outline ut-btn-s ingresar">Ingresá</a>
+            <li class="hide-on-small-and-down">
+              <button class="nav-menu-button right js-ld-main-menu-toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="17" viewBox="0 0 30 17"><g transform="translate(-2004.711 -1047.227)"><rect width="30" height="3" rx="1.5" transform="translate(2004.711 1047.227)" fill="#fff"/><rect width="30" height="3" rx="1.5" transform="translate(2004.711 1054.227)" fill="#fff"/><rect width="30" height="3" rx="1.5" transform="translate(2004.711 1061.227)" fill="#fff"/></g></svg>
+                <span>Menú</span>
+              </button>
             </li>
-            <li class="hide-on-small-only">
-              <a class="ut-btn ut-btn-s ut-btn-light suscribirse" href="{% url 'subscribe_landing' %}">Suscribite</a>
-            </li>
-          {% endif %}
-          <li class="hide-on-small-and-down">
-            <button class="nav-menu-button right js-ld-main-menu-toggle">
-              <svg xmlns="http://www.w3.org/2000/svg" width="30" height="17" viewBox="0 0 30 17"><g transform="translate(-2004.711 -1047.227)"><rect width="30" height="3" rx="1.5" transform="translate(2004.711 1047.227)" fill="#fff"/><rect width="30" height="3" rx="1.5" transform="translate(2004.711 1054.227)" fill="#fff"/><rect width="30" height="3" rx="1.5" transform="translate(2004.711 1061.227)" fill="#fff"/></g></svg>
-              <span>Menú</span>
-            </button>
-          </li>
-        </ul>
+          </ul>
+        {% endif %}
       </nav>
     </div>
   </div>
@@ -65,7 +69,7 @@
     {% endif %}
     {% if user.is_staff %}<li><a href="//{{ site.domain }}/admin/">Admin</a></li>{% endif %}
     {% if user_menu_dropdown_extra_items_template %}{% include user_menu_dropdown_extra_items_template %}{% endif %}
-    <li><a href="/ayuda/">Ayuda</a></li>
+    <li><a href="{% url 'help' %}">Ayuda</a></li>
     <li><a href="{% url 'account-logout' %}">Cerrar sesión</a></li>
   </ul>
 {% elif user.is_authenticated %}
@@ -77,12 +81,12 @@
       </a>
     </li>
     {% if not is_subscriber_any %}
-      <li><a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=headerbtn">Suscribite</a></li>
+      <li><a href="{% url 'subscribe-default' %}{% if use_utm_links %}?utm_source=web&utm_medium=headerbtn{% endif %}">Suscribite</a></li>
     {% endif %}
     {% if poll_url %}
       <li><a href="{{ poll_url }}" rel="noreferrer noopener">Danos tu opinión <svg class="external" xmlns="http://www.w3.org/2000/svg" width="13.25" height="13.25" viewBox="0 0 13.25 13.25"><path d="M0,0H13.25V13.25H0Z" fill="none"></path><g transform="translate(1.656 1.656)"><path d="M12.385,7.969h0a.554.554,0,0,0-.552.552v3.312H4.1V4.1H7.417a.554.554,0,0,0,.552-.552h0A.554.554,0,0,0,7.417,3H4.1A1.107,1.107,0,0,0,3,4.1v7.729a1.107,1.107,0,0,0,1.1,1.1h7.729a1.107,1.107,0,0,0,1.1-1.1V8.521A.554.554,0,0,0,12.385,7.969Z" transform="translate(-3 -3)" fill="#262626"></path><path d="M15.218,3H12.3a.273.273,0,0,0-.193.469L13.175,4.54,8.869,8.847a.55.55,0,0,0,0,.778h0a.55.55,0,0,0,.778,0l4.3-4.3L15.019,6.4a.279.279,0,0,0,.475-.2V3.276A.273.273,0,0,0,15.218,3Z" transform="translate(-5.556 -3)" fill="#262626"></path></g></svg></a></li>
     {% endif %}
-    <li><a href="/ayuda/">Ayuda</a></li>
+    <li><a href="{% url 'help' %}">Ayuda</a></li>
     <li><a href="{% url 'account-logout' %}" class="logout btn-logout">cerrar sesión</a></li>
   </ul>
 {% endif %}

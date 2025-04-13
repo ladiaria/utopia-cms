@@ -3,6 +3,7 @@ from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
 from pydoc import locate
+import traceback
 from kombu.exceptions import OperationalError
 
 from actstream.models import Action
@@ -12,6 +13,9 @@ from tagging_autocomplete_tagit.widgets import TagAutocompleteTagIt
 from reversion.admin import VersionAdmin
 from martor.models import MartorField
 from martor.widgets import AdminMartorWidget
+from concurrency.api import disable_concurrency
+from concurrency.admin import ConcurrentModelAdmin
+from adminsortable2.admin import SortableAdminBase, SortableTabularInline
 
 from django.conf import settings
 from django.urls import path
@@ -24,15 +28,19 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
-from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget
+from django.forms import (
+    ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget, SlugField
+)
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.fields import CharField, IntegerField
-from django.forms.widgets import TextInput, HiddenInput
+from django.forms.widgets import TextInput, HiddenInput, CheckboxInput
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.utils.text import Truncator
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
+from thedaily import get_talk_url
 
 from .models import (
     Article,
@@ -58,11 +66,23 @@ from .models import (
     BreakingNewsModule,
     DeviceSubscribed,
     PushNotification,
+    DefaultNewsletter,
+    DefaultNewsletterArticle,
 )
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
 from .tasks import update_category_home, send_push_notification
-from .utils import update_article_url_in_coral_talk, smart_quotes
+from .utils import update_article_url_in_coral_talk, article_slug_customizable
+
+
+INLINES_SORTABLE = settings.CORE_ARTICLE_ADMIN_INLINES_SORTABLE
+
+
+def register_custom(register_map):
+    for model_class, admin_class in register_map.items():
+        if model_class in admin.site._registry:
+            admin.site.unregister(model_class)
+        admin.site.register(model_class, admin_class)
 
 
 class PrintOnlyArticleInline(TabularInline):
@@ -153,10 +173,16 @@ class ArticleRelAdminBaseModelForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['article'].label = 'artículo'
-        self.fields['section'].label = 'sección'
         self.fields['section'].choices = section_choices()
-        self.fields['home_top'].label = 'en portada'
+
+    """ Example of how to override the clean method to change a null position to 1
+    def clean(self):
+        super().clean()
+        position = self.cleaned_data.get('position')
+        if not position:
+            # possible TODO: another option is to get the actual max position and add 1
+            self.cleaned_data['position'] = self.instance.position = 1
+    """
 
     class Meta:
         model = ArticleRel
@@ -185,6 +211,7 @@ class ArticleRelHomeTopForm(ArticleRelAdminBaseModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["home_top"].label = "en portada"
         self.fields['home_top'].help_text = \
             'Utilice esta opción para desmarcar y poder quitar el artículo de los artículos en portada.'
         self.initial['home_top'] = True
@@ -195,8 +222,6 @@ class ArticleRelHomeTopForm(ArticleRelAdminBaseModelForm):
 
 
 class ArticleRelHomeNoTopForm(ArticleRelAdminBaseModelForm):
-    # TODO: draggable ordering is not working, FIX asap
-
     position = IntegerField(
         label='orden',
         widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}),
@@ -209,6 +234,7 @@ class ArticleRelHomeNoTopForm(ArticleRelAdminBaseModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["home_top"].label = "en portada"
         self.fields['home_top'].help_text = 'Marque esta opción para agregar el artículo en portada.'
 
     class Meta:
@@ -250,11 +276,22 @@ NoTopArticleRelInlineFormSet = inlineformset_factory(
 class HomeTopArticleInline(EditionBaseArticleInline):
     ordering = ('top_position',)
     fields = ('top_position', 'article', 'section', "home_top")
-    verbose_name = 'artículo en portada'
-    verbose_name_plural = 'artículos en portada'
+    verbose_name = 'artículo destacado'
+    verbose_name_plural_default = 'artículos destacados en portada'
+    verbose_name_plural = verbose_name_plural_default
     form = ArticleRelHomeTopForm
     formset = TopArticleRelInlineFormSet
     can_delete = False
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        if (
+            obj
+            and obj.publication.slug == settings.DEFAULT_PUB
+            and self.verbose_name_plural == self.verbose_name_plural_default
+        ):
+            self.verbose_name_plural += " principal"
+        return fieldsets
 
 
 class NoHomeTopArticleInline(EditionBaseArticleInline):
@@ -276,8 +313,19 @@ class EditionAdmin(ModelAdmin):
     publication = None
     inlines = [HomeTopArticleInline, NoHomeTopArticleInline]
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        try:
+            return super().change_view(request, object_id, form_url, extra_context)
+        except ValidationError as e:
+            self.message_user(request, e.message, messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:core_edition_changelist'))
+
     def get_form(self, request, obj=None, **kwargs):
         if obj:
+            if obj.articlerel_set.count() > settings.DATA_UPLOAD_MAX_NUMBER_FIELDS / 2:
+                raise ValidationError(
+                    "ERROR: demasiados artículos asociados a la edición para poder gestionarla a través de este sitio"
+                )
             self.publication = obj.publication
         return super().get_form(request, obj, **kwargs)
 
@@ -367,36 +415,63 @@ class SectionAdmin(ModelAdmin):
         update_category_home()
 
 
-class ArticleExtensionInline(TabularInline):
+class SortableArticleExtensionInlineForm(ModelForm):
+    order = IntegerField(widget=HiddenInput(attrs={'class': '_reorder_'}), required=False)
+
+    class Meta:
+        fields = "__all__"
+
+
+class SortableArticleExtensionInline(SortableTabularInline):
     model = ArticleExtension
-    extra = 1
+    form = SortableArticleExtensionInlineForm
+    extra = 0
     classes = ["collapse"]
+    fields = ["order", "position", 'headline', 'body', 'size', 'background_color']
+    readonly_fields = ['position']
+
+    @admin.display(description='posición')
+    def position(self, instance):
+        return instance.order or ""
 
 
-class ArticleBodyImageInline(TabularInline):
+class ArticleExtensionInline(SortableArticleExtensionInline):
+    class Media:
+        css = {'all': ('css/admin_article_hide_draggable_inlines.css',)}
+
+
+class SortableArticleBodyImageInline(SortableTabularInline):
     model = ArticleBodyImage
     extra = 0
     raw_id_fields = ('image', )
-    readonly_fields = ['photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
+    readonly_fields = ["position", 'photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
+    fields = ['order', "position", "image", "display"] + readonly_fields[1:]
     classes = ["collapse"]
 
-    @admin.display(
-        description='thumbnail'
-    )
-    def photo_admin_thumbnail(self, instance):
-        return instance.image.admin_thumbnail()
+    @admin.display(description='posición')
+    def position(self, instance):
+        return instance.order or ""
 
-    @admin.display(
-        description='tomada el'
-    )
+    @admin.display(description='thumbnail')
+    def photo_admin_thumbnail(self, instance):
+        if instance.image_file_exists():
+            return instance.image.admin_thumbnail()
+        else:
+            # TODO: maybe good to render some placeholder "not available" thumbnail
+            pass
+
+    @admin.display(description='tomada el')
     def photo_date_taken(self, instance):
         return instance.image.date_taken
 
-    @admin.display(
-        description='fecha de creación'
-    )
+    @admin.display(description='fecha de creación')
     def photo_date_added(self, instance):
         return instance.image.date_added
+
+
+class ArticleBodyImageInline(SortableArticleBodyImageInline):
+    class Media:
+        css = {'all': ('css/admin_article_hide_draggable_inlines.css',)}
 
 
 class ArticleRelAdminModelForm(ArticleRelAdminBaseModelForm):
@@ -417,7 +492,6 @@ class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
     Overrided to use a custom js, because we found this error in the upstream project:
     https://github.com/agusmakmun/django-markdown-editor/pull/217
     """
-
     @property
     def media(self):
         result = super().media
@@ -429,34 +503,110 @@ class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
 
 class ArticleAdminModelForm(ModelForm):
     PW_OPTIONS = (
-        ('none', 'Metered (por defecto)'),
+        ('none', f'Metered ({settings.PORTAL_LABEL_DEFAULT})'),
         ('full_restricted_true', 'Hard (solamente para suscriptores)'),
         ('public_true', 'Sin paywall (libre acceso)'),
     )
-    slug = CharField(
-        label='Slug',
-        widget=TextInput(attrs={'readonly': 'readonly'}),
-        help_text='Se genera automáticamente en base al título.',
-    )
+    PUBLISH_OPTIONS = (('none', 'Publicar ahora'), ('scheduled', 'Programar publicación'))
+    UNPUBLISH_OPTIONS = (('unpublished', 'Guardar como borrador'),)
+    if article_slug_customizable:
+        slug_radio_choice = ChoiceField(
+            label=Article.SLUG_LABEL,
+            choices=(("slug", f"En base al título principal ({settings.PORTAL_LABEL_DEFAULT})"),),
+            required=False,
+            widget=RadioSelect(),
+        )
+        SLUG_CHOICE_CUSTOM = ("custom", "Personalizado")
+        slug_radio_choice_custom = ChoiceField(
+            label="", choices=(SLUG_CHOICE_CUSTOM,), required=False, widget=RadioSelect(),
+        )
+        slug_custom = SlugField(
+            label="",
+            help_text=(
+                'Redactar en formato url. En minúsculas y sin espacios ni caracteres especiales (ejemplo: '
+                '"titulo-personalizado-de-articulo").'
+                # If for any reason we change this field to a CharField and make the conversion to slug somewhere, then
+                # the help text should also change and it can be something like this next line:
+                # Los espacios u otros caracteres no soportados serán eliminados o reemplazados por guiones al guardar
+            ),
+            required=False,
+        )
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
     pw_radio_choice = ChoiceField(
-        label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
+        label="paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
     )
+    publish_radio_choice = ChoiceField(
+        required=False, label=_("Published"), choices=PUBLISH_OPTIONS, widget=RadioSelect(),
+    )
+    unpublish_radio_choice = ChoiceField(required=False, label="", choices=UNPUBLISH_OPTIONS, widget=RadioSelect())
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # paywall initial values resolution
         if self.instance.full_restricted and not self.instance.public:
             self.initial['pw_radio_choice'] = 'full_restricted_true'
         elif not self.instance.full_restricted and self.instance.public:
             self.initial['pw_radio_choice'] = 'public_true'
         else:
             self.initial['pw_radio_choice'] = 'none'
+
+        # published status fields transformations and initial values resolution
         nowval = timezone.now()
-        if not self.instance.pk:
+        self.fields["is_published"].widget = HiddenInput()
+        self.fields["to_be_published"].widget = HiddenInput()
+        self.fields["is_published"].label = self.fields["to_be_published"].label = ""
+        if self.instance.pk:
+            if self.instance.is_published:
+                self.fields["date_published"] = CharField(
+                    required=False,
+                    label=_("Published"),
+                    help_text=self.instance.datetime_published_verbose(),
+                    disabled=True,
+                    widget=TextInput(attrs={'class': 'hidden'}),
+                )
+                self.fields["publish_radio_choice"].widget = HiddenInput()
+                self.initial["publish_radio_choice"] = "none"
+                self.fields["unpublish_radio_choice"].label = "Despublicar y guardar como borrador"
+                self.fields["unpublish_radio_choice"].choices = ((False, "none"), (True, "unpublished"))
+                self.fields["unpublish_radio_choice"].widget = CheckboxInput()
+            elif self.instance.to_be_published:
+                self.initial["publish_radio_choice"] = 'scheduled'
+            else:
+                self.initial["unpublish_radio_choice"] = 'unpublished'
+                self.initial['date_published'] = nowval
+        else:
+            self.initial["publish_radio_choice"] = 'none'
             self.initial['date_published'] = nowval
-        self.fields['date_published'].widget.attrs['min'] = nowval.isoformat()
-        self.fields['date_published'].required = False
-        self.fields['date_published'].label = ""
+
+        if not (self.instance.pk and self.instance.is_published):
+            self.fields['date_published'].widget.attrs['min'] = nowval.isoformat()
+            self.fields['date_published'].required = False
+            self.fields['date_published'].label = ""
+
+        # slug initial values resolution
+        self.fields['slug'].widget.attrs['readonly'] = True
+        self.fields['slug'].widget.attrs['class'] = "readonly"
+        if article_slug_customizable:
+            self.fields['slug'].required = False
+            self.fields["slug"].label = ""
+            self.fields["slug_radio_choice"].choices.append(self.SLUG_CHOICE_CUSTOM)
+            slug_from_headline = slugify(cleanhtml(ldmarkup(self.instance.headline)))
+            if self.instance.pk and self.instance.slug != slug_from_headline:
+                self.initial["slug_radio_choice"] = self.initial["slug_radio_choice_custom"] = "custom"
+                self.initial["slug_custom"] = self.instance.slug
+                self.initial["slug"] = slug_from_headline
+            else:
+                self.initial["slug_radio_choice"] = "slug"
+                self.fields["slug_custom"].widget.attrs['disabled'] = True
+        else:
+            self.fields["slug"].label = Article.SLUG_LABEL
+
+    def clean_slug_custom(self):
+        # Kept this method only to say that if for any reason we change this field to a CharField, we can use this
+        # method to convert its value to a valid slug value using slugify, line doing this left commented (next line).
+        # return slugify(self.cleaned_data.get('slug_custom'))
+        return self.cleaned_data.get('slug_custom')
 
     def clean_tags(self):
         """
@@ -471,32 +621,101 @@ class ArticleAdminModelForm(ModelForm):
             tags = '"' + tags + '"'
         return tags
 
+    def clean_version(self):
+        version = self.cleaned_data['version']
+        if not self.data.get("recover"):  # skip if coming from reversion
+            if settings.DEBUG:
+                print(f"DEBUG: article version submitted/instance {version}/{self.instance.version}")
+            if version != self.instance.version:
+                self.add_error(None, ValidationError("La versión del artículo no coincide con la versión actual."))
+        return version
+
+    def published_current_status(self):
+        if not self.instance.id:
+            return 'new'
+        elif self.instance.is_published:
+            return 'published'
+        elif self.instance.to_be_published:
+            return 'scheduled'
+        else:
+            return 'unpublished'
+
+    def published_desired_status(self, current_status, cleaned_data):
+        if current_status == "published":
+            return '%spublished' % ("un" if eval(cleaned_data.get("unpublish_radio_choice")) else "")
+        publish_choice = cleaned_data.get("publish_radio_choice")
+        if publish_choice == 'none':
+            return 'published'
+        elif publish_choice == 'scheduled':
+            return 'scheduled'
+        else:
+            return 'unpublished'
+
+    def to_be_published_check(self, cleaned_data):
+        date_published, err_msg = cleaned_data.get("date_published"), None
+        if not date_published:
+            err_msg = 'Para programar la publicación de un artículo se debe especificar la fecha'
+        elif date_published <= timezone.now():
+            err_msg = 'La fecha de publicación programada no puede estar en el pasado'
+        if err_msg:
+            self.add_error(None, err_msg)
+            self.add_error("date_published", err_msg)
+
     def clean(self):
-        # TODO: "add" errors right way (as django doc says) instead of raising them
+        publish_choice = self.data.get("publish_radio_choice")
+        cleaned_data = super().clean()  # clean will remove erroneous values
+        self.errors.pop("publish_radio_choice", None)  # remove error because we added values without django's knoledge
+        if publish_choice == "unpublished":
+            cleaned_data["publish_radio_choice"] = "unpublished"  # insert the removed value again
+        if not self.errors:
+            if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
+                self.add_error(None, "La configuración necesaria para publicar en IPFS no está definida.")
+            else:
+                # TODO: (Article.save method should be checked/updated to do the same logic)
+                nowval = timezone.now()
+
+                current_status = self.published_current_status()
+                desired_status = self.published_desired_status(current_status, cleaned_data)
+                if current_status == "new":
+                    if desired_status == "unpublished":
+                        cleaned_data["is_published"] = False
+                    elif desired_status == "published":
+                        cleaned_data["is_published"] = True
+                        cleaned_data["date_published"] = nowval
+                    elif desired_status == "scheduled":
+                        self.to_be_published_check(cleaned_data)
+                        cleaned_data["to_be_published"] = True
+                elif current_status == "published":
+                    cleaned_data["date_published"] = self.instance.date_published
+                    if desired_status == "unpublished":
+                        cleaned_data["is_published"] = False
+                    elif desired_status == "scheduled":
+                        self.add_error(None, "No se permite programar la publicación de un artículo ya publicado")
+                elif current_status == "scheduled":
+                    if desired_status == "unpublished":
+                        cleaned_data["is_published"] = False
+                        cleaned_data["to_be_published"] = False
+                    elif desired_status == "published":
+                        cleaned_data["is_published"] = True
+                        cleaned_data["to_be_published"] = False
+                        cleaned_data["date_published"] = nowval
+                    elif desired_status == "scheduled":
+                        self.to_be_published_check(cleaned_data)
+                        cleaned_data["to_be_published"] = True
+                elif current_status == "unpublished":
+                    if desired_status == "published":
+                        cleaned_data["is_published"] = True
+                        cleaned_data["date_published"] = nowval
+                    elif desired_status == "scheduled":
+                        self.to_be_published_check(cleaned_data)
+                        cleaned_data["to_be_published"] = True
+                    elif desired_status == "unpublished":
+                        pass  # TODO: do we need to set any values here?
+
         if self.errors:
-            raise ValidationError("")
+            return cleaned_data
 
-        cleaned_data = super().clean()
-        if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
-            raise ValidationError("La configuración necesaria para publicar en IPFS no está definida.")
-
-        # TODO: DRY (Article.save does the same logic)
-        nowval = timezone.now()
-        date_published = cleaned_data.get('date_published')
-        is_published, to_be_published = cleaned_data.get('is_published'), cleaned_data.get('to_be_published')
-
-        if is_published:
-            if to_be_published:
-                self.add_error(None, 'No se permite programar publicación de un artículo ya publicado')
-        elif to_be_published:
-            if not date_published:
-                self.add_error(None, 'Para programar la publicación de un artículo se debe especificar la fecha')
-            elif date_published <= nowval:
-                self.add_error(None, 'La fecha de publicación programada no puede estar en el pasado')
-
-        if self.errors:
-            raise ValidationError("")
-
+        is_published, date_published = cleaned_data.get("is_published"), cleaned_data.get("date_published")
         date_value = (date_published if is_published else cleaned_data.get('date_created')) or nowval
         # conversion to UTC is needed, it's not done automatically like Article.save does.
         # (save gets values from obj and not from the form), TODO: improve or investigate to explain better the cause.
@@ -513,15 +732,25 @@ class ArticleAdminModelForm(ModelForm):
             ),
             timezone.utc,
         )
+        if cleaned_data.get('slug_radio_choice') == 'custom':
+            slug = cleaned_data.get('slug_custom')
+            if not slug:
+                self.add_error("slug_custom", "Este campo es requerido")
+        else:
+            slug = slugify(cleanhtml(ldmarkup(cleaned_data.get('headline'))))
+        cleaned_data['slug'] = slug
         targets = Article.objects.filter(
             Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
             | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
-            slug=slugify(cleanhtml(ldmarkup(smart_quotes(cleaned_data.get('headline'))))),
+            slug=slug,
         )
         if self.instance.id:
             targets = targets.exclude(id=self.instance.id)
         if targets:
-            raise ValidationError('Ya existe un artículo en ese mes con el mismo título.')
+            self.add_error(
+                "headline",
+                ValidationError('Ya existe un artículo en ese mes con el mismo título.', "slug_within_month_unique"),
+            )
 
         # pw options:
         pw_choice = cleaned_data.get('pw_radio_choice')
@@ -571,7 +800,7 @@ def get_editions():
 
 
 @admin.register(Article, site=site)
-class ArticleAdmin(VersionAdmin):
+class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
@@ -579,38 +808,46 @@ class ArticleAdmin(VersionAdmin):
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
     list_display = (
-        'id',
-        'headline',
-        'type',
-        'get_publications',
-        'get_sections',
-        'creation_date',
-        'publication_date',
-        "published_status",
-        has_photo,
-        'surl',
+        ('id', 'headline', 'type')
+        + (('get_publications',) if Publication.multi() else ())
+        + ('get_sections', 'creation_date', 'publication_date', "published_status", has_photo, 'surl')
     )
     list_select_related = True
     list_filter = (
-        'type', 'date_created', 'is_published',
-        # 'to_be_published',  # TODO: add this filter when the field gets fully implemented
-        'date_published', 'newsletter_featured', 'byline'
-    )
+        'type',
+        'date_created',
+        'is_published',
+        'to_be_published',
+        'date_published',
+        "public",
+        "allow_comments",
+        'newsletter_featured',
+    ) + (('byline',) if getattr(settings, 'CORE_ARTICLE_ADMIN_BYLINE_FILTER_ENABLED', False) else ())
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
     ordering = ('-date_created',)
     raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
-    inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
+    inlines = (
+        [SortableArticleExtensionInline, SortableArticleBodyImageInline] if INLINES_SORTABLE else
+        [ArticleExtensionInline, ArticleBodyImageInline]
+    ) + [ArticleEditionInline]
+    slug_fields = (
+        "slug_radio_choice", "slug", "slug_radio_choice_custom", "slug_custom"
+    ) if article_slug_customizable else ("slug",)
     fieldsets = (
         (
             None,
             {
                 'fields': (
                     'type',
-                    ('headline', 'alt_title_metadata', 'alt_title_newsletters'),
-                    'slug',
+                    'headline',
+                    'alt_title_metadata',
+                    'alt_title_newsletters',
+                    *slug_fields,
                     'keywords',
-                    ('deck', "alt_desc_metadata", "alt_desc_newsletters"),
+                    'deck',
+                    'alt_desc_metadata',
+                    'alt_desc_newsletters',
                     'lead',
                     'body',
                 ),
@@ -628,11 +865,9 @@ class ArticleAdmin(VersionAdmin):
             'Metadatos',
             {
                 'fields': (
-                    (
-                        'is_published',
-                        # 'to_be_published',  # TODO: add this field when it gets fully implemented
-                        'date_published'
-                    ),
+                    "publish_radio_choice",
+                    'date_published',
+                    ('unpublish_radio_choice', 'is_published', 'to_be_published'),
                     'tags',
                     'main_section'
                 )
@@ -651,6 +886,7 @@ class ArticleAdmin(VersionAdmin):
                     "pw_radio_choice",
                     "full_restricted",
                     "public",
+                    "version",
                 )
                 + (('additional_access',) if Publication.multi() else ())
                 + ('latitude', 'longitude', 'ipfs_upload'),
@@ -658,6 +894,13 @@ class ArticleAdmin(VersionAdmin):
             },
         ),
     )
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # only if we are on the base class (this class), the class registered to handle the Article model, that also
+        # can be our child, but not when we are registered to handle an Article's child model (like ArticleCollection)
+        # because those child objects will not have the lookup we're using here and an error will be raised.
+        return qs.filter(articlecollection__isnull=True) if self == site._registry[Article] else qs
 
     @admin.action(description="Intercambiar estado de publicación: publicado <-> borrador")
     def toggle_published(self, request, queryset):
@@ -749,12 +992,19 @@ class ArticleAdmin(VersionAdmin):
                 obj.admin = True  # tell model's save method that we are calling it from the admin
                 super().save_model(request, obj, form, change)
                 self.obj = obj
+            except ValidationError as ve:
+                form.add_error(None, ve)
             except Exception as e:
                 if settings.DEBUG:
-                    print("DEBUG: error in core.admin.ArticleAdmin.save_model: %s" % e)
+                    print(f"DEBUG: error in core.admin.ArticleAdmin.save_model: {e}")
+                    print(f"DEBUG: form.errors: {form.errors.as_json()}")
+                    print(f"DEBUG: full traceback: {traceback.format_exc()}")
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
+
+        if settings.DEBUG:
+            print(form.errors)
 
         # main "main" section radiobutton in inline (also has js hacks) mapped to main_section attribute:
         save = False
@@ -808,12 +1058,11 @@ class ArticleAdmin(VersionAdmin):
         if url_changed:
             self.obj.url_path = new_url_path
             self.obj.save()
-
-            talk_url = getattr(settings, 'TALK_URL', None)
-            if change and talk_url and not settings.DEBUG:
-                # the article has a new url, we need to update it in Coral-Talk using the API
-                # but don't do this in DEBUG mode to avoid updates with local urls in Coral
-                # TODO: do not message user if the story is not found in coral (use "code" value in response.errors)
+            if change and get_talk_url() and not settings.DEBUG:
+                # The article has a new url, we need to update it in Coral-Talk using the API but we don't do this in
+                # DEBUG mode to avoid updates using local development environments urls.
+                # TODO: Also try to update the title in Coral-Talk. (title is under the title key in the story
+                #       metadata)
                 try:
                     update_article_url_in_coral_talk(form.instance.id, new_url_path)
                 except (ConnectionError, ValueError, KeyError, AssertionError, TypeError):
@@ -835,7 +1084,7 @@ class ArticleAdmin(VersionAdmin):
         """
         try:
             article = Article.objects.get(id=object_id)
-        except Article.DoesNotExist:
+        except (ValueError, Article.DoesNotExist):
             pass
         else:
             if (
@@ -851,14 +1100,6 @@ class ArticleAdmin(VersionAdmin):
                 )
         return super().change_view(request, object_id, form_url, extra_context)
 
-    def changelist_view(self, request, extra_context=None):
-        if 'type__exact' not in request.GET:
-            q = request.GET.copy()
-            q['type__exact'] = 'NE'  # Setea el filtro por defecto a noticias
-            request.GET = q
-            request.META['QUERY_STRING'] = request.GET.urlencode()
-        return super().changelist_view(request, extra_context=extra_context)
-
     def delete_view(self, request, object_id, extra_context=None):
         # actstream does not return unicode when rendering an Action if the target object has non-ascii chars,
         # this breaks the django six names collector, and this temporal change can hack this when deleting an article.
@@ -866,6 +1107,8 @@ class ArticleAdmin(VersionAdmin):
         Action.__str__ = lambda x: 'Article followed by user'
         response = super().delete_view(request, object_id, extra_context)
         del Action.__str__
+        # also call update_category_home
+        update_category_home()
         return response
 
     def adminlog_history_view(self, request, object_id, extra_context=None):
@@ -875,13 +1118,23 @@ class ArticleAdmin(VersionAdmin):
         self.object_history_template = object_history_template_bak
         return response
 
+    @disable_concurrency()
+    def revision_view(self, request, object_id, version_id, extra_context=None):
+        return super().revision_view(request, object_id, version_id, extra_context=None)
+
+    @disable_concurrency()
+    def recover_view(self, request, version_id, extra_context=None):
+        return super().recover_view(request, version_id, extra_context)
+
     class Media:
-        css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
+        slug_customizable_css = ('css/admin_article_slug_customizable.css',) if article_slug_customizable else ()
+        css = {'all': ('css/charcounter.css', 'css/admin_article.css', *slug_customizable_css)}
         js = (
             'js/jquery.charcounter-orig.js',
             'js/utopiacms_martor_semantic.js',
             'js/utopiacms_martor_fullheight.js',
             'js/homev2/article_admin.js',
+            "js/sortable2_common.js",
         )
 
 
@@ -1008,6 +1261,49 @@ def published_articles(obj):
     return obj.articles_core.filter(is_published=True).count()
 
 
+# Classes for the default_pub custom NLs
+class DefaultNewsletterArticleForm(ModelForm):
+
+    class Meta:
+        fields = ['order', 'include_photo', 'article']
+        model = DefaultNewsletterArticle
+        widgets = {
+            'order': TextInput(attrs={'size': 3}),
+            "article": ForeignKeyRawIdWidgetMoreWords(
+                DefaultNewsletterArticle._meta.get_field("article").remote_field, site
+            ),
+        }
+
+
+class DefaultNewsletterArticleFormset(BaseInlineFormSet):
+    def clean(self):
+        super().clean()  # not sure if this call is really needed
+        unsaved_data = []
+        for form in self.forms:
+            cleaned_data = form.cleaned_data
+            if cleaned_data.get('article'):
+                # consider only the rows that have a valid article
+                unsaved_data.append((cleaned_data.get('order') or 0, cleaned_data.get('include_photo', 0)))
+        if unsaved_data:
+            # sort data to be sure which are the articles with minimal order
+            unsaved_data.sort()
+            # initialize variables with the first values in the minimal order group
+            first_order, include_photo_count = unsaved_data[0]
+            # flag to know when we finished iterate over the minimal group
+            first_order_passed = False
+            max_no_feat_photo_count = getattr(settings, "CORE_DEFAULT_NL_MAX_NO_FEATURED_PHOTOS", None)
+            for order, include_photo in unsaved_data[1:]:             # iterate over data tail
+                if not first_order_passed and order != first_order:
+                    first_order_passed = True
+                    if include_photo_count == 0:
+                        # if no one in the minimal group was checked, the first article will always include foto
+                        include_photo_count = 1
+                include_photo_count += include_photo
+                if max_no_feat_photo_count and include_photo_count > max_no_feat_photo_count:
+                    pl_phrase = 'artículo no principal' if max_no_feat_photo_count == 1 else 'artículos no principales'
+                    raise ValidationError(f'No se puede incluir más de {max_no_feat_photo_count} {pl_phrase} con foto')
+
+
 class JournalistForm(ModelForm):
     def clean_name(self):
         name = self.cleaned_data['name'].strip()
@@ -1092,6 +1388,7 @@ class PublicationAdminForm(CustomSubjectAdminForm):
         model = Publication
         fields = "__all__"
         widgets = {
+            'newsletter_name': TextInput(attrs={'size': 160}),
             'newsletter_tagline': TextInput(attrs={'size': 160}),
             'newsletter_subject': TextInput(attrs={'size': 160}),
             'html_title': TextInput(attrs={'size': 128}),
@@ -1133,6 +1430,7 @@ class PublicationAdmin(ModelAdmin):
                     ('newsletter_campaign', 'subscribe_box_question'),
                     ('subscribe_box_nl_subscribe_auth', 'subscribe_box_nl_subscribe_anon'),
                     ('full_width_cover_image',),
+                    ('youtube_video',),
                     ('is_emergente', 'new_pill'),
                 ),
             },
@@ -1213,9 +1511,10 @@ class CategoryAdminForm(CustomSubjectAdminForm):
 class CategoryAdmin(ModelAdmin):
     form = CategoryAdminForm
     list_display = (
-        'id', 'name', 'order', 'slug', 'title', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag'
+        'id', 'name', 'order', 'slug', 'has_newsletter', 'subscriber_count', 'get_full_width_cover_image_tag'
     )
     list_editable = ('name', 'order', 'slug', 'has_newsletter')
+    list_filter = ('has_newsletter',)
     fieldsets = (
         (
             None,
@@ -1227,9 +1526,12 @@ class CategoryAdmin(ModelAdmin):
                     ('description',),
                     ('full_width_cover_image', 'full_width_cover_image_title'),
                     ('full_width_cover_image_lead',),
+                    ('youtube_video',),
                     ('has_newsletter', "newsletter_new_pill"),
+                    ('newsletter_header_color',),
                     ("newsletter_from_name", "newsletter_from_email"),
-                    ('newsletter_tagline', 'newsletter_periodicity'),
+                    ("newsletter_name", "newsletter_tagline"),
+                    ('newsletter_periodicity',),
                     ('subscribe_box_question',),
                     ('subscribe_box_nl_subscribe_auth',),
                     ('subscribe_box_nl_subscribe_anon',),
@@ -1241,6 +1543,9 @@ class CategoryAdmin(ModelAdmin):
         ('Metadatos', {'fields': (('html_title',), ('meta_description',))}),
     )
     raw_id_fields = ('full_width_cover_image',)
+
+    class Media:
+        css = {'all': ('css/admin_category.css',)}
 
 
 class CategoryHomeArticleForm(ModelForm):
@@ -1269,8 +1574,8 @@ class CategoryHomeArticleFormSet(CategoryHomeArticleFormSetBase):
 
 class CategoryHomeArticleInline(TabularInline):
     model = CategoryHome.articles.through
-    extra = 20
-    max_num = 20
+    max_num = getattr(settings, "CORE_UPDATE_CATEGORY_HOMES_ARTICLES_INLINE_MAX_NUM", 20)
+    extra = max_num
     form = CategoryHomeArticleForm
     formset = CategoryHomeArticleFormSet
     raw_id_fields = ('article',)
@@ -1298,6 +1603,10 @@ class CategoryHomeAdmin(admin.ModelAdmin):
 
 
 class CategoryNewsletterArticleForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['order'].label = ''  # TODO: explain why
 
     class Meta:
         fields = ['order', 'featured', 'article']
@@ -1347,6 +1656,41 @@ class ArticleInline(TabularInline):
     max_num = 3
     raw_id_fields = ('article', )
     verbose_name_plural = 'Artículos relacionados'
+
+
+class UtopiaCategoryNewsletterArticleInline(TabularInline):
+    """
+    this class is copied from CategoryNewsletterArticleInline and modified because a child class can't be used, it
+    should be dificult modify a child class to suit our needs here.
+    """
+    extra = 20
+    max_num = 20
+    raw_id_fields = ('article', )
+    verbose_name_plural = 'Artículos en newsletter'
+
+    class Media:
+        css = {'all': ('css/category_newsletter.css', )}
+
+
+class DefaultNewsletterArticleInline(UtopiaCategoryNewsletterArticleInline):
+    model = DefaultNewsletter.articles.through
+    form = DefaultNewsletterArticleForm
+    formset = DefaultNewsletterArticleFormset
+    verbose_name_plural = 'Artículos en bloque principal'
+
+    class Media:
+        css = {'all': ('css/default_newsletter.css', )}
+
+
+class DefaultNewsletterAdmin(ModelAdmin):
+    list_display = ('day', 'cover_desc')
+    exclude = ('articles',)
+    inlines = [DefaultNewsletterArticleInline]
+    date_hierarchy = 'day'
+
+    class Media:
+        # jquery loaded again (admin uses custom js namespaces and we use "jquery dirty")
+        js = ('admin/js/jquery.js',)
 
 
 @admin.register(BreakingNewsModule, site=site)
@@ -1505,3 +1849,4 @@ site.unregister(Tag)
 site.unregister(TaggedItem)
 site.register(Tag, TagAdmin)
 site.register(TaggedItem, TaggedItemAdmin)
+site.register(DefaultNewsletter, DefaultNewsletterAdmin)

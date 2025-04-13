@@ -4,6 +4,8 @@ from os.path import abspath, basename, dirname, join, realpath
 import mimetypes
 from freezegun import freeze_time
 from kombu import Queue
+from babel import Locale
+from pycountry import countries
 
 import django
 from django.conf.global_settings import DEFAULT_CHARSET
@@ -30,10 +32,11 @@ URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
-# default filename for the bse_template used to extend by variable
 PORTAL_BASE_TEMPLATE = "base.html"
-# country name in page titles
+PORTAL_USE_UTM_LINKS = True
 PORTAL_TITLE_APPEND_COUNTRY = True
+PORTAL_FLATPAGES_DIR = "flatpages"
+PORTAL_LABEL_DEFAULT = "predeterminado"
 
 # disable template settings warning until fixed migrating django-mobile to django-amp-tools
 SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
@@ -59,8 +62,8 @@ STATICFILES_FINDERS = (
 
 INSTALLED_APPS = (
     "amp_tools",
-    "django.contrib.staticfiles",
     "admin_shortcuts",
+    "django.contrib.staticfiles",
     "django.contrib.admin",
     "django.contrib.admindocs",
     "django.contrib.auth",
@@ -108,7 +111,6 @@ INSTALLED_APPS = (
     "star_ratings",
     "tagging_autocomplete_tagit",
     "avatar",
-    "notification",
     "django.contrib.flatpages",
     "epubparser",
     "django_filters",
@@ -125,9 +127,20 @@ INSTALLED_APPS = (
     "django_celery_beat",
     "phonenumber_field",
     "closed_site",
+    "concurrency",
+    "adminsortable2",
+    "content_settings",
 )
 
 SITE_ID = 1
+
+# password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 9}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
 
 # martor
 # disable emoji (our markdown filter not yet support this)
@@ -149,22 +162,19 @@ MARTOR_TOOLBAR_BUTTONS = [
 ]
 MARTOR_ENABLE_LABEL = True  # enable field labels
 
-# photologue app need to add a custom migration
-MIGRATION_MODULES = {"photologue": "photologue_ladiaria.photologue_migrations"}
-
 ADMIN_SHORTCUTS = [
     {
         "title": "Links directos (edición)",
         "shortcuts": [
-            {"url_name": "admin:core_publication_changelist", "title": "Publicaciones", "icon": "newspaper"},
-            {"url_name": "admin:core_edition_changelist", "title": "Ediciones", "icon": "newspaper"},
+            {"url_name": "admin:core_publication_changelist", "title": "Publicaciones", "icon": "📰"},
+            {"url_name": "admin:core_edition_changelist", "title": "Ediciones", "icon": "📰"},
             {"url_name": "admin:core_edition_add", "title": "Crear edición"},
             {"url_name": "admin:core_article_add", "title": "Crear Artículo"},
         ],
     },
     {
         "title": "Reportes y otras utilidades",
-        "shortcuts": [{"url": "/dashboard/", "title": 'Reportes, estadísticas y "previews"', "icon": "chart-line"}],
+        "shortcuts": [{"url": "/dashboard/", "title": 'Reportes, estadísticas y "previews"', "icon": "📊"}],
     },
 ]
 
@@ -190,11 +200,12 @@ MIDDLEWARE = (
     "closed_site.middleware.RestrictedAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.cache.UpdateCacheMiddleware",  # runs during the response phase (top -> last)
-    "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)
     "django.contrib.sessions.middleware.SessionMiddleware",
     "libs.middleware.url.UrlMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.auth.middleware.RemoteUserMiddleware",
@@ -203,21 +214,18 @@ MIDDLEWARE = (
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_user_agents.middleware.UserAgentMiddleware",
     "signupwall.middleware.SignupwallMiddleware",
-    "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
+    "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
     "core.middleware.cache.AnonymousRequest",  # hacks cookie header for anon users (req phase)
     "django.middleware.cache.FetchFromCacheMiddleware",  # runs during the request phase (top -> first)
     "social_django.middleware.SocialAuthExceptionMiddleware",
-    "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
 )
 
 # Localization default settings
-LANGUAGES = (("en", "English"),)
 USE_I18N = True
 USE_L10N = True
-
-LANGUAGE_CODE = "en"
 LOCAL_LANG = "en"
 LOCAL_COUNTRY = "US"
+LOCALE_PATHS = [join(PROJECT_ABSOLUTE_DIR, "locale")]
 
 USE_TZ = True
 DATE_INPUT_FORMATS = (
@@ -232,8 +240,9 @@ ROOT_URLCONF = "urls"
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 
-# Default publication slug.
-DEFAULT_PUB = "default"
+# Default publication slug
+DEFAULT_PUB_NAME = "default"
+DEFAULT_PUB = DEFAULT_PUB_NAME
 
 FIRST_DAY_OF_WEEK = 0  # 0 is Sunday
 # Convert to calendar module, where 0 is Monday:
@@ -290,6 +299,7 @@ TEMPLATES = [
                 "adzone.context_processors.get_source_ip",
                 "apps.thedaily.context_processors.permissions",
                 "django.template.context_processors.csrf",
+                "content_settings.context_processors.content_settings",
             ],
             "loaders": [
                 "amp_tools.loader.Loader",
@@ -318,7 +328,8 @@ NEWSLETTERS_FROM_MX = NOTIFICATIONS_FROM_MX
 NEWSLETTER_IMG_FORMAT = "jpg"
 
 SENDNEWSLETTER_EXPORT_DIR = "/var/local/utopiacms/sendnewsletter_export"
-SENDNEWSLETTER_LOGFILE = "/var/log/utopiacms/sendnewsletter/%s-%s.log"
+PORTAL_LOG_BASE_DIR = "/var/log/utopiacms"
+SENDNEWSLETTER_LOGFILE = f"{PORTAL_LOG_BASE_DIR}/sendnewsletter/%s-%s.log"
 
 # celery
 CELERY_RESULT_BACKEND = "django-db"
@@ -350,6 +361,7 @@ CELERY_QUEUES = {
 }
 CELERY_TASK_ROUTES = {
     "update-category-home": {"queue": "upd_category_home"},
+    "article-publishing": {"queue": "upd_category_home"},
     "update-article-urls": {"queue": "upd_articles_url"},
     "send-push-notification": {"queue": "concurrent_tasks"},
 }
@@ -380,12 +392,14 @@ CORE_UPDATE_CATEGORY_HOMES = []
 CORE_LOG_ARTICLE_VIEWS = True
 
 # Article types
+CORE_NEWS_ARTICLE = "NE"
+CORE_OPINION_ARTICLE = "OP"
 CORE_PHOTO_ARTICLE = "PA"
 CORE_HTML_ARTICLE = "HT"
 CORE_COMUNIDAD_ARTICLE = "CM"
 CORE_ARTICLE_TYPES = (
-    ("NE", "Noticia"),
-    ("OP", "Opinión"),
+    (CORE_NEWS_ARTICLE, "Noticia"),
+    (CORE_OPINION_ARTICLE, "Opinión"),
     (CORE_PHOTO_ARTICLE, "Fotografía"),
     (CORE_HTML_ARTICLE, "HTML"),
     (CORE_COMUNIDAD_ARTICLE, "COMUNIDAD"),
@@ -401,11 +415,17 @@ CORE_ARTICLE_DETAIL_DATE_TOOLTIP = True
 # override to False to show the tooltip only since "Yesterday" dates
 CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 
+# audio transcript only for subscribers by default, change to False to enable for all registered users
+CORE_ARTICLE_DETAIL_AUDIO_TRANSCRIPT_ONLY_SUBSCRIBERS = True
+
 # show or hide photo credits in article cards
 CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 
 # class to use for the body field in articles
 CORE_ARTICLE_BODY_FIELD_CLASS = "martor.models.MartorField"
+
+# enable sortable inlines for article admin inlines
+CORE_ARTICLE_ADMIN_INLINES_SORTABLE = True
 
 # use job to build journalist absolute url
 CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
@@ -428,10 +448,17 @@ MAX_USERS_API_SESSIONS = 3
 THEDAILY_GOOGLE_OAUTH2_ASK_PHONE = False
 THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID = None
 THEDAILY_SUBSCRIPTION_TYPE_CHOICES = ()
+THEDAILY_CURRENCY_CHOICES = ()
 THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
-THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+# default newsletters for new accounts
+THEDAILY_DEFAULT_PUBLICATION_NEWSLETTERS = []  # publication slugs for default publication newsletters
+THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for default category newsletters
+# newsletter slugs to disable its preview in browser
+THEDAILY_NEWSLETTERS_DISABLED_BROWSER_PREVIEW = ()
+# debug signals
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
+THEDAILY_AUTOMATIC_MAIL_LOGFILE = f"{PORTAL_LOG_BASE_DIR}/automatic_mail.log"
 
 # photologue
 DEFAULT_BYLINE = "Difusión, S/D de autor."
@@ -479,6 +506,7 @@ LOGIN_URL = "/usuarios/entrar/"  # login_required decorator redirects here
 LOGOUT_URL = "/usuarios/salir/"
 SIGNUP_URL = "/usuarios/registro/"
 LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = LOGOUT_URL  # To be consistent on what url render after any logout, included admin's
 LOGIN_ERROR_URL = "/usuarios/error/login/"
 
 MESSAGETAGS = {messages.ERROR: "danger"}
@@ -543,9 +571,13 @@ FREEZE_TIME = None
 CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 PHONENUMBER_DEFAULT_REGION = None
+CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
+ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 
 
-# ====================================================================================== visual separator =============
+# =====================================================================================================================
+# =================      V I S U A L   S E P A R A T O R      =========================================================
+# =====================================================================================================================
 
 
 # Override previous settings with values in local_migration_settings.py settings file
@@ -556,13 +588,21 @@ SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain 
 SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
-LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
+
+LANGUAGE_CODE = LOCAL_LANG
+LOCALE_NAME_PREFIX = f"{LOCAL_LANG}_{LOCAL_COUNTRY}"
+LOCALE_NAME = f"{LOCALE_NAME_PREFIX}.{DEFAULT_CHARSET}"
+
+LANG_NAME = Locale.parse(LOCAL_LANG).get_display_name().capitalize()
+COUNTRY_NAME = countries.get(alpha_2=LOCAL_COUNTRY).name
+LANGUAGES = ((LANGUAGE_CODE, LANG_NAME), (LOCALE_NAME_PREFIX.replace("_", "-"), f"{LANG_NAME} ({COUNTRY_NAME})"))
+
 COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
 
 if locals().get("DEBUG_TOOLBAR_ENABLE"):
-    # NOTE when enabled, you need to: pip install "django-debug-toolbar==4.3.0" && ./manage.py collectstatic
+    # NOTE when enabled, you need to: pip install django-debug-toolbar && ./manage.py collectstatic
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE = MIDDLEWARE[:8] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[8:]
+    MIDDLEWARE = MIDDLEWARE[:9] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[9:]
 
 DEBUG = locals().get("DEBUG", False)
 if DEBUG:
@@ -607,13 +647,15 @@ if CRM_UPDATE_USER_CREATE_CONTACT is None:
     # defaults to the same value of the "base sync"
     CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED
 
-if locals().get("ENV_HTTP_BASIC_AUTH") and "API_KEY_CUSTOM_HEADER" not in locals():
+if ENV_HTTP_BASIC_AUTH and "API_KEY_CUSTOM_HEADER" not in locals():
     # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
     API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
 
-# thedaily default subscription type and debug signals
+# thedaily default subscription type, currency and debug signals
 if "THEDAILY_SUBSCRIPTION_TYPE_DEFAULT" not in locals():
     THEDAILY_SUBSCRIPTION_TYPE_DEFAULT = \
         THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0] if THEDAILY_SUBSCRIPTION_TYPE_CHOICES else None
+if "THEDAILY_CURRENCY_CHOICES_DEFAULT" not in locals():
+    THEDAILY_CURRENCY_CHOICES_DEFAULT = THEDAILY_CURRENCY_CHOICES[0][0] if THEDAILY_CURRENCY_CHOICES else None
 if THEDAILY_DEBUG_SIGNALS is None:
     THEDAILY_DEBUG_SIGNALS = DEBUG

@@ -1,0 +1,37 @@
+{% load i18n %}
+
+{% if TALK_URL and article.allow_comments %}
+  <div id="comentarios">
+    <div class="{% block talk_container_classnames %}container{% endblock %}">
+
+      {% block talk_info_container %}
+        <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}"
+                data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}"
+                data-article-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
+                data-login-url="{{ SITE_URL_SD }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
+          <span class="title">Comentar este artículo</span>
+          <button class="ut-btn">
+            {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
+          </button>
+        </section>
+      {% endblock %}
+
+      {% block talk_login_container %}
+        <div class="talk-login align-center display-hidden">
+          {% if user.is_authenticated %}
+            {% if not is_subscriber and not talk_auth_allowed %}
+              <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">{% trans "Suscribite" %} para comentar</a>
+            {% endif %}
+          {% else %}
+            <a href="{% if not talk_auth_allowed %}{% url 'subscribe-default' %}{% else %}{% url 'account-login' %}{% endif %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">{% if not talk_auth_allowed %}{% trans "Suscribite" %}{% else %}{% trans "Registrate" %}{% endif %} para comentar</a>
+            <span class="ld-caption ld-caption-subscribe-to-comment">
+              ¿Ya {% trans "tenés" %} {% if not talk_auth_allowed %}suscripción{% else %}cuenta{% endif %}?
+              <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">{% trans "Ingresá" %}</a>
+            </span>
+          {% endif %}
+        </div>
+      {% endblock %}
+
+    </div>
+  </div>
+{% endif %}

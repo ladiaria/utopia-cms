@@ -1,24 +1,18 @@
-{% extends "base.html" %}
+{% extends base_template %}
 {% load core_tags %}
 
 {% block page_title %}{% title_joinparts 'Login error' %}{% endblock %}
+
 {% block body_class %}thedaily{% endblock %}
 
 {% block content %}
-    <div class="titlebar">
-        <h2>
-             Asistencia a usuarios
-        </h2>
-    </div>
-    <h1>
-        Error al ingresar
-    </h1>
-    <p>
-        Error al ingresar al sitio web.
-        Para obtener ayuda visitá nuestro <a href="{{ SITE_URL }}ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
-    </p>
-    <p>
-        Gracias.
-    </p>
+  <div class="titlebar">
+    <h2>Asistencia a usuarios</h2>
+  </div>
+  <h1>Error al ingresar</h1>
+  <p>
+    Error al ingresar al sitio web. Para obtener ayuda visitá nuestro <a href="{% url 'help' %}">centro de ayuda</a>
+    o <a href="{% url 'contact-form' %}">contactanos</a>.
+  </p>
+  <p>Gracias.</p>
 {% endblock %}
-

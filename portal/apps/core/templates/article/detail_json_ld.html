@@ -1,4 +1,4 @@
-{% load static ldml %}
+{% load static ldml thumbnail %}
 
 <script type="application/ld+json">{# TODO: some parts of this code can be made easier with template tags #}
   {
@@ -9,10 +9,10 @@
     {% if article.date_published %}"datePublished": "{{ article.date_published_isoformat }}",{% endif %}
     "dateModified": "{{ article.last_modified_isoformat }}",
     "description": "{% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
-    "isAccessibleForFree": "{{ article.public }}",
+    "isAccessibleForFree": {{ article.public|lower }},
     "hasPart": {
       "@type": "WebPageElement",
-      "isAccessibleForFree": "{{ article.public }}",
+      "isAccessibleForFree": {{ article.public|lower }},
       "cssSelector" : ".paywalled-content"
     },
     "isPartOf": {
@@ -22,13 +22,14 @@
     "author":{% if article.get_authors|length > 1 %} [{% endif %}{% for author in article.get_authors %}
       {
         "@type": "Person",
-        "name": "{{ author.name }}"
+        "name": "{{ author.name }}",
+        "url": "{{ SITE_URL_SD }}{{ author.get_absolute_url }}"
       }{% if not forloop.last or article.get_authors|length == 1 %},{% endif %}{% endfor %}
     {% if article.get_authors|length > 1 %}],{% endif %}{% else %}
     "author": {
       "@type": "Organization",
       "name": "{{ site.name }}"
-    },{% endif %}
+    },{% endif %}{% spaceless %}{% block json_ld_publisher %}
     "publisher": {
       "@type": "Organization",
       "name": "{{ site.name }}"{% if publication.publisher_logo or default_pub.publisher_logo %},
@@ -41,7 +42,7 @@
         "width": "{{ default_pub.publisher_logo_width }}",
         "height": "{{ default_pub.publisher_logo_height }}"{% endif %}
       }{% endif %}
-    }{% if article.photo %},
+    }{% endblock %}{% endspaceless %}{% spaceless %}{% block json_ld_image %}{% if photo_render_allowed %},
     "image": {
       "@type": "ImageObject",
       "url": "{{ SITE_URL_SD }}{{ article.photo.get_1200w_url }}",
@@ -55,6 +56,6 @@
       "width": "{{ default_pub.open_graph_image_width }}",
       "height" : "{{ default_pub.open_graph_image_height }}"
     },
-    "thumbnailUrl": "{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}"{% endif %}
+    "thumbnailUrl": "{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}"{% endif %}{% endblock %}{% endspaceless %}
   }
 </script>

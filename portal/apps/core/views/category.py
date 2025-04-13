@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import sys
 from os.path import join
 import locale
@@ -11,8 +10,9 @@ from hashids import Hashids
 from favit.utils import is_xhr
 
 from django.conf import settings
+from django.core.management import CommandError, call_command
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseForbidden, HttpResponsePermanentRedirect, Http404
+from django.http import HttpResponseForbidden, HttpResponsePermanentRedirect, Http404, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
 from django.contrib.sites.models import Site
 from django.contrib.auth.decorators import login_required
@@ -23,8 +23,10 @@ from django.utils.timezone import now, datetime
 from libs.utils import decode_hashid, nl_serialize_multi
 from thedaily.models import Subscriber
 from faq.models import Topic
-from ..models import Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition
-from ..utils import get_category_template
+from ..models import (
+    Category, CategoryNewsletter, CategoryHome, Section, Article, get_latest_edition, get_current_edition
+)
+from ..utils import get_category_template, get_nl_featured_article_id, nl_utm_params, format_nl_date
 from ..templatetags.ldml import remove_markup
 
 
@@ -74,7 +76,7 @@ def category_detail(request, slug):
             'featured_section2': featured_section2,
             'featured_section3': featured_section3,
             'inner_sections': inner_sections,
-            'edition': get_latest_edition(),
+            'edition': get_current_edition(),
             'questions_topic': questions_topic,
             'big_photo': category.full_width_cover_image,
             'site_description': (
@@ -108,10 +110,31 @@ def newsletter_preview(request, slug):
 
     site = Site.objects.get_current()
     category = get_object_or_404(Category, slug=slug)
+
+    if request.method == "POST":
+        u = request.user
+        if u.email and hasattr(u, 'subscriber') and u.subscriber:
+            cmd_args = [category.slug, u.subscriber.id]
+            cmd_opts = {
+                "no_logfile": True,
+                "no_update_stats": True,
+                "force_no_subscriber": request.POST.get(f'is_subscriber_{settings.DEFAULT_PUB}') != "on",
+                "assert_one_email_sent": True,
+            }
+            nl_date, nl_type = request.POST.get('nl_date'), request.POST.get('nl_type')
+            if nl_type == 'c' and nl_date:
+                cmd_opts['nl_date'] = nl_date
+            try:
+                call_command("send_category_nl", *cmd_args, **cmd_opts)
+            except CommandError as cmde:
+                return HttpResponseBadRequest(cmde)
+
     context = {
-        'category': category,
+        'newsletter_name': category.newsletter_name,
+        'newsletter_header_color': category.newsletter_header_color,
         'newsletter_campaign': category.slug,
         "request_is_xhr": is_xhr(request),
+        "nl_type": "c",
     }
     context.update(category.newsletter_extra_context)
     render_kwargs = {"context": context}
@@ -153,13 +176,13 @@ def newsletter_preview(request, slug):
                 if getattr(cover_article_section, "slug", None) != listonly_section:
                     cover_article = top_articles.pop(0)[0] if top_articles else None
 
-            # featured directly by article.id in settings
-            featured_article_id = getattr(settings, 'NEWSLETTER_FEATURED_ARTICLE', False)
-            nl_featured = (
-                Article.objects.filter(id=featured_article_id)
-                if featured_article_id
-                else get_latest_edition().newsletter_featured_articles()
-            )
+            # featured directly by article.id in settings/edition
+            featured_article_id = get_nl_featured_article_id()
+            if featured_article_id:
+                nl_featured = Article.objects.filter(id=featured_article_id)
+            else:
+                latest_edition = get_latest_edition()
+                nl_featured = latest_edition.newsletter_featured_articles() if latest_edition else None
             opinion_article = nl_featured[0] if nl_featured else None
 
             # featured articles by featured section in the category (by settings)
@@ -185,7 +208,7 @@ def newsletter_preview(request, slug):
         if not custom_subject:
             subject_call = getattr(settings, 'CORE_CATEGORY_NL_SUBJECT_CALLABLE', {}).get(category.slug, None)
             email_subject += \
-                locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "headline", ""))
+                locate(subject_call)() if subject_call else remove_markup(getattr(cover_article, "nl_title", ""))
 
         email_from = '%s <%s>' % (
             category.newsletter_from_name or (
@@ -203,8 +226,9 @@ def newsletter_preview(request, slug):
         if as_news:
             unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
         else:
-            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, category.slug, hashed_id, category.slug)
+            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/%s' % (
+                site_url, category.slug, hashed_id, nl_utm_params(category.slug)
+            )
         headers['List-Unsubscribe'] = '<%s>' % unsubscribe_url
         headers['List-Unsubscribe-Post'] = "List-Unsubscribe=One-Click"
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
@@ -217,7 +241,7 @@ def newsletter_preview(request, slug):
                 'unsubscribe_url': unsubscribe_url,
                 'custom_subject': custom_subject,
                 'headers_preview': headers,
-                'nl_date': "{d:%A} {d.day} de {d:%B de %Y}".format(d=nowval.date()).capitalize(),
+                'nl_date': format_nl_date(nowval.date()),
                 'cover_article': nl_serialize_multi(cover_article, category, True, False),
                 'featured_article': nl_serialize_multi(featured_article, category, True, False),
             }
@@ -248,7 +272,7 @@ def newsletter_preview(request, slug):
 
 @never_cache
 def newsletter_browser_preview(request, slug, hashed_id=None):
-    category = get_object_or_404(Category, slug=slug)
+    get_object_or_404(Category, slug=slug)  # only to assert that the category exists
     if hashed_id:
         decoded = decode_hashid(hashed_id)
         # TODO: if authenticated => assert same logged in user
@@ -301,13 +325,11 @@ def newsletter_browser_preview(request, slug, hashed_id=None):
         if as_news:
             unsubscribe_url = '%s/usuarios/perfil/disable/allow_news/%s/' % (site_url, hashed_id)
         else:
-            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/?utm_source=newsletter&utm_medium=email' \
-                '&utm_campaign=%s&utm_content=unsubscribe' % (site_url, slug, hashed_id, slug)
+            unsubscribe_url = '%s/usuarios/nlunsubscribe/c/%s/%s/%s' % (site_url, slug, hashed_id, nl_utm_params(slug))
         context['unsubscribe_url'] = unsubscribe_url
     # TODO: obtain missing vars from hashed_id subscriber (TODO: which are those vars?)
     context.update(
         {
-            "category": category,
             "browser_preview": True,
             "as_news": as_news,
             'hashed_id': hashed_id,

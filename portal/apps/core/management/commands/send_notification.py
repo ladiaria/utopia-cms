@@ -45,7 +45,13 @@ def send_notification_func(msg, tag, url, img_url, user_id):
     )
 
     failed, success, opts = 0, 0, settings.CORE_PUSH_NOTIFICATIONS_OPTIONS.copy()
-    opts.update({'body': msg, 'tag': str(tag), 'data': {'link': url + "?utm_source=push_notification"}})
+    opts.update(
+        {
+            'body': msg,
+            'tag': str(tag),
+            'data': {'link': url + ("?utm_source=push_notification" if settings.PORTAL_USE_UTM_LINKS else "")},
+        }
+    )
     if img_url:
         opts.update({'image': img_url})
     data = json.dumps(opts)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from videologue.models import YouTubeVideo
+from django.template import Library, loader, Node, TemplateSyntaxError
 
-from django.template import (Context, Library, loader, Node, TemplateSyntaxError)
+from ..models import YouTubeVideo
 
 
 register = Library()
@@ -15,7 +15,7 @@ class RenderLatestVideoNode(Node):
     def render(self, context):
         try:
             video = YouTubeVideo.objects.latest()
-        except:
+        except YouTubeVideo.DoesNotExist:
             video = None
         context.update({self.kw: video})
         return ''
@@ -29,7 +29,7 @@ class RenderVideoNode(Node):
     def render(self, context):
         try:
             video = YouTubeVideo.objects.get(id=self.vid)
-        except:
+        except YouTubeVideo.DoesNotExist:
             video = None
         context.update({self.kw: video})
         return ''
@@ -44,6 +44,7 @@ def get_latest_video(parser, token):
         raise TemplateSyntaxError('Invalid arguments for %s' % bits[0])
     return RenderLatestVideoNode(bits[2])
 
+
 @register.tag
 def get_video(parser, token):
     """Usage: {% get_video id as video_object %}"""
@@ -52,6 +53,7 @@ def get_video(parser, token):
     if len(bits) != 4 or bits[2] != 'as':
         raise TemplateSyntaxError('Invalid arguments for %s' % bits[0])
     return RenderVideoNode(bits[3], bits[1])
+
 
 @register.filter
 def render_video(video):

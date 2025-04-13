@@ -1,15 +1,20 @@
-django<4.2
+django<5
 Pillow
+babel
 bleach
 bleach-whitelist
+django-admin-shortcuts
+django-admin-sortable2
 django-activity-stream==1.4.2
 django-bleach==3.0.1
+django-content-settings
 freezegun
 inflect
 social-auth-app-django
 social-auth-core
 pymemcache==4.0.0
 django-compressor
+django-concurrency
 djangorestframework==3.14.0
 djangorestframework-api-key
 django-filter==2.4.0
@@ -73,9 +78,6 @@ factory-boy
 tqdm
 w3storage
 qrcode
-
-# Third party repo not updated yet in the latest pypi release:
-git+https://github.com/alesdotio/django-admin-shortcuts.git
 
 # Our own repos (TODO: change to pypi package when released there):
 git+https://github.com/ladiaria/django-amp-readerid.git

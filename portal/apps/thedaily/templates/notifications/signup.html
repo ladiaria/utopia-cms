@@ -14,7 +14,8 @@
       ]]>
     </style>
     <style>
-      .body a{color:#262626}
+      .body a{color:{% block anchor_color %}#262626{% endblock %}}
+      {% block font_style %}
       @font-face {
         font-family: 'Roboto';
         font-style: normal;
@@ -29,6 +30,7 @@
         mso-font-alt: 'Arial';
         src: url(https://fonts.gstatic.com/s/roboto/v27/KFOmCnqEu92Fr1Mu4mxKKTU1Kg.woff2) format('woff2');
       }
+      {% endblock %}
     </style>
     <table style="background-color:{% block bg_color %}#f3f3f3{% endblock %};border-collapse:collapse;border-spacing:0;padding:0;position:relative;text-align:left;vertical-align:top;width:100%" align="center">
       <tbody style="padding:0">
@@ -41,14 +43,14 @@
               <tbody style="padding:0;border-bottom:0">
                 <tr style="padding:0;text-align:left;vertical-align:top">
                   <td style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0;border-collapse:collapse!important;color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0;padding:0;text-align:left;vertical-align:top;word-wrap:break-word">
-                    <table style="box-sizing: border-box; width: 100%; padding-top: 5px; padding-right: 5px; padding-bottom: 5px; padding-left: 5px; height: 0px; min-height: 30px; margin-top: 0px; margin-right: 0px; margin-bottom: 0px; margin-left: 0px; border-collapse: separate;"
+                    <table style="box-sizing: border-box; width: 100%; {% block table_logo_padding %}padding-top: 5px; padding-right: 5px; padding-bottom: 5px; padding-left: 5px{% endblock %}; height: 0px; min-height: 30px; margin-top: 0px; margin-right: 0px; margin-bottom: 0px; margin-left: 0px; border-collapse: separate;"
                             width="100%" height="0">
                       <tbody style="box-sizing: border-box;">
                         <tr style="box-sizing: border-box;">
                           <td class="top-cell" style="box-sizing: border-box; text-align: center;" align="center">
                             {% block logo %}
-                              <img src="{{ SITE_URL_SD }}{% static logo_url %}" class="c5813"
-                                   style="width: 100%; margin-top: 5px; margin-right: 0px; margin-bottom: 0px; margin-left: 0px; max-width: 120px;">
+                              <img src="{{ SITE_URL_SD }}{% static logo_url %}" class="c5813" {% block logo_extra_attrs %}{% endblock %}
+                                   style="width: 100%; margin-top: 5px; margin-right: 0px; margin-bottom: 0px; margin-left: 0px; height: auto; max-width: {% block logo_maxwidth %}120px{% endblock %};">
                             {% endblock %}
                           </td>
                         </tr>
@@ -62,7 +64,7 @@
         </tr>
       </tbody>
     </table>
-    <table style="box-sizing: border-box; width: 100%; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 24px; height: 0px; min-height: 30px; margin-top: 10px; margin-right: auto; margin-bottom: 0px; margin-left: auto; border-collapse: separate; max-width: 580px; background-color:{% block bg_color_body %}white{% endblock %}; border: 1px solid #D8D8D8; font-family: Roboto, sans-serif; color: #616161;"
+    <table style="box-sizing: border-box; width: 100%; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 24px; height: 0px; min-height: 30px; margin-top: 10px; margin-right: auto; margin-bottom: 0px; margin-left: auto; border-collapse: separate; max-width: 580px; background-color:{% block bg_color_body %}white{% endblock %}; border: 1px solid {% block table_border %}#D8D8D8{% endblock %}; font-family: {% block body_font %}Roboto, sans-serif{% endblock %}; color: {% block body_color %}#616161{% endblock %};"
            width="100%" height="0">
       <tbody style="box-sizing: border-box;background:white">
         {% block body %}
@@ -101,7 +103,7 @@
                 {% if seller_fullname %}{{ seller_fullname }} de{% else %}E{% endif %}l equipo de <span style="font-style: italic;">{{ site.name }}</span>.
               </p>
               <p>
-                Por consultas también podés visitar nuestro <a href="{{ SITE_URL }}ayuda/" style="color: #0a0a0a;">Centro de ayuda</a>.
+                Por consultas también podés visitar nuestro <a href="{{ SITE_URL_SD }}{% url 'help' %}" style="color: #0a0a0a;">Centro de ayuda</a>.
               </p>
             </td>
           </tr>
@@ -109,5 +111,6 @@
         {% block second_extra_body %}{% endblock %}
       </tbody>
     </table>
+    {% block extra_table %}{% endblock %}
   </body>
 </html>

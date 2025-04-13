@@ -23,6 +23,7 @@ from django.contrib.admin.util import NestedObjects
 from django.contrib.sites.models import Site
 
 from core.models import Article
+from thedaily import get_app_template
 from thedaily.models import Subscriber
 
 
@@ -109,7 +110,7 @@ class Command(BaseCommand):
                     ctx['username'] = costumer.user.username
                 costumer.user.email_user(
                     '[%s] Tu cuenta de usuario' % Site.objects.get_current().name,
-                    render_to_string('notifications/validation_email.html', ctx),
+                    render_to_string(get_app_template('notifications/validation_email.html'), ctx),
                 )
             except Subscriber.DoesNotExist:
                 print("Ningún suscriptor con id de cliente con documento %s" % dupedoc)

@@ -12,61 +12,70 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequ
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
 from django.core.exceptions import ValidationError
-from django.contrib.auth.models import Group
-from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.decorators import permission_required, user_passes_test
+from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now, datetime
 
 from django_amp_readerid.utils import get_related_user
 
+from core.models import Publication
 from thedaily.utils import get_profile_newsletters_ordered
 from .management.commands.nldelivery_sync_stats import get_report
 from .models import AudioStatistics, NewsletterDelivery
 
 
 to_response = render_response('dashboard/templates/')
+access_group = getattr(settings, 'DASHBOARD_ACCESS_GROUP', "Dashboard access")
+seller_group = getattr(settings, 'DASHBOARD_SELLER_GROUP', None)
+financial_group = getattr(settings, 'DASHBOARD_FINANCIAL_GROUP', None)
+
+
+def is_member(user, group_name=None):
+    return user.is_superuser or user.groups.filter(name=group_name or access_group).exists()
+
+
+def is_seller(user):
+    return user.is_superuser or (seller_group and is_member(user, seller_group))
+
+
+def is_financial(user):
+    return user.is_superuser or (financial_group and is_member(user, financial_group))
 
 
 @never_cache
-@permission_required('thedaily.change_subscriber')
+@staff_member_required
+@user_passes_test(is_member)
 @to_response
 def index(request):
-    is_admin, is_seller, is_financial = request.user.is_superuser, False, False
-    if not is_admin:
-        user_groups = request.user.groups.all()
-        is_seller = get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None)) in user_groups
-        is_financial = (
-            get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_FINANCIAL_GROUP', None)) in user_groups
-        )
     return (
         'index.html',
         {
-            'activity_rows': is_admin or is_seller,
-            'is_financial': is_admin or is_financial,
+            'activity_rows': is_seller(request.user),
+            'is_financial': is_financial(request.user),
             'financial_extra_items_template': getattr(settings, 'DASHBOARD_FINANCIAL_EXTRA_ITEMS_TEMPLATE', None),
             "newsletters": get_profile_newsletters_ordered(),
             "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+            "multi_publication": Publication.multi(),
         },
     )
 
 
 @never_cache
-@permission_required('thedaily.change_subscriber')
+@staff_member_required
+@user_passes_test(is_member)
 @to_response
 def load_table(request, table_id):
 
-    month = request.GET.get('month')
-    year = request.GET.get('year')
-    today = now().date()
+    month, year, today = request.GET.get('month'), request.GET.get('year'), now().date()
+    context = {'month': month, 'year': year}
 
     if table_id in ('activity', 'activity_only_digital'):
-        # Alow only admins or member of seller group
-        if not (
-            request.user.is_superuser
-            or get_object_or_404(Group, name=getattr(settings, 'DASHBOARD_SELLER_GROUP', None))
-            in request.user.groups.all()
-        ):
+        # Allow only admins or member of seller group
+        if is_seller(request.user):
+            context['extra_columns'] = getattr(settings, 'DASHBOARD_ACTIVITY_EXTRA_COLUMNS', [])
+        else:
             return HttpResponseForbidden()
 
     if month and year and table_id not in ('activity', 'activity_only_digital', 'subscribers'):
@@ -96,8 +105,6 @@ def load_table(request, table_id):
         {
             'rows': rows,
             'table_id': table_id,
-            'month': month,
-            'year': year,
             'date_start': date_start,
             'date_end': date_end,
         },
@@ -105,6 +112,8 @@ def load_table(request, table_id):
 
 
 @never_cache
+@staff_member_required
+@user_passes_test(is_member)
 @permission_required('thedaily.change_subscriber')
 def export_csv(request, table_id):
     month = request.GET.get('month')
@@ -123,6 +132,7 @@ def export_csv(request, table_id):
 @never_cache
 @require_POST
 def audio_statistics_api(request):
+    # TODO: secure this endpoint
     subscriber_id = request.POST.get('subscriber_id')
     audio_id = request.POST.get('audio_id')
     percentage = int(request.POST.get('percentage'))
@@ -145,7 +155,7 @@ def audio_statistics_api(request):
 @csrf_exempt
 @require_POST
 def audio_statistics_api_amp(request):
-
+    # TODO: secure this endpoint
     user = get_related_user(request, use_body=True)
 
     if not hasattr(user, 'subscriber'):

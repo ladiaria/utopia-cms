@@ -1,0 +1,193 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-13 17:04-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: apps/cartelera/choices.py:6
+msgid "Free"
+msgstr "Gratuito"
+
+#: apps/cartelera/choices.py:7
+msgid "Paid subscriptions only"
+msgstr "Sólo para suscripciones pagas"
+
+#: apps/comunidad/admin.py:16
+msgid "Usado"
+msgstr "Usado"
+
+#: apps/comunidad/admin.py:22
+msgid "Used"
+msgstr "Usado"
+
+#: apps/comunidad/admin.py:23
+msgid "Not Used"
+msgstr "No usado"
+
+#: apps/core/admin.py:539 apps/core/admin.py:563
+msgid "Published"
+msgstr "Publicado"
+
+#: apps/core/models.py:2505
+msgid "size"
+msgstr "tamaño"
+
+#: apps/core/models.py:2506
+msgid "background color"
+msgstr "color de fondo"
+
+#: apps/core/templates/article/detail_comments.html:23
+#: apps/core/templates/article/detail_comments.html:26
+msgid "Suscribite"
+msgstr "Suscríbase"
+
+#: apps/core/templates/article/detail_comments.html:26
+msgid "Registrate"
+msgstr "Regístrese"
+
+#: apps/core/templates/article/detail_comments.html:28
+msgid "tenés"
+msgstr "tiene"
+
+#: apps/core/templates/article/detail_comments.html:29
+msgid "Ingresá"
+msgstr "Ingrese"
+
+#: apps/core/templates/article/paywall/pw_auth_with_credits_title.html:6
+#: apps/signupwall/__init__.py:6
+msgid "Te queda"
+msgstr "Le queda"
+
+#: apps/core/templates/article/paywall/pw_auth_with_credits_title.html:8
+#: apps/signupwall/__init__.py:7
+msgid "Este es tu último artículo gratuito"
+msgstr "Este es su último artículo gratuito"
+
+#: apps/core/templates/edition/download_email_sent.html:12
+#: apps/thedaily/forms.py:176 apps/thedaily/forms.py:343
+msgid "Email"
+msgstr "Correo electrónico"
+
+#: apps/core/templates/edition/download_email_sent.html:14
+#: apps/thedaily/models.py:59 apps/thedaily/views.py:992
+msgid "email"
+msgstr "correo electrónico"
+
+#: apps/signupwall/__init__.py:4
+msgid "Tu cuenta"
+msgstr "Su cuenta"
+
+#: apps/signupwall/__init__.py:5
+msgid "Contenido no disponible con tu suscripción actual"
+msgstr "Contenido no disponible con su suscripción actual"
+
+#: apps/thedaily/admin.py:147
+msgid "subscribed"
+msgstr "suscrito"
+
+#: apps/thedaily/exceptions.py:8
+msgid "contactate"
+msgstr "contáctese"
+
+#: apps/thedaily/models.py:187
+msgid "name"
+msgstr "nombre"
+
+#: apps/thedaily/models.py:390
+msgid "user id"
+msgstr "id de usuario"
+
+#: apps/thedaily/models.py:595
+msgid "tus datos"
+msgstr "sus datos"
+
+#: apps/thedaily/models.py:614
+msgid "tu perfil"
+msgstr "su perfil"
+
+#: apps/thedaily/models.py:760
+msgid "billing name"
+msgstr "nombre facturación"
+
+#: apps/thedaily/models.py:761
+msgid "billing identification document"
+msgstr "documento facturación"
+
+#: apps/thedaily/models.py:762
+msgid "billing phone"
+msgstr "teléfono facturación"
+
+#: apps/thedaily/models.py:763
+msgid "billing email"
+msgstr "correo electrónico facturación"
+
+#: apps/thedaily/models.py:771
+msgid "start date"
+msgstr "fecha inicio"
+
+#: apps/thedaily/models.py:772
+msgid "end date"
+msgstr "fecha fin"
+
+#: apps/thedaily/models.py:773
+msgid "next billing"
+msgstr "próxima facturación"
+
+#: apps/thedaily/models.py:780
+msgid " subscription for "
+msgstr " suscripción para "
+
+#: apps/thedaily/templates/disable_profile_property.html:8
+msgid "recibirás"
+msgstr "recibirá"
+
+#: apps/thedaily/templates/nlunsubscribe.html:40
+msgid "Configurar todas tus newsletters"
+msgstr "Configurar todos sus newsletters"
+
+#: templates/admin/app_list.html:11
+#, python-format
+msgid "Models in the %(name)s application"
+msgstr "Modelos en la aplicación %(name)s"
+
+#: templates/admin/app_list.html:40 templates/admin/app_list.html:60
+#: templates/admin/app_list.html:73
+msgid "Add"
+msgstr "Agregar"
+
+#: templates/admin/app_list.html:47
+msgid "View"
+msgstr "Ver"
+
+#: templates/admin/app_list.html:49 templates/admin/app_list.html:65
+#: templates/admin/app_list.html:78
+msgid "Change"
+msgstr "Cambiar"
+
+#: templates/admin/app_list.html:88
+msgid "You don’t have permission to view or edit anything."
+msgstr "Usted no tiene permisos para ver o editar nada."
+
+#: templates/admin/change_form_object_tools.html:6
+#: templates/admin/core/article/change_form_object_tools.html:8
+msgid "History"
+msgstr "Histórico"
+
+#: templates/admin/change_form_object_tools.html:9
+#: templates/admin/change_form_object_tools.html:10
+msgid "View on site"
+msgstr "Ver en el sitio"

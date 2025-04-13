@@ -389,15 +389,13 @@
         <table id="table-activity" class="table table-striped table-sm" style="font-size: .7rem;" data-sort-name="last-activity" data-sort-order="asc">
           <thead>
             <tr>
-              {# TODO: remove custom "la diaria" columns #}
               <th data-sortable="true">Usuario</th>
               <th data-sortable="true">Email</th>
               <th data-sortable="true">Creado</th>
               <th data-sortable="true">Activo</th>
-              <th data-sortable="true">la diaria</th>
-              <th data-sortable="true">digital</th>
-              <th data-sortable="true">Lento</th>
-              <th data-sortable="true">FS</th>
+              {% for column in extra_columns %}
+                <th data-sortable="true">{{ column }}</th>
+              {% endfor %}
               <th data-sortable="true" data-field="last-activity">Últ. actividad</th>
             </tr>
           </thead>

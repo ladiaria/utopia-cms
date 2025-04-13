@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-
 import re
+from os.path import join
 from generator.views import contribute
 from rest_framework import serializers, viewsets, routers
+from rest_framework_api_key.permissions import HasAPIKey
 
 from django.conf import settings
 from django.urls import include, path, re_path
@@ -11,6 +12,7 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView, RedirectView
 from django.contrib import admin
 from django.contrib.sites.models import Site
+from django.contrib.flatpages.views import flatpage
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.static import serve
 
@@ -21,7 +23,7 @@ from core.views.sw import service_worker
 from core.views.subscribe import subscribe
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
-from thedaily.models import Subscriber
+from thedaily.models import Subscriber, Subscription
 from comunidad.models import Url, Recommendation
 from homev3.views import index
 from cartelera.views import vivo
@@ -103,6 +105,12 @@ class UrlSerializer(serializers.ModelSerializer):
         fields = ('recommendation_set',)
 
 
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ("id", "end_date")
+
+
 class SubscriberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscriber
@@ -142,7 +150,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     filter_fields = ('name', 'slug')
 
 
-RE_SLUG_APP_COMPAT = re.compile(r'([\w-]+)-ladiaria$')
+RE_SLUG_APP_COMPAT = re.compile(rf'(\w+)-{settings.DEFAULT_PUB}$')
 
 
 class SectionViewSet(viewsets.ModelViewSet):
@@ -153,7 +161,7 @@ class SectionViewSet(viewsets.ModelViewSet):
 
     def filter_queryset(self, queryset):
         """
-        Mobile APP compatibility (slugs ending with "-ladiaria")
+        Mobile APP compatibility (slugs ending with "-$DEFAULT_PUB_SLUG")
         https://stackoverflow.com/a/39849686
         WARNING: filtering by name will be ignored here
         """
@@ -205,6 +213,14 @@ class UrlViewSet(viewsets.ModelViewSet):
     filter_fields = ('url',)
 
 
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    authentication_classes = [] if settings.ENV_HTTP_BASIC_AUTH else viewsets.ModelViewSet.authentication_classes
+    permission_classes = [HasAPIKey]
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+    http_method_names = ["get", "head", "put"]
+
+
 class SubscriberViewSet(viewsets.ModelViewSet):
     queryset = Subscriber.objects.all()
     serializer_class = SubscriberSerializer
@@ -228,6 +244,7 @@ router.register(r'articles', ArticleViewSet)
 router.register(r'home', HomeArticleViewSet)
 router.register(r'journalists', JournalistViewSet)
 router.register(r'urls', UrlViewSet)
+router.register(r'subscriptions', SubscriptionViewSet)
 router.register(r'subscribers', SubscriberViewSet)
 router.register(r'dollar_exchange', DollarExchangeViewSet)
 
@@ -250,14 +267,34 @@ urlpatterns = [
     # Custom redirects
     path('suscribite-por-telefono/', RedirectView.as_view(url='/usuarios/suscribite-por-telefono/')),
     path('suscribite/', RedirectView.as_view(url=reverse_lazy('subscribe_landing'))),
-    re_path(
-        r'^contacto/', RedirectView.as_view(url=getattr(settings, 'CONTACT_REDIRECT_URL', '/')), name="contact-form"
-    ),
     # AMP copy iframe
     re_path(r'^copier/', TemplateView.as_view(template_name="core/templates/amp/article/copier.html"), name='copier'),
     # AMP reader ID
     path('amp-readerid/', include('django_amp_readerid.urls')),
 ]
+
+# contact and help redirects
+contact_redirection = getattr(settings, 'CONTACT_REDIRECT_URL', None)
+flatpage_not_configured = TemplateView.as_view(
+    template_name=join(settings.PORTAL_FLATPAGES_DIR, 'not-configured.html'),
+    extra_context={
+        "content_text": "La página o acción a la cual has accedido aún no se ha configurado en nuestro sitio.",
+    }
+)
+urlpatterns.append(
+    re_path(
+        r'^contacto/',
+        (RedirectView.as_view(url=contact_redirection) if contact_redirection else flatpage_not_configured),
+        name="contact-form",
+    )
+)
+help_redirection = getattr(settings, 'HELP_REDIRECT_URL', None)
+if help_redirection:
+    # Match only the first path segment to be url-tag-usage friendly, example: href="{% url 'help' %}help-subpage/"
+    urlpatterns.append(re_path(r'^ayuda/$', RedirectView.as_view(url=help_redirection), name="help"))
+else:
+    # Match any /ayuda/... pattern and render the not-configured template
+    urlpatterns.append(re_path(r'^ayuda/', flatpage_not_configured, name="help"))
 
 # Used to add customized url patterns from custom modules
 urls_custom_modules = getattr(settings, 'PORTAL_URLS_CUSTOM_MODULES', [])
@@ -324,6 +361,7 @@ urlpatterns.extend(
         # Other pages (TODO: check and organize better)
         re_path(r'^(?P<journalist_job>(periodista|columnista))/', include('core.urls.journalist')),
         path('area/', include('core.urls.category')),
+        path('nl/', include('core.urls.publication')),
         path('bn/', include('core.urls.breaking_news_module')),
     ]
 )
@@ -338,8 +376,6 @@ urlpatterns.extend(
         path('debug/', include('core.urls.debug')),
         # Usuarios
         path('usuarios/', include('thedaily.urls')),
-        # notification (TODO: move to thedaily.urls)
-        path('usuarios/alertas/', include('notification.urls')),
         # TODO: verify if this repeated path (?) makes sense
         path('', include('sitemaps.urls')),
         path('', include('social_django.urls', namespace='social')),
@@ -380,3 +416,6 @@ if settings.DEBUG:
     # )
 else:
     urlpatterns.append(re_path(r'^.*.css$', TemplateView.as_view(template_name='devnull.html')))
+
+# and after all, a catchall for flatpages
+urlpatterns.append(re_path(r"^(?P<url>.*/)$", flatpage))

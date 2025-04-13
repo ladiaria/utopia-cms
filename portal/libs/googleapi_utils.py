@@ -32,13 +32,15 @@ def build_youtube_api():
         return build('youtube', 'v3', **build_kwargs)
 
 
-def youtube_api_playlistItems(youtube_api, playlistId, maxResults=8, reverse=False):
+def youtube_api_playlistItems(youtube_api, playlistId, maxResults=8, reverse=False, include_description=False):
     """
     Returns a list of tuples with the video id, title and type of the playlist items.
     """
     items = [
         (
-            v["snippet"]["resourceId"]["videoId"], v["snippet"]["title"], "playlist"
+            (v["snippet"]["resourceId"]["videoId"], v["snippet"]["title"])
+            + ((v["snippet"]["description"],) if include_description else ())
+            + ("playlist",)
         ) for v in youtube_api.playlistItems().list(
             part="snippet", playlistId=playlistId, maxResults=maxResults
         ).execute()["items"]
@@ -60,7 +62,9 @@ def youtube_api_embeds(youtube_api, video_ids):
     )
 
 
-def youtube_api_search(channelId=None, search_q=None, playlistId=None, maxResults=None, embeds=False):
+def youtube_api_search(
+    channelId=None, search_q=None, playlistId=None, maxResults=None, embeds=False, include_description=False
+):
     """
     Returns a list of tuples with the video id, title and type of the search results inside a channel or all videos
     from a playlist. TODO: documnet embed param.
@@ -93,7 +97,9 @@ def youtube_api_search(channelId=None, search_q=None, playlistId=None, maxResult
                 ]
 
             elif playlistId:
-                items += youtube_api_playlistItems(youtube_api, playlistId, maxResults)
+                items += youtube_api_playlistItems(
+                    youtube_api, playlistId, maxResults, include_description=include_description
+                )
             if embeds:
                 items = youtube_api_embeds(youtube_api, [item[0] for item in items])
     return items

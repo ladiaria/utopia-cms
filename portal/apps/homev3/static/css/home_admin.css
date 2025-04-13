@@ -20,10 +20,17 @@ th.column-home_top, td.field-top_position, td.field-position, td.field-home_top,
 	text-align: center;
 }
 th.column-top_position {
+	width: 65px;
 	max-width: 93px;
 }
 th.column-position {
 	max-width: 72px;
+}
+th.column-section {
+	width: 290px;
+}
+th.column-home_top {
+	width: 80px;
 }
 td.field-top_position, td.field-position {
     text-align: center;
@@ -31,6 +38,11 @@ td.field-top_position, td.field-position {
     font-size: large;
 	padding-top: 1.6em !important;
 	padding-right: 30px;
+}
+/* Add new rule for td.field-[top_position, position] when previous sibling doesn't have p tag */
+td.original:not(:has(p)) + td.field-top_position,
+td.original:not(:has(p)) + td.field-position {
+    padding-top: 0.8em !important;
 }
 td.field-home_top, td.delete {
 	vertical-align: middle;

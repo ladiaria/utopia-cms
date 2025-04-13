@@ -88,22 +88,26 @@
         {% endfor %}
 
         {% for pub in publications|slice:":3" %}
-          <div class="col s12 m6 l3 news-wall__block">
-            <span class="news-wall__title">
-              <a href="{{ pub.get_absolute_url }}">{{ pub|capfirst }}</a>
-            </span>
-            <ul class="news-wall__list">
-              {% for section in pub.section_set.all|slice:":3" %}
-                <li class="news-wall__item">
-                  {% with latest_article=section.latest_article.0 %}
-                    <a href="{{ latest_article.get_absolute_url }}" class="news-wall__link">
-                      {{ latest_article.headline|ldmarkup|bleach }}
-                    </a>
-                  {% endwith %}
-                </li>
-              {% endfor %}
-            </ul>
-          </div>
+          {% with sections=pub.section_set.all|slice:":3" %}
+            {% if sections %}
+              <div class="col s12 m6 l3 news-wall__block">
+                <span class="news-wall__title">
+                  <a href="{{ pub.get_absolute_url }}">{{ pub|capfirst }}</a>
+                </span>
+                <ul class="news-wall__list">
+                  {% for section in sections %}
+                    <li class="news-wall__item">
+                      {% with latest_article=section.latest_article.0 %}
+                        <a href="{{ latest_article.get_absolute_url }}" class="news-wall__link">
+                          {{ latest_article.headline|ldmarkup|bleach }}
+                        </a>
+                      {% endwith %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+          {% endwith %}
         {% endfor %}
 
       {% endif %}

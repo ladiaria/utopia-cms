@@ -1,5 +1,6 @@
 *.log
 *.pyc
+*.mo
 *.pot
 ._*
 *.swp
@@ -19,6 +20,7 @@ __pycache__
 /portal/.pydevproject
 /portal/.settings
 cache
+.local_rev_*
 .editorconfig
 .idea
 .env*
@@ -27,7 +29,6 @@ cache
 .python-eggs
 .DS_Store
 /uwsgi.ini
-/wsgi.py
 /static/lightGallery
 /static/css/ladiaria.*
 /static/js/ld.min.js
