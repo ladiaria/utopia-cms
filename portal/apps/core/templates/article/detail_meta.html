@@ -7,6 +7,9 @@
 <meta property="og:site_name" content="{{ site.name }}">
 <meta property="og:url" content="{{ SITE_URL_SD }}{{ article.get_absolute_url }}">
 <meta property="article:section" content="{{ section }}">
+{% if CORE_ARTICLE_DETAIL_PUBLISHER_META %}
+  <meta property="article:publisher" content="{{ CORE_ARTICLE_DETAIL_PUBLISHER_META }}">
+{% endif %}
 {% if article.date_published %}
   <meta property="article:published_time" content="{{ article.date_published_isoformat }}">
 {% endif %}
@@ -33,15 +36,9 @@
 {% endif %}
 <!-- End Open Graph (http://ogp.me) -->
 
-<!-- Meta tags Facebook -->
-{% if CORE_ARTICLE_DETAIL_PUBLISHER_META %}
-  <meta property="article:publisher" content="{{ CORE_ARTICLE_DETAIL_PUBLISHER_META }}">
-{% endif %}
-<!-- End Meta tags Facebook -->
-
-<!-- Meta tags Google -->
-<meta name="robots" content="max-image-preview:large">
-<!-- End Meta tags Google -->
+<!-- other meta tags -->
+<meta name="robots" content="max-image-preview:large">{# TODO: check/indicate if this is only used by google bot #}
+<!-- end other meta tags -->
 
 <!-- Meta tags Twitter -->
 <meta name="twitter:card" content="summary{% if photo_render_allowed %}_large_image{% endif %}">
