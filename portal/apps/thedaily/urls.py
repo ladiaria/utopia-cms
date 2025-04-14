@@ -118,6 +118,7 @@ urlpatterns = [
         {"key": "unsubscribed_nls"},
         name='unsubscribed-nls-notice-closed',
     ),
+    re_path(r'^promotion/(?P<key>[\w-]+)/(?P<action>closed|show)/$', subscribe_notice_closed),
     # Profile
     path('perfil/editar/', edit_profile, name="edit-profile"),
     re_path(

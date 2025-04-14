@@ -2451,10 +2451,10 @@ def notification_preview(request, template, days=False):
 
 
 @never_cache
-@csrf_exempt
-def subscribe_notice_closed(request, key="subscribe"):
+def subscribe_notice_closed(request, key="subscribe", action="closed"):
+    # TODO: check against something to tell us if key is valid (do not allow anything on it)
     if request.method == "POST":
-        request.session[key + '_notice_closed'] = True
+        request.session[key + '_notice_closed'] = action == "closed"
         return HttpResponse()
     else:
         return JsonResponse({"closed": request.session.get(key + '_notice_closed', False)})

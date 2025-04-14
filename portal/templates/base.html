@@ -253,11 +253,22 @@
     {% endif %}
     <script type="text/javascript">
 
-      function notification_close(btn_close){
-        var notification = $(btn_close).parents('.breaking-notice');
-        $.get('/' + $(btn_close).attr('data-object') + '/' + $(btn_close).attr('data-id') + '/closed/', function(data){
-          notification.toggle();
-        });
+      function notification_close(btn_close, undo=false){
+        var method = $(btn_close).attr('data-method') || "get";
+        var url = (
+          '/' + $(btn_close).attr('data-object') + '/' + $(btn_close).attr('data-id') + '/'
+          + (undo ? 'show' : 'closed') + '/'
+        );
+        if (method == "get") {
+          var notification = $(btn_close).parents('.breaking-notice');
+          $.get(url, function(data) {
+            if (notification.length) {
+              notification.toggle();
+            }
+          });
+        } else if (method == "post") {
+          $.post(url, {"csrfmiddlewaretoken": "{{ csrf_token }}"});
+        }
       }
 
       function subscribe_notice_show(subscribe_notice){
@@ -272,6 +283,9 @@
       $(function(){
         $('.btn-close').click(function(){
           notification_close(this);
+        });
+        $('.btn-show').click(function(){
+          notification_close(this, true);
         });
 
         var subscribe_notice = $('.subscribe-notice');
