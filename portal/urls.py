@@ -37,7 +37,7 @@ admin.site.site_header, admin.site.enable_nav_sidebar = "CMS - %s" % settings.SI
 class PhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PhotoExtended
-        fields = ('image', )
+        fields = ('image',)
 
 
 class ArticleSerializer(serializers.ModelSerializer):
