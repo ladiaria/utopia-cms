@@ -162,7 +162,7 @@ urlpatterns = [
     ),
     path(
         'error/toomuch/',
-        never_cache(TemplateView.as_view(template_name='thedaily/templates/toomuch.html')),
+        never_cache(TemplateView.as_view(template_name=get_app_template('toomuch.html'))),
         name="account-error-toomuch",
     ),
     path('restablecer/', password_reset, name="account-password_reset"),
