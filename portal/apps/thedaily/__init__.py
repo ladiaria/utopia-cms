@@ -58,14 +58,17 @@ def conf_check(app_configs, **kwargs):
     return errors
 
 
-def get_app_template(relative_path):
+def get_app_template(
+    relative_path,
+    default_dir="thedaily/templates",
+    custom_dir=getattr(settings, "THEDAILY_ROOT_TEMPLATE_DIR", None)
+):
     """
     This simplifies the use of one custom setting per file, but cannot map a known template to any file, if one day
     this became a requirement, we can add a map setting to map the relative_path received here to whatever the custom
     map says; for ex: relative_path = getattr(settings, "NEW_CUSTOM_SETTING", {}).get(relative_path, relative_path)
     where NEW_CUSTOM_SETTING can be for ex: {"welcome.html": "goodbye.html"}
     """
-    default_dir, custom_dir = "thedaily/templates", getattr(settings, "THEDAILY_ROOT_TEMPLATE_DIR", None)
     template = join(default_dir, relative_path)  # fallback to the default
     if custom_dir:
         engine = Engine.get_default()

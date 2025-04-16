@@ -250,7 +250,6 @@ class DefaultArticleDetailView(ArticleDetailView):
         )
         context.update(
             {
-                "DEBUG": settings.DEBUG,
                 'article': article,
                 "article_restricted_cf": article.is_restricted_consider_full(),
                 "photo_render_allowed": article.photo_render_allowed(),

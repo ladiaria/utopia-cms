@@ -6,6 +6,7 @@ from django.template.base import Node
 
 from core.models import Section, Publication, Category, get_current_edition
 from core.utils import get_category_template, get_articles_slider_template
+from thedaily import get_app_template
 
 
 register = Library()
@@ -17,10 +18,11 @@ def get_item(dictionary, key):
 
 
 class RenderSectionNode(Node):
-    def __init__(self, context, section_slug, article_type, top_index):
+    def __init__(self, context, section_slug, article_type, top_index, limit):
         self.section_slug = section_slug
         self.article_type = article_type
         self.top_index = top_index
+        self.limit = limit
 
     def render(self, context):
         result, edition = '', context.get('edition')
@@ -48,13 +50,13 @@ class RenderSectionNode(Node):
                     try:
                         template_engine.get_template(template_try)
                     except TemplateDoesNotExist:
-                        pass
+                        template = get_app_template(template, "", template_dir)
                     else:
                         template = template_try
 
                 if section.slug not in getattr(settings, 'CORE_RENDER_SECTION_ARTICLES_TEMPLATE_OVERRIDES', ()):
 
-                    latest_kwargs = {}
+                    latest_kwargs = {'limit': self.limit} if self.limit else {}
 
                     if not section.home_block_show_featured:
                         # articles should not be render twice if cover, (in cover and here)
@@ -93,8 +95,8 @@ class RenderSectionNode(Node):
 
 
 @register.simple_tag(takes_context=True)
-def render_section(context, section_slug, article_type=None, top_index=None):
-    return RenderSectionNode(context, section_slug, article_type, top_index).render(context)
+def render_section(context, section_slug, article_type=None, top_index=None, limit=None):
+    return RenderSectionNode(context, section_slug, article_type, top_index, limit).render(context)
 
 
 @register.simple_tag(takes_context=True)
@@ -225,13 +227,16 @@ def render_publication_grid(context, data):
     )
 
 
+category_row_default_limit = getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT', 4)
+
+
 @register.simple_tag(takes_context=True)
-def render_category_row(context, category_slug, limit=getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT', 4)):
+def render_category_row(context, category_slug, limit=category_row_default_limit):
     return RenderCategoryRowNode(category_slug, limit).render(context)
 
 
 @register.simple_tag(takes_context=True)
-def render_category_slider(context, type, slug, limit=getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT', 4)):
+def render_category_slider(context, type, slug, limit=category_row_default_limit):
     return RenderArticlesSliderNode(context, type, slug, limit).render(context)
 
 
