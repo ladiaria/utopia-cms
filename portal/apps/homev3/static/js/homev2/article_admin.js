@@ -92,7 +92,7 @@ if (window.jQuery) {
     let slug_radio_choice_custom = $("#id_slug_radio_choice_custom_0");
     if (slug_radio_choice_custom.length) {
       slug_radio_choice_custom.prop(
-        {"name": "slug_radio_choice", "checked": !$('[id^="id_slug_radio_choice_"]:checked').length}
+        {"name": "slug_radio_choice", "checked": !$("#id_slug_radio_choice_0").prop("checked")}
       );
     }
     $("#id_slug_radio_choice, #id_slug_radio_choice_custom").on("change", function(){
