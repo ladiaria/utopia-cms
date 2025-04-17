@@ -144,33 +144,34 @@ def render_publication_row(context, publication_slug):
             return ''
 
 
-class RenderCategoryRowNode(Node):
-    def __init__(self, category_slug, limit):
-        self.category_slug = category_slug
-        self.limit = limit
+category_row_default_limit = getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT', 4)
 
-    def render(self, context):
-        try:
-            category = Category.objects.get(slug=self.category_slug)
-        except Category.DoesNotExist:
-            return ''
+
+@register.simple_tag(takes_context=True)
+def render_category_row(context, category_slug, limit=None):
+    try:
+        category = Category.objects.get(slug=category_slug)
+    except Category.DoesNotExist:
+        return ''
+    else:
+        if not limit:
+            limit = getattr(settings, 'HOMEV3_CATEGORY_ROW_LIMITS', {}).get(category_slug, category_row_default_limit)
+        latest_articles = category.latest_articles()[:limit]
+        if latest_articles:
+            flatten_ctx = context.flatten()
+            if "edition" not in flatten_ctx:
+                flatten_ctx['edition'] = get_current_edition()  # must to be set
+            flatten_ctx.update(
+                {
+                    'category': category,
+                    'is_portada': True,  # must to be set
+                    # force a blank first node because top_index should be > 0
+                    'category_destacados': [None] + latest_articles,
+                }
+            )
+            return loader.render_to_string(get_category_template(category.slug, "category_row"), flatten_ctx)
         else:
-            latest_articles = category.latest_articles()[:self.limit]
-            if latest_articles:
-                flatten_ctx = context.flatten()
-                flatten_ctx.update(
-                    {
-                        'category': category,
-                        # both next entries should be set
-                        'edition': get_current_edition(),
-                        'is_portada': True,
-                        # force a blank first node because top_index should be > 0
-                        'category_destacados': [None] + latest_articles,
-                    }
-                )
-                return loader.render_to_string(get_category_template(category.slug, "category_row"), flatten_ctx)
-            else:
-                return ''
+            return ''
 
 
 class RenderArticlesSliderNode(Node):
@@ -225,14 +226,6 @@ def render_publication_grid(context, data):
     return loader.render_to_string(
         '%s/%s_grid.html' % (settings.HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR, publication.slug), flatten_ctx
     )
-
-
-category_row_default_limit = getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT', 4)
-
-
-@register.simple_tag(takes_context=True)
-def render_category_row(context, category_slug, limit=category_row_default_limit):
-    return RenderCategoryRowNode(category_slug, limit).render(context)
 
 
 @register.simple_tag(takes_context=True)
