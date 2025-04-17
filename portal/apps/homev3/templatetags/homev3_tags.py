@@ -57,14 +57,11 @@ class RenderSectionNode(Node):
                 if section.slug not in getattr(settings, 'CORE_RENDER_SECTION_ARTICLES_TEMPLATE_OVERRIDES', ()):
 
                     latest_kwargs = {'limit': self.limit} if self.limit else {}
+                    rendered_ids = context.get('rendered_ids', [])
 
                     if not section.home_block_show_featured:
-                        # articles should not be render twice if cover, (in cover and here)
-                        top_articles_ids = [art.id for art in top_articles or []]
-                        cover_article = context.get('cover_article')
-                        if cover_article:
-                            top_articles_ids.append(cover_article.id)
-                        latest_kwargs['exclude_articles_ids'] = top_articles_ids
+                        # exclude articles that are already rendered
+                        latest_kwargs['exclude_articles_ids'] = rendered_ids
 
                     if (
                         self.article_type == 'OP'
@@ -84,6 +81,8 @@ class RenderSectionNode(Node):
                             latest_kwargs['publications_ids'] = [edition.publication.id]
 
                     articles = list(section.latest(**latest_kwargs))
+                    rendered_ids.extend([a.id for a in articles])
+                    context['rendered_ids'] = rendered_ids
 
             context.update({'articles': articles, 'section': section, 'edition': edition, 'art_count': len(articles)})
             try:
@@ -148,7 +147,7 @@ category_row_default_limit = getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMI
 
 
 @register.simple_tag(takes_context=True)
-def render_category_row(context, category_slug, limit=None):
+def render_category_row(context, category_slug, limit=None, debug=False):
     try:
         category = Category.objects.get(slug=category_slug)
     except Category.DoesNotExist:
@@ -156,8 +155,16 @@ def render_category_row(context, category_slug, limit=None):
     else:
         if not limit:
             limit = getattr(settings, 'HOMEV3_CATEGORY_ROW_LIMITS', {}).get(category_slug, category_row_default_limit)
-        latest_articles = category.latest_articles()[:limit]
+        rendered_ids = context.get('rendered_ids', [])
+        if debug and settings.DEBUG:
+            print(f"DEBUG: rendered_ids before {category_slug}: {rendered_ids}")
+        latest_kwargs = {}
+        if not getattr(settings, "HOMEV3_CATEGORY_ROWS_ALLOW_DUPLICATES", True):
+            latest_kwargs['exclude'] = rendered_ids
+        latest_articles = category.latest_articles(**latest_kwargs)[:limit]
         if latest_articles:
+            rendered_ids.extend([a.id for a in latest_articles])
+            context['rendered_ids'] = rendered_ids
             flatten_ctx = context.flatten()
             if "edition" not in flatten_ctx:
                 flatten_ctx['edition'] = get_current_edition()  # must to be set

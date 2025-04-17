@@ -231,6 +231,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         )
         template = 'index.html'
 
+    rendered_ids = [a.id for a in top_articles]
     if top_articles:
 
         if is_authenticated:
@@ -246,6 +247,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             'is_portada': True,
             'cover_article': cover_article,
             'destacados': top_articles,
+            "rendered_ids": rendered_ids,
             'questions_topic': questions_topic,
             'big_photo': publication.full_width_cover_image,
         }
