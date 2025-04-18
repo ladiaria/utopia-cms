@@ -275,11 +275,10 @@ urlpatterns = [
 
 # contact and help redirects
 contact_redirection = getattr(settings, 'CONTACT_REDIRECT_URL', None)
+not_configured_msg = "La página o acción a la cual has accedido aún no se ha configurado en nuestro sitio."
 flatpage_not_configured = TemplateView.as_view(
     template_name=join(settings.PORTAL_FLATPAGES_DIR, 'not-configured.html'),
-    extra_context={
-        "content_text": "La página o acción a la cual has accedido aún no se ha configurado en nuestro sitio.",
-    }
+    extra_context={"content_text": not_configured_msg}
 )
 urlpatterns.append(
     re_path(
