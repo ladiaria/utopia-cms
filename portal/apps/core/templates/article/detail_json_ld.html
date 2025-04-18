@@ -9,6 +9,7 @@
     {% if article.date_published %}"datePublished": "{{ article.date_published_isoformat }}",{% endif %}
     "dateModified": "{{ article.last_modified_isoformat }}",
     "description": "{% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
+    "inLanguage": "{{ local_lang }}-{{ LOCAL_COUNTRY }}",
     "isAccessibleForFree": {{ article.public|lower }},
     "hasPart": {
       "@type": "WebPageElement",
