@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.template import Library, Engine, TemplateDoesNotExist, loader
@@ -81,8 +82,9 @@ class RenderSectionNode(Node):
                             latest_kwargs['publications_ids'] = [edition.publication.id]
 
                     articles = list(section.latest(**latest_kwargs))
-                    rendered_ids.extend([a.id for a in articles])
-                    context['rendered_ids'] = rendered_ids
+                    if not content_settings.HOMEV3_ROWS_DUPLICATES_HOMETOP_ONLY:
+                        rendered_ids.extend([a.id for a in articles])
+                        context['rendered_ids'] = rendered_ids
 
             context.update({'articles': articles, 'section': section, 'edition': edition, 'art_count': len(articles)})
             try:
@@ -124,6 +126,7 @@ def render_publication_row(context, publication_slug):
             edition = get_current_edition(publication)
             if edition:
                 flatten_ctx = context.flatten()
+                # TODO: apply exclusion of articles same way as in render_category_row and render_section
                 flatten_ctx.update(
                     {
                         'publication_obj': publication,
@@ -163,8 +166,9 @@ def render_category_row(context, category_slug, limit=None, debug=False):
             latest_kwargs['exclude'] = rendered_ids
         latest_articles = category.latest_articles(**latest_kwargs)[:limit]
         if latest_articles:
-            rendered_ids.extend([a.id for a in latest_articles])
-            context['rendered_ids'] = rendered_ids
+            if not content_settings.HOMEV3_ROWS_DUPLICATES_HOMETOP_ONLY:
+                rendered_ids.extend([a.id for a in latest_articles])
+                context['rendered_ids'] = rendered_ids
             flatten_ctx = context.flatten()
             if "edition" not in flatten_ctx:
                 flatten_ctx['edition'] = get_current_edition()  # must to be set

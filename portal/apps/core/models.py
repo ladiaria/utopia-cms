@@ -1051,7 +1051,7 @@ class Section(Model):
             """ % (category, exclude_id, limit)
         )
 
-    def latest_related_by_publication(self, publication, exclude_id, limit):
+    def latest_related_by_publication(self, publication, exclude_ids, limit):
         """
         Returns the last 'limit' articles from the publication that accept being related,
         excluding the article ID passed as parameter.
@@ -1061,10 +1061,10 @@ class Section(Model):
             """
             SELECT a.* FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
                 JOIN core_edition e ON ar.edition_id=e.id
-            WHERE a.is_published AND a.allow_related AND e.publication_id=%s AND a.id!=%s%s
+            WHERE a.is_published AND a.allow_related AND e.publication_id=%s AND a.id NOT IN (%s)%s
             GROUP BY a.id ORDER BY a.date_published DESC
             LIMIT %d
-            """ % (publication, exclude_id, extra_where, limit)
+            """ % (publication, ','.join([str(x) for x in exclude_ids]), extra_where, limit)
         )
 
     def latest_article(self):

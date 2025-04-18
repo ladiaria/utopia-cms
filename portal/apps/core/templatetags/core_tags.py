@@ -59,7 +59,7 @@ def published_articles(context, **kwargs):
     return articles[:limit] if limit else articles
 
 
-def related_data_using_publication(publication, section, article, limit, title=None):
+def related_data_using_publication(publication, section, exclude_ids, limit, title=None):
     if (
         publication
         and section.slug not in getattr(settings, 'CORE_SECTIONS_EXCLUDE_RELATED', ())
@@ -67,7 +67,7 @@ def related_data_using_publication(publication, section, article, limit, title=N
     ):
         # use the publication
         upd_dict = {
-            'articles': section.latest_related_by_publication(publication.id, article.id, limit),
+            'articles': section.latest_related_by_publication(publication.id, exclude_ids, limit),
             'section': title or (
                 publication.headline
                 if publication.slug in getattr(settings, 'CORE_PUBLICATIONS_RELATED_USE_HEADLINE', ())
@@ -96,9 +96,10 @@ def render_related(context, article, amp=False, publication_priority=None, title
         publication_priority = settings_publication_priority
     related_default_limit = getattr(settings, 'CORE_RENDER_RELATED_DEFAULT_LIMIT', 4)
 
+    rendered_ids = context.get("rendered_ids", [article.id])
     if publication and publication_priority:
         # 1st: give priority to publication, if defined by settings
-        upd_dict = related_data_using_publication(publication, section, article, related_default_limit, title)
+        upd_dict = related_data_using_publication(publication, section, rendered_ids, related_default_limit, title)
 
     if not upd_dict:
         category_priority = getattr(settings, "CORE_CATEGORY_RELATED_CATEGORY_PRIORITY", False)
@@ -143,8 +144,11 @@ def render_related(context, article, amp=False, publication_priority=None, title
             # 5th: use the publication now, if it was not prioritized in the 1st "call"
             # NOTE: if the pub was prioritized, we already know here that it returns nothing,
             #       that's why we only call it "again" only if we know that it was not prioritized.
-            upd_dict = related_data_using_publication(publication, section, article, related_default_limit, title)
+            upd_dict = related_data_using_publication(publication, section, rendered_ids, related_default_limit, title)
 
+    if upd_dict.get("articles") is not None:
+        rendered_ids.extend([a.id for a in upd_dict["articles"]])
+        context["rendered_ids"] = rendered_ids
     upd_dict.update({'is_detail': False, 'amp': amp})
     flatten_ctx = context.flatten()
     flatten_ctx.update(upd_dict)
