@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from inflect import engine
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.http import Http404, HttpResponseRedirect
@@ -294,7 +295,7 @@ class SignupwallMiddleware(MiddlewareMixin):
                 if restricted_article:
                     request.signupwall = True
                 else:
-                    default_planslug = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+                    default_planslug = content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
                     if user_is_authenticated and default_planslug:
                         urlname, reverse_kwargs = "subscribe", {"planslug": default_planslug}
                     else:

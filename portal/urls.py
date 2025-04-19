@@ -23,7 +23,7 @@ from core.views.sw import service_worker
 from core.views.subscribe import subscribe
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
-from thedaily.models import Subscriber, Subscription
+from thedaily.models import Subscriber, Subscription, SubscriptionPrices
 from comunidad.models import Url, Recommendation
 from homev3.views import index
 from cartelera.views import vivo
@@ -115,6 +115,12 @@ class SubscriberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscriber
         fields = ('__str__', 'user_email', 'is_subscriber_any', 'newsletters')
+
+
+class SubscriptionPricesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscriptionPrices
+        fields = ('name', 'subscription_type', "months", "price", "price_total", "extra_info")
 
 
 class ExchangeSerializer(serializers.ModelSerializer):
@@ -213,12 +219,24 @@ class UrlViewSet(viewsets.ModelViewSet):
     filter_fields = ('url',)
 
 
-class SubscriptionViewSet(viewsets.ModelViewSet):
+class CustomAuthViewSetMixin:
     authentication_classes = [] if settings.ENV_HTTP_BASIC_AUTH else viewsets.ModelViewSet.authentication_classes
     permission_classes = [HasAPIKey]
+
+
+# REST REM: post=create, put=modify, delete=destroy
+
+
+class SubscriptionViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):
     queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
     http_method_names = ["get", "head", "put"]
+
+
+class SubscriptionPricesViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):
+    queryset = SubscriptionPrices.objects.all()
+    serializer_class = SubscriptionPricesSerializer
+    http_method_names = ["get", "head", "post", "put"]
 
 
 class SubscriberViewSet(viewsets.ModelViewSet):
@@ -246,6 +264,7 @@ router.register(r'journalists', JournalistViewSet)
 router.register(r'urls', UrlViewSet)
 router.register(r'subscriptions', SubscriptionViewSet)
 router.register(r'subscribers', SubscriberViewSet)
+router.register(r'subscription_prices', SubscriptionPricesViewSet)
 router.register(r'dollar_exchange', DollarExchangeViewSet)
 
 # error handlers

@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-
-from future.utils import raise_
-
-from datetime import timedelta
 import locale
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.template import Library, Node, NodeList, TemplateSyntaxError, Variable
 from django.contrib.flatpages.models import FlatPage
-from django.utils import timezone
+from django.utils.timezone import now, timedelta
 
 from core.models import Article
 from ..models import SubscriptionPrices
@@ -45,11 +42,11 @@ class TimeNode(Node):
         return timedelta(**{unit: elapsed})
 
     def render(self, context):
-        time = self.time.resolve(context)
+        time, nowval = self.time.resolve(context), now()
         if self.future:
-            in_range = self.compare(time, timezone.now() + self.delta)
+            in_range = self.compare(time, nowval + self.delta)
         else:
-            in_range = self.compare(timezone.now() - self.delta, time)
+            in_range = self.compare(nowval - self.delta, time)
         if in_range:
             return self.nodelist_true.render(context)
         else:
@@ -81,7 +78,7 @@ def if_time(parser, token):
     elif tag_name.endswith('until'):
         future = True
     if len(bits) != 4:
-        raise_(TemplateSyntaxError, "%r takes three arguments" % tag_name)
+        raise TemplateSyntaxError("%r takes three arguments" % tag_name)
     end_tag = 'end' + tag_name
     nodelist_true = parser.parse(('else', end_tag))
     token = parser.next_token()
@@ -94,9 +91,9 @@ def if_time(parser, token):
     try:
         time_int, time_unit = int(bits[3][:-1]), bits[3][-1]
     except ValueError:
-        raise_(TemplateSyntaxError, "Invalid argument '%s'" % bits[3])
+        raise TemplateSyntaxError("Invalid argument '%s'" % bits[3])
     if time_unit not in 'smhd':
-        raise_(TemplateSyntaxError, "Invalid argument '%s'" % bits[3])
+        raise TemplateSyntaxError("Invalid argument '%s'" % bits[3])
     return TimeNode(
         nodelist_true, nodelist_false, future=future, time=bits[1], operator=bits[2], elapsed=time_int, unit=time_unit
     )
@@ -107,14 +104,16 @@ register.tag('iftimeuntil', if_time)
 
 
 @register.simple_tag
-def subscriptionprice(subscription_type=settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT):
-    try:
-        price = SubscriptionPrices.objects.get(subscription_type=subscription_type).price
-    except SubscriptionPrices.DoesNotExist:
-        price = getattr(settings, 'THEDAILY_SUBSCRIPTIONPRICES_OTHER', {}).get(subscription_type, "")
-    if price:
-        locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
-        price = f'{int(price):n}'
+def subscriptionprice(subscription_type):
+    price, subscription_type = "", subscription_type or content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+    if subscription_type:
+        try:
+            price = SubscriptionPrices.objects.get(subscription_type=subscription_type).price
+        except SubscriptionPrices.DoesNotExist:
+            price = getattr(settings, 'THEDAILY_SUBSCRIPTIONPRICES_OTHER', {}).get(subscription_type)
+        if price:
+            locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
+            price = f'{int(price):n}'
     return price
 
 

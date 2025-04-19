@@ -17,6 +17,7 @@ from smtplib import SMTPRecipientsRefused
 from PIL import Image
 from ga4mp import GtagMP
 from hashids import Hashids
+from content_settings.conf import content_settings
 
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
@@ -364,7 +365,7 @@ def login(request, product_slug=None, product_variant=None):
         return HttpResponseRedirect(next_page)
 
     article_id, login_formclass, response, login_error, context = None, LoginForm, None, None, {}
-    default_planslug = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+    default_planslug = content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
     if default_planslug:
         try:
             context["default_subscription_type"] = SubscriptionPrices.objects.get(subscription_type=default_planslug)
@@ -2575,9 +2576,7 @@ def telephone_subscription_msg(user, preferred_time):
             'Ciudad: %s\nDepartamento: %s\n'
         ) % (
             name,
-            dict(settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES).get(
-                user.subscriber.subscriptions.all()[0].subscription_type_prices.all()[0].subscription_type, '-'
-            ),
+            user.subscriber.subscriptions.all()[0].subscription_type_prices.all()[0].name,
             user.email,
             user.subscriber.phone,
             dict(SUBSCRIPTION_PHONE_TIME_CHOICES).get(preferred_time, "-"),

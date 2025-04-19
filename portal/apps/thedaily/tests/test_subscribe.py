@@ -1,5 +1,6 @@
 # coding:utf-8
 from string import ascii_letters, digits, punctuation
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.test import TestCase
@@ -14,7 +15,7 @@ from core.factories import UserFactory
 from thedaily.models import SubscriptionPrices
 
 
-sp_default = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+sp_default = content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
 
 
 def generate_password():
@@ -39,7 +40,7 @@ class SubscribeTestCase(TestCase):
 
     def set_hname(self):
         # last word in the human readable name of the default subscription type
-        self.hname = dict(settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES)[sp_default].lower().split()[-1]
+        self.hname = SubscriptionPrices.objects.get(subscription_type=sp_default).name.lower().split()[-1]
 
     def subscribe_requests(self, c, blocked_phone_prefix):
         response = c.get('/usuarios/planes/', follow=True)

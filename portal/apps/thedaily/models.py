@@ -38,6 +38,7 @@ from django.db.models import (
     DecimalField,
     Manager,
     ManyToManyField,
+    SlugField,
 )
 from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.db.utils import IntegrityError
@@ -86,10 +87,8 @@ def sync_log(message, level=logging.INFO, request=None):
 
 
 class SubscriptionPrices(Model):
-    # TODO: this first field can be migrated to 2 new fields; name and slug (both unique and required)
-    subscription_type = CharField(
-        'tipo', max_length=31, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, blank=True, null=True
-    )
+    name = CharField(max_length=64, unique=True)
+    subscription_type = SlugField(max_length=64, unique=True)
     order = PositiveSmallIntegerField('orden', null=True)
     months = PositiveSmallIntegerField('meses', default=1)
     price = DecimalField('precio', max_digits=9, decimal_places=2, validators=[MIN0])
@@ -114,7 +113,7 @@ class SubscriptionPrices(Model):
     ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
 
     def __str__(self):
-        return self.get_subscription_type_display() if self.subscription_type else self.periodicity()
+        return self.name
 
     def periodicity(self):
         return "Mensual" if self.months == 1 else f"{self.months} meses"

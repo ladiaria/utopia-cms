@@ -217,7 +217,7 @@ class SubscriberAdmin(ModelAdmin):
 class SubscriptionPricesAdmin(ModelAdmin):
     list_display = (
         'periodicity',
-        "subscription_type",
+        "name",
         'order',
         'months',
         'price',

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import pycountry
 from os.path import join
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -86,7 +87,8 @@ def publications(request):
     if not is_amp_detect:
         result['footer_template'] = settings.HOMEV3_FOOTER_TEMPLATE
         if (
-            settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT and getattr(settings, "HOMEV3_SUBSCRIBE_NOTICE_ENABLED", True)
+            content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+            and getattr(settings, "HOMEV3_SUBSCRIBE_NOTICE_ENABLED", True)
         ):
             result['subscribe_notice_template'] = getattr(
                 settings, "HOMEV3_SUBSCRIBE_NOTICE_TEMPLATE", "homev3/templates/subscribe_notice.html"

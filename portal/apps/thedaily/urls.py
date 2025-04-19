@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
 from pydoc import locate
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.urls import path, re_path, reverse_lazy
@@ -75,7 +75,7 @@ custom_patterns.append(path('planes/', sp_listview, name="subscribe_landing"))
 
 # SubscribeView class can also be overrided "alone"
 subscribe = (locate(f"{viewclass_custom}.SubscribeView") if viewclass_custom else SubscribeView).as_view()
-default_planslug = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+default_planslug = content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
 
 urlpatterns = [
     path('', RedirectView.as_view(url=reverse_lazy("edit-profile"))),

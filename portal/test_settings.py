@@ -6,15 +6,13 @@ from settings import *  # noqa
 
 AMP_SIMULATE = True  # Tests will allways run "locally", then this variable must be True
 
-if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_CHOICES"):
-    print("NOTE: filling THEDAILY_SUBSCRIPTION_TYPE_CHOICES with some default values for testing purposes")
-    THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
-        ("DDIGM", "Suscripción digital"),
-        ("PAPYDIM", "Suscripción papel"),
-        ("spinoff", "Suscripción digital spinoff"),
-    )
-if not locals().get("THEDAILY_SUBSCRIPTION_TYPE_DEFAULT"):
-    THEDAILY_SUBSCRIPTION_TYPE_DEFAULT = THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0]
+# TODO: migrate this to a fixture
+# THEDAILY_SUBSCRIPTION_TYPE_DEPRECATEDCHOICES = (
+#     ("DDIGM", "Suscripción digital"),
+#     ("PAPYDIM", "Suscripción papel"),
+#     ("spinoff", "Suscripción digital spinoff"),
+# )
+
 if not locals().get("THEDAILY_CURRENCY_CHOICES"):
     print("NOTE: filling THEDAILY_CURRENCY_CHOICES with some default values for testing purposes")
     THEDAILY_CURRENCY_CHOICES = (
