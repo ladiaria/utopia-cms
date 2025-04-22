@@ -99,7 +99,6 @@ from .forms import (
     LoginForm,
     SubscriberForm,
     SubscriberAddressForm,
-    GoogleSigninForm,
     PasswordResetForm,
     WebSubscriptionForm,
     WebSubscriptionPromoCodeForm,
@@ -630,8 +629,9 @@ def google_phone(request):
     if initial:
         form_kwargs["initial"] = initial
 
+    form_class = get_formclass(request, "GoogleSignin")
     if request.method == 'POST':
-        google_signin_form = GoogleSigninForm(request.POST, **form_kwargs)
+        google_signin_form = form_class(request.POST, **form_kwargs)
         if google_signin_form.is_valid():
             google_signin_form.save()
             if is_new:
@@ -668,7 +668,7 @@ def google_phone(request):
         elif profile.terms_and_conds_accepted:
             # can be redirected now if T&C
             return HttpResponseRedirect(next_page or reverse('home'))
-        google_signin_form = GoogleSigninForm(**form_kwargs)
+        google_signin_form = form_class(**form_kwargs)
     subscribe_log(request, 'google_phone end')
     ctx.update({'google_signin_form': google_signin_form, "is_new": is_new})
     return render(request, get_app_template("google_signup.html"), ctx)
@@ -719,6 +719,12 @@ class SubscribeView(TemplateView):
             subscription = Subscription.objects.create(billing_email=email)
 
         return subscription
+
+    def get_initial_terms_and_conds_accepted(self, user):
+        return (
+            user.subscriber.terms_and_conds_accepted
+            if self.request.user.is_authenticated else self.request.session.get("terms_and_conds_accepted", False)
+        )
 
     def dispatch(self, request, planslug, category_slug=None):
         article_id = request.GET.get("article")
@@ -851,10 +857,7 @@ class SubscribeView(TemplateView):
 
         initial = {
             'subscription_type_prices': planslug,
-            "terms_and_conds_accepted": (
-                subscriber.terms_and_conds_accepted
-                if user_is_auth else request.session.get("terms_and_conds_accepted", False)
-            ),
+            "terms_and_conds_accepted": self.get_initial_terms_and_conds_accepted(user),
         }
         subscription_form = subscription_formclass(initial=initial)
         context["is_already_subscribed"] = is_subscriber
