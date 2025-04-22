@@ -684,6 +684,10 @@ class SubscribeView(TemplateView):
     """
     This view handles the plan subscriptions.
     """
+    @staticmethod
+    def user_is_subscriber(user):
+        return hasattr(user, 'subscriber') and user.subscriber and user.subscriber.is_subscriber()
+
     def auth_alt_flow(self, request, *args, **kwargs):
         pass
 

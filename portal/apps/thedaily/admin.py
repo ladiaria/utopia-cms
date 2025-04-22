@@ -216,15 +216,12 @@ class SubscriberAdmin(ModelAdmin):
 
 class SubscriptionPricesAdmin(ModelAdmin):
     list_display = (
-        'periodicity',
+        "subscription_type",
         "name",
         'order',
-        'months',
         'price',
-        "currency_id",
         'price_total',
         "discount",
-        'publication',
     )
     list_editable = list_display[1:]
 
