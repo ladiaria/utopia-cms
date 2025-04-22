@@ -707,5 +707,5 @@ if THEDAILY_DEBUG_SIGNALS is None:
     THEDAILY_DEBUG_SIGNALS = DEBUG
 
 # terms and conditions page related context processor
-if THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
+if isinstance(THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID, int):
     TEMPLATES[0]['OPTIONS']['context_processors'].append('thedaily.context_processors.terms_and_conditions')
