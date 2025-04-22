@@ -10,8 +10,10 @@
     "dateModified": "{{ article.last_modified_isoformat }}",
     "description": "{% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
     "inLanguage": "{{ local_lang }}-{{ LOCAL_COUNTRY }}",
-    "isAccessibleForFree": {{ article.public|lower }},
-    {% spaceless %}{% block schema_detail_keywords %}{% endblock %}{% endspaceless %} {# TODO: Analyze whether 'keywords' should be added directly to core #}
+    "isAccessibleForFree": {{ article.public|lower }},{% if tag_list %}
+    {% spaceless %}
+      "keywords": [{% for tag in tag_list %}"{{ tag.name|capfirst }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+    {% endspaceless %}{% endif %}
     "hasPart": {
       "@type": "WebPageElement",
       "isAccessibleForFree": {{ article.public|lower }},
