@@ -11,6 +11,7 @@
     "description": "{% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
     "inLanguage": "{{ local_lang }}-{{ LOCAL_COUNTRY }}",
     "isAccessibleForFree": {{ article.public|lower }},
+    {% spaceless %}{% block schema_detail_keywords %}{% endblock %}{% endspaceless %} {# TODO: Analyze whether 'keywords' should be added directly to core #}
     "hasPart": {
       "@type": "WebPageElement",
       "isAccessibleForFree": {{ article.public|lower }},
