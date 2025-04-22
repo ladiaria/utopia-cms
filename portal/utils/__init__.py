@@ -1,1 +1,1 @@
-# TODO: check if this module is beeing used somewhere, it seems that it can't be imported
+not_configured_msg = "La página o acción a la cual has accedido aún no se ha configurado en nuestro sitio."
