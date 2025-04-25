@@ -168,6 +168,9 @@ MARTOR_TOOLBAR_BUTTONS = [
 ]
 MARTOR_ENABLE_LABEL = True  # enable field labels
 
+# photologue app need to add a custom migration
+MIGRATION_MODULES = {"photologue": "photologue_ladiaria.photologue_migrations"}
+
 ADMIN_SHORTCUTS = [
     {
         "title": "Links directos (edición)",
@@ -486,10 +489,13 @@ THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 THEDAILY_AUTOMATIC_MAIL_LOGFILE = f"{PORTAL_LOG_BASE_DIR}/automatic_mail.log"
 
 # photologue
+PHOTOLOGUE_IMAGE_FIELD_MAX_LENGTH = 128
+PHOTOLOGUE_PATH = 'photologue_ladiaria.config.get_image_path'
 DEFAULT_BYLINE = "Difusión, S/D de autor."
 
 # django-tagging and autocomplete-taggit
 FORCE_LOWERCASE_TAGS = False
+MAX_TAG_LENGTH = 70
 TAGGING_AUTOCOMPLETE_JS_BASE_URL = f"{STATIC_URL}jquery-tag-it/"
 TAGGING_AUTOCOMPLETE_JQUERY_UI_FILE = "jquery-ui.min.js"
 

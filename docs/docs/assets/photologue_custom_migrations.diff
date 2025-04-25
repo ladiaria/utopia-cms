@@ -1,0 +1,7 @@
+diff --color portal/apps/photologue_ladiaria/photologue_migrations/0001_initial.py /opt/venv/versions/utopiacms/site-packages/photologue/migrations/0001_initial.py
+1d0
+< from django.conf import settings
+58c57
+<                 ('image', models.ImageField(upload_to=photologue.models.get_storage_path, verbose_name='image', max_length=settings.PHOTOLOGUE_IMAGE_FIELD_MAX_LENGTH)),
+---
+>                 ('image', models.ImageField(upload_to=photologue.models.get_storage_path, verbose_name='image')),

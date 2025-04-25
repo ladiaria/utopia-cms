@@ -47,7 +47,6 @@ hashids
 emails
 pandas
 ebooklib
-django-tagging==0.5.0
 django-elasticsearch-dsl
 django-model-utils==4.3.1
 django-phonenumber-field[phonenumberslite]
@@ -78,6 +77,9 @@ factory-boy
 tqdm
 w3storage
 qrcode
+
+# Installed from source (pypi has no "good" releases yet)
+git+https://github.com/Fantomas42/django-tagging.git
 
 # Our own repos (TODO: change to pypi package when released there):
 git+https://github.com/ladiaria/django-amp-readerid.git

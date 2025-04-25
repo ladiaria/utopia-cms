@@ -208,3 +208,9 @@ Más casos: (16-20) para los casos 11 a 15, probar lo mismo en cada uno de ellos
 | Casos | Resultado | Celery tasks |
 |-------|-----------|--------------|
 | 16 a 20 | Error, se mantiene publicado | 0 |
+
+## photologue custom migrations
+
+TODO: explain better
+
+Customized only to modify the initial photologue migration to be consistent with the setting that defines the max_length for the `Photo.image` field, the diff between original - overriden taken at the time of writing this doc subsection is stored in `assets/photologue _custom_migrations.diff`
