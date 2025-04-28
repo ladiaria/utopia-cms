@@ -7,6 +7,11 @@
 <meta property="og:site_name" content="{{ site.name }}">
 <meta property="og:url" content="{{ SITE_URL_SD }}{{ article.get_absolute_url }}">
 <meta property="article:section" content="{{ section }}">
+{% if tag_list %}
+  {% for tag in tag_list %}
+  <meta property="article:tag" content="{{ tag.name|capfirst }}">
+  {% endfor %}
+{% endif %}
 {% if CORE_ARTICLE_DETAIL_PUBLISHER_META %}
   <meta property="article:publisher" content="{{ CORE_ARTICLE_DETAIL_PUBLISHER_META }}">
 {% endif %}
