@@ -1116,7 +1116,7 @@ class Journalist(Model):
         ('PE', 'Periodista'),
         ('CO', 'Columnista'),
     )
-    name = CharField('nombre', max_length=50, unique=True)
+    name = CharField('nombre', max_length=100, unique=True)
     email = EmailField(blank=True, null=True)
     slug = SlugField('slug', unique=True)
     image = ImageField('imagen', upload_to='journalist', blank=True, null=True)
