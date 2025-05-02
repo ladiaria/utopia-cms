@@ -75,7 +75,10 @@ custom_patterns.append(path('planes/', sp_listview, name="subscribe_landing"))
 
 # SubscribeView class can also be overrided "alone"
 subscribe = (locate(f"{viewclass_custom}.SubscribeView") if viewclass_custom else SubscribeView).as_view()
-default_planslug = content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+try:
+    default_planslug = content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+except Exception:
+    default_planslug = None
 
 urlpatterns = [
     path('', RedirectView.as_view(url=reverse_lazy("edit-profile"))),
