@@ -1,3 +1,5 @@
+from content_settings.conf import content_settings
+
 from django.core.management import BaseCommand
 
 from photologue.models import PhotoSize
@@ -33,6 +35,17 @@ class Command(BaseCommand):
                 if name in ("450w", "700w"):
                     ps.quality = 90
                     ps.save()
+
+        for name in content_settings.PHOTOLOGUE_CROP2FIT_SIZES:
+            if not PhotoSize.objects.filter(name=name).exists():
+                try:
+                    width, height = (int(x) for x in name.split('x'))
+                except Exception:
+                    print(f"Invalid size: {name}")
+                else:
+                    ps = PhotoSize.objects.create(
+                        name=name, width=width, height=height, crop=True, pre_cache=False, increment_count=False
+                    )
 
         # other size with special attrs
         if not PhotoSize.objects.filter(name='article_thumb').exists():
