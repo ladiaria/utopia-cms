@@ -1119,7 +1119,7 @@ class Journalist(Model):
     name = CharField('nombre', max_length=100, unique=True)
     email = EmailField(blank=True, null=True)
     slug = SlugField('slug', max_length=100, unique=True)
-    image = ImageField('imagen', upload_to='journalist', blank=True, null=True)
+    image = ImageField('imagen', upload_to='journalist', blank=True, null=True, max_length=128)
     bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
     job = CharField(
         'trabajo',
