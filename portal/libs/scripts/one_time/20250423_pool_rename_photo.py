@@ -7,9 +7,10 @@ from tqdm import tqdm
 from photologue.models import Photo
 
 
-def realocate():
-    moved, total = 0, Photo.objects.count()
-    for photo in tqdm(Photo.objects.iterator(), total=total):
+def realocate(filter_kwargs={}):
+    target_qs = Photo.objects.filter(**filter_kwargs) if filter_kwargs else Photo.objects
+    moved, total = 0, target_qs.count()
+    for photo in tqdm(target_qs.iterator(), total=total):
         try:
             if dirname(str(photo.image)) == "photologue/photos":
                 pc = deepcopy(photo)
