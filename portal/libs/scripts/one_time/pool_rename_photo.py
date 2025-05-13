@@ -1,5 +1,5 @@
 from os import unlink
-from os.path import dirname
+from os.path import dirname, exists
 from copy import deepcopy
 
 from tqdm import tqdm
@@ -22,3 +22,10 @@ def realocate(filter_kwargs={}):
             moved += 1
 
     print(f"Moved {moved} of {total}")
+
+
+def print_non_existent_photos():
+    for p in Photo.objects.iterator():
+        pp = p.image.path
+        if not exists(pp):
+            print(f"{p.id},{pp}")
