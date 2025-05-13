@@ -1,8 +1,9 @@
 from os import unlink
-from os.path import dirname, exists
+from os.path import dirname, exists, splitext
 from copy import deepcopy
-
 from tqdm import tqdm
+
+from django.utils.text import slugify
 
 from photologue.models import Photo
 
@@ -12,9 +13,10 @@ def realocate(filter_kwargs={}):
     moved, total = 0, target_qs.count()
     for photo in tqdm(target_qs.iterator(), total=total):
         try:
-            if dirname(str(photo.image)) == "photologue/photos":
+            if exists(photo.image.path) and dirname(str(photo.image)) == "photologue/photos":
                 pc = deepcopy(photo)
-                pc.image.save(pc.image_filename(), pc.image.file)
+                filename_splitted = splitext(pc.image_filename())
+                pc.image.save(slugify(filename_splitted[0]) + filename_splitted[1], pc.image.file)
                 unlink(photo.image.path)
         except Exception as e:
             print(e)
@@ -24,8 +26,8 @@ def realocate(filter_kwargs={}):
     print(f"Moved {moved} of {total}")
 
 
-def print_non_existent_photos():
+def non_existent_photos():
     for p in Photo.objects.iterator():
         pp = p.image.path
         if not exists(pp):
-            print(f"{p.id},{pp}")
+            yield p.id, pp
