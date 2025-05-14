@@ -413,7 +413,7 @@
     {% block main_close %}</main>{% endblock %}
 
     {% block footer_block %}
-      <footer class="footer-portada{% if category %} footer-{{ category.slug }}{% endif %}">
+      <footer class="footer-portada{% if category %} footer-{{ category.slug }}{% endif %} {% block footer_block_extra_css %}{% endblock %}">
         {% include footer_template %}
       </footer>
     {% endblock footer_block %}
