@@ -1267,9 +1267,7 @@ class ArticleBase(Model, CT):
         'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
     body = locate(settings.CORE_ARTICLE_BODY_FIELD_CLASS)("cuerpo")
-    header_display = CharField(
-        'estilo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
-    )
+    header_display = CharField('estilo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, default='BG')
     home_header_display = CharField(
         'tipo de cabezal cuando es portada',
         max_length=2,
