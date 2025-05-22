@@ -11,7 +11,7 @@ from photologue.models import Photo, PhotoSize, get_storage_path
 
 
 class Agency(models.Model):
-    name = models.CharField('nombre', max_length=50, unique=True)
+    name = models.CharField('nombre', max_length=150, unique=True)
     info = models.EmailField('email', blank=True, null=True)
     date_created = models.DateTimeField('fecha de creación', auto_now_add=True)
 
@@ -26,7 +26,7 @@ class Agency(models.Model):
 
 
 class Photographer(models.Model):
-    name = models.CharField('nombre', max_length=50, unique=True)
+    name = models.CharField('nombre', max_length=150, unique=True)
     email = models.EmailField(blank=True, null=True)
     date_created = models.DateTimeField('fecha de creación', auto_now_add=True)
 
