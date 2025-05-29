@@ -179,10 +179,19 @@
                   <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
                        data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
                 </picture>
-                <figcaption class="article-caption container ld-caption">
-                  {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+                <figcaption class="article-caption ld-caption">
+                  {% if article.photo.caption %}<p id="photo-caption">{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+                  <span class="separator"></span>
                   {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
                 </figcaption>
+                <script type="text/javascript">
+                  $(function(){
+                    const captionHeight = $('#photo-caption').height();
+                    if (captionHeight > 20) {
+                      $('.article-caption').addClass('vertical');
+                    }
+                  });
+                </script>
               </figure>
             </div>
           {% endif %}
@@ -204,50 +213,24 @@
           {% endcomment %}
           {% if include_after_headline %}{% include include_after_headline %}{% endif %}
         {% endif %}
-        {% if article.date_published %}
-          <div class="article-date-author">
-            Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
-            {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
-              {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
-                <span class="ld-info-tooltip time">
-                  <span class="ld-info-tooltip-content">
-                    {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
-                  </span>
-                </span>
-              {% endif %}
-            {% endif %}
-          </div>
-        {% endif %}
-        <div class="article-date-author">
-          {% with authors=article.get_authors %}
-            {% if authors %}
-              Escribe
-              {% for author in authors %}
-                <span class="small"><a href="{{ author.get_absolute_url }}">{{ author.name }}</a></span>
-                {% if not forloop.last %}, {% endif %}
-              {% endfor %}
-              {% if section %} <span class="small">en </span>{% endif %}
-            {% endif %}
-          {% endwith %}
-          {% if section %}
-            <span class="small">
-              {% block byline_section %}
-                <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
-              {% endblock %}
-            </span>
+
+        {% if article.has_deck or article.has_lead %}
+          {% if article.has_deck %}
+            {% block article_deck %}
+              <p class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</p>
+            {% endblock %}
           {% endif %}
-        </div>
-        {% if not article_restricted_cf or restricted_access %}
-          <div class="reading-time">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-              <path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/>
-            </svg> <span class="eta">{{ article.reading_time }}</span> de lectura
-          </div>
+          {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
         {% endif %}
+
         {% if article_restricted_cf and restricted_access %}
           {% include 'article/paywall/pw_premium.html' %}
         {% endif %}
+
+        {% comment %} TODO: Revisar condiciones
+        <!-- si el artículo no es full restrictivo o el artículo tiene acceso restrictivo -->
         {% if not article_restricted_cf or restricted_access %}
+          <!-- si el usuario está autenticado y no "sigue" al artículo -->
           {% if user.is_authenticated and not followed %}
             <div class="read-later top">
               <a class="read-later__btn read-later__add">
@@ -295,26 +278,150 @@
             </div>
           {% endif %}
         {% endif %}
+        {% endcomment %}
+        {% if not article_restricted_cf or restricted_access %}
+          <p class="reading-time">{{ article.reading_time }} de lectura</p>
+        {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
         </div>{# opened in line 103 #}
       {% endif %}
 
-      {% if article.has_deck or article.has_lead %}
-        {% if article.has_deck %}
-          {% block article_deck %}
-            <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
-          {% endblock %}
-        {% endif %}
-        {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
-      {% endif %}
+      <div class="article-action-bar">
+        <div class="left-buttons">
+          {% if user.is_authenticated %}
+            {% if not article_restricted_cf or restricted_access %}
+              <button class="ld-audio__action-bar-read-later{% if followed %} hidden{% endif %}">
+                <svg title="Bookmark" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 6.2C6 5.08 6 4.52 6.218 4.092C6.40974 3.71569 6.71569 3.40974 7.092 3.218C7.52 3 8.08 3 9.2 3H14.8C15.92 3 16.48 3 16.908 3.218C17.2843 3.40974 17.5903 3.71569 17.782 4.092C18 4.52 18 5.08 18 6.2V19.505C18 19.991 18 20.234 17.899 20.367C17.8554 20.4248 17.7997 20.4725 17.7358 20.5067C17.6719 20.5409 17.6013 20.5608 17.529 20.565C17.362 20.575 17.16 20.44 16.756 20.171L12 17L7.244 20.17C6.84 20.44 6.638 20.575 6.47 20.565C6.39784 20.5606 6.32748 20.5407 6.26377 20.5065C6.20007 20.4723 6.14453 20.4247 6.101 20.367C6 20.234 6 19.991 6 19.505V6.2Z" stroke="#262626" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Leer después</span>
+              </button>
+              <button class="ld-audio__action-bar-read-later-saved{% if not followed %} hidden{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 6.2C6 5.08 6 4.52 6.218 4.092C6.40974 3.71569 6.71569 3.40974 7.092 3.218C7.52 3 8.08 3 9.2 3H14.8C15.92 3 16.48 3 16.908 3.218C17.2843 3.40974 17.5903 3.71569 17.782 4.092C18 4.52 18 5.08 18 6.2V19.505C18 19.991 18 20.234 17.899 20.367C17.8554 20.4248 17.7997 20.4725 17.7358 20.5067C17.6719 20.5409 17.6013 20.5608 17.529 20.565C17.362 20.575 17.16 20.44 16.756 20.171L12 17L7.244 20.17C6.84 20.44 6.638 20.575 6.47 20.565C6.39784 20.5606 6.32748 20.5407 6.26377 20.5065C6.20007 20.4723 6.14453 20.4247 6.101 20.367C6 20.234 6 19.991 6 19.505V6.2Z" fill="#262626" stroke="#262626" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Guardado</span>
+              </button>
+            {% endif %}
+          {% endif %}
+          {% if article.audio %}
+            {% include "article/custom_audio_component.html" %}
+          {% endif %}
+        </div>
+        <div class="right-buttons">
+          <button id="action-bar__share-button" class="">
+            <svg title="Compartir" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M18.8 8.19969H16V6.99969H19.001C19.551 6.99969 20 7.44569 20 7.99569V21.0037C19.9989 21.2675 19.8937 21.5203 19.7071 21.7068C19.5206 21.8934 19.2678 21.9986 19.004 21.9997H4.996C4.73217 21.9986 4.47944 21.8934 4.29289 21.7068C4.10633 21.5203 4.00105 21.2675 4 21.0037V7.99569C4.00106 7.73134 4.10674 7.47817 4.29395 7.29152C4.48115 7.10488 4.73465 6.99996 4.999 6.99969H8V8.19969H5.2V20.7997H18.8V8.19969ZM12.6 4.26169V13.4997H11.4V4.26169L9.313 6.34869L8.464 5.49969L11.293 2.67169C11.4805 2.48422 11.7348 2.37891 12 2.37891C12.2652 2.37891 12.5195 2.48422 12.707 2.67169L15.536 5.49969L14.687 6.34869L12.6 4.26169Z" fill="#262626"/>
+            </svg>
+            <span>Compartir</span>
+            <div class="popup-compartir">
+              <ul>
+                <li>
+                  <span class="copy-link-to-clipboard" onclick="copyToClipboard('#url', '', true)" aria-label="Copiar enlace">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="21" height="10" viewBox="0 0 21 10" fill="none">
+                      <path d="M9.5 10H5.5C4.11667 10 2.93767 9.51233 1.963 8.537C0.988334 7.56167 0.500667 6.38267 0.500001 5C0.499334 3.61733 0.987001 2.43833 1.963 1.463C2.939 0.487667 4.118 0 5.5 0H9.5V2H5.5C4.66667 2 3.95833 2.29167 3.375 2.875C2.79167 3.45833 2.5 4.16667 2.5 5C2.5 5.83333 2.79167 6.54167 3.375 7.125C3.95833 7.70833 4.66667 8 5.5 8H9.5V10ZM6.5 6V4H14.5V6H6.5ZM11.5 10V8H15.5C16.3333 8 17.0417 7.70833 17.625 7.125C18.2083 6.54167 18.5 5.83333 18.5 5C18.5 4.16667 18.2083 3.45833 17.625 2.875C17.0417 2.29167 16.3333 2 15.5 2H11.5V0H15.5C16.8833 0 18.0627 0.487667 19.038 1.463C20.0133 2.43833 20.5007 3.61733 20.5 5C20.4993 6.38267 20.0117 7.562 19.037 8.538C18.0623 9.514 16.8833 10.0013 15.5 10H11.5Z" fill="#262626"/>
+                    </svg><span>Copiar link</span></li>
+                  </span>
+                <li>
+                  <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}" target="_blank" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" viewBox="0 0 21 20" fill="none">
+                      <path d="M10.5 0C16.023 0 20.5 4.477 20.5 10C20.5 15.523 16.023 20 10.5 20C8.73277 20.003 6.9966 19.5353 5.47002 18.645L0.504015 20L1.85602 15.032C0.964974 13.5049 0.496918 11.768 0.500015 10C0.500015 4.477 4.97702 0 10.5 0ZM7.09202 5.3L6.89201 5.308C6.76271 5.31691 6.63636 5.35087 6.52002 5.408C6.41159 5.46951 6.31258 5.5463 6.22602 5.636C6.10602 5.749 6.03802 5.847 5.96502 5.942C5.59514 6.4229 5.39599 7.01331 5.39902 7.62C5.40102 8.11 5.52902 8.587 5.72902 9.033C6.13802 9.935 6.81102 10.89 7.69902 11.775C7.91302 11.988 8.12302 12.202 8.34902 12.401C9.45245 13.3724 10.7673 14.073 12.189 14.447L12.757 14.534C12.942 14.544 13.127 14.53 13.313 14.521C13.6042 14.5056 13.8885 14.4268 14.146 14.29C14.2769 14.2223 14.4047 14.1489 14.529 14.07C14.529 14.07 14.5714 14.0413 14.654 13.98C14.789 13.88 14.872 13.809 14.984 13.692C15.068 13.6053 15.138 13.5047 15.194 13.39C15.272 13.227 15.35 12.916 15.382 12.657C15.406 12.459 15.399 12.351 15.396 12.284C15.392 12.177 15.303 12.066 15.206 12.019L14.624 11.758C14.624 11.758 13.754 11.379 13.222 11.137C13.1663 11.1128 13.1067 11.0989 13.046 11.096C12.9776 11.0888 12.9084 11.0965 12.8432 11.1184C12.778 11.1403 12.7182 11.176 12.668 11.223C12.663 11.221 12.596 11.278 11.873 12.154C11.8315 12.2098 11.7744 12.2519 11.7088 12.2751C11.6433 12.2982 11.5723 12.3013 11.505 12.284C11.4398 12.2666 11.376 12.2446 11.314 12.218C11.19 12.166 11.147 12.146 11.062 12.11C10.4879 11.8599 9.95646 11.5215 9.48702 11.107C9.36102 10.997 9.24402 10.877 9.12402 10.761C8.73063 10.3842 8.38777 9.95799 8.10401 9.493L8.04501 9.398C8.00328 9.3338 7.96905 9.26501 7.94302 9.193C7.90502 9.046 8.00402 8.928 8.00402 8.928C8.00402 8.928 8.24702 8.662 8.36002 8.518C8.47002 8.378 8.56301 8.242 8.62302 8.145C8.74102 7.955 8.77802 7.76 8.71602 7.609C8.43602 6.925 8.14668 6.24467 7.84802 5.568C7.78902 5.434 7.61402 5.338 7.45502 5.319C7.40102 5.31233 7.34701 5.307 7.29302 5.303C7.15874 5.2953 7.02411 5.29664 6.89002 5.307L7.09202 5.3Z" fill="#262626"/>
+                    </svg>WhatsApp</li>
+                  </a>
+                <li>
+                  <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ SITE_URL_SD }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="21" height="16" viewBox="0 0 21 16" fill="none">
+                      <path d="M2.5 16C1.95 16 1.47933 15.8043 1.088 15.413C0.696667 15.0217 0.500667 14.5507 0.5 14V2C0.5 1.45 0.696 0.979333 1.088 0.588C1.48 0.196666 1.95067 0.000666667 2.5 0H18.5C19.05 0 19.521 0.196 19.913 0.588C20.305 0.98 20.5007 1.45067 20.5 2V14C20.5 14.55 20.3043 15.021 19.913 15.413C19.5217 15.805 19.0507 16.0007 18.5 16H2.5ZM10.5 9L18.5 4V2L10.5 7L2.5 2V4L10.5 9Z" fill="#262626"/>
+                    </svg>Mail</li>
+                  </a>
+                <li>
+                  <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL_SD }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" viewBox="0 0 21 20" fill="none">
+                      <path d="M20.5 10C20.5 4.48 16.02 0 10.5 0C4.98 0 0.5 4.48 0.5 10C0.5 14.84 3.94 18.87 8.5 19.8V13H6.5V10H8.5V7.5C8.5 5.57 10.07 4 12 4H14.5V7H12.5C11.95 7 11.5 7.45 11.5 8V10H14.5V13H11.5V19.95C16.55 19.45 20.5 15.19 20.5 10Z" fill="#262626"/>
+                    </svg>Facebook</li>
+                  </a>
+                <li>
+                  <a href="https://twitter.com/intent/tweet?original_referer={{ SITE_URL_SD }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ SITE_URL_SD }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}" rel="noopener" aria-label="Compartir en Twitter">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
+                      <mask id="mask0_1246_1082" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="17" height="17">
+                        <path d="M0.5 0.950195H16.5V16.9502H0.5V0.950195Z" fill="white"/>
+                      </mask>
+                      <g mask="url(#mask0_1246_1082)">
+                        <path d="M13.1 1.69971H15.5537L10.1937 7.84142L16.5 16.2003H11.5629L7.69314 11.1317L3.27029 16.2003H0.814286L6.54686 9.62885L0.5 1.70085H5.56286L9.05543 6.33285L13.1 1.69971ZM12.2371 14.7283H13.5971L4.82 3.09514H3.36171L12.2371 14.7283Z" fill="#262626"/>
+                      </g>
+                    </svg>X</li>
+                  </a>
+                <li>
+                  <a href="#">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25" fill="none">
+                      <path d="M20.2778 3C20.8671 3 21.4324 3.23413 21.8491 3.65087C22.2659 4.06762 22.5 4.63285 22.5 5.22222V20.7778C22.5 21.3671 22.2659 21.9324 21.8491 22.3491C21.4324 22.7659 20.8671 23 20.2778 23H4.72222C4.13285 23 3.56762 22.7659 3.15087 22.3491C2.73413 21.9324 2.5 21.3671 2.5 20.7778V5.22222C2.5 4.63285 2.73413 4.06762 3.15087 3.65087C3.56762 3.23413 4.13285 3 4.72222 3H20.2778ZM19.7222 20.2222V14.3333C19.7222 13.3727 19.3406 12.4513 18.6613 11.772C17.982 11.0927 17.0607 10.7111 16.1 10.7111C15.1556 10.7111 14.0556 11.2889 13.5222 12.1556V10.9222H10.4222V20.2222H13.5222V14.7444C13.5222 13.8889 14.2111 13.1889 15.0667 13.1889C15.4792 13.1889 15.8749 13.3528 16.1666 13.6445C16.4583 13.9362 16.6222 14.3319 16.6222 14.7444V20.2222H19.7222ZM6.81111 9.17778C7.30618 9.17778 7.78098 8.98111 8.13104 8.63104C8.48111 8.28098 8.67778 7.80618 8.67778 7.31111C8.67778 6.27778 7.84444 5.43333 6.81111 5.43333C6.31309 5.43333 5.83547 5.63117 5.48332 5.98332C5.13117 6.33547 4.93333 6.81309 4.93333 7.31111C4.93333 8.34444 5.77778 9.17778 6.81111 9.17778ZM8.35556 20.2222V10.9222H5.27778V20.2222H8.35556Z" fill="#262626"/>
+                    </svg>LinkedIn</li>
+                  </a>
+              </ul>
+            </div>
+          </button>
+          <button class="">
+            <svg title="Icono de comentar" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 21C10.22 21 8.47991 20.4722 6.99987 19.4832C5.51983 18.4943 4.36627 17.0887 3.68508 15.4442C3.00389 13.7996 2.82566 11.99 3.17293 10.2442C3.5202 8.49836 4.37737 6.89472 5.63604 5.63604C6.89471 4.37737 8.49836 3.5202 10.2442 3.17294C11.99 2.82567 13.7996 3.0039 15.4442 3.68509C17.0887 4.36628 18.4943 5.51983 19.4832 6.99987C20.4722 8.47991 21 10.22 21 12C21 13.488 20.64 14.89 20 16.127L21 21L16.127 20C14.891 20.639 13.487 21 12 21Z" stroke="#262626" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Comentar</span>
+          </button>
+        </div>
+      </div>
 
       {# begin restricted content #}
       {% if not request.signupwall or not article_restricted_cf or restricted_access %}
 
-        {% if article.audio %}{% include audio_template %}{% endif %}
+        {% comment %} {% if article.audio %}{% include 'article/audio.html' %}{% endif %} {% endcomment %}
 
-        {% if not request.signupwall %}{# closed in line 677 #}
+        <div class="article-author">
+          {% with authors=article.get_authors %}
+            {% if authors %}
+              Escribe
+              {% for author in authors %}
+                <span class="small"><a href="{{ author.get_absolute_url }}">{{ author.name }}</a></span>
+                {% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              {% if section %} <span class="small">en </span>{% endif %}
+            {% endif %}
+          {% endwith %}
+          {% if section %}
+            <span class="small">
+              {% block byline_section %}
+                <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
+              {% endblock %}
+            </span>
+          {% endif %}
+        </div>
+
+        {% if article.date_published %}
+          <div class="article-date">
+            Publicado
+            {% if date_published_use_main_publication %}
+              el <span>{{ article.main_section.edition.date_published_verbose }}</span>
+            {% else %}
+              {% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %}
+                el
+              {% endif %}
+              <span>
+                <time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time>
+              </span>
+            {% endif %}
+
+            {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
+              {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
+                <span class="ld-info-tooltip time">
+                  <span class="ld-info-tooltip-content">
+                    {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+                  </span>
+                </span>
+              {% endif %}
+            {% endif %}
+          </div>
+        {% endif %}
+
+        {% if not request.signupwall %}{# closed in line 676 #}
 
           {% include 'article/paywall/pw_not_in_request.html' %}
 
@@ -840,6 +947,8 @@
             <span class="title">Compartir este artículo</span>
             <ul class="inline share">
               <li class="whatsapp">
+
+
                 <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
                   <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#595959"/>
@@ -917,20 +1026,64 @@
         });
       {% endif %}
 
-      $('a.read-later__add').click(function(){
+      $('.ld-audio__action-bar-read-later').click(function(){
         {% if user.is_authenticated %}
           $.get("{% url 'actstream_follow' content_type_id=article_ct_id object_id=article.id %}", function(data){
-            $('a.read-later__add').addClass('hide');
-            $('.read-later__add__info').addClass('hide');
-            $('.read-later__saved__info:eq(1)').removeClass('hide');
-            $('a.read-later__saved:eq(1)').removeClass('hide');
-            $('.read-later__saved__info.first').removeClass('hide');
-            $('a.read-later__saved.first').removeClass('hide');
+            $('.ld-audio__action-bar-read-later').addClass('hidden');
+            $('.ld-audio__action-bar-read-later-saved').removeClass('hidden');
           });
         {% else %}
           $('.modal').modal('open');
         {% endif %}
       });
+      $('.ld-audio__action-bar-read-later-saved').click(function() {
+        {% if user.is_authenticated %}
+          $.get("{% url 'actstream_unfollow' content_type_id=article_ct_id object_id=article.id %}", function(data){
+            $('.ld-audio__action-bar-read-later').removeClass('hidden');
+            $('.ld-audio__action-bar-read-later-saved').addClass('hidden');
+          });
+        {% else %}
+          $('.modal').modal('open');
+        {% endif %}
+      })
+
+      $('.read-later__add').click(function(){
+        {% if user.is_authenticated %}
+          $.get("{% url 'actstream_follow' content_type_id=article_ct_id object_id=article.id %}", function(data){
+            $('.read-later__add').addClass('hide');
+            $('.read-later__add__info').addClass('hide');
+            $('.read-later__saved__info:eq(1)').removeClass('hide');
+            $('.read-later__saved').removeClass('hide');
+            $('.read-later__saved__info.first').removeClass('hide');
+            $('a.read-later__saved.first').removeClass('hide');
+
+            // New read later button
+
+          });
+        {% else %}
+          $('.modal').modal('open');
+        {% endif %}
+      });
+
+      /* Botón de compartir */
+      function actionBarShareButtonEvents() {
+        $('#action-bar__share-button').click(function(){
+          $('.popup-compartir').toggleClass('visible');
+        });
+        // Al hacer click en cualquier parte del documento
+        $(document).click(function(e) {
+          // Si el click no se realizó dentro del popup ni en el botón de acción
+          if (!$(e.target).closest('.popup-compartir, #action-bar__share-button').length) {
+            $('.popup-compartir').removeClass('visible');
+            $(`.copy-link-to-clipboard span`).text('Copiar link');
+          }
+        });
+        // Opcional: Evitar que los clicks dentro del popup cierren el popup
+        $('.popup-compartir').click(function(e){
+          e.stopPropagation();
+        });
+      }
+      actionBarShareButtonEvents();
 
       $('a.open-ipfs').click(function(){
         window.open("{% url 'ipfs-article-detail' article_id=article.id %}", 'Ver en IPFS');
@@ -1038,9 +1191,9 @@
     });
 
     // copy to clipboard
-    function copyToClipboard(element, tooltipclass) {
-      var tooltip = $(tooltipclass);
-      var $temp = $("<input>");
+    function copyToClipboard(element, tooltipclass, withTooltip) {
+      const tooltip = $(tooltipclass);
+      const $temp = $("<input>");
       $("body").append($temp);
       $temp.val($(element).text()).select();
       document.execCommand("copy");
@@ -1053,6 +1206,10 @@
       setTimeout(function() {
         tooltip.text('');
       }, 1200);
+
+      if (withTooltip) {
+        $(`.copy-link-to-clipboard span`).text('Link copiado');
+      }
     }
   </script>
 {% endblock %}
