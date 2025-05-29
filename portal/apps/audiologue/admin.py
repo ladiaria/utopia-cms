@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-
-from audiologue.models import Audio
-
 from django.contrib.admin import ModelAdmin, site
+
+from .models import Audio
 
 
 class AudioAdmin(ModelAdmin):
