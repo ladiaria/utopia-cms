@@ -419,7 +419,9 @@ def login(request, product_slug=None, product_variant=None):
                             try:
                                 check_password_strength(password, user)
                             except ValidationError:
-                                mail_managers("Staff user with weak password", f"User: {user}, Id: {user.id}")
+                                mail_managers(
+                                    "Weak password for staff user", f"User: {user}, Id: {user.id}", fail_silently=True
+                                )
                         do_login(request, user)
                         request.session.pop('next', None)
                         # also remove possible unfinished google sign-in information from the session, if not,
