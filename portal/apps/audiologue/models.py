@@ -1,24 +1,25 @@
 # -*- coding: utf-8 -*-
-from django.db.models import (
-    Model, FileField, DateTimeField, CharField, PositiveIntegerField, SlugField, BooleanField, TextField
-)
+from pydoc import locate
+
+from django.conf import settings
+from django.db.models import Model, DateTimeField, CharField, PositiveIntegerField, SlugField, BooleanField, TextField
 
 
-# in case a pool by year is needed, also a one-time script to update the file paths is provided
+# in case a pool by year is needed, uncomment and update file field definition with "... upload_to=audio_upload_path)"
+# A one-time script to update the already uploaded files file paths is provided.
 """
 import os
 def audio_upload_path(instance, filename):
     # Use the year of date_uploaded for the upload path
     year = instance.date_uploaded.year
     return os.path.join('audiologue', str(year), filename)
-class Audio(Model):
-    file = FileField('audio', upload_to=audio_upload_path)  # Updated upload_to
 """
 
 
 class Audio(Model):
-    # TODO: date_uploaded should be required
-    file = FileField('audio', upload_to='audiologue')
+    file = locate(
+        getattr(settings, "AUDIOLOGUE_FILE_FIELD_CLASS", "django.db.models.FileField")
+    )('audio', upload_to='audiologue')
     title = CharField('título', max_length=255)
     slug = SlugField('slug', null=True, blank=True, editable=False)
     caption = CharField('pie', max_length=255, null=True, blank=True)
