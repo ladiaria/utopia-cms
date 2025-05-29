@@ -5,6 +5,7 @@
   <figure class="{% block figure_classname %}principal{% endblock %}">
     {% block picture %}
       <picture class="{% block picture_classname %}materialboxed{% endblock %}">
+        {% block source_display %}
         <!--[if IE 9]><video style="display: none;"><![endif]-->
         {% if display == "FW" %}
           <source srcset="{{ image.get_fullscreen_url }}" media="(min-width: 1200px)">
@@ -23,6 +24,7 @@
           <source srcset="{{ image.get_250w_url }}" media="(min-width: 0px)">
         {% endif %}
         <!--[if IE 9]></video><![endif]-->
+        {% endblock %}
         {% block image %}
           <img class="responsive-img {% if image.extended.is_landscape %}landscape{% else %}portrait{% endif %}"
             data-caption="{% if image.caption %}{{ image.caption|remove_markup }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}"

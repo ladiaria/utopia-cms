@@ -6,6 +6,7 @@
     "@type": "{% if section.is_satirical %}SatiricalArticle{% else %}NewsArticle{% endif %}",
     "mainEntityOfPage": "{{ SITE_URL_SD }}{{ article.get_absolute_url }}",
     "headline": "{% firstof article.alt_title_metadata article.headline|remove_markup|truncatewords:25 %}",
+    {% spaceless %}{% block json_ld_article_section %}{% endblock %}{% endspaceless %}
     {% if article.date_published %}"datePublished": "{{ article.date_published_isoformat }}",{% endif %}
     "dateModified": "{{ article.last_modified_isoformat }}",
     "description": "{% firstof article.alt_desc_metadata article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}",
