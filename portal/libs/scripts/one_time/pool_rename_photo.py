@@ -8,7 +8,7 @@ from django.utils.text import slugify
 from photologue.models import Photo
 
 
-def realocate(filter_kwargs={}, verbose=False, dry_run=False):
+def realocate(filter_kwargs={}, verbose=False, dry_run=False, ignore_errors=False):
     target_qs = Photo.objects.filter(**filter_kwargs) if filter_kwargs else Photo.objects
     non_existent, errors, in_pool, moved, total = 0, 0, 0, 0, target_qs.count()
     for photo in tqdm(target_qs.iterator(), total=total):
@@ -33,6 +33,8 @@ def realocate(filter_kwargs={}, verbose=False, dry_run=False):
             errors += 1
             if verbose:
                 print(e)
+            if not ignore_errors:
+                break
 
     m = "Would move" if dry_run else "Moved"
     print(f"{m} {moved} of {total} (Non-existent: {non_existent}, Errors: {errors}, Already in pool: {in_pool})")
