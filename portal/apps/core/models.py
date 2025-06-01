@@ -1373,9 +1373,14 @@ class ArticleBase(Model, CT):
 
     @staticmethod
     def collisions(slug, date_value):
+        nowval = now()
         return Article.objects.filter(
             Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
-            | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
+            | Q(is_published=False) & (
+                Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month)
+                # also check for current dt because on save(), the first dt that is used is the current dt
+                | Q(date_created__year=nowval.year) & Q(date_created__month=nowval.month)
+            ),
             slug=slug,
         )
 
