@@ -2531,7 +2531,12 @@ class ArticleBodyImage(Model):
     )
     article = ForeignKey(Article, on_delete=CASCADE, verbose_name='artículo', related_name='body_image')
     image = ForeignKey(Photo, on_delete=CASCADE, verbose_name='foto', related_name='photo')
-    display = CharField('display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
+    display = CharField(
+        'display',
+        max_length=2,
+        choices=DISPLAY_CHOICES,
+        default=getattr(settings, 'CORE_ARTICLEBODYIMAGE_DISPLAY_CHOICES_DEFAULT', 'BG'),
+    )
     order = PositiveSmallIntegerField('orden', null=True, blank=True)
 
     def __str__(self):
