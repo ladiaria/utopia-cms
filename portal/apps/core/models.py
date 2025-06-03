@@ -49,6 +49,7 @@ from django.db.models import (
     Index,
     SET_NULL,
     CASCADE,
+    URLField,
 )
 from django.db.models.signals import post_save
 from django.db.utils import OperationalError
@@ -88,7 +89,7 @@ from .utils import (
     update_article_url_in_coral_talk,
     get_category_template,
 )
-
+from solo.models import SingletonModel
 
 def remove_media_root(path):
     return path.replace(settings.MEDIA_ROOT, '')
@@ -2643,3 +2644,62 @@ class PushNotification(Model):
 
     def __str__(self):
         return "%s - %s" % (self.tag, self.message)
+
+
+from django.db.models import (
+    URLField, CharField, PositiveIntegerField, TextField, TextChoices
+)
+from solo.models import SingletonModel
+
+class PerplexityAPISettings(SingletonModel):
+    class PerplexityModelChoices(TextChoices):
+        SONAR_PRO = 'sonar-pro', 'sonar-pro'
+        SONAR = 'sonar', 'sonar'
+        SONAR_REASONING_PRO = 'sonar-reasoning-pro', 'sonar-reasoning-pro'
+        SONAR_REASONING = 'sonar-reasoning', 'sonar-reasoning'
+        SONAR_DEEP_RESEARCH = 'sonar-deep-research', 'sonar-deep-research'
+        R1_1776 = 'r1-1776', 'r1-1776'
+
+    class WebSearchContextSizeChoices(TextChoices):
+        LOW = 'low', 'low'
+        MEDIUM = 'medium', 'medium'
+        HIGH = 'high', 'high'
+
+    endpoint = URLField(
+        default='https://api.perplexity.ai/chat/completions',
+        help_text='Endpoint de la API de Perplexity'
+    )
+    model = CharField(
+        max_length=50,
+        choices=PerplexityModelChoices.choices,
+        default=PerplexityModelChoices.SONAR,
+        help_text='Modelo de IA a utilizar'
+    )
+    context_size = CharField(
+        max_length=10,
+        choices=WebSearchContextSizeChoices.choices,
+        default=WebSearchContextSizeChoices.LOW,
+        help_text='Opcion "search_context_size" a utilizar: low, medium o high'
+    )
+    search_domain_filter = CharField(
+        max_length=500,
+        blank=True,
+        default='ladiaria.com.uy',
+        help_text='Dominios permitidos o restringidos, separados por coma, '
+                  'si queires excliur alguno use "-" delante del dominio, ej. -redis.com'
+    )
+    max_tokens = PositiveIntegerField(
+        blank=True, null=True,
+        help_text='Máximo de tokens por respuesta, si no se configura se usa '
+                  'el valor por defecto que depende del modelo escogido.'
+    )
+    default_context = TextField(
+        default='Responde en español de manera clara y concisa.',
+        help_text='Contexto por defecto que siempre se enviará a Perplexity'
+    )
+
+    def get_domain_list(self):
+        return [d.strip() for d in self.search_domain_filter.split(',') if d.strip()]
+
+    def __str__(self):
+        return "Configuración de la API de Perplexity"

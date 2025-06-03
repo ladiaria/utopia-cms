@@ -126,6 +126,7 @@ INSTALLED_APPS = (
     "django_celery_beat",
     "phonenumber_field",
     "closed_site",
+    'solo',
 )
 
 SITE_ID = 1
@@ -668,3 +669,5 @@ if "THEDAILY_SUBSCRIPTION_TYPE_DEFAULT" not in locals():
         THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0] if THEDAILY_SUBSCRIPTION_TYPE_CHOICES else None
 if THEDAILY_DEBUG_SIGNALS is None:
     THEDAILY_DEBUG_SIGNALS = DEBUG
+
+PERPLEXITY_API_KEY = ""

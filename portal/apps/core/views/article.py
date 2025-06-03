@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 from os.path import join
 from future import standard_library
 from builtins import str
@@ -7,6 +8,7 @@ import json
 from dateutil.relativedelta import relativedelta
 from requests.exceptions import ConnectionError
 from urllib.parse import urlsplit, urlunsplit
+import time
 
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
@@ -33,9 +35,15 @@ from apps import mongo_db
 from signupwall.middleware import signupwall_exclude, subscriber_access
 from decorators import decorate_if_no_auth, decorate_if_auth
 from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
-from core.models import Publication, Category, Article, ArticleUrlHistory
+from core.models import Publication, Category, Article, ArticleUrlHistory, PerplexityAPISettings
 from thedaily.templatetags.thedaily_tags import has_restricted_access
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.admin.views.decorators import staff_member_required
+
+
+logging.basicConfig(level=logging.INFO)
 
 standard_library.install_aliases()
 
@@ -383,3 +391,73 @@ Podés ver el artículo aquí: %(url)s
     else:
         data = {"status": "ERROR", "errors": str(form.errors["email"])}
     return HttpResponse(json.dumps(data), content_type="application/json")
+
+
+@csrf_exempt
+@staff_member_required
+def perplexity_ask(request):
+    if request.method == 'POST':
+        data = json.loads(request.body.decode('utf-8'))
+        question = data.get('question', '')
+        api_key = getattr(settings, 'PERPLEXITY_API_KEY', None)
+        if not api_key:
+            return JsonResponse({'response': 'API key de Perplexity no configurada.'})
+
+        config = PerplexityAPISettings.get_solo()
+
+        url = config.endpoint
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        # Concatenate the default context and the question
+        full_prompt = f"{config.default_context.strip()}  {question.strip()}"
+
+        payload = {
+            "model": config.model,
+            "messages": [
+                {"role": "system", "content": "Responde de manera clara y concisa."},
+                {"role": "user", "content": full_prompt}
+            ],
+            "search_domain_filter": config.get_domain_list(),
+            "web_search_options": {
+                "search_context_size": config.context_size
+              },
+        }
+
+        search_domain_filter = config.get_domain_list()
+        if len(search_domain_filter) > 0:
+            payload["search_domain_filter"] = search_domain_filter
+
+        # Solo incluye max_tokens si está definido en la configuración
+        if config.max_tokens:
+            payload["max_tokens"] = config.max_tokens
+        elif settings.DEBUG:
+            payload["max_tokens"] = 100
+
+        response = None
+
+        try:
+            logging.info(f"calling the api with this data: {payload}")
+            start_time = time.time()
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            elapsed = time.time() - start_time
+            logging.info(f"Tiempo de respuesta de Perplexity API: {elapsed:.2f} segundos")
+            response.raise_for_status()
+            json_response = response.json()
+            if 'choices' in json_response and len(json_response['choices']) > 0:
+                answer = json_response['choices'][0]['message']['content']
+            else:
+                answer = "La respuesta de la API no tiene el formato esperado."
+        except Exception as ex:
+            answer = "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo más tarde."
+            logging.error(f"Unexpected Error: {ex}", exc_info=True)
+            if response is not None:
+                logging.error(f"API Respuesta: {response.json()['error']['message']}")
+        return JsonResponse({'response': answer})
+    return JsonResponse({'response': 'Método no permitido.'}, status=405)
+
+
+
+

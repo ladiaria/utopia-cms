@@ -4,6 +4,7 @@ import json
 from urllib.parse import urljoin
 from pydoc import locate
 from kombu.exceptions import OperationalError
+from solo.admin import SingletonModelAdmin
 
 from actstream.models import Action
 from tagging.models import Tag, TaggedItem
@@ -58,6 +59,7 @@ from .models import (
     BreakingNewsModule,
     DeviceSubscribed,
     PushNotification,
+    PerplexityAPISettings,
 )
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
@@ -454,6 +456,21 @@ class ArticleAdminModelForm(ModelForm):
         label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
     )
 
+    perplexity_message = CharField(
+        label='Pregunta para Perplexity',
+        widget=Textarea(attrs={'rows': 3, 'placeholder': 'Escribe tu pregunta para Perplexity AI aquí...'}),
+        required=False,
+        help_text='Pregunta que se enviará a Perplexity AI'
+    )
+
+    perplexity_response = CharField(
+        label='Respuesta de Perplexity',
+        widget=Textarea(
+            attrs={'rows': 6, 'readonly': True, 'style': 'background-color: #f8f9fa; cursor: not-allowed;'}),
+        required=False,
+        help_text='Respuesta generada por Perplexity AI'
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.full_restricted and not self.instance.public:
@@ -553,6 +570,10 @@ class ArticleAdminModelForm(ModelForm):
         fields = "__all__"
         widgets = {"full_restricted": HiddenInput(), "public": HiddenInput()}
 
+    class Media:
+        js = ('js/perplexity_button.js',)
+        css = {'all': ('css/perplexity_admin.css',)}
+
 
 @admin.display(description='Foto', boolean=True)
 def has_photo(obj):
@@ -630,6 +651,13 @@ class ArticleAdmin(VersionAdmin):
                     'body',
                 ),
                 'classes': ('wide',)
+            },
+        ),
+        (
+            'Perplexity AI',
+            {
+                'fields': ('perplexity_message', 'perplexity_response'),
+                'classes': ('wide',),
             },
         ),
         (
@@ -1515,6 +1543,8 @@ class PushNotificationAdmin(admin.ModelAdmin):
     def send_me_push_notification(self, request, queryset):
         self.send_notifications(request, queryset, False)
 
+
+admin.site.register(PerplexityAPISettings, SingletonModelAdmin)
 
 site.unregister(Tag)
 site.unregister(TaggedItem)
