@@ -132,6 +132,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- End Icons -->
 
+    <!-- Fonts -->
+    {% block base_fonts %}{% endblock %}
+    {% block base_fonts_css %}{% endblock %}
+    <!-- End Fonts -->
+
     <!-- CSS -->
     {% compress css %}
       {% block base_css %}
