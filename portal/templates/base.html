@@ -134,7 +134,7 @@
 
     <!-- Fonts -->
     {% block base_fonts %}{% endblock %}
-    {% block base_fonts_css %}{% endblock %}
+    {% compress css %}{% block base_fonts_css %}{% endblock %}{% endcompress %}
     <!-- End Fonts -->
 
     <!-- CSS -->
