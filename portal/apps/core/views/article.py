@@ -48,6 +48,10 @@ logging.basicConfig(level=logging.INFO)
 standard_library.install_aliases()
 
 
+class ClienteException(Exception):
+    pass
+
+
 class ArticleDetailView(DetailView):
     model = Article
 
@@ -399,64 +403,91 @@ def perplexity_ask(request):
     if request.method == 'POST':
         data = json.loads(request.body.decode('utf-8'))
         question = data.get('question', '')
-        api_key = getattr(settings, 'PERPLEXITY_API_KEY', None)
-        if not api_key:
-            return JsonResponse({'response': 'API key de Perplexity no configurada.'})
-
-        config = PerplexityAPISettings.get_solo()
-
-        url = config.endpoint
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-
-        # Concatenate the default context and the question
-        full_prompt = f"{config.default_context.strip()}  {question.strip()}"
-
-        payload = {
-            "model": config.model,
-            "messages": [
-                {"role": "system", "content": "Responde de manera clara y concisa."},
-                {"role": "user", "content": full_prompt}
-            ],
-            "search_domain_filter": config.get_domain_list(),
-            "web_search_options": {
-                "search_context_size": config.context_size
-              },
-        }
-
-        search_domain_filter = config.get_domain_list()
-        if len(search_domain_filter) > 0:
-            payload["search_domain_filter"] = search_domain_filter
-
-        # Solo incluye max_tokens si está definido en la configuración
-        if config.max_tokens:
-            payload["max_tokens"] = config.max_tokens
-        elif settings.DEBUG:
-            payload["max_tokens"] = 100
-
-        response = None
+        api_response = None
 
         try:
+            if question == '':
+                raise ClienteException("No se envio la pregunta.")
+
+            article_id = data.get('article_id', '')
+            if article_id == '':
+                raise ClienteException("No se envio el id del articulo.")
+
+            article = Article.objects.filter(id=article_id).first()
+
+            if article is not None:
+                if article.ia_used == True:
+                    raise ClienteException("No puede usarse la IA mas de una vez.")
+            else:
+                raise ClienteException('El articulo debe ser guardado antes de usar IA.')
+
+            api_key = getattr(settings, 'PERPLEXITY_API_KEY', None)
+            if not api_key:
+                raise Exception('API key de Perplexity no configurada.')
+
+            config = PerplexityAPISettings.get_solo()
+
+            url = config.endpoint
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+
+            # Concatenate the default context and the question
+            full_prompt = f"{config.default_context.strip()}  {question.strip()}"
+
+            payload = {
+                "model": config.model,
+                "messages": [
+                    {"role": "system", "content": "Responde de manera clara y concisa."},
+                    {"role": "user", "content": full_prompt}
+                ],
+                "search_domain_filter": config.get_domain_list(),
+                "web_search_options": {
+                    "search_context_size": config.context_size
+                  },
+            }
+
+            search_domain_filter = config.get_domain_list()
+            if len(search_domain_filter) > 0:
+                payload["search_domain_filter"] = search_domain_filter
+
+            # Solo incluye max_tokens si está definido en la configuración
+            if config.max_tokens:
+                payload["max_tokens"] = config.max_tokens
+            elif settings.DEBUG:
+                payload["max_tokens"] = 100
+
             logging.info(f"calling the api with this data: {payload}")
             start_time = time.time()
-            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            api_response = requests.post(url, headers=headers, json=payload, timeout=30)
             elapsed = time.time() - start_time
             logging.info(f"Tiempo de respuesta de Perplexity API: {elapsed:.2f} segundos")
-            response.raise_for_status()
-            json_response = response.json()
+
+            api_response.raise_for_status()
+            json_response = api_response.json()
+
             if 'choices' in json_response and len(json_response['choices']) > 0:
                 answer = json_response['choices'][0]['message']['content']
+                article.ia_used=True
+                article.save()
+                response = {'error': False, 'message': answer}
             else:
                 answer = "La respuesta de la API no tiene el formato esperado."
+                response = {'error': True, 'message': answer}
+        except ClienteException as ex:
+            response = {'error': True, 'message': str(ex), 'status': 400}
+            logging.error(f"Unexpected Error: {ex}", exc_info=True)
         except Exception as ex:
             answer = "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo más tarde."
             logging.error(f"Unexpected Error: {ex}", exc_info=True)
-            if response is not None:
-                logging.error(f"API Respuesta: {response.json()['error']['message']}")
-        return JsonResponse({'response': answer})
-    return JsonResponse({'response': 'Método no permitido.'}, status=405)
+            response = {'error': True, 'message': answer, 'status': 500}
+            if api_response is not None:
+                answer = api_response.json()['error']['message']
+                logging.error(f"API Respuesta: {answer}")
+                response = {'error': True, 'message': answer, 'status': 500}
+        return JsonResponse(response)
+    return JsonResponse({'error': True, 'message': 'Método no permitido.'}, status=405)
 
 
 

@@ -1751,6 +1751,12 @@ class Article(ArticleBase):
     # SuperDesk article ID
     sp_id = CharField(max_length=100, null=True, blank=True)
 
+    ia_used = BooleanField(
+        default=False,
+        editable=False,
+        help_text="Indica si se utilizó IA en este artículo."
+    )
+
     def save(self, *args, **kwargs):
 
         if self.pk and self.sections:

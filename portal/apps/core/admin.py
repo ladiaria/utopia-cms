@@ -654,13 +654,6 @@ class ArticleAdmin(VersionAdmin):
             },
         ),
         (
-            'Perplexity AI',
-            {
-                'fields': ('perplexity_message', 'perplexity_response'),
-                'classes': ('wide',),
-            },
-        ),
-        (
             'Portada',
             {
                 'fields': ('home_lead', 'home_top_deck', 'home_display', 'home_header_display', 'header_display'),
@@ -698,6 +691,13 @@ class ArticleAdmin(VersionAdmin):
                 + (('additional_access',) if Publication.multi() else ())
                 + ('latitude', 'longitude', 'ipfs_upload'),
                 'classes': ('collapse',),
+            },
+        ),
+        (
+            'Perplexity AI',
+            {
+                'fields': ('perplexity_message', 'perplexity_response'),
+                'classes': ('wide',),
             },
         ),
     )
