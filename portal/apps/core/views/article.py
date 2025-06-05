@@ -9,6 +9,7 @@ from dateutil.relativedelta import relativedelta
 from requests.exceptions import ConnectionError
 from urllib.parse import urlsplit, urlunsplit
 import time
+from typing import Any, Dict
 
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
@@ -400,6 +401,59 @@ Podés ver el artículo aquí: %(url)s
 @csrf_exempt
 @staff_member_required
 def perplexity_ask(request):
+    def extract_valid_json(response: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extracts and returns only the valid JSON part from a response object.
+
+        This function assumes that the response has a structure where the valid JSON
+        is included in the 'content' field of the first choice's message, after the
+        closing "</think>" marker. Any markdown code fences (e.g. ```json) are stripped.
+
+        Parameters:
+            response (dict): The full API response object.
+
+        Returns:
+            dict: The parsed JSON object extracted from the content.
+
+        Raises:
+            ValueError: If no valid JSON can be parsed from the content.
+        """
+        # Navigate to the 'content' field; adjust if your structure differs.
+        content = (
+            response
+            .get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+        )
+
+        # Find the index of the closing </think> tag.
+        marker = "</think>"
+        idx = content.rfind(marker)
+
+        if idx == -1:
+            # If marker not found, try parsing the entire content.
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError as e:
+                raise ValueError("No </think> marker found and content is not valid JSON") from e
+
+        # Extract the substring after the marker.
+        json_str = content[idx + len(marker):].strip()
+
+        # Remove markdown code fence markers if present.
+        if json_str.startswith("```json"):
+            json_str = json_str[len("```json"):].strip()
+        if json_str.startswith("```"):
+            json_str = json_str[3:].strip()
+        if json_str.endswith("```"):
+            json_str = json_str[:-3].strip()
+
+        try:
+            parsed_json = json.loads(json_str)
+            return parsed_json
+        except json.JSONDecodeError as e:
+            raise ValueError("Failed to parse valid JSON from response content") from e
+
     if request.method == 'POST':
         data = json.loads(request.body.decode('utf-8'))
         titulo = data.get('titulo', '')
@@ -444,6 +498,8 @@ def perplexity_ask(request):
                 raise ClienteException("El texto base debe contener los placeholders '{titulo}' y '{cuerpo}'")
 
             full_prompt = default_context.replace("{titulo}", titulo).replace("{cuerpo}", cuerpo)
+
+            full_prompt += "Por favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys"
 
             schema = {
                 "type": "object",
@@ -498,24 +554,15 @@ def perplexity_ask(request):
             logging.info(f"Tiempo de respuesta de Perplexity API: {elapsed:.2f} segundos")
 
             api_response.raise_for_status()
-            json_response = api_response.json()
+            data = extract_valid_json(api_response.json())
 
-            if 'choices' in json_response and len(json_response['choices']) > 0:
-                answer = json_response['choices'][0]['message']['content']
-                data = json.loads(answer)
+            if "metatitles" not in data or "copys" not in data:
+                raise ValueError("perplexity no retorno 'metatitles' o 'copys'.")
 
-                # Validar respuesta
-                if not isinstance(data, dict):
-                    raise ValueError("La respuesta no es un diccionario.")
-                if "metatitles" not in data or "copys" not in data:
-                    raise ValueError("perplexity no retorno 'metatitles' o 'copys'.")
+            article.ia_used=True
+            article.save()
+            response = {'error': False, 'message': data}
 
-                article.ia_used=True
-                article.save()
-                response = {'error': False, 'message': data}
-            else:
-                answer = "La respuesta de la API no tiene el formato esperado."
-                response = {'error': True, 'message': answer, 'status': 500}
         except ClienteException as ex:
             response = {'error': True, 'message': str(ex), 'status': 400}
             logging.error(f"Unexpected Error: {ex}", exc_info=True)
