@@ -402,14 +402,18 @@ Podés ver el artículo aquí: %(url)s
 def perplexity_ask(request):
     if request.method == 'POST':
         data = json.loads(request.body.decode('utf-8'))
-        question = data.get('question', '')
+        titulo = data.get('titulo', '')
+        cuerpo = data.get('cuerpo', '')
+        article_id = data.get('article_id', '')
         api_response = None
 
         try:
-            if question == '':
-                raise ClienteException("No se envio la pregunta.")
+            if titulo == '':
+                raise ClienteException("No se envio el titulo.")
 
-            article_id = data.get('article_id', '')
+            if cuerpo == '':
+                raise ClienteException("No se envio el cuerpo.")
+
             if article_id == '':
                 raise ClienteException("No se envio el id del articulo.")
 
@@ -434,7 +438,31 @@ def perplexity_ask(request):
             }
 
             # Concatenate the default context and the question
-            full_prompt = f"{config.default_context.strip()}  {question.strip()}"
+            default_context = config.default_context.strip()
+            # Validación de placeholders
+            if '{titulo}' not in default_context or '{cuerpo}' not in default_context:
+                raise ClienteException("El texto base debe contener los placeholders '{titulo}' y '{cuerpo}'")
+
+            full_prompt = default_context.replace("{titulo}", titulo).replace("{cuerpo}", cuerpo)
+
+            schema = {
+                "type": "object",
+                "properties": {
+                    "metatitles": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 3,
+                        "maxItems": 3
+                    },
+                    "copys": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 2,
+                        "maxItems": 2
+                    }
+                },
+                "required": ["metatitles", "copys"]
+            }
 
             payload = {
                 "model": config.model,
@@ -446,6 +474,11 @@ def perplexity_ask(request):
                 "web_search_options": {
                     "search_context_size": config.context_size
                   },
+
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {"schema": schema}
+                }
             }
 
             search_domain_filter = config.get_domain_list()
@@ -469,12 +502,20 @@ def perplexity_ask(request):
 
             if 'choices' in json_response and len(json_response['choices']) > 0:
                 answer = json_response['choices'][0]['message']['content']
+                data = json.loads(answer)
+
+                # Validar respuesta
+                if not isinstance(data, dict):
+                    raise ValueError("La respuesta no es un diccionario.")
+                if "metatitles" not in data or "copys" not in data:
+                    raise ValueError("perplexity no retorno 'metatitles' o 'copys'.")
+
                 article.ia_used=True
                 article.save()
-                response = {'error': False, 'message': answer}
+                response = {'error': False, 'message': data}
             else:
                 answer = "La respuesta de la API no tiene el formato esperado."
-                response = {'error': True, 'message': answer}
+                response = {'error': True, 'message': answer, 'status': 500}
         except ClienteException as ex:
             response = {'error': True, 'message': str(ex), 'status': 400}
             logging.error(f"Unexpected Error: {ex}", exc_info=True)
