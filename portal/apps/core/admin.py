@@ -456,21 +456,6 @@ class ArticleAdminModelForm(ModelForm):
         label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
     )
 
-    perplexity_message = CharField(
-        label='Pregunta para Perplexity',
-        widget=Textarea(attrs={'rows': 3, 'placeholder': 'Escribe tu pregunta para Perplexity AI aquí...'}),
-        required=False,
-        help_text='Pregunta que se enviará a Perplexity AI'
-    )
-
-    perplexity_response = CharField(
-        label='Respuesta de Perplexity',
-        widget=Textarea(
-            attrs={'rows': 6, 'readonly': True, 'style': 'background-color: #f8f9fa; cursor: not-allowed;'}),
-        required=False,
-        help_text='Respuesta generada por Perplexity AI'
-    )
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.full_restricted and not self.instance.public:
@@ -691,13 +676,6 @@ class ArticleAdmin(VersionAdmin):
                 + (('additional_access',) if Publication.multi() else ())
                 + ('latitude', 'longitude', 'ipfs_upload'),
                 'classes': ('collapse',),
-            },
-        ),
-        (
-            'Perplexity AI',
-            {
-                'fields': ('perplexity_message', 'perplexity_response'),
-                'classes': ('wide',),
             },
         ),
     )

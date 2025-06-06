@@ -1,0 +1,29 @@
+/* Style for the Perplexity button */
+#perplexity-send-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 18px;      /* More space from textarea */
+    margin-bottom: 18px;   /* Space before next field */
+    display: block;
+    transition: background 0.2s;
+    margin-left: 50px;
+}
+
+#perplexity-send-button:hover {
+    background-color: #79aec8 !important;
+}
+
+/* Widen the textareas */
+#id_perplexity_message, #id_perplexity_response {
+    width: 100%;
+    max-width: 700px;
+    min-width: 400px;
+    box-sizing: border-box;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+}
