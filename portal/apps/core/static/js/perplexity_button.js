@@ -35,12 +35,12 @@ document.addEventListener('DOMContentLoaded', function() {
     continueBtn.parentNode.insertBefore(btn, continueBtn.nextSibling);
 
     // encontrar el articulo id
-    const match = window.location.pathname.match(/\/(\d+)\/change\//);
-    const articleId = match ? match[1] : null;
+    const perplexityDiv = document.getElementById('perplexity-data');
+    const articleId = perplexityDiv.dataset.articleId;
 
     // boton click evento
     btn.addEventListener('click', function() {
-        if (articleId) {
+        if (articleId != '') {
         console.log('Article ID:', articleId);
         } else {
             alert('El articulo debe ser guardado antes de usar el boton de sugerencias.');
@@ -91,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch((err) => {
             const msg = "Ha ocurrido un error al comunicarse con la API. Por favor, inténtalo de nuevo más tarde.";
-            alert(msg);
             alert(msg);
             setPerplexityBtnStatus(btn);
             console.error(err);

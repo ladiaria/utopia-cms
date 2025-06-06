@@ -455,6 +455,13 @@ def perplexity_ask(request):
             raise ValueError("Failed to parse valid JSON from response content") from e
 
     if request.method == 'POST':
+        config = PerplexityAPISettings.get_solo()
+        if config.activar_asistente is False:
+            message = 'Asistente IA desactivado.'
+            response = {'error': True, 'message': message, 'status': 400}
+            logging.error(f"{message}")
+            return JsonResponse(response)
+
         data = json.loads(request.body.decode('utf-8'))
         titulo = data.get('titulo', '')
         cuerpo = data.get('cuerpo', '')
@@ -482,8 +489,6 @@ def perplexity_ask(request):
             api_key = getattr(settings, 'PERPLEXITY_API_KEY', None)
             if not api_key:
                 raise Exception('API key de Perplexity no configurada.')
-
-            config = PerplexityAPISettings.get_solo()
 
             url = config.endpoint
             headers = {
@@ -536,6 +541,12 @@ def perplexity_ask(request):
                     "json_schema": {"schema": schema}
                 }
             }
+
+            conocimiento = config.get_conocimiento()
+
+            if len(conocimiento) > 0:
+                # falta cmo agregar los enlaces de conocimientos
+                pass
 
             search_domain_filter = config.get_domain_list()
             if len(search_domain_filter) > 0:

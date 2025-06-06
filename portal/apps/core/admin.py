@@ -555,10 +555,6 @@ class ArticleAdminModelForm(ModelForm):
         fields = "__all__"
         widgets = {"full_restricted": HiddenInput(), "public": HiddenInput()}
 
-    class Media:
-        js = ('js/perplexity_button.js',)
-        css = {'all': ('css/perplexity_admin.css',)}
-
 
 @admin.display(description='Foto', boolean=True)
 def has_photo(obj):
@@ -592,6 +588,7 @@ class ArticleAdmin(VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
+    change_form_template = "core/templates/admin/core/article/change_form.html"
     formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
@@ -678,6 +675,7 @@ class ArticleAdmin(VersionAdmin):
                 'classes': ('collapse',),
             },
         ),
+        (None, {'fields': ('copy_para_redes',)}),
     )
 
     @admin.action(description="Intercambiar estado de publicación: publicado <-> borrador")
@@ -1522,7 +1520,21 @@ class PushNotificationAdmin(admin.ModelAdmin):
         self.send_notifications(request, queryset, False)
 
 
-admin.site.register(PerplexityAPISettings, SingletonModelAdmin)
+class ArticleInline2(admin.TabularInline):
+    model = Article
+    extra = 0
+    max_num = 2
+    # raw_id_fields = ('articles',)
+    verbose_name_plural = 'Artículos relacionados'
+
+
+from django.db import models
+@admin.register(PerplexityAPISettings)
+class PerplexityAPISettingsAdmin(SingletonModelAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': admin.widgets.AdminTextareaWidget(attrs={'rows': 10, 'cols': 80})},
+    }
+    # inlines = [ArticleInline2]
 
 site.unregister(Tag)
 site.unregister(TaggedItem)

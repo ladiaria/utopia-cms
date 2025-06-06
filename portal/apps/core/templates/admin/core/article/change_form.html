@@ -1,0 +1,19 @@
+{% extends "admin/change_form.html" %}
+{% load group_filters %}
+{% load static %}
+
+{% block content %}
+    {{ block.super }}
+    <div id="perplexity-data"
+         data-article-id="{{ original.id }}">
+    </div>
+
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {% if user|in_group:"use_ia" %}
+        <link rel="stylesheet" href="{% static 'css/perplexity_admin.css' %}">
+        <script src="{% static 'js/perplexity_button.js' %}"></script>
+    {% endif %}
+{% endblock %}

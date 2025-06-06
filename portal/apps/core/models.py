@@ -1757,6 +1757,20 @@ class Article(ArticleBase):
         help_text="Indica si se utilizó IA en este artículo."
     )
 
+    copy_para_redes = CharField(
+        max_length=200,
+        blank=True,
+        help_text='Texto que sera utilizado en redes sociales.'
+    )
+
+    # perplexity_settings = ForeignKey(
+    #     'PerplexityAPISettings',
+    #     on_delete=SET_NULL,
+    #     related_name="articles",
+    #     blank = True,
+    #     null = True,
+    # )
+
     def save(self, *args, **kwargs):
 
         if self.pk and self.sections:
@@ -2671,6 +2685,8 @@ class PerplexityAPISettings(SingletonModel):
         MEDIUM = 'medium', 'medium'
         HIGH = 'high', 'high'
 
+    activar_asistente = BooleanField(default=True, help_text='para activar o desactivar el uso del asistente IA ')
+
     endpoint = URLField(
         default='https://api.perplexity.ai/chat/completions',
         help_text='Endpoint de la API de Perplexity'
@@ -2704,8 +2720,16 @@ class PerplexityAPISettings(SingletonModel):
         help_text='Contexto por defecto que siempre se enviará a Perplexity'
     )
 
+    conocimiento = TextField(
+        blank=True,
+        help_text='Enlaces a los articulos ejemplos.'
+    )
+
     def get_domain_list(self):
         return [d.strip() for d in self.search_domain_filter.split(',') if d.strip()]
+
+    def get_conocimiento(self):
+        return [line.strip() for line in self.conocimiento.strip().split('\n') if line.strip()]
 
     def __str__(self):
         return "Configuración de la API de Perplexity"
