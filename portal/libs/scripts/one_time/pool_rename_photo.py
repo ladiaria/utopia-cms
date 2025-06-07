@@ -42,6 +42,6 @@ def realocate(filter_kwargs={}, verbose=False, dry_run=False, ignore_errors=Fals
 
 def non_existent_photos():
     for p in Photo.objects.iterator():
-        pp = p.image.path
+        pp = p.image.storage.path(p.image.name)
         if not exists(pp):
             yield p.id, pp
