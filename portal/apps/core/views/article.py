@@ -4,6 +4,7 @@ from future import standard_library
 from builtins import str
 import requests
 import json
+import importlib
 from dateutil.relativedelta import relativedelta
 from requests.exceptions import ConnectionError
 from urllib.parse import urlsplit, urlunsplit
@@ -38,6 +39,15 @@ from thedaily.templatetags.thedaily_tags import has_restricted_access
 
 
 standard_library.install_aliases()
+
+
+def import_from_string(dotted_path):
+    try:
+        module_path, attr = dotted_path.rsplit(".", 1)
+        module = importlib.import_module(module_path)
+        return getattr(module, attr)
+    except (ImportError, AttributeError) as e:
+        raise ImportError(f"Could not import '{dotted_path}': {e}") from e
 
 
 class ArticleDetailView(DetailView):
@@ -258,6 +268,16 @@ def article_detail(request, year, month, slug, domain_slug=None):
             "restricted_access": has_restricted_access(request.user, article),
         } if user_is_authenticated else {"signupwall_remaining_banner": settings.SIGNUPWALL_ENABLED}
     )  # NOTE: banner is rendered despite of setting for anon users
+
+    extra_context_module_path = getattr(settings, "ARTICLE_DETAIL_EXTRA_CONTEXT_MODULE", None)
+
+    if extra_context_module_path and request.user:
+        try:
+            get_extra_context = import_from_string(extra_context_module_path)
+            context.update(get_extra_context(request.user))
+        except ImportError as e:
+            if settings.DEBUG:
+                print(f"Error importing extra context: {e}")
 
     template = "article/detail"
     # custom template support and custom article.type-based tmplates, search for the template iterations:
