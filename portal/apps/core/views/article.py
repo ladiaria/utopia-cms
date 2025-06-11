@@ -465,18 +465,21 @@ def perplexity_ask(request):
         data = json.loads(request.body.decode('utf-8'))
         titulo = data.get('titulo', '')
         cuerpo = data.get('cuerpo', '')
+        descripcion = data.get('descripcion', '')
         article_id = data.get('article_id', '')
         api_response = None
 
         try:
-            if titulo == '':
-                raise ClienteException("No se envio el titulo.")
+            fields = [
+                ('titulo', titulo, "No se envio el titulo."),
+                ('descripcion', descripcion, "No se envio la descripcion."),
+                ('cuerpo', cuerpo, "No se envio el cuerpo."),
+                ('article_id', article_id, "No se envio el id del articulo.")
+            ]
 
-            if cuerpo == '':
-                raise ClienteException("No se envio el cuerpo.")
-
-            if article_id == '':
-                raise ClienteException("No se envio el id del articulo.")
+            for field_name, value, error_message in fields:
+                if value == '':
+                    raise ClienteException(error_message)
 
             article = Article.objects.filter(id=article_id).first()
 
@@ -499,10 +502,11 @@ def perplexity_ask(request):
             # Concatenate the default context and the question
             default_context = config.default_context.strip()
             # Validación de placeholders
-            if '{titulo}' not in default_context or '{cuerpo}' not in default_context:
-                raise ClienteException("El texto base debe contener los placeholders '{titulo}' y '{cuerpo}'")
+            placeholders = ['{titulo}', '{cuerpo}', '{descripcion}']
+            if not all(ph in default_context for ph in placeholders):
+                raise ClienteException("El texto base debe contener los placeholders '{titulo}', '{descripcion}' y '{cuerpo}'")
 
-            full_prompt = default_context.replace("{titulo}", titulo).replace("{cuerpo}", cuerpo)
+            full_prompt = default_context.replace("{titulo}", titulo).replace("{cuerpo}", cuerpo).replace("{descripcion}", descripcion)
 
             full_prompt += "Por favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys"
 
