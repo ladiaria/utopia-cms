@@ -484,8 +484,9 @@ def perplexity_ask(request):
             article = Article.objects.filter(id=article_id).first()
 
             if article is not None:
-                if article.ia_used == True:
-                    raise ClienteException("No puede usarse la IA mas de una vez.")
+                if article.ia_used:
+                    print("se está utilizando más de una vez ")
+                    # raise ClienteException("No puede usarse la IA mas de una vez.")
             else:
                 raise ClienteException('El articulo debe ser guardado antes de usar IA.')
 
