@@ -1,12 +1,13 @@
 {% extends "admin/change_form.html" %}
-{% load group_filters %}
+{% load core_tags %}
 {% load static %}
 
 {% block content %}
-  {{ block.super }}
-  <div id="perplexity-data"
-    data-article-id="{{ original.id }}">
-  </div>
+    {{ block.super }}
+    <div id="perplexity-data"
+         data-article-id="{{ original.id }}">
+         <input type="hidden" id="nombre-asistente" value="{% get_nombre_del_asistente %}">
+    </div>
 
 {% endblock %}
 

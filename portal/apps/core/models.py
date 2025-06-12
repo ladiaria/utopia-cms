@@ -1757,19 +1757,10 @@ class Article(ArticleBase):
         help_text="Indica si se utilizó IA en este artículo."
     )
 
-    copy_para_redes = CharField(
+    copy_para_redes = TextField(
         max_length=200,
         blank=True,
-        help_text='Texto que sera utilizado en redes sociales.'
     )
-
-    # perplexity_settings = ForeignKey(
-    #     'PerplexityAPISettings',
-    #     on_delete=SET_NULL,
-    #     related_name="articles",
-    #     blank = True,
-    #     null = True,
-    # )
 
     def save(self, *args, **kwargs):
 
@@ -2679,6 +2670,12 @@ class PerplexityAPISettings(SingletonModel):
         SONAR_REASONING = 'sonar-reasoning', 'sonar-reasoning'
         SONAR_DEEP_RESEARCH = 'sonar-deep-research', 'sonar-deep-research'
         R1_1776 = 'r1-1776', 'r1-1776'
+
+    nombre_del_asistente = CharField(
+        max_length=50,
+        default='tIA',
+        help_text='Nombre del asistente IA a utilizar'
+    )
 
     class WebSearchContextSizeChoices(TextChoices):
         LOW = 'low', 'low'
