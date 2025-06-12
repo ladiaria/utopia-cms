@@ -93,7 +93,7 @@
 }
 
 /* Confirmation container */
-.ia-confirmation-container {
+#ia-confirmation-container {
   border-radius: 4px;
   border: 1px solid #E8E8E8;
   background: #F8F8F8;
@@ -106,7 +106,7 @@
   margin-bottom: 24px;
 }
 
-.ia-confirmation-container .title {
+#ia-confirmation-container .title {
   border-bottom: 1px solid #CCC;
   color: #747474;
   margin: 0;
@@ -120,15 +120,16 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
 }
 
-.ia-confirmation-container .confirmation-suggestion {
+#ia-confirmation-container .confirmation-suggestion {
   display: flex;
   gap: 16px;
 }
 
-.ia-confirmation-container .confirmation-suggestion p,
-.ia-confirmation-container .confirmation-suggestion button {
+#ia-confirmation-container .confirmation-suggestion p,
+#ia-confirmation-container .confirmation-suggestion button {
   line-height: normal;
   margin: 0;
 }
@@ -143,9 +144,13 @@
   color: #000;
 }
 
-.ia-confirmation-container .confirmation-suggestion button {
+#ia-confirmation-container .confirmation-suggestion button {
   background-color: transparent;
   border: none;
   padding: 0;
   color: #417893
+}
+
+.hidden {
+  display: none !important;
 }
