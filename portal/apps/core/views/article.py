@@ -491,7 +491,7 @@ def perplexity_ask(request):
 
             api_key = getattr(settings, 'PERPLEXITY_API_KEY', None)
             if not api_key:
-                raise Exception('API key de Perplexity no configurada.')
+                raise Exception(f'API key de Perplexity no configurada. valor:{api_key}')
 
             url = config.endpoint
             headers = {
@@ -508,7 +508,7 @@ def perplexity_ask(request):
 
             if descripcion == '':
                 # The description is not mandatory, and if it is not sent, then it is not sent to Perplexity.
-                default_context += default_context.replace("Descripción: {descripcion}", "")
+                default_context = default_context.replace("Descripción: {descripcion}", "")
             else:
                 default_context += default_context.replace("{descripcion}", descripcion)
 
