@@ -1,5 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
 
+  if (sessionStorage.getItem("perplexity")) {
+    console.log('ya usaste la IA en la creación de este artículo');
+  }
+
   function setPerplexityBtnStatus(button, disabled = false, html = 'Enviar a Perplexity', className = "") {
     button.disabled = disabled;
     button.innerHTML = html;
@@ -85,6 +89,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   addConfirmationContainer();
 
+  // encontrar el articulo id
+  const perplexityDiv = document.getElementById('perplexity-data');
+  const articleId = perplexityDiv.dataset.articleId;
+
+  console.log(articleId)
+
   const perplexityBtn = document.createElement("button");
   perplexityBtn.className = "button default";
   perplexityBtn.id = "perplexity-send-button";
@@ -106,12 +116,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Insertar botón de Generar sugerencia de IA
   document.querySelector(`input[type="submit"][name="_continue"]`).after(perplexityBtn);
 
-  // encontrar el articulo id
-  const perplexityDiv = document.getElementById('perplexity-data');
-  const articleId = perplexityDiv.dataset.articleId;
-
   // boton click evento
   perplexityBtn.addEventListener('click', async function() {
+
+    sessionStorage.setItem("perplexity", true);
+
     if (articleId != '') {
       console.log('Article ID:', articleId);
     } else {
