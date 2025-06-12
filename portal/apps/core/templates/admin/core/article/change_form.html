@@ -7,7 +7,11 @@
     <div id="perplexity-data"
          data-article-id="{{ original.id }}">
          <input type="hidden" id="nombre-asistente" value="{% get_nombre_del_asistente %}">
+
+        {{ adminform.form.input_ia_used }}
+
     </div>
+
 
 {% endblock %}
 

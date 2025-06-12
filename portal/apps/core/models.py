@@ -2717,10 +2717,6 @@ class PerplexityAPISettings(SingletonModel):
         help_text='Contexto por defecto que siempre se enviará a Perplexity'
     )
 
-    conocimiento = TextField(
-        blank=True,
-        help_text='Enlaces a los articulos ejemplos.'
-    )
 
     def get_domain_list(self):
         return [d.strip() for d in self.search_domain_filter.split(',') if d.strip()]

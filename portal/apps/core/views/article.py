@@ -466,28 +466,18 @@ def perplexity_ask(request):
         titulo = data.get('titulo', '')
         cuerpo = data.get('cuerpo', '')
         descripcion = data.get('descripcion', '')
-        article_id = data.get('article_id', '')
+        # article_id = data.get('article_id', '')
         api_response = None
 
         try:
             fields = [
                 ('titulo', titulo, "No se envio el titulo."),
                 ('cuerpo', cuerpo, "No se envio el cuerpo."),
-                ('article_id', article_id, "No se envio el id del articulo.")
             ]
 
             for field_name, value, error_message in fields:
                 if value == '':
                     raise ClienteException(error_message)
-
-            article = Article.objects.filter(id=article_id).first()
-
-            if article is not None:
-                if article.ia_used:
-                    print("se está utilizando más de una vez ")
-                    # raise ClienteException("No puede usarse la IA mas de una vez.")
-            else:
-                raise ClienteException('El articulo debe ser guardado antes de usar IA.')
 
             api_key = getattr(settings, 'PERPLEXITY_API_KEY', None)
             if not api_key:
@@ -552,12 +542,6 @@ def perplexity_ask(request):
                 }
             }
 
-            conocimiento = config.get_conocimiento()
-
-            if len(conocimiento) > 0:
-                # falta cmo agregar los enlaces de conocimientos
-                pass
-
             search_domain_filter = config.get_domain_list()
             if len(search_domain_filter) > 0:
                 payload["search_domain_filter"] = search_domain_filter
@@ -580,8 +564,6 @@ def perplexity_ask(request):
             if "metatitles" not in data or "copys" not in data:
                 raise ValueError("perplexity no retorno 'metatitles' o 'copys'.")
 
-            article.ia_used=True
-            article.save()
             response = {'error': False, 'message': data}
 
         except ClienteException as ex:
