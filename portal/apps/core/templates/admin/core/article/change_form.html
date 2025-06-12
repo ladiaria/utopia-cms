@@ -135,6 +135,7 @@
           // Selecciona el textarea del cuerpo (body)
           const textareaBody = document.querySelector('textarea[id^="id_body-"]');
           const valorBody = textareaBody ? textareaBody.value.trim() : '';
+          const valorDesc = document.getElementById("id_deck") ? document.getElementById("id_deck").value.trim() : "";
 
           setPerplexityBtnStatus(perplexityBtn, true, `
             <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
@@ -149,7 +150,12 @@
                 'Content-Type': 'application/json',
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
               },
-              body: JSON.stringify({ titulo: valorHeadline, cuerpo: valorBody, article_id: articleId })
+              body: JSON.stringify({
+                titulo: valorHeadline,
+                cuerpo: valorBody,
+                descripcion: valorDesc,
+                article_id: articleId
+              })
             });
             const data = await response.json();
 
