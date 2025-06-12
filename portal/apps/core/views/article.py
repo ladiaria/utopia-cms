@@ -472,7 +472,6 @@ def perplexity_ask(request):
         try:
             fields = [
                 ('titulo', titulo, "No se envio el titulo."),
-                ('descripcion', descripcion, "No se envio la descripcion."),
                 ('cuerpo', cuerpo, "No se envio el cuerpo."),
                 ('article_id', article_id, "No se envio el id del articulo.")
             ]
@@ -492,7 +491,7 @@ def perplexity_ask(request):
 
             api_key = getattr(settings, 'PERPLEXITY_API_KEY', None)
             if not api_key:
-                raise Exception('API key de Perplexity no configurada.')
+                raise Exception(f'API key de Perplexity no configurada. valor:{api_key}')
 
             url = config.endpoint
             headers = {
@@ -507,7 +506,13 @@ def perplexity_ask(request):
             if not all(ph in default_context for ph in placeholders):
                 raise ClienteException("El texto base debe contener los placeholders '{titulo}', '{descripcion}' y '{cuerpo}'")
 
-            full_prompt = default_context.replace("{titulo}", titulo).replace("{cuerpo}", cuerpo).replace("{descripcion}", descripcion)
+            if descripcion == '':
+                # The description is not mandatory, and if it is not sent, then it is not sent to Perplexity.
+                default_context = default_context.replace("Descripción: {descripcion}", "")
+            else:
+                default_context += default_context.replace("{descripcion}", descripcion)
+
+            full_prompt = default_context.replace("{titulo}", titulo).replace("{cuerpo}", cuerpo)
 
             full_prompt += "Por favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys"
 
