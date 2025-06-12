@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-  function setPerplexityBtnStatus(button, status = false, html = 'Enviar a Perplexity', className = "") {
-    button.disabled = status;
+  function setPerplexityBtnStatus(button, disabled = false, html = 'Enviar a Perplexity', className = "") {
+    button.disabled = disabled;
     button.innerHTML = html;
     button.className = className ? `button defualt ${className}` : "button default";
   }
@@ -155,12 +155,21 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       const data = await response.json();
 
-      console.log(data);
-
       if (data.error) {
-        console.error(data.message);
         alert(data.message);
-        setPerplexityBtnStatus(perplexityBtn);
+        setPerplexityBtnStatus(perplexityBtn, false, `
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
+            <g clip-path="url(#clip0_83_261)">
+              <path d="M15.4324 5.22667H13.8924V0.545333L8.88569 4.78133V0.605333H8.11503V4.736L3.49369 0.5V5.22667H1.56836V12.158H3.49369V16.5L8.11569 12.26V16.394H8.88569V12.3627L13.507 16.4833V12.158H15.4324V5.22667ZM13.1217 2.206V5.226H9.55169L13.1217 2.206ZM4.26436 2.25067L7.51036 5.22667H4.26369L4.26436 2.25067ZM2.33903 11.388V5.99667H7.57036L3.49369 10.0733V11.388H2.33903ZM4.26436 14.748V10.392L8.11503 6.54133V11.2153L4.26436 14.748ZM12.7364 14.7647L8.88569 11.3313V6.54067L12.7364 10.3913V14.7647ZM14.6624 11.388H13.507V10.0733L9.43036 5.99667H14.6624V11.388Z" fill="white"/>
+            </g>
+            <defs>
+              <clipPath id="clip0_83_261">
+                <rect width="16" height="16" fill="white" transform="translate(0.5 0.5)"/>
+              </clipPath>
+            </defs>
+          </svg>
+          <span>Volver a preguntarle a la TIA</span>
+        `);
       } else {
 
         setPerplexityBtnStatus(perplexityBtn, true, `
@@ -241,9 +250,11 @@ document.addEventListener('DOMContentLoaded', function() {
     confirmationSuggestion.classList.add("hidden");
 
     const opitionButton = document.querySelector(optionButtonSelector);
-    opitionButton.classList.remove("activated");
-    opitionButton.innerHTML = "Usar";
-    opitionButton.disabled = false;
+    if (opitionButton) {
+      opitionButton.classList.remove("activated");
+      opitionButton.innerHTML = "Usar";
+      opitionButton.disabled = false;
+    }
 
     if (metatitleConfirmationSuggestion.classList.contains("hidden") &&
       copyParaRedesConfirmationSuggestion.classList.contains("hidden")) {
