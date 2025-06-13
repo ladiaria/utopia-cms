@@ -30,11 +30,14 @@
 #perplexity-send-button.activated,
 #perplexity-send-button.activated:hover {
   background-color: #CCC;
-  cursor: default;
   opacity: 1;
 }
 
-#perplexity-send-button:hover {
+#perplexity-send-button:disabled {
+  cursor: default;
+}
+
+#perplexity-send-button:hover:not(:disabled) {
   background-color: #79aec8;
 }
 
