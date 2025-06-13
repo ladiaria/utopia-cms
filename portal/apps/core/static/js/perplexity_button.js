@@ -136,6 +136,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector(".ace_text-input").addEventListener("input", function() {
       perplexityBtn.disabled = !inputHeadline.value || !textareaBody.value;
     });
+    document.querySelector(".ace_text-input").addEventListener("selectionchange", function() {
+      perplexityBtn.disabled = !inputHeadline.value || !textareaBody.value;
+    });
   }, 0);
 
   // boton click evento
