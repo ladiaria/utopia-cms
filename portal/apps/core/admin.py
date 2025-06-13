@@ -775,7 +775,6 @@ class ArticleAdmin(VersionAdmin):
                 obj.admin = True  # tell model's save method that we are calling it from the admin
                 # Get the value from the custom hidden form field
                 ia_used_value = form.cleaned_data.get('input_ia_used', None)
-                breakpoint()
                 # Do something with ia_used_value
                 if ia_used_value:
                     obj.ia_used = ia_used_value
