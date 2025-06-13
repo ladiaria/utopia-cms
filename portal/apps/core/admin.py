@@ -4,6 +4,7 @@ import json
 from urllib.parse import urljoin
 from pydoc import locate
 from kombu.exceptions import OperationalError
+from solo.admin import SingletonModelAdmin
 
 from actstream.models import Action
 from tagging.models import Tag, TaggedItem
@@ -26,7 +27,7 @@ from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
 from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
-from django.forms.fields import CharField, IntegerField
+from django.forms.fields import CharField, IntegerField, BooleanField
 from django.forms.widgets import TextInput, HiddenInput
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -58,6 +59,7 @@ from .models import (
     BreakingNewsModule,
     DeviceSubscribed,
     PushNotification,
+    PerplexityAPISettings,
 )
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
@@ -453,6 +455,11 @@ class ArticleAdminModelForm(ModelForm):
     pw_radio_choice = ChoiceField(
         label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
     )
+    input_ia_used = BooleanField(
+        widget=HiddenInput(),
+        required=False,  # Allows the field to be omitted in the form submission
+        initial=False  # Sets the default value to False
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -584,8 +591,10 @@ def get_editions():
 @admin.register(Article, site=site)
 class ArticleAdmin(VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
+    readonly_fields = ('ia_used',)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
+    change_form_template = "core/templates/admin/core/article/change_form.html"
     formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
@@ -628,6 +637,7 @@ class ArticleAdmin(VersionAdmin):
                     'alt_desc_newsletters',
                     'lead',
                     'body',
+                    'ia_used',
                 ),
                 'classes': ('wide',)
             },
@@ -672,6 +682,7 @@ class ArticleAdmin(VersionAdmin):
                 'classes': ('collapse',),
             },
         ),
+        (None, {'fields': ('copy_para_redes',)}),
     )
 
     @admin.action(description="Intercambiar estado de publicación: publicado <-> borrador")
@@ -762,6 +773,10 @@ class ArticleAdmin(VersionAdmin):
         if form.is_valid():
             try:
                 obj.admin = True  # tell model's save method that we are calling it from the admin
+                # Get the value from the custom hidden form field
+                ia_used_value = form.cleaned_data.get('input_ia_used', None)
+                if ia_used_value:
+                    obj.ia_used = ia_used_value
                 super().save_model(request, obj, form, change)
                 self.obj = obj
             except Exception as e:
@@ -1515,6 +1530,21 @@ class PushNotificationAdmin(admin.ModelAdmin):
     def send_me_push_notification(self, request, queryset):
         self.send_notifications(request, queryset, False)
 
+
+class ArticleInline2(admin.TabularInline):
+    model = Article
+    extra = 0
+    max_num = 2
+    # raw_id_fields = ('articles',)
+    verbose_name_plural = 'Artículos relacionados'
+
+
+from django.db import models
+@admin.register(PerplexityAPISettings)
+class PerplexityAPISettingsAdmin(SingletonModelAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': admin.widgets.AdminTextareaWidget(attrs={'rows': 10, 'cols': 80})},
+    }
 
 site.unregister(Tag)
 site.unregister(TaggedItem)

@@ -1,0 +1,283 @@
+document.addEventListener('DOMContentLoaded', function() {
+
+  function setPerplexityBtnStatus(button, disabled = false, html = 'Enviar a Perplexity', className = "") {
+    button.disabled = disabled;
+    button.innerHTML = html;
+    button.className = className ? `button defualt ${className}` : "button default";
+  }
+
+  function toggleOptionButton(button, activate = true) {
+    if (!button) return;
+    if (activate) {
+      button.classList.add("activated");
+      button.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M3.4375 10.9375L7.8125 15.3125L16.5625 5.9375" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      `;
+      button.disabled = true;
+    } else {
+      button.classList.remove("activated");
+      button.innerHTML = "Usar";
+      button.disabled = false;
+    }
+  }
+
+  function generateSuggestionsList(type = "metatitle", container, suggestions) {
+    let iaContainer = `<div id="${type}-ia-container">`;
+    suggestions.forEach((suggestion, index) => {
+      iaContainer += `<div class="${type}-suggestion ia-suggestion">
+        <p>${suggestion}</p>
+        <button class="${type}-option" id="${type}-option-${index}" type="button">Usar</button>
+      </div>
+      `;
+    });
+    iaContainer += `</div>`;
+    container.insertAdjacentHTML("beforeend", iaContainer);
+  }
+
+  const confirmationContainer = document.createElement("div");
+  confirmationContainer.id = "ia-confirmation-container";
+  confirmationContainer.className = "hidden";
+  document.querySelector(".submit-row").before(confirmationContainer);
+
+  function showConfirmationMessage(type = "metatitle", text) {
+    if (confirmationContainer.classList.contains("hidden")) {
+      confirmationContainer.classList.remove("hidden");
+    }
+    if (type === "metatitle") {
+      const confirmationSuggestion = document.getElementById("metatitle-confirmation-suggestion")
+      confirmationSuggestion.querySelector(".value").innerText = text;
+      confirmationSuggestion.classList.remove("hidden");
+    } else if (type === "copy-para-redes") {
+      const confirmationSuggestion = document.getElementById("copy-para-redes-confirmation-suggestion")
+      confirmationSuggestion.querySelector(".value").innerText = text;
+      confirmationSuggestion.classList.remove("hidden");
+    }
+  }
+
+  function addConfirmationContainer() {
+    confirmationContainer.insertAdjacentHTML("beforeend", `
+      <p class="title">Usaste sugerencias con IA sin modificar. ¿Querés revisarlas antes de guardar?</p>
+      <div class="confirmation-suggestions-items">
+        <div id="metatitle-confirmation-suggestion" class="confirmation-suggestion hidden">
+          <p class="type">Metatítulo</p>
+          <p class="value"></p>
+          <a href="#id_alt_title_metadata">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M5.80467 13.138L12 6.94267L9.05733 4L2.862 10.1953C2.77663 10.2807 2.71603 10.3876 2.68667 10.5047L2 14L5.49467 13.3133C5.612 13.284 5.71933 13.2233 5.80467 13.138ZM14 4.94267C14.25 4.69263 14.3904 4.35355 14.3904 4C14.3904 3.64645 14.25 3.30737 14 3.05733L12.9427 2C12.6926 1.75004 12.3536 1.60962 12 1.60962C11.6464 1.60962 11.3074 1.75004 11.0573 2L10 3.05733L12.9427 6L14 4.94267Z" fill="#417893"/>
+            </svg>
+            <span>Editar</span>
+          </a>
+        </div>
+        <div id="copy-para-redes-confirmation-suggestion" class="confirmation-suggestion hidden">
+          <p class="type">Copy para redes sociales:</p>
+          <p class="value"></p>
+          <a href="#id_copy_para_redes">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M5.80467 13.138L12 6.94267L9.05733 4L2.862 10.1953C2.77663 10.2807 2.71603 10.3876 2.68667 10.5047L2 14L5.49467 13.3133C5.612 13.284 5.71933 13.2233 5.80467 13.138ZM14 4.94267C14.25 4.69263 14.3904 4.35355 14.3904 4C14.3904 3.64645 14.25 3.30737 14 3.05733L12.9427 2C12.6926 1.75004 12.3536 1.60962 12 1.60962C11.6464 1.60962 11.3074 1.75004 11.0573 2L10 3.05733L12.9427 6L14 4.94267Z" fill="#417893"/>
+            </svg>
+            <span>Editar</span>
+          </a>
+        </div>
+      </div>
+    `);
+  }
+  addConfirmationContainer();
+
+  // encontrar el articulo id
+  const perplexityDiv = document.getElementById('perplexity-data');
+  const articleId = perplexityDiv.dataset.articleId;
+  const isAIUsed = perplexityDiv.dataset.articleIsAiUsed;
+
+  const perplexityBtn = document.createElement("button");
+  perplexityBtn.className = "button default";
+  perplexityBtn.id = "perplexity-send-button";
+  perplexityBtn.type = "button";
+  perplexityBtn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="17" viewBox="0 0 16 17" fill="none">
+      <g clip-path="url(#clip0_81_242)">
+        <path d="M14.9324 5.22667H13.3924V0.545333L8.38569 4.78133V0.605333H7.61503V4.736L2.99369 0.5V5.22667H1.06836V12.158H2.99369V16.5L7.61569 12.26V16.394H8.38569V12.3627L13.007 16.4833V12.158H14.9324V5.22667ZM12.6217 2.206V5.226H9.05169L12.6217 2.206ZM3.76436 2.25067L7.01036 5.22667H3.76369L3.76436 2.25067ZM1.83903 11.388V5.99667H7.07036L2.99369 10.0733V11.388H1.83903ZM3.76436 14.748V10.392L7.61503 6.54133V11.2153L3.76436 14.748ZM12.2364 14.7647L8.38569 11.3313V6.54067L12.2364 10.3913V14.7647ZM14.1624 11.388H13.007V10.0733L8.93036 5.99667H14.1624V11.388Z" fill="white"/>
+      </g>
+      <defs>
+        <clipPath id="clip0_81_242">
+          <rect width="16" height="16" fill="white" transform="translate(0 0.5)"/>
+        </clipPath>
+      </defs>
+    </svg>
+    <span>Generar sugerencias con la T<strong>IA</strong></span>
+  `;
+
+  const sessionStorageValue = sessionStorage.getItem("ldPerplexityUsed");
+
+  if ((sessionStorageValue === "empty_article" && !articleId) || sessionStorageValue === articleId || isAIUsed === "True") {
+    perplexityBtn.disabled = true;
+    perplexityBtn.classList.add("activated");
+    perplexityBtn.querySelector("span").innerText = "Ya se generaron sugerencias";
+  }
+
+  // Insertar botón de Generar sugerencia de IA
+  document.querySelector(`input[type="submit"][name="_continue"]`).after(perplexityBtn);
+
+  const inputHeadline = document.getElementById('id_headline');
+  const valorHeadline = inputHeadline ? inputHeadline.value.trim() : '';
+  const textareaBody = document.querySelector('textarea[id^="id_body-"]');
+  const valorBody = textareaBody ? textareaBody.value.trim() : '';
+
+  if (!valorHeadline || !valorBody) {
+    perplexityBtn.disabled = true;
+  }
+
+  inputHeadline.addEventListener("input", () => {
+    perplexityBtn.disabled = !inputHeadline.value || !textareaBody.value;
+  });
+
+  setTimeout(() => {
+    document.querySelector(".ace_text-input").addEventListener("input", function() {
+      perplexityBtn.disabled = !inputHeadline.value || !textareaBody.value;
+    });
+  }, 0);
+
+  // boton click evento
+  perplexityBtn.addEventListener('click', async function() {
+    const valorDesc = document.getElementById("id_deck") ? document.getElementById("id_deck").value.trim() : "";
+
+    setPerplexityBtnStatus(perplexityBtn, true, `
+      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
+        <path d="M8.5 2C4.91067 2 2 4.91067 2 8.5C2 12.0893 4.91067 15 8.5 15V13.3753C7.53594 13.3752 6.59356 13.0892 5.79203 12.5535C4.9905 12.0178 4.3658 11.2565 3.99693 10.3658C3.62806 9.47511 3.53159 8.49503 3.7197 7.5495C3.90781 6.60397 4.37206 5.73545 5.05376 5.05376C5.73545 4.37206 6.60397 3.90781 7.5495 3.7197C8.49503 3.53159 9.47511 3.62806 10.3658 3.99693C11.2565 4.3658 12.0178 4.9905 12.5535 5.79203C13.0892 6.59356 13.3752 7.53594 13.3753 8.5H15C15 4.91067 12.0893 2 8.5 2Z" fill="white"/>
+      </svg>
+      <span>Generando sugerencias</span>
+    `, 'loading');
+    try {
+      const response = await fetch('/admin/perplexity-ask/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+          titulo: inputHeadline.value.trim(),
+          cuerpo: textareaBody.value.trim(),
+          descripcion: valorDesc,
+          article_id: articleId
+        })
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        alert(data.message);
+        setPerplexityBtnStatus(perplexityBtn, false, `
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
+            <g clip-path="url(#clip0_83_261)">
+              <path d="M15.4324 5.22667H13.8924V0.545333L8.88569 4.78133V0.605333H8.11503V4.736L3.49369 0.5V5.22667H1.56836V12.158H3.49369V16.5L8.11569 12.26V16.394H8.88569V12.3627L13.507 16.4833V12.158H15.4324V5.22667ZM13.1217 2.206V5.226H9.55169L13.1217 2.206ZM4.26436 2.25067L7.51036 5.22667H4.26369L4.26436 2.25067ZM2.33903 11.388V5.99667H7.57036L3.49369 10.0733V11.388H2.33903ZM4.26436 14.748V10.392L8.11503 6.54133V11.2153L4.26436 14.748ZM12.7364 14.7647L8.88569 11.3313V6.54067L12.7364 10.3913V14.7647ZM14.6624 11.388H13.507V10.0733L9.43036 5.99667H14.6624V11.388Z" fill="white"/>
+            </g>
+            <defs>
+              <clipPath id="clip0_83_261">
+                <rect width="16" height="16" fill="white" transform="translate(0.5 0.5)"/>
+              </clipPath>
+            </defs>
+          </svg>
+          <span>Volver a generar sugerencias</span>
+        `);
+      } else {
+        sessionStorage.setItem("ldPerplexityUsed", articleId ? articleId : "empty_article");
+        document.getElementById("id_input_ia_used").value = "True";
+
+        setPerplexityBtnStatus(perplexityBtn, true, `
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
+            <g clip-path="url(#clip0_81_246)">
+              <path d="M15.4324 5.22667H13.8924V0.545333L8.88569 4.78133V0.605333H8.11503V4.736L3.49369 0.5V5.22667H1.56836V12.158H3.49369V16.5L8.11569 12.26V16.394H8.88569V12.3627L13.507 16.4833V12.158H15.4324V5.22667ZM13.1217 2.206V5.226H9.55169L13.1217 2.206ZM4.26436 2.25067L7.51036 5.22667H4.26369L4.26436 2.25067ZM2.33903 11.388V5.99667H7.57036L3.49369 10.0733V11.388H2.33903ZM4.26436 14.748V10.392L8.11503 6.54133V11.2153L4.26436 14.748ZM12.7364 14.7647L8.88569 11.3313V6.54067L12.7364 10.3913V14.7647ZM14.6624 11.388H13.507V10.0733L9.43036 5.99667H14.6624V11.388Z" fill="white"/>
+            </g>
+            <defs>
+              <clipPath id="clip0_81_246">
+                <rect width="16" height="16" fill="white" transform="translate(0.5 0.5)"/>
+              </clipPath>
+            </defs>
+          </svg>
+          <span>Ya se generaron sugerencias</span>
+        `, "activated");
+
+        if (data.message?.metatitles) {
+          generateSuggestionsList(
+            "metatitle",
+            document.querySelector(".form-row.field-alt_title_metadata"),
+            data.message.metatitles
+          );
+
+          const metatitleOptionButtons = document.querySelectorAll(".metatitle-option");
+          metatitleOptionButtons.forEach((button) => {
+            button.addEventListener("click", function(event) {
+              const text = button.closest("div").querySelector("p").textContent;
+              document.getElementById("id_alt_title_metadata").value = text;
+
+              toggleOptionButton(document.querySelector(".metatitle-option.activated"), false);
+
+              toggleOptionButton(button, true);
+
+              showConfirmationMessage("metatitle", text);
+            });
+          });
+        }
+        if (data.message?.copys) {
+          generateSuggestionsList(
+            "copy-para-redes",
+            document.querySelector(".form-row.field-copy_para_redes"),
+            data.message.copys
+          );
+
+          const copyParaRedesOptionButtons = document.querySelectorAll(".copy-para-redes-option");
+          copyParaRedesOptionButtons.forEach((button) => {
+            button.addEventListener("click", function(event) {
+              const text = button.closest("div").querySelector("p").textContent;
+              document.getElementById("id_copy_para_redes").value = text;
+
+              toggleOptionButton(document.querySelector(".copy-para-redes-option.activated"), false);
+
+              toggleOptionButton(button, true);
+
+              showConfirmationMessage("copy-para-redes", text);
+            });
+          });
+        }
+
+      }
+    } catch (err) {
+      const msg = "Ha ocurrido un error al comunicarse con la API. Por favor, inténtalo de nuevo más tarde.";
+      alert(msg);
+      setPerplexityBtnStatus(perplexityBtn);
+      console.error(err);
+    }
+  });
+
+  function resetSuggestionOption(type = "metatitle") {
+    const metatitleConfirmationSuggestion = document.getElementById("metatitle-confirmation-suggestion");
+    const copyParaRedesConfirmationSuggestion = document.getElementById("copy-para-redes-confirmation-suggestion");
+
+    const optionButtonSelector = type === "metatitle" ?
+      ".metatitle-option.activated" : ".copy-para-redes-option.activated";
+
+    const confirmationSuggestion = type === "metatitle" ? metatitleConfirmationSuggestion : copyParaRedesConfirmationSuggestion;
+    confirmationSuggestion.querySelector(".value").innerText = "";
+    confirmationSuggestion.classList.add("hidden");
+
+    const opitionButton = document.querySelector(optionButtonSelector);
+    if (opitionButton) {
+      opitionButton.classList.remove("activated");
+      opitionButton.innerHTML = "Usar";
+      opitionButton.disabled = false;
+    }
+
+    if (metatitleConfirmationSuggestion.classList.contains("hidden") &&
+      copyParaRedesConfirmationSuggestion.classList.contains("hidden")) {
+      confirmationContainer.classList.add("hidden");
+    }
+  }
+
+  document.getElementById("id_alt_title_metadata").addEventListener("input", function() {
+    resetSuggestionOption("metatitle");
+  });
+
+  document.getElementById("id_copy_para_redes").addEventListener("input", function() {
+    resetSuggestionOption("copy-para-redes");
+  });
+});

@@ -18,7 +18,7 @@ from django.utils.text import Truncator
 
 from tagging.models import Tag, TaggedItem
 
-from core.models import Article, ArticleCollection, Supplement, Category, Section
+from core.models import Article, ArticleCollection, Supplement, Category, Section, PerplexityAPISettings
 from core.forms import SendByEmailForm
 from core.utils import datetime_timezone
 
@@ -669,3 +669,13 @@ def randomgen():
         random.choice(string.ascii_letters)
         + ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(15))
     )
+
+
+@register.filter
+def in_group(user, group_name):
+    return user.groups.filter(name=group_name).exists()
+
+
+@register.simple_tag
+def get_nombre_del_asistente():
+    return PerplexityAPISettings.get_solo().nombre_del_asistente

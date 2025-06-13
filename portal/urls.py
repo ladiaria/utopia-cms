@@ -19,6 +19,7 @@ from core.views.edition import edition_detail, edition_list, edition_list_ajax
 from core.views.supplement import supplement_list
 from core.views.sw import service_worker
 from core.views.subscribe import subscribe
+from core.views.article import perplexity_ask
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
 from thedaily.models import Subscriber
@@ -241,6 +242,7 @@ urlpatterns = [
     path('epubparser/', include('epubparser.urls')),
     # Admin
     path('admin/doc/', include('django.contrib.admindocs.urls')),
+    path('admin/perplexity-ask/', perplexity_ask, name='perplexity_ask'),
     path('admin/', admin.site.urls),
     # Search
     path('buscar/', include('search.urls')),
