@@ -63,9 +63,9 @@
                     </span>
                   {% endif %}
                 {% endblock %}
-                <h1 style="Margin:0;color:inherit;font-family:Roboto,Arial,sans-serif;font-size:20px;line-height:1.2;font-weight:700;margin:0 15px;margin-bottom:0;margin-top:5px;padding:0;text-align:left;word-wrap:normal">
+                <h1 translate="no" style="Margin:0;color:inherit;font-family:Roboto,Arial,sans-serif;font-size:20px;line-height:1.2;font-weight:700;margin:0 15px;margin-bottom:0;margin-top:5px;padding:0;text-align:left;word-wrap:normal">
                   {% block extra_cover_title %}{% endblock %}
-                  <a href="{{ site_url }}{{ cover_article.get_absolute_url }}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}" style="Margin:0;color:#262626;font-family:Roboto,Arial,sans-serif;font-size:20px;font-weight:700;line-height:1.2;margin:0;padding:0;text-align:left;text-decoration:none">
+                  <a translate="no" href="{{ site_url }}{{ cover_article.get_absolute_url }}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}" style="Margin:0;color:#262626;font-family:Roboto,Arial,sans-serif;font-size:20px;font-weight:700;line-height:1.2;margin:0;padding:0;text-align:left;text-decoration:none">
                     {{ cover_article.headline|ldmarkup|bleach }}
                   </a>
                 </h1>
@@ -114,9 +114,9 @@
                           </span>
                         {% endif %}
                       {% endblock %}
-                      <h2 style="color:inherit;font-family:Roboto,Arial,sans-serif;font-size:20px;font-weight:700;line-height:1.2;margin:15px;margin-bottom:0;margin-top:8px;padding:0;text-align:left;word-wrap:normal">
+                      <h2 translate="no" style="color:inherit;font-family:Roboto,Arial,sans-serif;font-size:20px;font-weight:700;line-height:1.2;margin:15px;margin-bottom:0;margin-top:8px;padding:0;text-align:left;word-wrap:normal">
                         {% block extra_title %}{% endblock %}
-                        <a href="{{ site_url }}{{ article.get_absolute_url }}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}" style="Margin:0;color:#262626;font-family:Roboto,Arial,sans-serif;font-size:20px;font-weight:700;line-height:1.2;margin:0;padding:0;text-align:left;text-decoration:none">
+                        <a translate="no" href="{{ site_url }}{{ article.get_absolute_url }}?utm_source=newsletter&utm_medium=email&utm_campaign={{ newsletter_campaign }}" style="Margin:0;color:#262626;font-family:Roboto,Arial,sans-serif;font-size:20px;font-weight:700;line-height:1.2;margin:0;padding:0;text-align:left;text-decoration:none">
                           {{ article.headline|ldmarkup|bleach }}
                         </a>
                       </h2>
