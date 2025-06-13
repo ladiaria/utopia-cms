@@ -481,7 +481,7 @@ def perplexity_ask(request):
 
             api_key = getattr(settings, 'PERPLEXITY_API_KEY', None)
             if not api_key:
-                raise Exception(f'API key de Perplexity no configurada. valor:{api_key}')
+                raise Exception(f'API key de Perplexity no configurada.')
 
             url = config.endpoint
             headers = {

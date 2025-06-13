@@ -2,13 +2,14 @@
 {% load core_tags %}
 {% load static %}
 
-{% block content %}
-  {{ block.super }}
+{% block after_field_sets %}
   <div id="perplexity-data"
       data-article-id="{{ original.id }}" data-article-is-ai-used="{{ original.ia_used }}">
       {{ adminform.form.input_ia_used }}
   </div>
 {% endblock %}
+
+
 
 {% block extrahead %}
   {{ block.super }}
