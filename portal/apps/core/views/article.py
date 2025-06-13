@@ -466,7 +466,7 @@ def perplexity_ask(request):
         titulo = data.get('titulo', '')
         cuerpo = data.get('cuerpo', '')
         descripcion = data.get('descripcion', '')
-        # article_id = data.get('article_id', '')
+        article_id = data.get('article_id', '')
         api_response = None
 
         try:
@@ -479,9 +479,18 @@ def perplexity_ask(request):
                 if value == '':
                     raise ClienteException(error_message)
 
+            article = None
+            if article_id != '':
+                article = Article.objects.filter(id=article_id).first()
+                if article is not None:
+                    if article.ia_used:
+                        raise ClienteException("No puede usarse la IA mas de una vez.")
+                else:
+                    raise Exception("El articulo no existe.")
+
             api_key = getattr(settings, 'PERPLEXITY_API_KEY', None)
             if not api_key:
-                raise Exception(f'API key de Perplexity no configurada.')
+                raise Exception('API key de Perplexity no configurada.')
 
             url = config.endpoint
             headers = {
@@ -563,6 +572,10 @@ def perplexity_ask(request):
 
             if "metatitles" not in data or "copys" not in data:
                 raise ValueError("perplexity no retorno 'metatitles' o 'copys'.")
+
+            if article is not None:
+                article.ia_used=True
+                article.save()
 
             response = {'error': False, 'message': data}
 
