@@ -16,6 +16,17 @@
   min-width: 13.75rem;
 }
 
+#perplexity-send-button.loading svg {
+  animation: rotate 2s linear infinite;
+  transform-origin: center center;
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 #perplexity-send-button.activated,
 #perplexity-send-button.activated:hover {
   background-color: #CCC;

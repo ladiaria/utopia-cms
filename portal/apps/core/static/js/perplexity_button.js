@@ -1,9 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-  if (sessionStorage.getItem("perplexity")) {
-    console.log('ya usaste la IA en la creación de este artículo');
-  }
-
   function setPerplexityBtnStatus(button, disabled = false, html = 'Enviar a Perplexity', className = "") {
     button.disabled = disabled;
     button.innerHTML = html;
@@ -92,8 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // encontrar el articulo id
   const perplexityDiv = document.getElementById('perplexity-data');
   const articleId = perplexityDiv.dataset.articleId;
-
-  console.log(articleId)
+  const isAIUsed = perplexityDiv.dataset.articleIsAiUsed;
 
   const perplexityBtn = document.createElement("button");
   perplexityBtn.className = "button default";
@@ -110,8 +105,14 @@ document.addEventListener('DOMContentLoaded', function() {
         </clipPath>
       </defs>
     </svg>
-    <span>Generar sugerencias con IA</span>
+    <span>Generar sugerencias con la T<strong>IA</strong></span>
   `;
+
+  if (sessionStorage.getItem("ldPerplexityUsed") || isAIUsed) {
+    perplexityBtn.disabled = true;
+    perplexityBtn.classList.add("activated");
+    perplexityBtn.querySelector("span").innerText = "Ya se generaron sugerencias";
+  }
 
   // Insertar botón de Generar sugerencia de IA
   document.querySelector(`input[type="submit"][name="_continue"]`).after(perplexityBtn);
@@ -119,15 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // boton click evento
   perplexityBtn.addEventListener('click', async function() {
 
-    sessionStorage.setItem("perplexity", true);
-
-    if (articleId != '') {
-      console.log('Article ID:', articleId);
-    } else {
-      alert('El articulo debe ser guardado antes de usar el boton de sugerencias.');
-      // setPerplexityBtnStatus(btn);
-      return;
-    }
+    sessionStorage.setItem("ldPerplexityUsed", true);
 
     const inputHeadline = document.getElementById('id_headline');
     const valorHeadline = inputHeadline ? inputHeadline.value.trim() : '';
@@ -147,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <path d="M8.5 2C4.91067 2 2 4.91067 2 8.5C2 12.0893 4.91067 15 8.5 15V13.3753C7.53594 13.3752 6.59356 13.0892 5.79203 12.5535C4.9905 12.0178 4.3658 11.2565 3.99693 10.3658C3.62806 9.47511 3.53159 8.49503 3.7197 7.5495C3.90781 6.60397 4.37206 5.73545 5.05376 5.05376C5.73545 4.37206 6.60397 3.90781 7.5495 3.7197C8.49503 3.53159 9.47511 3.62806 10.3658 3.99693C11.2565 4.3658 12.0178 4.9905 12.5535 5.79203C13.0892 6.59356 13.3752 7.53594 13.3753 8.5H15C15 4.91067 12.0893 2 8.5 2Z" fill="white"/>
       </svg>
       <span>Generando sugerencias</span>
-    `);
+    `, 'loading');
     try {
       const response = await fetch('/admin/perplexity-ask/', {
         method: 'POST',
@@ -177,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </clipPath>
             </defs>
           </svg>
-          <span>Volver a preguntarle a la TIA</span>
+          <span>Volver a generar sugerencias</span>
         `);
       } else {
 
@@ -192,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </clipPath>
             </defs>
           </svg>
-          <span>Ya se generaron sugerencias con IA</span>
+          <span>Ya se generaron sugerencias</span>
         `, "activated");
 
         if (data.message?.metatitles) {
