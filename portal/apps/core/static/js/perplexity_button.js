@@ -108,7 +108,9 @@ document.addEventListener('DOMContentLoaded', function() {
     <span>Generar sugerencias con la T<strong>IA</strong></span>
   `;
 
-  if (sessionStorage.getItem("ldPerplexityUsed") || isAIUsed) {
+  const sessionStorageValue = sessionStorage.getItem("ldPerplexityUsed");
+
+  if (sessionStorageValue === "empty_article" || sessionStorageValue === articleId || isAIUsed === "True") {
     perplexityBtn.disabled = true;
     perplexityBtn.classList.add("activated");
     perplexityBtn.querySelector("span").innerText = "Ya se generaron sugerencias";
@@ -117,22 +119,27 @@ document.addEventListener('DOMContentLoaded', function() {
   // Insertar botón de Generar sugerencia de IA
   document.querySelector(`input[type="submit"][name="_continue"]`).after(perplexityBtn);
 
+  const inputHeadline = document.getElementById('id_headline');
+  const valorHeadline = inputHeadline ? inputHeadline.value.trim() : '';
+  const textareaBody = document.querySelector('textarea[id^="id_body-"]');
+  const valorBody = textareaBody ? textareaBody.value.trim() : '';
+
+  if (!valorHeadline || !valorBody) {
+    perplexityBtn.disabled = true;
+  }
+
+  inputHeadline.addEventListener("input", () => {
+    perplexityBtn.disabled = !inputHeadline.value || !textareaBody.value;
+  });
+
+  setTimeout(() => {
+    document.querySelector(".ace_text-input").addEventListener("input", function() {
+      perplexityBtn.disabled = !inputHeadline.value || !textareaBody.value;
+    });
+  }, 0);
+
   // boton click evento
   perplexityBtn.addEventListener('click', async function() {
-
-    sessionStorage.setItem("ldPerplexityUsed", true);
-
-    const inputHeadline = document.getElementById('id_headline');
-    const valorHeadline = inputHeadline ? inputHeadline.value.trim() : '';
-
-    if (!valorHeadline) {
-      alert('Por favor, escribe una pregunta para Perplexity.');
-      return;
-    }
-
-    // Selecciona el textarea del cuerpo (body)
-    const textareaBody = document.querySelector('textarea[id^="id_body-"]');
-    const valorBody = textareaBody ? textareaBody.value.trim() : '';
     const valorDesc = document.getElementById("id_deck") ? document.getElementById("id_deck").value.trim() : "";
 
     setPerplexityBtnStatus(perplexityBtn, true, `
@@ -149,8 +156,8 @@ document.addEventListener('DOMContentLoaded', function() {
           'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
         },
         body: JSON.stringify({
-          titulo: valorHeadline,
-          cuerpo: valorBody,
+          titulo: inputHeadline.value.trim(),
+          cuerpo: textareaBody.value.trim(),
           descripcion: valorDesc,
           article_id: articleId
         })
@@ -173,6 +180,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <span>Volver a generar sugerencias</span>
         `);
       } else {
+        sessionStorage.setItem("ldPerplexityUsed", articleId ? articleId : "empty_article");
+        document.getElementById("id_input_ia_used").value = "True";
 
         setPerplexityBtnStatus(perplexityBtn, true, `
           <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
