@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const sessionStorageValue = sessionStorage.getItem("ldPerplexityUsed");
 
-  if (sessionStorageValue === "empty_article" || sessionStorageValue === articleId || isAIUsed === "True") {
+  if ((sessionStorageValue === "empty_article" && !articleId) || sessionStorageValue === articleId || isAIUsed === "True") {
     perplexityBtn.disabled = true;
     perplexityBtn.classList.add("activated");
     perplexityBtn.querySelector("span").innerText = "Ya se generaron sugerencias";
