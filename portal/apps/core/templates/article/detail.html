@@ -43,9 +43,12 @@
 {% endblock %}
 
 {% block header_scripts %}
+  {{ block.super }}
   <script type="text/javascript">
     $(function(){
-      $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
+      {% if ad_load|default_if_none:True %}
+        $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
+      {% endif %}
       {% if request.signupwall_header %}
         $("#close-article-alert").on("click", function(){
           $(this).parent().hide();

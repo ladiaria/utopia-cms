@@ -21,11 +21,14 @@
 {% endblock %}
 
 {% block header_scripts %}
-  <script type="text/javascript">
-    $(function(){
-      $('#header-pub').load("{% url 'adzone_ad_content' %}");
-    });
-  </script>
+  {{ block.super }}
+  {% if ad_load|default_if_none:True %}
+    <script type="text/javascript">
+      $(function(){
+        $('#header-pub').load("{% url 'adzone_ad_content' %}");
+      });
+    </script>
+  {% endif %}
   {% if unsubscribed_newsletters %}
     <script src="{% static 'js/unsubscribed_nls.js' %}"></script>
   {% endif %}
