@@ -329,7 +329,9 @@
   </head>
   <body class="{% if user.is_authenticated %}logged-in{% endif %} {% if is_portada %}frontpage {% else %}interior {% endif %}{% block body_class %}{% endblock %} {{ publication.slug|default:DEFAULT_PUB }}-pub">
     <a class="skip-main" href="#main-content">Saltar a contenido</a>
-    {% block page_loader %}{% endblock %}
+
+    {% block before_navbar %}{% endblock %}
+
     {% if not debug and GTM_CONTAINER_ID %}
       <!-- Google Tag Manager (noscript) -->
       <noscript>
@@ -425,7 +427,6 @@
     {% endblock footer_block %}
 
     {% block cookie_banner %}{% endblock %}
-
 
     {% block nav_mobile %}
       <div id="nav-mobile" class="nav-mobile navbar-fixed">

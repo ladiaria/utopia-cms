@@ -7,22 +7,20 @@
 
 {% block body_class %}login no-footer{% endblock %}
 
+{% block before_navbar %}{% endblock %}
+
 {% block content %}
   <main class="ld-content">
     <div class="row">
       <div class="col s12 m8 offset-m2">
         <h1 class="ld-title-huge align-center u-mb-60">Cerraste la sesión con éxito</h1>
-
         <div class="align-center ld-text-secondary">
           <a href="{% url 'account-login' %}">Ingresar nuevamente</a><br>
           <a href="{% url 'home' %}">Ir a portada</a>
         </div>
-
       </div>
     </div>
   </main>
 {% endblock %}
 
-{% block footer_block %}
-  {% include 'footer_simple.html' %}
-{% endblock footer_block %}
+{% block footer_block %}{% include 'footer_simple.html' %}{% endblock footer_block %}
