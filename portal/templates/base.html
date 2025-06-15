@@ -327,7 +327,7 @@
     <!-- End JavaScript -->
 
   </head>
-  <body class="{% if user.is_authenticated %}logged-in{% endif %} {% if is_portada %}frontpage {% else %}interior {% endif %}{% block body_class %}{% endblock %} {{ publication.slug|default:DEFAULT_PUB }}-pub">
+  <body id="main-body" class="{% if user.is_authenticated %}logged-in{% endif %} {% if is_portada %}frontpage {% else %}interior {% endif %}{% block body_class %}{% endblock %} {{ publication.slug|default:DEFAULT_PUB }}-pub">
     <a class="skip-main" href="#main-content">Saltar a contenido</a>
 
     {% block before_navbar %}{% endblock %}
