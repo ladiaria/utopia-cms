@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load static ldml %}
+{% load static bleach_tags ldml %}
 
 {% block page_title %}Buscar en {{ site.name }}{% endblock %}
 
@@ -37,7 +37,11 @@
             {% for article in page_results|default:results.object_list %}
               <li>
                 <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup }}</a>
-                <div class="searchdes">{{ article.get_lead|ldmarkup }}</div>
+                <div class="searchdes">
+                  {% with sr=article.as_search_result %}
+                    {% if sr %}<p class="mb-2">{{ sr|bleach }}</p>{% endif %}
+                  {% endwith %}
+                </div>
                 <div class="searchfooter">
                   <span class="searchdate">{{ article.date_published|date:"j.n.y" }} | </span>
                   {% if article.section %}

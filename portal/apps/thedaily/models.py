@@ -587,7 +587,10 @@ def user_pre_save(sender, instance, **kwargs):
         changeset['last_name'] = instance.last_name
     if changeset or actualusr.email != instance.email:
         try:
-            contact_id = instance.subscriber.contact_id if instance.subscriber else None
+            contact_id = (
+                instance.subscriber.contact_id
+                if hasattr(instance, 'subscriber') and instance.subscriber else None
+            )
             changeset.update({'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email})
             put_data_to_crm(api_uri, changeset)
         except requests.exceptions.RequestException:

@@ -32,7 +32,7 @@ from crispy_forms.utils import get_template_pack
 from phonenumber_field.formfields import PhoneNumberField
 from phonenumber_field.widgets import RegionalPhoneNumberWidget
 
-from .models import Subscription, Subscriber, SubscriptionPrices, email_extra_validations, email_i18n, ALPHANUM_STR
+from .models import Subscription, Subscriber, email_extra_validations, email_i18n, ALPHANUM_STR
 from .utils import get_all_newsletters
 from .exceptions import EmailValidationError
 from . import get_app_template
@@ -804,10 +804,11 @@ class PhoneSubscriptionForm(CrispyForm):
 
 
 class WebSubscriptionForm(CrispyModelForm):
-    subscription_type_prices = ChoiceField(
-        choices=SubscriptionPrices.objects.values_list('subscription_type', flat=True),
-        widget=HiddenInput(),
-    )
+    # TODO: check if this is needed
+    # subscription_type_prices = ChoiceField(
+    #     choices=SubscriptionPrices.objects.values_list('subscription_type', flat=True),
+    #     widget=HiddenInput(),
+    # )
     if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
         terms_and_conds_accepted = terms_and_conditions_field()
 

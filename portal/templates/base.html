@@ -132,6 +132,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- End Icons -->
 
+    <!-- Fonts -->
+    {% block base_fonts %}{% endblock %}
+    {% block base_fonts_css %}{% endblock %}
+    <!-- End Fonts -->
+
     <!-- CSS -->
     {% compress css %}
       {% block base_css %}
@@ -414,7 +419,7 @@
     {% block main_close %}</main>{% endblock %}
 
     {% block footer_block %}
-      <footer class="footer-portada{% if category %} footer-{{ category.slug }}{% endif %}">
+      <footer class="footer-portada{% if category %} footer-{{ category.slug }}{% endif %} {% block footer_block_extra_css %}{% endblock %}">
         {% include footer_template %}
       </footer>
     {% endblock footer_block %}

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
 import locale
@@ -63,7 +64,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.timezone import datetime, timedelta, make_aware, now, template_localtime
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
-from django.utils.html import escape
+from django.utils.html import escape, strip_tags
 from django.utils.translation import gettext_lazy as _
 
 from apps import blocklisted
@@ -96,6 +97,9 @@ from .utils import (
     article_slug_customizable,
     revoke_scheduled_tasks,
 )
+
+
+NEWLINE_COLLAPSE_RE = re.compile(r'( *\n)( *\n)+')
 
 
 @celery_app.task(name="article-publishing")
@@ -1119,7 +1123,7 @@ class Journalist(Model):
     name = CharField('nombre', max_length=100, unique=True)
     email = EmailField(blank=True, null=True)
     slug = SlugField('slug', max_length=100, unique=True)
-    image = ImageField('imagen', upload_to='journalist', blank=True, null=True)
+    image = ImageField('imagen', upload_to='journalist', blank=True, null=True, max_length=128)
     bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
     job = CharField(
         'trabajo',
@@ -1267,9 +1271,7 @@ class ArticleBase(Model, CT):
         'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
     body = locate(settings.CORE_ARTICLE_BODY_FIELD_CLASS)("cuerpo")
-    header_display = CharField(
-        'estilo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
-    )
+    header_display = CharField('estilo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, default='BG')
     home_header_display = CharField(
         'tipo de cabezal cuando es portada',
         max_length=2,
@@ -1375,9 +1377,14 @@ class ArticleBase(Model, CT):
 
     @staticmethod
     def collisions(slug, date_value):
+        nowval = now()
         return Article.objects.filter(
             Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
-            | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
+            | Q(is_published=False) & (
+                Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month)
+                # also check for current dt because on save(), the first dt that is used is the current dt
+                | Q(date_created__year=nowval.year) & Q(date_created__month=nowval.month)
+            ),
             slug=slug,
         )
 
@@ -1462,15 +1469,21 @@ class ArticleBase(Model, CT):
         return bool(self.deck)
 
     def get_deck(self):
-        if self.deck:
-            return self.deck
-        return ''
+        return self.deck or ""
 
     def has_lead(self):
         return bool(self.lead)
 
     def get_lead(self):
         return self.lead or self.body[: self.body.find('\n')]
+
+    def as_search_result(self):
+        if self.has_lead() or self.has_deck():
+            result = ldmarkup(self.lead or self.deck)
+        else:
+            fb = self.formatted_body()
+            result = fb[:fb.find("\n")]
+        return result
 
     def get_keywords(self):
         if self.keywords:
@@ -1670,13 +1683,14 @@ class ArticleBase(Model, CT):
         return cleanhtml(ldmarkup(self.deck))
 
     def unformatted_lead(self):
-        return cleanhtml(ldmarkup(self.lead))
+        return cleanhtml(ldmarkup(self.lead or ""))
 
     def formatted_body(self, amp=False):
         return (amp_ldmarkup if amp else ldmarkup)(self.body, self.id)
 
     def unformatted_body(self):
-        return cleanhtml(self.formatted_body())
+        # this is done to also remove the recuadro and imagen marks and then collapse multiple newlines they left.
+        return NEWLINE_COLLAPSE_RE.sub('\n', strip_tags(self.formatted_body()))
 
     def reading_time(self):
         """
@@ -2528,7 +2542,12 @@ class ArticleBodyImage(Model):
     )
     article = ForeignKey(Article, on_delete=CASCADE, verbose_name='artículo', related_name='body_image')
     image = ForeignKey(Photo, on_delete=CASCADE, verbose_name='foto', related_name='photo')
-    display = CharField('display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
+    display = CharField(
+        'display',
+        max_length=2,
+        choices=DISPLAY_CHOICES,
+        default=getattr(settings, 'CORE_ARTICLEBODYIMAGE_DISPLAY_CHOICES_DEFAULT', 'BG'),
+    )
     order = PositiveSmallIntegerField('orden', null=True, blank=True)
 
     def __str__(self):

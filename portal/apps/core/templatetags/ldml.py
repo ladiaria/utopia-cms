@@ -50,7 +50,7 @@ def get_extension(match, aid):
     idx = kw_idx(match)
     try:
         extension = ArticleExtension.objects.get(article_id=aid, order=idx)
-    except ArticleExtension.DoesNotExist:
+    except (ArticleExtension.DoesNotExist, ArticleExtension.MultipleObjectsReturned):
         return ''
     return render_to_string('core/templates/article/extension.html', {'extension': extension})
 

@@ -15,18 +15,19 @@ def journalist_detail(request, journalist_job, journalist_slug, template_name=No
     if use_job:
         get_kwargs["job"] = journalist_job
     try:
-        journalist = Journalist.objects.get(**get_kwargs)
+        journalist = Journalist.objects.filter(**get_kwargs).first()
+        assert journalist
         if not use_job and journalist_job in ("PE", "CO"):
             if journalist.job != journalist_job:
                 raise Http404
             return HttpResponsePermanentRedirect(journalist.get_absolute_url())
-    except Journalist.DoesNotExist:
+    except AssertionError:
         if use_job:
             # Maybe it has the other job, if so, redirect
             get_kwargs["job"] = 'CO' if journalist_job == 'PE' else 'PE'
             journalist = get_object_or_404(Journalist, **get_kwargs)
             return HttpResponsePermanentRedirect(journalist.get_absolute_url())
-        raise
+        raise Http404
 
     articles = journalist.articles_core.filter(is_published=True)
     paginator, page = Paginator(articles, 20), request.GET.get('pagina')

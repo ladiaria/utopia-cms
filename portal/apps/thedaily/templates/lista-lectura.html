@@ -12,6 +12,7 @@
 {% endblock %}
 
 {% block header_scripts %}
+  {{ block.super }}
   <script type="text/javascript">
     $(function(){
       $.each($("li.tab a").not(".active"), function(k, v){

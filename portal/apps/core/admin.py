@@ -375,14 +375,9 @@ class SectionAdmin(ModelAdmin):
     list_editable = ('name', 'home_order', 'in_home')
     list_filter = ('category', 'in_home', 'home_block_all_pubs', 'home_block_show_featured', "publications")
     list_display = (
-        'id',
-        'home_order',
-        'name',
-        'category',
-        "included_in_category_menu_short",
-        'in_home',
-        'get_publications',
-        'articles_count',
+        ('id', 'home_order', 'name', 'category', "included_in_category_menu_short", 'in_home')
+        + (('get_publications',) if Publication.multi() else ())
+        + ('articles_count',)
     )
     search_fields = ('name', 'name_in_category_menu', 'contact')
     fieldsets = (
@@ -413,6 +408,9 @@ class SectionAdmin(ModelAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         update_category_home()
+
+    class Media:
+        css = {'all': ('css/admin_section.css',)}
 
 
 class SortableArticleExtensionInlineForm(ModelForm):

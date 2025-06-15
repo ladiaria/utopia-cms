@@ -1,5 +1,5 @@
-
 from builtins import object
+import inspect
 
 from django.conf import settings
 from django_elasticsearch_dsl import Document, fields
@@ -23,9 +23,22 @@ class ArticleDocument(Document):
     # other needed fields (Article methods) to render the results
     get_absolute_url = fields.TextField(attr="get_absolute_url")
     get_type_display = fields.TextField(attr="get_type_display")
-    get_lead = fields.TextField(attr="get_lead")
+    as_search_result = fields.TextField(attr="as_search_result")
     # section is also needed to render the results
     section = fields.TextField()
+
+    def update(self, instance, refresh=None, action="index", **kwargs):
+        # use stack info to avoid call to parent update if it came from a reversion-show-revision because they do
+        # call save also when you're only viewing the form. Note that you must left unchanged (calling father)
+        # when a revision is selected and confirmed to be reverted to it.
+        # Against with we can imagine, "revert" is called only from this "revision view only" and not when a revert is
+        # confirmed, then when "revert" is in the stack, we'll not call super.update.
+        # To add more robustness, the whole call pattern to avoid update can be matched, when I wrote this, the pattern
+        # was: revert, _safe_revert, revert, _revision_revisionform_view, revision_view, revision_view.
+        for frame in inspect.stack():
+            if frame.function == "revert":
+                return
+        return super().update(instance, refresh, action, **kwargs)
 
     def prepare_section(self, instance):
         return str(instance.section) if instance.section else ''
