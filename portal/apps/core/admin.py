@@ -591,7 +591,6 @@ def get_editions():
 @admin.register(Article, site=site)
 class ArticleAdmin(VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
-    readonly_fields = ('ia_used',)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
     change_form_template = "core/templates/admin/core/article/change_form.html"
@@ -637,7 +636,6 @@ class ArticleAdmin(VersionAdmin):
                     'alt_desc_newsletters',
                     'lead',
                     'body',
-                    'ia_used',
                 ),
                 'classes': ('wide',)
             },
