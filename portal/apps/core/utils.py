@@ -195,3 +195,8 @@ def smart_quotes(value):
     value = re.sub("\"(?=[¿¡\‘\'\(\[ÑÁÉÍÓÚñáéíóú])", "“", value)
     value = re.sub("(?<=[?!\’\'\)ÑÁÉÍÓÚñáéíóú\.\%\]])\"", "”", value)
     return value
+
+
+def ia_use_group(user):
+    # Allow users in 'ia_use' group only
+    return user.groups.filter(name='use_ia').exists()

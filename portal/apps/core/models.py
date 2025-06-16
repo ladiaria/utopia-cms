@@ -1758,7 +1758,6 @@ class Article(ArticleBase):
     )
 
     copy_para_redes = TextField(
-        max_length=200,
         blank=True,
     )
 

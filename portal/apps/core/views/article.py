@@ -27,6 +27,8 @@ from django.views.decorators.vary import vary_on_cookie
 from django.template import Engine, TemplateDoesNotExist
 from django.template.defaultfilters import slugify
 from django.utils.timezone import timedelta, now, datetime, utc
+from django.http import JsonResponse
+from django.contrib.auth.decorators import user_passes_test
 
 from actstream.models import following
 from favit.models import Favorite
@@ -38,10 +40,8 @@ from decorators import decorate_if_no_auth, decorate_if_auth
 from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
 from core.models import Publication, Category, Article, ArticleUrlHistory, PerplexityAPISettings
 from thedaily.templatetags.thedaily_tags import has_restricted_access
+from core.utils import ia_use_group
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.admin.views.decorators import staff_member_required
 
 
 logging.basicConfig(level=logging.INFO)
@@ -398,8 +398,9 @@ Podés ver el artículo aquí: %(url)s
     return HttpResponse(json.dumps(data), content_type="application/json")
 
 
-@csrf_exempt
-@staff_member_required
+@never_cache
+@login_required
+@user_passes_test(ia_use_group)
 def perplexity_ask(request):
     def extract_valid_json(response: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -453,6 +454,17 @@ def perplexity_ask(request):
             return parsed_json
         except json.JSONDecodeError as e:
             raise ValueError("Failed to parse valid JSON from response content") from e
+
+    def response_validation(input_data):
+        len_msg_error = "perplexity no retorno 'metatitles' o 'copys' en el formato esperado."
+        if "metatitles" not in input_data or "copys" not in input_data:
+            raise ValueError("perplexity no retorno 'metatitles' o 'copys'.")
+        elif len(input_data["copys"]) != schema["properties"]["copys"]["maxItems"] or \
+                len(input_data["metatitles"]) != schema["properties"]["metatitles"]["maxItems"]:
+            raise ValueError(f"{len_msg_error}: {input_data}")
+        elif len(input_data["copys"]) != schema["properties"]["copys"]["minItems"] or \
+                len(input_data["metatitles"]) != schema["properties"]["metatitles"]["minItems"]:
+            raise ValueError(f"{len_msg_error}: {input_data}")
 
     if request.method == 'POST':
         config = PerplexityAPISettings.get_solo()
@@ -513,7 +525,30 @@ def perplexity_ask(request):
 
             full_prompt = default_context.replace("{titulo}", titulo).replace("{cuerpo}", cuerpo)
 
-            full_prompt += "Por favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys"
+            # the following `prompt_suffix` sting is need at end of the pront in order to fix bug in the perplexity api,
+            # it was not respeting the schema sent bc the input pront need in some way to match the schema, the fix
+            # found is to be explicit in the pront
+            prompt_suffix = """
+            \n Por favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys.
+            - El campo "metatitles" debe ser un array de exactamente 3 strings, cada uno con un metatítulo diferente y adecuado para Google Discover, siguiendo el estilo de la diaria.
+            - El campo "copys" debe ser un array de exactamente 2 strings. Cada string debe incluir primero el copy para redes sociales y, en la misma string y separado por un salto de línea, los hashtags correspondientes.
+            - No agregues elementos adicionales ni comentarios fuera del objeto JSON.
+
+            Ejemplo de formato esperado:
+            {
+              "metatitles": [
+                "Metatítulo 1",
+                "Metatítulo 2",
+                "Metatítulo 3"
+              ],
+              "copys": [
+                "Copy para redes sociales 1.\\n#Hashtag1 #Hashtag2",
+                "Copy para redes sociales 2.\\n#Hashtag3 #Hashtag4"
+              ]
+            }
+            """
+
+            full_prompt += prompt_suffix
 
             schema = {
                 "type": "object",
@@ -570,8 +605,7 @@ def perplexity_ask(request):
             api_response.raise_for_status()
             data = extract_valid_json(api_response.json())
 
-            if "metatitles" not in data or "copys" not in data:
-                raise ValueError("perplexity no retorno 'metatitles' o 'copys'.")
+            response_validation(data)
 
             if article is not None:
                 article.ia_used=True
