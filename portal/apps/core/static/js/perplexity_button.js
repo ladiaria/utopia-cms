@@ -243,6 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         }
 
+        window.scrollTo(0, 0);
       }
     } catch (err) {
       const msg = "Ha ocurrido un error al comunicarse con la API. Por favor, inténtalo de nuevo más tarde.";
