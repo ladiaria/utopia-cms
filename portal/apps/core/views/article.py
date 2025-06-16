@@ -59,10 +59,11 @@ def get_article_detail_extra_context(request):
     """
     extra_context_module_path = getattr(settings, "ARTICLE_DETAIL_EXTRA_CONTEXT_MODULE", None)
     extra_context = {}
+    credits = getattr(request, "credits", 0)
     if extra_context_module_path and request.user.is_authenticated and request.user.subscriber:
         try:
             get_extra_context = import_from_string(extra_context_module_path)
-            extra_context = get_extra_context(request.user)
+            extra_context = get_extra_context(request.user, credits)
         except ImportError as e:
             if settings.DEBUG:
                 print(f"Error importing extra context: {e}")
