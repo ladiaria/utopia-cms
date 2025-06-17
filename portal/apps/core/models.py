@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.core.validators import MinValueValidator, MaxValueValidator
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
 import locale
@@ -50,6 +51,8 @@ from django.db.models import (
     SET_NULL,
     CASCADE,
     URLField,
+    TextChoices,
+    FloatField,
 )
 from django.db.models.signals import post_save
 from django.db.utils import OperationalError
@@ -2656,72 +2659,73 @@ class PushNotification(Model):
         return "%s - %s" % (self.tag, self.message)
 
 
-from django.db.models import (
-    URLField, CharField, PositiveIntegerField, TextField, TextChoices
-)
-from solo.models import SingletonModel
-
 class PerplexityAPISettings(SingletonModel):
     class PerplexityModelChoices(TextChoices):
-        SONAR_PRO = 'sonar-pro', 'sonar-pro'
-        SONAR = 'sonar', 'sonar'
-        SONAR_REASONING_PRO = 'sonar-reasoning-pro', 'sonar-reasoning-pro'
-        SONAR_REASONING = 'sonar-reasoning', 'sonar-reasoning'
-        SONAR_DEEP_RESEARCH = 'sonar-deep-research', 'sonar-deep-research'
-        R1_1776 = 'r1-1776', 'r1-1776'
+        SONAR_PRO = "sonar-pro", "sonar-pro"
+        SONAR = "sonar", "sonar"
+        SONAR_REASONING_PRO = "sonar-reasoning-pro", "sonar-reasoning-pro"
+        SONAR_REASONING = "sonar-reasoning", "sonar-reasoning"
+        SONAR_DEEP_RESEARCH = "sonar-deep-research", "sonar-deep-research"
+        R1_1776 = "r1-1776", "r1-1776"
 
-    nombre_del_asistente = CharField(
-        max_length=50,
-        default='tIA',
-        help_text='Nombre del asistente IA a utilizar'
-    )
+    nombre_del_asistente = CharField(max_length=50, default="tIA", help_text="Nombre del asistente IA a utilizar")
 
     class WebSearchContextSizeChoices(TextChoices):
-        LOW = 'low', 'low'
-        MEDIUM = 'medium', 'medium'
-        HIGH = 'high', 'high'
+        LOW = "low", "low"
+        MEDIUM = "medium", "medium"
+        HIGH = "high", "high"
 
-    activar_asistente = BooleanField(default=True, help_text='para activar o desactivar el uso del asistente IA ')
+    activar_asistente = BooleanField(default=True, help_text="para activar o desactivar el uso del asistente IA ")
 
     endpoint = URLField(
-        default='https://api.perplexity.ai/chat/completions',
-        help_text='Endpoint de la API de Perplexity'
+        default="https://api.perplexity.ai/chat/completions", help_text="Endpoint de la API de Perplexity"
     )
     model = CharField(
         max_length=50,
         choices=PerplexityModelChoices.choices,
         default=PerplexityModelChoices.SONAR,
-        help_text='Modelo de IA a utilizar'
+        help_text="Modelo de IA a utilizar",
+    )
+    temperature = FloatField(
+        validators=[MinValueValidator(0), MaxValueValidator(2)],
+        blank=True,
+        null=True,
+        help_text="La cantidad de aleatoriedad en la respuesta, valorada entre 0 y 2. "
+        "Los valores bajos (por ejemplo, 0.1) hacen que la salida sea más enfocada, "
+        "determinista y menos creativa. Los valores altos (por ejemplo, 1.5) hacen "
+        "que la salida sea más aleatoria y creativa. Usa valores bajos para tareas de "
+        "recuperación de información o hechos y valores altos para aplicaciones creativas. "
+        "Por defecto se usa 0.2",
     )
     context_size = CharField(
         max_length=10,
         choices=WebSearchContextSizeChoices.choices,
         default=WebSearchContextSizeChoices.LOW,
-        help_text='Opcion "search_context_size" a utilizar: low, medium o high'
+        help_text='Opcion "search_context_size" a utilizar: low, medium o high',
     )
     search_domain_filter = CharField(
         max_length=500,
         blank=True,
-        default='ladiaria.com.uy',
-        help_text='Dominios permitidos o restringidos, separados por coma, '
-                  'si queires excliur alguno use "-" delante del dominio, ej. -redis.com'
+        default="ladiaria.com.uy",
+        help_text="Dominios permitidos o restringidos, separados por coma, "
+        'si queires excliur alguno use "-" delante del dominio, ej. -redis.com',
     )
     max_tokens = PositiveIntegerField(
-        blank=True, null=True,
-        help_text='Máximo de tokens por respuesta, si no se configura se usa '
-                  'el valor por defecto que depende del modelo escogido.'
+        blank=True,
+        null=True,
+        help_text="Máximo de tokens por respuesta, si no se configura se usa "
+        "el valor por defecto que depende del modelo escogido.",
     )
     default_context = TextField(
-        default='Responde en español de manera clara y concisa.',
-        help_text='Contexto por defecto que siempre se enviará a Perplexity'
+        default="Responde en español de manera clara y concisa.",
+        help_text="Contexto por defecto que siempre se enviará a Perplexity",
     )
 
-
     def get_domain_list(self):
-        return [d.strip() for d in self.search_domain_filter.split(',') if d.strip()]
+        return [d.strip() for d in self.search_domain_filter.split(",") if d.strip()]
 
     def get_conocimiento(self):
-        return [line.strip() for line in self.conocimiento.strip().split('\n') if line.strip()]
+        return [line.strip() for line in self.conocimiento.strip().split("\n") if line.strip()]
 
     def __str__(self):
         return "Configuración de la API de Perplexity"
