@@ -44,7 +44,6 @@ from thedaily.templatetags.thedaily_tags import has_restricted_access
 from core.utils import ia_use_group
 
 
-
 logging.basicConfig(level=logging.INFO)
 
 standard_library.install_aliases()
@@ -473,11 +472,11 @@ def perplexity_ask(request):
                 raise ValueError("No </think> marker found and content is not valid JSON") from e
 
         # Extract the substring after the marker.
-        json_str = content[idx + len(marker):].strip()
+        json_str = content[idx + len(marker) :].strip()
 
         # Remove markdown code fence markers if present.
         if json_str.startswith("```json"):
-            json_str = json_str[len("```json"):].strip()
+            json_str = json_str[len("```json") :].strip()
         if json_str.startswith("```"):
             json_str = json_str[3:].strip()
         if json_str.endswith("```"):
@@ -493,40 +492,44 @@ def perplexity_ask(request):
         len_msg_error = "perplexity no retorno 'metatitles' o 'copys' en el formato esperado."
         if "metatitles" not in input_data or "copys" not in input_data:
             raise ValueError("perplexity no retorno 'metatitles' o 'copys'.")
-        elif len(input_data["copys"]) != schema["properties"]["copys"]["maxItems"] or \
-                len(input_data["metatitles"]) != schema["properties"]["metatitles"]["maxItems"]:
+        elif (
+            len(input_data["copys"]) != schema["properties"]["copys"]["maxItems"]
+            or len(input_data["metatitles"]) != schema["properties"]["metatitles"]["maxItems"]
+        ):
             raise ValueError(f"{len_msg_error}: {input_data}")
-        elif len(input_data["copys"]) != schema["properties"]["copys"]["minItems"] or \
-                len(input_data["metatitles"]) != schema["properties"]["metatitles"]["minItems"]:
+        elif (
+            len(input_data["copys"]) != schema["properties"]["copys"]["minItems"]
+            or len(input_data["metatitles"]) != schema["properties"]["metatitles"]["minItems"]
+        ):
             raise ValueError(f"{len_msg_error}: {input_data}")
 
-    if request.method == 'POST':
+    if request.method == "POST":
         config = PerplexityAPISettings.get_solo()
         if config.activar_asistente is False:
-            message = 'Asistente IA desactivado.'
-            response = {'error': True, 'message': message, 'status': 400}
+            message = "Asistente IA desactivado."
+            response = {"error": True, "message": message, "status": 400}
             logging.error(f"{message}")
             return JsonResponse(response)
 
-        data = json.loads(request.body.decode('utf-8'))
-        titulo = data.get('titulo', '')
-        cuerpo = data.get('cuerpo', '')
-        descripcion = data.get('descripcion', '')
-        article_id = data.get('article_id', '')
+        data = json.loads(request.body.decode("utf-8"))
+        titulo = data.get("titulo", "")
+        cuerpo = data.get("cuerpo", "")
+        descripcion = data.get("descripcion", "")
+        article_id = data.get("article_id", "")
         api_response = None
 
         try:
             fields = [
-                ('titulo', titulo, "No se envio el titulo."),
-                ('cuerpo', cuerpo, "No se envio el cuerpo."),
+                ("titulo", titulo, "No se envio el titulo."),
+                ("cuerpo", cuerpo, "No se envio el cuerpo."),
             ]
 
             for field_name, value, error_message in fields:
-                if value == '':
+                if value == "":
                     raise ClienteException(error_message)
 
             article = None
-            if article_id != '':
+            if article_id != "":
                 article = Article.objects.filter(id=article_id).first()
                 if article is not None:
                     if article.ia_used:
@@ -534,9 +537,9 @@ def perplexity_ask(request):
                 else:
                     raise Exception("El articulo no existe.")
 
-            api_key = getattr(settings, 'PERPLEXITY_API_KEY', None)
+            api_key = getattr(settings, "PERPLEXITY_API_KEY", None)
             if not api_key:
-                raise Exception('API key de Perplexity no configurada.')
+                raise Exception("API key de Perplexity no configurada.")
 
             url = config.endpoint
             headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
@@ -544,13 +547,13 @@ def perplexity_ask(request):
             # Concatenate the default context and the question
             default_context = config.default_context.strip()
             # Validación de placeholders
-            placeholders = ['{titulo}', '{cuerpo}', '{descripcion}']
+            placeholders = ["{titulo}", "{cuerpo}", "{descripcion}"]
             if not all(ph in default_context for ph in placeholders):
                 raise ClienteException(
                     "El texto base debe contener los placeholders '{titulo}', '{descripcion}' y '{cuerpo}'"
                 )
 
-            if descripcion == '':
+            if descripcion == "":
                 # The description is not mandatory, and if it is not sent, then it is not sent to Perplexity.
                 default_context = default_context.replace("Descripción: {descripcion}", "")
             else:
@@ -594,6 +597,7 @@ def perplexity_ask(request):
 
             payload = {
                 "model": config.model,
+                "temperature": config.temperature,
                 "messages": [
                     {"role": "system", "content": "Responde de manera clara y concisa."},
                     {"role": "user", "content": full_prompt},
@@ -628,18 +632,18 @@ def perplexity_ask(request):
                 article.ia_used = True
                 article.save()
 
-            response = {'error': False, 'message': data}
+            response = {"error": False, "message": data}
 
         except ClienteException as ex:
-            response = {'error': True, 'message': str(ex), 'status': 400}
+            response = {"error": True, "message": str(ex), "status": 400}
             logging.error(f"Unexpected Error: {ex}", exc_info=True)
         except Exception as ex:
             answer = "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo más tarde."
             logging.error(f"Unexpected Error: {ex}", exc_info=True)
-            response = {'error': True, 'message': answer, 'status': 500}
+            response = {"error": True, "message": answer, "status": 500}
             if api_response is not None:
-                answer = api_response.json()['error']['message']
+                answer = api_response.json()["error"]["message"]
                 logging.error(f"API Respuesta: {answer}")
-                response = {'error': True, 'message': answer, 'status': 500}
+                response = {"error": True, "message": answer, "status": 500}
         return JsonResponse(response)
-    return JsonResponse({'error': True, 'message': 'Método no permitido.'}, status=405)
+    return JsonResponse({"error": True, "message": "Método no permitido."}, status=405)
