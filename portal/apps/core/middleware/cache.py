@@ -12,6 +12,12 @@ debug_cache = getattr(settings, 'HOME_CACHE_DEBUG', False)
 class AnonymousRequest(MiddlewareMixin):
     anon_request_url_names_include_auth = getattr(settings, 'PORTAL_ANON_REQUEST_URL_NAMES_INCLUDE_AUTH', [])
 
+    def clear_extra_condition(self, request):
+        """
+        Clear extra condition for the cache. Useful to override in subclasses.
+        """
+        return True
+
     def process_request(self, request):
         """
         set cookies headers to None if anon user and home-page or (article_detail when signupwall is disabled) or
@@ -38,6 +44,7 @@ class AnonymousRequest(MiddlewareMixin):
             if not clear:
                 url_name_resolved = url_name_resolved or resolve(request.path_info).url_name
                 clear = url_name_resolved in AnonymousRequest.anon_request_url_names_include_auth
+            clear = clear and self.clear_extra_condition(request)
             if clear:
                 request.META['HTTP_COOKIE'] = None
                 request.META['HTTP_ACCEPT_ENCODING'] = 'identity'
@@ -53,6 +60,12 @@ class AnonymousRequest(MiddlewareMixin):
 
 
 class AnonymousResponse(MiddlewareMixin):
+    def clear_extra_condition(self, request):
+        """
+        Clear extra condition for the cache. Useful to override in subclasses.
+        """
+        return True
+
     def process_response(self, request, response):
         """
         idem as above (to make the page cache not be updated)
@@ -84,6 +97,7 @@ class AnonymousResponse(MiddlewareMixin):
             if not clear:
                 url_name_resolved = url_name_resolved or resolve(request.path_info).url_name
                 clear = url_name_resolved in AnonymousRequest.anon_request_url_names_include_auth
+            clear = clear and self.clear_extra_condition(request)
             if clear:
                 request.META['HTTP_COOKIE'] = None
                 request.META['HTTP_ACCEPT_ENCODING'] = 'identity'
