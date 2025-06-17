@@ -626,7 +626,3 @@ def perplexity_ask(request):
                 response = {'error': True, 'message': answer, 'status': 500}
         return JsonResponse(response)
     return JsonResponse({'error': True, 'message': 'Método no permitido.'}, status=405)
-
-
-
-
