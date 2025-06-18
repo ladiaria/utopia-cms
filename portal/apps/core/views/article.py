@@ -597,7 +597,6 @@ def perplexity_ask(request):
 
             payload = {
                 "model": config.model,
-                "temperature": config.temperature,
                 "messages": [
                     {"role": "system", "content": "Responde de manera clara y concisa."},
                     {"role": "user", "content": full_prompt},
@@ -612,6 +611,8 @@ def perplexity_ask(request):
                 payload["search_domain_filter"] = search_domain_filter
 
             # Solo incluye max_tokens si está definido en la configuración
+            if config.temperature:
+                payload["temperature"] = config.temperature
             if config.max_tokens:
                 payload["max_tokens"] = config.max_tokens
             elif settings.DEBUG:
