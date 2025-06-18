@@ -18,6 +18,7 @@
 
 #perplexity-send-button span {
   font-size: 0.875rem;
+  font-family: 'Roboto', sans-serif;
 }
 
 #perplexity-send-button.loading svg {
@@ -185,13 +186,4 @@
 
 .hidden {
   display: none !important;
-}
-
-
-@media (prefers-color-scheme: dark) {
-
-  body {
-    color: revert;
-    background: revert !important;
-  }
 }
