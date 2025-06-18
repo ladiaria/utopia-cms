@@ -168,3 +168,16 @@
 .hidden {
   display: none !important;
 }
+
+@media (prefers-color-scheme: dark) {
+  body,
+  .module,
+  .form-row,
+  .form-group,
+  input,
+  textarea,
+  select {
+    background-color: #fff !important;
+    color: #000 !important;
+  }
+}
