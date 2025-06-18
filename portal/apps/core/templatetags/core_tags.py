@@ -680,6 +680,7 @@ def in_group(user, group_name):
 def get_nombre_del_asistente():
     return PerplexityAPISettings.get_solo().nombre_del_asistente
 
+
 @register.simple_tag
 def ia_activa():
     return PerplexityAPISettings.get_solo().activar_asistente

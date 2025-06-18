@@ -2,17 +2,32 @@
 {% load core_tags %}
 {% load static %}
 
+
 {% block after_field_sets %}
-  <div id="perplexity-data"
-      data-article-id="{{ original.id }}" data-article-is-ai-used="{{ original.ia_used }}">
-      {{ adminform.form.input_ia_used }}
-  </div>
+  {% ia_activa as ia_is_active %}
+  {% if ia_is_active %}
+    <div id="perplexity-data"
+        data-article-id="{{ original.id }}" data-article-is-ai-used="{{ original.ia_used }}">
+        {{ adminform.form.input_ia_used }}
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block extrahead %}
+  {% ia_activa as ia_is_active %}
   {{ block.super }}
 
-  {% if user|in_group:"use_ia" %}
+  {% if admin_martor_change_form_custom_css %}
+    <link rel="stylesheet" type="text/css" href="{% static admin_martor_change_form_custom_css %}">
+  {% endif %}
+
+  <style type="text/css">
+    .form-row.field-copy_para_redes .charcounter {
+      margin-left: 10px;
+    }
+  </style>
+
+  {% if ia_is_active and user|in_group:"use_ia" %}
     <link rel="stylesheet" href="{% static 'css/perplexity_admin.css' %}">
     <script src="{% static 'js/perplexity_button.js' %}"></script>
   {% endif %}
