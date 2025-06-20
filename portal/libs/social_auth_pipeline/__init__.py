@@ -1,13 +1,14 @@
-
+import logging
 from social_core.exceptions import AuthException
 
 from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.contrib.auth.models import User
 
 from thedaily.models import OAuthState
-from thedaily.utils import get_or_create_user_profile
+from thedaily.utils import get_or_create_user_profile, subscribe_log
 
 
 class AuthIntegrityError(AuthException):
@@ -58,5 +59,16 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
                 oas.state = state
                 oas.save()
         except OAuthState.DoesNotExist:
-            OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
+            by_state = OAuthState.objects.filter(state=state)
+            if by_state.exists():
+                # TODO: (doing) we're debugging scenarios when the state already exists, but the user is not the same.
+                #       After debugging, this comment should be replaced with a more suitable one.
+                msg = (
+                    "A creation of an OAuthState with different user and already existing state was aborted: state "
+                    f"received='{state}', user received='{user}'"
+                )
+                subscribe_log(request, msg, logging.DEBUG)
+                return HttpResponseRedirect(reverse("login-error"))
+            else:
+                OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
         return HttpResponseRedirect('/usuarios/registrate/google/%s' % ('?is_new=1' if is_new else ""))
