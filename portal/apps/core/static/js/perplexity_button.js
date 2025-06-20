@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function toggleOptionButton(button, activate = true) {
     if (!button) return;
+
     if (activate) {
       button.classList.add("activated");
       button.innerHTML = `
