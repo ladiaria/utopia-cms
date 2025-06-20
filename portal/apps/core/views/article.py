@@ -20,6 +20,7 @@ from django.http import Http404, HttpResponse, BadHeaderError, HttpResponsePerma
 from django.views.generic import DetailView
 from django.forms import ValidationError
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_protect
 from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache, cache_page
@@ -398,6 +399,7 @@ Podés ver el artículo aquí: %(url)s
 
 
 @never_cache
+@csrf_protect
 @login_required
 @user_passes_test(ia_use_group)
 def perplexity_ask(request):
