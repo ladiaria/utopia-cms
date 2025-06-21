@@ -63,6 +63,8 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
             if by_state.exists():
                 # TODO: (doing) we're debugging scenarios when the state already exists, but the user is not the same.
                 #       After debugging, this comment should be replaced with a more suitable one.
+                #       TODO: Log also the collector_analysis of the user saved in the OAuthState, perhaps we can
+                #             replace with the user received here.
                 msg = (
                     "A creation of an OAuthState with different user and already existing state was aborted: state "
                     f"received='{state}', user received='{user}'"
