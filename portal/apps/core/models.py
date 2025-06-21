@@ -3,7 +3,6 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
 import locale
-import tempfile
 import operator
 import json
 from pydoc import locate
@@ -11,7 +10,6 @@ from collections import OrderedDict
 from requests.exceptions import ConnectionError
 from kombu.exceptions import OperationalError as KombuOperationalError
 from sorl.thumbnail import get_thumbnail
-from PIL import Image
 from bs4 import BeautifulSoup
 import readtime
 import mutagen
@@ -280,17 +278,19 @@ class Publication(Model):
     def image_tag(self):
         url = None
         if self.image:
-            logo_filename = self.image.path
             try:
-                logo_image = Image.open(logo_filename)
-            except IOError:
-                logo_image = None
-            if logo_image and logo_image.size[0] > 120:
-                tmpfile, f = tempfile.mkstemp('.png', dir=settings.MEDIA_ROOT)
-                logo_image.convert('RGB').save(f, optimize=True)
-                url = get_thumbnail(f, '120', crop='center', quality=99).url
-            else:
-                url = '%s%s' % (settings.MEDIA_URL, self.image)
+                # If image is wider than 120px, create a PNG thumbnail
+                if self.image.width > 120:
+                    url = get_thumbnail(self.image, '120', crop='center', quality=99, format='PNG').url
+                else:
+                    # Otherwise, use the original image url
+                    url = self.image.url
+            except Exception:
+                # Fallback to original image url if thumbnailing or width check fails
+                try:
+                    url = self.image.url
+                except ValueError:
+                    pass  # url remains None
         return mark_safe(
             '<a href="/admin/core/publication/%d/"><img src="%s" style="background:%s;"/></a>' % (
                 self.id, url, self.newsletter_header_color
