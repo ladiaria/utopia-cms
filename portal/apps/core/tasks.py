@@ -101,7 +101,11 @@ def update_category_home():
     # Check if the task is already running or enqueued before enqueueing it again
     task_name, found = update_category_home_task.name, False
     if update_category_home_workers:
-        active_tasks, found = inspector.active() or {}, False
+        try:
+            active_tasks = inspector.active() or {}
+        except TimeoutError:
+            active_tasks = {}
+        found = False
         for w in update_category_home_workers:
             for task in active_tasks.get(w, []):
                 if task.get('name') == task_name:
