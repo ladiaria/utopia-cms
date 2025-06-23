@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function toggleOptionButton(button, activate = true) {
     if (!button) return;
+
     if (activate) {
       button.classList.add("activated");
       button.innerHTML = `
@@ -90,23 +91,27 @@ document.addEventListener('DOMContentLoaded', function() {
   const articleId = perplexityDiv.dataset.articleId;
   const isAIUsed = perplexityDiv.dataset.articleIsAiUsed;
 
-  const perplexityBtn = document.createElement("button");
-  perplexityBtn.className = "button default";
-  perplexityBtn.id = "perplexity-send-button";
-  perplexityBtn.type = "button";
-  perplexityBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="17" viewBox="0 0 16 17" fill="none">
-      <g clip-path="url(#clip0_81_242)">
-        <path d="M14.9324 5.22667H13.3924V0.545333L8.38569 4.78133V0.605333H7.61503V4.736L2.99369 0.5V5.22667H1.06836V12.158H2.99369V16.5L7.61569 12.26V16.394H8.38569V12.3627L13.007 16.4833V12.158H14.9324V5.22667ZM12.6217 2.206V5.226H9.05169L12.6217 2.206ZM3.76436 2.25067L7.01036 5.22667H3.76369L3.76436 2.25067ZM1.83903 11.388V5.99667H7.07036L2.99369 10.0733V11.388H1.83903ZM3.76436 14.748V10.392L7.61503 6.54133V11.2153L3.76436 14.748ZM12.2364 14.7647L8.38569 11.3313V6.54067L12.2364 10.3913V14.7647ZM14.1624 11.388H13.007V10.0733L8.93036 5.99667H14.1624V11.388Z" fill="white"/>
-      </g>
-      <defs>
-        <clipPath id="clip0_81_242">
-          <rect width="16" height="16" fill="white" transform="translate(0 0.5)"/>
-        </clipPath>
-      </defs>
-    </svg>
-    <span>Generar sugerencias con la T<strong>IA</strong></span>
+  const perplexityBtnContainer = document.createElement("div");
+  perplexityBtnContainer.id = "perplexity-container";
+  perplexityBtnContainer.innerHTML = `
+    <button class="button default" id="perplexity-send-button" type="button">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="17" viewBox="0 0 16 17" fill="none">
+        <g clip-path="url(#clip0_81_242)">
+          <path d="M14.9324 5.22667H13.3924V0.545333L8.38569 4.78133V0.605333H7.61503V4.736L2.99369 0.5V5.22667H1.06836V12.158H2.99369V16.5L7.61569 12.26V16.394H8.38569V12.3627L13.007 16.4833V12.158H14.9324V5.22667ZM12.6217 2.206V5.226H9.05169L12.6217 2.206ZM3.76436 2.25067L7.01036 5.22667H3.76369L3.76436 2.25067ZM1.83903 11.388V5.99667H7.07036L2.99369 10.0733V11.388H1.83903ZM3.76436 14.748V10.392L7.61503 6.54133V11.2153L3.76436 14.748ZM12.2364 14.7647L8.38569 11.3313V6.54067L12.2364 10.3913V14.7647ZM14.1624 11.388H13.007V10.0733L8.93036 5.99667H14.1624V11.388Z" fill="white"/>
+        </g>
+        <defs>
+          <clipPath id="clip0_81_242">
+            <rect width="16" height="16" fill="white" transform="translate(0 0.5)"/>
+          </clipPath>
+        </defs>
+      </svg>
+      <span>Generar sugerencias con la T<strong>IA</strong></span>
+    </button>
+    <div id="perplexity-tooltip">
+      <p>Estas sugerencias están generadas por la IA de Perplexity, entrenada por el equipo de <em>la diaria</em></p>
+    </div>
   `;
+  const perplexityBtn = perplexityBtnContainer.querySelector("#perplexity-send-button");
 
   const sessionStorageValue = sessionStorage.getItem("ldPerplexityUsed");
 
@@ -117,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Insertar botón de Generar sugerencia de IA
-  document.querySelector(`input[type="submit"][name="_continue"]`).after(perplexityBtn);
+  document.querySelector(`input[type="submit"][name="_continue"]`).after(perplexityBtnContainer);
 
   const inputHeadline = document.getElementById('id_headline');
   const valorHeadline = inputHeadline ? inputHeadline.value.trim() : '';
