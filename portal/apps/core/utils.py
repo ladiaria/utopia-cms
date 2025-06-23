@@ -26,7 +26,10 @@ inspector = celery_app.control.inspect()
 
 def get_workers_for_queue(queue_name):
     # Get the list of all registered workers and their queues
-    active_queues = inspector.active_queues() or {}
+    try:
+        active_queues = inspector.active_queues() or {}
+    except TimeoutError:
+        active_queues = {}
     workers_handling_queue = set()
     for worker, queues in active_queues.items():
         for queue in queues:
@@ -47,7 +50,10 @@ except (AttributeError, KeyError, OperationalError):
 def get_active_tasks(task_name, task_args=None):
     result = []
     if update_category_home_workers:
-        active_tasks = inspector.active() or {}
+        try:
+            active_tasks = inspector.active() or {}
+        except TimeoutError:
+            active_tasks = {}
         if active_tasks:
             for w in update_category_home_workers:
                 for task in active_tasks.get(w, []):
@@ -60,7 +66,10 @@ def get_active_tasks(task_name, task_args=None):
 def get_scheduled_tasks(task_name, task_args=None):
     result = []
     if update_category_home_workers:
-        scheduled_tasks = inspector.scheduled() or {}
+        try:
+            scheduled_tasks = inspector.scheduled() or {}
+        except TimeoutError:
+            scheduled_tasks = {}
         if scheduled_tasks:
             for w in update_category_home_workers:
                 for task in scheduled_tasks.get(w, []):

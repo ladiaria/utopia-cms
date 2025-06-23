@@ -380,18 +380,19 @@ def publication_section(context, article, pub=None):
     publication_obj or publication context variables as the publication argument (or default_pub if both are None).
     TODO: why default_pub as last option instead of the article's "main_pub"?
     """
-    section = article.publication_section(
-        pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
-    )
-    if section:
-        use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
-        s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
-        if use_section_link:
-            return '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
-        else:
-            return '<span>%s</span>' % s_name
-    else:
-        return ''
+    result = ""
+    if article:
+        section = article.publication_section(
+            pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
+        )
+        if section:
+            use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
+            s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
+            if use_section_link:
+                result = '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
+            else:
+                result = '<span>%s</span>' % s_name
+    return result
 
 
 @register.simple_tag(takes_context=True)
