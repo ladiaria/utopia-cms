@@ -804,11 +804,6 @@ class PhoneSubscriptionForm(CrispyForm):
 
 
 class WebSubscriptionForm(CrispyModelForm):
-    # TODO: check if this is needed
-    # subscription_type_prices = ChoiceField(
-    #     choices=SubscriptionPrices.objects.values_list('subscription_type', flat=True),
-    #     widget=HiddenInput(),
-    # )
     if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
         terms_and_conds_accepted = terms_and_conditions_field()
 

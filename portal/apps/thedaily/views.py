@@ -862,7 +862,7 @@ class SubscribeView(TemplateView):
         )
 
         initial = {
-            'subscription_type_prices': planslug,
+            'subscription_type_prices': SubscriptionPrices.objects.filter(subscription_type=planslug),
             "terms_and_conds_accepted": self.get_initial_terms_and_conds_accepted(user),
         }
         subscription_form = subscription_formclass(initial=initial)
@@ -1056,10 +1056,12 @@ class SubscribeView(TemplateView):
                         context.update(self.get_context_data())
                         try:
                             # TODO: more customization is needed on how to use the next_page
-                            view_func = resolve(subscription_form_v.next_page).match.func
-                            return view_func(request, planslug, context)
-                        except AttributeError:
+                            #       (explain better this comment or remove it asap)
+                            view_func = resolve(subscription_form_v.cleaned_data.get('next_page')).match.func
+                        except (AttributeError, KeyError):
                             pass
+                        else:
+                            return view_func(request, planslug, context)
                         return render(request, get_app_template("online_subscription.html"), context)
                     else:
                         request.session['notify_phone_subscription'] = True
