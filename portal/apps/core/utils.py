@@ -31,10 +31,11 @@ def get_workers_for_queue(queue_name):
     except TimeoutError:
         active_queues = {}
     workers_handling_queue = set()
-    for worker, queues in active_queues.items():
-        for queue in queues:
-            if queue['name'] == queue_name:
-                workers_handling_queue.add(worker)
+    if active_queues:
+        for worker, queues in active_queues.items():
+            for queue in queues:
+                if queue['name'] == queue_name:
+                    workers_handling_queue.add(worker)
     return list(workers_handling_queue)
 
 
