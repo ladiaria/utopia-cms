@@ -299,6 +299,7 @@ TEMPLATES = [
                 "adzone.context_processors.get_source_ip",
                 "apps.thedaily.context_processors.permissions",
                 "django.template.context_processors.csrf",
+                "context_processors.google_client_id",
             ],
             "loaders": [
                 "amp_tools.loader.Loader",

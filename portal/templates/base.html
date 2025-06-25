@@ -455,5 +455,31 @@
     {% block javascript %}{% endblock %}
     {% block footer_scripts %}{% endblock %}
     {% block footer_scripts_extra %}{% endblock %}
+
+    <!-- Google One Tap Authentication -->
+    {% if not user.is_authenticated and google_client_id %}
+      <script src="https://accounts.google.com/gsi/client" async defer></script>
+      <script>
+        window.onload = function () {
+          google.accounts.id.initialize({
+            client_id: '{{ google_client_id }}',
+            callback: handleCredentialResponse,
+            context: 'signin'
+          });
+          google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              // One Tap is not available, continue with regular login
+              console.log('Google One Tap not available');
+            }
+          });
+        };
+
+        function handleCredentialResponse(response) {
+          // Use the existing Google OAuth flow with the credential
+          // Redirect to the existing Google OAuth endpoint with the credential
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}&credential=" + encodeURIComponent(response.credential);
+        }
+      </script>
+    {% endif %}
   </body>
 </html>
