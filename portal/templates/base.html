@@ -477,7 +477,7 @@
         function handleCredentialResponse(response) {
           // Use the existing Google OAuth flow with the credential
           // Redirect to the existing Google OAuth endpoint with the credential
-          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}&credential=" + encodeURIComponent(response.credential);
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}";
         }
       </script>
     {% endif %}
