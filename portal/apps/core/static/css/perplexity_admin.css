@@ -1,3 +1,35 @@
+form#article_form .submit-row {
+  overflow: visible;
+}
+
+#perplexity-container {
+  position: relative;
+  display: flex;
+}
+
+#perplexity-tooltip {
+  display: none;
+  min-width: 20rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #CCC;
+  background: #FFF;
+  position: absolute;
+  top: -55px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#perplexity-tooltip p {
+  margin: 0;
+  font-size: 0.875rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+#perplexity-send-button:hover+div {
+  display: block;
+}
+
 /* Style for the Perplexity button */
 #perplexity-send-button {
   background-color: #4178A0;

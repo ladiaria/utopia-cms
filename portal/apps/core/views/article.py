@@ -43,6 +43,8 @@ from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedbac
 from core.models import Publication, Category, Article, ArticleUrlHistory, PerplexityAPISettings
 from thedaily.templatetags.thedaily_tags import has_restricted_access
 from core.utils import ia_use_group
+from pydantic import BaseModel, Field
+from typing import List
 
 
 logging.basicConfig(level=logging.INFO)
@@ -490,20 +492,12 @@ def perplexity_ask(request):
         except json.JSONDecodeError as e:
             raise ValueError("Failed to parse valid JSON from response content") from e
 
-    def response_validation(input_data):
-        len_msg_error = "perplexity no retorno 'metatitles' o 'copys' en el formato esperado."
-        if "metatitles" not in input_data or "copys" not in input_data:
-            raise ValueError("perplexity no retorno 'metatitles' o 'copys'.")
-        elif (
-            len(input_data["copys"]) != schema["properties"]["copys"]["maxItems"]
-            or len(input_data["metatitles"]) != schema["properties"]["metatitles"]["maxItems"]
-        ):
-            raise ValueError(f"{len_msg_error}: {input_data}")
-        elif (
-            len(input_data["copys"]) != schema["properties"]["copys"]["minItems"]
-            or len(input_data["metatitles"]) != schema["properties"]["metatitles"]["minItems"]
-        ):
-            raise ValueError(f"{len_msg_error}: {input_data}")
+    def built_schema():
+        class PerplexityAnswerFormat(BaseModel):
+            metatitles: List[str] = Field(..., min_items=3, max_items=3)
+            copys: List[str] = Field(..., min_items=2, max_items=2)
+
+        return PerplexityAnswerFormat.model_json_schema()
 
     if request.method == "POST":
         config = PerplexityAPISettings.get_solo()
@@ -548,12 +542,6 @@ def perplexity_ask(request):
 
             # Concatenate the default context and the question
             default_context = config.default_context.strip()
-            # Validación de placeholders
-            placeholders = ["{titulo}", "{cuerpo}", "{descripcion}"]
-            if not all(ph in default_context for ph in placeholders):
-                raise ClienteException(
-                    "El texto base debe contener los placeholders '{titulo}', '{descripcion}' y '{cuerpo}'"
-                )
 
             if descripcion == "":
                 # The description is not mandatory, and if it is not sent, then it is not sent to Perplexity.
@@ -563,39 +551,11 @@ def perplexity_ask(request):
 
             full_prompt = default_context.replace("{titulo}", titulo).replace("{cuerpo}", cuerpo)
 
-            # the following `prompt_suffix` sting is need at end of the pront in order to fix bug in the perplexity api,
-            # it was not respeting the schema sent bc the input pront need in some way to match the schema, the fix
-            # found is to be explicit in the pront
-            prompt_suffix = """
-            \n Por favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys.
-            - El campo "metatitles" debe ser un array de exactamente 3 strings, cada uno con un metatítulo diferente y adecuado para Google Discover, siguiendo el estilo de la diaria.
-            - El campo "copys" debe ser un array de exactamente 2 strings. Cada string debe incluir primero el copy para redes sociales y, en la misma string y separado por un salto de línea, los hashtags correspondientes.
-            - No agregues elementos adicionales ni comentarios fuera del objeto JSON.
+            full_prompt += f" \n{config.result_instructions}"
 
-            Ejemplo de formato esperado:
-            {
-              "metatitles": [
-                "Metatítulo 1",
-                "Metatítulo 2",
-                "Metatítulo 3"
-              ],
-              "copys": [
-                "Copy para redes sociales 1.\\n#Hashtag1 #Hashtag2",
-                "Copy para redes sociales 2.\\n#Hashtag3 #Hashtag4"
-              ]
-            }
-            """
+            schema = built_schema()
 
-            full_prompt += prompt_suffix
-
-            schema = {
-                "type": "object",
-                "properties": {
-                    "metatitles": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 3},
-                    "copys": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 2},
-                },
-                "required": ["metatitles", "copys"],
-            }
+            logging.info(f"pydentic schema: {schema}")
 
             payload = {
                 "model": config.model,
@@ -628,8 +588,6 @@ def perplexity_ask(request):
 
             api_response.raise_for_status()
             data = extract_valid_json(api_response.json())
-
-            response_validation(data)
 
             if article is not None:
                 article.ia_used = True
