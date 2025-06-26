@@ -80,7 +80,7 @@ def get_workers_for_queue(queue_name):
     # Get the list of all registered workers and their queues
     try:
         active_queues = inspector.active_queues() or {}
-    except TimeoutError:
+    except (TimeoutError, BrokenPipeError):
         active_queues = {}
     workers_handling_queue = set()
     if active_queues:
@@ -106,7 +106,7 @@ def update_category_home():
     if update_category_home_workers:
         try:
             active_tasks = inspector.active() or {}
-        except TimeoutError:
+        except (TimeoutError, BrokenPipeError):
             active_tasks = {}
         if active_tasks:
             for w in update_category_home_workers:
@@ -122,7 +122,7 @@ def update_category_home():
         if not found:
             try:
                 queued_tasks = inspector.scheduled() or {}
-            except TimeoutError:
+            except (TimeoutError, BrokenPipeError):
                 queued_tasks = {}
             if queued_tasks:
                 for w in update_category_home_workers:
