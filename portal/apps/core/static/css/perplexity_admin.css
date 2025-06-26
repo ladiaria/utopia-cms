@@ -9,21 +9,20 @@ form#article_form .submit-row {
 
 #perplexity-tooltip {
   display: none;
-  max-width: 11.875rem;
-  min-width: 11.875rem;
+  min-width: 20rem;
   padding: 4px 8px;
   border-radius: 4px;
   border: 1px solid #CCC;
   background: #FFF;
   position: absolute;
-  top: -39px;
+  top: -55px;
   left: 50%;
   transform: translateX(-50%);
 }
 
 #perplexity-tooltip p {
   margin: 0;
-  font-size: 0.5rem;
+  font-size: 0.875rem;
   font-family: 'Roboto', sans-serif;
 }
 
