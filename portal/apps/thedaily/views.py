@@ -519,7 +519,10 @@ def signup(request):
             user = None
             try:
                 user = signup_form.create_user()
-                add_default_newsletters(user.subscriber)  # TODO: better call this after email confirmation success
+                # next line adds default NLs to user, you can think that is better call this after email confirmation
+                # success, but there is a difficulty there because an email confirmation can be executed not only for a
+                # new user, but also for a user that already has an account and validates it again for any reason.
+                add_default_newsletters(user.subscriber)
                 # TODO: notifications/signup.html is also used for this purpose (2 templates to the same thing?)
                 notification_template = "account_signup.html"
                 was_sent = send_validation_email(
@@ -730,6 +733,15 @@ class SubscribeView(TemplateView):
         return (
             user.subscriber.terms_and_conds_accepted
             if self.request.user.is_authenticated else self.request.session.get("terms_and_conds_accepted", False)
+        )
+
+    def send_validation_email(self, user):
+        notification_template = 'account_signup.html'
+        return send_validation_email(
+            notification_subjects[notification_template],
+            user,
+            get_app_template(f'notifications/{notification_template}'),
+            get_signup_validation_url,
         )
 
     def dispatch(self, request, planslug, category_slug=None):
@@ -981,15 +993,14 @@ class SubscribeView(TemplateView):
                             context.update(self.get_context_data())
                             return render(request, template, context)
                         try:
-                            notification_template = 'account_signup.html'
-                            was_sent = send_validation_email(
-                                notification_subjects[notification_template],
-                                user,
-                                get_app_template(f'notifications/{notification_template}'),
-                                get_signup_validation_url,
-                            )
+                            was_sent = self.send_validation_email(user)
                             if not was_sent:
                                 raise Exception(f"Error al enviar {verif_email_i18n} para el usuario %s" % user)
+                            else:
+                                try:
+                                    add_default_newsletters(user)
+                                except Exception:
+                                    pass  # fail silently if default NLs cannot be added. TODO: alert managers?
                         except Exception as exc:
                             msg = str(exc)
                             error_log(msg)
