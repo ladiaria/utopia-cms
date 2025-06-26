@@ -1433,7 +1433,7 @@ class TagAdmin(admin.ModelAdmin):
 
 class TaggedItemAdmin(admin.ModelAdmin):
     model = TaggedItem
-    search_fields = ('name',)
+    search_fields = ('tag__name',)
 
 
 @admin.register(DeviceSubscribed, site=site)
