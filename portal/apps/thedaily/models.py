@@ -115,6 +115,9 @@ class SubscriptionPrices(Model):
     def __str__(self):
         return self.name
 
+    def natural_key(self):
+        return (self.subscription_type,)
+
     def periodicity(self):
         return "Mensual" if self.months == 1 else f"{self.months} meses"
 
