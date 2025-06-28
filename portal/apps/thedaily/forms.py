@@ -347,10 +347,10 @@ def email_field():
     )
 
 
-def phone_field():
+def phone_field(required=False):
     return PhoneNumberField(
         label='Teléfono',
-        required=False,
+        required=required,
         widget=RegionalPhoneNumberWidget(
             attrs={'class': 'textinput textInput', 'autocomplete': 'tel', 'spellcheck': 'false'}
         ),

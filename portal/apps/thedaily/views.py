@@ -849,8 +849,8 @@ class SubscribeView(TemplateView):
                         profile.province = default_province
                     subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
-                subscriber_form = (
-                    SubscriberSignupForm if online else SubscriberSignupAddressForm
+                subscriber_form = get_formclass(
+                    request, "SubscriberSignup" if online else "SubscriberSignupAddress"
                 )(initial={'next_page': request.path})
             # check session and if a new user was created, encourage login
             if request.method == 'GET':
