@@ -782,7 +782,10 @@ class Subscription(Model):
 
     def __str__(self):
         subscription_type = f"{self.subscription_type} ({self.get_subscription_type_prices()})"
-        return subscription_type + _(" subscription for ") + self.subscriber.get_full_name()
+        return (
+            subscription_type
+            + ((_(" subscription for ") + self.subscriber.get_full_name()) if self.subscriber else f" id {self.id}")
+        )
 
     def get_subscription_type_prices(self):
         return ', '.join('%s' % stp for stp in self.subscription_type_prices.all())

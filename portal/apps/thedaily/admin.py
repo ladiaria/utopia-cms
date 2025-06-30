@@ -74,7 +74,7 @@ class SubscriptionAdmin(ModelAdmin):
             "<a href='%s'>%s</a>" % (
                 reverse('admin:thedaily_subscriber_change', args=[obj.subscriber.id]), obj.subscriber.get_full_name()
             )
-        )
+        ) if obj.subscriber else None
     get_subscriber.short_description = 'Suscriptor'
 
 

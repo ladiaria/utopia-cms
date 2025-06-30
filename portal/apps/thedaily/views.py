@@ -113,8 +113,6 @@ from .forms import (
     PasswordChangeForm,
     GoogleSignupForm,
     GoogleSignupAddressForm,
-    SubscriberSignupForm,
-    SubscriberSignupAddressForm,
     ProfileExtraDataForm,
     PhoneSubscriptionForm,
     phone_is_blocklisted,
@@ -744,6 +742,16 @@ class SubscribeView(TemplateView):
             get_signup_validation_url,
         )
 
+    def next_viewcall(self, next_page):
+        try:
+            # TODO: more customization is needed on how to use the next_page
+            #       (explain better this comment or remove it asap)
+            view_func = resolve(next_page).match.func
+        except (AttributeError, KeyError):
+            pass
+        else:
+            return view_func
+
     def dispatch(self, request, planslug, category_slug=None):
         article_id = request.GET.get("article")
 
@@ -904,12 +912,35 @@ class SubscribeView(TemplateView):
                 ) if oauth2_state else (
                     SubscriberForm if online else SubscriberAddressForm
                 )(post, instance=get_or_create_user_profile(request.user))
-            elif oauth2_state:
-                subscriber_form_v = (
-                    GoogleSignupForm if online else GoogleSignupAddressForm
-                )(post, instance=get_or_create_user_profile(user))
             else:
-                subscriber_form_v = (SubscriberSignupForm if online else SubscriberSignupAddressForm)(post)
+                if online:
+                    subscription_in_process_posted = post.get('subscription_id')
+                    if subscription_in_process_posted:
+                        subscription = request.session.get('subscription')
+                        if subscription and subscription_in_process_posted == str(subscription.id):
+                            context.update(
+                                {
+                                    "subscription_price": subscription_price,
+                                    "planslug": planslug,
+                                    "user_created": request.user.is_anonymous,
+                                    'subscription': subscription,
+                                    "subscriber_form": subscriber_form.__class__(instance=subscription.subscriber),
+                                }
+                            )
+                            context.update(self.get_context_data(subscription_in_process_posted=subscription))
+                            next_viewcall = self.next_viewcall(post.get('next_page'))
+                            if next_viewcall:
+                                return next_viewcall(request, planslug, context)
+                            return render(request, get_app_template("online_subscription.html"), context)
+
+                if oauth2_state:
+                    subscriber_form_v = (
+                        GoogleSignupForm if online else GoogleSignupAddressForm
+                    )(post, instance=get_or_create_user_profile(user))
+                else:
+                    subscriber_form_v = get_formclass(
+                        request, "SubscriberSignup" if online else "SubscriberSignupAddress"
+                    )(post)
 
             # TODO: commented code is the old one, remove it after testing
             # subscription_form_v = (
@@ -1035,7 +1066,6 @@ class SubscribeView(TemplateView):
                             subscription.subscriber = user.subscriber
                             subscription.save()
 
-                # we should save the subscription and its type in the session
                 request.session['subscription'] = subscription
                 request.session['subscription_type'] = subscription_price
                 # TODO (DRY_end)
@@ -1054,7 +1084,6 @@ class SubscribeView(TemplateView):
                 else:
                     if online:
                         context.update(
-                            # TODO: try save the subscription form, then last entry can be removed (==form.instance)
                             {
                                 "subscription_price": subscription_price,
                                 "planslug": planslug,
@@ -1065,14 +1094,9 @@ class SubscribeView(TemplateView):
                             }
                         )
                         context.update(self.get_context_data())
-                        try:
-                            # TODO: more customization is needed on how to use the next_page
-                            #       (explain better this comment or remove it asap)
-                            view_func = resolve(subscription_form_v.cleaned_data.get('next_page')).match.func
-                        except (AttributeError, KeyError):
-                            pass
-                        else:
-                            return view_func(request, planslug, context)
+                        next_viewcall = self.next_viewcall(subscription_form_v.cleaned_data.get('next_page'))
+                        if next_viewcall:
+                            return next_viewcall(request, planslug, context)
                         return render(request, get_app_template("online_subscription.html"), context)
                     else:
                         request.session['notify_phone_subscription'] = True
