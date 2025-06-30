@@ -505,7 +505,7 @@ def section_name_in_publication_menu(publication, section):
 
 @register.simple_tag(takes_context=True)
 def tags_joined(context):
-    return ", ".join(str(tag).title() for tag in context.get("tags"))
+    return ", ".join(str(tag) for tag in context.get("tags"))
 
 
 @register.simple_tag(takes_context=True)
