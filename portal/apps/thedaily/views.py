@@ -1029,8 +1029,9 @@ class SubscribeView(TemplateView):
                                 raise Exception(f"Error al enviar {verif_email_i18n} para el usuario %s" % user)
                             else:
                                 try:
-                                    add_default_newsletters(user)
-                                except Exception:
+                                    add_default_newsletters(user.subscriber)
+                                except Exception as exc:
+                                    error_log(f"Error al agregar default NLs: {exc}")
                                     pass  # fail silently if default NLs cannot be added. TODO: alert managers?
                         except Exception as exc:
                             msg = str(exc)
