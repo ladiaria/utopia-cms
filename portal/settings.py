@@ -517,7 +517,7 @@ LOGIN_ERROR_URL = "/usuarios/error/login/"
 MESSAGETAGS = {messages.ERROR: "danger"}
 
 AUTHENTICATION_BACKENDS = (
-    "social_core.backends.google.GoogleOAuth2",
+    "libs.google_oauth2_backend.CustomGoogleOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 )
 
