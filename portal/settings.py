@@ -300,6 +300,7 @@ TEMPLATES = [
                 "apps.thedaily.context_processors.permissions",
                 "django.template.context_processors.csrf",
                 "context_processors.google_client_id",
+                "context_processors.google_one_tap_enabled",
             ],
             "loaders": [
                 "amp_tools.loader.Loader",
