@@ -463,7 +463,7 @@
     {% block footer_scripts_extra %}{% endblock %}
 
     <!-- Google One Tap Authentication -->
-    {% if not user.is_authenticated and google_client_id %}
+    {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP %}
       <script src="https://accounts.google.com/gsi/client" async defer></script>
       <script>
         window.onload = function () {

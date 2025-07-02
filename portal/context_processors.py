@@ -179,3 +179,9 @@ def google_client_id(request):
     return {
         'google_client_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', ''),
     }
+
+
+def google_one_tap_enabled(request):
+    return {
+        'ENABLE_GOOGLE_ONE_TAP': getattr(settings, 'ENABLE_GOOGLE_ONE_TAP', False),
+    }
