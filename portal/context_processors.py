@@ -173,3 +173,9 @@ def main_menus(request):
 
 def article_content_type(request):
     return {'article_ct_id': ContentType.objects.get_for_model(Article).id}
+
+
+def google_client_id(request):
+    return {
+        'google_client_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', ''),
+    }
