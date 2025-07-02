@@ -515,8 +515,11 @@ LOGIN_ERROR_URL = "/usuarios/error/login/"
 
 MESSAGETAGS = {messages.ERROR: "danger"}
 
+# Set to True to use Google One Tap and forward login_hint, or False to use the default Google OAuth2 backend.
+ENABLE_GOOGLE_ONE_TAP = True
+
 AUTHENTICATION_BACKENDS = (
-    "libs.google_oauth2_backend.CustomGoogleOAuth2",
+    "libs.google_oauth2_backend.CustomGoogleOAuth2" if ENABLE_GOOGLE_ONE_TAP else "social_core.backends.google.GoogleOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 )
 
