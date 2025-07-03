@@ -78,4 +78,4 @@ THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED = [THEDAILY_SUBSCRIPTION_CAPTCHA
 # IPFS_TOKEN = ""
 
 # Set to True to use Google One Tap and forward login_hint, or False to use the default Google OAuth2 backend.
-ENABLE_GOOGLE_ONE_TAP = True
+ENABLE_GOOGLE_ONE_TAP = False
