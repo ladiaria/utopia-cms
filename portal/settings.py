@@ -517,14 +517,6 @@ LOGIN_ERROR_URL = "/usuarios/error/login/"
 
 MESSAGETAGS = {messages.ERROR: "danger"}
 
-# Set to True to use Google One Tap and forward login_hint, or False to use the default Google OAuth2 backend.
-ENABLE_GOOGLE_ONE_TAP = True
-
-AUTHENTICATION_BACKENDS = (
-    "libs.google_oauth2_backend.CustomGoogleOAuth2" if ENABLE_GOOGLE_ONE_TAP else "social_core.backends.google.GoogleOAuth2",
-    "django.contrib.auth.backends.ModelBackend",
-)
-
 # django-social-auth
 SOCIAL_AUTH_GOOGLE_OAUTH2_STRATEGY = "social_django.strategy.DjangoStrategy"
 SOCIAL_AUTH_STORAGE = "social_django.models.DjangoStorage"
@@ -591,7 +583,7 @@ CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP versio
 PHONENUMBER_DEFAULT_REGION = None
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
-
+ENABLE_GOOGLE_ONE_TAP = False
 
 # ====================================================================================== visual separator =============
 
@@ -599,6 +591,11 @@ ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restri
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
 
+
+AUTHENTICATION_BACKENDS = (
+    "libs.google_oauth2_backend.CustomGoogleOAuth2" if ENABLE_GOOGLE_ONE_TAP else "social_core.backends.google.GoogleOAuth2",
+    "django.contrib.auth.backends.ModelBackend",
+)
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
