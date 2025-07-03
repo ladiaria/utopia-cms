@@ -1,6 +1,6 @@
 {% load thedaily_tags %}
 
-{% subscriptionprice as subscription_price %}
+{% subscriptionprice as subscription_price %}{# TODO: check if planslug as arg is needed #}
 {% if subscription_price %}
   <div class="ld-snackbar__block">
     {# TODO: conditional subscribe url if category_signup #}

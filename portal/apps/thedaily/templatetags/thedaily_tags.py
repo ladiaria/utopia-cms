@@ -104,7 +104,7 @@ register.tag('iftimeuntil', if_time)
 
 
 @register.simple_tag
-def subscriptionprice(subscription_type):
+def subscriptionprice(subscription_type=None):
     price, subscription_type = "", subscription_type or content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
     if subscription_type:
         try:

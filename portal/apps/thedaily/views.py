@@ -132,6 +132,7 @@ from .utils import (
     collector_analysis,
     subscribe_log,
     get_notification_subjects,
+    subscriptions_edit_profile_anchor,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -349,19 +350,21 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 @readerid_assoc
 def login(request, product_slug=None, product_variant=None):
     # next_page value got here will be available in session (TODO: explain how this happen)
-    return_param = amp_login_param(request, 'return')
+    return_param, article_id = amp_login_param(request, 'return'), request.GET.get('article')
     if return_param:
         # redirect email/google AMP logins (google social auth do not redirect to external urls)
         next_page = "%s?url=%s" % (reverse("amp-readerid:redirect"), return_param)
-    else:
+    elif not (product_slug or article_id):
         next_page = request.GET.get('next', request.session.get('next', '/'))
+    else:
+        next_page = None
 
-    if request.user.is_authenticated:
+    if next_page and request.user.is_authenticated:
         request.session.pop('next', None)  # if not removed, google signin from AMP will redirect in infinite loop
         request.session.modified = True
         return HttpResponseRedirect(next_page)
 
-    article_id, login_formclass, response, login_error, context = None, LoginForm, None, None, {}
+    login_formclass, response, login_error, context = LoginForm, None, None, {}
     default_planslug = content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
     if default_planslug:
         try:
@@ -396,6 +399,8 @@ def login(request, product_slug=None, product_variant=None):
             template = hard_paywall_template
             context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "article": article})
 
+    if not next_page:
+        next_page = request.GET.get('next', request.session.get('next', '/'))
     context.update({'next_page': next_page, 'next': pathname2url(next_page.encode('utf8').decode())})
 
     initial, name_or_mail = {}, request.GET.get('name_or_mail')
@@ -483,7 +488,7 @@ def login(request, product_slug=None, product_variant=None):
     if not response:
         # update next page in session for cases when google sign-in option is used
         request.session["next"] = next_page
-        context['login_form'] = login_form
+        context[("subscriber" if request.user.is_authenticated else "login") + '_form'] = login_form
         response = render(request, template, context)
 
     response['Expires'], response['Pragma'] = 0, 'no-cache'
@@ -826,6 +831,7 @@ class SubscribeView(TemplateView):
                         profile.province = default_province
                     subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
+                # TODO: check usage of initial vs instance (specially for SubscriberAddressForm)
                 initial = {
                     'email': user.email, 'first_name': user.first_name.strip(), "last_name": user.last_name.strip()
                 }
@@ -833,7 +839,7 @@ class SubscribeView(TemplateView):
                     initial['phone'] = subscriber.phone
 
                 if online:
-                    subscriber_form = get_formclass(request, "Subscriber")(initial=initial)
+                    subscriber_form = get_formclass(request, "Subscriber")(instance=subscriber, planslug=planslug)
                 else:
                     initial.update({'address': subscriber.address, 'city': subscriber.city})
                     if subscriber.province:
@@ -885,7 +891,7 @@ class SubscribeView(TemplateView):
             'subscription_type_prices': SubscriptionPrices.objects.filter(subscription_type=planslug),
             "terms_and_conds_accepted": self.get_initial_terms_and_conds_accepted(user),
         }
-        subscription_form = subscription_formclass(initial=initial)
+        subscription_form = subscription_formclass(initial=initial, planslug=planslug)
         context["is_already_subscribed"] = is_subscriber
 
         if not is_subscriber and request.method == 'POST':
@@ -1435,6 +1441,7 @@ def edit_profile(request, user=None):
             "email_is_bouncer": user.subscriber.email_is_bouncer(),
             "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
             "user_has_password": user_has_password,
+            "subscriptions_edit_profile_anchor": subscriptions_edit_profile_anchor,
         },
     )
 

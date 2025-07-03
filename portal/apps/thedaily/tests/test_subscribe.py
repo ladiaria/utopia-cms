@@ -15,9 +15,6 @@ from core.factories import UserFactory
 from thedaily.models import SubscriptionPrices
 
 
-sp_default = content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
-
-
 def generate_password():
     allowed = ascii_letters + digits + punctuation
     return User.objects.make_random_password(allowed_chars=allowed)
@@ -30,6 +27,12 @@ class SubscribeTestCase(TestCase):
     def setUp(self):
         translation.activate(settings.LOCALE_NAME_PREFIX)
         self.your_account = str(your_account_i18n)
+        sp_default_setting_name = "THEDAILY_TEST_SUBSCRIPTION_TYPE_DEFAULT"
+        sp_default_setting_val = getattr(settings, sp_default_setting_name, None)
+        self.assertNotEqual(sp_default_setting_val, None)
+        if sp_default_setting_val:
+            setattr(content_settings, sp_default_setting_name.replace("_TEST_", "_"), sp_default_setting_val)
+            self.sp_default = sp_default_setting_val
 
     def check_one_entry(self, response):
         self.assertEqual(response.status_code, 200)
@@ -40,14 +43,15 @@ class SubscribeTestCase(TestCase):
 
     def set_hname(self):
         # last word in the human readable name of the default subscription type
-        self.hname = SubscriptionPrices.objects.get(subscription_type=sp_default).name.lower().split()[-1]
+        s_default = SubscriptionPrices.objects.get(subscription_type=self.sp_default)
+        self.hname = s_default.name.lower().split()[-1]
+        self.sp_default_id = s_default.id
 
     def subscribe_requests(self, c, blocked_phone_prefix):
         response = c.get('/usuarios/planes/', follow=True)
         self.assertEqual(response.status_code, 200)
         response_content = response.content.decode()
         self.assertIn(self.hname, response_content.lower())
-        planslug = sp_default
         phone_subscription_log_clear()
         user = response.wsgi_request.user
         my_email, good_phone = user.email if user.is_authenticated else "userone@gmail.com", "+59896112233"
@@ -59,14 +63,14 @@ class SubscribeTestCase(TestCase):
             "password": generate_password(),
             "preferred_time": 1,
             "terms_and_conds_accepted": True,
-            "subscription_type_prices": planslug,
+            "subscription_type_prices": self.sp_default_id,
             "payment_type": "tel",
             "province": settings.THEDAILY_PROVINCE_CHOICES[1][0],
             "city": "Montevideo",
             "address": "Treinta y Tres 1479",
         }
         post_data.update(self.var.get("test01_extra_post_data", {}))
-        response = c.post('/usuarios/suscribite/%s/' % planslug, post_data, follow=True)
+        response = c.post('/usuarios/suscribite/%s/' % self.sp_default, post_data, follow=True)
         self.check_one_entry(response)
         response_content = response.content.decode()
         self.assertIn("Recibimos tu información", response_content)
@@ -109,11 +113,11 @@ class SubscribeTestCase(TestCase):
         self.assertNotIn(display_msg, response_content)
 
     def test01_subscribe_landing(self):
-        self.assertIsNotNone(sp_default)
+        self.assertIsNotNone(self.sp_default)
         self.set_hname()
         # change the category of default price to use a no onlie default price
         # but TODO: write this test version for "online" also ASAP
-        sp = SubscriptionPrices.objects.get(subscription_type=sp_default)
+        sp = SubscriptionPrices.objects.get(subscription_type=self.sp_default)
         sp.ga_category = "P"
         sp.save()
         c, blocked_phone_prefix = Client(), "+598966555"
@@ -128,7 +132,7 @@ class SubscribeTestCase(TestCase):
             self.subscribe_requests(c, blocked_phone_prefix)
 
     def test02_subscribe_landing_logged_in(self):
-        self.assertIsNotNone(sp_default)
+        self.assertIsNotNone(self.sp_default)
         self.set_hname()
         password, user = User.objects.make_random_password(), UserFactory()
         user.set_password(password)
@@ -146,7 +150,7 @@ class SubscribeTestCase(TestCase):
         response = c.get('/usuarios/confirm_email/')
         self.assertEqual(response.status_code, 404)
 
-        # mow the landings
+        # now the landings
         with self.settings(DEBUG=True):
             response = c.get('/usuarios/planes/', follow=True)
             self.assertEqual(response.status_code, 200)

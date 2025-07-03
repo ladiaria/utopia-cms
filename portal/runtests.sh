@@ -15,7 +15,9 @@ TEST_MODULES="homev3 core dashboard"
 SVACTIVE="systemctl is-active --quiet supervisord"
 # exit now if we are being sourced by another script or shell
 [[ "${#BASH_SOURCE[@]}" -gt "1" ]] && { return 0; }
-MANAGEPYTEST="python -W ignore manage.py test --settings=test_settings --failfast"
+MANAGEPYCMD="python -W ignore manage.py"
+MANAGEPYOPTS="--settings test_settings"
+MANAGEPYTEST="${MANAGEPYCMD} test ${MANAGEPYOPTS} --failfast"
 set -ex
 ${MANAGEPYTEST} --exclude-tag celery --keepdb ${TEST_MODULES} thedaily.tests.test_crmsync
 exit_if_last_failed

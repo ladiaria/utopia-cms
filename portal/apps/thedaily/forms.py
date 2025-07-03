@@ -168,6 +168,8 @@ class CrispyForm(Form):
 
 class CrispyModelForm(ModelForm):
     def __init__(self, *args, **kwargs):
+        # child classes in third party apps may need this kwarg, and may already used at this point, pop here is safe
+        kwargs.pop('planslug', None)
         super().__init__(*args, **kwargs)
         self.helper = (locate(custom_helper_class) if custom_helper_class else CrispyModelFormHelper)()
 

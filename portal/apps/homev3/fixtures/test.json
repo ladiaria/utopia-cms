@@ -1,5 +1,13 @@
 [
 {
+  "model": "sites.site",
+  "pk": 1,
+  "fields": {
+    "domain": "yoogle.com",
+    "name": "mysite"
+  }
+},
+{
   "pk": 1,
   "model": "core.publication",
   "fields": {
@@ -36,9 +44,9 @@
   }
 },
 {
-  "pk": 1,
   "model": "thedaily.subscriptionprices",
   "fields": {
+    "name": "suscripción digital",
     "subscription_type": "DDIGM",
     "ga_category": "D",
     "price": "350.00",
@@ -49,9 +57,9 @@
   }
 },
 {
-  "pk": 2,
   "model": "thedaily.subscriptionprices",
   "fields": {
+    "name": "papel lunes a viernes",
     "subscription_type": "PAPYDIM",
     "ga_category": "P",
     "price": "790.00",
@@ -62,9 +70,9 @@
   }
 },
 {
-  "pk": 3,
   "model": "thedaily.subscriptionprices",
   "fields": {
+    "name": "spinoff digital",
     "subscription_type": "spinoff",
     "ga_category": "D",
     "price": "350.00",

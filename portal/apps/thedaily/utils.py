@@ -29,10 +29,11 @@ from libs.utils import crm_rest_api_kwargs, get_site_name
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
 from signupwall.utils import get_ip
-from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
+from .models import Subscription, Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
 from . import get_app_template, log_formatter
 
 
+subscriptions_edit_profile_anchor = f"#{Subscription._meta.verbose_name_plural}"
 subscribe_logfile, subscribe_logger = getattr(settings, 'THEDAILY_SUBSCRIBE_LOGFILE', None), None
 if subscribe_logfile:
     subscribe_logger = logging.getLogger(__name__)
