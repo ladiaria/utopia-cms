@@ -19,6 +19,7 @@ from ga4mp import GtagMP
 from hashids import Hashids
 from content_settings.conf import content_settings
 
+from social_core.backends.google import GoogleOAuth2
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
@@ -97,7 +98,6 @@ from .models import (
 from .forms import (
     __name__ as forms_module_name,
     LoginForm,
-    SubscriberForm,
     SubscriberAddressForm,
     PasswordResetForm,
     WebSubscriptionForm,
@@ -111,7 +111,6 @@ from .forms import (
     PasswordResetRequestForm,
     PasswordChangeBaseForm,
     PasswordChangeForm,
-    GoogleSignupForm,
     GoogleSignupAddressForm,
     ProfileExtraDataForm,
     PhoneSubscriptionForm,
@@ -611,7 +610,7 @@ def google_phone(request):
             # default category newsletters are not added here because some subscriptions may not add the default
             # category newsletters. TODO: Add a M2M relation from subscriptionprices(planslug) to Category
             pass
-        return HttpResponseRedirect(reverse('subscribe', kwargs={'planslug': planslug}))
+        return HttpResponseRedirect(reverse('subscribe', kwargs={'planslug': planslug}) + "?oauth=1")
     try:
         oas = OAuthState.objects.get(state=request.session.get('google-oauth2_state'))
     except OAuthState.DoesNotExist:
@@ -688,6 +687,32 @@ class SubscriptionPricesListView(ListView):
 
 
 @method_decorator(never_cache, name='dispatch')
+class UtopiaSubscribeGateway(TemplateView):
+    template_name = get_app_template("online_subscription.html")
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**kwargs)
+
+
+@never_cache
+@login_required
+@csrf_exempt
+def subscribe_oauth(request, planslug, **kwargs):
+    """
+    We're using this intermediate view only to "assert" that the user is logged-in after completed the oauth login.
+    Even logged-in, we saw (in prod) that the session cookie was removed (we don't know why), often this happened when
+    our "phone" pipeline was used, but after include here this 1st line, the problem seems to be solved.
+    (See that pipeline comments for more information).
+    """
+    subscribe_log(request, f'subscribe_oauth (kwargs keys: {kwargs.keys()})')
+    request.session.modified = True
+    SubscribeGateway = locate(
+        getattr(settings, "THEDAILY_SUBSCRIBE_GATEWAY_VIEWCLASS", "thedaily.views.UtopiaSubscribeGateway")
+    )
+    return SubscribeGateway.as_view()(request, planslug, **kwargs)
+
+
+@method_decorator(never_cache, name='dispatch')
 class SubscribeView(TemplateView):
     """
     This view handles the plan subscriptions.
@@ -758,9 +783,9 @@ class SubscribeView(TemplateView):
             return view_func
 
     def dispatch(self, request, planslug, category_slug=None):
-        article_id = request.GET.get("article")
-
-        context, article = {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}, None
+        subscribe_log(request, 'SubscribeView.dispatch begin')
+        article_id, article = request.GET.get("article"), None
+        context = {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "google_backend_name": GoogleOAuth2.name}
         template = get_app_template("subscribe.html")
         if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
             try:
@@ -803,14 +828,33 @@ class SubscribeView(TemplateView):
                 return HttpResponseRedirect(request.path + qparams_str_wqmark)
             else:
                 user = oas.user
+                user_is_auth = user.is_authenticated
 
         product = get_object_or_404(Publication, slug=settings.DEFAULT_PUB)
         # TODO post release: Usage guide should describe when 404 is raised here
         subscription_price = get_object_or_404(SubscriptionPrices, subscription_type=planslug)
         oauth2_button, subscription_in_process, default_province = True, False, get_default_province()
         online = subscription_price.ga_category == 'D'
+        oauth = request.GET.get('oauth', False) == "1"
 
         if user_is_auth:
+
+            # "oauth=1" fakes a "suscription in process" and returns also the same render (the following step)
+            if oauth:
+                subscription = user.subscriber.subscriptions.first()
+                if subscription:
+                    proxyview_initial_context = self.get_context_data(subscription_in_process_posted=subscription)
+                    proxyview_initial_context.update(
+                        {
+                            "subscription_price": subscription_price,
+                            "user_created": True,  # TODO: check if this is correct
+                            'subscription': subscription,
+                        }
+                    )
+                    return subscribe_oauth(request, planslug, initial_context=proxyview_initial_context)
+                elif settings.DEBUG:
+                    print("no subscription yet for user %s" % user)
+
             auth_alt_flow = self.auth_alt_flow(request, planslug=planslug)
             if auth_alt_flow:
                 return auth_alt_flow
@@ -825,7 +869,7 @@ class SubscribeView(TemplateView):
                 oauth2_button = False
                 profile = get_or_create_user_profile(user)
                 if online:
-                    subscriber_form = GoogleSignupForm(instance=profile)
+                    subscriber_form = get_formclass(request, "GoogleSignup")(instance=profile)
                 else:
                     if not profile.province and default_province:
                         profile.province = default_province
@@ -835,7 +879,7 @@ class SubscribeView(TemplateView):
                 initial = {
                     'email': user.email, 'first_name': user.first_name.strip(), "last_name": user.last_name.strip()
                 }
-                if subscriber.phone:
+                if subscriber.phone != "":
                     initial['phone'] = subscriber.phone
 
                 if online:
@@ -857,7 +901,7 @@ class SubscribeView(TemplateView):
                 oauth2_button = False
                 profile = get_or_create_user_profile(user)
                 if online:
-                    subscriber_form = GoogleSignupForm(instance=profile)
+                    subscriber_form = get_formclass(request, "GoogleSignup")(instance=profile)
                 else:
                     if not profile.province and default_province:
                         profile.province = default_province
@@ -914,10 +958,10 @@ class SubscribeView(TemplateView):
                 # reason, the Subscriber object has a blank phone, the form will submit a phone value and then
                 # the form.save call must save the field in the Subscriber obj.
                 subscriber_form_v = (
-                    GoogleSignupForm if online else GoogleSignupAddressForm
-                ) if oauth2_state else (
-                    SubscriberForm if online else SubscriberAddressForm
-                )(post, instance=get_or_create_user_profile(request.user))
+                    get_formclass(request, "GoogleSignup" if online else "GoogleSignupAddress")
+                    if oauth2_state else
+                    get_formclass(request, "Subscriber" if online else "SubscriberAddress")
+                )(post, instance=get_or_create_user_profile(user))
             else:
                 if online:
                     subscription_in_process_posted = post.get('subscription_id')
@@ -928,9 +972,8 @@ class SubscribeView(TemplateView):
                                 {
                                     "subscription_price": subscription_price,
                                     "planslug": planslug,
-                                    "user_created": request.user.is_anonymous,
+                                    "user_created": user.is_anonymous,
                                     'subscription': subscription,
-                                    "subscriber_form": subscriber_form.__class__(instance=subscription.subscriber),
                                 }
                             )
                             context.update(self.get_context_data(subscription_in_process_posted=subscription))
@@ -941,7 +984,7 @@ class SubscribeView(TemplateView):
 
                 if oauth2_state:
                     subscriber_form_v = (
-                        GoogleSignupForm if online else GoogleSignupAddressForm
+                        get_formclass(request, "GoogleSignup" if online else "GoogleSignupAddress")
                     )(post, instance=get_or_create_user_profile(user))
                 else:
                     subscriber_form_v = get_formclass(
@@ -974,13 +1017,13 @@ class SubscribeView(TemplateView):
                 first_name = subscriber_form_v.cleaned_data.get("first_name")
                 if oauth2_state:
                     subscriber_form_v.save()
-                    if not subscription.first_name:
+                    if not subscription.billing_name:
                         # take first_name from oas (it can be not present due a previous not finished google signup)
-                        subscription.first_name = oas.fullname
-                    subscription.telephone = post.get('phone')
+                        subscription.billing_name = oas.fullname
+                    subscription.billing_phone = post.get('phone')
                 else:
-                    subscription.first_name = first_name
-                    subscription.telephone = post['phone']
+                    subscription.billing_name = first_name
+                    subscription.billing_phone = post['phone']
 
                 for post_key in ('address', 'city', 'province', 'promo_code'):
                     post_value = post.get(post_key)
@@ -1079,14 +1122,14 @@ class SubscribeView(TemplateView):
 
                 if oauth2_state:
                     if online:
-                        social_next = reverse("online-subscription")  # TODO: this pattern must be mapped
+                        social_next = reverse("subscribe", kwargs={"planslug": planslug}) + "?oauth=1"
                     else:
                         request.session['notify_phone_subscription'] = True
                         request.session['preferred_time'] = post.get('preferred_time')
                         social_next = reverse('phone-subscription')
                     request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
                     return HttpResponseRedirect(
-                        '%s?next=%s' % (reverse('social:begin', kwargs={'backend': 'google-oauth2'}), social_next)
+                        '%s?next=%s' % (reverse('social:begin', kwargs={'backend': GoogleOAuth2.name}), social_next)
                     )
                 else:
                     if online:
@@ -1095,7 +1138,6 @@ class SubscribeView(TemplateView):
                                 "subscription_price": subscription_price,
                                 "planslug": planslug,
                                 "user_created": user_created,
-                                'subscriber_form': subscriber_form_v,
                                 'subscription_form': subscription_form_v,
                                 'subscription': subscription,
                             }

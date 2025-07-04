@@ -546,6 +546,9 @@ def email_extra_validations(old_email, email, instance_id=None, next_page=None, 
                     )
 
                 elif User.objects.filter(username__iexact=email).exclude(**exclude_kwargs_user).exists():
+                    # TODO: "Multiple..." is not allways true, there are other cases when this code is reached.
+                    #       for example, when by admin somebody changes only the email field, so, divide cases to
+                    #       notify better or find a more realistic generic message.
                     mail_managers("Multiple username in users", email)
                     msg = error_msg_prefix + 'no puede ser utilizado.'
 

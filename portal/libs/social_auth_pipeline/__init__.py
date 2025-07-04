@@ -21,14 +21,14 @@ def check_email_in_use(backend, details, uid, user=None, *args, **kwargs):
     Taken from https://stackoverflow.com/a/40631405/2292933 and modified by us.
     Avoid associate an email already in use by another user.
     """
-    email = details.get('email')
+    email, error_exception_obj = details.get('email'), AuthIntegrityError(backend)
     if user:
         # logged-in assoc, check by username and email excluding the logged in user
         if User.objects.filter(Q(email__iexact=email) | Q(username__iexact=email)).exclude(id=user.id).exists():
-            raise AuthIntegrityError(backend)
+            raise error_exception_obj
     elif User.objects.filter(username__iexact=email).exclude(email__iexact=email).exists():
         # a new assoc, username with the email should not exist (unless is the one who has that email)
-        raise AuthIntegrityError(backend)
+        raise error_exception_obj
 
 
 def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
@@ -45,7 +45,7 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
     # 1. This is a new user and the user has no phone number and the phone number is required by settings.
     # 2. T&C are configured, assumed not to be accepted by default in google and the user has not accepted them yet.
     if (
-        (settings.THEDAILY_GOOGLE_OAUTH2_ASK_PHONE and not subscriber.phone and is_new)
+        (settings.THEDAILY_GOOGLE_OAUTH2_ASK_PHONE and subscriber.phone == "" and is_new)
         or (settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID and not subscriber.terms_and_conds_accepted)
     ):
         request = kwargs['request']
@@ -72,5 +72,6 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
                 subscribe_log(request, msg, logging.DEBUG)
                 return HttpResponseRedirect(reverse("login-error"))
             else:
-                OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
+                oasnew = OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
+                subscribe_log(request, f'OAuthState created: {oasnew} for user {user}')
         return HttpResponseRedirect('/usuarios/registrate/google/%s' % ('?is_new=1' if is_new else ""))

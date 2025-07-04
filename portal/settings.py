@@ -645,6 +645,9 @@ if locals().get("DEBUG_TOOLBAR_ENABLE"):
     # NOTE when enabled, you need to: pip install django-debug-toolbar && ./manage.py collectstatic
     INSTALLED_APPS += ('debug_toolbar',)
     MIDDLEWARE = MIDDLEWARE[:9] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[9:]
+    from debug_toolbar.settings import PANELS_DEFAULTS
+    DEBUG_TOOLBAR_PANELS = PANELS_DEFAULTS
+    DEBUG_TOOLBAR_PANELS.remove('debug_toolbar.panels.templates.TemplatesPanel')
 
 DEBUG = locals().get("DEBUG", False)
 if DEBUG:
