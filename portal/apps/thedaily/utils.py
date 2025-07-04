@@ -33,7 +33,7 @@ from .models import Subscription, Subscriber, SentMail, OAuthState, SubscriberEv
 from . import get_app_template, log_formatter
 
 
-subscriptions_edit_profile_anchor = f"#{Subscription._meta.verbose_name_plural}"
+subscriptions_edit_profile_anchor = Subscription._meta.verbose_name_plural
 subscribe_logfile, subscribe_logger = getattr(settings, 'THEDAILY_SUBSCRIBE_LOGFILE', None), None
 if subscribe_logfile:
     subscribe_logger = logging.getLogger(__name__)
