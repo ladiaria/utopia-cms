@@ -57,6 +57,8 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
                 return
             else:
                 oas.state = state
+                if is_new:
+                    oas.is_new = True
                 oas.save()
         except OAuthState.DoesNotExist:
             by_state = OAuthState.objects.filter(state=state)
@@ -72,6 +74,8 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
                 subscribe_log(request, msg, logging.DEBUG)
                 return HttpResponseRedirect(reverse("login-error"))
             else:
-                oasnew = OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
+                oasnew = OAuthState.objects.create(
+                    user=user, state=state, fullname=kwargs['details'].get('fullname'), is_new=is_new
+                )
                 subscribe_log(request, f'OAuthState created: {oasnew} for user {user}')
         return HttpResponseRedirect('/usuarios/registrate/google/%s' % ('?is_new=1' if is_new else ""))

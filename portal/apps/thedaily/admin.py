@@ -115,7 +115,7 @@ class SubscriberAdmin(ModelAdmin):
         'phone'
     )
     raw_id_fields = ('user',)
-    readonly_fields = ("extra_info", 'plan_id', 'get_latest_article_visited')
+    readonly_fields = ("extra_info", 'plan_id', 'get_latest_article_visited', 'terms_and_conds_accepted')
     list_filter = ['newsletters', 'category_newsletters', 'allow_news', 'allow_promotions', 'allow_polls']
     actions = ['send_account_info', "delete_user"]  # TODO: new action: sync_plan_id_from_activos_csv
     fieldsets = (
@@ -126,7 +126,7 @@ class SubscriberAdmin(ModelAdmin):
                 ('city', 'province'),
                 ('document', 'phone'),
                 ('newsletters', 'category_newsletters'),
-                ('allow_news', 'allow_promotions', 'allow_polls'),
+                ('allow_news', 'allow_promotions', 'allow_polls', 'terms_and_conds_accepted'),
                 ('extra_info',),
                 ('plan_id',),
                 ('get_latest_article_visited',),

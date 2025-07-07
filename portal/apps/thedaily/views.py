@@ -70,10 +70,10 @@ from django.utils.html import strip_tags
 from django.utils.translation import gettext as _
 from django.utils.decorators import method_decorator
 
+from utils.error_log import error_log
 from apps import mongo_db, bouncer_blocklisted
 from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
-from utils.error_log import error_log
 from decorators import render_response
 
 from core.models import Publication, Category, Article, ArticleUrlHistory
@@ -610,7 +610,8 @@ def google_phone(request):
             # default category newsletters are not added here because some subscriptions may not add the default
             # category newsletters. TODO: Add a M2M relation from subscriptionprices(planslug) to Category
             pass
-        return HttpResponseRedirect(reverse('subscribe', kwargs={'planslug': planslug}) + "?oauth=1")
+        request.session.modified = True
+        return HttpResponseRedirect(reverse('subscribe', kwargs={'planslug': planslug}) + qparamstr({'oauth': 1}))
     try:
         oas = OAuthState.objects.get(state=request.session.get('google-oauth2_state'))
     except OAuthState.DoesNotExist:
@@ -669,7 +670,7 @@ def google_phone(request):
                 reverse('social:begin', kwargs=redirect_kwargs) + (("?next=" + next_page) if next_page else "")
             )
     else:
-        # if is a new user add the default category newsletters (reached only from "free" subscriptions)
+        # add default newsletters to new users (reached only from "free" subscriptions)
         if is_new:
             add_default_newsletters(profile)
         elif profile.terms_and_conds_accepted:
@@ -819,7 +820,7 @@ class SubscribeView(TemplateView):
                 )
             )
 
-        oauth2_state = request.session.get('google-oauth2_state')
+        oauth2_state, oas = request.session.get('google-oauth2_state'), None
         if oauth2_state:
             try:
                 oas = OAuthState.objects.get(state=oauth2_state)
@@ -839,9 +840,10 @@ class SubscribeView(TemplateView):
 
         if user_is_auth:
 
+            subscriber = user.subscriber
             # "oauth=1" fakes a "suscription in process" and returns also the same render (the following step)
             if oauth:
-                subscription = user.subscriber.subscriptions.first()
+                subscription = subscriber.subscriptions.first()
                 if subscription:
                     proxyview_initial_context = self.get_context_data(subscription_in_process_posted=subscription)
                     proxyview_initial_context.update(
@@ -859,36 +861,30 @@ class SubscribeView(TemplateView):
             if auth_alt_flow:
                 return auth_alt_flow
 
-            subscriber = user.subscriber
             is_subscriber = self.is_subscriber(subscriber)
 
             if article and self.is_subscriber_for_article(subscriber, article):
                 return HttpResponseRedirect(article.get_absolute_url())
 
+            # the usage of initial even when instance is provided is because those fields are not in the instance,
+            # (they are fields from the User instance, then they must be also provided using initial)
+            initial = {'email': user.email, 'first_name': user.first_name.strip(), "last_name": user.last_name.strip()}
             if oauth2_state:
                 oauth2_button = False
                 profile = get_or_create_user_profile(user)
                 if online:
-                    subscriber_form = get_formclass(request, "GoogleSignup")(instance=profile)
+                    subscriber_form = get_formclass(request, "GoogleSignup")(instance=profile, initial=initial)
                 else:
                     if not profile.province and default_province:
                         profile.province = default_province
-                    subscriber_form = GoogleSignupAddressForm(instance=profile)
+                    subscriber_form = GoogleSignupAddressForm(instance=profile, initial=initial)
             else:
-                # TODO: check usage of initial vs instance (specially for SubscriberAddressForm)
-                initial = {
-                    'email': user.email, 'first_name': user.first_name.strip(), "last_name": user.last_name.strip()
-                }
-                if subscriber.phone != "":
-                    initial['phone'] = subscriber.phone
-
                 if online:
-                    subscriber_form = get_formclass(request, "Subscriber")(instance=subscriber, planslug=planslug)
+                    subscriber_form = get_formclass(request, "Subscriber")(
+                        instance=subscriber, initial=initial, planslug=planslug
+                    )
                 else:
-                    initial.update({'address': subscriber.address, 'city': subscriber.city})
-                    if subscriber.province:
-                        initial['province'] = subscriber.province
-                    subscriber_form = SubscriberAddressForm(initial=initial)
+                    subscriber_form = SubscriberAddressForm(instance=subscriber, initial=initial, planslug=planslug)
 
                 # do not show oauth button if this user is already associated
                 if user.social_auth.filter(provider='google-oauth2').exists():
@@ -961,7 +957,7 @@ class SubscribeView(TemplateView):
                     get_formclass(request, "GoogleSignup" if online else "GoogleSignupAddress")
                     if oauth2_state else
                     get_formclass(request, "Subscriber" if online else "SubscriberAddress")
-                )(post, instance=get_or_create_user_profile(user))
+                )(post, instance=user.subscriber)
             else:
                 if online:
                     subscription_in_process_posted = post.get('subscription_id')
@@ -1030,7 +1026,7 @@ class SubscribeView(TemplateView):
                     if post_value:
                         setattr(subscription, post_key, post_value)
 
-                user_created = False
+                user_created, add_nl_error_msg = False, "Error al agregar default NLs"
                 if user_is_auth:
                     # possible user new first name should be updated
                     if first_name and user.first_name != first_name:
@@ -1045,13 +1041,20 @@ class SubscribeView(TemplateView):
                         subscriber.save()
                     subscription.subscriber = subscriber
                     subscription.save()
+                    if oas:
+                        # add default newsletters (only if is a new user) then remove the oas object
+                        if oas.is_new:
+                            try:
+                                add_default_newsletters(subscriber)
+                            except Exception as exc:
+                                error_log(add_nl_error_msg + f": {exc}")  # TODO: alert managers?
+                        oas.delete()
                 else:
                     if oauth2_state:
                         # succesfull google sigin usage (form saved lines above), we can remove the oas object (just
                         # like the google_phone view does after a succesfull POST)
                         subscription.subscriber = user.subscriber
                         subscription.save()
-                        oas.delete()
                     else:
                         try:
                             user, user_created = subscriber_form_v.signup_form.create_user(), True
@@ -1080,8 +1083,7 @@ class SubscribeView(TemplateView):
                                 try:
                                     add_default_newsletters(user.subscriber)
                                 except Exception as exc:
-                                    error_log(f"Error al agregar default NLs: {exc}")
-                                    pass  # fail silently if default NLs cannot be added. TODO: alert managers?
+                                    error_log(add_nl_error_msg + f": {exc}")  # TODO: alert managers?
                         except Exception as exc:
                             msg = str(exc)
                             error_log(msg)
@@ -1120,7 +1122,7 @@ class SubscribeView(TemplateView):
                 request.session['subscription_type'] = subscription_price
                 # TODO (DRY_end)
 
-                if oauth2_state:
+                if oauth2_state and not user_is_auth:
                     if online:
                         social_next = reverse("subscribe", kwargs={"planslug": planslug}) + "?oauth=1"
                     else:

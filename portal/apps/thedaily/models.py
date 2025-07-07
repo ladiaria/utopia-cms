@@ -708,6 +708,7 @@ class OAuthState(Model):
     state = CharField(max_length=32, unique=True)
     fullname = CharField(max_length=255, blank=True, null=True)
     phone_submitted_blank = BooleanField(default=False)
+    is_new = BooleanField(default=False)
 
 
 class WebSubscriber(Subscriber):

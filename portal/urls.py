@@ -2,7 +2,8 @@
 import re
 from os.path import join
 from generator.views import contribute
-from rest_framework import serializers, viewsets, routers
+from rest_framework import serializers, viewsets, routers, permissions
+from rest_framework.response import Response
 from rest_framework_api_key.permissions import HasAPIKey
 
 from django.conf import settings
@@ -136,6 +137,21 @@ class JournalistSerializer(serializers.ModelSerializer):
         fields = ('name',)
 
 
+# custom permissions classes
+class IsSuperuserOrHasAPIKey(permissions.BasePermission):
+    """
+    Permite acceso a superusuarios o a solicitudes con una API Key válida.
+    """
+    def has_permission(self, request, view):
+        # Permite acceso si el usuario es superusuario
+        if request.user and request.user.is_superuser:
+            return True
+
+        # Si no es superusuario, delega a HasAPIKey
+        from rest_framework_api_key.permissions import HasAPIKey
+        return HasAPIKey().has_permission(request, view)
+
+
 # ViewSets define the view behavior.
 class PhotoViewSet(viewsets.ModelViewSet):
     queryset = PhotoExtended.objects.all()
@@ -222,10 +238,10 @@ class UrlViewSet(viewsets.ModelViewSet):
 
 class CustomAuthViewSetMixin:
     authentication_classes = [] if settings.ENV_HTTP_BASIC_AUTH else viewsets.ModelViewSet.authentication_classes
-    permission_classes = [HasAPIKey]
+    permission_classes = [IsSuperuserOrHasAPIKey if settings.DEBUG else HasAPIKey]
 
 
-# REST REM: post=create, put=modify, delete=destroy
+# REST REM: post=create, put=modify, delete=destroy, patch=update only those fields given
 
 
 class SubscriptionViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):
@@ -237,7 +253,19 @@ class SubscriptionViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):
 class SubscriptionPricesViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):
     queryset = SubscriptionPrices.objects.all()
     serializer_class = SubscriptionPricesSerializer
-    http_method_names = ["get", "head", "post", "put"]
+    lookup_field = 'subscription_type'
+    http_method_names = ["get", "head", "post", "patch"]
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        ei_bak = dict((k, v) for k, v in instance.extra_info.items() if k not in ("preapproval_plan_id", "benefits"))
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        if ei_bak:
+            instance.extra_info.update(ei_bak)
+            instance.save()
+        return Response(serializer.data)
 
 
 class SubscriberViewSet(viewsets.ModelViewSet):

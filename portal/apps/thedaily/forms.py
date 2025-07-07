@@ -326,25 +326,34 @@ class UserForm(BaseUserForm):
         }
 
 
-def first_name_field():
+def first_name_field(hidden=False):
     return CharField(
         label='Nombre',
-        widget=TextInput(attrs={'autocomplete': 'given-name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
+        widget=(
+            HiddenInput() if hidden else
+            TextInput(attrs={'autocomplete': 'given-name', 'autocapitalize': 'sentences', 'spellcheck': 'false'})
+        ),
     )
 
 
-def last_name_field():
+def last_name_field(hidden=False):
     return CharField(
         label='Apellido',
-        widget=TextInput(attrs={'autocomplete': 'family-name', 'autocapitalize': 'sentences', 'spellcheck': 'false'}),
+        widget=(
+            HiddenInput() if hidden else
+            TextInput(attrs={'autocomplete': 'family-name', 'autocapitalize': 'sentences', 'spellcheck': 'false'})
+        ),
     )
 
 
-def email_field():
+def email_field(hidden=False):
     return EmailField(
         label=_('Email'),
-        widget=EmailInput(
-            attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
+        widget=(
+            HiddenInput() if hidden else
+            EmailInput(
+                attrs={'inputmode': 'email', 'autocomplete': 'email', 'autocapitalize': 'none', 'spellcheck': 'false'}
+            )
         ),
     )
 
