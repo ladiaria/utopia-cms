@@ -458,20 +458,23 @@
 
     <!-- Google One Tap Authentication -->
     {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP %}
-      <script src="https://accounts.google.com/gsi/client" async defer></script>
+      <script src="https://accounts.google.com/gsi/client" async defer data-cfasync="false"></script>
       <script>
         window.onload = function () {
-          google.accounts.id.initialize({
-            client_id: '{{ google_client_id }}',
-            callback: handleCredentialResponse,
-            context: 'signin'
-          });
-          google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              // One Tap is not available, continue with regular login
-              console.log('Google One Tap not available');
-            }
-          });
+          if (window.google && google.accounts && google.accounts.id) {
+            google.accounts.id.initialize({
+              client_id: '{{ google_client_id }}',
+              callback: handleCredentialResponse,
+              context: 'signin'
+            });
+            google.accounts.id.prompt((notification) => {
+              if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                console.log('Google One Tap not available');
+              }
+            });
+          } else {
+            console.log('Google One Tap script not loaded');
+          }
         };
 
         function parseJwt(token) {
