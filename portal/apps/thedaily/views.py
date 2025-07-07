@@ -1122,13 +1122,14 @@ class SubscribeView(TemplateView):
                 request.session['subscription_type'] = subscription_price
                 # TODO (DRY_end)
 
-                if oauth2_state and not user_is_auth:
+                if oauth2_state:
                     if online:
                         social_next = reverse("subscribe", kwargs={"planslug": planslug}) + "?oauth=1"
                     else:
                         request.session['notify_phone_subscription'] = True
                         request.session['preferred_time'] = post.get('preferred_time')
                         social_next = reverse('phone-subscription')
+                    request.session.pop("google-oauth2_state", None)
                     request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
                     return HttpResponseRedirect(
                         '%s?next=%s' % (reverse('social:begin', kwargs={'backend': GoogleOAuth2.name}), social_next)
