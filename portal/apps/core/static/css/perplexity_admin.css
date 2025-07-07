@@ -1,0 +1,221 @@
+form#article_form .submit-row {
+  overflow: visible;
+}
+
+#perplexity-container {
+  position: relative;
+  display: flex;
+}
+
+#perplexity-tooltip {
+  display: none;
+  min-width: 20rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #CCC;
+  background: #FFF;
+  position: absolute;
+  top: -55px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#perplexity-tooltip p {
+  margin: 0;
+  font-size: 0.875rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+#perplexity-send-button:hover+div {
+  display: block;
+}
+
+/* Style for the Perplexity button */
+#perplexity-send-button {
+  background-color: #4178A0;
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: block;
+  transition: background 0.2s;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 13.75rem;
+}
+
+#perplexity-send-button span {
+  font-size: 0.875rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+#perplexity-send-button.loading svg {
+  animation: rotate 2s linear infinite;
+  transform-origin: center center;
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+#perplexity-send-button.activated,
+#perplexity-send-button.activated:hover {
+  background-color: #CCC;
+  opacity: 1;
+}
+
+#perplexity-send-button:disabled {
+  cursor: default;
+}
+
+#perplexity-send-button:hover:not(:disabled) {
+  background-color: #79aec8;
+}
+
+/* Widen the textareas */
+#id_perplexity_message,
+#id_perplexity_response {
+  width: 100%;
+  max-width: 700px;
+  min-width: 400px;
+  box-sizing: border-box;
+  font-size: 1.1em;
+  margin-bottom: 10px;
+}
+
+.form-row.field-alt_title_metadata,
+.form-row.field-copy_para_redes {
+  display: flex;
+  justify-content: space-between;
+}
+
+#metatitle-ia-container,
+#copy-para-redes-ia-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  max-width: 474px;
+}
+
+.ia-suggestion {
+  max-width: 600px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background-color: #E8E8E8;
+  border-radius: 8px;
+  padding: 6px 8px 6px 16px;
+}
+
+#metatitle-ia-container .ia-suggestion p,
+#copy-para-redes-ia-container .ia-suggestion p {
+  margin: 0;
+  color: #000;
+}
+
+#metatitle-ia-container .ia-suggestion button,
+#copy-para-redes-ia-container .ia-suggestion button {
+  text-transform: uppercase;
+  border-radius: 50px;
+  border: 1px solid #4178A0;
+  background: #4178A0;
+  color: white;
+  padding: 6px 20px;
+  font-weight: 700;
+  line-height: normal;
+  min-width: 4.75rem;
+}
+
+#metatitle-ia-container .ia-suggestion button:hover,
+#copy-para-redes-ia-container .ia-suggestion button:hover {
+  background-color: #79AEC8;
+  border-color: #79AEC8;
+}
+
+#metatitle-ia-container .ia-suggestion button.activated,
+#copy-para-redes-ia-container .ia-suggestion button.activated {
+  border: 1px solid #A6BCCB;
+  background: #A6BCCB;
+  cursor: default;
+  padding: 3.5px 20px;
+}
+
+/* Confirmation container */
+#ia-confirmation-container {
+  border-radius: 4px;
+  border: 1px solid #E8E8E8;
+  background: #F8F8F8;
+  max-width: 680px;
+  display: flex;
+  padding: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+#ia-confirmation-container .title {
+  border-bottom: 1px solid #CCC;
+  color: #747474;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: normal;
+  padding-bottom: 8px;
+  width: 100%;
+}
+
+.confirmation-suggestions-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+#ia-confirmation-container .confirmation-suggestion {
+  display: flex;
+  gap: 16px;
+}
+
+#ia-confirmation-container .confirmation-suggestion p,
+#ia-confirmation-container .confirmation-suggestion button {
+  line-height: normal;
+  margin: 0;
+}
+
+.confirmation-suggestion p.type {
+  color: #666;
+  min-width: 10rem;
+}
+
+.confirmation-suggestion p.value {
+  flex: 1;
+  color: #000;
+}
+
+#ia-confirmation-container .confirmation-suggestion button {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  color: #417893
+}
+
+.confirmation-suggestion>a:hover span {
+  color: #79AEC8;
+}
+
+.confirmation-suggestion>a:hover svg path {
+  fill: #79AEC8;
+}
+
+.hidden {
+  display: none !important;
+}

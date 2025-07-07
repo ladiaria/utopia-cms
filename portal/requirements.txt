@@ -74,6 +74,8 @@ factory-boy
 tqdm
 w3storage
 qrcode
+django-solo
+pydantic
 
 # Our own repos (TODO: change to pypi package when released there):
 git+https://github.com/ladiaria/django-amp-readerid.git
