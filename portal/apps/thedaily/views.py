@@ -1144,7 +1144,7 @@ class SubscribeView(TemplateView):
                                 'subscription': subscription,
                             }
                         )
-                        context.update(self.get_context_data())
+                        context.update(self.get_context_data(subscription_in_process_posted=subscription))
                         next_viewcall = self.next_viewcall(subscription_form_v.cleaned_data.get('next_page'))
                         if next_viewcall:
                             return next_viewcall(request, planslug, context)
