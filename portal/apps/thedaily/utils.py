@@ -49,6 +49,8 @@ non_relevant_data_max_amounts = {
     SubscriberEvent: 1,
     Subscriber.newsletters.through: 10,
     Subscriber.category_newsletters.through: 10,
+    Subscription: 1,
+    Subscription.subscription_type_prices.through: 1,
     UserSocialAuth: 1,
     SentMail: 10,
     ArticleViewedBy: 10,
@@ -112,14 +114,18 @@ def move_data(s0, s1):
 def subscribe_log(request, message, level=logging.INFO):
     if subscribe_logger and not request.user_agent.is_bot:
         log_session_keys = getattr(settings, "THEDAILY_SUBSCRIBE_LOG_SESSION_KEYS", False)
+        log_post_keys = getattr(settings, "THEDAILY_SUBSCRIBE_LOG_POST_KEYS", False)
+        log_user_agent = getattr(settings, "THEDAILY_SUBSCRIBE_LOG_USER_AGENT", False)
         subscribe_logger.log(
             level,
-            '[%s]\t%s%s %s\t(%s)\tuser: %s, "%s", session keys: %s' % (
+            '[%s]\t%s%s %s%s\tuser: %s, "%s", session keys: %s' % (
                 get_ip(request),
                 'X' if is_xhr(request) else '',
-                request.method,
+                request.method + (
+                    f", keys={request.POST.keys()}" if request.method == "POST" and log_post_keys else ""
+                ),
                 request.get_full_path(),
-                request.user_agent,
+                f"\t({request.user_agent})" if log_user_agent else "",
                 getattr(request.user, 'id', 'not_set'),
                 message,
                 (

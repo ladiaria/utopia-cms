@@ -18,7 +18,6 @@ from PIL import Image
 from ga4mp import GtagMP
 from hashids import Hashids
 from content_settings.conf import content_settings
-
 from social_core.backends.google import GoogleOAuth2
 from social_django.models import UserSocialAuth
 from emails.django import DjangoMessage as Message
@@ -661,7 +660,7 @@ def google_phone(request):
             request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
             redirect_kwargs = {'backend': 'google-oauth2'}
             # if the user didn't complete the phone, we tell pipeline to not redirect here again through oas obj
-            if google_signin_form.instance.phone:
+            if google_signin_form.instance.phone != "":
                 oas.delete()
             else:
                 oas.phone_submitted_blank = True
@@ -839,7 +838,6 @@ class SubscribeView(TemplateView):
         oauth = request.GET.get('oauth', False) == "1"
 
         if user_is_auth:
-
             subscriber = user.subscriber
             # "oauth=1" fakes a "suscription in process" and returns also the same render (the following step)
             if oauth:
@@ -866,50 +864,56 @@ class SubscribeView(TemplateView):
             if article and self.is_subscriber_for_article(subscriber, article):
                 return HttpResponseRedirect(article.get_absolute_url())
 
-            # the usage of initial even when instance is provided is because those fields are not in the instance,
-            # (they are fields from the User instance, then they must be also provided using initial)
-            initial = {'email': user.email, 'first_name': user.first_name.strip(), "last_name": user.last_name.strip()}
-            if oauth2_state:
-                oauth2_button = False
-                profile = get_or_create_user_profile(user)
-                if online:
-                    subscriber_form = get_formclass(request, "GoogleSignup")(instance=profile, initial=initial)
-                else:
-                    if not profile.province and default_province:
-                        profile.province = default_province
-                    subscriber_form = GoogleSignupAddressForm(instance=profile, initial=initial)
-            else:
-                if online:
-                    subscriber_form = get_formclass(request, "Subscriber")(
-                        instance=subscriber, initial=initial, planslug=planslug
-                    )
-                else:
-                    subscriber_form = SubscriberAddressForm(instance=subscriber, initial=initial, planslug=planslug)
-
-                # do not show oauth button if this user is already associated
-                if user.social_auth.filter(provider='google-oauth2').exists():
+            if request.method == 'GET':
+                # the usage of initial even when instance is provided is because those fields are not in the instance,
+                # (they are fields from the User instance, then they must be also provided using initial)
+                initial = {
+                    'email': user.email, 'first_name': user.first_name.strip(), "last_name": user.last_name.strip()
+                }
+                if oauth2_state:
                     oauth2_button = False
+                    profile = get_or_create_user_profile(user)
+                    if online:
+                        subscriber_form = get_formclass(request, "GoogleSignup")(instance=profile, initial=initial)
+                    else:
+                        if not profile.province and default_province:
+                            profile.province = default_province
+                        subscriber_form = GoogleSignupAddressForm(instance=profile, initial=initial)
+                else:
+                    if online:
+                        subscriber_form = get_formclass(request, "Subscriber")(
+                            instance=subscriber, initial=initial, planslug=planslug
+                        )
+                    else:
+                        subscriber_form = SubscriberAddressForm(
+                            instance=subscriber, initial=initial, planslug=planslug
+                        )
+
+                    # do not show oauth button if this user is already associated
+                    if user.social_auth.filter(provider='google-oauth2').exists():
+                        oauth2_button = False
 
         else:
             # not authenticated
             is_subscriber = False
-            if oauth2_state:
-                oauth2_button = False
-                profile = get_or_create_user_profile(user)
-                if online:
-                    subscriber_form = get_formclass(request, "GoogleSignup")(instance=profile)
-                else:
-                    if not profile.province and default_province:
-                        profile.province = default_province
-                    subscriber_form = GoogleSignupAddressForm(instance=profile)
-            else:
-                subscriber_form = get_formclass(
-                    request, "SubscriberSignup" if online else "SubscriberSignupAddress"
-                )(initial={'next_page': request.path})
-            # check session and if a new user was created, encourage login
             if request.method == 'GET':
-                subscription = request.session.get('subscription')
-                subscription_in_process = subscription and subscription.subscriber
+                if oauth2_state:
+                    oauth2_button = False
+                    profile = get_or_create_user_profile(user)
+                    if online:
+                        subscriber_form = get_formclass(request, "GoogleSignup")(instance=profile)
+                    else:
+                        if not profile.province and default_province:
+                            profile.province = default_province
+                        subscriber_form = GoogleSignupAddressForm(instance=profile)
+                else:
+                    subscriber_form = get_formclass(
+                        request, "SubscriberSignup" if online else "SubscriberSignupAddress"
+                    )(initial={'next_page': request.path})
+
+        # check session and if a new user was created, encourage login (TODO: explain better this comment)
+        subscription = request.session.get('subscription')
+        subscription_in_process = subscription and subscription.subscriber
 
         PROMOCODE_ENABLED, nocaptcha = getattr(settings, 'THEDAILY_PROMOCODE_ENABLED', False), no_captcha(request)
 
@@ -1122,14 +1126,13 @@ class SubscribeView(TemplateView):
                 request.session['subscription_type'] = subscription_price
                 # TODO (DRY_end)
 
-                if oauth2_state:
+                if oauth2_state and not user_is_auth:
                     if online:
                         social_next = reverse("subscribe", kwargs={"planslug": planslug}) + "?oauth=1"
                     else:
                         request.session['notify_phone_subscription'] = True
                         request.session['preferred_time'] = post.get('preferred_time')
                         social_next = reverse('phone-subscription')
-                    request.session.pop("google-oauth2_state", None)
                     request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
                     return HttpResponseRedirect(
                         '%s?next=%s' % (reverse('social:begin', kwargs={'backend': GoogleOAuth2.name}), social_next)
@@ -1896,8 +1899,8 @@ def delete_user_from_crm(request):
         return is_valid, msg
 
     try:
-        contact_id = request.POST["contact_id"]
-        email = request.POST.get("email", "")
+        contact_id = request.data["contact_id"]
+        email = request.data.get("email", "")
     except KeyError:
         return HttpResponseBadRequest("Missing argument contact_id")
 
