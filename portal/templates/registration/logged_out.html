@@ -3,6 +3,11 @@
 
 {% block page_title %}{% title_joinparts 'Cerraste la sesión con éxito' %}{% endblock %}
 
+{% block meta %}
+  {{ block.super }}
+  <meta name="prerender-status" content="no-prerender">{# if not, it can cause unwanted logouts #}
+{% endblock %}
+
 {% block header_scripts %}{% endblock %}
 
 {% block body_class %}login no-footer{% endblock %}
