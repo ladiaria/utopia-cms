@@ -455,5 +455,45 @@
     {% block javascript %}{% endblock %}
     {% block footer_scripts %}{% endblock %}
     {% block footer_scripts_extra %}{% endblock %}
+
+    <!-- Google One Tap Authentication -->
+    {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP %}
+      <script src="https://accounts.google.com/gsi/client" async defer data-cfasync="false"></script>
+      <script>
+        window.onload = function () {
+          if (window.google && google.accounts && google.accounts.id) {
+            google.accounts.id.initialize({
+              client_id: '{{ google_client_id }}',
+              callback: handleCredentialResponse,
+              context: 'signin'
+            });
+            google.accounts.id.prompt((notification) => {
+              if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                console.log('Google One Tap not available');
+              }
+            });
+          } else {
+            console.log('Google One Tap script not loaded');
+          }
+        };
+
+        function parseJwt(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        function handleCredentialResponse(response) {
+          // Use the existing Google OAuth flow with the credential
+          // Redirect to the existing Google OAuth endpoint with the credential
+          const payload = parseJwt(response.credential);
+          const email = payload.email;
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}&login_hint=" + encodeURIComponent(email);
+        }
+      </script>
+    {% endif %}
   </body>
 </html>
