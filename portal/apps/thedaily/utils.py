@@ -30,6 +30,7 @@ from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
 from signupwall.utils import get_ip
 from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
+from utopia_cms_ladiaria.models import RadioNewsletter
 
 
 subscribe_logfile, subscribe_logger = getattr(settings, 'THEDAILY_SUBSCRIBE_LOGFILE', None), None
@@ -245,8 +246,15 @@ def get_profile_newsletters_ordered():
     nl_custom_ordered = [next((x for x in nl_unsorted if x.slug == o), None) for o in custom_order]
     nl_alpha = [nl_obj for nl_obj in nl_unsorted if nl_obj not in nl_custom_ordered]
     nl_alpha.sort(key=attrgetter("slug"))
-    return [nl_obj for nl_obj in nl_custom_ordered if nl_obj] + nl_alpha
+    newsletters = [nl_obj for nl_obj in nl_custom_ordered if nl_obj] + nl_alpha
 
+    # Add RadioNewsletter if it is not already in the list
+    # This allows RadioNewsletter to appear in the user dashboard
+    radio_newsletter = RadioNewsletter.objects.order_by("-day").first()
+    if radio_newsletter and radio_newsletter not in newsletters:
+        newsletters.append(radio_newsletter)
+
+    return newsletters
 
 def google_phone_next_page(request, is_new):
     next_page = request.session.pop("next", None)  # allways pop next page from session
