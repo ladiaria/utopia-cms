@@ -465,7 +465,8 @@
             google.accounts.id.initialize({
               client_id: '{{ google_client_id }}',
               callback: handleCredentialResponse,
-              context: 'signin'
+              context: 'signin',
+              itp_support: true
             });
             google.accounts.id.prompt((notification) => {
               if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
