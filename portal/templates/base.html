@@ -467,6 +467,12 @@
   <script src="https://accounts.google.com/gsi/client" async defer data-cfasync="false"></script>
   <script>
     window.onload = function () {
+
+        // Disable any existing Google Sign-In buttons
+      if (window.gapi && window.gapi.load) {
+        console.log('Disabling old Google Sign-In to prevent conflicts');
+        window.gapi = undefined;
+      }
       if (window.google && google.accounts && google.accounts.id) {
 
         // Detect if we're likely to have cookie/popup issues
