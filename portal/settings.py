@@ -583,6 +583,9 @@ PHONENUMBER_DEFAULT_REGION = None
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 ENABLE_GOOGLE_ONE_TAP = False
+EXCLUDE_ONE_TAP_FOR_URLS = ["/usuarios/entrar/",
+                            "/usuarios/suscribite/",
+                            "/usuarios/restablecer/"]
 
 # ====================================================================================== visual separator =============
 

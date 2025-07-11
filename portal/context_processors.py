@@ -179,6 +179,12 @@ def google_client_id(request):
 
 
 def google_one_tap_enabled(request):
+    exclude_one_tap_for_urls = getattr(settings, 'EXCLUDE_ONE_TAP_FOR_URLS', [])
+
+    # Check if the current path start with any of the prefix
+    show_one_google_tap = not any(request.path.startswith(prefix) for prefix in exclude_one_tap_for_urls)
+
     return {
         'ENABLE_GOOGLE_ONE_TAP': getattr(settings, 'ENABLE_GOOGLE_ONE_TAP', False),
+        'SHOW_ONE_GOOGLE_TAP': show_one_google_tap,
     }
