@@ -98,7 +98,6 @@ from .forms import (
     __name__ as forms_module_name,
     LoginForm,
     SubscriberAddressForm,
-    PasswordResetForm,
     WebSubscriptionForm,
     WebSubscriptionPromoCodeForm,
     WebSubscriptionCaptchaForm,
@@ -108,8 +107,6 @@ from .forms import (
     SubscriptionCaptchaForm,
     SubscriptionPromoCodeCaptchaForm,
     PasswordResetRequestForm,
-    PasswordChangeBaseForm,
-    PasswordChangeForm,
     GoogleSignupAddressForm,
     ProfileExtraDataForm,
     PhoneSubscriptionForm,
@@ -1360,15 +1357,18 @@ def password_change(request, user_id=None, hash=None):
     if user_id and hash:
         user = get_object_or_404(User, id=user_id)
         form_kwargs = {'user': user, 'hash': hash}
-        password_change_form = PasswordResetForm(post, **form_kwargs) if is_post else PasswordResetForm(**form_kwargs)
+        formclass = get_formclass(request, "PasswordReset")
+        password_change_form = formclass(post, **form_kwargs) if is_post else formclass(**form_kwargs)
     else:
         if not request.user.is_authenticated:
             raise Http404('Unauthorized access.')
         user = request.user
         if user.has_usable_password():
-            password_change_form = PasswordChangeForm(post, user=user) if is_post else PasswordChangeForm()
+            formclass = get_formclass(request, "PasswordChange")
+            password_change_form = formclass(post, user=user) if is_post else formclass()
         else:
-            password_change_form = PasswordChangeBaseForm(post, user=user) if is_post else PasswordChangeBaseForm()
+            formclass = get_formclass(request, "PasswordChangeBase")
+            password_change_form = formclass(post, user=user) if is_post else formclass()
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])

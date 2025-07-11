@@ -5,7 +5,7 @@ from pydoc import locate
 from django.conf import settings
 from django.http import UnreadablePostError
 from django.contrib.auth.models import User
-from django.contrib.auth.password_validation import validate_password, get_password_validators
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import mail_managers
 from django.forms import (
@@ -104,9 +104,7 @@ terms_and_conditions_prelogin = (
 
 
 def check_password_strength(password, user=None):
-    return validate_password(
-        password, user, get_password_validators(PASSWORD_VALIDATORS) if PASSWORD_VALIDATORS else None
-    )
+    return validate_password(password, user)
 
 
 def clean_terms_and_conds(form):
@@ -417,7 +415,13 @@ class SignupForm(BaseUserForm):
     def clean_password(self):
         data = self.cleaned_data
         password = data.get('password')
-        return check_password_strength(password) or password
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        email = data.get('email')
+        return (
+            check_password_strength(password, User(email=email, first_name=first_name, last_name=last_name))
+            or password
+        )
 
     def clean_terms_and_conds_accepted(self):
         return clean_terms_and_conds(self)
@@ -1157,15 +1161,12 @@ class PasswordChangeBaseForm(CrispyForm):
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'change_password'
-        self.helper.layout = (
-            custom_layout(self.helper.form_id, False)
-            or Layout(
-                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-                HTML('<div class="align-center">'),
-                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-                HTML('</div>'),
-            )
+        self.helper.layout = Layout(
+            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+            HTML('<div class="align-center">'),
+            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+            HTML('</div>'),
         )
 
     def clean(self):
@@ -1190,16 +1191,13 @@ class PasswordChangeForm(PasswordChangeBaseForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper.layout = (
-            custom_layout(self.helper.form_id)
-            or Layout(
-                Field('old_password', template='materialize_css_forms/layout/password.html'),
-                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-                HTML('<div class="align-center">'),
-                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-                HTML('</div>'),
-            )
+        self.helper.layout = Layout(
+            Field('old_password', template='materialize_css_forms/layout/password.html'),
+            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+            HTML('<div class="align-center">'),
+            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+            HTML('</div>'),
         )
 
     def clean_old_password(self):
@@ -1238,7 +1236,7 @@ class PasswordResetForm(PasswordChangeBaseForm):
         super().__init__(*args, **kwargs)
 
         self.helper.layout = (
-            custom_layout(self.helper.form_id, False, initial['gonzo'])
+            self.custom_layout(False, initial['gonzo'])
             or Layout(
                 Field('new_password_1', template='materialize_css_forms/layout/password.html'),
                 Field('new_password_2', template='materialize_css_forms/layout/password.html'),
@@ -1249,6 +1247,9 @@ class PasswordResetForm(PasswordChangeBaseForm):
                 HTML('</div>'),
             )
         )
+
+    def custom_layout(self, *args, **kwargs):
+        pass
 
     def gen_gonzo(self):
         from libs.utils import do_gonzo

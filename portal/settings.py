@@ -6,6 +6,7 @@ from freezegun import freeze_time
 from kombu import Queue
 from babel import Locale
 from pycountry import countries
+import environ
 
 import django
 from django.conf.global_settings import DEFAULT_CHARSET
@@ -22,6 +23,10 @@ PROJECT_NAME = basename(PROJECT_ABSOLUTE_DIR)
 APPS_DIR = join(PROJECT_ABSOLUTE_DIR, "apps")
 if APPS_DIR not in sys.path:
     sys.path.insert(0, APPS_DIR)
+
+env = environ.Env(DEBUG=(bool, False))
+environ.Env.read_env(join(PROJECT_ABSOLUTE_DIR, '.env'))
+DATABASES = {'default': env.db()}
 
 SITE_ROOT = dirname(realpath(__file__))
 STATIC_URL = "/static/"
@@ -234,7 +239,6 @@ USE_I18N = True
 USE_L10N = True
 LOCAL_LANG = "es"
 LOCAL_COUNTRY = "UY"
-LOCALE_PATHS = [join(PROJECT_ABSOLUTE_DIR, "locale")]
 
 USE_TZ = True
 DATE_INPUT_FORMATS = (
@@ -603,6 +607,8 @@ TESTING_PORT = 8000
 LOCAL_EMAIL_BACKEND_TEST = False
 
 # defaults that will be assigned after local settings import
+DATABASES_default_OPTIONS = {}
+LOCALE_PATHS = []
 COMPRESS_OFFLINE_CONTEXT = {}
 SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
@@ -624,6 +630,7 @@ ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restri
 from local_settings import *  # noqa
 
 
+DATABASES['default']['OPTIONS'] = DATABASES_default_OPTIONS
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
@@ -633,6 +640,9 @@ if "LANGUAGE_CODE" not in locals():
     LANGUAGE_CODE = f"{LOCAL_LANG}-{LOCAL_COUNTRY.lower()}"
 LOCALE_NAME_PREFIX = f"{LOCAL_LANG}_{LOCAL_COUNTRY}"
 LOCALE_NAME = f"{LOCALE_NAME_PREFIX}.{DEFAULT_CHARSET}"
+LOCALE_PATHS_DEFAULT_ITEM = join(PROJECT_ABSOLUTE_DIR, "locale")
+if LOCALE_PATHS_DEFAULT_ITEM not in LOCALE_PATHS:
+    LOCALE_PATHS.append(LOCALE_PATHS_DEFAULT_ITEM)
 
 LANG_NAME = Locale.parse(LOCAL_LANG).get_display_name().capitalize()
 COUNTRY_NAME = countries.get(alpha_2=LOCAL_COUNTRY).name
@@ -649,7 +659,7 @@ if locals().get("DEBUG_TOOLBAR_ENABLE"):
     DEBUG_TOOLBAR_PANELS = PANELS_DEFAULTS
     DEBUG_TOOLBAR_PANELS.remove('debug_toolbar.panels.templates.TemplatesPanel')
 
-DEBUG = locals().get("DEBUG", False)
+DEBUG = locals().get("DEBUG", env("DEBUG"))
 if DEBUG:
     MIDDLEWARE = MIDDLEWARE[:8] + ("corsheaders.middleware.CorsMiddleware",) + MIDDLEWARE[8:]
 

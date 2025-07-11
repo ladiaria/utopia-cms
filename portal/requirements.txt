@@ -8,6 +8,7 @@ django-admin-sortable2
 django-activity-stream==1.4.2
 django-bleach==3.0.1
 django-content-settings
+django-environ
 freezegun
 inflect
 social-auth-app-django

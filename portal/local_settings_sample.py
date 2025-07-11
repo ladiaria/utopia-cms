@@ -22,15 +22,7 @@ ADMINS = (("Admin", "admin@example.com"),)  # change to a real mailbox for non-d
 
 MANAGERS = ADMINS
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "utopiacms",
-        "USER": "utopiacms_user",
-        "PASSWORD": "password",
-        "OPTIONS": {"init_command": "SET sql_mode='STRICT_TRANS_TABLES'"},
-    }
-}
+DATABASES_default_OPTIONS = {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"}
 
 # example of custom datetime formatting
 TIME_ZONE = "America/Montevideo"
