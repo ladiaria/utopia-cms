@@ -470,11 +470,12 @@
           if (window.google && google.accounts && google.accounts.id) {
             google.accounts.id.initialize({
               client_id: '{{ google_client_id }}',
-              callback: handleCredentialResponse,
+              //callback: handleCredentialResponse,
               context: 'signin',
               itp_support: true,  // ← CLAVE: Habilitar soporte para navegadores con ITP (Firefox/Safari)
               use_fedcm_for_prompt: true,  // ← Usar FedCM cuando esté disponible
               ux_mode: 'redirect',  // ← FORZAR modo redirect en lugar de popup
+              login_uri: "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}"
             });
             google.accounts.id.prompt((notification) => {
               if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
