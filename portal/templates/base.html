@@ -486,9 +486,10 @@
             client_id: '{{ google_client_id }}',
             callback: handleCredentialResponse,
             context: 'signin',
+            // Additional configurations for stability
             itp_support: true,
             use_fedcm_for_prompt: true,
-            // Additional configurations for stability
+            // UI behavior configurations
             cancel_on_tap_outside: false,
             auto_select: false
           });
