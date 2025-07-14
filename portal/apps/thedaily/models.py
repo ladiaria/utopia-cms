@@ -457,7 +457,7 @@ def delete_data_from_crm(api_url, data):
         return res.json()
 
 
-def get_data_from_crm(api_url, data):
+def get_data_from_crm(api_url, data=None):
     """
     Performs an GET request to the CRM app
     api_url is the request url and data is the request param data
@@ -468,7 +468,8 @@ def get_data_from_crm(api_url, data):
     api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
     if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
         api_kwargs = crm_rest_api_kwargs(api_key)
-        api_kwargs["params"] = data  # get call send data like query params
+        if data:
+            api_kwargs["params"] = data  # get call send data like query params
         res = requests.get(api_url, **api_kwargs)
         res.raise_for_status()
         return res.json()
