@@ -182,12 +182,16 @@ def google_client_id(request):
 
 
 def google_one_tap_enabled(request):
-    exclude_one_tap_for_urls = getattr(settings, 'EXCLUDE_ONE_TAP_FOR_URLS', [])
-
-    # Check if the current path start with any of the prefix
-    show_one_google_tap = not any(request.path.startswith(prefix) for prefix in exclude_one_tap_for_urls)
-
-    return {
-        'ENABLE_GOOGLE_ONE_TAP': getattr(settings, 'ENABLE_GOOGLE_ONE_TAP', False),
-        'SHOW_ONE_GOOGLE_TAP': show_one_google_tap,
+    is_enable_google_one_tap = getattr(settings, 'ENABLE_GOOGLE_ONE_TAP', False)
+    context_to_update = {
+        'ENABLE_GOOGLE_ONE_TAP': is_enable_google_one_tap,
     }
+
+    if is_enable_google_one_tap:
+        exclude_one_tap_for_urls = getattr(settings, 'EXCLUDE_ONE_TAP_FOR_URLS', [])
+
+        # Check if the current path start with any of the prefix
+        show_one_google_tap = not any(request.path.startswith(prefix) for prefix in exclude_one_tap_for_urls)
+        context_to_update.update({'SHOW_ONE_GOOGLE_TAP': show_one_google_tap})
+
+    return context_to_update
