@@ -126,6 +126,7 @@ INSTALLED_APPS = (
     "django_celery_beat",
     "phonenumber_field",
     "closed_site",
+    'solo',
 )
 
 SITE_ID = 1
