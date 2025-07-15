@@ -640,18 +640,28 @@ if ENABLE_GOOGLE_ONE_TAP:
     CONTENT_SECURITY_POLICY = {
         'DIRECTIVES': {
             'child-src': ["'self'", 'https://accounts.google.com'],
-            'connect-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
             'form-action': ["'self'", 'https://accounts.google.com'],
             'frame-ancestors': ["'self'", 'https://accounts.google.com'],
             'frame-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
-            'script-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'"],
 
             'style-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'", "'unsafe-hashes'"],
             'style-src-attr': ["'unsafe-inline'"],  # Para inline styles de Google
-            'style-src-elem': ["'self'", 'https://accounts.google.com'],  # Para https://accounts.google.com/gsi/style
             'img-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com', 'data:'],
-            'font-src': ["'self'", 'https://accounts.google.com', 'https://fonts.gstatic.com'],
 
+            # Reemplazar estas líneas:
+
+            'connect-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com',
+                            'https://*.googletagmanager.com'],
+
+            'script-src': ["'self'", 'https://accounts.google.com', 'https://*.googletagmanager.com', "'unsafe-inline'",
+                           "'unsafe-eval'"],
+
+            'style-src-elem': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
+
+            'font-src': ["'self'", 'https://accounts.google.com', 'https://fonts.gstatic.com', 'https://*.gstatic.com'],
+
+            # Y agregar esta nueva línea al inicio:
+            'default-src': ["'self'"],
         }
     }
 
