@@ -634,6 +634,10 @@ if ENABLE_GOOGLE_ONE_TAP:
         m for m in MIDDLEWARE
         if m != "django.middleware.clickjacking.XFrameOptionsMiddleware"
     ])
+    CSP_FRAME_ANCESTORS = ["'self'", "https://accounts.google.com"]
+    CSP_CONNECT_SRC = ["'self'", "https://accounts.google.com", "https://*.google.com"]
+    CSP_SCRIPT_SRC = ["'self'", "https://accounts.google.com", "'unsafe-inline'"]
+    CSP_CHILD_SRC = ["'self'", "https://accounts.google.com"]
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
