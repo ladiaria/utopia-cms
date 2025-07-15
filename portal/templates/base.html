@@ -494,7 +494,8 @@
             context: 'signin',
             // Additional configurations for stability
             itp_support: true,
-            use_fedcm_for_prompt: true,
+            // Remove use_fedcm_for_prompt to avoid popup issues
+            // use_fedcm_for_prompt: true,
             // UI behavior configurations
             cancel_on_tap_outside: false,
             auto_select: false
@@ -548,7 +549,9 @@
           if (!email) {
             console.error('No email found in credential');
             // Fallback without login_hint
-            window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}";
+            const currentUrl = window.location.href;
+            const nextUrl = encodeURIComponent(currentUrl);
+            window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
             return;
           }
 
@@ -563,7 +566,9 @@
 
           // Fallback: redirect without login_hint
           console.log('Falling back to OAuth without login_hint');
-          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}";
+          const currentUrl = window.location.href;
+          const nextUrl = encodeURIComponent(currentUrl);
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
         }
       }
 
