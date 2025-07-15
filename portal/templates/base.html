@@ -541,19 +541,25 @@
           if (!email) {
             console.error('No email found in credential');
             // Fallback without login_hint
-            window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}";
+            const currentUrl = window.location.href;
+            const nextUrl = encodeURIComponent(currentUrl);
+            window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
             return;
           }
 
           console.log('Redirecting to OAuth with email hint');
-          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}&login_hint=" + encodeURIComponent(email);
+          const currentUrl = window.location.href;
+          const nextUrl = encodeURIComponent(currentUrl);
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl + "&login_hint=" + encodeURIComponent(email);
 
         } catch (error) {
           console.error('Error processing credential:', error);
 
           // Fallback: redirect without login_hint
           console.log('Falling back to OAuth without login_hint');
-          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}";
+          const currentUrl = window.location.href;
+          const nextUrl = encodeURIComponent(currentUrl);
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
         }
       }
 
