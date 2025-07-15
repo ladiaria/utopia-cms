@@ -492,21 +492,43 @@
             client_id: '{{ google_client_id }}',
             callback: handleCredentialResponse,
             context: 'signin',
-            // Additional configurations for stability
+            // Firefox-specific configurations
             itp_support: true,
-            use_fedcm_for_prompt: false,
-            // UI behavior configurations
+            use_fedcm_for_prompt: true, // Mejorar compatibilidad con Firefox
+            // UI behavior configurations optimizadas para Firefox
             cancel_on_tap_outside: false,
-            auto_select: false
+            auto_select: false,
+            // Configuraciones adicionales para popups
+            ux_mode: 'popup', // Forzar modo popup explícitamente
+            state_cookie_domain: '.{{ site.domain }}', // Configurar dominio de cookies
+            // Configuraciones de tiempo para evitar timeouts
+            allowed_parent_origin: ['{{ SITE_URL_SD }}'],
+            // Configuraciones de seguridad
+            nonce: '{{ csrf_token }}',
+            // Configuraciones de retry para Firefox
+            prompt_parent_id: 'main-content'
           });
 
           oneTabInitialized = true;
           console.log('Google One Tap initialized successfully');
 
+          // Configuración de prompt optimizada para Firefox
           google.accounts.id.prompt((notification) => {
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
               const reason = notification.getNotDisplayedReason();
               console.log('Google One Tap not displayed. Reason:', reason);
+              
+              // Fallback específico para Firefox si el popup falla
+              if (reason && (reason.includes('popup') || reason.includes('blocked'))) {
+                console.log('Popup blocked, trying alternative approach');
+                // Intentar con redirect directo si popup está bloqueado
+                setTimeout(() => {
+                  const currentUrl = window.location.href;
+                  const nextUrl = encodeURIComponent(currentUrl);
+                  console.log('Redirecting to direct OAuth due to popup block');
+                  window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
+                }, 1000);
+              }
             } else {
               console.log('Google One Tap displayed successfully');
             }
@@ -550,8 +572,10 @@
             // Fallback without login_hint
             const currentUrl = window.location.href;
             const nextUrl = encodeURIComponent(currentUrl);
-            window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
-            return;
+            const oauthUrl = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl + "&login_hint=" + encodeURIComponent(email);
+  
+            // Redirect directo - no popup
+            window.location.href = oauthUrl;
           }
 
           const currentUrl = window.location.href;
