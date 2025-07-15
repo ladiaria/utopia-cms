@@ -620,6 +620,10 @@ if ENABLE_GOOGLE_ONE_TAP:
     # Required for One Tap to maintain session state across domains.
     SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-site session cookies
     CSRF_COOKIE_SAMESITE = 'None'     # Allow cross-site CSRF cookies
+    
+    # Secure cookies - necesario para SameSite=None
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
     # -----------------------------------------------------------------------------
     # Frame Options Configuration
@@ -640,28 +644,83 @@ if ENABLE_GOOGLE_ONE_TAP:
     CONTENT_SECURITY_POLICY = {
         'DIRECTIVES': {
             'default-src': ["'self'"],
-            'child-src': ["'self'", 'https://accounts.google.com'],
-            'form-action': ["'self'", 'https://accounts.google.com'],
-            'frame-ancestors': ["'self'", 'https://accounts.google.com'],
-            'frame-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
+            
+            # Frame sources - incluye todos los dominios de Google necesarios
+            'frame-src': ["'self'", 
+                         'https://accounts.google.com', 
+                         'https://*.google.com',
+                         'https://*.googletagmanager.com',
+                         'https://*.doubleclick.net'],
+            
+            'child-src': ["'self'", 
+                         'https://accounts.google.com',
+                         'https://*.google.com'],
+            
+            'form-action': ["'self'", 
+                           'https://accounts.google.com',
+                           'https://*.google.com'],
+            
+            'frame-ancestors': ["'self'", 
+                               'https://accounts.google.com',
+                               'https://*.google.com'],
 
-            'style-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com', 'https://*.gstatic.com',
-                          "'unsafe-inline'", "'unsafe-hashes'"],
-            'style-src-attr': ["'unsafe-inline'"],  # Para inline styles de Google
-            'img-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com', 'https://*.gstatic.com',
-                        'data:'],
+            # Script sources - incluye Google Ads y Analytics necesarios para One Tap
+            'script-src': ["'self'", 
+                          'https://accounts.google.com', 
+                          'https://*.google.com',
+                          'https://*.googletagmanager.com',
+                          'https://*.gstatic.com',
+                          'https://*.doubleclick.net',
+                          'https://googleads.g.doubleclick.net',
+                          'https://www.google-analytics.com',
+                          "'unsafe-inline'",
+                          "'unsafe-eval'"],
 
-            'connect-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com',
-                            'https://*.googletagmanager.com', 'https://*.gstatic.com'],
+            # Style sources - configuración completa para estilos de Google
+            'style-src': ["'self'", 
+                         'https://accounts.google.com', 
+                         'https://*.google.com', 
+                         'https://*.gstatic.com',
+                         "'unsafe-inline'", 
+                         "'unsafe-hashes'"],
+            
+            'style-src-attr': ["'unsafe-inline'", "'unsafe-hashes'"],  # Para inline styles de Google
+            
+            'style-src-elem': ["'self'", 
+                              'https://accounts.google.com', 
+                              'https://*.google.com',
+                              'https://*.gstatic.com',
+                              "'unsafe-hashes'"],
 
-            'script-src': ["'self'", 'https://accounts.google.com', 'https://*.googletagmanager.com',
-                           'https://*.gstatic.com', "'unsafe-inline'",
-                           "'unsafe-eval'"],
+            # Connection sources - para todas las conexiones necesarias
+            'connect-src': ["'self'", 
+                           'https://accounts.google.com', 
+                           'https://*.google.com',
+                           'https://*.googletagmanager.com', 
+                           'https://*.gstatic.com',
+                           'https://*.doubleclick.net',
+                           'https://googleads.g.doubleclick.net'],
 
-            'style-src-elem': ["'self'", 'https://accounts.google.com', 'https://*.google.com',
-                               'https://*.gstatic.com'],
+            # Image sources
+            'img-src': ["'self'", 
+                       'https://accounts.google.com', 
+                       'https://*.google.com', 
+                       'https://*.gstatic.com',
+                       'https://*.doubleclick.net',
+                       'data:'],
 
-            'font-src': ["'self'", 'https://accounts.google.com', 'https://fonts.gstatic.com', 'https://*.gstatic.com'],
+            # Font sources
+            'font-src': ["'self'", 
+                        'https://accounts.google.com', 
+                        'https://fonts.gstatic.com', 
+                        'https://*.gstatic.com'],
+            
+            # Object and media sources para completar el flujo
+            'object-src': ["'none'"],
+            'media-src': ["'self'", 'https://*.google.com'],
+            
+            # Base URI
+            'base-uri': ["'self'"],
         }
     }
 
