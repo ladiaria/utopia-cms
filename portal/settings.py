@@ -620,7 +620,7 @@ if ENABLE_GOOGLE_ONE_TAP:
     # Required for One Tap to maintain session state across domains.
     SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-site session cookies
     CSRF_COOKIE_SAMESITE = 'None'     # Allow cross-site CSRF cookies
-    
+
     # Secure cookies - necesario para SameSite=None
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -645,91 +645,30 @@ if ENABLE_GOOGLE_ONE_TAP:
         'DIRECTIVES': {
             'default-src': ["'self'"],
             
-            # Frame sources - incluye todos los dominios de Google necesarios
+            # Basic Google One Tap authentication domains
             'frame-src': ["'self'", 
-                         'https://accounts.google.com', 
-                         'https://*.google.com',
-                         'https://*.googletagmanager.com',
-                         'https://*.doubleclick.net',
-                         'https://googleads.g.doubleclick.net'],
+                         'https://accounts.google.com'],
             
-            'child-src': ["'self'", 
-                         'https://accounts.google.com',
-                         'https://*.google.com'],
-            
-            'form-action': ["'self'", 
-                           'https://accounts.google.com',
-                           'https://*.google.com'],
-            
-            'frame-ancestors': ["'self'", 
-                               'https://accounts.google.com',
-                               'https://*.google.com'],
-
-            # Script sources - incluye Google Ads, Analytics y Marfeel
             'script-src': ["'self'", 
                           'https://accounts.google.com', 
-                          'https://*.google.com',
-                          'https://*.googletagmanager.com',
                           'https://*.gstatic.com',
-                          'https://*.doubleclick.net',
-                          'https://googleads.g.doubleclick.net',
-                          'https://www.google-analytics.com',
-                          'https://sdk.mrf.io',
-                          'https://www.youtube.com',
-                          'https://*.youtube.com',
-                          "'unsafe-inline'",
-                          "'unsafe-eval'"],
+                          "'unsafe-inline'"],
 
-            # Style sources - configuración completa para estilos de Google incluyendo el hash faltante
             'style-src': ["'self'", 
                          'https://accounts.google.com', 
-                         'https://*.google.com', 
                          'https://*.gstatic.com',
-                         "'unsafe-inline'", 
-                         "'unsafe-hashes'",
-                         "'sha256-ZAdCRDnStGum6I/Iqtz5uunKn4HysAVC/9iXTVObQr8='"],
+                         "'unsafe-inline'"],
             
-            'style-src-attr': ["'unsafe-inline'", "'unsafe-hashes'"],  # Para inline styles de Google
-            
-            'style-src-elem': ["'self'", 
-                              'https://accounts.google.com', 
-                              'https://*.google.com',
-                              'https://*.gstatic.com',
-                              "'unsafe-hashes'",
-                              "'sha256-ZAdCRDnStGum6I/Iqtz5uunKn4HysAVC/9iXTVObQr8='"],
-
-            # Connection sources - para todas las conexiones necesarias
             'connect-src': ["'self'", 
-                           'https://accounts.google.com', 
-                           'https://*.google.com',
-                           'https://*.googletagmanager.com', 
-                           'https://*.gstatic.com',
-                           'https://*.doubleclick.net',
-                           'https://googleads.g.doubleclick.net',
-                           'https://www.google-analytics.com'],
+                           'https://accounts.google.com'],
 
-            # Image sources - agregar dominios de Google faltantes
             'img-src': ["'self'", 
                        'https://accounts.google.com', 
-                       'https://*.google.com', 
                        'https://*.gstatic.com',
-                       'https://*.doubleclick.net',
-                       'https://www.google.com.uy',
-                       'https://googleads.g.doubleclick.net',
                        'data:'],
 
-            # Font sources
             'font-src': ["'self'", 
-                        'https://accounts.google.com', 
-                        'https://fonts.gstatic.com', 
-                        'https://*.gstatic.com'],
-            
-            # Object and media sources para completar el flujo
-            'object-src': ["'none'"],
-            'media-src': ["'self'", 'https://*.google.com'],
-            
-            # Base URI
-            'base-uri': ["'self'"],
+                        'https://fonts.gstatic.com'],
         }
     }
 
