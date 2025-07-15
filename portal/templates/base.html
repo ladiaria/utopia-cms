@@ -482,6 +482,15 @@
         }
 
         try {
+          // Debug: verificar condiciones antes de inicializar
+          console.log('🔍 Debugging Google One Tap conditions:');
+          console.log('🔍 User authenticated:', {{ user.is_authenticated|yesno:"true,false" }});
+          console.log('🔍 Client ID:', '{{ google_client_id }}');
+          console.log('🔍 One Tap enabled:', {{ ENABLE_GOOGLE_ONE_TAP|yesno:"true,false" }});
+          console.log('🔍 Show One Tap:', {{ SHOW_ONE_GOOGLE_TAP|yesno:"true,false" }});
+          console.log('🔍 Current URL:', window.location.href);
+          console.log('🔍 User Agent:', navigator.userAgent);
+          
           google.accounts.id.initialize({
             client_id: '{{ google_client_id }}',
             callback: handleCredentialResponse,
@@ -509,18 +518,29 @@
           // Log antes del prompt
           console.log('About to call google.accounts.id.prompt()...');
           
+          // Timeout de seguridad para detectar si el callback nunca se llama
+          let promptCallbackReceived = false;
+          setTimeout(() => {
+            if (!promptCallbackReceived) {
+              console.error('TIMEOUT: Google One Tap prompt callback was never called after 3 seconds');
+              console.log('This usually means Google silently blocked One Tap due to policy');
+            }
+          }, 3000);
+          
           // Configuración de prompt optimizada para Firefox
           google.accounts.id.prompt((notification) => {
-            console.log('Prompt callback called. Notification object:', notification);
+            promptCallbackReceived = true;
+            console.log('🎯 PROMPT CALLBACK EXECUTED! Notification object:', notification);
+            console.log('🎯 Notification methods available:', Object.getOwnPropertyNames(notification));
             
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
               const reason = notification.getNotDisplayedReason();
               const skippedReason = notification.getSkippedReason();
-              console.log('Google One Tap not displayed. Reason:', reason);
-              console.log('Google One Tap skipped. Reason:', skippedReason);
-              console.log('Is not displayed:', notification.isNotDisplayed());
-              console.log('Is skipped moment:', notification.isSkippedMoment());
-              console.log('Is dismissed moment:', notification.isDismissedMoment());
+              console.log('❌ Google One Tap not displayed. Reason:', reason);
+              console.log('❌ Google One Tap skipped. Reason:', skippedReason);
+              console.log('❌ Is not displayed:', notification.isNotDisplayed());
+              console.log('❌ Is skipped moment:', notification.isSkippedMoment());
+              console.log('❌ Is dismissed moment:', notification.isDismissedMoment());
               
               // Fallback específico para Firefox si el popup falla
               if (reason && (reason.includes('popup') || reason.includes('blocked'))) {
@@ -534,7 +554,7 @@
                 }, 1000);
               }
             } else {
-              console.log('Google One Tap displayed successfully');
+              console.log('✅ Google One Tap displayed successfully');
             }
           });
           
