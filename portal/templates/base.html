@@ -512,6 +512,9 @@
           oneTabInitialized = true;
           console.log('Google One Tap initialized successfully');
 
+          // Log antes del prompt
+          console.log('About to call google.accounts.id.prompt()...');
+          
           // Configuración de prompt optimizada para Firefox
           google.accounts.id.prompt((notification) => {
             console.log('Prompt callback called. Notification object:', notification);
@@ -540,6 +543,8 @@
               console.log('Google One Tap displayed successfully');
             }
           });
+          
+          console.log('google.accounts.id.prompt() call completed');
 
         } catch (error) {
           console.error('Error initializing Google One Tap:', error);
