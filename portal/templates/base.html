@@ -482,83 +482,28 @@
         }
 
         try {
-          // Debug: verificar condiciones antes de inicializar
-          console.log('🔍 Debugging Google One Tap conditions:');
-          console.log('🔍 User authenticated:', {{ user.is_authenticated|yesno:"true,false" }});
-          console.log('🔍 Client ID:', '{{ google_client_id }}');
-          console.log('🔍 One Tap enabled:', {{ ENABLE_GOOGLE_ONE_TAP|yesno:"true,false" }});
-          console.log('🔍 Show One Tap:', {{ SHOW_ONE_GOOGLE_TAP|yesno:"true,false" }});
-          console.log('🔍 Current URL:', window.location.href);
-          console.log('🔍 User Agent:', navigator.userAgent);
-          
           google.accounts.id.initialize({
             client_id: '{{ google_client_id }}',
             callback: handleCredentialResponse,
             context: 'signin',
-            // Firefox-specific configurations
             itp_support: true,
-            use_fedcm_for_prompt: true, // Mejorar compatibilidad con Firefox
-            // UI behavior configurations optimizadas para Firefox
+            use_fedcm_for_prompt: true,
+            // Additional configurations for stability
             cancel_on_tap_outside: false,
-            auto_select: false,
-            // Configuraciones adicionales para popups
-            ux_mode: 'popup', // Forzar modo popup explícitamente
-            state_cookie_domain: '.{{ site.domain }}', // Configurar dominio de cookies
-            // Configuraciones de tiempo para evitar timeouts
-            allowed_parent_origin: ['{{ SITE_URL_SD }}'],
-            // Configuraciones de seguridad
-            nonce: '{{ csrf_token }}',
-            // Configuraciones de retry para Firefox
-            prompt_parent_id: 'main-content'
+            auto_select: false
           });
 
           oneTabInitialized = true;
           console.log('Google One Tap initialized successfully');
 
-          // Log antes del prompt
-          console.log('About to call google.accounts.id.prompt()...');
-          
-          // Timeout de seguridad para detectar si el callback nunca se llama
-          let promptCallbackReceived = false;
-          setTimeout(() => {
-            if (!promptCallbackReceived) {
-              console.error('TIMEOUT: Google One Tap prompt callback was never called after 3 seconds');
-              console.log('This usually means Google silently blocked One Tap due to policy');
-            }
-          }, 3000);
-          
-          // Configuración de prompt optimizada para Firefox
           google.accounts.id.prompt((notification) => {
-            promptCallbackReceived = true;
-            console.log('🎯 PROMPT CALLBACK EXECUTED! Notification object:', notification);
-            console.log('🎯 Notification methods available:', Object.getOwnPropertyNames(notification));
-            
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
               const reason = notification.getNotDisplayedReason();
-              const skippedReason = notification.getSkippedReason();
-              console.log('❌ Google One Tap not displayed. Reason:', reason);
-              console.log('❌ Google One Tap skipped. Reason:', skippedReason);
-              console.log('❌ Is not displayed:', notification.isNotDisplayed());
-              console.log('❌ Is skipped moment:', notification.isSkippedMoment());
-              console.log('❌ Is dismissed moment:', notification.isDismissedMoment());
-              
-              // Fallback específico para Firefox si el popup falla
-              if (reason && (reason.includes('popup') || reason.includes('blocked'))) {
-                console.log('Popup blocked, trying alternative approach');
-                // Intentar con redirect directo si popup está bloqueado
-                setTimeout(() => {
-                  const currentUrl = window.location.href;
-                  const nextUrl = encodeURIComponent(currentUrl);
-                  console.log('Redirecting to direct OAuth due to popup block');
-                  window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
-                }, 1000);
-              }
+              console.log('Google One Tap not displayed. Reason:', reason);
             } else {
-              console.log('✅ Google One Tap displayed successfully');
+              console.log('Google One Tap displayed successfully');
             }
           });
-          
-          console.log('google.accounts.id.prompt() call completed');
 
         } catch (error) {
           console.error('Error initializing Google One Tap:', error);
@@ -596,28 +541,19 @@
           if (!email) {
             console.error('No email found in credential');
             // Fallback without login_hint
-            const currentUrl = window.location.href;
-            const nextUrl = encodeURIComponent(currentUrl);
-            const oauthUrl = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl + "&login_hint=" + encodeURIComponent(email);
-  
-            // Redirect directo - no popup
-            window.location.href = oauthUrl;
+            window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}";
+            return;
           }
 
-          const currentUrl = window.location.href;
-          const nextUrl = encodeURIComponent(currentUrl);
-
           console.log('Redirecting to OAuth with email hint');
-          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl + "&login_hint=" + encodeURIComponent(email);
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}&login_hint=" + encodeURIComponent(email);
 
         } catch (error) {
           console.error('Error processing credential:', error);
 
           // Fallback: redirect without login_hint
           console.log('Falling back to OAuth without login_hint');
-          const currentUrl = window.location.href;
-          const nextUrl = encodeURIComponent(currentUrl);
-          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}";
         }
       }
 
