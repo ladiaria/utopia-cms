@@ -552,8 +552,11 @@
             return;
           }
 
+          const currentUrl = window.location.href;
+          const nextUrl = encodeURIComponent(currentUrl);
+
           console.log('Redirecting to OAuth with email hint');
-          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}&login_hint=" + encodeURIComponent(email);
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl + "&login_hint=" + encodeURIComponent(email);
 
         } catch (error) {
           console.error('Error processing credential:', error);
