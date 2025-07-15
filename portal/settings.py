@@ -650,7 +650,8 @@ if ENABLE_GOOGLE_ONE_TAP:
                          'https://accounts.google.com', 
                          'https://*.google.com',
                          'https://*.googletagmanager.com',
-                         'https://*.doubleclick.net'],
+                         'https://*.doubleclick.net',
+                         'https://googleads.g.doubleclick.net'],
             
             'child-src': ["'self'", 
                          'https://accounts.google.com',
@@ -679,13 +680,14 @@ if ENABLE_GOOGLE_ONE_TAP:
                           "'unsafe-inline'",
                           "'unsafe-eval'"],
 
-            # Style sources - configuración completa para estilos de Google
+            # Style sources - configuración completa para estilos de Google incluyendo el hash faltante
             'style-src': ["'self'", 
                          'https://accounts.google.com', 
                          'https://*.google.com', 
                          'https://*.gstatic.com',
                          "'unsafe-inline'", 
-                         "'unsafe-hashes'"],
+                         "'unsafe-hashes'",
+                         "'sha256-ZAdCRDnStGum6I/Iqtz5uunKn4HysAVC/9iXTVObQr8='"],
             
             'style-src-attr': ["'unsafe-inline'", "'unsafe-hashes'"],  # Para inline styles de Google
             
@@ -693,7 +695,8 @@ if ENABLE_GOOGLE_ONE_TAP:
                               'https://accounts.google.com', 
                               'https://*.google.com',
                               'https://*.gstatic.com',
-                              "'unsafe-hashes'"],
+                              "'unsafe-hashes'",
+                              "'sha256-ZAdCRDnStGum6I/Iqtz5uunKn4HysAVC/9iXTVObQr8='"],
 
             # Connection sources - para todas las conexiones necesarias
             'connect-src': ["'self'", 
