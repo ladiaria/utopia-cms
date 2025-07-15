@@ -127,6 +127,7 @@ INSTALLED_APPS = (
     "phonenumber_field",
     "closed_site",
     'solo',
+    'csp',
 )
 
 SITE_ID = 1
@@ -196,6 +197,8 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap", "uni_form", "bootstrap3", "bootstr
 CRISPY_TEMPLATE_PACK = "materialize_css_forms"
 
 MIDDLEWARE = (
+    'csp.middleware.CSPMiddleware',
+    'utopia_cms_ladiaria.middleware.OldBrowsersMiddleware',
     "closed_site.middleware.ClosedSiteMiddleware",
     "closed_site.middleware.RestrictedAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -634,19 +637,19 @@ if ENABLE_GOOGLE_ONE_TAP:
         m for m in MIDDLEWARE
         if m != "django.middleware.clickjacking.XFrameOptionsMiddleware"
     ])
-    CSP_FRAME_ANCESTORS = ["'self'", "https://accounts.google.com"]
-    CSP_CONNECT_SRC = ["'self'", "https://accounts.google.com", "https://*.google.com"]
-    CSP_SCRIPT_SRC = ["'self'", "https://accounts.google.com", "'unsafe-inline'"]
-    CSP_CHILD_SRC = ["'self'", "https://accounts.google.com"]
-
-    CSP_FRAME_SRC = ["'self'", "https://accounts.google.com", "https://*.google.com"]
-    CSP_FORM_ACTION = ["'self'", "https://accounts.google.com"]
-
-    # Opcional para debugging (remover después):
-    CSP_REPORT_ONLY = True
-    CSP_REPORT_URI = '/csp-report/'
+    CONTENT_SECURITY_POLICY = {
+        'DIRECTIVES': {
+            'child-src': ["'self'", 'https://accounts.google.com'],
+            'connect-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
+            'form-action': ["'self'", 'https://accounts.google.com'],
+            'frame-ancestors': ["'self'", 'https://accounts.google.com'],
+            'frame-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
+            'script-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'"]
+        }
+    }
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
+SITE_URL = f"{SITE_URL_SD}/"
 SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
