@@ -637,23 +637,23 @@ if ENABLE_GOOGLE_ONE_TAP:
         m for m in MIDDLEWARE
         if m != "django.middleware.clickjacking.XFrameOptionsMiddleware"
     ])
-    # CONTENT_SECURITY_POLICY = {
-    #     'DIRECTIVES': {
-    #         'child-src': ["'self'", 'https://accounts.google.com'],
-    #         'connect-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
-    #         'form-action': ["'self'", 'https://accounts.google.com'],
-    #         'frame-ancestors': ["'self'", 'https://accounts.google.com'],
-    #         'frame-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
-    #         'script-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'"],
-    #
-    #         'style-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'", "'unsafe-hashes'"],
-    #         'style-src-attr': ["'unsafe-inline'"],  # Para inline styles de Google
-    #         'style-src-elem': ["'self'", 'https://accounts.google.com'],  # Para https://accounts.google.com/gsi/style
-    #         'img-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com', 'data:'],
-    #         'font-src': ["'self'", 'https://accounts.google.com', 'https://fonts.gstatic.com'],
-    #
-    #     }
-    # }
+    CONTENT_SECURITY_POLICY = {
+        'DIRECTIVES': {
+            'child-src': ["'self'", 'https://accounts.google.com'],
+            'connect-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
+            'form-action': ["'self'", 'https://accounts.google.com'],
+            'frame-ancestors': ["'self'", 'https://accounts.google.com'],
+            'frame-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
+            'script-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'"],
+
+            'style-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'", "'unsafe-hashes'"],
+            'style-src-attr': ["'unsafe-inline'"],  # Para inline styles de Google
+            'style-src-elem': ["'self'", 'https://accounts.google.com'],  # Para https://accounts.google.com/gsi/style
+            'img-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com', 'data:'],
+            'font-src': ["'self'", 'https://accounts.google.com', 'https://fonts.gstatic.com'],
+
+        }
+    }
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
