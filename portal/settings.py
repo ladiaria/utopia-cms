@@ -664,7 +664,7 @@ if ENABLE_GOOGLE_ONE_TAP:
                                'https://accounts.google.com',
                                'https://*.google.com'],
 
-            # Script sources - incluye Google Ads y Analytics necesarios para One Tap
+            # Script sources - incluye Google Ads, Analytics y Marfeel
             'script-src': ["'self'", 
                           'https://accounts.google.com', 
                           'https://*.google.com',
@@ -673,6 +673,7 @@ if ENABLE_GOOGLE_ONE_TAP:
                           'https://*.doubleclick.net',
                           'https://googleads.g.doubleclick.net',
                           'https://www.google-analytics.com',
+                          'https://sdk.mrf.io',
                           "'unsafe-inline'",
                           "'unsafe-eval'"],
 
@@ -699,14 +700,17 @@ if ENABLE_GOOGLE_ONE_TAP:
                            'https://*.googletagmanager.com', 
                            'https://*.gstatic.com',
                            'https://*.doubleclick.net',
-                           'https://googleads.g.doubleclick.net'],
+                           'https://googleads.g.doubleclick.net',
+                           'https://www.google-analytics.com'],
 
-            # Image sources
+            # Image sources - agregar dominios de Google faltantes
             'img-src': ["'self'", 
                        'https://accounts.google.com', 
                        'https://*.google.com', 
                        'https://*.gstatic.com',
                        'https://*.doubleclick.net',
+                       'https://www.google.com.uy',
+                       'https://googleads.g.doubleclick.net',
                        'data:'],
 
             # Font sources
