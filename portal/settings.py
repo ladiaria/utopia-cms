@@ -645,6 +645,13 @@ if ENABLE_GOOGLE_ONE_TAP:
             'frame-ancestors': ["'self'", 'https://accounts.google.com'],
             'frame-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
             'script-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'"]
+
+            'style-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'", "'unsafe-hashes'"],
+            'style-src-attr': ["'unsafe-inline'"],  # Para inline styles de Google
+            'style-src-elem': ["'self'", 'https://accounts.google.com'],  # Para https://accounts.google.com/gsi/style
+            'img-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com', 'data:'],
+            'font-src': ["'self'", 'https://accounts.google.com', 'https://fonts.gstatic.com'],
+
         }
     }
 
