@@ -639,29 +639,29 @@ if ENABLE_GOOGLE_ONE_TAP:
     ])
     CONTENT_SECURITY_POLICY = {
         'DIRECTIVES': {
+            'default-src': ["'self'"],
             'child-src': ["'self'", 'https://accounts.google.com'],
             'form-action': ["'self'", 'https://accounts.google.com'],
             'frame-ancestors': ["'self'", 'https://accounts.google.com'],
             'frame-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
 
-            'style-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'", "'unsafe-hashes'"],
+            'style-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com', 'https://*.gstatic.com',
+                          "'unsafe-inline'", "'unsafe-hashes'"],
             'style-src-attr': ["'unsafe-inline'"],  # Para inline styles de Google
-            'img-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com', 'data:'],
-
-            # Reemplazar estas líneas:
+            'img-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com', 'https://*.gstatic.com',
+                        'data:'],
 
             'connect-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com',
-                            'https://*.googletagmanager.com'],
+                            'https://*.googletagmanager.com', 'https://*.gstatic.com'],
 
-            'script-src': ["'self'", 'https://accounts.google.com', 'https://*.googletagmanager.com', "'unsafe-inline'",
+            'script-src': ["'self'", 'https://accounts.google.com', 'https://*.googletagmanager.com',
+                           'https://*.gstatic.com', "'unsafe-inline'",
                            "'unsafe-eval'"],
 
-            'style-src-elem': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
+            'style-src-elem': ["'self'", 'https://accounts.google.com', 'https://*.google.com',
+                               'https://*.gstatic.com'],
 
             'font-src': ["'self'", 'https://accounts.google.com', 'https://fonts.gstatic.com', 'https://*.gstatic.com'],
-
-            # Y agregar esta nueva línea al inicio:
-            'default-src': ["'self'"],
         }
     }
 
