@@ -508,9 +508,16 @@
 
           // Configuración de prompt optimizada para Firefox
           google.accounts.id.prompt((notification) => {
+            console.log('Prompt callback called. Notification object:', notification);
+            
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
               const reason = notification.getNotDisplayedReason();
+              const skippedReason = notification.getSkippedReason();
               console.log('Google One Tap not displayed. Reason:', reason);
+              console.log('Google One Tap skipped. Reason:', skippedReason);
+              console.log('Is not displayed:', notification.isNotDisplayed());
+              console.log('Is skipped moment:', notification.isSkippedMoment());
+              console.log('Is dismissed moment:', notification.isDismissedMoment());
               
               // Fallback específico para Firefox si el popup falla
               if (reason && (reason.includes('popup') || reason.includes('blocked'))) {
