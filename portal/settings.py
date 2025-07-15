@@ -644,7 +644,7 @@ if ENABLE_GOOGLE_ONE_TAP:
             'form-action': ["'self'", 'https://accounts.google.com'],
             'frame-ancestors': ["'self'", 'https://accounts.google.com'],
             'frame-src': ["'self'", 'https://accounts.google.com', 'https://*.google.com'],
-            'script-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'"]
+            'script-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'"],
 
             'style-src': ["'self'", 'https://accounts.google.com', "'unsafe-inline'", "'unsafe-hashes'"],
             'style-src-attr': ["'unsafe-inline'"],  # Para inline styles de Google
