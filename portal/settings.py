@@ -645,13 +645,15 @@ if ENABLE_GOOGLE_ONE_TAP:
         'DIRECTIVES': {
             'default-src': ["'self'"],
             
-            # Basic Google One Tap authentication domains
+            # Basic Google One Tap authentication domains + GTM
             'frame-src': ["'self'", 
-                         'https://accounts.google.com'],
+                         'https://accounts.google.com',
+                         'https://*.googletagmanager.com'],
             
             'script-src': ["'self'", 
                           'https://accounts.google.com', 
                           'https://*.gstatic.com',
+                          'https://*.googletagmanager.com',
                           "'unsafe-inline'"],
 
             'style-src': ["'self'", 
@@ -660,11 +662,13 @@ if ENABLE_GOOGLE_ONE_TAP:
                          "'unsafe-inline'"],
             
             'connect-src': ["'self'", 
-                           'https://accounts.google.com'],
+                           'https://accounts.google.com',
+                           'https://*.googletagmanager.com'],
 
             'img-src': ["'self'", 
                        'https://accounts.google.com', 
                        'https://*.gstatic.com',
+                       'https://*.googletagmanager.com',
                        'data:'],
 
             'font-src': ["'self'", 
