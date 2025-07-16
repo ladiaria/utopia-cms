@@ -484,8 +484,10 @@
         try {
           // Detect Firefox for different UX mode
           const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+          console.log('🔍 Browser detection - Firefox:', isFirefox);
+          console.log('🔍 User Agent:', navigator.userAgent);
           
-          google.accounts.id.initialize({
+          const config = {
             client_id: '{{ google_client_id }}',
             callback: handleCredentialResponse,
             context: 'signin',
@@ -493,12 +495,22 @@
             use_fedcm_for_prompt: true,
             // Additional configurations for stability
             cancel_on_tap_outside: false,
-            auto_select: false,
-            // Use redirect mode for Firefox to avoid popup blocking
-            ux_mode: isFirefox ? 'redirect' : 'popup',
-            // For redirect mode, we need to specify the redirect URI
-            login_uri: isFirefox ? "{% url 'social:begin' 'google-oauth2' %}" : undefined
-          });
+            auto_select: false
+          };
+          
+          // Use redirect mode for Firefox to avoid popup blocking
+          if (isFirefox) {
+            config.ux_mode = 'redirect';
+            config.login_uri = "{% url 'social:begin' 'google-oauth2' %}";
+            console.log('🔍 Using REDIRECT mode for Firefox');
+          } else {
+            config.ux_mode = 'popup';
+            console.log('🔍 Using POPUP mode for other browsers');
+          }
+          
+          console.log('🔍 Final config:', config);
+          
+          google.accounts.id.initialize(config);
 
           oneTabInitialized = true;
           console.log('Google One Tap initialized successfully');
