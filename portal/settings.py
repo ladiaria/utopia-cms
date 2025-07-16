@@ -196,7 +196,6 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap", "uni_form", "bootstrap3", "bootstr
 CRISPY_TEMPLATE_PACK = "materialize_css_forms"
 
 MIDDLEWARE = (
-    'utopia_cms_ladiaria.middleware.OldBrowsersMiddleware',
     "closed_site.middleware.ClosedSiteMiddleware",
     "closed_site.middleware.RestrictedAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
