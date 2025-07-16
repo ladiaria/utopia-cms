@@ -619,10 +619,6 @@ if ENABLE_GOOGLE_ONE_TAP:
     SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-site session cookies
     CSRF_COOKIE_SAMESITE = 'None'     # Allow cross-site CSRF cookies
 
-    # Secure cookies - necesario para SameSite=None
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-
     # -----------------------------------------------------------------------------
     # Frame Options Configuration
     # -----------------------------------------------------------------------------
