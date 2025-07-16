@@ -519,6 +519,16 @@
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
               const reason = notification.getNotDisplayedReason();
               console.log('Google One Tap not displayed. Reason:', reason);
+              
+              // Firefox fallback: if Google ignores redirect mode, redirect manually
+              if (isFirefox && reason && (reason.includes('popup') || reason.includes('blocked'))) {
+                console.log('🔄 Firefox fallback: Google ignored redirect mode, redirecting manually');
+                setTimeout(() => {
+                  const currentUrl = window.location.href;
+                  const nextUrl = encodeURIComponent(currentUrl);
+                  window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
+                }, 1000);
+              }
             } else {
               console.log('Google One Tap displayed successfully');
             }

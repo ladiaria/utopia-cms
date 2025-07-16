@@ -662,6 +662,8 @@ if ENABLE_GOOGLE_ONE_TAP:
                           'https://*.doubleclick.net',
                           'https://www.google-analytics.com',
                           'https://sdk.mrf.io',
+                          'https://www.youtube.com',
+                          'https://*.youtube.com',
                           "'unsafe-inline'"],
 
             'style-src': ["'self'", 
