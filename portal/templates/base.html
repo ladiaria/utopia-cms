@@ -486,9 +486,10 @@
             client_id: '{{ google_client_id }}',
             callback: handleCredentialResponse,
             context: 'signin',
+            // Additional configurations for stability
             itp_support: true,
             use_fedcm_for_prompt: true,
-            // Additional configurations for stability
+            // UI behavior configurations
             cancel_on_tap_outside: false,
             auto_select: false
           });
@@ -541,15 +542,15 @@
           if (!email) {
             console.error('No email found in credential');
             // Fallback without login_hint
-            const currentUrl = window.location.href;
-            const nextUrl = encodeURIComponent(currentUrl);
-            window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
+            window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}";
             return;
           }
 
-          console.log('Redirecting to OAuth with email hint');
           const currentUrl = window.location.href;
           const nextUrl = encodeURIComponent(currentUrl);
+
+          console.log('Redirecting to OAuth with email hint');
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}&login_hint=" + encodeURIComponent(email);
           window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl + "&login_hint=" + encodeURIComponent(email);
 
         } catch (error) {
