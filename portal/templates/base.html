@@ -482,6 +482,9 @@
         }
 
         try {
+          // Detect Firefox for different UX mode
+          const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+          
           google.accounts.id.initialize({
             client_id: '{{ google_client_id }}',
             callback: handleCredentialResponse,
@@ -490,7 +493,11 @@
             use_fedcm_for_prompt: true,
             // Additional configurations for stability
             cancel_on_tap_outside: false,
-            auto_select: false
+            auto_select: false,
+            // Use redirect mode for Firefox to avoid popup blocking
+            ux_mode: isFirefox ? 'redirect' : 'popup',
+            // For redirect mode, we need to specify the redirect URI
+            login_uri: isFirefox ? "{% url 'social:begin' 'google-oauth2' %}" : undefined
           });
 
           oneTabInitialized = true;

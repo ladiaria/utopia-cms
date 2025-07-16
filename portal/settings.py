@@ -645,30 +645,41 @@ if ENABLE_GOOGLE_ONE_TAP:
         'DIRECTIVES': {
             'default-src': ["'self'"],
             
-            # Basic Google One Tap authentication domains + GTM
+            # Google One Tap + GTM + Analytics for Firefox compatibility
             'frame-src': ["'self'", 
                          'https://accounts.google.com',
-                         'https://*.googletagmanager.com'],
+                         'https://*.google.com',
+                         'https://*.googletagmanager.com',
+                         'https://*.doubleclick.net'],
             
             'script-src': ["'self'", 
                           'https://accounts.google.com', 
+                          'https://*.google.com',
                           'https://*.gstatic.com',
                           'https://*.googletagmanager.com',
+                          'https://*.doubleclick.net',
+                          'https://www.google-analytics.com',
                           "'unsafe-inline'"],
 
             'style-src': ["'self'", 
                          'https://accounts.google.com', 
+                         'https://*.google.com',
                          'https://*.gstatic.com',
                          "'unsafe-inline'"],
             
             'connect-src': ["'self'", 
                            'https://accounts.google.com',
-                           'https://*.googletagmanager.com'],
+                           'https://*.google.com',
+                           'https://*.googletagmanager.com',
+                           'https://*.doubleclick.net',
+                           'https://www.google-analytics.com'],
 
             'img-src': ["'self'", 
                        'https://accounts.google.com', 
+                       'https://*.google.com',
                        'https://*.gstatic.com',
                        'https://*.googletagmanager.com',
+                       'https://*.doubleclick.net',
                        'data:'],
 
             'font-src': ["'self'", 
