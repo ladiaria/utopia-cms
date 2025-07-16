@@ -127,7 +127,6 @@ INSTALLED_APPS = (
     "phonenumber_field",
     "closed_site",
     'solo',
-    'csp',
 )
 
 SITE_ID = 1
@@ -197,7 +196,6 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap", "uni_form", "bootstrap3", "bootstr
 CRISPY_TEMPLATE_PACK = "materialize_css_forms"
 
 MIDDLEWARE = (
-    'csp.middleware.CSPMiddleware',
     'utopia_cms_ladiaria.middleware.OldBrowsersMiddleware',
     "closed_site.middleware.ClosedSiteMiddleware",
     "closed_site.middleware.RestrictedAccessMiddleware",
@@ -641,59 +639,6 @@ if ENABLE_GOOGLE_ONE_TAP:
         m for m in MIDDLEWARE
         if m != "django.middleware.clickjacking.XFrameOptionsMiddleware"
     ])
-    CONTENT_SECURITY_POLICY = {
-        'DIRECTIVES': {
-            'default-src': ["'self'"],
-            
-            # Google One Tap + GTM + Analytics for Firefox compatibility
-            'frame-src': ["'self'", 
-                         'https://accounts.google.com',
-                         'https://*.google.com',
-                         'https://www.google.com.uy',
-                         'https://*.googletagmanager.com',
-                         'https://*.doubleclick.net'],
-            
-            'script-src': ["'self'", 
-                          'https://accounts.google.com', 
-                          'https://*.google.com',
-                          'https://www.google.com.uy',
-                          'https://*.gstatic.com',
-                          'https://*.googletagmanager.com',
-                          'https://*.doubleclick.net',
-                          'https://www.google-analytics.com',
-                          'https://sdk.mrf.io',
-                          'https://www.youtube.com',
-                          'https://*.youtube.com',
-                          "'unsafe-inline'"],
-
-            'style-src': ["'self'", 
-                         'https://accounts.google.com', 
-                         'https://*.google.com',
-                         'https://www.google.com.uy',
-                         'https://*.gstatic.com',
-                         "'unsafe-inline'"],
-            
-            'connect-src': ["'self'", 
-                           'https://accounts.google.com',
-                           'https://*.google.com',
-                           'https://www.google.com.uy',
-                           'https://*.googletagmanager.com',
-                           'https://*.doubleclick.net',
-                           'https://www.google-analytics.com'],
-
-            'img-src': ["'self'", 
-                       'https://accounts.google.com', 
-                       'https://*.google.com',
-                       'https://www.google.com.uy',
-                       'https://*.gstatic.com',
-                       'https://*.googletagmanager.com',
-                       'https://*.doubleclick.net',
-                       'data:'],
-
-            'font-src': ["'self'", 
-                        'https://fonts.gstatic.com'],
-        }
-    }
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
