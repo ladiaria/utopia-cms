@@ -1461,15 +1461,16 @@ def edit_profile(request, user=None):
     google_oauth2_allow_disconnect = (
         not google_oauth2_multiple and oauth2_assoc and (user_has_password or user.email != oauth2_assoc.uid)
     )
-
+    subscriber = user.subscriber
     return render(
         request,
         get_app_template("edit_profile.html"),
         {
+            "subscriber": subscriber,
             'user_form': user_form,
             'profile_form': profile_form,
             'profile_data_form': ProfileExtraDataForm(instance=profile),
-            'is_subscriber_digital': user.subscriber.is_digital_only(),
+            'is_subscriber_digital': subscriber.is_digital_only(),
             'google_oauth2_assoc': oauth2_assoc,
             'google_oauth2_multiple': google_oauth2_multiple,
             'google_oauth2_allow_disconnect': google_oauth2_allow_disconnect,
@@ -1479,14 +1480,10 @@ def edit_profile(request, user=None):
             "mailtrain_lists": MailtrainList.objects.all(),
             "incomplete_field_count": sum(
                 not bool(value) for value in (
-                    user.get_full_name(),
-                    user.subscriber.document,
-                    user.email,
-                    user.subscriber.phone,
-                    user.subscriber.address,
+                    user.get_full_name(), subscriber.document, user.email, subscriber.phone, subscriber.address
                 )
             ),
-            "email_is_bouncer": user.subscriber.email_is_bouncer(),
+            "email_is_bouncer": subscriber.email_is_bouncer(),
             "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
             "user_has_password": user_has_password,
             "subscriptions_edit_profile_anchor": subscriptions_edit_profile_anchor,
