@@ -272,7 +272,7 @@ class BaseUserForm(CrispyModelForm):
             error_use_next and (cleaned_data.get('next_page', '/') or "/"),
         )
         if error_msg:
-            self.add_error('email', ValidationError(error_msg))
+            self.add_error('email', ValidationError(error_msg, code=error_code))
         else:
             self.instance.email_extra_validations_done = True  # useful flag for the pre_save signal
             return cleaned_data
@@ -300,7 +300,7 @@ class BaseUserForm(CrispyModelForm):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email')
-        labels = {"last_name": "Apellido", "email": "Email"}
+        labels = {"last_name": "Apellido", "email": _("Email")}
 
 
 class UserForm(BaseUserForm):
