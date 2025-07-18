@@ -128,6 +128,9 @@ from .utils import (
     subscribe_log,
     get_notification_subjects,
     subscriptions_edit_profile_anchor,
+    get_oauth2_assoc,
+    delivery_err,
+    get_password_validation_url,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -137,7 +140,6 @@ from . import get_app_template, get_talk_url
 
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
-delivery_err = "Error interno, intentá de nuevo más tarde."
 verif_email_i18n = f"{email_i18n} de verificación"
 notification_subjects = get_notification_subjects()
 # Initialize the hashid object with salt from settings and custom length
@@ -359,7 +361,7 @@ def login(request, product_slug=None, product_variant=None):
         request.session.modified = True
         return HttpResponseRedirect(next_page)
 
-    login_formclass, response, login_error, context = LoginForm, None, None, {}
+    login_formclass, response, login_error, context = get_formclass(request, "Login"), None, None, {}
     default_planslug = content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
     if default_planslug:
         try:
@@ -442,7 +444,12 @@ def login(request, product_slug=None, product_variant=None):
                     else:
                         response = HttpResponseRedirect(reverse('account-confirm_email'))
                 else:
-                    login_error = 'Usuario y/o contraseña incorrectos.'
+                    # support for third party apps overriding login form, perform a hook to return a custom response
+                    passwd_error_hook_result = login_form.password_error_hook(request)
+                    if isinstance(passwd_error_hook_result, HttpResponse):
+                        response = passwd_error_hook_result
+                    else:
+                        login_error = 'Usuario y/o contraseña incorrectos.'
             else:
                 request.session["terms_and_conds_accepted"] = True
                 request.session.modified = True
@@ -1195,13 +1202,6 @@ def hash_validate(user_id, hash):
     return user
 
 
-def get_password_validation_url(user):
-    return reverse(
-        'account-password_change-hash',
-        kwargs={'user_id': str(user.id), 'hash': default_token_generator.make_token(user)},
-    )
-
-
 @never_cache
 @to_response
 def complete_signup(request, user_id, hash):
@@ -1353,7 +1353,7 @@ def logout_view(request, next_page='/usuarios/sesion-cerrada/'):
 @to_response
 def password_change(request, user_id=None, hash=None):
     is_post = request.method == 'POST'
-    post = request.POST.copy() if is_post else None
+    post, ctx = request.POST.copy() if is_post else None, {}
     if user_id and hash:
         user = get_object_or_404(User, id=user_id)
         form_kwargs = {'user': user, 'hash': hash}
@@ -1363,23 +1363,28 @@ def password_change(request, user_id=None, hash=None):
         if not request.user.is_authenticated:
             raise Http404('Unauthorized access.')
         user = request.user
+        ctx["is_authenticated"] = True
         if user.has_usable_password():
             formclass = get_formclass(request, "PasswordChange")
             password_change_form = formclass(post, user=user) if is_post else formclass()
+            ctx["has_usable_password"] = True
         else:
-            formclass = get_formclass(request, "PasswordChangeBase")
-            password_change_form = formclass(post, user=user) if is_post else formclass()
+            oauth2_assoc, google_oauth2_multiple = get_oauth2_assoc(user)
+            # allow change wo email verification only if the user has a valid and unique oauth2 association, if not, it
+            # will be redirected to the reset password page
+            if oauth2_assoc and not google_oauth2_multiple:
+                formclass = get_formclass(request, "PasswordChangeBase")
+                password_change_form = formclass(post, user=user) if is_post else formclass()
+            else:
+                return HttpResponseRedirect(reverse('account-password_reset'))
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
-    return render(
-        request,
-        get_app_template('password_change.html'),
-        {'form': password_change_form, 'user_id': user_id, 'hash': hash},
-    )
+    ctx.update({'form': password_change_form, 'user_id': user_id, 'hash': hash})
+    return render(request, get_app_template('password_change.html'), ctx)
 
 
 @never_cache
@@ -1449,14 +1454,7 @@ def edit_profile(request, user=None):
     # Google oauth note: disconnections are discouraged when the email used is the same as the user's email because
     #                    once disconnected, if the user has no valid password, he/she would not be able to login again
     #                    without a successful pasword reset.
-    oauth2_assoc, google_oauth2_multiple = None, False
-    try:
-        oauth2_assoc = UserSocialAuth.objects.get(user=user, provider='google-oauth2')
-    except UserSocialAuth.DoesNotExist:
-        pass
-    except UserSocialAuth.MultipleObjectsReturned:
-        oauth2_assoc, google_oauth2_multiple = True, True
-
+    oauth2_assoc, google_oauth2_multiple = get_oauth2_assoc(user)
     user_has_password = user.has_usable_password()
     google_oauth2_allow_disconnect = (
         not google_oauth2_multiple and oauth2_assoc and (user_has_password or user.email != oauth2_assoc.uid)

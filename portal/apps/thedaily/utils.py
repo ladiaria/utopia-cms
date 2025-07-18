@@ -21,6 +21,7 @@ from django.db import IntegrityError
 from django.db.models import Value
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.contenttypes.models import ContentType
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
@@ -33,6 +34,7 @@ from .models import Subscription, Subscriber, SentMail, OAuthState, SubscriberEv
 from . import get_app_template, log_formatter
 
 
+delivery_err = "Error interno, intentá de nuevo más tarde."
 subscriptions_edit_profile_anchor = Subscription._meta.verbose_name_plural
 subscribe_logfile, subscribe_logger = getattr(settings, 'THEDAILY_SUBSCRIBE_LOGFILE', None), None
 if subscribe_logfile:
@@ -299,6 +301,17 @@ def google_phone_next_page(request, is_new):
     )
 
 
+def get_oauth2_assoc(user):
+    oauth2_assoc, google_oauth2_multiple = None, False
+    try:
+        oauth2_assoc = UserSocialAuth.objects.get(user=user, provider='google-oauth2')
+    except UserSocialAuth.DoesNotExist:
+        pass
+    except UserSocialAuth.MultipleObjectsReturned:
+        oauth2_assoc, google_oauth2_multiple = True, True
+    return oauth2_assoc, google_oauth2_multiple
+
+
 def get_notification_subjects():
     account_verify_msg_subject_nosite = "Verificá tu cuenta"
     account_verify_msg_subject = " de ".join((account_verify_msg_subject_nosite, get_site_name()))
@@ -312,6 +325,13 @@ def get_notification_subjects():
     }
     notification_subjects.update(getattr(settings, "NOTIFICATION_SUBJECTS", {}))
     return notification_subjects
+
+
+def get_password_validation_url(user):
+    return reverse(
+        'account-password_change-hash',
+        kwargs={'user_id': str(user.id), 'hash': default_token_generator.make_token(user)},
+    )
 
 
 def product_checkout_template(product_slug, steps=False):

@@ -260,6 +260,9 @@ class LoginForm(CrispyForm):
                 result = data
         return result
 
+    def password_error_hook(self, request):
+        pass
+
 
 class BaseUserForm(CrispyModelForm):
 
