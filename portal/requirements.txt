@@ -1,4 +1,5 @@
 django<5
+docutils
 Pillow
 babel
 bleach

@@ -15,6 +15,7 @@ from django.template.defaultfilters import stringfilter, slugify
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
+from django.contrib.admindocs.utils import parse_rst
 
 from tagging.models import Tag, TaggedItem
 
@@ -617,6 +618,11 @@ def date_published_verbose(article, flat=False):
         ) % (' - ' if article.has_byline() else '', custom_data or article.date_published_verbose())
     else:
         return ''
+
+
+@register.simple_tag(takes_context=True)
+def model_doc(context, model):
+    return parse_rst(model.model.__doc__, context)
 
 
 # Inclusion tags
