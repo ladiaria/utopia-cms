@@ -256,6 +256,7 @@ def get_profile_newsletters_ordered():
 
     return newsletters
 
+
 def google_phone_next_page(request, is_new):
     next_page = request.session.pop("next", None)  # allways pop next page from session
     # but gives precedence to: welcome page if is_new; next entry in get/post when not is_new
