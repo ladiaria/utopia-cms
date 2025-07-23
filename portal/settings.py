@@ -600,9 +600,12 @@ AUTHENTICATION_BACKENDS = (
 
 if ENABLE_GOOGLE_ONE_TAP:
     # Exclude URLs that should not use Google One Tap
-    EXCLUDE_ONE_TAP_FOR_URLS = ["/usuarios/entrar/",
-                                "/usuarios/suscribite/",
-                                "/usuarios/restablecer/"]
+    EXCLUDE_ONE_TAP_FOR_URLS = [
+        "/usuarios/entrar/",
+        "/usuarios/suscribite/",
+        "/usuarios/restablecer/",
+        "/usuarios/registrate/google/",
+    ]
     # =============================================================================
     # Google One Tap Configuration
     # =============================================================================
