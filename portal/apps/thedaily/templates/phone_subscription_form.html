@@ -3,13 +3,9 @@
 
 {% block page_title %}{% title_joinparts 'Suscribite por teléfono' %}{% endblock %}
 
-{% block meta %}
-  <meta name="robots" content="noindex">
-{% endblock %}
+{% block robots %}noindex{% endblock %}
 
-{% block extra_css %}
-  <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
-{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">{% endblock %}
 
 {% block header_scripts %}
   <script src="{{ intl_tel_input_cdn }}js/intlTelInput.min.js"></script>
@@ -47,6 +43,4 @@
   {% endif %}
 {% endblock %}
 
-{% block footer_block %}
-  {% include 'footer_simple.html' %}
-{% endblock footer_block %}
+{% block footer_block %}{% include 'footer_simple.html' %}{% endblock footer_block %}
