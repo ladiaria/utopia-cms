@@ -55,8 +55,7 @@
   {% if allow_mas_leidos %}<script src="{% static 'js/most_read.js' %}"></script>{% endif %}
   <script type="text/javascript">
     $(function(){
-      resizeSubnav($('.section-detail__sub-cats'), $('.section-detail__sub-cats-list'), 2);
-      resizeSubnav($('.section-subheader .submenu'), $('.submenu--list'), 1);
+      resizeSubnav(document.querySelector(".section-subheader .submenu"), document.querySelector(".submenu--list"), 1);
       $('#header-pub').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
     });
   </script>
