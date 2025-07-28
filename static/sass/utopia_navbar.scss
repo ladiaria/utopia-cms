@@ -1369,7 +1369,7 @@ main > header {
         text-transform: uppercase;
         white-space: nowrap;
         margin-bottom: 10px;
-        line-height: 31px;
+        line-height: 25px;
 
         a {
           display: inline-block;
@@ -1461,7 +1461,7 @@ main > header {
 
     &.show-secondary {
       .secondary {
-        display: block;
+        display: inline-block;
       }
     }
     .dropdown-content {

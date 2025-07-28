@@ -539,16 +539,13 @@ a.ladiaria {
       fill: #595959;
     }
 
-    .dropdown-button {
-      svg {
-        height: auto;
-      }
+    .dropdown-button svg {
+      height: auto;
     }
 
-    &:not(.js) {
-      .section-detail__sub-cats-list {
-        overflow-x: hidden;
-      }
+    &:not(.js) .section-detail__sub-cats-list {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     &-list {
@@ -559,7 +556,7 @@ a.ladiaria {
         white-space: nowrap;
 
         &.hidden {
-          display: none;
+          display: none !important;
         }
 
         &.more {
@@ -577,10 +574,11 @@ a.ladiaria {
         }
       }
 
-      &.full {
-        li {
-          flex-grow: 1;
-        }
+      &.full li {
+        flex-grow: 1;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
       }
       .dropdown-content {
         border-radius: 0 0 10px 10px;
@@ -622,11 +620,11 @@ a.ladiaria {
   &__header-sub-cat {
     text-transform: uppercase;
     font-family: "Roboto", sans-serif;
-    font-size: 14px;
+    font-size: px-to-rem(14px);
     font-weight: bold;
     display: inline-block;
     margin-right: 5px;
-    line-height: 30px;
+    line-height: 25px;
     color: #595959;
     cursor: pointer;
     padding: 0 8px;
