@@ -32,7 +32,7 @@
 {% block footer_scripts %}
   <script>
     $(document).ready(function(){
-      resizeSubnav($('.section-subheader .submenu'), $('.submenu--list'), 1);
+      resizeSubnav(document.querySelector(".section-subheader .submenu"), document.querySelector(".submenu--list"), 1);
     });
   </script>
 {% endblock %}
