@@ -3,6 +3,7 @@ import json
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 from django.conf import settings
 
@@ -36,18 +37,25 @@ def youtube_api_playlistItems(youtube_api, playlistId, maxResults=8, reverse=Fal
     """
     Returns a list of tuples with the video id, title and type of the playlist items.
     """
-    items = [
-        (
-            (v["snippet"]["resourceId"]["videoId"], v["snippet"]["title"])
-            + ((v["snippet"]["description"],) if include_description else ())
-            + ("playlist",)
-        ) for v in youtube_api.playlistItems().list(
-            part="snippet", playlistId=playlistId, maxResults=maxResults
-        ).execute()["items"]
-    ] if youtube_api and playlistId else []
-    if reverse:
-        items.reverse()
-    return items
+    items = None
+    if youtube_api and playlistId:
+        try:
+            items = [
+                (
+                    (v["snippet"]["resourceId"]["videoId"], v["snippet"]["title"])
+                    + ((v["snippet"]["description"],) if include_description else ())
+                    + ("playlist",)
+                ) for v in youtube_api.playlistItems().list(
+                    part="snippet", playlistId=playlistId, maxResults=maxResults
+                ).execute()["items"]
+            ]
+        except HttpError as httperr:
+            if settings.DEBUG:
+                print(f"Error getting playlist items: {httperr}")
+        else:
+            if items and reverse:
+                items.reverse()
+    return items or []
 
 
 def youtube_api_embeds(youtube_api, video_ids):
