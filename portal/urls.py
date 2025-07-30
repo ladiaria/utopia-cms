@@ -258,7 +258,7 @@ class SubscriptionPricesViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        extra_info_sync_keys = ("preapproval_plan_id", "benefits", "cusom", "urlpath", "title", "description")
+        extra_info_sync_keys = getattr(settings, "THEDAILY_SUBSCRIPTION_PRICES_EXTRA_INFO_SYNC_KEYS", ())
         ei_bak = dict((k, v) for k, v in instance.extra_info.items() if k not in extra_info_sync_keys)
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
