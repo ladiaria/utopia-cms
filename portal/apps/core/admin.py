@@ -828,7 +828,7 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
     inlines = (
         [SortableArticleExtensionInline, SortableArticleBodyImageInline] if INLINES_SORTABLE else
         [ArticleExtensionInline, ArticleBodyImageInline]
-    ) + [ArticleEditionInline]
+    ) + [ArticleEditionInline] + article_optional_inlines
     slug_fields = (
         "slug_radio_choice", "slug", "slug_radio_choice_custom", "slug_custom"
     ) if article_slug_customizable else ("slug",)
