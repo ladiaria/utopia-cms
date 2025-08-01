@@ -6,6 +6,7 @@ from freezegun import freeze_time
 from kombu import Queue
 from babel import Locale
 from pycountry import countries
+import environ
 
 import django
 from django.conf.global_settings import DEFAULT_CHARSET
@@ -22,6 +23,10 @@ PROJECT_NAME = basename(PROJECT_ABSOLUTE_DIR)
 APPS_DIR = join(PROJECT_ABSOLUTE_DIR, "apps")
 if APPS_DIR not in sys.path:
     sys.path.insert(0, APPS_DIR)
+
+env = environ.Env(DEBUG=(bool, False))
+environ.Env.read_env(join(PROJECT_ABSOLUTE_DIR, '.env'))
+DATABASES = {'default': env.db()}
 
 SITE_ROOT = dirname(realpath(__file__))
 STATIC_URL = "/static/"
@@ -568,6 +573,7 @@ PWA_SERVICE_WORKER_TEMPLATE = "core/templates/sw/serviceworker.js"
 PWA_SERVICE_WORKER_VERSION = 1
 
 # defaults that will be assigned after local settings import
+DATABASES_default_OPTIONS = {}
 COMPRESS_OFFLINE_CONTEXT = {}
 SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
@@ -589,6 +595,7 @@ ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restri
 from local_migration_settings import *  # noqa
 
 
+DATABASES['default']['OPTIONS'] = DATABASES_default_OPTIONS
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
@@ -608,8 +615,11 @@ if locals().get("DEBUG_TOOLBAR_ENABLE"):
     # NOTE when enabled, you need to: pip install django-debug-toolbar && ./manage.py collectstatic
     INSTALLED_APPS += ('debug_toolbar',)
     MIDDLEWARE = MIDDLEWARE[:9] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[9:]
+    from debug_toolbar.settings import PANELS_DEFAULTS
+    DEBUG_TOOLBAR_PANELS = PANELS_DEFAULTS
+    DEBUG_TOOLBAR_PANELS.remove('debug_toolbar.panels.templates.TemplatesPanel')
 
-DEBUG = locals().get("DEBUG", False)
+DEBUG = locals().get("DEBUG", env("DEBUG"))
 if DEBUG:
     MIDDLEWARE = MIDDLEWARE[:8] + ("corsheaders.middleware.CorsMiddleware",) + MIDDLEWARE[8:]
 

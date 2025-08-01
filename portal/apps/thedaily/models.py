@@ -86,10 +86,18 @@ def sync_log(message, level=logging.INFO, request=None):
         sync_logger.log(level, message + extra)
 
 
+def default_price_publication_when_unique():
+    if (
+        not Publication.multi()
+        and getattr(settings, "THEDAILY_SUBSCRIPTION_PRICES_API_SET_PUBLICATION_IF_UNIQUE", True)
+    ):
+        return Publication.default()
+
+
 class SubscriptionPrices(Model):
     name = CharField(max_length=64, unique=True)
     subscription_type = SlugField(max_length=64, unique=True)
-    order = PositiveSmallIntegerField('orden', null=True)
+    order = PositiveSmallIntegerField('orden', blank=True, null=True)
     months = PositiveSmallIntegerField('meses', default=1)
     price = DecimalField('precio', max_digits=9, decimal_places=2, validators=[MIN0])
     price_total = DecimalField('precio total', max_digits=9, decimal_places=2, validators=[MIN0])
@@ -107,10 +115,19 @@ class SubscriptionPrices(Model):
     extra_info = JSONField("información extra", default=dict, help_text='Diccionario Python en formato JSON')
     paypal_button_id = CharField(max_length=13, null=True, blank=True)
     auth_group = ForeignKey(Group, on_delete=CASCADE, verbose_name='Grupo asociado al permiso', blank=True, null=True)
-    publication = ForeignKey(Publication, on_delete=CASCADE, blank=True, null=True, verbose_name='publicación')
+    publication = ForeignKey(
+        Publication,
+        on_delete=CASCADE,
+        blank=True,
+        null=True,
+        verbose_name='publicación',
+        default=default_price_publication_when_unique,
+    )
     ga_sku = CharField(max_length=10, blank=True, null=True)
     ga_name = CharField(max_length=64, blank=True, null=True)
-    ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
+    ga_category = CharField(
+        max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True, default=GA_CATEGORY_CHOICES[0][0]
+    )
 
     def __str__(self):
         return self.name
