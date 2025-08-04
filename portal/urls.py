@@ -247,7 +247,7 @@ class CustomAuthViewSetMixin:
 class SubscriptionViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):
     queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
-    http_method_names = ["get", "head", "put"]
+    http_method_names = ["get", "head", "put", "patch"]
 
 
 class SubscriptionPricesViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):

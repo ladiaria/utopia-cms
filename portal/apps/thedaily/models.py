@@ -575,6 +575,8 @@ def email_extra_validations(old_email, email, instance_id=None, next_page=None, 
 
 @receiver(pre_save, sender=User)
 def user_pre_save(sender, instance, **kwargs):
+    if settings.THEDAILY_DEBUG_SIGNALS:
+        print('DEBUG: user_pre_save signal called')
     email_extra_validations_done, error_msg = getattr(instance, "email_extra_validations_done", False), None
     if email_extra_validations_done:
         # remove flag
@@ -616,6 +618,8 @@ def user_pre_save(sender, instance, **kwargs):
                 if hasattr(instance, 'subscriber') and instance.subscriber else None
             )
             changeset.update({'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email})
+            if settings.THEDAILY_DEBUG_SIGNALS:
+                print(f"DEBUG: user_pre_save signal, will call put_data_to_crm with changeset: {changeset}")
             put_data_to_crm(api_uri, changeset)
         except requests.exceptions.RequestException:
             raise UpdateCrmEx(MSG_ERR_UPDATE % _("tus datos"))
@@ -635,7 +639,9 @@ def subscriber_pre_save(sender, instance, **kwargs):
                 changeset[crm_field] = getattr(instance, f)
         if changeset:
             try:
-                updatecrmuser(instance.contact_id, None, changeset)
+                # TODO: must be changed to only 1 request, not 1 per field ASAP
+                for crm_field, value in changeset.items():
+                    updatecrmuser(instance.contact_id, crm_field, value)
             except requests.exceptions.RequestException:
                 raise UpdateCrmEx(MSG_ERR_UPDATE % _("tu perfil"))
     except Subscriber.DoesNotExist:

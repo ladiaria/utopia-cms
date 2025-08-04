@@ -2152,7 +2152,9 @@ def email_check_api(request):
     """
     try:
 
-        email, contact_id, retval = request.POST['email'], int(request.POST['contact_id']), 0
+        if settings.DEBUG:
+            print(f"DEBUG: email_check_api request.data: {request.data}")
+        email, contact_id, retval = request.data['email'], int(request.data['contact_id']), 0
 
         if Subscriber.objects.filter(contact_id=contact_id).exists():
 
