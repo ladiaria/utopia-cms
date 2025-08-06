@@ -634,7 +634,7 @@ if ENABLE_GOOGLE_ONE_TAP:
     # The middleware would override X_FRAME_OPTIONS and block Google's authentication popup.
     MIDDLEWARE = tuple([
         m for m in MIDDLEWARE
-        if m != "django.middleware.clickjacking.XFrameOptionsMiddleware"
+        if m not in ["django.middleware.clickjacking.XFrameOptionsMiddleware",]
     ])
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
