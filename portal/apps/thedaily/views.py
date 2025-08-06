@@ -944,7 +944,10 @@ class SubscribeView(TemplateView):
 
         if not is_subscriber and request.method == 'POST':
             post = request.POST.copy()
-
+            # TODO: improvement:
+            #       Avoid creating a new subscription if "double click prevention" was bypassed tampering the js.
+            #       A way to do this is saving the token used and on saving a subscription check previously if there
+            #       is a subscription with the same token, etc.
             if user_is_auth:
                 subscription = request.session.get('subscription')
                 subscription_type = request.session.get('subscription_type')
@@ -1001,7 +1004,7 @@ class SubscribeView(TemplateView):
             #         SubscriptionForm if nocaptcha else SubscriptionCaptchaForm
             #     )(post)
             # )
-            subscription_form_v = subscription_formclass(post, initial=initial)
+            subscription_form_v = subscription_formclass(post, initial=initial, planslug=planslug)
 
             if subscriber_form_v.is_valid(planslug) and subscription_form_v.is_valid():
                 # TODO: (DRY_start) can be moved to a function (one of our custom apps does near exactly the same,

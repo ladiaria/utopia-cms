@@ -636,7 +636,10 @@ def subscriber_pre_save(sender, instance, **kwargs):
         changeset = {}
         for crm_field, f in list(settings.CRM_UPDATE_SUBSCRIBER_FIELDS.items()):
             if getattr(actual_sub, f) != getattr(instance, f):
-                changeset[crm_field] = getattr(instance, f)
+                value = getattr(instance, f)
+                if f == "phone":
+                    value = value.as_e164
+                changeset[crm_field] = value
         if changeset:
             try:
                 # TODO: must be changed to only 1 request, not 1 per field ASAP

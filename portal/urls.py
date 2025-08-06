@@ -110,7 +110,7 @@ class UrlSerializer(serializers.ModelSerializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
-        fields = ("id", "end_date")
+        fields = ("id", "start_date", "end_date")
 
 
 class SubscriberSerializer(serializers.ModelSerializer):
