@@ -354,8 +354,17 @@
             {% include subscribe_notice_template %}
           {% endif %}
         {% endif %}
+      {% elif user_newsletters_notice_template %}
+
+        {% if not request.session.subscribe_notice_closed %}
+          {% if is_portada and publication == default_pub or is_detail %}
+            {% include user_newsletters_notice_template %}
+          {% endif %}
+        {% endif %}
+
       {% endif %}
     {% endblock %}
+
 
     <!-- Main -->
     {% block main_open %}<main class="main" id="main-content">{% endblock %}
