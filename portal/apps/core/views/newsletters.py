@@ -5,6 +5,15 @@ from thedaily.utils import unsubscribed_newsletters, get_app_template
 
 
 def index(request):
+    """
+    Vista para mostrar y gestionar las newsletters disponibles para suscripción.
+    
+    Args:
+        request: HttpRequest object
+        
+    Returns:
+        HttpResponse: Template renderizado con la lista de newsletters
+    """
     user = request.user
     subscriber = getattr(user, 'subscriber', None)
 
@@ -18,6 +27,19 @@ def index(request):
 
     # Si el usuario puede suscribirse, se le pasan sus datos; en caso contrario se pasa False.
     unsubscribed_list = unsubscribed_newsletters(subscriber if user_can_subscribe else False, False)
+    
+    # Ordenar alfabéticamente por el nombre de la newsletter
+    try:
+        unsubscribed_list = sorted(
+            unsubscribed_list, 
+            key=lambda x: x.name.lower()
+        )
+    except (AttributeError, TypeError) as e:
+        # Fallback: si hay problemas con el ordenamiento, mantener lista original
+        # AttributeError: cuando un objeto no tiene atributo 'name'
+        # TypeError: cuando 'name' existe pero no es string (ej: None, 123, etc.)
+        pass
+    
 
     context = {
         "unsubscribed_newsletters": unsubscribed_list,
