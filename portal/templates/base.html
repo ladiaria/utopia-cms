@@ -509,9 +509,7 @@
           google.accounts.id.prompt((notification) => {
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
               const reason = notification.getNotDisplayedReason();
-              // Google One Tap not displayed. Reason:', reason);
-            } else {
-              // Google One Tap displayed successfully
+              console.log('Google One Tap not displayed. Reason:', reason);
             }
           });
 
