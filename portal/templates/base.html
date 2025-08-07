@@ -457,43 +457,130 @@
     {% block footer_scripts_extra %}{% endblock %}
 
     <!-- Google One Tap Authentication -->
-    {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP %}
-      <script src="https://accounts.google.com/gsi/client" async defer data-cfasync="false"></script>
-      <script>
-        window.onload = function () {
-          if (window.google && google.accounts && google.accounts.id) {
-            google.accounts.id.initialize({
-              client_id: '{{ google_client_id }}',
-              callback: handleCredentialResponse,
-              context: 'signin'
-            });
-            google.accounts.id.prompt((notification) => {
-              if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                console.log('Google One Tap not available');
-              }
-            });
-          } else {
-            console.log('Google One Tap script not loaded');
-          }
-        };
+    {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP and SHOW_ONE_GOOGLE_TAP %}
+    <script src="https://accounts.google.com/gsi/client" async defer data-cfasync="false"></script>
+    <script>
+      // Variables to prevent multiple initializations
+      let oneTabInitialized = false;
+      let retryCount = 0;
+      const MAX_RETRIES = 2;
 
-        function parseJwt(token) {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
+      function initializeGoogleOneTap() {
+        // Prevent multiple initializations
+        if (oneTabInitialized) {
+          // Google One Tap already initialized
+          return;
         }
 
-        function handleCredentialResponse(response) {
-          // Use the existing Google OAuth flow with the credential
-          // Redirect to the existing Google OAuth endpoint with the credential
+        if (!window.google || !google.accounts || !google.accounts.id) {
+          // Google One Tap script not loaded yet
+          if (retryCount < MAX_RETRIES) {
+            retryCount++;
+            setTimeout(initializeGoogleOneTap, 1000);
+          }
+          return;
+        }
+
+        try {
+          google.accounts.id.initialize({
+            client_id: '{{ google_client_id }}',
+            callback: handleCredentialResponse,
+            context: 'signin',
+            // Additional configurations for stability
+            itp_support: true,
+            use_fedcm_for_prompt: false,
+            // UI behavior configurations
+            cancel_on_tap_outside: true,
+            auto_select: false
+          });
+
+          oneTabInitialized = true;
+          // Google One Tap initialized successfully
+
+          google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              const reason = notification.getNotDisplayedReason();
+              // Google One Tap not displayed. Reason:', reason);
+            } else {
+              // Google One Tap displayed successfully
+            }
+          });
+
+        } catch (error) {
+          console.error('Error initializing Google One Tap:', error);
+        }
+      }
+
+      function parseJwt(token) {
+        try {
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(
+            atob(base64).split('').map(function (c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join('')
+          );
+          return JSON.parse(jsonPayload);
+        } catch (error) {
+          console.error('Error parsing JWT token:', error);
+          throw error;
+        }
+      }
+
+      function handleCredentialResponse(response) {
+        // Credential response received
+
+        if (!response || !response.credential) {
+          console.error('No credential received');
+          return;
+        }
+
+        try {
           const payload = parseJwt(response.credential);
           const email = payload.email;
-          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next={{ next }}&login_hint=" + encodeURIComponent(email);
+
+          if (!email) {
+            console.error('No email found in credential');
+            // Fallback without login_hint
+            const currentUrl = window.location.href;
+            const nextUrl = encodeURIComponent(currentUrl);
+            window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
+            return;
+          }
+
+          const currentUrl = window.location.href;
+          const nextUrl = encodeURIComponent(currentUrl);
+
+          // Redirecting to OAuth with email hint
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl + "&login_hint=" + encodeURIComponent(email);
+
+        } catch (error) {
+          console.error('Error processing credential:', error);
+
+          // Fallback: redirect without login_hint
+          // Falling back to OAuth without login_hint
+          const currentUrl = window.location.href;
+          const nextUrl = encodeURIComponent(currentUrl);
+          window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
         }
-      </script>
+      }
+
+      // Initialize when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeGoogleOneTap);
+      } else {
+        // DOM is already ready
+        initializeGoogleOneTap();
+      }
+
+      // Backup: initialize on window.onload if DOMContentLoaded didn't work
+      window.addEventListener('load', function() {
+        if (!oneTabInitialized) {
+          // Initializing via window.onload backup
+          initializeGoogleOneTap();
+        }
+      });
+    </script>
     {% endif %}
   </body>
 </html>
