@@ -606,7 +606,6 @@ if ENABLE_GOOGLE_ONE_TAP:
         "/usuarios/registrate/google/",
     ]
 
-    SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
     # =============================================================================
     # Google One Tap Configuration
     # =============================================================================
@@ -621,6 +620,9 @@ if ENABLE_GOOGLE_ONE_TAP:
     # Required for One Tap to maintain session state across domains.
     SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-site session cookies
     CSRF_COOKIE_SAMESITE = 'None'     # Allow cross-site CSRF cookies
+
+    # Allow popups to external domains while maintaining same-origin security
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
     # -----------------------------------------------------------------------------
     # Frame Options Configuration

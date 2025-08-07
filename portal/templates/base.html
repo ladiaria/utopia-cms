@@ -477,12 +477,12 @@
       function initializeGoogleOneTap() {
         // Prevent multiple initializations
         if (oneTabInitialized) {
-          console.log('Google One Tap already initialized');
+          // Google One Tap already initialized
           return;
         }
 
         if (!window.google || !google.accounts || !google.accounts.id) {
-          console.log('Google One Tap script not loaded yet');
+          // Google One Tap script not loaded yet
           if (retryCount < MAX_RETRIES) {
             retryCount++;
             setTimeout(initializeGoogleOneTap, 1000);
@@ -504,14 +504,14 @@
           });
 
           oneTabInitialized = true;
-          console.log('Google One Tap initialized successfully');
 
+          // Google One Tap initialized successfully
           google.accounts.id.prompt((notification) => {
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
               const reason = notification.getNotDisplayedReason();
-              console.log('Google One Tap not displayed. Reason:', reason);
+              // Google One Tap not displayed. Reason:', reason);
             } else {
-              console.log('Google One Tap displayed successfully');
+              // Google One Tap displayed successfully
             }
           });
 
@@ -537,7 +537,7 @@
       }
 
       function handleCredentialResponse(response) {
-        console.log('Credential response received');
+        // Credential response received
 
         if (!response || !response.credential) {
           console.error('No credential received');
@@ -560,14 +560,13 @@
           const currentUrl = window.location.href;
           const nextUrl = encodeURIComponent(currentUrl);
 
-          console.log('Redirecting to OAuth with email hint');
+          // Redirecting to OAuth with email hint
           window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl + "&login_hint=" + encodeURIComponent(email);
 
         } catch (error) {
           console.error('Error processing credential:', error);
 
-          // Fallback: redirect without login_hint
-          console.log('Falling back to OAuth without login_hint');
+          // Falling back to OAuth without login_hint
           const currentUrl = window.location.href;
           const nextUrl = encodeURIComponent(currentUrl);
           window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
@@ -585,7 +584,7 @@
       // Backup: initialize on window.onload if DOMContentLoaded didn't work
       window.addEventListener('load', function() {
         if (!oneTabInitialized) {
-          console.log('Initializing via window.onload backup');
+          // Initializing via window.onload backup
           initializeGoogleOneTap();
         }
       });
