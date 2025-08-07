@@ -606,7 +606,7 @@ if ENABLE_GOOGLE_ONE_TAP:
         "/usuarios/registrate/google/",
     ]
 
-    SECURE_CROSS_ORIGIN_OPENER_POLICY = None  # Django wont add header
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
     # =============================================================================
     # Google One Tap Configuration
     # =============================================================================
