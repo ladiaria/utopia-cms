@@ -606,6 +606,8 @@ if ENABLE_GOOGLE_ONE_TAP:
         "/usuarios/restablecer/",
         "/usuarios/registrate/google/",
     ]
+
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = None  # Django wont add header
     # =============================================================================
     # Google One Tap Configuration
     # =============================================================================
