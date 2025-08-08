@@ -107,12 +107,6 @@ class UrlSerializer(serializers.ModelSerializer):
         fields = ('recommendation_set',)
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Subscription
-        fields = ("id", "start_date", "end_date")
-
-
 class SubscriberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscriber
@@ -123,6 +117,16 @@ class SubscriptionPricesSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionPrices
         fields = ('name', 'subscription_type', "months", "price", "price_total", "extra_info")
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    subscription_type_prices = serializers.SlugRelatedField(
+        many=True, slug_field="subscription_type", queryset=SubscriptionPrices.objects.all(),
+    )
+
+    class Meta:
+        model = Subscription
+        fields = ("id", "start_date", "end_date", "subscription_type_prices")
 
 
 class ExchangeSerializer(serializers.ModelSerializer):
