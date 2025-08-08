@@ -31,8 +31,12 @@
 
 {% block footer_scripts %}
   <script>
-    $(document).ready(function(){
-      resizeSubnav(document.querySelector(".section-subheader .submenu"), document.querySelector(".submenu--list"), 1);
+    $(document).ready(function() {
+      const subMenu = document.querySelector(".section-subheader .submenu");
+      const subMenuList = document.querySelector(".submenu--list");
+      if (subMenu && subMenuList) {
+        resizeSubnav(subMenu, subMenuList, 1);
+      }
     });
   </script>
 {% endblock %}
