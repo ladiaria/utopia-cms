@@ -637,7 +637,7 @@ def subscriber_pre_save(sender, instance, **kwargs):
         for crm_field, f in list(settings.CRM_UPDATE_SUBSCRIBER_FIELDS.items()):
             if getattr(actual_sub, f) != getattr(instance, f):
                 value = getattr(instance, f)
-                if f == "phone":
+                if value and f == "phone":
                     value = value.as_e164
                 changeset[crm_field] = value
         if changeset:

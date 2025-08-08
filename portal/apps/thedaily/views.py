@@ -1411,6 +1411,9 @@ def edit_profile(request, user=None):
                 except OAuthState.DoesNotExist:
                     pass
 
+                updated_msg = _('Perfil actualizado.')
+                check_email_msg = _('revisá tu email para verificar el cambio de email.')
+
                 if old_email != user.email:
                     # TODO: send the email after saving the user and take actions if it not sent
                     template_name = 'account_signup.html'
@@ -1426,17 +1429,21 @@ def edit_profile(request, user=None):
                         profile_form.save()
                         user.is_active = False
                         user.save()
-                        messages.success(
-                            request, 'Perfil actualizado, revisá tu email para verificar el cambio de email.'
-                        )
+                        messages.success(request, f"{updated_msg}, {check_email_msg}")
                         logout(request)
                         return HttpResponseRedirect(reverse('account-logout'))
                     else:
                         user_form.add_error("email", f"Error al enviar {verif_email_i18n} para el usuario %s" % user)
                 else:
                     user_form.save()
-                    profile_form.save()
-                    messages.success(request, 'Perfil Actualizado.')
+                    try:
+                        profile_form.save()
+                    except Exception as exc:
+                        msg = _("Error al guardar los datos")
+                        error_log(msg + " para el usuario: '{}', detalle: {}".format(str(user), str(exc)))
+                        user_form.add_error(None, ValidationError(msg, code='onsave_valid_form'))
+                    else:
+                        messages.success(request, updated_msg)
 
             except UpdateCrmEx as e:
                 user.refresh_from_db()
@@ -1818,6 +1825,10 @@ def update_user_from_crm(request):
                     new_user.save()
                     subscriber = new_user.subscriber
                     subscriber.contact_id = contact_id
+                    request_data_fields = json.loads(request.data.get('fields', "{}"))
+                    fname_map = settings.CRM_UPDATE_SUBSCRIBER_FIELDS
+                    for fname in [item[0] for item in fname_map.items() if item[1] not in user_args]:
+                        setattr(subscriber, fname_map[fname], request_data_fields.get(fname))
                     subscriber.updatefromcrm = True
                     subscriber.save()
                 except IntegrityError as inner_ie:
