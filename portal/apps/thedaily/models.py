@@ -644,6 +644,8 @@ def subscriber_pre_save(sender, instance, **kwargs):
             try:
                 # TODO: must be changed to only 1 request, not 1 per field ASAP
                 for crm_field, value in changeset.items():
+                    if settings.THEDAILY_DEBUG_SIGNALS:
+                        print(f"\tcalling updatecrmuser with crm_field: {crm_field} and value: {value}")
                     updatecrmuser(instance.contact_id, crm_field, value)
             except requests.exceptions.RequestException:
                 raise UpdateCrmEx(MSG_ERR_UPDATE % _("tu perfil"))
