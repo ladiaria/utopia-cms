@@ -105,7 +105,7 @@ def get_document_type_choices():
                 try:
                     result = [(x["id"], x["name"]) for x in response.json()]
                     with open(dtlist_json, "w") as fobj:
-                        json.dump({"document_type": result}, fobj)
+                        json.dump(result, fobj)
                 except Exception as e:
                     if settings.DEBUG:
                         print(e)
@@ -115,7 +115,7 @@ def get_document_type_choices():
         # return content of the local file
         try:
             fobj = open(dtlist_json)
-            result = json.loads(fobj.read()).get("document_type", result)
+            result = json.loads(fobj.read())
             fobj.close()
         except FileNotFoundError as fnfe:
             if settings.DEBUG:
