@@ -47,8 +47,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
 
-from libs.utils import crm_rest_api_kwargs
-from apps import mongo_db, bouncer_blocklisted, whitelisted_domains, document_type_choices
+from apps import mongo_db, bouncer_blocklisted, whitelisted_domains, document_type_choices, crm_rest_api_kwargs
 from core.models import Edition, Publication, Category, ArticleViewedBy
 from .exceptions import UpdateCrmEx, EmailValidationError, MSG_ERR_UPDATE
 from .managers import SubscriberManager

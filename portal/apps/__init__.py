@@ -14,8 +14,10 @@ TODO: 1. if mongo server fails after this global vars are set, the global client
 
 import csv
 import json
+import requests
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
+from requests.auth import HTTPBasicAuth
 
 from django.conf import settings
 
@@ -60,11 +62,54 @@ def whitelisted_domains(update_list=None):
         fobj.close()
 
 
+def crm_rest_api_kwargs(api_key=None, data=None):
+    """
+    Get the CRM API standard args.
+    @param api_key: CRM API key.
+    @param data: request body data to be send.
+    @return result: dictionary with all params.
+    """
+    http_basic_auth = settings.CRM_API_HTTP_BASIC_AUTH
+    headers = {'Authorization': 'Api-Key ' + api_key} if api_key else None
+    result = {"headers": {"X-Api-Key": api_key} if http_basic_auth else headers} if headers else {}
+    if not getattr(settings, "CRM_API_VERIFY_SSL", True):
+        result["verify"] = False
+    if data:
+        result["data"] = data
+    if http_basic_auth:
+        result["auth"] = HTTPBasicAuth(*http_basic_auth)
+    return result
+
+
 def get_document_type_choices():
-    # TODO: check how many times this function is called
+    if settings.DEBUG:
+        print("get_document_type_choices called")
     result = []
     dtlist_json = getattr(settings, "THEDAILY_DOCUMENT_TYPE_CHOICES_JSON", None)
     if dtlist_json:
+        api_base_url = settings.CRM_API_BASE_URI
+        if api_base_url:
+            # update, save and return the result
+            try:
+                # get from crm api
+                response = requests.get(api_base_url + "document-types/", **crm_rest_api_kwargs())
+                response.raise_for_status()
+            except Exception as e:
+                if settings.DEBUG:
+                    print(e)
+            else:
+                # update local file
+                try:
+                    result = [(x["id"], x["name"]) for x in response.json()]
+                    with open(dtlist_json, "w") as fobj:
+                        json.dump({"document_type": result}, fobj)
+                except Exception as e:
+                    if settings.DEBUG:
+                        print(e)
+                else:
+                    # return the result used to update the local file
+                    return result
+        # return content of the local file
         try:
             fobj = open(dtlist_json)
             result = json.loads(fobj.read()).get("document_type", result)

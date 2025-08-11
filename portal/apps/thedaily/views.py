@@ -70,8 +70,8 @@ from django.utils.translation import gettext as _
 from django.utils.decorators import method_decorator
 
 from utils.error_log import error_log
-from apps import mongo_db, bouncer_blocklisted
-from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
+from apps import mongo_db, bouncer_blocklisted, crm_rest_api_kwargs
+from libs.utils import set_amp_cors_headers, decode_hashid
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from decorators import render_response
 

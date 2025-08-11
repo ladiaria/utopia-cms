@@ -9,7 +9,7 @@ from django.conf import settings
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 
-from libs.utils import crm_rest_api_kwargs
+from apps import crm_rest_api_kwargs
 from thedaily.models import createcrmuser, existscrmuser
 
 

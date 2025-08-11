@@ -110,7 +110,7 @@ class UrlSerializer(serializers.ModelSerializer):
 class SubscriberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscriber
-        fields = ('__str__', 'user_email', 'is_subscriber_any', 'newsletters')
+        fields = ('__str__', "contact_id", 'user_email', 'is_subscriber_any', 'newsletters')
 
 
 class SubscriptionPricesSerializer(serializers.ModelSerializer):
@@ -126,7 +126,11 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ("id", "start_date", "end_date", "subscription_type_prices")
+        fields = ("id", "subscriber", "start_date", "end_date", "subscription_type_prices")
+
+
+class SubscriptionContactSerializer(SubscriptionSerializer):
+    subscriber = serializers.SlugRelatedField(slug_field="contact_id", queryset=Subscriber.objects.all())
 
 
 class ExchangeSerializer(serializers.ModelSerializer):
@@ -254,6 +258,10 @@ class SubscriptionViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):
     http_method_names = ["get", "head", "put", "patch"]
 
 
+class SubscriptionContactViewSet(SubscriptionViewSet):
+    serializer_class = SubscriptionContactSerializer
+
+
 class SubscriptionPricesViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):
     queryset = SubscriptionPrices.objects.all()
     serializer_class = SubscriptionPricesSerializer
@@ -297,6 +305,7 @@ router.register(r'home', HomeArticleViewSet)
 router.register(r'journalists', JournalistViewSet)
 router.register(r'urls', UrlViewSet)
 router.register(r'subscriptions', SubscriptionViewSet)
+router.register(r'subscriptions-contact', SubscriptionContactViewSet)
 router.register(r'subscribers', SubscriberViewSet)
 router.register(r'subscription_prices', SubscriptionPricesViewSet)
 router.register(r'dollar_exchange', DollarExchangeViewSet)

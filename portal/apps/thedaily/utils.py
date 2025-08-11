@@ -26,7 +26,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 
-from libs.utils import crm_rest_api_kwargs, get_site_name
+from libs.utils import get_site_name
+from apps import crm_rest_api_kwargs
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
 from signupwall.utils import get_ip
