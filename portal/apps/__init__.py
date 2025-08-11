@@ -62,16 +62,18 @@ def whitelisted_domains(update_list=None):
         fobj.close()
 
 
-def crm_rest_api_kwargs(api_key=None, data=None):
+def crm_rest_api_kwargs(api_key, data=None):
     """
     Get the CRM API standard args.
     @param api_key: CRM API key.
     @param data: request body data to be send.
     @return result: dictionary with all params.
     """
+    # we require the api_key as arg (we can obtain it from settings) because the caller code needs also it most of the
+    # time to make previous conditions to call us or build the data arg, this way the code is a bit less repeated but
+    # of course that the calls in all the code that call us can be refactored lettng this function with only one arg.
     http_basic_auth = settings.CRM_API_HTTP_BASIC_AUTH
-    headers = {'Authorization': 'Api-Key ' + api_key} if api_key else None
-    result = {"headers": {"X-Api-Key": api_key} if http_basic_auth else headers} if headers else {}
+    result = {"headers": {"X-Api-Key": api_key} if http_basic_auth else {'Authorization': 'Api-Key ' + api_key}}
     if not getattr(settings, "CRM_API_VERIFY_SSL", True):
         result["verify"] = False
     if data:
@@ -88,11 +90,12 @@ def get_document_type_choices():
     dtlist_json = getattr(settings, "THEDAILY_DOCUMENT_TYPE_CHOICES_JSON", None)
     if dtlist_json:
         api_base_url = settings.CRM_API_BASE_URI
-        if api_base_url:
+        api_key = getattr(settings, 'CRM_UPDATE_USER_API_KEY', None)
+        if api_base_url and api_key:
             # update, save and return the result
             try:
                 # get from crm api
-                response = requests.get(api_base_url + "document-types/", **crm_rest_api_kwargs())
+                response = requests.get(api_base_url + "document-types/", **crm_rest_api_kwargs(api_key))
                 response.raise_for_status()
             except Exception as e:
                 if settings.DEBUG:
