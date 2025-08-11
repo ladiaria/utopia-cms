@@ -81,6 +81,9 @@
     {% if not user.is_anonymous  %}
       function changeHandler(input) {
         input.closest('.edit_profile_card__inner-section').classList.toggle('active');
+
+        // If user activate any input, storage a local storage item preventing to show the popup again
+        localStorage.setItem('home_notice_closed_already_activated', true);
       }
       $(function() {
         switch_change_events($('.grid-nl-cards .switch-container'), null, changeHandler);
