@@ -258,7 +258,9 @@
 {% block javascript %}
   <script>
     $(function() {
-      resizeSubnav(document.querySelector(".section-detail__sub-cats"), document.querySelector(".section-detail__sub-cats-list"), 2);
+      if (document.querySelector(".section-detail__sub-cats") && document.querySelector(".section-detail__sub-cats-list")) {
+        resizeSubnav(document.querySelector(".section-detail__sub-cats"), document.querySelector(".section-detail__sub-cats-list"), 2);
+      }
       {% if bn_module_published_count %}
         $('#bn-module').load("{% url 'bn-content' %}?category={{ category.slug }}", function(response){
           if(response){
