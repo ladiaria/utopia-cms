@@ -417,83 +417,95 @@
           notification.toggle();
         });
       }
-      function has48HoursPassed() {
-        const saved = localStorage.getItem('homeNoticeClosedAt');
-        if (!saved) return true; // no timestamp stored, treat as expired
-        const elapsed = Date.now() - Number(saved);
-        return elapsed >= (48 * 60 * 60 * 1000);
-      }
-
-      function getUserMetLandingCondition() {
-        const landingConditions = JSON.parse(localStorage.getItem('landingPopupData'));
-        if (!landingConditions) return false;
-
-        const numberOfDaysToCondition = landingConditions.numerOfDisplayed === 1 ? 7 :
-                                       landingConditions.numerOfDisplayed === 2 ? 14 : 30;
-
-        const now = new Date().getTime();
-        return (now - landingConditions.timestamp) < (numberOfDaysToCondition * 24 * 60 * 60 * 1000);
-      }
-
-      function home_notice_show(home_notice){
-        home_notice.removeClass("hide");
-
-        document.querySelector(".btn-close-notice").addEventListener("click", function() {
-          // Add local storage with a timestamp to avoid showing the notice again
-          localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
-          home_notice.hide();
-        });
-
-        const currentLandingData = JSON.parse(localStorage.getItem('landingPopupData'));
-
-        document.getElementById("landing-nl-btn").addEventListener("click", function() {
-          localStorage.setItem('landingPopupData', JSON.stringify({
-            userActivatedNewsletter: false,
-            numerOfDisplayed: 1,
-            timestamp: new Date().getTime()
-          }));
-        });
-
-        if (currentLandingData) {
-          localStorage.setItem('landingPopupData', JSON.stringify({
-            userActivatedNewsletter: false,
-            numerOfDisplayed: currentLandingData.numerOfDisplayed + 1,
-            timestamp: new Date().getTime()
-          }));
-        }
-
-        setTimeout(() => {
-          $(".home-notice__desktop").toggleClass("hidden");
-          $("#home-notice-mobile").toggleClass("collapsed expanded");
-          $(".home-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
-        }, 20000);
-      }
 
       document.addEventListener("DOMContentLoaded", function() {
 
+        // Live notifications
         $('.btn-close').click(function() {
           notification_close(this);
-        });
-
-        $("#btn-toggle-banner").click(function(){
-          $("#home-notice-mobile").toggleClass("collapsed expanded");
-          $(".home-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
-          localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
         });
 
         {% block read_later_events %}
           {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
         {% endblock %}
 
-        {% if user.is_authenticated %}
-          const home_notice = $('.home-notice');
-          const alreadyActivated = localStorage.getItem('home_notice_closed_already_activated');
-          const userMetLandingCondition = getUserMetLandingCondition();
+        {% if subscribe_notice_template or user_newsletters_notice_template %}
+          {% if is_portada and publication == default_pub or is_detail %}
 
-          if(home_notice.length && !alreadyActivated && !userMetLandingCondition && has48HoursPassed()) {
-            home_notice_show(home_notice);
-          }
-        {% elif not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP and SHOW_ONE_GOOGLE_TAP %}
+            function has48HoursPassed() {
+              const saved = localStorage.getItem('homeNoticeClosedAt');
+              if (!saved) return true; // no timestamp stored, treat as expired
+              const elapsed = Date.now() - Number(saved);
+              return elapsed >= (48 * 60 * 60 * 1000);
+            }
+
+            function getUserMetLandingCondition() {
+              const landingConditions = JSON.parse(localStorage.getItem('landingPopupData'));
+              if (!landingConditions) return false;
+
+              const numberOfDaysToCondition = landingConditions.numerOfDisplayed === 1 ? 7 :
+                                            landingConditions.numerOfDisplayed === 2 ? 14 : 30;
+
+              const now = new Date().getTime();
+              return (now - landingConditions.timestamp) < (numberOfDaysToCondition * 24 * 60 * 60 * 1000);
+            }
+
+            function showHomeNoticePupup(homePupup){
+              homePupup.removeClass("hide");
+
+              document.querySelector(".btn-close-notice").addEventListener("click", function() {
+                // Add local storage with a timestamp to avoid showing the notice again
+                localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
+                homePupup.hide();
+              });
+
+              const currentLandingData = JSON.parse(localStorage.getItem('landingPopupData'));
+
+              if (currentLandingData) {
+                localStorage.setItem('landingPopupData', JSON.stringify({
+                  userActivatedNewsletter: false,
+                  numerOfDisplayed: currentLandingData.numerOfDisplayed + 1,
+                  timestamp: new Date().getTime()
+                }));
+              }
+
+              document.getElementById("landing-nl-btn").addEventListener("click", function() {
+                localStorage.setItem('landingPopupData', JSON.stringify({
+                  userActivatedNewsletter: false,
+                  numerOfDisplayed: 1,
+                  timestamp: new Date().getTime()
+                }));
+              });
+
+              document.getElementById("btn-toggle-banner").addEventListener("click", function() {
+                $("#home-notice-mobile").toggleClass("collapsed expanded");
+                $(".home-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
+                localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
+              });
+
+              setTimeout(() => {
+                $(".home-notice__desktop").toggleClass("hidden");
+                $("#home-notice-mobile").toggleClass("collapsed expanded");
+                $(".home-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
+              }, 20000);
+            }
+
+            function checkConditionsAndShowHomePopupNotice() {
+              const homeNotice = $('.home-notice');
+              const alreadyActivated = localStorage.getItem('home_notice_closed_already_activated');
+              const userMetLandingCondition = getUserMetLandingCondition();
+              if (!homeNotice.length || alreadyActivated || userMetLandingCondition && !has48HoursPassed()) return;
+
+              showHomeNoticePupup(homeNotice);
+            }
+
+            {% if user.is_authenticated %}
+              checkConditionsAndShowHomePopupNotice();
+            {% endif %}
+          {% endif %}
+        {% endif %}
+
+        {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP and SHOW_ONE_GOOGLE_TAP %}
           // Variables to prevent multiple initializations
           let oneTabInitialized = false;
           let retryCount = 0;
@@ -537,15 +549,11 @@
                   const skippedReason = notification.getSkippedReason();
                   console.log('Google One Tap not displayed. Reason:', reason || skippedReason);
 
-                  {% if user_newsletters_notice_template and is_portada and publication == default_pub or is_detail %}
-                    const alreadyActivated = localStorage.getItem('home_notice_closed_already_activated');
-                    const userMetLandingCondition = getUserMetLandingCondition();
-
-                    if (!alreadyActivated && !userMetLandingCondition && has48HoursPassed()) {
-                      home_notice_show(home_notice);
-                    }
+                  {% if subscribe_notice_template or user_newsletters_notice_template %}
+                    {% if is_portada and publication == default_pub or is_detail %}
+                      checkConditionsAndShowHomePopupNotice();
+                    {% endif %}
                   {% endif %}
-
                   // supressed_by_user => User closed the One Tap prompt and Google will not show it again until met conditions
                   // tap_outside => User closed the One Tap prompt by tapping outside
                   // user_cancel => User closed the One Tap prompt by clicking the cancel button
