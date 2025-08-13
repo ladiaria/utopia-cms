@@ -472,7 +472,7 @@
 
               const currentLandingData = JSON.parse(localStorage.getItem('landingPopupData'));
 
-              if (currentLandingData) {
+              if (currentLandingData && !currentLandingData.userActivatedNewsletter) {
                 setupLandingPupupData(currentLandingData.numberOfDisplayed + 1);
               }
 
@@ -507,9 +507,9 @@
 
             function checkConditionsAndShowHomePopupNotice() {
               const homeNotice = $('.home-notice');
-              const alreadyActivated = localStorage.getItem('home_notice_closed_already_activated');
+              const landingPopupData = JSON.parse(localStorage.getItem('landingPopupData'));
               const userMetLandingCondition = getUserMetLandingCondition();
-              if (!homeNotice.length || alreadyActivated || userMetLandingCondition || !has48HoursPassed()) return;
+              if (!homeNotice.length || landingPopupData?.userActivatedNewsletter || userMetLandingCondition || !has48HoursPassed()) return;
 
               showHomeNoticePupup(homeNotice);
             }
