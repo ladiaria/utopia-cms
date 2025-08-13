@@ -49,7 +49,7 @@ function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement) {
 }
 
 // set switch change events
-function switch_change_events(switches, push_notifications_keys_set, changeHandler) {
+function switch_change_events(switches, push_notifications_keys_set, callbackFunction) {
   for (let i = 0; i < switches.length; i++) {
     const switchElement = switches[i];
     const input = switchElement.querySelector('input[type="checkbox"]');
@@ -77,7 +77,7 @@ function switch_change_events(switches, push_notifications_keys_set, changeHandl
           input.setAttribute("disabled", "disabled");
         }
       }
-      changeHandler(input);
+      if (callbackFunction) callbackFunction(input);
     });
   }
 }
