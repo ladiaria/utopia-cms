@@ -443,14 +443,23 @@
           home_notice.hide();
         });
 
+        const currentLandingData = JSON.parse(localStorage.getItem('landingPopupData'));
+
         document.getElementById("landing-nl-btn").addEventListener("click", function() {
-          const currentLandingData = JSON.parse(localStorage.getItem('landingPopupData'));
           localStorage.setItem('landingPopupData', JSON.stringify({
             userActivatedNewsletter: false,
-            numerOfDisplayed: currentLandingData && currentLandingData.numerOfDisplayed ? currentLandingData.numerOfDisplayed + 1 : 1,
+            numerOfDisplayed: 1,
             timestamp: new Date().getTime()
           }));
         });
+
+        if (currentLandingData) {
+          localStorage.setItem('landingPopupData', JSON.stringify({
+            userActivatedNewsletter: currentLandingData.userActivatedNewsletter,
+            numerOfDisplayed: currentLandingData.numerOfDisplayed + 1,
+            timestamp: new Date().getTime()
+          }));
+        }
 
         setTimeout(() => {
           $(".home-notice__desktop").toggleClass("hidden");
@@ -544,10 +553,10 @@
                     }
                   {% endif %}
 
-                  // supressed_by_user => esto es basado en las cookies?
-                  // tap_outside => se cierra por el usuario al hacer click fuera del modal
-                  // user_cancel => el usuario cierra el modal
-                  // opt_out_or_no_session => no tiene sesión activa o ha optado por no usar One Tap
+                  // supressed_by_user => User closed the One Tap prompt and Google will not show it again until met conditions
+                  // tap_outside => User closed the One Tap prompt by tapping outside
+                  // user_cancel => User closed the One Tap prompt by clicking the cancel button
+                  // opt_out_or_no_session => User opted out of One Tap or no session available
                 }
               });
 
