@@ -1,23 +1,25 @@
 from apps import bouncer_blocklisted
 from django.shortcuts import render
+from django.views.decorators.cache import never_cache
 
 from thedaily.utils import unsubscribed_newsletters, get_app_template
 
 
+@never_cache
 def index(request):
     """
-    Vista para mostrar y gestionar las newsletters disponibles para suscripción.
+    View to display and manage available newsletters for subscription.
 
     Args:
         request: HttpRequest object
 
     Returns:
-        HttpResponse: Template renderizado con la lista de newsletters
+        HttpResponse: Rendered template with the newsletter list
     """
     user = request.user
-    subscriber = getattr(user, 'subscriber', None)
+    subscriber = getattr(user, "subscriber", None)
 
-    # Verificar si el usuario puede tener newsletters no suscritas basadas en las condiciones
+    # Check if the user can have unsubscribed newsletters based on conditions
     user_can_subscribe = (
         user.is_authenticated
         and subscriber is not None
@@ -25,19 +27,18 @@ def index(request):
         and user.email not in bouncer_blocklisted
     )
 
-    # Si el usuario puede suscribirse, se le pasan sus datos; en caso contrario se pasa False.
-    unsubscribed_list = unsubscribed_newsletters(subscriber if user_can_subscribe else False, False)
+    # If the user can subscribe, pass their data; otherwise pass False.
+    unsubscribed_list = unsubscribed_newsletters(
+        subscriber if user_can_subscribe else False, False
+    )
 
-    # Ordenar alfabéticamente por el nombre de la newsletter
+    # Sort alphabetically by newsletter name
     try:
-        unsubscribed_list = sorted(
-            unsubscribed_list,
-            key=lambda x: x.name.lower()
-        )
+        unsubscribed_list = sorted(unsubscribed_list, key=lambda x: x.name.lower())
     except (AttributeError, TypeError):
-        # Fallback: si hay problemas con el ordenamiento, mantener lista original
-        # AttributeError: cuando un objeto no tiene atributo 'name'
-        # TypeError: cuando 'name' existe pero no es string (ej: None, 123, etc.)
+        # Fallback: if there are issues with sorting, keep original list
+        # AttributeError: when an object doesn't have 'name' attribute
+        # TypeError: when 'name' exists but isn't a string (e.g.: None, 123, etc.)
         pass
 
     context = {
@@ -45,7 +46,7 @@ def index(request):
         "show_newsletters_pill": True,
     }
 
-    # Si el usuario no cumple las condiciones, lo añadimos al contexto
+    # If the user doesn't meet the conditions, add them to the context
     if not user_can_subscribe:
         context["user"] = user
 
