@@ -455,7 +455,7 @@
 
         if (currentLandingData) {
           localStorage.setItem('landingPopupData', JSON.stringify({
-            userActivatedNewsletter: currentLandingData.userActivatedNewsletter,
+            userActivatedNewsletter: false,
             numerOfDisplayed: currentLandingData.numerOfDisplayed + 1,
             timestamp: new Date().getTime()
           }));
@@ -474,33 +474,25 @@
           notification_close(this);
         });
 
-        const home_notice = $('.home-notice');
-
-        if(home_notice.length){
-          {% if user.is_authenticated %}
-            home_notice_show(home_notice);
-          {% else %}
-            //home_notice_show(home_notice);
-            /*
-            $.get("{% url 'home-notice-closed' %}", function(data){
-              if(!data.closed){
-                home_notice_show(home_notice);
-              }
-            });
-            */
-          {% endif %}
-        }
-
         $("#btn-toggle-banner").click(function(){
           $("#home-notice-mobile").toggleClass("collapsed expanded");
           $(".home-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
+          localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
         });
 
         {% block read_later_events %}
           {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
         {% endblock %}
 
-        {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP and SHOW_ONE_GOOGLE_TAP %}
+        {% if user.is_authenticated %}
+          const home_notice = $('.home-notice');
+          const alreadyActivated = localStorage.getItem('home_notice_closed_already_activated');
+          const userMetLandingCondition = getUserMetLandingCondition();
+
+          if(home_notice.length && !alreadyActivated && !userMetLandingCondition && has48HoursPassed()) {
+            home_notice_show(home_notice);
+          }
+        {% elif not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP and SHOW_ONE_GOOGLE_TAP %}
           // Variables to prevent multiple initializations
           let oneTabInitialized = false;
           let retryCount = 0;
@@ -548,7 +540,7 @@
                     const alreadyActivated = localStorage.getItem('home_notice_closed_already_activated');
                     const userMetLandingCondition = getUserMetLandingCondition();
 
-                    if (!alreadyActivated && !userMetLandingCondition && has48HoursPassed() ) {
+                    if (!alreadyActivated && !userMetLandingCondition && has48HoursPassed()) {
                       home_notice_show(home_notice);
                     }
                   {% endif %}
