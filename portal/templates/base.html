@@ -301,12 +301,8 @@
             {% include subscribe_notice_template %}
           {% endif %}
         {% endif %}
-      {% elif user_newsletters_notice_template %}
-        {% comment %} {% if not request.session.subscribe_notice_closed %} {% endcomment %}
-          {% if is_portada and publication == default_pub or is_detail %}
-            {% include user_newsletters_notice_template %}
-          {% endif %}
-        {% comment %} {% endif %} {% endcomment %}
+      {% elif user_newsletters_notice_template and is_portada and publication == default_pub or is_detail %}
+          {% include user_newsletters_notice_template %}
       {% endif %}
     {% endblock %}
 
@@ -422,22 +418,49 @@
         });
       }
       function has48HoursPassed() {
-        const saved = localStorage.getItem('home_notice_closed_at');
+        const saved = localStorage.getItem('homeNoticeClosedAt');
         if (!saved) return true; // no timestamp stored, treat as expired
         const elapsed = Date.now() - Number(saved);
         return elapsed >= (48 * 60 * 60 * 1000);
       }
 
-      function home_notice_show(home_notice){
-        home_notice.removeClass("hide");
-        document.querySelector(".btn-close-notice").addEventListener("click", function() {
-          // Add local storage with a timestamp to avoid showing the notice again
-          localStorage.setItem('home_notice_closed_at', new Date().getTime());
-          home_notice.hide();
-        });
+      function getUserMetLandingCondition() {
+        const landingConditions = JSON.parse(localStorage.getItem('landingPopupData'));
+        if (!landingConditions) return false;
+
+        const numberOfDaysToCondition = landingConditions.numerOfDisplayed === 1 ? 7 :
+                                       landingConditions.numerOfDisplayed === 2 ? 14 : 30;
+
+        const now = new Date().getTime();
+        return (now - landingConditions.timestamp) < (numberOfDaysToCondition * 24 * 60 * 60 * 1000);
       }
 
-      $(function() {
+      function home_notice_show(home_notice){
+        home_notice.removeClass("hide");
+
+        document.querySelector(".btn-close-notice").addEventListener("click", function() {
+          // Add local storage with a timestamp to avoid showing the notice again
+          localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
+          home_notice.hide();
+        });
+
+        document.getElementById("landing-nl-btn").addEventListener("click", function() {
+          const currentLandingData = JSON.parse(localStorage.getItem('landingPopupData'));
+          localStorage.setItem('landingPopupData', JSON.stringify({
+            userActivatedNewsletter: false,
+            numerOfDisplayed: currentLandingData && currentLandingData.numerOfDisplayed ? currentLandingData.numerOfDisplayed + 1 : 1,
+            timestamp: new Date().getTime()
+          }));
+        });
+
+        setTimeout(() => {
+          $(".home-notice__desktop").toggleClass("hidden");
+          $("#home-notice-mobile").toggleClass("collapsed expanded");
+          $(".home-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
+        }, 20000);
+      }
+
+      document.addEventListener("DOMContentLoaded", function() {
 
         $('.btn-close').click(function() {
           notification_close(this);
@@ -459,12 +482,6 @@
             */
           {% endif %}
         }
-
-        setTimeout(() => {
-          $(".home-notice__desktop").toggleClass("hidden");
-          $("#home-notice-mobile").toggleClass("collapsed expanded");
-          $(".home-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
-        }, 20000);
 
         $("#btn-toggle-banner").click(function(){
           $("#home-notice-mobile").toggleClass("collapsed expanded");
@@ -521,7 +538,9 @@
 
                   {% if user_newsletters_notice_template and is_portada and publication == default_pub or is_detail %}
                     const alreadyActivated = localStorage.getItem('home_notice_closed_already_activated');
-                    if (has48HoursPassed() && !alreadyActivated) {
+                    const userMetLandingCondition = getUserMetLandingCondition();
+
+                    if (!alreadyActivated && !userMetLandingCondition && has48HoursPassed() ) {
                       home_notice_show(home_notice);
                     }
                   {% endif %}

@@ -54,7 +54,7 @@ from django.contrib.auth.views import LogoutView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import ListView
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
@@ -2235,16 +2235,14 @@ def nlunsubscribe(request, publication_slug, hashed_id):
             subscriber = get_object_or_404(Subscriber, id=subscriber_id)
             if not subscriber.user:
                 raise Http404
-            email = subscriber.user.email
             try:
                 subscriber.newsletters.remove(publication)
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
-                ctx['error'] = e.displaymessage
-        else:
-            email = 'anonymous_user@localhost'
-        ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+                error_message = getattr(e, 'displaymessage', str(e))
+                ctx['error'] = error_message
+                return 'nlunsubscribe.html', ctx
+            return redirect('user_newsletters')
     except IndexError:
         raise Http404
 
@@ -2266,16 +2264,14 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
             subscriber = get_object_or_404(Subscriber, id=subscriber_id)
             if not subscriber.user:
                 raise Http404
-            email = subscriber.user.email
             try:
                 subscriber.category_newsletters.remove(category)
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
-                ctx['error'] = e.displaymessage
-        else:
-            email = 'anonymous_user@localhost'
-        ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+                error_message = getattr(e, 'displaymessage', str(e))
+                ctx['error'] = error_message
+                return 'nlunsubscribe.html', ctx
+        return redirect('user_newsletters')
     except IndexError:
         raise Http404
 
