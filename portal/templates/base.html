@@ -443,15 +443,27 @@
               const landingConditions = JSON.parse(localStorage.getItem('landingPopupData'));
               if (!landingConditions) return false;
 
-              const numberOfDaysToCondition = landingConditions.numerOfDisplayed === 1 ? 7 :
-                                            landingConditions.numerOfDisplayed === 2 ? 14 : 30;
+              const numberOfDaysToCondition = landingConditions.numberOfDisplayed === 1 ? 7 :
+                                            landingConditions.numberOfDisplayed === 2 ? 14 : 30;
 
               const now = new Date().getTime();
               return (now - landingConditions.timestamp) < (numberOfDaysToCondition * 24 * 60 * 60 * 1000);
             }
 
+            function setupLandingPupupData(numberOfDisplayed) {
+              localStorage.setItem('landingPopupData', JSON.stringify({
+                userActivatedNewsletter: false,
+                numberOfDisplayed: numberOfDisplayed ? numberOfDisplayed : 1,
+                timestamp: new Date().getTime()
+              }));
+            }
+
             function showHomeNoticePupup(homePupup){
               homePupup.removeClass("hide");
+
+              const popupMobile = document.getElementById("home-notice-mobile");
+              const ctaPopupMobile = document.querySelector(".home-notice__footer a")
+              const popupDesktop = document.querySelector(".home-notice__desktop")
 
               document.querySelector(".btn-close-notice").addEventListener("click", function() {
                 // Add local storage with a timestamp to avoid showing the notice again
@@ -462,31 +474,35 @@
               const currentLandingData = JSON.parse(localStorage.getItem('landingPopupData'));
 
               if (currentLandingData) {
-                localStorage.setItem('landingPopupData', JSON.stringify({
-                  userActivatedNewsletter: false,
-                  numerOfDisplayed: currentLandingData.numerOfDisplayed + 1,
-                  timestamp: new Date().getTime()
-                }));
+                setupLandingPupupData(currentLandingData.numberOfDisplayed + 1);
               }
 
-              document.getElementById("landing-nl-btn").addEventListener("click", function() {
-                localStorage.setItem('landingPopupData', JSON.stringify({
-                  userActivatedNewsletter: false,
-                  numerOfDisplayed: 1,
-                  timestamp: new Date().getTime()
-                }));
+              document.getElementById("cta-pupup-desktop").addEventListener("click", function() {
+                setupLandingPupupData();
+              });
+              document.getElementById("cta-pupup-mobile").addEventListener("click", function() {
+                setupLandingPupupData();
               });
 
               document.getElementById("btn-toggle-banner").addEventListener("click", function() {
-                $("#home-notice-mobile").toggleClass("collapsed expanded");
-                $(".home-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
+                popupMobile.classList.toggle("collapsed");
+                popupMobile.classList.toggle("expanded");
+
+                ctaPopupMobile.classList.toggle("ut-btn");
+                ctaPopupMobile.classList.toggle("ut-btn-subscription");
+                ctaPopupMobile.classList.toggle("ut-btn-subscription--mobile");
+
                 localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
               });
 
               setTimeout(() => {
-                $(".home-notice__desktop").toggleClass("hidden");
-                $("#home-notice-mobile").toggleClass("collapsed expanded");
-                $(".home-notice__footer a").toggleClass("ut-btn ut-btn-subscription ut-btn-subscription--mobile");
+                popupDesktop.classList.add("hidden");
+
+                popupMobile.classList.remove("expanded");
+                popupMobile.classList.add("collapsed");
+
+                ctaPopupMobile.classList.remove("ut-btn");
+                ctaPopupMobile.classList.add("ut-btn-subscription", "ut-btn-subscription--mobile");
               }, 20000);
             }
 
@@ -494,7 +510,7 @@
               const homeNotice = $('.home-notice');
               const alreadyActivated = localStorage.getItem('home_notice_closed_already_activated');
               const userMetLandingCondition = getUserMetLandingCondition();
-              if (!homeNotice.length || alreadyActivated || userMetLandingCondition && !has48HoursPassed()) return;
+              if (!homeNotice.length || alreadyActivated || userMetLandingCondition || !has48HoursPassed()) return;
 
               showHomeNoticePupup(homeNotice);
             }
