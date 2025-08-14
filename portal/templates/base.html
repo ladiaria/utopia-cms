@@ -418,7 +418,6 @@
       }
 
       document.addEventListener("DOMContentLoaded", function() {
-
         // Live notifications
         $('.btn-close').click(function() {
           notification_close(this);
@@ -440,7 +439,7 @@
         {% if subscribe_notice_template or user_newsletters_notice_template %}
           {% if is_portada and publication == default_pub or is_detail %}
 
-          function has48HoursPassed() {
+            function has48HoursPassed() {
               const saved = localStorage.getItem('homeNoticeClosedAt');
               if (!saved) return true; // no timestamp stored, treat as expired
               const elapsed = Date.now() - Number(saved);
