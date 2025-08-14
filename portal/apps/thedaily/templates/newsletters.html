@@ -94,6 +94,13 @@
           localStorage.setItem('landingPopupData', JSON.stringify({
             userActivatedNewsletter: true
           }));
+
+          if (!window.dataLayer) return;
+          window.dataLayer.push({
+            event: 'nlLandingSwitchChange',
+            isSubscriber: {{ is_subscriber_any|yesno:"true,false" }},
+            isLoggedIn: {{ user.is_authenticated|yesno:"true,false" }}
+          });
         }
         switch_change_events($('.grid-nl-cards .switch-container'), null, switchCallback);
       {% else %}
