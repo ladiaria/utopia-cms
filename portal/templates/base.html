@@ -432,7 +432,16 @@
         {% if subscribe_notice_template or user_newsletters_notice_template %}
           {% if is_portada and publication == default_pub or is_detail %}
 
-            function has48HoursPassed() {
+          function sendGTMEvent(eventName) {
+            if (!window.dataLayer) return;
+            window.dataLayer.push({
+              event: eventName, // nlPopupDisplayed || nlPopupCTAClick || loggedWithOneTap
+              isSubscriber: {{ is_subscriber_any|yesno:"true,false" }},
+              isLoggedIn: {{ user.is_authenticated|yesno:"true,false" }}
+            });
+          }
+
+          function has48HoursPassed() {
               const saved = localStorage.getItem('homeNoticeClosedAt');
               if (!saved) return true; // no timestamp stored, treat as expired
               const elapsed = Date.now() - Number(saved);
@@ -461,6 +470,8 @@
             function showHomeNoticePupup(homePupup){
               homePupup.removeClass("hide");
 
+              sendGTMEvent("nlPopupDisplayed");
+
               const popupMobile = document.getElementById("home-notice-mobile");
               const ctaPopupMobile = document.querySelector(".home-notice__footer a")
               const popupDesktop = document.querySelector(".home-notice__desktop")
@@ -479,9 +490,11 @@
 
               document.getElementById("cta-pupup-desktop").addEventListener("click", function() {
                 setupLandingPupupData();
+                sendGTMEvent("nlPopupCTAClick");
               });
               document.getElementById("cta-pupup-mobile").addEventListener("click", function() {
                 setupLandingPupupData();
+                sendGTMEvent("nlPopupCTAClick");
               });
 
               document.getElementById("btn-toggle-banner").addEventListener("click", function() {
@@ -574,6 +587,10 @@
                   // tap_outside => User closed the One Tap prompt by tapping outside
                   // user_cancel => User closed the One Tap prompt by clicking the cancel button
                   // opt_out_or_no_session => User opted out of One Tap or no session available
+                } else {
+                  const dismissedReason = notification.getDismissedReason()
+                  if (!dismissedReason) return;
+                  sendGTMEvent("loggedWithOneTap");
                 }
               });
 
