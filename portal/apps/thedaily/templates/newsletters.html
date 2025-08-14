@@ -78,24 +78,33 @@
   {% endif %}
 
   <script type="text/javascript">
-    {% if not user.is_anonymous  %}
-      function changeHandler(input) {
-        input.closest('.edit_profile_card__inner-section').classList.toggle('active');
-
-        // If user activate any input, storage a local storage item preventing to show the popup again
-        localStorage.setItem('home_notice_closed_already_activated', true);
+    document.addEventListener("DOMContentLoaded", function() {
+      /*
+      {
+        userActivatedNewsletter: true,
+        numberOfDisplayed: 1|2|3|4|5...,
+        timestamp: 1755026312690
       }
-      $(function() {
-        switch_change_events($('.grid-nl-cards .switch-container'), null, changeHandler);
-      });
-    {% else %}
-      const switches = document.querySelectorAll('.ld-switch');
+      */
+      {% if not user.is_anonymous  %}
+        function switchCallback(input) {
+          input.closest('.edit_profile_card__inner-section').classList.toggle('active');
 
-      for (let i = 0; i < switches.length; i++) {
-        switches[i].addEventListener("click", (e) => {
-          window.location.href = "{% url 'account-login' %}?next={{ request.path }}";
-        })
-      }
-    {% endif %}
+          // If user activate any input, storage a local storage item preventing to show the popup again
+          localStorage.setItem('landingPopupData', JSON.stringify({
+            userActivatedNewsletter: true
+          }));
+        }
+        switch_change_events($('.grid-nl-cards .switch-container'), null, switchCallback);
+      {% else %}
+        const switches = document.querySelectorAll('.ld-switch');
+
+        for (let i = 0; i < switches.length; i++) {
+          switches[i].addEventListener("click", (e) => {
+            window.location.href = "{% url 'account-login' %}?next={{ request.path }}";
+          })
+        }
+      {% endif %}
+    });
   </script>
 {% endblock %}
