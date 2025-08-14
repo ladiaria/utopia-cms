@@ -243,6 +243,10 @@ nav ul a:hover {
         margin-left: 15px;
       }
 
+      .homepage & .suscribirse {
+        background-color: #56e3ce;
+      }
+
       .ingresar {
         margin-left: 15px;
       }
@@ -1532,10 +1536,10 @@ body.interior {
 
 @keyframes notice-animation-desktop {
   0% {
-    bottom: -140px;
+    bottom: -230px;
   }
   66% {
-    bottom: -140px;
+    bottom: -230px;
   }
   100% {
     bottom: 0px;
@@ -1550,11 +1554,11 @@ body.interior {
     bottom: 0px;
   }
   100% {
-    bottom: -140px;
+    bottom: -230px;
   }
 }
 
-.subscribe-notice {
+.home-notice {
   color: $off-black;
   background: $primary-color;
   font-size: 1rem;
@@ -1568,6 +1572,15 @@ body.interior {
   padding: 32px 16px;
   box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.25);
   animation: notice-animation-mobile 3s;
+
+  &#home-notice-mobile {
+    height: 215px;
+    transition: height 0.3s ease-in-out;
+
+    @media only screen and (max-width: 368px) {
+      height: 255px;
+    }
+  }
 
   &::before {
     content: " ";
@@ -1583,15 +1596,15 @@ body.interior {
     background-blend-mode: exclusion, normal;
     background-size: 280px;
 
-    @media screen and (min-width: 600px) {
+    @media #{$medium-and-up} {
       opacity: 0.2;
     }
   }
 
   #btn-toggle-banner {
     position: absolute;
-    right: 7px;
-    top: 3px;
+    right: -5px;
+    top: 0;
     width: 40px;
     height: 40px;
     cursor: pointer;
@@ -1618,6 +1631,28 @@ body.interior {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 20px;
+
+    .arrow {
+      height: 2px;
+      border-top: 2px solid $off-black;
+      flex: 1;
+      position: relative;
+      border-radius: 5px;
+
+      &::after {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border: 2px solid $off-black;
+        border-left: none;
+        border-top: none;
+        transform: rotate(-45deg);
+        position: absolute;
+        right: 1px;
+        top: -6px;
+      }
+    }
 
     @media screen and (max-width: 340px) {
       svg {
@@ -1647,6 +1682,10 @@ body.interior {
   &.collapsed {
     padding: 12px 16px;
 
+    &#home-notice-mobile {
+      height: 48px;
+    }
+
     p {
       display: none;
     }
@@ -1665,6 +1704,84 @@ body.interior {
     }
   }
 
+  &.user-nl-notice {
+    &#home-notice-mobile:not(.collapsed) {
+      padding: 0 16px 16px;
+    }
+
+    p {
+      font-size: px-to-rem(30px);
+    }
+
+    &::before {
+      background-image: url("../img/bg_nl_popup_mobile.png");
+      opacity: 1;
+      background-blend-mode: unset;
+      background-size: cover;
+    }
+
+    .home-notice__header {
+      display: flex;
+      align-items: center;
+      padding-top: 8px;
+      margin-bottom: 16px;
+
+      svg {
+        position: relative;
+        z-index: 1;
+      }
+    }
+
+    .home-notice__footer {
+      svg.mail-icon {
+        display: none;
+      }
+      .ut-btn {
+        background-color: #ff0;
+        color: $off-black;
+        box-shadow: 4px 4px 20px 6px rgba(0, 0, 0, 0.25);
+      }
+    }
+
+    #btn-toggle-banner {
+      position: relative;
+      margin-left: auto;
+    }
+
+    &.collapsed {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: space-between;
+      padding: 12px 19px;
+
+      .home-notice__header {
+        margin: 0;
+        padding: 0;
+
+        #btn-toggle-banner {
+          top: 0;
+          right: 0;
+          background-color: #ff0;
+        }
+        > svg {
+          display: none;
+        }
+      }
+      .home-notice__footer {
+        gap: 8px;
+        svg.mail-icon {
+          display: block;
+        }
+        svg.arrow-icon {
+          display: none;
+        }
+        a.ut-btn-subscription {
+          background-color: transparent;
+        }
+      }
+    }
+  }
+
   &__desktop {
     font-weight: 500;
     font-size: 2rem;
@@ -1676,17 +1793,16 @@ body.interior {
 
     &.hidden {
       animation: notice-animation-desktop-hidden 3s;
-      bottom: -140px;
+      bottom: -230px;
     }
 
     .btn-close-notice {
       position: absolute;
-      right: 9px;
+      margin: 12px;
+      right: 0;
       top: 0;
       cursor: pointer;
       display: block;
-      padding: 10px;
-      margin-top: 9px;
 
       svg {
         display: block;
@@ -1700,18 +1816,10 @@ body.interior {
 
     p {
       margin-bottom: 0;
-
-      @media screen and (min-width: 601px) and (max-width: 720px) {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        a {
-          margin-top: 10px;
-        }
-      }
-      @media #{$medium-and-down} {
-        margin: 5px 0;
-        font-size: 20px;
+      display: flex;
+      align-items: center;
+      span {
+        flex: 1;
       }
     }
 
@@ -1721,6 +1829,76 @@ body.interior {
 
       span {
         font-weight: 400;
+      }
+    }
+
+    &.user-nl-notice {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 110px;
+
+      > span.empty-element {
+        display: none;
+      }
+
+      @media only screen and (min-width: 1325px) {
+        > span.empty-element {
+          width: 90px;
+          display: inline;
+        }
+      }
+
+      @media only screen and (max-width: 1234px) {
+        gap: 10px;
+        justify-content: space-around;
+      }
+
+      @media only screen and (max-width: 1024px) {
+        p {
+          font-size: 1.5rem;
+        }
+      }
+      @media only screen and (max-width: 896px) {
+        padding: 32px 16px;
+      }
+
+      @media only screen and (max-width: 872px) {
+        p {
+          flex-direction: column;
+        }
+      }
+
+      @media only screen and (max-width: 620px) {
+        padding: 32px 8px;
+      }
+
+      svg.logo-la-diaria {
+        z-index: 1;
+        right: 80px;
+      }
+
+      &::before {
+        background-image: url(../img/bg_nl_popup.png);
+        background-blend-mode: unset;
+        background-size: 100%;
+        @media #{$medium-and-up} {
+          opacity: 1;
+        }
+      }
+
+      p .ut-btn {
+        background-color: #ffff00;
+        color: $off-black;
+        box-shadow: 4px 4px 20px 6px rgba(0, 0, 0, 0.25);
+
+        &:hover {
+          box-shadow: none;
+        }
+        &:active {
+          outline: 1px solid $off-black;
+          box-shadow: none;
+        }
       }
     }
   }
