@@ -31,8 +31,14 @@
   {% include 'profile/notification_box.html' %}
 
   {% if unsubscribed_newsletters %}
-    <h1>Recibí por mail el contenido que te interesa</h1>
-    <p class="deck">Cuando quieras desactivar alguna newsletter que ya recibas, podés hacerlo en <a href="{% url 'edit-profile' %}">tu perfil</a>.</p>
+    {% if current_unsubscribed_nl %}
+      <h1>Ya no recibirás la newsletter "{{ current_unsubscribed_nl }}"</h1>
+      <p class="deck">Si querés seguir recibiendo contenido por mail, elegí otras newsletters que te interesen.</p>
+      <p class="deck">Cuando quieras desactivar alguna que ya recibas, podés hacerlo en <a href="{% url 'edit-profile' %}">tu perfil</a>.</p>
+    {% else %}
+      <h1>Recibí por mail el contenido que te interesa</h1>
+      <p class="deck">Cuando quieras desactivar alguna newsletter que ya recibas, podés hacerlo en <a href="{% url 'edit-profile' %}">tu perfil</a>.</p>
+    {% endif %}
     <div class="grid-nl-cards">
       {% for nl_item in unsubscribed_newsletters %}
         <div class="edit_profile_card__inner-section">
