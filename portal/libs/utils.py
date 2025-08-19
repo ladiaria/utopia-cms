@@ -195,7 +195,7 @@ def smtp_servers_meta():
             except KeyError:
                 weights = None
 
-    return not_allowed, weights
+    return weights, not_allowed
 
 
 def smtp_server_choice(user_email, servers_available, force_ignore_weights=False, ignore_from_available=None):
