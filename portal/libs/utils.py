@@ -218,7 +218,8 @@ def smtp_server_choice(user_email, servers_available, force_ignore_weights=False
             weights = [servers_weights[alt_index] for alt_index in choices_data]
         else:
             weights = None
-        index_chosen = choices(choices_data, weights=weights)[0]
+        # TODO: avoid zero-prob only servers chosen
+        index_chosen = choices(choices_data, weights=weights if sum(weights) else None)[0]
     else:
         index_chosen = None
     return index_chosen
