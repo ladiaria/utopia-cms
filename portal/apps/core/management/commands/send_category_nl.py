@@ -25,13 +25,12 @@ from django.utils import translation
 from django.utils.timezone import now, datetime
 
 from apps import blocklisted
+from libs.utils import alt_email_conf, smtp_connect, nl_serialize_multi
 from core.models import Category, CategoryNewsletter, CategoryHome, Article, get_latest_edition
 from core.utils import get_category_template
 from core.templatetags.ldml import remove_markup
 from thedaily.models import Subscriber
 from thedaily.utils import subscribers_nl_iter, subscribers_nl_iter_filter
-from libs.utils import smtp_connect, nl_serialize_multi
-
 from . import SendNLCommand
 
 
@@ -287,7 +286,8 @@ class Command(SendNLCommand):
 
         # connect to smtp servers
         if not (self.no_deliver or self.export_only):
-            for alt_index in range(len(getattr(settings, "EMAIL_ALTERNATIVE", [])) + 1):
+            alt_email_config = alt_email_conf()
+            for alt_index in range(len(alt_email_config) + 1):
                 self.smtp_servers.append(smtp_connect(alt_index))
             if not any(self.smtp_servers):
                 # At least 1 smtp server must be available

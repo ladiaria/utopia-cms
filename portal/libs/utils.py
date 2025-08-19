@@ -147,6 +147,10 @@ def smtp_quit(smtp_servers):
                 pass
 
 
+def alt_email_conf():
+    return getattr(settings, "EMAIL_ALTERNATIVE", [])
+
+
 def smtp_connect(alternative=0):
     """
     Authenticate to SMTP (if any auth needed) and return the conn instance.
@@ -155,7 +159,7 @@ def smtp_connect(alternative=0):
     email_conf = {}
     if alternative:
         try:
-            email_conf = getattr(settings, "EMAIL_ALTERNATIVE", [])[alternative - 1]
+            email_conf = alt_email_conf()[alternative - 1]
         except IndexError:
             pass
     else:
@@ -187,7 +191,7 @@ def smtp_servers_meta():
         # when using weights, all weights must be configured, otherwise they are ignored
         weights = None
 
-    for email_conf in getattr(settings, "EMAIL_ALTERNATIVE", []):
+    for email_conf in alt_email_conf():
         not_allowed.append(email_conf.get("DOMAINS_NOT_ALLOWED", []))
         if weights:
             try:
@@ -219,7 +223,7 @@ def smtp_server_choice(user_email, servers_available, force_ignore_weights=False
         else:
             weights = None
         # TODO: avoid zero-prob only servers chosen
-        index_chosen = choices(choices_data, weights=weights if sum(weights) else None)[0]
+        index_chosen = choices(choices_data, weights=weights if sum(weights or []) else None)[0]
     else:
         index_chosen = None
     return index_chosen
