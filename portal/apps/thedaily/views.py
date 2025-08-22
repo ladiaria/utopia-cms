@@ -2405,7 +2405,6 @@ def nlunsubscribe(request, publication_slug, hashed_id):
             subscriber = get_object_or_404(Subscriber, id=subscriber_id)
             if not subscriber.user:
                 raise Http404
-            email = subscriber.user.email
             try:
                 subscriber.newsletters.remove(publication)
             except Exception as e:
@@ -2414,6 +2413,8 @@ def nlunsubscribe(request, publication_slug, hashed_id):
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
+        # TODO: if "some new setting or content setting" return the following commented redirect instead of the render
+        # redirect(f"{reverse('user_newsletters')}?nl={publication.newsletter_name or publication.name}")
         return render(request, get_app_template('nlunsubscribe.html'), ctx)
     except IndexError:
         raise Http404
@@ -2436,7 +2437,6 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
             subscriber = get_object_or_404(Subscriber, id=subscriber_id)
             if not subscriber.user:
                 raise Http404
-            email = subscriber.user.email
             try:
                 subscriber.category_newsletters.remove(category)
             except Exception as e:
@@ -2445,6 +2445,8 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
         else:
             email = 'anonymous_user@localhost'
         ctx['email'] = email
+        # TODO: if "some new setting or content setting" return the following commented redirect instead of the render
+        # redirect(f"{reverse('user_newsletters')}?nl={category.name}")
         return render(request, get_app_template('nlunsubscribe.html'), ctx)
     except IndexError:
         raise Http404

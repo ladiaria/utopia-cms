@@ -224,7 +224,7 @@ def add_default_newsletters(subscriber):
     add_default_category_newsletters(subscriber)
 
 
-def unsubscribed_newsletters(subscriber):
+def unsubscribed_newsletters(subscriber, randomize=True):
     """
     Get unsubscribed newsletters for subscriber supplied
     @params: subscriber instance
@@ -236,7 +236,7 @@ def unsubscribed_newsletters(subscriber):
     if subscriber:
         subscribed_nls = list(subscriber.newsletters.all()) + list(subscriber.category_newsletters.all())
         result_nl = list(set(all_nl) - set(subscribed_nls))
-        rdm.shuffle(result_nl)
+        rdm.shuffle(result_nl) if randomize else None
         return result_nl
     else:
         return all_nl

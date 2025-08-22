@@ -114,7 +114,7 @@ urlpatterns = [
     path('api/comments/', user_comments_api),
     path('fromcrm', update_user_from_crm),
     path('deletefromcrm', delete_user_from_crm),
-    path('subscribe-notice-closed', subscribe_notice_closed, name='subscribe-notice-closed'),
+    path('home-notice-closed', subscribe_notice_closed, name='home-notice-closed'),
     path(
         'unsubscribed-nls-notice-closed',
         subscribe_notice_closed,

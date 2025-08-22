@@ -1,3 +1,5 @@
+{% load ldml bleach_tags %}
+
 {% with a_class=a_class|default:'section-detail__toplink' svg_path=svg_path|default:'core/templates/section/detail_header_content_svg.html' %}
   {% if section.category and not backlink_skip_category %}
     <a class="{{ a_class }}" href="{% url 'home' domain_slug=section.category.slug %}">
@@ -26,7 +28,7 @@
 {% endwith %}
 <h1 class="{% block h1_class %}section-detail__title{% endblock %}">{{ section.name }}</h1>
 {% if section.show_description %}
-  <p class="section-detail__description">{{ section.description }}</p>
+  <p class="section-detail__description">{{ section.description|ldmarkup|bleach}}</p>
 {% endif %}
 {% if section.show_image %}
   <img class="responsive-img" src="{{ MEDIA_URL }}{{ section.imagen }}" width="500px" alt="{{ section.name }}" loading="lazy"><br><br>

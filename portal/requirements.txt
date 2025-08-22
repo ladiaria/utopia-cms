@@ -79,6 +79,8 @@ factory-boy
 tqdm
 w3storage
 qrcode
+django-solo
+pydantic
 
 # Installed from source (pypi has no "good" releases yet)
 git+https://github.com/Fantomas42/django-tagging.git

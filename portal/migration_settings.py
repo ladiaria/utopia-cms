@@ -135,6 +135,7 @@ INSTALLED_APPS = (
     "concurrency",
     "adminsortable2",
     "content_settings",
+    'solo',
 )
 
 SITE_ID = 1
@@ -308,6 +309,8 @@ TEMPLATES = [
                 "apps.thedaily.context_processors.permissions",
                 "django.template.context_processors.csrf",
                 "content_settings.context_processors.content_settings",
+                "context_processors.google_client_id",
+                "context_processors.google_one_tap_enabled",
             ],
             "loaders": [
                 "amp_tools.loader.Loader",
@@ -521,11 +524,6 @@ LOGIN_ERROR_URL = "/usuarios/error/login/"
 
 MESSAGETAGS = {messages.ERROR: "danger"}
 
-AUTHENTICATION_BACKENDS = (
-    "social_core.backends.google.GoogleOAuth2",
-    "django.contrib.auth.backends.ModelBackend",
-)
-
 # django-social-auth
 SOCIAL_AUTH_GOOGLE_OAUTH2_STRATEGY = "social_django.strategy.DjangoStrategy"
 SOCIAL_AUTH_STORAGE = "social_django.models.DjangoStorage"
@@ -584,7 +582,7 @@ CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 PHONENUMBER_DEFAULT_REGION = None
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
-
+ENABLE_GOOGLE_ONE_TAP = False
 
 # =====================================================================================================================
 # =================      V I S U A L   S E P A R A T O R      =========================================================

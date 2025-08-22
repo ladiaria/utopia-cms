@@ -285,6 +285,15 @@
         });
       }
 
+      function sendGTMEvent(eventName) {
+        if (!window.dataLayer) return;
+        window.dataLayer.push({
+          event: eventName, // nlPopupDisplayed || nlPopupCTAClick || loggedWithOneTap
+          isSubscriber: {{ is_subscriber_any|yesno:"true,false" }},
+          isLoggedIn: {{ user.is_authenticated|yesno:"true,false" }}
+        });
+      }
+
       $(function(){
         $('.btn-close').click(function(){
           notification_close(this);
@@ -381,6 +390,8 @@
             {% include subscribe_notice_template %}
           {% endif %}
         {% endif %}
+      {% elif user_newsletters_notice_template and is_portada and publication == default_pub or is_detail %}
+          {% include user_newsletters_notice_template %}
       {% endif %}
     {% endblock %}
 
@@ -484,5 +495,247 @@
     {% block javascript %}{% endblock %}
     {% block footer_scripts %}{% endblock %}
     {% block footer_scripts_extra %}{% endblock %}
+
+    {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP and SHOW_ONE_GOOGLE_TAP %}
+      <script src="https://accounts.google.com/gsi/client" async defer data-cfasync="false"></script>
+    {% endif %}
+
+    <script type="text/javascript">
+
+      document.addEventListener("DOMContentLoaded", function() {
+
+        {% if subscribe_notice_template or user_newsletters_notice_template %}
+          {% if is_portada and publication == default_pub or is_detail %}
+
+            function has48HoursPassed() {
+              const saved = localStorage.getItem('homeNoticeClosedAt');
+              if (!saved) return true; // no timestamp stored, treat as expired
+              const elapsed = Date.now() - Number(saved);
+              return elapsed >= (48 * 60 * 60 * 1000);
+            }
+
+            function getUserMetLandingCondition() {
+              const landingConditions = JSON.parse(localStorage.getItem('landingPopupData'));
+              if (!landingConditions) return false;
+
+              const numberOfDaysToCondition = landingConditions.numberOfDisplayed === 1 ? 7 :
+                  landingConditions.numberOfDisplayed === 2 ? 14 : 30;
+
+              const now = new Date().getTime();
+              return (now - landingConditions.timestamp) < (numberOfDaysToCondition * 24 * 60 * 60 * 1000);
+            }
+
+            function setupLandingPupupData(numberOfDisplayed) {
+              localStorage.setItem('landingPopupData', JSON.stringify({
+                userActivatedNewsletter: false,
+                numberOfDisplayed: numberOfDisplayed ? numberOfDisplayed : 1,
+                timestamp: new Date().getTime()
+              }));
+            }
+
+            function showHomeNoticePupup(homePupup){
+              homePupup.removeClass("hide");
+
+              sendGTMEvent("nlPopupDisplayed");
+
+              const popupMobile = document.getElementById("home-notice-mobile");
+              const ctaPopupMobile = document.querySelector(".home-notice__footer a")
+              const popupDesktop = document.querySelector(".home-notice__desktop")
+
+              document.querySelector(".btn-close-notice").addEventListener("click", function() {
+                // Add local storage with a timestamp to avoid showing the notice again
+                localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
+                homePupup.hide();
+              });
+
+              const currentLandingData = JSON.parse(localStorage.getItem('landingPopupData'));
+
+              if (currentLandingData && !currentLandingData.userActivatedNewsletter) {
+                setupLandingPupupData(currentLandingData.numberOfDisplayed + 1);
+              }
+
+              document.getElementById("cta-pupup-desktop").addEventListener("click", function() {
+                setupLandingPupupData();
+                sendGTMEvent("nlPopupCTAClick");
+              });
+              document.getElementById("cta-pupup-mobile").addEventListener("click", function() {
+                setupLandingPupupData();
+                sendGTMEvent("nlPopupCTAClick");
+              });
+
+              document.getElementById("btn-toggle-banner").addEventListener("click", function() {
+                popupMobile.classList.toggle("collapsed");
+                popupMobile.classList.toggle("expanded");
+
+                ctaPopupMobile.classList.toggle("ut-btn");
+                ctaPopupMobile.classList.toggle("ut-btn-subscription");
+                ctaPopupMobile.classList.toggle("ut-btn-subscription--mobile");
+
+                localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
+              });
+
+              setTimeout(() => {
+                popupDesktop.classList.add("hidden");
+
+                popupMobile.classList.remove("expanded");
+                popupMobile.classList.add("collapsed");
+
+                ctaPopupMobile.classList.remove("ut-btn");
+                ctaPopupMobile.classList.add("ut-btn-subscription", "ut-btn-subscription--mobile");
+              }, 20000);
+            }
+
+            function checkConditionsAndShowHomePopupNotice() {
+              const homeNotice = $('.home-notice');
+              const landingPopupData = JSON.parse(localStorage.getItem('landingPopupData'));
+              const userMetLandingCondition = getUserMetLandingCondition();
+              if (!homeNotice.length || landingPopupData?.userActivatedNewsletter || userMetLandingCondition || !has48HoursPassed()) return;
+
+              showHomeNoticePupup(homeNotice);
+            }
+
+            {% if user.is_authenticated %}
+              checkConditionsAndShowHomePopupNotice();
+            {% endif %}
+          {% endif %}
+        {% endif %}
+
+        {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP and SHOW_ONE_GOOGLE_TAP %}
+          // Variables to prevent multiple initializations
+          let oneTabInitialized = false;
+          let retryCount = 0;
+          const MAX_RETRIES = 2;
+
+          function initializeGoogleOneTap() {
+            // Prevent multiple initializations
+            if (oneTabInitialized) {
+              // Google One Tap already initialized
+              return;
+            }
+
+            if (!window.google || !google.accounts || !google.accounts.id) {
+              // Google One Tap script not loaded yet
+              if (retryCount < MAX_RETRIES) {
+                retryCount++;
+                setTimeout(initializeGoogleOneTap, 1000);
+              }
+              return;
+            }
+
+            try {
+              google.accounts.id.initialize({
+                client_id: '{{ google_client_id }}',
+                callback: handleCredentialResponse,
+                context: 'signin',
+                // Additional configurations for stability
+                itp_support: true,
+                use_fedcm_for_prompt: false,
+                // UI behavior configurations
+                cancel_on_tap_outside: true,
+                auto_select: false
+              });
+
+              oneTabInitialized = true;
+              // Google One Tap initialized successfully
+
+              google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                  const reason = notification.getNotDisplayedReason();
+                  const skippedReason = notification.getSkippedReason();
+                  console.log('Google One Tap not displayed. Reason:', reason || skippedReason);
+
+                  {% if subscribe_notice_template or user_newsletters_notice_template %}
+                    {% if is_portada and publication == default_pub or is_detail %}
+                      checkConditionsAndShowHomePopupNotice();
+                    {% endif %}
+                  {% endif %}
+                  // supressed_by_user => User closed the One Tap prompt and Google will not show it again until met conditions
+                  // tap_outside => User closed the One Tap prompt by tapping outside
+                  // user_cancel => User closed the One Tap prompt by clicking the cancel button
+                  // opt_out_or_no_session => User opted out of One Tap or no session available
+                } else {
+                  const dismissedReason = notification.getDismissedReason();
+                  if (!dismissedReason) return;
+                  sendGTMEvent("loggedWithOneTap");
+                }
+              });
+
+            } catch (error) {
+              console.error('Error initializing Google One Tap:', error);
+            }
+          }
+
+          function parseJwt(token) {
+            try {
+              const base64Url = token.split('.')[1];
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const jsonPayload = decodeURIComponent(
+                atob(base64).split('').map(function (c) {
+                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join('')
+              );
+              return JSON.parse(jsonPayload);
+            } catch (error) {
+              console.error('Error parsing JWT token:', error);
+              throw error;
+            }
+          }
+
+          function handleCredentialResponse(response) {
+            // Credential response received
+
+            if (!response || !response.credential) {
+              console.error('No credential received');
+              return;
+            }
+
+            try {
+              const payload = parseJwt(response.credential);
+              const email = payload.email;
+
+              if (!email) {
+                console.error('No email found in credential');
+                // Fallback without login_hint
+                const currentUrl = window.location.href;
+                const nextUrl = encodeURIComponent(currentUrl);
+                window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
+                return;
+              }
+
+              const currentUrl = window.location.href;
+              const nextUrl = encodeURIComponent(currentUrl);
+
+              // Redirecting to OAuth with email hint
+              window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl + "&login_hint=" + encodeURIComponent(email);
+
+            } catch (error) {
+              console.error('Error processing credential:', error);
+
+              // Fallback: redirect without login_hint
+              // Falling back to OAuth without login_hint
+              const currentUrl = window.location.href;
+              const nextUrl = encodeURIComponent(currentUrl);
+              window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
+            }
+          }
+
+          // Initialize when DOM is ready
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeGoogleOneTap);
+          } else {
+            // DOM is already ready
+            initializeGoogleOneTap();
+          }
+
+          // Backup: initialize on window.onload if DOMContentLoaded didn't work
+          window.addEventListener('load', function() {
+            if (!oneTabInitialized) {
+              // Initializing via window.onload backup
+              initializeGoogleOneTap();
+            }
+          });
+        {% endif %}
+      });
+    </script>
   </body>
 </html>

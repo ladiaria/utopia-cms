@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 from pydoc import locate
 import traceback
 from kombu.exceptions import OperationalError
+from solo.admin import SingletonModelAdmin
 
 from actstream.models import Action
 from tagging.models import Tag, TaggedItem
@@ -20,7 +21,7 @@ from adminsortable2.admin import SortableAdminBase, SortableTabularInline
 from django.conf import settings
 from django.urls import path
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, TextField
 from django.http import HttpResponseRedirect, Http404
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
@@ -32,7 +33,7 @@ from django.forms import (
     ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget, SlugField
 )
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
-from django.forms.fields import CharField, IntegerField
+from django.forms.fields import CharField, IntegerField, BooleanField
 from django.forms.widgets import TextInput, HiddenInput, CheckboxInput
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -68,6 +69,7 @@ from .models import (
     PushNotification,
     DefaultNewsletter,
     DefaultNewsletterArticle,
+    PerplexityAPISettings,
 )
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
@@ -537,6 +539,11 @@ class ArticleAdminModelForm(ModelForm):
         required=False, label=_("Published"), choices=PUBLISH_OPTIONS, widget=RadioSelect(),
     )
     unpublish_radio_choice = ChoiceField(required=False, label="", choices=UNPUBLISH_OPTIONS, widget=RadioSelect())
+    input_ia_used = BooleanField(
+        widget=HiddenInput(),
+        required=False,  # Allows the field to be omitted in the form submission
+        initial=False  # Sets the default value to False
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -802,6 +809,7 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
+    change_form_template = "core/templates/admin/core/article/change_form.html"
     formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
@@ -891,6 +899,7 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
                 'classes': ('collapse',),
             },
         ),
+        (None, {'fields': ('copy_para_redes',)}),
     )
 
     def get_queryset(self, request):
@@ -988,6 +997,10 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
         if form.is_valid():
             try:
                 obj.admin = True  # tell model's save method that we are calling it from the admin
+                # Get the value from the custom hidden form field
+                ia_used_value = form.cleaned_data.get('input_ia_used', None)
+                if ia_used_value:
+                    obj.ia_used = ia_used_value
                 super().save_model(request, obj, form, change)
                 self.obj = obj
             except ValidationError as ve:
@@ -1841,6 +1854,19 @@ class PushNotificationAdmin(admin.ModelAdmin):
     )
     def send_me_push_notification(self, request, queryset):
         self.send_notifications(request, queryset, False)
+
+
+class ArticleInline2(admin.TabularInline):
+    model = Article
+    extra = 0
+    max_num = 2
+    # raw_id_fields = ('articles',)  # TODO: explain why this is commented or remove the line
+    verbose_name_plural = 'Artículos relacionados'
+
+
+@admin.register(PerplexityAPISettings)
+class PerplexityAPISettingsAdmin(SingletonModelAdmin):
+    formfield_overrides = {TextField: {'widget': admin.widgets.AdminTextareaWidget(attrs={'rows': 10, 'cols': 80})}}
 
 
 site.unregister(Tag)

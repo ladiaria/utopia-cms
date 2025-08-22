@@ -361,6 +361,11 @@ def smart_quotes(value):
     return value
 
 
+def ia_use_group(user):
+    """ Shortcut group existence check to be used on IA features """
+    return user.groups.filter(name='use_ia').exists()
+
+
 def test_smart_quotes():
     """Test cases where smart_quotes change/unchange the input"""
     test_cases = [

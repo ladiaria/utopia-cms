@@ -86,13 +86,17 @@ def publications(request):
     )
     if not is_amp_detect:
         result['footer_template'] = settings.HOMEV3_FOOTER_TEMPLATE
-        if (
-            content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
-            and getattr(settings, "HOMEV3_SUBSCRIBE_NOTICE_ENABLED", True)
-        ):
-            result['subscribe_notice_template'] = getattr(
-                settings, "HOMEV3_SUBSCRIBE_NOTICE_TEMPLATE", "homev3/templates/subscribe_notice.html"
-            )
+        if content_settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT:
+            if getattr(settings, "HOMEV3_SUBSCRIBE_NOTICE_ENABLED", True):
+                result['subscribe_notice_template'] = getattr(
+                    settings, "HOMEV3_SUBSCRIBE_NOTICE_TEMPLATE", "homev3/templates/subscribe_notice.html"
+                )
+            elif getattr(settings, "HOMEV3_USER_NEWSLETTERS_NOTICE_ENABLED", True):
+                result['user_newsletters_notice_template'] = getattr(
+                    settings,
+                    "HOMEV3_USER_NEWSLETTERS_NOTICE_TEMPLATE",
+                    "homev3/templates/user_newsletters_notice.html",
+                )
 
     # use this context processor to load also some other useful variables configured in settings
     result['PWA_ENABLED'] = getattr(settings, 'PWA_ENABLED', True)
@@ -177,3 +181,23 @@ def main_menus(request):
 
 def article_content_type(request):
     return {'article_ct_id': ContentType.objects.get_for_model(Article).id}
+
+
+def google_client_id(request):
+    return {
+        'google_client_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', ''),
+    }
+
+
+def google_one_tap_enabled(request):
+    is_enable_google_one_tap = settings.ENABLE_GOOGLE_ONE_TAP
+    context_to_update = {'ENABLE_GOOGLE_ONE_TAP': is_enable_google_one_tap}
+
+    if is_enable_google_one_tap:
+        exclude_one_tap_for_urls = getattr(settings, 'EXCLUDE_ONE_TAP_FOR_URLS', [])
+
+        # Check if the current path start with any of the prefix
+        show_one_google_tap = not any(request.path.startswith(prefix) for prefix in exclude_one_tap_for_urls)
+        context_to_update.update({'SHOW_ONE_GOOGLE_TAP': show_one_google_tap})
+
+    return context_to_update

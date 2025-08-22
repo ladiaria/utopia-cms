@@ -141,6 +141,7 @@ INSTALLED_APPS = (
     "concurrency",
     "adminsortable2",
     "content_settings",
+    'solo',
 )
 
 SITE_ID = 1
@@ -312,6 +313,8 @@ TEMPLATES = [
                 "apps.thedaily.context_processors.permissions",
                 "django.template.context_processors.csrf",
                 "content_settings.context_processors.content_settings",
+                "context_processors.google_client_id",
+                "context_processors.google_one_tap_enabled",
             ],
             "loaders": [
                 "amp_tools.loader.Loader",
@@ -546,11 +549,6 @@ LOGIN_ERROR_URL = "/usuarios/error/login/"
 
 MESSAGETAGS = {messages.ERROR: "danger"}
 
-AUTHENTICATION_BACKENDS = (
-    "social_core.backends.google.GoogleOAuth2",
-    "django.contrib.auth.backends.ModelBackend",
-)
-
 # django-social-auth
 SOCIAL_AUTH_GOOGLE_OAUTH2_STRATEGY = "social_django.strategy.DjangoStrategy"
 SOCIAL_AUTH_STORAGE = "social_django.models.DjangoStorage"
@@ -619,7 +617,7 @@ CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP versio
 PHONENUMBER_DEFAULT_REGION = None
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
-
+ENABLE_GOOGLE_ONE_TAP = False
 
 # =====================================================================================================================
 # =================      V I S U A L   S E P A R A T O R      =========================================================
@@ -631,6 +629,37 @@ from local_settings import *  # noqa
 
 
 DATABASES['default']['OPTIONS'] = DATABASES_default_OPTIONS
+
+if ENABLE_GOOGLE_ONE_TAP:
+    # Google One Tap Configuration
+    AUTHENTICATION_BACKENDS = (
+        "libs.google_oauth2_backend.CustomGoogleOAuth2", "django.contrib.auth.backends.ModelBackend"
+    )
+    # Exclude URLs that should not use Google One Tap
+    EXCLUDE_ONE_TAP_FOR_URLS = [
+        "/usuarios/entrar/",
+        "/usuarios/suscribite/",
+        "/usuarios/restablecer/",
+        "/usuarios/registrate/google/",
+    ]
+    # These settings are required for Google One Tap authentication to work properly in browsers with Enhanced Tracking
+    # protection (Firefox, Safari) and strict Content Security Policies.
+    # Third-party Cookie Configuration:
+    # Enable cross-site cookie sharing for Google's authentication flow.
+    # Required for One Tap to maintain session state across domains.
+    SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-site session cookies
+    CSRF_COOKIE_SAMESITE = 'None'     # Allow cross-site CSRF cookies
+    # Allow popups to external domains while maintaining same-origin security
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+    # Frame Options Configuration:
+    # Allow Google to embed authentication iframes in our pages.
+    # SAMEORIGIN is more secure than ALLOWALL while still permitting Google's flow.
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
+    # Middleware Configuration:
+    # Remove XFrameOptionsMiddleware to prevent conflicts with Google One Tap iframes.
+    # The middleware would override X_FRAME_OPTIONS and block Google's authentication popup.
+    MIDDLEWARE = tuple(m for m in MIDDLEWARE if m != "django.middleware.clickjacking.XFrameOptionsMiddleware")
+
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
