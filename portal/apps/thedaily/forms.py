@@ -579,34 +579,11 @@ class SubscriberAddressForm(SubscriberForm):
     )
 
     def __init__(self, *args, **kwargs):
-        planslug = kwargs.pop('planslug', None)
         super().__init__(*args, **kwargs)
-        
-        # Add GIGAN-specific fields conditionally
-        if planslug == 'GIGAN':
-            self.fields['kid_name'] = CharField(required=True, label='Nombre del niño o niña')
-            self.fields['tag_name'] = CharField(required=True, label='Nombre en etiqueta')
-        
-        # Build layout conditionally
-        layout_fields = [
+        self.helper.layout = Layout(
             Field('first_name'),
             Field('email', readonly=True),
             Field('phone'),
-        ]
-        
-        # Add GIGAN-specific fields to layout
-        if planslug == 'GIGAN':
-            layout_fields.extend([
-                HTML(
-                    '<div class="validate col s12">'
-                    '  <h3 class="medium" style="color:black;">Información del niño/niña</h3>'
-                    '</div>'
-                ),
-                Field('kid_name'),
-                Field('tag_name'),
-            ])
-        
-        layout_fields.extend([
             HTML(
                 '<div class="validate col s12">'
                 '  <h3 class="medium" style="color:black;">Información de entrega</h3>'
@@ -615,9 +592,7 @@ class SubscriberAddressForm(SubscriberForm):
             'address',
             'city',
             Field('province', template='materialize_css_forms/layout/select.html'),
-        ])
-        
-        self.helper.layout = Layout(*layout_fields)
+        )
 
     class Meta:
         model = Subscriber
@@ -714,36 +689,13 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
         terms_and_conds_accepted = terms_and_conditions_field()
 
     def __init__(self, *args, **kwargs):
-        planslug = kwargs.pop('planslug', None)
         super().__init__(*args, **kwargs)
-        
-        # Add GIGAN-specific fields conditionally
-        if planslug == 'GIGAN':
-            self.fields['kid_name'] = CharField(required=True, label='Nombre del niño o niña')
-            self.fields['tag_name'] = CharField(required=True, label='Nombre en etiqueta')
-        
-        # Build layout conditionally
-        layout_fields = [
+        self.helper.layout = Layout(
             'first_name',
             'email',
             'phone',
             'next_page',
             Field('password', template='materialize_css_forms/layout/password.html'),
-        ]
-        
-        # Add GIGAN-specific fields to layout
-        if planslug == 'GIGAN':
-            layout_fields.extend([
-                HTML(
-                    '<div class="validate col s12">'
-                    '  <h3 class="medium" style="color:black;">Información del niño/niña</h3>'
-                    '</div>'
-                ),
-                Field('kid_name'),
-                Field('tag_name'),
-            ])
-        
-        layout_fields.extend([
             HTML(
                 '<div class="validate col s12">'
                 '  <h3 class="medium" style="color:black;">Información de entrega</h3>'
@@ -752,9 +704,7 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
             'address',
             'city',
             Field('province', template='materialize_css_forms/layout/select.html'),
-        ])
-        
-        self.helper.layout = Layout(*layout_fields)
+        )
 
     def is_valid(self, subscription_type, payment_type=None):
         # call is_valid first with the parent class, only to fill the cleaned_data
@@ -1038,33 +988,10 @@ class GoogleSignupAddressForm(GoogleSignupForm):
     )
 
     def __init__(self, *args, **kwargs):
-        planslug = kwargs.pop('planslug', None)
         super().__init__(*args, **kwargs)
-        
-        # Add GIGAN-specific fields conditionally
-        if planslug == 'GIGAN':
-            self.fields['kid_name'] = CharField(required=True, label='Nombre del niño o niña')
-            self.fields['tag_name'] = CharField(required=True, label='Nombre en etiqueta')
-        
-        # Build layout conditionally
-        layout_fields = [
+        self.helper.layout = Layout(
             HTML('<div class="ld-block--sm align-center">Para continuar completá los siguientes datos</div>'),
             'phone',
-        ]
-        
-        # Add GIGAN-specific fields to layout
-        if planslug == 'GIGAN':
-            layout_fields.extend([
-                HTML(
-                    '<div class="validate col s12">'
-                    '  <h3 class="medium" style="color:black;">Información del niño/niña</h3>'
-                    '</div>'
-                ),
-                Field('kid_name'),
-                Field('tag_name'),
-            ])
-        
-        layout_fields.extend([
             HTML(
                 '<div class="validate col s12">'
                 '  <h3 class="medium" style="color:black;">Información de entrega</h3>'
@@ -1073,9 +1000,7 @@ class GoogleSignupAddressForm(GoogleSignupForm):
             'address',
             'city',
             Field('province', template='materialize_css_forms/layout/select.html'),
-        ])
-        
-        self.helper.layout = Layout(*layout_fields)
+        )
 
     class Meta:
         model = Subscriber
