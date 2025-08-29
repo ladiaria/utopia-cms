@@ -1,6 +1,6 @@
 
 from django.contrib.sitemaps import Sitemap
-from django.contrib.sites.models import Site
+from libs.utils import get_site_name
 
 
 class NewsSitemap(Sitemap):
@@ -25,7 +25,7 @@ class NewsSitemap(Sitemap):
 class NewsSitemap48hs(Sitemap):
     limit = 1000
 
-    publication_name = Site.objects.get_current().name
+    publication_name = get_site_name()
     publication_language = "es"
 
     def publication_date(self, obj):
