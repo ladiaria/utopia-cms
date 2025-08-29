@@ -9,7 +9,7 @@
                 <news:name>{{ item.publication_name }}</news:name>
                 <news:language>{{ item.publication_language }}</news:language>
             </news:publication>
-            <news:publication_date>{{ item.publication_date|date:"Y-m-d\TH:i:sP" }}</news:publication_date>
+            <news:publication_date>{{ item.publication_date|date:"c" }}</news:publication_date>
             <news:title>{{ item.title }}</news:title>
             {% if item.keywords %}
             <news:keywords>{{ item.keywords }}</news:keywords>
