@@ -79,3 +79,15 @@ THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED = [THEDAILY_SUBSCRIPTION_CAPTCHA
 
 # Set to True to use Google One Tap and forward login_hint, or False to use the default Google OAuth2 backend.
 ENABLE_GOOGLE_ONE_TAP = False
+
+# Add GIGAN to subscription types
+THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
+    ('DDIGM', 'Suscripción digital'),
+    ('DDIGMFS', 'Suscripción digital + Fin de semana'),
+    ('PAPYDIM', 'Suscripción papel'),
+    ('LDFS', 'la diaria fin de semana'),
+    ('PAPYLAS', 'la diaria lunes a sábados'),
+    ('LENM', 'Revista Lento'),
+    ('LEMONDE', 'Le Monde diplomatique'),
+    ('GIGAN', 'Gigantes'),  # Children's magazine
+)
