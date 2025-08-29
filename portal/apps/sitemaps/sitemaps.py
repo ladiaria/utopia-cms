@@ -38,5 +38,5 @@ class ArticleNews48hsSitemap(NewsSitemap48hs):
 
     def items(self):
         cutoff = timezone.now() - timedelta(hours=48)
-        # Ojo con el nombre del campo de fecha
+
         return published_non_satirical_articles.filter(date_published__gte=cutoff)
