@@ -605,7 +605,7 @@ def user_pre_save(sender, instance, **kwargs):
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
 def subscriber_pre_save(sender, instance, **kwargs):
     if settings.THEDAILY_DEBUG_SIGNALS:
-        print('DEBUG: subscriber_pre_save signal called')
+        sync_log('subscriber_pre_save signal called')
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
         return True
     try:
@@ -626,12 +626,12 @@ def subscriber_pre_save(sender, instance, **kwargs):
                 # TODO: must be changed to only 1 request, not 1 per field ASAP
                 for crm_field, value in changeset.items():
                     if settings.THEDAILY_DEBUG_SIGNALS:
-                        print(f"\tcalling updatecrmuser with crm_field: {crm_field} and value: {value}")
+                        sync_log(f"calling updatecrmuser with crm_field: {crm_field} and value: {value}")
                     updatecrmuser(instance.contact_id, crm_field, value)
-                if addr_changes:
+                if addr_changes and instance.contact_id:
                     addr_api_response = update_crm_address(instance.contact_id, addr_changes)
                     if settings.THEDAILY_DEBUG_SIGNALS:
-                        print(f"\tDEBUG: subscriber_pre_save signal, addr_api_response: {addr_api_response}")
+                        sync_log(f"subscriber_pre_save signal, addr_api_response: {addr_api_response}")
             except requests.exceptions.RequestException:
                 raise UpdateCrmEx(MSG_ERR_UPDATE % _("tu perfil"))
     except Subscriber.DoesNotExist:
