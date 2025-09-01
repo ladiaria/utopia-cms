@@ -247,7 +247,8 @@ class Subscriber(Model):
             Q(
                 Q(start_date__isnull=False), Q(end_date__isnull=True) | Q(end_date__isnull=False, end_date__gte=today)
             )
-            | Q(start_date__isnull=True, end_date__isnull=False, end_date__gte=today)
+            | Q(start_date__isnull=True, end_date__isnull=False, end_date__gte=today),
+            active=True,
         )
 
     def active_subscriptions_pub_slugs(self):
@@ -515,6 +516,11 @@ def existscrmuser(email, contact_id=None):
     return get_data_from_crm(api_url, data)
 
 
+def update_crm_address(contact_id, changeset):
+    api_url = settings.CRM_API_UPDATE_USER_URI + f"{contact_id}/address/"
+    return post_data_to_crm(api_url, data=changeset)
+
+
 def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
     msg, error_msg_prefix, error_code = None, f"El {email_i18n} ingresado ", None
     error_msg_invalid = error_msg_prefix + "no es válido."
@@ -632,20 +638,28 @@ def subscriber_pre_save(sender, instance, **kwargs):
         return True
     try:
         actual_sub = sender.objects.get(pk=instance.id)
-        changeset = {}
+        changeset, addr_fields = {}, getattr(settings, "CRM_UPDATE_SUBSCRIBER_ADDRESS_FIELDS", {})
         for crm_field, f in list(settings.CRM_UPDATE_SUBSCRIBER_FIELDS.items()):
-            if getattr(actual_sub, f) != getattr(instance, f):
+            if f in addr_fields.values() or getattr(actual_sub, f) != getattr(instance, f):
                 value = getattr(instance, f)
                 if value and f == "phone":
                     value = value.as_e164
                 changeset[crm_field] = value
         if changeset:
+            addr_changes = {}
+            for addr_field in addr_fields.keys():
+                if addr_field in changeset:
+                    addr_changes[addr_field] = changeset.pop(addr_field)
             try:
                 # TODO: must be changed to only 1 request, not 1 per field ASAP
                 for crm_field, value in changeset.items():
                     if settings.THEDAILY_DEBUG_SIGNALS:
                         print(f"\tcalling updatecrmuser with crm_field: {crm_field} and value: {value}")
                     updatecrmuser(instance.contact_id, crm_field, value)
+                if addr_changes:
+                    addr_api_response = update_crm_address(instance.contact_id, addr_changes)
+                    if settings.THEDAILY_DEBUG_SIGNALS:
+                        print(f"\tDEBUG: subscriber_pre_save signal, addr_api_response: {addr_api_response}")
             except requests.exceptions.RequestException:
                 raise UpdateCrmEx(MSG_ERR_UPDATE % _("tu perfil"))
     except Subscriber.DoesNotExist:
@@ -794,6 +808,7 @@ class EditionDownload(Model):
 class Subscription(Model):
     SUBSCRIPTION_CHOICES = (('PAP', 'Edición papel + Digital'), ('DIG', 'Digital (Edición web)'))
     subscriber = ForeignKey(Subscriber, on_delete=CASCADE, related_name='subscriptions', null=True, blank=True)
+    active = BooleanField(default=True)
     billing_name = CharField(_('billing name'), max_length=255)
     billing_id_doc = CharField(_("billing identification document"), max_length=31, null=True)
     billing_phone = PhoneNumberField(blank=True, default="", verbose_name=_("billing phone"), db_index=True)

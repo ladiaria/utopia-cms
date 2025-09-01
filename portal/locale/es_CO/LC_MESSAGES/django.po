@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-13 17:04-0300\n"
+"POT-Creation-Date: 2025-08-30 14:26-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -38,15 +38,15 @@ msgstr "Usado"
 msgid "Not Used"
 msgstr "No usado"
 
-#: apps/core/admin.py:539 apps/core/admin.py:563
+#: apps/core/admin.py:539 apps/core/admin.py:568
 msgid "Published"
 msgstr "Publicado"
 
-#: apps/core/models.py:2505
+#: apps/core/models.py:2554
 msgid "size"
 msgstr "tamaño"
 
-#: apps/core/models.py:2506
+#: apps/core/models.py:2555
 msgid "background color"
 msgstr "color de fondo"
 
@@ -78,12 +78,13 @@ msgid "Este es tu último artículo gratuito"
 msgstr "Este es su último artículo gratuito"
 
 #: apps/core/templates/edition/download_email_sent.html:12
-#: apps/thedaily/forms.py:176 apps/thedaily/forms.py:343
+#: apps/thedaily/forms.py:176 apps/thedaily/forms.py:306
+#: apps/thedaily/forms.py:352
 msgid "Email"
 msgstr "Correo electrónico"
 
 #: apps/core/templates/edition/download_email_sent.html:14
-#: apps/thedaily/models.py:59 apps/thedaily/views.py:992
+#: apps/thedaily/models.py:59 apps/thedaily/views.py:1107
 msgid "email"
 msgstr "correo electrónico"
 
@@ -103,51 +104,51 @@ msgstr "suscrito"
 msgid "contactate"
 msgstr "contáctese"
 
-#: apps/thedaily/models.py:187
+#: apps/thedaily/models.py:205
 msgid "name"
 msgstr "nombre"
 
-#: apps/thedaily/models.py:390
+#: apps/thedaily/models.py:409
 msgid "user id"
 msgstr "id de usuario"
 
-#: apps/thedaily/models.py:595
+#: apps/thedaily/models.py:630
 msgid "tus datos"
 msgstr "sus datos"
 
-#: apps/thedaily/models.py:614
+#: apps/thedaily/models.py:664
 msgid "tu perfil"
 msgstr "su perfil"
 
-#: apps/thedaily/models.py:760
+#: apps/thedaily/models.py:812
 msgid "billing name"
 msgstr "nombre facturación"
 
-#: apps/thedaily/models.py:761
+#: apps/thedaily/models.py:813
 msgid "billing identification document"
 msgstr "documento facturación"
 
-#: apps/thedaily/models.py:762
+#: apps/thedaily/models.py:814
 msgid "billing phone"
 msgstr "teléfono facturación"
 
-#: apps/thedaily/models.py:763
+#: apps/thedaily/models.py:815
 msgid "billing email"
 msgstr "correo electrónico facturación"
 
-#: apps/thedaily/models.py:771
+#: apps/thedaily/models.py:823
 msgid "start date"
 msgstr "fecha inicio"
 
-#: apps/thedaily/models.py:772
+#: apps/thedaily/models.py:824
 msgid "end date"
 msgstr "fecha fin"
 
-#: apps/thedaily/models.py:773
+#: apps/thedaily/models.py:825
 msgid "next billing"
 msgstr "próxima facturación"
 
-#: apps/thedaily/models.py:780
+#: apps/thedaily/models.py:834
 msgid " subscription for "
 msgstr " suscripción para "
 
@@ -158,6 +159,18 @@ msgstr "recibirá"
 #: apps/thedaily/templates/nlunsubscribe.html:40
 msgid "Configurar todas tus newsletters"
 msgstr "Configurar todos sus newsletters"
+
+#: apps/thedaily/views.py:1414
+msgid "Perfil actualizado."
+msgstr ""
+
+#: apps/thedaily/views.py:1415
+msgid "revisá tu email para verificar el cambio de email."
+msgstr ""
+
+#: apps/thedaily/views.py:1442
+msgid "Error al guardar los datos"
+msgstr ""
 
 #: templates/admin/app_list.html:11
 #, python-format
@@ -191,3 +204,7 @@ msgstr "Histórico"
 #: templates/admin/change_form_object_tools.html:10
 msgid "View on site"
 msgstr "Ver en el sitio"
+
+#: templates/admin_doc/model_index.html:6
+msgid "Model documentation"
+msgstr "Documentación de los modelos de datos"

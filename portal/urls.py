@@ -127,7 +127,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ("id", "subscriber", "start_date", "end_date", "subscription_type_prices")
+        fields = ("id", "subscriber", "start_date", "end_date", "subscription_type_prices", "active")
 
 
 class SubscriptionContactSerializer(SubscriptionSerializer):
@@ -256,7 +256,7 @@ class CustomAuthViewSetMixin:
 class SubscriptionViewSet(CustomAuthViewSetMixin, viewsets.ModelViewSet):
     queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
-    http_method_names = ["get", "head", "put", "patch"]
+    http_method_names = ["get", "head", "put", "patch", "post", "delete"]
 
 
 class SubscriptionContactViewSet(SubscriptionViewSet):

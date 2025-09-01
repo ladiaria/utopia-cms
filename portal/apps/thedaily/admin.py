@@ -58,13 +58,13 @@ class SubscriptionAdmin(ModelAdmin):
     list_display = (
         'id',
         'get_subscriber',
-        'billing_name',
-        'billing_phone',
         'billing_email',
         'get_subscription_type_prices',
         "start_date",
         "end_date",
+        "active",
     )
+    list_filter = ('active',)
     search_fields = ('billing_name', 'billing_email', 'subscriber__user__email')
     raw_id_fields = ('subscriber',)
     exclude = ('subscription_type',)

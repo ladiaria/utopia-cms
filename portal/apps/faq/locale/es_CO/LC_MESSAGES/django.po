@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-10 06:58-0300\n"
+"POT-Creation-Date: 2025-08-30 14:33-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -27,25 +27,24 @@ msgstr "faq"
 msgid "Changed status to '%s'."
 msgstr "Status cambiado a '%s'."
 
-#: apps/faq/actions.py:33
+#: apps/faq/actions.py:32
 #, python-format
 msgid "%(rows_updated)s %(verbose_name)s was successfully %(verb)s."
-msgid_plural ""
-"%(rows_updated)s  %(verbose_name_plural)s were successfully %(verb)s."
+msgid_plural "%(rows_updated)s  %(verbose_name)s were successfully %(verb)s."
 msgstr[0] ""
 msgstr[1] ""
 
-#: apps/faq/actions.py:47
+#: apps/faq/actions.py:55
 #, python-format
 msgid "Draft selected %(verbose_name_plural)s"
 msgstr "Borrador seleccionado %(verbose_name_plural)s"
 
-#: apps/faq/actions.py:53
+#: apps/faq/actions.py:63
 #, python-format
 msgid "Publish selected %(verbose_name_plural)s"
 msgstr "Publicado seleccionado %(verbose_name_plural)s"
 
-#: apps/faq/actions.py:59
+#: apps/faq/actions.py:71
 #, python-format
 msgid "Remove selected %(verbose_name_plural)s"
 msgstr "Eliminado seleccionado %(verbose_name_plural)s"

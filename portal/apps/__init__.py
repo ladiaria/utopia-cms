@@ -18,6 +18,7 @@ import requests
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from requests.auth import HTTPBasicAuth
+from content_settings.conf import content_settings
 
 from django.conf import settings
 
@@ -62,7 +63,7 @@ def whitelisted_domains(update_list=None):
         fobj.close()
 
 
-def crm_rest_api_kwargs(api_key, data=None):
+def crm_rest_api_kwargs(api_key, data=None, json=None):
     """
     Get the CRM API standard args.
     @param api_key: CRM API key.
@@ -78,37 +79,39 @@ def crm_rest_api_kwargs(api_key, data=None):
         result["verify"] = False
     if data:
         result["data"] = data
+    elif json:
+        result["json"] = json
     if http_basic_auth:
         result["auth"] = HTTPBasicAuth(*http_basic_auth)
     return result
 
 
-def get_document_type_choices():
+def crm_json_api_mapping(json_path, api_url_slug, map_fields, json_path_setting=None):
     if settings.DEBUG:
-        print("get_document_type_choices called")
+        print(f"DEBUG: crm_json_api_mapping called for '/{api_url_slug}/'")
     result = []
-    dtlist_json = getattr(settings, "THEDAILY_DOCUMENT_TYPE_CHOICES_JSON", None)
-    if dtlist_json:
+    dtlist_json = json_path or (getattr(settings, json_path_setting, None) if json_path_setting else None)
+    if all([dtlist_json, api_url_slug, map_fields]):
         api_base_url = settings.CRM_API_BASE_URI
         api_key = getattr(settings, 'CRM_UPDATE_USER_API_KEY', None)
         if api_base_url and api_key:
             # update, save and return the result
             try:
                 # get from crm api
-                response = requests.get(api_base_url + "document-types/", **crm_rest_api_kwargs(api_key))
+                response = requests.get(f"{api_base_url}{api_url_slug}/", **crm_rest_api_kwargs(api_key))
                 response.raise_for_status()
             except Exception as e:
                 if settings.DEBUG:
-                    print(e)
+                    print(f"WARNING: crm_api error getting data: {e}")
             else:
                 # update local file
                 try:
-                    result = [(x["id"], x["name"]) for x in response.json()]
+                    result = [tuple(x[field] for field in map_fields) for x in response.json()]
                     with open(dtlist_json, "w") as fobj:
                         json.dump(result, fobj)
                 except Exception as e:
                     if settings.DEBUG:
-                        print(e)
+                        print(f"WARNING: error saving data: {e}")
                 else:
                     # return the result used to update the local file
                     return result
@@ -123,4 +126,15 @@ def get_document_type_choices():
     return result
 
 
-document_type_choices = get_document_type_choices()
+document_type_choices = crm_json_api_mapping(
+    None, "document-types", ["id", "name"], "THEDAILY_DOCUMENT_TYPE_CHOICES_JSON"
+)
+crm_mappings = {}
+for mapping in content_settings.CRM_JSON_API_MAPPINGS_EXTRA or []:
+    try:
+        crm_mappings[mapping["key"]] = dict(
+            crm_json_api_mapping(mapping["json_path"], mapping["api_slug"], mapping["map_fields"])
+        )
+    except Exception as exc:
+        if settings.DEBUG:
+            print(f"Error loading CRM JSON API mapping for {mapping}: {exc}")

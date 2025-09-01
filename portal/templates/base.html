@@ -279,7 +279,7 @@
       function subscribe_notice_show(subscribe_notice){
         subscribe_notice.removeClass("hide");
         $('.btn-close-notice', subscribe_notice).click(function(){
-          $.post("{% url 'subscribe-notice-closed' %}", function(data){
+          $.post("{% url 'home-notice-closed' %}", function(data){
             subscribe_notice.hide();
           });
         });
@@ -307,7 +307,7 @@
           {% if user.is_authenticated %}
             subscribe_notice_show(subscribe_notice);
           {% else %}
-            $.get("{% url 'subscribe-notice-closed' %}", function(data){
+            $.get("{% url 'home-notice-closed' %}", function(data){
               if(!data.closed){
                 subscribe_notice_show(subscribe_notice);
               }

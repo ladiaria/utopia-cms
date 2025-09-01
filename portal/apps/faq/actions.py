@@ -18,8 +18,7 @@ def update_status(modeladmin, request, queryset, status):
         obj.save()
         # Now log what happened.
         # Use ugettext_noop() 'cause this is going straight into the db.
-        log_message = gettext_noop(u'Changed status to \'%s\'.' %
-            obj.get_status_display())
+        log_message = gettext_noop('Changed status to \'%s\'.' % obj.get_status_display())
         modeladmin.log_change(request, obj, log_message)
 
     # Send a message to the user telling them what has happened.
@@ -30,9 +29,16 @@ def update_status(modeladmin, request, queryset, status):
         'verb': dict(STATUS_CHOICES)[status],
     }
     user_message = ngettext(
-        u'%(rows_updated)s %(verbose_name)s was successfully %(verb)s.',
-        u'%(rows_updated)s  %(verbose_name_plural)s were successfully %(verb)s.',
-        message_dict['rows_updated']) % message_dict
+        '%(rows_updated)s %(verbose_name)s was successfully %(verb)s.',
+        '%(rows_updated)s  %(verbose_name)s were successfully %(verb)s.',  # TODO: see next docstring
+        message_dict['rows_updated']
+    ) % message_dict
+
+    """
+    the line with the TODO above was changed because "makemessages" was not working, the change made can be obtained
+    using git log.
+    """
+
     modeladmin.message_user(request, user_message)
 
     # Return None to display the change list page again and allow the user
@@ -44,16 +50,22 @@ def update_status(modeladmin, request, queryset, status):
 def draft(modeladmin, request, queryset):
     """Admin action for setting status of selected items to 'drafted'."""
     return update_status(modeladmin, request, queryset, DRAFTED)
-draft.short_description = _(u'Draft selected %(verbose_name_plural)s')
+
+
+draft.short_description = _('Draft selected %(verbose_name_plural)s')
 
 
 def publish(modeladmin, request, queryset):
     """Admin action for setting status of selected items to 'published'."""
     return update_status(modeladmin, request, queryset, PUBLISHED)
-publish.short_description = _(u'Publish selected %(verbose_name_plural)s')
+
+
+publish.short_description = _('Publish selected %(verbose_name_plural)s')
 
 
 def remove(modeladmin, request, queryset):
     """Admin action for setting status of selected items to 'removed'."""
     return update_status(modeladmin, request, queryset, REMOVED)
-remove.short_description = _(u'Remove selected %(verbose_name_plural)s')
+
+
+remove.short_description = _('Remove selected %(verbose_name_plural)s')

@@ -1638,7 +1638,7 @@ def user_profile(request, user_id):
 
 
 @never_cache
-@api_view(['POST', "PUT"])
+@api_view(['POST', "PUT", "PATCH"])
 @api_view_auth_decorator
 @permission_classes([HasAPIKey])
 def update_user_from_crm(request):
@@ -1666,6 +1666,8 @@ def update_user_from_crm(request):
         @param field: Subscriber field
         @param value: Subscriber field value
         """
+        if settings.DEBUG:
+            print("DEBUG: changesubscriberfield, field: %s, value: %s" % (field, value))
         mapped_field = settings.CRM_UPDATE_SUBSCRIBER_FIELDS.get(field)
         if not mapped_field:
             return  # Skip if no field mapping found
@@ -1784,7 +1786,9 @@ def update_user_from_crm(request):
         email = request.data.get('email')
         newemail = request.data.get('newemail')
         fields = json.loads(request.data.get('fields', "{}"))
-    except KeyError:
+    except (KeyError, json.decoder.JSONDecodeError) as exc:
+        if settings.DEBUG:
+            print(f"DEBUG: update_user_from_crm, error: {exc}")
         return HttpResponseBadRequest()
     try:
         subscriber = Subscriber.objects.select_related('user').get(contact_id=contact_id)
@@ -1792,6 +1796,8 @@ def update_user_from_crm(request):
             updatesubscriberemail(subscriber.user, newemail)
             updatesubscriberfields(subscriber, fields)
             updateuserfields(subscriber.user, name, last_name)
+        elif request.method == "PATCH":
+            updatesubscriberfields(subscriber, fields)
         elif request.method == "POST":
             return HttpResponseBadRequest("already exists", status=409)
     except Subscriber.DoesNotExist:
@@ -1799,6 +1805,8 @@ def update_user_from_crm(request):
             print(f"DEBUG: sync API: Subscriber.DoesNotExist for contact_id={contact_id}")
             print(f"DEBUG: sync API: request.data={request.data}")
             print(f"DEBUG: sync API: fields={fields}")
+        if request.method == "PATCH":
+            raise
         if email or fields.get('email'):
             try:
                 email_to_use = email or fields.get('email')
