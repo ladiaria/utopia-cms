@@ -27,12 +27,12 @@ from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 
 from libs.utils import get_site_name
-from apps import crm_rest_api_kwargs
+from apps import crm_rest_api_kwargs, log_formatter
 from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
 from dashboard.models import AudioStatistics
 from signupwall.utils import get_ip
 from .models import Subscription, Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
-from . import get_app_template, log_formatter
+from . import get_app_template
 
 
 delivery_err = "Error interno, intentá de nuevo más tarde."

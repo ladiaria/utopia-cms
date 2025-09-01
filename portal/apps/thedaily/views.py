@@ -70,11 +70,10 @@ from django.utils.translation import gettext as _
 from django.utils.decorators import method_decorator
 
 from utils.error_log import error_log
-from apps import mongo_db, bouncer_blocklisted, crm_rest_api_kwargs
+from apps import mongo_db, bouncer_blocklisted, crm_rest_api_kwargs, sync_log
 from libs.utils import set_amp_cors_headers, decode_hashid
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from decorators import render_response
-
 from core.models import Publication, Category, Article, ArticleUrlHistory
 from core.forms import feedback_allowed
 from core.utils import get_hard_paywall_template
@@ -84,15 +83,7 @@ from signupwall.middleware import (
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
 
 from .models import (
-    Subscriber,
-    Subscription,
-    SubscriptionPrices,
-    UsersApiSession,
-    OAuthState,
-    MailtrainList,
-    deletecrmuser,
-    email_i18n,
-    sync_log,
+    Subscriber, Subscription, SubscriptionPrices, UsersApiSession, OAuthState, MailtrainList, deletecrmuser, email_i18n
 )
 from .forms import (
     __name__ as forms_module_name,

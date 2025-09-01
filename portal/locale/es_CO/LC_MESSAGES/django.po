@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-30 14:26-0500\n"
+"POT-Creation-Date: 2025-09-01 06:59-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -84,7 +84,7 @@ msgid "Email"
 msgstr "Correo electrónico"
 
 #: apps/core/templates/edition/download_email_sent.html:14
-#: apps/thedaily/models.py:59 apps/thedaily/views.py:1107
+#: apps/thedaily/models.py:57 apps/thedaily/views.py:1098
 msgid "email"
 msgstr "correo electrónico"
 
@@ -104,51 +104,51 @@ msgstr "suscrito"
 msgid "contactate"
 msgstr "contáctese"
 
-#: apps/thedaily/models.py:205
+#: apps/thedaily/models.py:177
 msgid "name"
 msgstr "nombre"
 
-#: apps/thedaily/models.py:409
+#: apps/thedaily/models.py:381
 msgid "user id"
 msgstr "id de usuario"
 
-#: apps/thedaily/models.py:630
+#: apps/thedaily/models.py:602
 msgid "tus datos"
 msgstr "sus datos"
 
-#: apps/thedaily/models.py:664
+#: apps/thedaily/models.py:636
 msgid "tu perfil"
 msgstr "su perfil"
 
-#: apps/thedaily/models.py:812
+#: apps/thedaily/models.py:784
 msgid "billing name"
 msgstr "nombre facturación"
 
-#: apps/thedaily/models.py:813
+#: apps/thedaily/models.py:785
 msgid "billing identification document"
 msgstr "documento facturación"
 
-#: apps/thedaily/models.py:814
+#: apps/thedaily/models.py:786
 msgid "billing phone"
 msgstr "teléfono facturación"
 
-#: apps/thedaily/models.py:815
+#: apps/thedaily/models.py:787
 msgid "billing email"
 msgstr "correo electrónico facturación"
 
-#: apps/thedaily/models.py:823
+#: apps/thedaily/models.py:795
 msgid "start date"
 msgstr "fecha inicio"
 
-#: apps/thedaily/models.py:824
+#: apps/thedaily/models.py:796
 msgid "end date"
 msgstr "fecha fin"
 
-#: apps/thedaily/models.py:825
+#: apps/thedaily/models.py:797
 msgid "next billing"
 msgstr "próxima facturación"
 
-#: apps/thedaily/models.py:834
+#: apps/thedaily/models.py:806
 msgid " subscription for "
 msgstr " suscripción para "
 
@@ -160,15 +160,15 @@ msgstr "recibirá"
 msgid "Configurar todas tus newsletters"
 msgstr "Configurar todos sus newsletters"
 
-#: apps/thedaily/views.py:1414
+#: apps/thedaily/views.py:1405
 msgid "Perfil actualizado."
 msgstr ""
 
-#: apps/thedaily/views.py:1415
+#: apps/thedaily/views.py:1406
 msgid "revisá tu email para verificar el cambio de email."
 msgstr ""
 
-#: apps/thedaily/views.py:1442
+#: apps/thedaily/views.py:1433
 msgid "Error al guardar los datos"
 msgstr ""
 

@@ -12,6 +12,8 @@ TODO: 1. if mongo server fails after this global vars are set, the global client
       must be set to False to avoid a "pool" error exception. (RHEL7/9-Mongod7).
 """
 
+import sys
+import logging
 import csv
 import json
 import requests
@@ -19,8 +21,40 @@ from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from requests.auth import HTTPBasicAuth
 from content_settings.conf import content_settings
+from favit.utils import is_xhr
 
 from django.conf import settings
+
+
+# sync log
+# TODO: log_formatter is repeated in many modules only changing last param, avoid repetition someway.
+global log_formatter
+log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S')
+sync_logfile, sync_logger = getattr(settings, 'THEDAILY_SYNC_LOGFILE', None), None
+sync_logger = logging.getLogger(__name__)
+sync_logger.setLevel(logging.DEBUG)
+if sync_logfile:
+    file_handler = logging.FileHandler(filename=sync_logfile)
+    file_handler.setFormatter(log_formatter)
+    sync_logger.addHandler(file_handler)
+if settings.DEBUG:
+    # print also errors to stderr in DEBUG mode
+    err_handler = logging.StreamHandler(sys.stderr)
+    err_handler.setLevel(logging.ERROR)
+    err_handler.setFormatter(log_formatter)
+    sync_logger.addHandler(err_handler)
+
+
+def sync_log(message, level=logging.INFO, request=None):
+    if sync_logger:
+        extra = ''
+        if request:
+            extra = ' request: {is_ajax}{method} user={user}'.format(
+                is_ajax="X" if is_xhr(request) else '',
+                method=request.method,
+                user=getattr(request.user, 'id', 'not_set'),
+            )
+        sync_logger.log(level, message + extra)
 
 
 # mongodb database
@@ -38,7 +72,7 @@ except ServerSelectionTimeoutError:
     mongo_db = None
 
 # two email block lists (bounces in last 7 days, and bounces max ammount reached)
-global blocklisted, bouncer_blocklisted, document_type_choices
+global blocklisted, bouncer_blocklisted, document_type_choices, crm_mappings
 blocklisted, bouncer_blocklisted = [
     (
         set(
@@ -87,8 +121,7 @@ def crm_rest_api_kwargs(api_key, data=None, json=None):
 
 
 def crm_json_api_mapping(json_path, api_url_slug, map_fields, json_path_setting=None):
-    if settings.DEBUG:
-        print(f"DEBUG: crm_json_api_mapping called for '/{api_url_slug}/'")
+    sync_log(f"crm_json_api_mapping called for '/{api_url_slug}/'")
     result = []
     dtlist_json = json_path or (getattr(settings, json_path_setting, None) if json_path_setting else None)
     if all([dtlist_json, api_url_slug, map_fields]):
@@ -101,8 +134,7 @@ def crm_json_api_mapping(json_path, api_url_slug, map_fields, json_path_setting=
                 response = requests.get(f"{api_base_url}{api_url_slug}/", **crm_rest_api_kwargs(api_key))
                 response.raise_for_status()
             except Exception as e:
-                if settings.DEBUG:
-                    print(f"WARNING: crm_api error getting data: {e}")
+                sync_log(f"crm_api error getting data: {e}", logging.WARNING)
             else:
                 # update local file
                 try:
@@ -110,8 +142,7 @@ def crm_json_api_mapping(json_path, api_url_slug, map_fields, json_path_setting=
                     with open(dtlist_json, "w") as fobj:
                         json.dump(result, fobj)
                 except Exception as e:
-                    if settings.DEBUG:
-                        print(f"WARNING: error saving data: {e}")
+                    sync_log(f"error saving data: {e}", logging.WARNING)
                 else:
                     # return the result used to update the local file
                     return result
@@ -121,8 +152,7 @@ def crm_json_api_mapping(json_path, api_url_slug, map_fields, json_path_setting=
             result = json.loads(fobj.read())
             fobj.close()
         except FileNotFoundError as fnfe:
-            if settings.DEBUG:
-                print(fnfe)
+            sync_log(f"file not found: {fnfe}", logging.WARNING)
     return result
 
 
@@ -136,5 +166,4 @@ for mapping in content_settings.CRM_JSON_API_MAPPINGS_EXTRA or []:
             crm_json_api_mapping(mapping["json_path"], mapping["api_slug"], mapping["map_fields"])
         )
     except Exception as exc:
-        if settings.DEBUG:
-            print(f"Error loading CRM JSON API mapping for {mapping}: {exc}")
+        sync_log(f"Error loading CRM JSON API mapping for {mapping}: {exc}", logging.WARNING)

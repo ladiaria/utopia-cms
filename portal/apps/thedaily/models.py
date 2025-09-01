@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
 import re
 import json
 import logging
@@ -8,10 +7,8 @@ import pymongo
 from hashids import Hashids
 from pymailcheck import split_email
 from pyisemail import is_email
-
 from social_django.models import UserSocialAuth
 from phonenumber_field.modelfields import PhoneNumberField
-from favit.utils import is_xhr
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
@@ -47,42 +44,17 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
 
-from apps import mongo_db, bouncer_blocklisted, whitelisted_domains, document_type_choices, crm_rest_api_kwargs
+from apps import (
+    mongo_db, bouncer_blocklisted, whitelisted_domains, document_type_choices, crm_rest_api_kwargs, sync_log
+)
 from core.models import Edition, Publication, Category, ArticleViewedBy
 from .exceptions import UpdateCrmEx, EmailValidationError, MSG_ERR_UPDATE
 from .managers import SubscriberManager
-from . import log_formatter
 
 
 ALPHANUM_STR = "^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _'.-]*$"
 GA_CATEGORY_CHOICES, MIN0, MAX100 = (('D', 'Digital'), ('P', 'Papel')), MinValueValidator(0), MaxValueValidator(100)
 email_i18n = _("email")
-
-sync_logfile, sync_logger = getattr(settings, 'THEDAILY_SYNC_LOGFILE', None), None
-sync_logger = logging.getLogger(__name__)
-sync_logger.setLevel(logging.DEBUG)
-if sync_logfile:
-    file_handler = logging.FileHandler(filename=sync_logfile)
-    file_handler.setFormatter(log_formatter)
-    sync_logger.addHandler(file_handler)
-if settings.DEBUG:
-    # print also errors to stderr in DEBUG mode
-    err_handler = logging.StreamHandler(sys.stderr)
-    err_handler.setLevel(logging.ERROR)
-    err_handler.setFormatter(log_formatter)
-    sync_logger.addHandler(err_handler)
-
-
-def sync_log(message, level=logging.INFO, request=None):
-    if sync_logger:
-        extra = ''
-        if request:
-            extra = ' request: {is_ajax}{method} user={user}'.format(
-                is_ajax="X" if is_xhr(request) else '',
-                method=request.method,
-                user=getattr(request.user, 'id', 'not_set'),
-            )
-        sync_logger.log(level, message + extra)
 
 
 def default_price_publication_when_unique():
