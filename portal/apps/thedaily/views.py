@@ -635,7 +635,11 @@ def google_phone(request):
     if request.method == 'POST':
         google_signin_form = form_class(request.POST, **form_kwargs)
         if google_signin_form.is_valid():
-            google_signin_form.save()
+            request.session["terms_and_conds_accepted"] = True
+            try:
+                google_signin_form.save()
+            except UpdateCrmEx as crm_exc:
+                subscribe_log(request, 'google_phone error in form.save() for user %d: %s' % (oas.user.id, crm_exc))
             if is_new:
                 request.session['welcome'] = True
                 try:
@@ -667,7 +671,7 @@ def google_phone(request):
         # add default newsletters to new users (reached only from "free" subscriptions)
         if is_new:
             add_default_newsletters(profile)
-        elif profile.terms_and_conds_accepted:
+        elif profile.terms_and_conds_accepted or request.session.get("terms_and_conds_accepted"):
             # can be redirected now if T&C
             return HttpResponseRedirect(next_page or reverse('home'))
         google_signin_form = form_class(**form_kwargs)

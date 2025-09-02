@@ -87,9 +87,13 @@ def whitelisted_domains(update_list=None):
     if not dlist_json:
         return []
     if update_list is None:
-        fobj = open(dlist_json)
-        dlist = json.loads(fobj.read()).get("domains", [])
-        fobj.close()
+        try:
+            fobj = open(dlist_json)
+            dlist = json.loads(fobj.read()).get("domains", [])
+        except (FileNotFoundError, json.JSONDecodeError):
+            dlist = []
+        else:
+            fobj.close()
         return dlist
     else:
         fobj = open(dlist_json, "w")

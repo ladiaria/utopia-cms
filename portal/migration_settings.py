@@ -9,7 +9,7 @@ from pycountry import countries
 import environ
 
 import django
-from django.conf.global_settings import DEFAULT_CHARSET
+from django.conf.global_settings import DEFAULT_CHARSET, AUTHENTICATION_BACKENDS
 from django.contrib.messages import constants as messages
 from django.utils.encoding import smart_str, force_str
 
@@ -594,6 +594,11 @@ from local_migration_settings import *  # noqa
 
 
 DATABASES['default']['OPTIONS'] = DATABASES_default_OPTIONS
+
+preferred_auth_backend = "social_core.backends.google.GoogleOAuth2"
+if preferred_auth_backend not in AUTHENTICATION_BACKENDS:
+    AUTHENTICATION_BACKENDS.insert(0, preferred_auth_backend)
+
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]

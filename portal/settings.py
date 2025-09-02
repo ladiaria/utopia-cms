@@ -9,7 +9,7 @@ from pycountry import countries
 import environ
 
 import django
-from django.conf.global_settings import DEFAULT_CHARSET
+from django.conf.global_settings import DEFAULT_CHARSET, AUTHENTICATION_BACKENDS
 from django.contrib.messages import constants as messages
 from django.utils.encoding import smart_str, force_str
 
@@ -632,9 +632,7 @@ DATABASES['default']['OPTIONS'] = DATABASES_default_OPTIONS
 
 if ENABLE_GOOGLE_ONE_TAP:
     # Google One Tap Configuration
-    AUTHENTICATION_BACKENDS = (
-        "libs.google_oauth2_backend.CustomGoogleOAuth2", "django.contrib.auth.backends.ModelBackend"
-    )
+    preferred_auth_backend = "libs.google_oauth2_backend.CustomGoogleOAuth2"
     # Exclude URLs that should not use Google One Tap
     EXCLUDE_ONE_TAP_FOR_URLS = [
         "/usuarios/entrar/",
@@ -659,6 +657,10 @@ if ENABLE_GOOGLE_ONE_TAP:
     # Remove XFrameOptionsMiddleware to prevent conflicts with Google One Tap iframes.
     # The middleware would override X_FRAME_OPTIONS and block Google's authentication popup.
     MIDDLEWARE = tuple(m for m in MIDDLEWARE if m != "django.middleware.clickjacking.XFrameOptionsMiddleware")
+else:
+    preferred_auth_backend = "social_core.backends.google.GoogleOAuth2"
+if preferred_auth_backend not in AUTHENTICATION_BACKENDS:
+    AUTHENTICATION_BACKENDS.insert(0, preferred_auth_backend)
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
