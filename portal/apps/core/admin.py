@@ -1009,7 +1009,9 @@ class ArticleAdmin(SortableAdminBase, ConcurrentModelAdmin, VersionAdmin):
                 if settings.DEBUG:
                     print(f"DEBUG: error in core.admin.ArticleAdmin.save_model: {e}")
                     print(f"DEBUG: form.errors: {form.errors.as_json()}")
-                    print(f"DEBUG: full traceback: {traceback.format_exc()}")
+                    print("\nDEBUG: full traceback print begin ********************************\n")
+                    print(traceback.format_exc())
+                    print("\nDEBUG: full traceback print end **********************************\n")
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
