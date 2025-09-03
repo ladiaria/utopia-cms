@@ -152,9 +152,11 @@ class Command(SendNLCommand):
             self.log.error(error_msg)
             raise CommandError(error_msg)
 
-        export_ctx = publication.extra_context.copy()
+        pubobj = publication if not self.offline else Publication.objects.get(slug=self.pub_slug)
+
+        export_ctx = pubobj.extra_context.copy()
         common_ctx = self.default_common_ctx.copy()
-        common_ctx.update({"newsletter_header_color": publication.newsletter_header_color})
+        common_ctx.update({"newsletter_header_color": pubobj.newsletter_header_color})
         # A flag to force no delivery can be set in extra context
         if export_ctx.get("force_no_delivery"):
             self.log.info("Force to no delivery by the publication extra context, aborting.")
