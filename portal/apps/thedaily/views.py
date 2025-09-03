@@ -1744,13 +1744,8 @@ def update_user_from_crm(request):
                 given_categories = Category.objects.filter(slug__in=pubs_slugs)
                 set_newsletters = set(given_publications.values_list("slug", flat=True))
                 set_cat_newsletters = set(given_categories.values_list("slug", flat=True))
-                # TODO: give an example where the next affirmation could happen (not easy to understand)
-                # This code set duplicates slugs in both relationships. This could be a bug in the future
-                # This case would happens if for example we have a category with slug "deporte"
-                # and also we have an publication with the slug "deporte".
-                # In this case, if a "deporte" comes like slug for update newsletters,
-                # this code code will add "deporte" like a category newsletter and like publication newsletter,
-                # cause is hard to set up.
+                # NOTE: Is suppossed that slugs are unique also between Publications and Areas, at least when they have
+                #       newsletters.
                 # TODO: Pending of full review for remove the commented code (commented code, now removed, is the code
                 #       that was here before this change)
                 #       This can be checked with tests:
@@ -1789,6 +1784,12 @@ def update_user_from_crm(request):
         subscriber = Subscriber.objects.select_related('user').get(contact_id=contact_id)
         if request.method == "PUT":
             updatesubscriberemail(subscriber.user, newemail)
+            # remove "name" and "last_name" entries from fields (proxyied to the User.first_name and User.last_name)
+            # TODO: check if this is needed also for "PATCH" method (next elif)
+            # TODO: check CRM new-contact (not admin) view is not asking neither sending the NLs sync, also not adding
+            #       them in the CRM itself.
+            fields.pop("name", None)
+            fields.pop("last_name", None)
             updatesubscriberfields(subscriber, fields)
             updateuserfields(subscriber.user, name, last_name)
         elif request.method == "PATCH":
