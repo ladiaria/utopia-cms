@@ -20,7 +20,6 @@ import requests
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from requests.auth import HTTPBasicAuth
-from content_settings.conf import content_settings
 from favit.utils import is_xhr
 
 from django.conf import settings
@@ -163,11 +162,18 @@ def crm_json_api_mapping(json_path, api_url_slug, map_fields, json_path_setting=
 document_type_choices = crm_json_api_mapping(
     None, "document-types", ["id", "name"], "THEDAILY_DOCUMENT_TYPE_CHOICES_JSON"
 )
-crm_mappings = {}
-for mapping in content_settings.CRM_JSON_API_MAPPINGS_EXTRA or []:
-    try:
-        crm_mappings[mapping["key"]] = dict(
-            crm_json_api_mapping(mapping["json_path"], mapping["api_slug"], mapping["map_fields"])
-        )
-    except Exception as exc:
-        sync_log(f"Error loading CRM JSON API mapping for {mapping}: {exc}", logging.WARNING)
+
+
+def build_crm_mappings():
+    _crm_mappings = {}
+    for mapping in getattr(settings, "CORE_CRM_JSON_API_MAPPINGS_EXTRA", []):
+        try:
+            _crm_mappings[mapping["key"]] = dict(
+                crm_json_api_mapping(mapping["json_path"], mapping["api_slug"], mapping["map_fields"])
+            )
+        except Exception as exc:
+            sync_log(f"Error loading CRM JSON API mapping for {mapping}: {exc}", logging.WARNING)
+    return _crm_mappings
+
+
+crm_mappings = build_crm_mappings()
