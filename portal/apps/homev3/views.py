@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from datetime import date
+from datetime import date  # used only to assert that a variable is a date (django's timezone doesnt provide date type)
 
 from django_user_agents.utils import get_user_agent
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.urls import reverse
@@ -13,10 +14,9 @@ from django.urls.exceptions import NoReverseMatch
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
-from decorators import decorate_if_no_auth, decorate_if_auth
-
 from apps import bouncer_blocklisted
-from core.models import Edition, get_current_edition, Publication, Category, CategoryHome, Article
+from decorators import decorate_if_no_auth, decorate_if_auth
+from core.models import Edition, get_current_edition, Publication, Category, CategoryHome, Article, Section
 from core.views.category import category_detail
 from core.utils import get_app_template
 from faq.models import Topic
@@ -83,7 +83,18 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
                         raise Http404
                 else:
                     raise Http404
-            return category_detail(request, get_object_or_404(Category, slug=domain_slug).slug)
+            try:
+                return category_detail(request, Category.objects.get(slug=domain_slug).slug)
+            except Category.DoesNotExist:
+                if not (year or month or day) and content_settings.HOMEV3_REDIRECT_SECTION_FALLBACK:
+                    # last chance (if enabled by settings) is to redirect to a section detail view by slug
+                    try:
+                        section_detail_url = Section.objects.get(slug=domain_slug).get_absolute_url()
+                    except Section.DoesNotExist:
+                        pass
+                    else:
+                        return HttpResponsePermanentRedirect(section_detail_url)
+                raise Http404
     else:
         publication = Publication.objects.get(slug=settings.DEFAULT_PUB)
 

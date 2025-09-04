@@ -21,3 +21,10 @@ HOMEV3_ROWS_DUPLICATES_HOMETOP_ONLY = SimpleBool(
     # cls_field=BooleanField, (N1)
     # widget=CheckboxInput, (N1)
 )
+HOMEV3_REDIRECT_SECTION_FALLBACK = SimpleBool(
+    default="false",
+    help=(
+        "Si es <code>true</code>, se redirige a la vista de sección con slug match, si no se encuentra un área o "
+        "publicación."
+    ),
+)
