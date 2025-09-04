@@ -413,7 +413,7 @@ urlpatterns.extend(
 
         # Homes: domain_slug can be a publication slug or an area (core.Category) slug, or (if allowed by settings) a
         # section slug to be redirected to its canonical url, this last behaviour also, when enabled by the same
-        # settings, happens when a match /category-slug/section-slug/ is found (defined after the section detail path)
+        # settings, happens when a match /category-slug/section-slug/ is found (defined after all other paths)
         path('', index, name='home'),
         re_path(r'^(?P<domain_slug>[\w-]+)/$', index, name='home'),
 
@@ -424,10 +424,6 @@ urlpatterns.extend(
         # Artcles (other pages that show articles)
         path('articulos/', include('core.urls.article.type')),  # Articles by type
         path('seccion/', include('core.urls.section')),  # Articles by section
-    ] + (
-        [re_path(r'^(?P<domain_slug>[\w-]+)/(?P<section_slug>[\w-]+)/$', index, name='home')]
-        if content_settings.HOMEV3_REDIRECT_SECTION_FALLBACK else []
-    ) + [
         path('tags/', include('core.urls.tag')),
 
         # Other pages (TODO: check and organize better)
@@ -488,6 +484,9 @@ if settings.DEBUG:
     # )
 else:
     urlpatterns.append(re_path(r'^.*.css$', TemplateView.as_view(template_name='devnull.html')))
+
+if content_settings.HOMEV3_REDIRECT_SECTION_FALLBACK:
+    urlpatterns.append(re_path(r'^(?P<domain_slug>[\w-]+)/(?P<section_slug>[\w-]+)/$', index, name='home'))
 
 # and after all, a catchall for flatpages
 urlpatterns.append(re_path(r"^(?P<url>.*/)$", flatpage))
