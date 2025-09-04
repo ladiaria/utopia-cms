@@ -5,6 +5,7 @@ from generator.views import contribute
 from rest_framework import serializers, viewsets, routers, permissions
 from rest_framework.response import Response
 from rest_framework_api_key.permissions import HasAPIKey
+from content_settings.conf import content_settings
 
 from django.conf import settings
 from django.urls import include, path, re_path
@@ -410,7 +411,9 @@ urlpatterns.extend(
         re_path(r'^suplementos/', supplement_list, name='supplement_list'),
         path('suplemento/', include('core.urls.supplement')),
 
-        # Homes: domain_slug can be a publication slug or an area (core.Category) slug
+        # Homes: domain_slug can be a publication slug or an area (core.Category) slug, or (if allowed by settings) a
+        # section slug to be redirected to its canonical url, this last behaviour also, when enabled by the same
+        # settings, happens when a match /category-slug/section-slug/ is found (defined after the section detail path)
         path('', index, name='home'),
         re_path(r'^(?P<domain_slug>[\w-]+)/$', index, name='home'),
 
@@ -421,6 +424,10 @@ urlpatterns.extend(
         # Artcles (other pages that show articles)
         path('articulos/', include('core.urls.article.type')),  # Articles by type
         path('seccion/', include('core.urls.section')),  # Articles by section
+    ] + (
+        [re_path(r'^(?P<domain_slug>[\w-]+)/(?P<section_slug>[\w-]+)/$', index, name='home')]
+        if content_settings.HOMEV3_REDIRECT_SECTION_FALLBACK else []
+    ) + [
         path('tags/', include('core.urls.tag')),
 
         # Other pages (TODO: check and organize better)

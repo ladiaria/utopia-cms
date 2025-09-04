@@ -49,52 +49,57 @@ def ctx_update_article_extradata(context, user, user_has_subscriber, follow_set,
 @decorate_auth(decorator=never_cache)
 @decorate_if_no_auth(decorator=vary_on_cookie)
 @cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=cache_maxage)
-def index(request, year=None, month=None, day=None, domain_slug=None):
+def index(request, year=None, month=None, day=None, domain_slug=None, section_slug=None):
     """
     View to display the current edition page. Or the edition in the date and publication matching domain_slug.
     If domain_slug is a Category slug this view will return the matching category detail view.
     """
     user = request.user
     if domain_slug:
-        # if domain_slug is one of the "root url" publications => redirect to home (only if no edition date given)
-        if domain_slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL and not (year or month or day):
-            return HttpResponsePermanentRedirect(reverse('home'))
-        try:
-            publication = Publication.objects.get(slug=domain_slug)
-            # if not public => only allow staff members
-            if not (publication.public or user.is_staff):
-                raise Http404
-        except Publication.DoesNotExist:
-            # if domain_slug is an area slug (or a slug to redirect) => return area detail view
-            category_redirections = getattr(settings, 'CORE_CATEGORY_REDIRECT', {})
-            if domain_slug in category_redirections:
-                # removed, changed or force-404 categories redirects by settings
-                redirect_slug = category_redirections[domain_slug]
-                if redirect_slug:
-                    if redirect_slug.startswith('/'):
-                        # support for a "direct path" temporal redirect
-                        # TODO: the settings could include the temporal/permanent option
-                        return redirect(redirect_slug)
-                    try:
-                        return HttpResponsePermanentRedirect(
-                            reverse('home', args=(settings.CORE_CATEGORY_REDIRECT[domain_slug],))
-                        )
-                    except NoReverseMatch:
-                        raise Http404
-                else:
-                    raise Http404
+        if section_slug and content_settings.HOMEV3_REDIRECT_SECTION_FALLBACK:
+            # we should match Category/Section to allow the redirection to the section detail view
+            section = get_object_or_404(Section, slug=section_slug, category__slug=domain_slug)
+            return HttpResponsePermanentRedirect(section.get_absolute_url())
+        else:
+            # if domain_slug is one of the "root url" publications => redirect to home (only if no edition date given)
+            if domain_slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL and not (year or month or day):
+                return HttpResponsePermanentRedirect(reverse('home'))
             try:
-                return category_detail(request, Category.objects.get(slug=domain_slug).slug)
-            except Category.DoesNotExist:
-                if not (year or month or day) and content_settings.HOMEV3_REDIRECT_SECTION_FALLBACK:
-                    # last chance (if enabled by settings) is to redirect to a section detail view by slug
-                    try:
-                        section_detail_url = Section.objects.get(slug=domain_slug).get_absolute_url()
-                    except Section.DoesNotExist:
-                        pass
+                publication = Publication.objects.get(slug=domain_slug)
+                # if not public => only allow staff members
+                if not (publication.public or user.is_staff):
+                    raise Http404
+            except Publication.DoesNotExist:
+                # if domain_slug is an area slug (or a slug to redirect) => return area detail view
+                category_redirections = getattr(settings, 'CORE_CATEGORY_REDIRECT', {})
+                if domain_slug in category_redirections:
+                    # removed, changed or force-404 categories redirects by settings
+                    redirect_slug = category_redirections[domain_slug]
+                    if redirect_slug:
+                        if redirect_slug.startswith('/'):
+                            # support for a "direct path" temporal redirect
+                            # TODO: the settings could include the temporal/permanent option
+                            return redirect(redirect_slug)
+                        try:
+                            return HttpResponsePermanentRedirect(
+                                reverse('home', args=(settings.CORE_CATEGORY_REDIRECT[domain_slug],))
+                            )
+                        except NoReverseMatch:
+                            raise Http404
                     else:
-                        return HttpResponsePermanentRedirect(section_detail_url)
-                raise Http404
+                        raise Http404
+                try:
+                    return category_detail(request, Category.objects.get(slug=domain_slug).slug)
+                except Category.DoesNotExist:
+                    if not (year or month or day) and content_settings.HOMEV3_REDIRECT_SECTION_FALLBACK:
+                        # last chance (if enabled by settings) is to redirect to a section detail view by slug
+                        try:
+                            section_detail_url = Section.objects.get(slug=domain_slug).get_absolute_url()
+                        except Section.DoesNotExist:
+                            pass
+                        else:
+                            return HttpResponsePermanentRedirect(section_detail_url)
+                    raise Http404
     else:
         publication = Publication.objects.get(slug=settings.DEFAULT_PUB)
 
