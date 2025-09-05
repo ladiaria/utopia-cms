@@ -49,7 +49,6 @@ from django.db.models import (
     Index,
     SET_NULL,
     CASCADE,
-    URLField,
     TextChoices,
     FloatField,
 )
@@ -93,6 +92,7 @@ from .utils import (
     get_category_template,
 )
 from solo.models import SingletonModel
+
 
 def remove_media_root(path):
     return path.replace(settings.MEDIA_ROOT, '')
