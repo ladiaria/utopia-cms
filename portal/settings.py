@@ -597,6 +597,50 @@ AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
 )
 
+if ENABLE_GOOGLE_ONE_TAP:
+    # Exclude URLs that should not use Google One Tap
+    EXCLUDE_ONE_TAP_FOR_URLS = [
+        "/usuarios/entrar/",
+        "/usuarios/suscribite/",
+        "/usuarios/restablecer/",
+        "/usuarios/registrate/google/",
+    ]
+    
+    # =============================================================================
+    # Google One Tap Configuration
+    # =============================================================================
+    # These settings are required for Google One Tap authentication to work
+    # properly in browsers with Enhanced Tracking Protection (Firefox, Safari)
+    # and strict Content Security Policies.
+
+    # -----------------------------------------------------------------------------
+    # Third-party Cookie Configuration
+    # -----------------------------------------------------------------------------
+    # Enable cross-site cookie sharing for Google's authentication flow.
+    # Required for One Tap to maintain session state across domains.
+    SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-site session cookies
+    CSRF_COOKIE_SAMESITE = 'None'     # Allow cross-site CSRF cookies
+
+    # Allow popups to external domains while maintaining same-origin security
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+
+    # -----------------------------------------------------------------------------
+    # Frame Options Configuration
+    # -----------------------------------------------------------------------------
+    # Allow Google to embed authentication iframes in our pages.
+    # SAMEORIGIN is more secure than ALLOWALL while still permitting Google's flow.
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+    # -----------------------------------------------------------------------------
+    # Middleware Configuration
+    # -----------------------------------------------------------------------------
+    # Remove XFrameOptionsMiddleware to prevent conflicts with Google One Tap iframes.
+    # The middleware would override X_FRAME_OPTIONS and block Google's authentication popup.
+    MIDDLEWARE = tuple([
+        m for m in MIDDLEWARE
+        if m not in ["django.middleware.clickjacking.XFrameOptionsMiddleware",]
+    ])
+
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]

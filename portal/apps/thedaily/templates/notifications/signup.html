@@ -37,6 +37,7 @@
         </tr>
         <tr style="padding:0;text-align:left;vertical-align:top">
           <td style="-moz-hyphens:auto;-webkit-hyphens:auto;Margin:0;border-collapse:collapse!important;color:#0a0a0a;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:400;hyphens:auto;line-height:1.3;margin:0;padding:0;text-align:left;vertical-align:top;word-wrap:break-word">
+            {% block email_header %}
             <table style="Margin:0 auto;background:{% block logo_background %}black{% endblock %};border-collapse:collapse;border-spacing:0;margin:0 auto;padding:0;text-align:inherit;vertical-align:top;max-width:580px;border-top-left-radius:4px;border-top-right-radius:4px;border-spacing:0;border-collapse:separate;overflow:hidden;border:1px solid {% block header_border_color %}#D8D8D8{% endblock %};width:100%" align="center">
               <tbody style="padding:0;border-bottom:0">
                 <tr style="padding:0;text-align:left;vertical-align:top">
@@ -58,6 +59,7 @@
                 </tr>
               </tbody>
             </table>
+            {% endblock %}
           </td>
         </tr>
       </tbody>
@@ -76,7 +78,7 @@
                 Recibí en tu email contenidos según tus intereses.<br>
               </p>
               <p>
-                <a style="padding: 12px 15px; border-radius: 100px; background-color: #6ef9ff; color: #262626; text-transform: uppercase; font-weight: bold; text-decoration: none; display: inline-block; font-size: 14px;" href="{{ SITE_URL }}usuarios/perfil/editar/#ld-newsletters">configurar newsletters</a>
+                <a style="padding: 12px 15px; border-radius: 100px; background-color: #6ef9ff; color: #262626; text-transform: uppercase; font-weight: bold; text-decoration: none; display: inline-block; font-size: 14px;" href="{{ SITE_URL }}{% url 'user_newsletters' %}">configurar newsletters</a>
               </p>
               <div style="width: 100px; display: block; margin: 40px auto; border-top: 1px solid #D9D9D9; height: 1px;"></div>
               <p>Suscribite y obtené la experiencia digital completa:</p>
