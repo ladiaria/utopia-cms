@@ -577,10 +577,12 @@ def welcome(request, signup=False, subscribed=False):
     """
     if request.session.get('welcome'):
         request.session.pop('welcome')
+        # Get signup_mail from session if it exists (for SMS verification flow)
+        signup_mail = request.session.pop('signup_mail', None)
         return render(
             request,
             get_app_template("welcome.html"),
-            {'signup': signup, 'subscribed': subscribed, "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
+            {'signup': signup, 'subscribed': subscribed, 'signup_mail': signup_mail, "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
     else:
         return HttpResponseRedirect(reverse('home'))

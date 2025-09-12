@@ -78,4 +78,27 @@ THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED = [THEDAILY_SUBSCRIPTION_CAPTCHA
 # IPFS_TOKEN = ""
 
 # Set to True to use Google One Tap and forward login_hint, or False to use the default Google OAuth2 backend.
+<<<<<<< Updated upstream
 ENABLE_GOOGLE_ONE_TAP = False
+=======
+ENABLE_GOOGLE_ONE_TAP = False
+
+# Add GIGAN to subscription types
+THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
+    ('DDIGM', 'Suscripción digital'),
+    ('DDIGMFS', 'Suscripción digital + Fin de semana'),
+    ('PAPYDIM', 'Suscripción papel'),
+    ('LDFS', 'la diaria fin de semana'),
+    ('PAPYLAS', 'la diaria lunes a sábados'),
+    ('LENM', 'Revista Lento'),
+    ('LEMONDE', 'Le Monde diplomatique'),
+    ('GIGAN', 'Gigantes'),  # Children's magazine
+)
+
+# SMS Registration Settings
+THEDAILY_SMS_MAX_SEND_ATTEMPTS = 5          # Maximum SMS send attempts per email/phone
+THEDAILY_SMS_MAX_VERIFY_ATTEMPTS = 5        # Maximum code verification attempts per code
+THEDAILY_SMS_COOLDOWN_SECONDS = 30          # Seconds to wait between SMS sends  
+THEDAILY_SMS_AUTO_RESET_HOURS = 1           # Hours after which attempt counters reset automatically (0 to disable)
+THEDAILY_SMS_CODE_EXPIRY_MINUTES = 2        # Minutes after which SMS code expires
+>>>>>>> Stashed changes
