@@ -99,3 +99,8 @@ THEDAILY_SMS_COOLDOWN_SECONDS = 30          # Seconds to wait between SMS sends
 THEDAILY_SMS_AUTO_RESET_HOURS = 1           # Hours after which attempt counters reset automatically (0 to disable)
 THEDAILY_SMS_CODE_EXPIRY_MINUTES = 2        # Minutes after which SMS code expires
 
+# SMS Service Configuration (utopia_cms_ladiaria)
+SMS_USE_MOCK = False                        # Set to True for development, False for production
+SMS_API_KEY = 'CRM key here'                # Use same API key as CRM
+SMS_BASE_URL = 'http://localhost:8000'      # CRM base URL (without /api/)
+SMS_TIMEOUT = 30                            # Request timeout in seconds
