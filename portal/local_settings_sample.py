@@ -91,3 +91,17 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
     ('LEMONDE', 'Le Monde diplomatique'),
     ('GIGAN', 'Gigantes'),  # Children's magazine
 )
+
+
+# SMS Registration Settings
+THEDAILY_SMS_MAX_SEND_ATTEMPTS = 5          # Maximum SMS send attempts per email/phone
+THEDAILY_SMS_MAX_VERIFY_ATTEMPTS = 5        # Maximum code verification attempts per code
+THEDAILY_SMS_COOLDOWN_SECONDS = 30          # Seconds to wait between SMS sends
+THEDAILY_SMS_AUTO_RESET_HOURS = 1           # Hours after which attempt counters reset automatically (0 to disable)
+THEDAILY_SMS_CODE_EXPIRY_MINUTES = 2        # Minutes after which SMS code expires
+
+# SMS Service Configuration (utopia_cms_ladiaria)
+SMS_USE_MOCK = False                        # Set to True for development, False for production
+SMS_API_KEY = 'CRM key here'                # Use same API key as CRM
+SMS_BASE_URL = CRM_API_BASE_URI      # CRM base URL (without /api/)
+SMS_TIMEOUT = 30                            # Request timeout in seconds
