@@ -73,4 +73,4 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
                 return HttpResponseRedirect(reverse("login-error"))
             else:
                 OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
-        return HttpResponseRedirect('/usuarios/registrate/google/%s' % ('?is_new=1' if is_new else ""))
+        return HttpResponseRedirect('/usuarios/registrate/?step=2&google_flow=1&state=%s%s' % (state, '&is_new=1' if is_new else ""))

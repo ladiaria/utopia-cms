@@ -41,9 +41,13 @@ def index(request):
         # TypeError: when 'name' exists but isn't a string (e.g.: None, 123, etc.)
         pass
 
+    # Check if user just registered (from welcome URL parameter)
+    show_welcome_buttons = request.GET.get('welcome') == '1'
+
     context = {
         "unsubscribed_newsletters": unsubscribed_list,
         "show_newsletters_pill": True,
+        "show_welcome_buttons": show_welcome_buttons,
     }
 
     # If the user doesn't meet the conditions, add them to the context

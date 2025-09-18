@@ -30,6 +30,47 @@
 {% block content %}
   {% include 'profile/notification_box.html' %}
 
+  {% if show_welcome_buttons %}
+    <!-- Botones de bienvenida para usuarios recién registrados -->
+    <div style="text-align: center; margin: 40px 0; padding: 20px;">
+      <div style="display: inline-flex; gap: 15px;">
+        <button id="btn-ir-portada" style="
+          background-color: white;
+          color: #333;
+          border: 2px solid #333;
+          padding: 12px 24px;
+          border-radius: 25px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          text-decoration: none;
+          transition: all 0.3s ease;
+        " onmouseover="this.style.backgroundColor='#f5f5f5'" onmouseout="this.style.backgroundColor='white'">
+          IR A LA PORTADA
+        </button>
+
+        <button id="btn-continuar" style="
+          background-color: #333;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 25px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          text-decoration: none;
+          transition: background-color 0.3s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        " onmouseover="this.style.backgroundColor='#555'" onmouseout="this.style.backgroundColor='#333'">
+          CONTINUAR
+          <span style="font-size: 16px;">→</span>
+        </button>
+      </div>
+    </div>
+  {% endif %}
+
   {% if unsubscribed_newsletters %}
     <h1>Recibí por mail el contenido que te interesa</h1>
     <p class="deck">Cuando quieras desactivar alguna newsletter que ya recibas, podés hacerlo en <a href="{% url 'edit-profile' %}">tu perfil</a>.</p>
@@ -79,39 +120,27 @@
 
   <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", function() {
-      /*
-      {
-        userActivatedNewsletter: true,
-        numberOfDisplayed: 1|2|3|4|5...,
-        timestamp: 1755026312690
+
+
+      // Button redirects functionality for new buttons
+      const btnIrPortada = document.getElementById('btn-ir-portada');
+      const btnContinuar = document.getElementById('btn-continuar');
+
+      if (btnIrPortada) {
+        btnIrPortada.addEventListener('click', function() {
+          // Go to homepage
+          window.location.href = '/';
+        });
       }
-      */
-      {% if not user.is_anonymous  %}
-        function switchCallback(input) {
-          input.closest('.edit_profile_card__inner-section').classList.toggle('active');
 
-          // If user activate any input, storage a local storage item preventing to show the popup again
-          localStorage.setItem('landingPopupData', JSON.stringify({
-            userActivatedNewsletter: true
-          }));
+      if (btnContinuar) {
+        btnContinuar.addEventListener('click', function() {
+          // Go to welcome page
+          window.location.href = '/usuarios/bienvenida/';
+        });
+      }
 
-          if (!window.dataLayer) return;
-          window.dataLayer.push({
-            event: 'nlLandingSwitchChange',
-            isSubscriber: {{ is_subscriber_any|yesno:"true,false" }},
-            isLoggedIn: {{ user.is_authenticated|yesno:"true,false" }}
-          });
-        }
-        switch_change_events($('.grid-nl-cards .switch-container'), null, switchCallback);
-      {% else %}
-        const switches = document.querySelectorAll('.ld-switch');
 
-        for (let i = 0; i < switches.length; i++) {
-          switches[i].addEventListener("click", (e) => {
-            window.location.href = "{% url 'account-login' %}?next={{ request.path }}";
-          })
-        }
-      {% endif %}
     });
   </script>
 {% endblock %}
