@@ -48,10 +48,10 @@ def index(request):
         "unsubscribed_newsletters": unsubscribed_list,
         "show_newsletters_pill": True,
         "show_welcome_buttons": show_welcome_buttons,
+        "current_unsubscribed_nl": request.GET.get("nl", "")
     }
 
     # If the user doesn't meet the conditions, add them to the context
     if not user_can_subscribe:
         context["user"] = user
-
     return render(request, get_app_template("newsletters.html"), context)

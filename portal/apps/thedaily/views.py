@@ -2246,7 +2246,7 @@ def nlunsubscribe(request, publication_slug, hashed_id):
                 error_message = getattr(e, 'displaymessage', str(e))
                 ctx['error'] = error_message
                 return 'nlunsubscribe.html', ctx
-            return redirect('user_newsletters')
+            return redirect(f"{reverse('user_newsletters')}?nl={publication.newsletter_name or publication.name}")
     except IndexError:
         raise Http404
 
@@ -2275,7 +2275,7 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
                 error_message = getattr(e, 'displaymessage', str(e))
                 ctx['error'] = error_message
                 return 'nlunsubscribe.html', ctx
-        return redirect('user_newsletters')
+        return redirect(f"{reverse('user_newsletters')}?nl={category.name}")
     except IndexError:
         raise Http404
 
