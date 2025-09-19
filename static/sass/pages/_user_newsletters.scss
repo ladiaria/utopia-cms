@@ -24,6 +24,20 @@ body.user-newsletters {
     font-size: px-to-rem(18px);
   }
 
+  .welcome-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-top: 40px;
+
+    a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: px-to-rem(44px);
+    }
+  }
+
   .grid-nl-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
