@@ -30,47 +30,6 @@
 {% block content %}
   {% include 'profile/notification_box.html' %}
 
-  {% if show_welcome_buttons %}
-    <!-- Botones de bienvenida para usuarios recién registrados -->
-    <div style="text-align: center; margin: 40px 0; padding: 20px;">
-      <div style="display: inline-flex; gap: 15px;">
-        <button id="btn-ir-portada" style="
-          background-color: white;
-          color: #333;
-          border: 2px solid #333;
-          padding: 12px 24px;
-          border-radius: 25px;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          text-decoration: none;
-          transition: all 0.3s ease;
-        " onmouseover="this.style.backgroundColor='#f5f5f5'" onmouseout="this.style.backgroundColor='white'">
-          IR A LA PORTADA
-        </button>
-
-        <button id="btn-continuar" style="
-          background-color: #333;
-          color: white;
-          border: none;
-          padding: 12px 24px;
-          border-radius: 25px;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          text-decoration: none;
-          transition: background-color 0.3s ease;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-        " onmouseover="this.style.backgroundColor='#555'" onmouseout="this.style.backgroundColor='#333'">
-          CONTINUAR
-          <span style="font-size: 16px;">→</span>
-        </button>
-      </div>
-    </div>
-  {% endif %}
-
   {% if unsubscribed_newsletters %}
     {% if current_unsubscribed_nl %}
       <h1>Ya no recibirás la newsletter "{{ current_unsubscribed_nl }}"</h1>
@@ -79,7 +38,20 @@
     {% else %}
       <h1>Recibí por mail el contenido que te interesa</h1>
       <p class="deck">Cuando quieras desactivar alguna newsletter que ya recibas, podés hacerlo en <a href="{% url 'edit-profile' %}">tu perfil</a>.</p>
+
+      {% if show_welcome_buttons %}
+        <div class="welcome-btns">
+          <a href="{% url 'account-welcome' %}" class="ut-btn">
+            <span>Continuar</span>
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0.860651 1.67678L2.09848 0.440114L8.84065 7.17995C8.94933 7.28794 9.03558 7.41636 9.09444 7.55782C9.15329 7.69928 9.18359 7.85098 9.18359 8.0042C9.18359 8.15741 9.15329 8.30911 9.09444 8.45057C9.03558 8.59203 8.94933 8.72045 8.84065 8.82844L2.09848 15.5718L0.861818 14.3351L7.18982 8.00594L0.860651 1.67678Z" fill="white"/>
+            </svg>
+          </a>
+          <a href="{% url 'home' %}" class="ut-btn ut-btn-outline">Ir a la portada</a>
+        </div>
+      {% endif %}
     {% endif %}
+
     <div class="grid-nl-cards">
       {% for nl_item in unsubscribed_newsletters %}
         <div class="edit_profile_card__inner-section">
@@ -123,30 +95,4 @@
   {% if not user.is_anonymous  %}
     <script src="{% static 'js/switch_change_events.js' %}"></script>
   {% endif %}
-
-  <script type="text/javascript">
-    document.addEventListener("DOMContentLoaded", function() {
-
-
-      // Button redirects functionality for new buttons
-      const btnIrPortada = document.getElementById('btn-ir-portada');
-      const btnContinuar = document.getElementById('btn-continuar');
-
-      if (btnIrPortada) {
-        btnIrPortada.addEventListener('click', function() {
-          // Go to homepage
-          window.location.href = '/';
-        });
-      }
-
-      if (btnContinuar) {
-        btnContinuar.addEventListener('click', function() {
-          // Go to welcome page
-          window.location.href = '/usuarios/bienvenida/';
-        });
-      }
-
-
-    });
-  </script>
 {% endblock %}
