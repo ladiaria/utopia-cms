@@ -573,13 +573,19 @@ def signup(request):
 @never_cache
 def welcome(request, signup=False, subscribed=False):
     """
-    welcome page, will be rendered only if welcome in session has a value, otherwise will be redirected to home.
+    welcome page, will be rendered only if welcome in session has a value OR activated=1 parameter, otherwise will be redirected to home.
     """
-    if request.session.get('welcome'):
-        request.session.pop('welcome')
-        # Get signup_mail from session if it exists (for SMS verification flow)
+    # Check both session (for SMS flow) and URL parameter (for email activation)
+    has_welcome_session = request.session.get('welcome')
+    is_activated = request.GET.get('activated') == '1'
+
+    if has_welcome_session or is_activated:
+        # Clean session data if present
+        if has_welcome_session:
+            request.session.pop('welcome')
         signup_mail = request.session.pop('signup_mail', None)
         email_error = request.session.pop('email_error', None)
+
         return render(
             request,
             get_app_template("welcome.html"),
@@ -1077,16 +1083,13 @@ def complete_signup(request, user_id, hash):
             {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
 
-    request.session['welcome'] = 'account-welcome' + ('-s' if is_subscriber_any else '')
-
+    # Use URL parameter instead of session to avoid session loss between redirects
     if not user.has_usable_password():
         # email is valid, so, generate pass token and redirect to change form
         return HttpResponseRedirect(get_password_validation_url(user))
 
-    if is_subscriber_any:
-        return HttpResponseRedirect(reverse('account-welcome-s'))
-    else:
-        return HttpResponseRedirect(reverse('account-welcome'))
+    welcome_url = reverse('account-welcome-s' if is_subscriber_any else 'account-welcome')
+    return HttpResponseRedirect(f"{welcome_url}?activated=1")
 
 
 @never_cache
