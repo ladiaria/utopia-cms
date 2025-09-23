@@ -604,7 +604,7 @@ if ENABLE_GOOGLE_ONE_TAP:
         "/usuarios/suscribite/",
         "/usuarios/restablecer/",
         "/usuarios/registrate/google/",
-        "usuarios/verificar-email/",
+        "/usuarios/verificar-email/",
         "/usuarios/registrate/?step=2",
         "/usuarios/registrate/?step=2.5",
         "/usuarios/registrate/?step=3",
