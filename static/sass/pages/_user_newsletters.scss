@@ -61,11 +61,11 @@ body.user-newsletters {
     }
 
     h1 {
-      font-size: px-to-rem(24px);
+      font-size: px-to-rem(26px);
     }
 
     p.deck {
-      font-size: px-to-rem(16px);
+      font-size: px-to-rem(15px);
     }
 
     .welcome-page-header {
@@ -76,7 +76,13 @@ body.user-newsletters {
       padding-top: 40px;
       flex-direction: column-reverse;
       align-items: flex-start;
-      width: 100%;
+      width: max-content;
+      align-self: flex-start;
+
+      a.ut-btn:not(.ut-btn-outline) {
+        width: 100%;
+        justify-content: center;
+      }
     }
 
     .grid-nl-cards {
