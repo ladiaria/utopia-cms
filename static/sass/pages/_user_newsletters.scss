@@ -16,7 +16,7 @@ body.user-newsletters {
 
   h1 {
     font-size: px-to-rem(28px);
-    padding-bottom: 12px;
+    padding-bottom: 16px;
   }
 
   p.deck {
@@ -24,11 +24,16 @@ body.user-newsletters {
     font-size: px-to-rem(18px);
   }
 
+  .welcome-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
   .welcome-btns {
     display: flex;
     flex-wrap: wrap;
     gap: 16px;
-    padding-top: 40px;
 
     a {
       display: flex;
@@ -61,6 +66,17 @@ body.user-newsletters {
 
     p.deck {
       font-size: px-to-rem(16px);
+    }
+
+    .welcome-page-header {
+      flex-direction: column;
+    }
+
+    .welcome-btns {
+      padding-top: 40px;
+      flex-direction: column-reverse;
+      align-items: flex-start;
+      width: 100%;
     }
 
     .grid-nl-cards {
