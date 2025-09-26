@@ -16,12 +16,31 @@ body.user-newsletters {
 
   h1 {
     font-size: px-to-rem(28px);
-    padding-bottom: 12px;
+    padding-bottom: 16px;
   }
 
   p.deck {
     color: #4f4f4f;
     font-size: px-to-rem(18px);
+  }
+
+  .welcome-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .welcome-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: px-to-rem(44px);
+    }
   }
 
   .grid-nl-cards {
@@ -42,11 +61,28 @@ body.user-newsletters {
     }
 
     h1 {
-      font-size: px-to-rem(24px);
+      font-size: px-to-rem(26px);
     }
 
     p.deck {
-      font-size: px-to-rem(16px);
+      font-size: px-to-rem(15px);
+    }
+
+    .welcome-page-header {
+      flex-direction: column;
+    }
+
+    .welcome-btns {
+      padding-top: 40px;
+      flex-direction: column-reverse;
+      align-items: flex-start;
+      width: max-content;
+      align-self: flex-start;
+
+      a.ut-btn:not(.ut-btn-outline) {
+        width: 100%;
+        justify-content: center;
+      }
     }
 
     .grid-nl-cards {
