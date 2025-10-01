@@ -92,7 +92,6 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
     ('LENM', 'Revista Lento'),
     ('LEMONDE', 'Le Monde diplomatique'),
     ('GIGAN', 'Gigantes'),  # Children's magazine
-
 )
 
 

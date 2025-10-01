@@ -10,6 +10,29 @@ from django.contrib.auth.models import User
 from thedaily.models import OAuthState
 from thedaily.utils import get_or_create_user_profile, subscribe_log
 
+USER_FIELDS = ["username", "email"]
+
+
+def create_user_inactive(strategy, details, backend, user=None, *args, **kwargs):
+    """
+    Create user with is_active=False for new Google OAuth users.
+    They will be activated after SMS verification.
+    """
+    if user:
+        return {"is_new": False}
+
+    fields = {
+        name: kwargs.get(name, details.get(name))
+        for name in backend.setting("USER_FIELDS", USER_FIELDS)
+    }
+    if not fields:
+        return
+
+    # Create user with is_active=False
+    fields['is_active'] = False
+
+    return {"is_new": True, "user": strategy.create_user(**fields)}
+
 
 class AuthIntegrityError(AuthException):
     def __str__(self):

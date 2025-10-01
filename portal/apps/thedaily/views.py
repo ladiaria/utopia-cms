@@ -427,16 +427,18 @@ def login(request, product_slug=None, product_variant=None):
                                     check_password_strength(password, user)
                                 except ValidationError:
                                     mail_managers(
-                                        "Weak password for staff user", f"User: {user}, Id: {user.id}", fail_silently=True
+                                        "Weak password for staff user", f"User: {user}, Id: {user.id}",
+                                        fail_silently=True
                                     )
                             # Set backend for multiple authentication backends
                             user.backend = 'django.contrib.auth.backends.ModelBackend'
                             do_login(request, user)
                             request.session.pop('next', None)
                             # also remove possible unfinished google sign-in information from the session, if not,
-                            # the social pipelines will try to finish and an error will be raised regarding to the conflict
-                            # between the user that just logged-in and the user that has this "unfinished" google signin
-                            # attempt.
+                            # the social pipelines will try to finish and an error will be raised regarding to the
+                            # conflict between the user that just logged-in and the user that has this "unfinished"
+                            # google signin attempt.
+
                             request.session.pop("google-oauth2_state", None)
                             request.session.modified = True
                             # terms and conds acceptance save
@@ -473,7 +475,10 @@ def login(request, product_slug=None, product_variant=None):
                             # 3b. Si falta activar email → mostrar mensaje con enlace para reenviar
                             else:
                                 confirm_url = reverse('account-confirm_email') + '?email=' + existing_user.email
-                                login_error = 'Tu cuenta no está activada. Revisá tu correo y seguí el enlace. <a href="{}">Reenviar mail</a>'.format(confirm_url)
+                                login_error = (
+                                    'Tu cuenta no está activada. Revisá tu correo y seguí el enlace para activarla. '
+                                    '<a href="{}">Reenviar mail</a>'.format(confirm_url)
+                                )
 
                     # Si contraseña incorrecta
                     else:
@@ -610,7 +615,8 @@ def signup(request):
 @never_cache
 def welcome(request, signup=False, subscribed=False):
     """
-    welcome page, will be rendered only if welcome in session has a value OR activated=1 parameter, otherwise will be redirected to home.
+    welcome page, will be rendered only if welcome in session has a value OR activated=1 parameter,
+    otherwise will be redirected to home.
     """
     # Check both session (for SMS flow) and URL parameter (for email activation)
     has_welcome_session = request.session.get('welcome')

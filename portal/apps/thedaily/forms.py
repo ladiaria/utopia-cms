@@ -762,7 +762,7 @@ class PhoneSubscriptionForm(CrispyForm):
             HTML('<h3 class="small">Tus datos</h3>'),
             "full_name",
             "phone",
-            HTML('<div class="row">'),  # next field will close this div tag
+            HTML('<div class="">'),  # next field will close this div tag
             Field('preferred_time', template='preferred_time_visible.html'),
             HTML('<div class="ld-block--sm align-center">'),
             FormActions(Submit('save', 'Enviar', css_class='ut-btn ut-btn-l')),
