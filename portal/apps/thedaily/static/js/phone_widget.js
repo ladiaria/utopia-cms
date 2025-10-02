@@ -24,13 +24,13 @@ function phone_widget(
       if (extra_options) {
         Object.assign(options, extra_options);
       }
-      const iti = window.intlTelInput(input, options);
+      const intlTelInput = window.intlTelInput(input, options);
       input.addEventListener("countrychange", function (e) {
         e.target.value = "";
       });
       input.addEventListener("keyup", function (e) {
-        let val = iti.getNumber();
-        input.setCustomValidity(required && !val || val && !iti.isValidNumber() ? "Formato incorrecto" : "");
+        let val = intlTelInput.getNumber();
+        input.setCustomValidity(required && !val || val && !intlTelInput.isValidNumber() ? "Formato incorrecto" : "");
       });
       input.dispatchEvent(new CustomEvent("phone-widget-ready", {
           detail: { intlTelInput }  // podés pasar la instancia si querés
