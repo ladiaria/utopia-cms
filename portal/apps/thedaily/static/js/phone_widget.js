@@ -4,7 +4,6 @@ function phone_widget(
 ) {
 
   import(intl_tel_input_cdn + "js/i18n/" + local_lang + "/index.js").then(module => {
-
     const { default: allTranslations } = module;
     const input = document.querySelector("#id_phone");
     if (input) {
@@ -35,6 +34,9 @@ function phone_widget(
         let value = intlTelInput.getNumber();
         input.setCustomValidity(required && !value || value && !intlTelInput.isValidNumber() ? "Formato incorrecto" : "");
       });
+      input.dispatchEvent(new CustomEvent("phone-widget-ready", {
+          detail: { iti }  // podés pasar la instancia si querés
+      }));
     }
   });
 }
