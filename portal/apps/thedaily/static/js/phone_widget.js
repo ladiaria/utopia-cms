@@ -33,7 +33,7 @@ function phone_widget(
         input.setCustomValidity(required && !val || val && !intlTelInput.isValidNumber() ? "Formato incorrecto" : "");
       });
       input.dispatchEvent(new CustomEvent("phone-widget-ready", {
-          detail: { intlTelInput }
+        detail: { intlTelInput }
       }));
     }
   });
