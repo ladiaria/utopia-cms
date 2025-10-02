@@ -35,7 +35,7 @@ function phone_widget(
         input.setCustomValidity(required && !value || value && !intlTelInput.isValidNumber() ? "Formato incorrecto" : "");
       });
       input.dispatchEvent(new CustomEvent("phone-widget-ready", {
-          detail: { iti }  // podés pasar la instancia si querés
+          detail: { intlTelInput }  // podés pasar la instancia si querés
       }));
     }
   });
