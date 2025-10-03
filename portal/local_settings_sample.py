@@ -107,3 +107,14 @@ SMS_USE_MOCK = False                        # Set to True for development, False
 SMS_API_KEY = 'CRM key here'                # Use same API key as CRM
 SMS_BASE_URL = CRM_API_BASE_URI      # CRM base URL (without /api/)
 SMS_TIMEOUT = 30                            # Request timeout in seconds
+
+# SMS Smart Routing Configuration
+# When enabled, Uruguay numbers use CRM SMS service, international numbers use Twilio
+SMS_USE_SMART_ROUTING = True                       # Set to True to enable smart routing
+
+
+# Twilio Configuration (for international SMS when smart routing is enabled)
+# Get these credentials from: https://console.twilio.com/
+TWILIO_ACCOUNT_SID = ''        # Your Twilio Account SID (e.g., 'ACxxxxx...')
+TWILIO_AUTH_TOKEN = ''           # Your Twilio Auth Token (keep secret!)
+TWILIO_FROM_NUMBER = ''                              # Your Twilio phone number (e.g., '+1234567890')
