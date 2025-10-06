@@ -534,7 +534,7 @@ SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.user.get_username",
     "libs.social_auth_pipeline.check_email_in_use",
     "social_core.pipeline.social_auth.associate_by_email",
-    "social_core.pipeline.user.create_user",
+    "libs.social_auth_pipeline.create_user_inactive",  # Create user with is_active=False
     "libs.social_auth_pipeline.get_phone_number",
     "social_core.pipeline.social_auth.associate_user",
     "social_core.pipeline.social_auth.load_extra_data",
@@ -604,6 +604,10 @@ if ENABLE_GOOGLE_ONE_TAP:
         "/usuarios/suscribite/",
         "/usuarios/restablecer/",
         "/usuarios/registrate/google/",
+        "/usuarios/verificar-email/",
+        "/usuarios/registrate/?step=2",
+        "/usuarios/registrate/?step=2.5",
+        "/usuarios/registrate/?step=3",
     ]
     
     # =============================================================================

@@ -10,6 +10,29 @@ from django.contrib.auth.models import User
 from thedaily.models import OAuthState
 from thedaily.utils import get_or_create_user_profile, subscribe_log
 
+USER_FIELDS = ["username", "email"]
+
+
+def create_user_inactive(strategy, details, backend, user=None, *args, **kwargs):
+    """
+    Create user with is_active=False for new Google OAuth users.
+    They will be activated after SMS verification.
+    """
+    if user:
+        return {"is_new": False}
+
+    fields = {
+        name: kwargs.get(name, details.get(name))
+        for name in backend.setting("USER_FIELDS", USER_FIELDS)
+    }
+    if not fields:
+        return
+
+    # Create user with is_active=False
+    fields['is_active'] = False
+
+    return {"is_new": True, "user": strategy.create_user(**fields)}
+
 
 class AuthIntegrityError(AuthException):
     def __str__(self):
@@ -41,11 +64,61 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
               this doesn't seem to be the right way, we believe that the "partial" approach is the right solution.
     """
     subscriber, is_new = get_or_create_user_profile(user), kwargs.get('is_new')
+
+    # Add default newsletters and populate name data for new Google users
+    if is_new:
+        from utopia_cms_ladiaria.utils import add_default_newsletters_for_new_user
+
+        request = kwargs.get('request')
+        details = kwargs.get('details', {})
+
+        if request:
+            subscribe_log(request, f'Adding default newsletters for new Google user: {user.email}')
+
+        # Populate first_name and last_name from Google data
+        try:
+            first_name = details.get('first_name', '').strip()
+            last_name = details.get('last_name', '').strip()
+
+            # If first/last name not available, try to split fullname
+            if not first_name and not last_name:
+                fullname = details.get('fullname') or details.get('full_name', '')
+                if fullname:
+                    name_parts = fullname.strip().split(' ', 1)
+                    first_name = name_parts[0] if name_parts else ''
+                    last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+            # Update user's name fields if we have the data
+            if first_name or last_name:
+                user.first_name = first_name
+                user.last_name = last_name
+                user.save()
+
+                if request:
+                    subscribe_log(request, f'Updated name for Google user {user.email}: {first_name} {last_name}')
+
+        except Exception as exc:
+            if request:
+                subscribe_log(request, f'Error updating name for Google user {user.email}: {exc}')
+            # Don't fail the login process if name update fails
+
+        # Add default newsletters using centralized function
+        try:
+            add_default_newsletters_for_new_user(subscriber, extra_category=None)
+
+            if request:
+                subscribe_log(request, f'Default newsletters added successfully. User: {user.email}')
+        except Exception as exc:
+            if request:
+                subscribe_log(request, f'Error adding newsletters for new Google user {user.email}: {exc}')
+            # Don't fail the login process if newsletters fail
     # The "missing data" form is shown when any of the following conditions is met:
     # 1. This is a new user and the user has no phone number and the phone number is required by settings.
-    # 2. T&C are configured, assumed not to be accepted by default in google and the user has not accepted them yet.
+    # 2. This is an existing user but inactive (missing phone number) - CASO 1: CUENTA NO ACTIVA
+    # 3. T&C are configured, assumed not to be accepted by default in google and the user has not accepted them yet.
     if (
         (settings.THEDAILY_GOOGLE_OAUTH2_ASK_PHONE and not subscriber.phone and is_new)
+        or (settings.THEDAILY_GOOGLE_OAUTH2_ASK_PHONE and not subscriber.phone and not user.is_active)  # CASO 1
         or (settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID and not subscriber.terms_and_conds_accepted)
     ):
         request = kwargs['request']
@@ -73,4 +146,4 @@ def get_phone_number(backend, uid, user=None, social=None, *args, **kwargs):
                 return HttpResponseRedirect(reverse("login-error"))
             else:
                 OAuthState.objects.create(user=user, state=state, fullname=kwargs['details'].get('fullname'))
-        return HttpResponseRedirect('/usuarios/registrate/google/%s' % ('?is_new=1' if is_new else ""))
+        return HttpResponseRedirect('/usuarios/registrate/?step=2&google_flow=1&state=%s%s' % (state, '&is_new=1' if is_new else ""))
