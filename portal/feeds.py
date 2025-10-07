@@ -124,6 +124,9 @@ class LatestArticles(Feed):
             else:
                 image_url = getattr(photo, 'url', None)
 
+        if image_url and image_url.startswith("/"):
+            image_url = f"{settings.URL_SCHEME}://{settings.SITE_DOMAIN}{image_url}"
+
         sections = item.get_sections()
         if hasattr(sections, 'values_list'):
             categories_cdata = list(sections.values_list('name', flat=True))
