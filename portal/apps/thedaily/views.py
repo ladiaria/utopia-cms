@@ -415,7 +415,7 @@ def login(request, product_slug=None, product_variant=None):
 
                 # First check if user exists, regardless of active status
                 try:
-                    existing_user = User.objects.get(email__iexact=login_form.username)
+                    existing_user = User.objects.get(username=login_form.username)
 
                     # Check if password is correct
                     if existing_user.check_password(password):
