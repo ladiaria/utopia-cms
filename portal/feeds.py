@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+from datetime import timedelta
+
 from django.conf import settings
 from django.contrib.syndication.views import Feed
 from django.shortcuts import get_object_or_404
-from django.utils.feedgenerator import Rss201rev2Feed
+from django.utils import timezone
+from django.utils.feedgenerator import Rss201rev2Feed, rfc2822_date
 
 from libs.utils import get_site_name
 from core.models import Article, get_current_edition, get_current_feeds, Journalist, Section, Supplement, Edition
@@ -10,6 +13,14 @@ from core.templatetags.ldml import ldmarkup, cleanhtml
 
 
 site_name = get_site_name()
+
+
+def _cdata_element(handler, tag, text):
+    """Escribe una etiqueta completa con CDATA, segura para Django 4.2."""
+    if text is None:
+        return
+    safe = str(text).replace("]]>", "]]]]><![CDATA[>")
+    handler._write(f"<{tag}><![CDATA[{safe}]]></{tag}>")
 
 
 class MinimalImageRSSFeed(Rss201rev2Feed):
@@ -25,26 +36,44 @@ class MinimalImageRSSFeed(Rss201rev2Feed):
         return attrs
 
     def add_item_elements(self, handler, item):
-        super().add_item_elements(handler, item)
+        guid = item.get('unique_id')
+        if guid:
+            is_perm = item.get('unique_id_is_permalink')
+            attrs = {}
+            if is_perm is not None:
+                attrs['isPermaLink'] = 'true' if is_perm else 'false'
+            handler.addQuickElement('guid', guid, attrs)
+
+        pubdate = item.get('pubdate')
+        if pubdate:
+            pubdate = timezone.localtime(pubdate)
+            handler.addQuickElement('pubDate', rfc2822_date(pubdate))
+
+        title = item.get('title')
+        if title:
+            _cdata_element(handler, 'title', title)
+
+        description = item.get('description')
+        if description:
+            _cdata_element(handler, 'description', description)
 
         image_url = item.get('image_url')
+        image_title = item.get('image_title')
         if image_url:
-            handler.startElement('image:image', {})
+            handler._write("<image:image>")
             handler.addQuickElement('image:loc', image_url)
-            image_title = item.get('image_title')
             if image_title:
-                handler.startElement('image:title', {})
-                handler._write('<![CDATA[' + str(image_title) + ']]>')
-                handler.endElement('image:title')
-            handler.endElement('image:image')
+                _cdata_element(handler, 'image:title', image_title)
+            handler._write("</image:image>")
 
         categories = item.get('categories_cdata') or []
         for cat in categories:
-            if not cat:
-                continue
-            handler.startElement('category', {})
-            handler._write('<![CDATA[' + str(cat) + ']]>')
-            handler.endElement('category')
+            if cat:
+                _cdata_element(handler, 'category', cat)
+
+        link = item.get('link')
+        if link:
+            handler.addQuickElement('link', link)
 
 
 class LatestArticles(Feed):
@@ -110,6 +139,18 @@ class LatestArticles(Feed):
             'image_title': image_title,
             'categories_cdata': categories_cdata,
         }
+
+
+class LatestArticles72hs(LatestArticles):
+    title = f"{site_name}"
+    description = f"Artículos publicados en las últimas 72 horas en {site_name}."
+
+    def feed_url(self):
+        return f"{settings.URL_SCHEME}://{settings.SITE_DOMAIN}/feeds/articulos_rss_72hs.xml"
+
+    def items(self):
+        cutoff = timezone.localtime(timezone.now()) - timedelta(hours=72)
+        return Article.published.filter(date_published__gte=cutoff).order_by('-date_published')
 
 
 class LatestArticlesByCategory(Feed):

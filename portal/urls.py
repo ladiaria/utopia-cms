@@ -361,10 +361,18 @@ try:
 except (ProgrammingError, Site.DoesNotExist):
     pass
 else:
-    from feeds import ArticlesByJournalist, LatestArticlesByCategory, LatestEditions, LatestSupplements, LatestArticles
+    from feeds import (
+        ArticlesByJournalist,
+        LatestArticlesByCategory,
+        LatestEditions,
+        LatestSupplements,
+        LatestArticles,
+        LatestArticles72hs
+    )
     urlpatterns += [
         path('feeds/articulos/', LatestArticles(), name='ultimos-articulos-rss'),
         path('feeds/ediciones/', LatestEditions()),
+        re_path(r'^feeds/articulos_rss_72hs\.xml$', LatestArticles72hs(), name='articles_rss_72hs'),
         re_path(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
         re_path(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
         path('feeds/suplementos/', LatestSupplements()),
