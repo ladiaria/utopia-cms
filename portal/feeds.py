@@ -11,7 +11,6 @@ from libs.utils import get_site_name
 from core.models import Article, get_current_edition, get_current_feeds, Journalist, Section, Supplement, Edition
 from core.templatetags.ldml import ldmarkup, cleanhtml
 
-
 site_name = get_site_name()
 
 
@@ -34,6 +33,16 @@ class MinimalImageRSSFeed(Rss201rev2Feed):
             'xmlns:image': 'http://www.google.com/schemas/sitemap-image/1.1',
         })
         return attrs
+
+    def add_root_elements(self, handler):
+        super().add_root_elements(handler)
+        feed_url = self.feed.get('feed_url')
+        if feed_url:
+            handler.addQuickElement('atom:link', None, {
+                'href': feed_url,
+                'rel': 'self',
+                'type': 'application/rss+xml',
+            })
 
     def add_item_elements(self, handler, item):
         guid = item.get('unique_id')
@@ -148,8 +157,11 @@ class LatestArticles72hs(LatestArticles):
     title = f"{site_name}"
     description = f"Artículos publicados en las últimas 72 horas en {site_name}."
 
-    def feed_url(self):
+    def link(self):
         return f"{settings.URL_SCHEME}://{settings.SITE_DOMAIN}/feeds/articulos_rss_72hs.xml"
+
+    def feed_url(self):
+        return self.link()
 
     def items(self):
         cutoff = timezone.localtime(timezone.now()) - timedelta(hours=72)
