@@ -113,6 +113,10 @@ class LatestArticles(Feed):
     def item_pubdate(self, item):
         return item.date_published
 
+    def item_author_name(self, item):
+        authors = item.get_authors()
+        return authors[0] if authors else ""
+
     def item_categories(self, item):
         return []
 
@@ -157,11 +161,8 @@ class LatestArticles72hs(LatestArticles):
     title = f"{site_name}"
     description = f"Artículos publicados en las últimas 72 horas en {site_name}."
 
-    def link(self):
-        return f"{settings.URL_SCHEME}://{settings.SITE_DOMAIN}/feeds/articulos_rss_72hs.xml"
-
     def feed_url(self):
-        return self.link()
+        return f"{settings.URL_SCHEME}://{settings.SITE_DOMAIN}/feeds/articulos_rss_72hs.xml"
 
     def items(self):
         cutoff = timezone.localtime(timezone.now()) - timedelta(hours=72)
