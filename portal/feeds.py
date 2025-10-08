@@ -36,13 +36,6 @@ class MinimalImageRSSFeed(Rss201rev2Feed):
 
     def add_root_elements(self, handler):
         super().add_root_elements(handler)
-        feed_url = self.feed.get('feed_url')
-        if feed_url:
-            handler.addQuickElement('atom:link', None, {
-                'href': feed_url,
-                'rel': 'self',
-                'type': 'application/rss+xml',
-            })
 
     def add_item_elements(self, handler, item):
         guid = item.get('unique_id')
