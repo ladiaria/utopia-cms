@@ -109,3 +109,23 @@ SMS_BASE_URL = 'http://localhost:8000'      # CRM base URL (without /api/)
 SMS_TIMEOUT = 30                            # Request timeout in seconds
 SMS_BASE_URL = CRM_API_BASE_URI      # CRM base URL (without /api/)
 SMS_TIMEOUT = 30                            # Request timeout in seconds
+
+# SMS Smart Routing Configuration
+# When enabled, configured country codes use CRM SMS service, others use Twilio
+SMS_USE_SMART_ROUTING = True                       # Set to True to enable smart routing
+
+# Country codes that use CRM SMS service (when smart routing is enabled)
+# Dictionary: {country_code: country_name} - codes WITHOUT the + prefix
+SMS_CRM_COUNTRY_CODES = {
+    '54': 'Argentina',
+    '55': 'Brasil',
+    '56': 'Chile',
+    '598': 'Uruguay',
+    '1': 'USA/Canada',
+}
+
+# Twilio Configuration (for international SMS when smart routing is enabled)
+# Get these credentials from: https://console.twilio.com/
+TWILIO_ACCOUNT_SID = ''        # Your Twilio Account SID (e.g., 'ACxxxxx...')
+TWILIO_AUTH_TOKEN = ''           # Your Twilio Auth Token (keep secret!)
+TWILIO_FROM_NUMBER = ''                              # Your Twilio phone number (e.g., '+1234567890')

@@ -59,6 +59,10 @@ class MinimalImageRSSFeed(Rss201rev2Feed):
         if description:
             _cdata_element(handler, 'description', description)
 
+        author = item.get('author_name')
+        if author:
+            _cdata_element(handler, 'dc:creator', author)
+
         image_url = item.get('image_url')
         image_title = item.get('image_title')
         if image_url:
