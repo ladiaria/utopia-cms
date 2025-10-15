@@ -70,6 +70,7 @@ INSTALLED_APPS = (
     "django.contrib.sites",
     "django.contrib.redirects",
     "audiologue",
+    "utopia_cms_radio",
     "tagging",
     "core.config.CoreConfig",
     "core.attachments",
