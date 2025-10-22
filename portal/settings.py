@@ -70,7 +70,6 @@ INSTALLED_APPS = (
     "django.contrib.sites",
     "django.contrib.redirects",
     "audiologue",
-    "utopia_cms_radio",
     "tagging",
     "core.config.CoreConfig",
     "core.attachments",
@@ -80,6 +79,7 @@ INSTALLED_APPS = (
     # 'memcached',  TODO: replace this removed repo app with this app: https://github.com/bartTC/django-memcache-status
     "shoutbox",
     "thedaily",
+    "utopia_cms_radio",  # After thedaily to allow direct imports from thedaily.models
     "videologue",
     "short",
     "adzone",
@@ -585,6 +585,7 @@ PHONENUMBER_DEFAULT_REGION = None
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 ENABLE_GOOGLE_ONE_TAP = False
+JWT_ENABLED = False  # Enable JWT authentication for REST API (override in local_settings.py)
 
 # ====================================================================================== visual separator =============
 
@@ -610,7 +611,7 @@ if ENABLE_GOOGLE_ONE_TAP:
         "/usuarios/registrate/?step=2.5",
         "/usuarios/registrate/?step=3",
     ]
-    
+
     # =============================================================================
     # Google One Tap Configuration
     # =============================================================================
@@ -720,3 +721,27 @@ if "THEDAILY_SUBSCRIPTION_TYPE_DEFAULT" not in locals():
         THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0] if THEDAILY_SUBSCRIPTION_TYPE_CHOICES else None
 if THEDAILY_DEBUG_SIGNALS is None:
     THEDAILY_DEBUG_SIGNALS = DEBUG
+
+# =============================================================================
+# JWT Authentication Configuration (conditional)
+# =============================================================================
+# Apply JWT configuration if JWT_ENABLED is True in local_settings
+if JWT_ENABLED:
+    # Add JWT apps to INSTALLED_APPS
+    INSTALLED_APPS += (
+        'rest_framework_simplejwt',
+        'rest_framework_simplejwt.token_blacklist',
+        'corsheaders',
+    )
+
+    # Prepend JWT authentication to REST_FRAMEWORK
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ) + REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES']
+
+    # Add JWT CSRF exempt middleware (BEFORE CsrfViewMiddleware at position 8)
+    # This exempts JWT auth endpoints from CSRF verification
+    MIDDLEWARE = MIDDLEWARE[:8] + ("utopia_cms_radio.middleware.JWTAuthCSRFExemptMiddleware",) + MIDDLEWARE[8:]
+
+    # Note: CORS middleware is already added at line 664 when DEBUG=True
+    # No need to add it again here to avoid duplication

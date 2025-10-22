@@ -127,3 +127,130 @@ SMS_CRM_COUNTRY_CODES = {
 TWILIO_ACCOUNT_SID = ''        # Your Twilio Account SID (e.g., 'ACxxxxx...')
 TWILIO_AUTH_TOKEN = ''           # Your Twilio Auth Token (keep secret!)
 TWILIO_FROM_NUMBER = ''                              # Your Twilio phone number (e.g., '+1234567890')
+
+# =============================================================================
+# JWT Authentication Configuration (djangorestframework-simplejwt)
+# =============================================================================
+# Enable JWT authentication for REST API (consumed by external clients like Next.js apps)
+# Set to True to enable, False to disable.
+JWT_ENABLED = True
+
+# IMPORTANT: After enabling JWT_ENABLED for the first time, run migrations:
+#   python manage.py migrate token_blacklist
+#
+# Configuration for JWT tokens (only used if JWT_ENABLED=True)
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    # Token Lifetimes
+    # ---------------
+    # Access token: Short-lived token sent in Authorization header for each API request.
+    # Recommended: 15 minutes (modern security standard).
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+
+    # Refresh token: Long-lived token used to obtain new access tokens when they expire.
+    # Stored as HttpOnly cookie (not accessible by JavaScript for security).
+    # Recommended: 7 days.
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+
+    # Token Rotation (Security Feature)
+    # ----------------------------------
+    # When True: Each time a refresh token is used, a NEW refresh token is generated
+    # and the old one is invalidated. This prevents token reuse attacks.
+    'ROTATE_REFRESH_TOKENS': True,
+
+    # When True: Old refresh tokens are added to a blacklist after rotation,
+    # preventing their reuse even if stolen. Requires the token_blacklist app.
+    'BLACKLIST_AFTER_ROTATION': True,
+
+    # Algorithm and Signing
+    # ---------------------
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': None,  # Uses settings.SECRET_KEY by default
+
+    # Token Headers
+    # -------------
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+
+    # Custom Serializers
+    # ------------------
+    # Override to add custom claims (e.g., is_subscriber, email, name)
+    'TOKEN_OBTAIN_SERIALIZER': 'utopia_cms_radio.serializers.CustomTokenObtainPairSerializer',
+
+    # User Identification
+    # -------------------
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+
+    # Token Types
+    # -----------
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+}
+
+# =============================================================================
+# CORS Configuration (django-cors-headers)
+# =============================================================================
+# Configure Cross-Origin Resource Sharing to allow API requests from your Next.js frontend.
+# IMPORTANT: Only add trusted domains to prevent unauthorized access.
+#
+# For development (localhost):
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",      # Next.js development server
+    "http://127.0.0.1:3000",      # Alternative localhost
+]
+
+# For production, add your actual frontend domains:
+# CORS_ALLOWED_ORIGINS = [
+#     "https://radio.ladiaria.com.uy",  # Production
+#     "https://radio.piques.uy",         # Staging
+# ]
+
+# Allow credentials (cookies, authorization headers) to be sent in CORS requests.
+# Required for HttpOnly cookie-based refresh tokens.
+CORS_ALLOW_CREDENTIALS = True
+
+# Optionally, allow specific HTTP methods:
+# CORS_ALLOW_METHODS = [
+#     'DELETE',
+#     'GET',
+#     'OPTIONS',
+#     'PATCH',
+#     'POST',
+#     'PUT',
+# ]
+
+# Optionally, allow specific headers:
+# CORS_ALLOW_HEADERS = [
+#     'accept',
+#     'accept-encoding',
+#     'authorization',
+#     'content-type',
+#     'dnt',
+#     'origin',
+#     'user-agent',
+#     'x-csrftoken',
+#     'x-requested-with',
+# ]
+
+# =============================================================================
+# SSO Configuration - Share cookies between domains
+# =============================================================================
+# This enables Single Sign-On (SSO) between the main Django site and external apps
+# Users authenticated in one site will automatically be authenticated in the other
+#
+# For local development, SESSION_COOKIE_DOMAIN is usually set earlier in this file.
+# For production, override it here to share cookies across subdomains:
+#
+# Production examples:
+# SESSION_COOKIE_DOMAIN = '.ladiaria.com.uy'  # Shares across *.ladiaria.com.uy
+# SESSION_COOKIE_DOMAIN = '.piques.uy'         # Shares across *.piques.uy (staging)
+#
+# Cookie security settings (adjust based on DEBUG mode):
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_HTTPONLY = True
+
+# =============================================================================
+# End of JWT Authentication Configuration
+# =============================================================================
