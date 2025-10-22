@@ -744,5 +744,17 @@ if JWT_ENABLED:
     # This exempts JWT auth endpoints from CSRF verification
     MIDDLEWARE = MIDDLEWARE[:8] + ("utopia_cms_radio.middleware.JWTAuthCSRFExemptMiddleware",) + MIDDLEWARE[8:]
 
+    CORS_MIDDLEWARE = 'corsheaders.middleware.CorsMiddleware'
+    SECURITY_MIDDLEWARE = 'django.middleware.security.SecurityMiddleware'
+
+    if CORS_MIDDLEWARE not in MIDDLEWARE:
+        try:
+            pos = MIDDLEWARE.index(SECURITY_MIDDLEWARE) + 1
+        except ValueError:
+            pos = 0
+        MIDDLEWARE = list(MIDDLEWARE)
+        MIDDLEWARE.insert(pos, CORS_MIDDLEWARE)
+        MIDDLEWARE = tuple(MIDDLEWARE)
+
     # Note: CORS middleware is already added at line 664 when DEBUG=True
     # No need to add it again here to avoid duplication
