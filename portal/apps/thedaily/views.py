@@ -1147,19 +1147,14 @@ def password_reset(request, user_id=None, hash=None):
         if reset_form.is_valid():
             try:
                 user = reset_form.cleaned_data["user"]
-                if user.is_active:
-                    send_validation_email(
-                        'Recuperación de contraseña',
-                        user,
-                        get_app_template('notifications/password_reset_body.html'),
-                        get_password_validation_url,
-                    )
-                else:
-                    is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
-                    notification_template = get_app_template(
-                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
-                    )
-                    send_validation_email(account_verify_msg, user, notification_template, get_signup_validation_url)
+                # Send reset email for ALL users (active and inactive)
+                # Inactive users will complete phone verification after choosing password
+                send_validation_email(
+                    'Recuperación de contraseña',
+                    user,
+                    get_app_template('notifications/password_reset_body.html'),
+                    get_password_validation_url,
+                )
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
@@ -1277,6 +1272,24 @@ def password_change(request, user_id=None, hash=None):
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])
+
+        # If user is NOT active (account not fully verified)
+        # they must verify phone before activation
+        if not user.is_active:
+            from django.utils import timezone
+            # Create signup_data for phone verification flow
+            request.session['signup_data'] = {
+                'user_id': user.id,
+                'email': user.email,
+                'user_created': True,
+                'from_password_reset': True,  # Flag to identify this flow
+                'session_created': timezone.now().isoformat(),
+            }
+            request.session.modified = True
+            # Redirect to step 2 (verify phone) - user is NOT logged in
+            return HttpResponseRedirect(reverse('account-signup') + '?step=2')
+
+        # Active user: normal flow (login and redirect)
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
