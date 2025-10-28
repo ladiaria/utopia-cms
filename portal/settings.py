@@ -79,7 +79,6 @@ INSTALLED_APPS = (
     # 'memcached',  TODO: replace this removed repo app with this app: https://github.com/bartTC/django-memcache-status
     "shoutbox",
     "thedaily",
-    "utopia_cms_radio",  # After thedaily to allow direct imports from thedaily.models
     "videologue",
     "short",
     "adzone",
@@ -733,12 +732,16 @@ if JWT_ENABLED:
         'rest_framework_simplejwt',
         'rest_framework_simplejwt.token_blacklist',
         'corsheaders',
+        'drf_spectacular',
     )
 
     # Prepend JWT authentication to REST_FRAMEWORK
     REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ) + REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES']
+
+    # Configure drf-spectacular for OpenAPI/Swagger documentation
+    REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'
 
     # Add JWT CSRF exempt middleware (BEFORE CsrfViewMiddleware at position 8)
     # This exempts JWT auth endpoints from CSRF verification
