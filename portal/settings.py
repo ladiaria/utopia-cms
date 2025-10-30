@@ -735,10 +735,9 @@ if JWT_ENABLED:
         'drf_spectacular',
     )
 
-    # Prepend JWT authentication to REST_FRAMEWORK
-    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ) + REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES']
+    # JWT authentication is NOT added to DEFAULT_AUTHENTICATION_CLASSES
+    # to avoid affecting existing API endpoints (thedaily, core, etc.)
+    # JWT is only used in utopia_cms_radio views via explicit authentication_classes
 
     # Configure drf-spectacular for OpenAPI/Swagger documentation
     REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'
