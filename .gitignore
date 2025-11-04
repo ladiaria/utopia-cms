@@ -1,5 +1,6 @@
 *.log
 *.pyc
+*.mo
 *.pot
 ._*
 *.swp
@@ -18,8 +19,11 @@ __pycache__
 /portal/.project
 /portal/.pydevproject
 /portal/.settings
+/portal/.migrate
 cache
+.local_rev_*
 .editorconfig
+.vscode
 .idea
 .env*
 .sass-cache
@@ -27,7 +31,6 @@ cache
 .python-eggs
 .DS_Store
 /uwsgi.ini
-/wsgi.py
 /static/lightGallery
 /static/css/ladiaria.*
 /static/js/ld.min.js
@@ -46,6 +49,11 @@ cache
 /tests/locust/local_settings.py
 /vendor
 /docs/site
-/docs/ssl/yoogle.com.*
-/docs/ssl/myCA.*
+/docs/ssl/*.crt
+/docs/ssl/*.csr
+/docs/ssl/*.ext
+/docs/ssl/*.key
+/docs/ssl/*.der
+/docs/ssl/*.pem
+/docs/ssl/*.srl
 /docs/ssl/calocal.sh
