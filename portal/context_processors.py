@@ -192,6 +192,13 @@ def google_one_tap_enabled(request):
 
         # Check if the current path start with any of the prefix
         show_one_google_tap = not any(request.path.startswith(prefix) for prefix in exclude_one_tap_for_urls)
+
+        # Also check for registration steps with query parameters
+        if show_one_google_tap and request.path == '/usuarios/registrate/':
+            step = request.GET.get('step')
+            if step in ['2', '2.5', '3']:
+                show_one_google_tap = False
+
         context_to_update.update({'SHOW_ONE_GOOGLE_TAP': show_one_google_tap})
 
     return context_to_update

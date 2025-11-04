@@ -71,6 +71,8 @@ RECAPTCHA_PRIVATE_KEY = ""
 THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY = ""  # 2-char (in caps) country iso code
 THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED = [THEDAILY_SUBSCRIPTION_CAPTCHA_DEFAULT_COUNTRY]
 
+CRM_API_BASE_URI = 'http://localhost:8000/api/'
+
 # IPFS
 # The web3.storage API Token used to upload files to the web3.storage service.
 # To generate an API Token with your account, refer to the following URL:
@@ -79,3 +81,49 @@ THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED = [THEDAILY_SUBSCRIPTION_CAPTCHA
 
 # Set to True to use Google One Tap and forward login_hint, or False to use the default Google OAuth2 backend.
 ENABLE_GOOGLE_ONE_TAP = False
+
+# Add GIGAN to subscription types
+THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
+    ('DDIGM', 'Suscripción digital'),
+    ('DDIGMFS', 'Suscripción digital + Fin de semana'),
+    ('PAPYDIM', 'Suscripción papel'),
+    ('LDFS', 'la diaria fin de semana'),
+    ('PAPYLAS', 'la diaria lunes a sábados'),
+    ('LENM', 'Revista Lento'),
+    ('LEMONDE', 'Le Monde diplomatique'),
+    ('GIGAN', 'Gigantes'),  # Children's magazine
+)
+
+
+# SMS Registration Settings
+THEDAILY_SMS_MAX_SEND_ATTEMPTS = 5          # Maximum SMS send attempts per email/phone
+THEDAILY_SMS_MAX_VERIFY_ATTEMPTS = 5        # Maximum code verification attempts per code
+THEDAILY_SMS_COOLDOWN_SECONDS = 30          # Seconds to wait between SMS sends
+THEDAILY_SMS_AUTO_RESET_HOURS = 1           # Hours after which attempt counters reset automatically (0 to disable)
+THEDAILY_SMS_CODE_EXPIRY_MINUTES = 2        # Minutes after which SMS code expires
+
+# SMS Service Configuration (utopia_cms_ladiaria)
+SMS_USE_MOCK = False                        # Set to True for development, False for production
+SMS_API_KEY = 'CRM key here'                # Use same API key as CRM
+SMS_BASE_URL = CRM_API_BASE_URI      # CRM base URL (without /api/)
+SMS_TIMEOUT = 30                            # Request timeout in seconds
+
+# SMS Smart Routing Configuration
+# When enabled, configured country codes use CRM SMS service, others use Twilio
+SMS_USE_SMART_ROUTING = True                       # Set to True to enable smart routing
+
+# Country codes that use CRM SMS service (when smart routing is enabled)
+# Dictionary: {country_code: country_name} - codes WITHOUT the + prefix
+SMS_CRM_COUNTRY_CODES = {
+    '54': 'Argentina',
+    '55': 'Brasil',
+    '56': 'Chile',
+    '598': 'Uruguay',
+    '1': 'USA/Canada',
+}
+
+# Twilio Configuration (for international SMS when smart routing is enabled)
+# Get these credentials from: https://console.twilio.com/
+TWILIO_ACCOUNT_SID = ''        # Your Twilio Account SID (e.g., 'ACxxxxx...')
+TWILIO_AUTH_TOKEN = ''           # Your Twilio Auth Token (keep secret!)
+TWILIO_FROM_NUMBER = ''                              # Your Twilio phone number (e.g., '+1234567890')
