@@ -211,6 +211,14 @@ CORS_ALLOWED_ORIGINS = [
 # Required for HttpOnly cookie-based refresh tokens.
 CORS_ALLOW_CREDENTIALS = True
 
+# =============================================================================
+# API Documentation Configuration (drf-spectacular)
+# =============================================================================
+# Enable API documentation endpoints (Swagger UI, ReDoc, OpenAPI schema)
+# Set to True in development/test environments, False in production for security.
+# URLs: /api/docs/ (Swagger), /api/redoc/ (ReDoc), /api/schema/ (OpenAPI JSON)
+UTOPIA_CMS_RADIO_API_DOCS_ENABLED = True  # Set to False in production
+
 # Optionally, allow specific HTTP methods:
 # CORS_ALLOW_METHODS = [
 #     'DELETE',

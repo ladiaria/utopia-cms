@@ -585,6 +585,7 @@ CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is r
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 ENABLE_GOOGLE_ONE_TAP = False
 JWT_ENABLED = False  # Enable JWT authentication for REST API (override in local_settings.py)
+UTOPIA_CMS_RADIO_API_DOCS_ENABLED = False  # Enable API documentation (override in local_settings.py)
 
 # ====================================================================================== visual separator =============
 
@@ -731,15 +732,11 @@ if JWT_ENABLED:
         'rest_framework_simplejwt',
         'rest_framework_simplejwt.token_blacklist',
         'corsheaders',
-        'drf_spectacular',
     )
 
     # JWT authentication is NOT added to DEFAULT_AUTHENTICATION_CLASSES
     # to avoid affecting existing API endpoints (thedaily, core, etc.)
     # JWT is only used in utopia_cms_radio views via explicit authentication_classes
-
-    # Configure drf-spectacular for OpenAPI/Swagger documentation
-    REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'
 
     # Add JWT CSRF exempt middleware (BEFORE CsrfViewMiddleware at position 8)
     # This exempts JWT auth endpoints from CSRF verification
@@ -759,3 +756,13 @@ if JWT_ENABLED:
 
     # Note: CORS middleware is already added at line 664 when DEBUG=True
     # No need to add it again here to avoid duplication
+
+# =============================================================================
+# API Documentation Configuration (drf-spectacular)
+# =============================================================================
+# Add drf-spectacular if API docs are enabled (controlled by UTOPIA_CMS_RADIO_API_DOCS_ENABLED)
+# This flag is defined in local_settings.py (imported at line 593)
+if UTOPIA_CMS_RADIO_API_DOCS_ENABLED:
+    INSTALLED_APPS += ('drf_spectacular',)
+    # Configure drf-spectacular for OpenAPI/Swagger documentation
+    REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'
