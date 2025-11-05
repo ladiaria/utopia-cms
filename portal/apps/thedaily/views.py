@@ -1568,13 +1568,11 @@ def update_user_from_crm(request):
         mapped_field = settings.CRM_UPDATE_SUBSCRIBER_FIELDS.get(field)
         if not mapped_field:
             return  # Skip if no field mapping found
-
         # Conversion for boolean fields
         field_value = value
-        if isinstance(getattr(subscriber, mapped_field), bool):
+        if isinstance(getattr(s, mapped_field), bool):
             field_value = value if type(value) is bool else value.lower() in ['true', '1', 'yes']
-
-        setattr(subscriber, mapped_field, field_value)
+        setattr(s, mapped_field, field_value)
 
     def updatesubscriberemail(user, newemail):
         """
