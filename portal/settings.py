@@ -732,6 +732,7 @@ if JWT_ENABLED:
         'rest_framework_simplejwt',
         'rest_framework_simplejwt.token_blacklist',
         'corsheaders',
+        'utopia_cms_radio',  # Radio app requires JWT authentication
     )
 
     # JWT authentication is NOT added to DEFAULT_AUTHENTICATION_CLASSES
