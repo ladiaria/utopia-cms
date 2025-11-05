@@ -129,13 +129,22 @@ TWILIO_AUTH_TOKEN = ''           # Your Twilio Auth Token (keep secret!)
 TWILIO_FROM_NUMBER = ''                              # Your Twilio phone number (e.g., '+1234567890')
 
 # =============================================================================
-# JWT Authentication Configuration (djangorestframework-simplejwt)
+# JWT Authentication and Radio App Configuration
 # =============================================================================
-# Enable JWT authentication for REST API (consumed by external clients like Next.js apps)
-# Set to True to enable, False to disable.
+# JWT_ENABLED controls multiple related features:
+# - JWT authentication (rest_framework_simplejwt)
+# - CORS middleware (for cross-subdomain API requests)
+# - utopia_cms_radio app (requires JWT for API authentication)
+# - Radio API URLs (registered conditionally)
+#
+# Set to True to enable radio functionality and JWT authentication.
+# Set to False to disable (useful for minimal/test environments).
 JWT_ENABLED = True
 
 # IMPORTANT: After enabling JWT_ENABLED for the first time, run migrations:
+#   python manage.py migrate utopia_cms_ladiaria  # Applies migration 0030
+#   python manage.py migrate utopia_cms_radio --fake-initial
+#   python manage.py migrate utopia_cms_radio
 #   python manage.py migrate token_blacklist
 #
 # Configuration for JWT tokens (only used if JWT_ENABLED=True)

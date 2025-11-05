@@ -723,9 +723,16 @@ if THEDAILY_DEBUG_SIGNALS is None:
     THEDAILY_DEBUG_SIGNALS = DEBUG
 
 # =============================================================================
-# JWT Authentication Configuration (conditional)
+# JWT Authentication and Radio App Configuration (conditional)
 # =============================================================================
-# Apply JWT configuration if JWT_ENABLED is True in local_settings
+# JWT_ENABLED controls:
+# - JWT authentication (rest_framework_simplejwt)
+# - CORS middleware (for cross-subdomain API requests)
+# - utopia_cms_radio app (requires JWT for API authentication)
+# - Radio API URLs (registered conditionally in urls.py)
+#
+# Set JWT_ENABLED=True in local_settings.py to enable radio functionality.
+# Set JWT_ENABLED=False to disable radio app (useful for minimal environments).
 if JWT_ENABLED:
     # Add JWT apps to INSTALLED_APPS
     INSTALLED_APPS += (
