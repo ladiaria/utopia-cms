@@ -584,6 +584,8 @@ PHONENUMBER_DEFAULT_REGION = None
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 ENABLE_GOOGLE_ONE_TAP = False
+JWT_ENABLED = False  # Enable JWT authentication for REST API (override in local_settings.py)
+UTOPIA_CMS_RADIO_API_DOCS_ENABLED = False  # Enable API documentation (override in local_settings.py)
 
 # ====================================================================================== visual separator =============
 
@@ -609,7 +611,7 @@ if ENABLE_GOOGLE_ONE_TAP:
         "/usuarios/registrate/?step=2.5",
         "/usuarios/registrate/?step=3",
     ]
-    
+
     # =============================================================================
     # Google One Tap Configuration
     # =============================================================================
@@ -719,3 +721,49 @@ if "THEDAILY_SUBSCRIPTION_TYPE_DEFAULT" not in locals():
         THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0] if THEDAILY_SUBSCRIPTION_TYPE_CHOICES else None
 if THEDAILY_DEBUG_SIGNALS is None:
     THEDAILY_DEBUG_SIGNALS = DEBUG
+
+# =============================================================================
+# JWT Authentication Configuration (conditional)
+# =============================================================================
+# Apply JWT configuration if JWT_ENABLED is True in local_settings
+if JWT_ENABLED:
+    # Add JWT apps to INSTALLED_APPS
+    INSTALLED_APPS += (
+        'rest_framework_simplejwt',
+        'rest_framework_simplejwt.token_blacklist',
+        'corsheaders',
+        'utopia_cms_radio',  # Radio app requires JWT authentication
+    )
+
+    # JWT authentication is NOT added to DEFAULT_AUTHENTICATION_CLASSES
+    # to avoid affecting existing API endpoints (thedaily, core, etc.)
+    # JWT is only used in utopia_cms_radio views via explicit authentication_classes
+
+    # Add JWT CSRF exempt middleware (BEFORE CsrfViewMiddleware at position 8)
+    # This exempts JWT auth endpoints from CSRF verification
+    MIDDLEWARE = MIDDLEWARE[:8] + ("utopia_cms_radio.middleware.JWTAuthCSRFExemptMiddleware",) + MIDDLEWARE[8:]
+
+    CORS_MIDDLEWARE = 'corsheaders.middleware.CorsMiddleware'
+    SECURITY_MIDDLEWARE = 'django.middleware.security.SecurityMiddleware'
+
+    if CORS_MIDDLEWARE not in MIDDLEWARE:
+        try:
+            pos = MIDDLEWARE.index(SECURITY_MIDDLEWARE) + 1
+        except ValueError:
+            pos = 0
+        MIDDLEWARE = list(MIDDLEWARE)
+        MIDDLEWARE.insert(pos, CORS_MIDDLEWARE)
+        MIDDLEWARE = tuple(MIDDLEWARE)
+
+    # Note: CORS middleware is already added at line 664 when DEBUG=True
+    # No need to add it again here to avoid duplication
+
+# =============================================================================
+# API Documentation Configuration (drf-spectacular)
+# =============================================================================
+# Add drf-spectacular if API docs are enabled (controlled by UTOPIA_CMS_RADIO_API_DOCS_ENABLED)
+# This flag is defined in local_settings.py (imported at line 593)
+if UTOPIA_CMS_RADIO_API_DOCS_ENABLED:
+    INSTALLED_APPS += ('drf_spectacular',)
+    # Configure drf-spectacular for OpenAPI/Swagger documentation
+    REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'

@@ -226,7 +226,7 @@ router.register(r'publications', PublicationViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'sections', SectionViewSet)
 router.register(r'articles', ArticleViewSet)
-router.register(r'home', HomeArticleViewSet)
+router.register(r'home', HomeArticleViewSet, basename='home-article')
 router.register(r'journalists', JournalistViewSet)
 router.register(r'urls', UrlViewSet)
 router.register(r'subscribers', SubscriberViewSet)
@@ -291,7 +291,12 @@ urlpatterns.extend(
 
         # Rest Framework API
         path('api/', include(router.urls)),
-        path('api/auth/', include('rest_framework.urls', namespace='rest_framework')),
+        # Django REST Framework browsable API auth (HTML forms for testing in browser)
+        # Moved to /api/drf-auth/ to avoid conflict with JWT endpoints at /api/auth/
+        path('api/drf-auth/', include('rest_framework.urls', namespace='rest_framework')),
+
+        # Radio API (JWT authentication + REST endpoints)
+        path('', include('utopia_cms_radio.urls', namespace='utopia_cms_radio')),
 
         # Editions
         path('ediciones/', edition_list, name='edition_list'),
