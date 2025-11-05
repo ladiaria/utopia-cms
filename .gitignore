@@ -6,6 +6,7 @@
 *.swp
 __pycache__
 /portal/local_*settings.py
+/portal/*_swprojhook.sh
 /portal/bin/pdffonts
 /portal/bin/pdfimages
 /portal/bin/pdfinfo
