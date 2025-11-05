@@ -5,6 +5,7 @@
 ._*
 *.swp
 __pycache__
+pyrightconfig.json
 /portal/local_*settings.py
 /portal/*_swprojhook.sh
 /portal/bin/pdffonts
