@@ -295,9 +295,6 @@ urlpatterns.extend(
         # Moved to /api/drf-auth/ to avoid conflict with JWT endpoints at /api/auth/
         path('api/drf-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
-        # Radio API (JWT authentication + REST endpoints)
-        path('', include('utopia_cms_radio.urls', namespace='utopia_cms_radio')),
-
         # Editions
         path('ediciones/', edition_list, name='edition_list'),
         re_path(r'^ediciones/(?P<year>\d{4})/(?P<month>\d{1,2})/$', edition_list_ajax, name='edition_list_ajax'),
@@ -390,3 +387,7 @@ if settings.DEBUG:
     # )
 else:
     urlpatterns.append(re_path(r'^.*.css$', TemplateView.as_view(template_name='devnull.html')))
+
+# Radio API URLs (only if JWT is enabled and utopia_cms_radio is installed)
+if getattr(settings, 'JWT_ENABLED', False) and 'utopia_cms_radio' in settings.INSTALLED_APPS:
+    urlpatterns.insert(0, path('', include('utopia_cms_radio.urls', namespace='utopia_cms_radio')))
