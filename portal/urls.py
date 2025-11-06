@@ -226,7 +226,7 @@ router.register(r'publications', PublicationViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'sections', SectionViewSet)
 router.register(r'articles', ArticleViewSet)
-router.register(r'home', HomeArticleViewSet)
+router.register(r'home', HomeArticleViewSet, basename='home-article')
 router.register(r'journalists', JournalistViewSet)
 router.register(r'urls', UrlViewSet)
 router.register(r'subscribers', SubscriberViewSet)
@@ -291,7 +291,10 @@ urlpatterns.extend(
 
         # Rest Framework API
         path('api/', include(router.urls)),
-        path('api/auth/', include('rest_framework.urls', namespace='rest_framework')),
+        path(
+            f'api/{getattr(settings, "PORTAL_URLS_DRF_AUTH_URL_PREFIX", "")}auth/',
+            include('rest_framework.urls', namespace='rest_framework'),
+        ),
 
         # Editions
         path('ediciones/', edition_list, name='edition_list'),
