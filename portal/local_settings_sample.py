@@ -269,5 +269,19 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_HTTPONLY = True
 
 # =============================================================================
+# Cross-Domain Redirects Configuration
+# =============================================================================
+# Allow redirects to specific domains after login/logout (for SSO)
+# This is required for:
+# 1. Google OAuth login redirects to external domains
+# 2. Login/logout with ?next=https://external-domain parameter
+#
+# Security: Only add trusted domains you control
+# ALLOWED_REDIRECT_HOSTS = [
+#     'radio.ladiaria.com.uy',  # Production
+#     'radio.piques.uy',         # Staging
+# ]
+
+# =============================================================================
 # End of JWT Authentication Configuration
 # =============================================================================
