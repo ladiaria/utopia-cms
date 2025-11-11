@@ -129,13 +129,22 @@ TWILIO_AUTH_TOKEN = ''           # Your Twilio Auth Token (keep secret!)
 TWILIO_FROM_NUMBER = ''                              # Your Twilio phone number (e.g., '+1234567890')
 
 # =============================================================================
-# JWT Authentication Configuration (djangorestframework-simplejwt)
+# JWT Authentication and Radio App Configuration
 # =============================================================================
-# Enable JWT authentication for REST API (consumed by external clients like Next.js apps)
-# Set to True to enable, False to disable.
+# JWT_ENABLED controls multiple related features:
+# - JWT authentication (rest_framework_simplejwt)
+# - CORS middleware (for cross-subdomain API requests)
+# - utopia_cms_radio app (requires JWT for API authentication)
+# - Radio API URLs (registered conditionally)
+#
+# Set to True to enable radio functionality and JWT authentication.
+# Set to False to disable (useful for minimal/test environments).
 JWT_ENABLED = True
 
 # IMPORTANT: After enabling JWT_ENABLED for the first time, run migrations:
+#   python manage.py migrate utopia_cms_ladiaria  # Applies migration 0030
+#   python manage.py migrate utopia_cms_radio --fake-initial
+#   python manage.py migrate utopia_cms_radio
 #   python manage.py migrate token_blacklist
 #
 # Configuration for JWT tokens (only used if JWT_ENABLED=True)
@@ -258,6 +267,20 @@ UTOPIA_CMS_RADIO_API_DOCS_ENABLED = True  # Set to False in production
 # Cookie security settings (adjust based on DEBUG mode):
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_HTTPONLY = True
+
+# =============================================================================
+# Cross-Domain Redirects Configuration
+# =============================================================================
+# Allow redirects to specific domains after login/logout (for SSO)
+# This is required for:
+# 1. Google OAuth login redirects to external domains
+# 2. Login/logout with ?next=https://external-domain parameter
+#
+# Security: Only add trusted domains you control
+# ALLOWED_REDIRECT_HOSTS = [
+#     'radio.ladiaria.com.uy',  # Production
+#     'radio.piques.uy',         # Staging
+# ]
 
 # =============================================================================
 # End of JWT Authentication Configuration
