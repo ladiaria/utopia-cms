@@ -79,7 +79,7 @@ pydantic
 
 # Our own repos (TODO: change to pypi package when released there):
 git+https://github.com/ladiaria/django-amp-readerid.git
-git+https://github.com/ladiaria/utopia-cms-radio.git#egg=utopia-cms-radio
+
 # Our forks:
 git+https://github.com/ladiaria/django-shorturls.git
 git+https://github.com/ladiaria/django-favit.git
