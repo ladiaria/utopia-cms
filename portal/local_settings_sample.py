@@ -112,8 +112,8 @@ SMS_CRM_COUNTRY_CODES = {
 # Twilio Configuration (for international SMS when smart routing is enabled)
 # Get these credentials from: https://console.twilio.com/
 TWILIO_ACCOUNT_SID = ''        # Your Twilio Account SID (e.g., 'ACxxxxx...')
-TWILIO_AUTH_TOKEN = ''           # Your Twilio Auth Token (keep secret!)
-TWILIO_FROM_NUMBER = ''                              # Your Twilio phone number (e.g., '+1234567890')
+TWILIO_AUTH_TOKEN = ''         # Your Twilio Auth Token (keep secret!)
+TWILIO_FROM_NUMBER = ''        # Your Twilio phone number (e.g., '+1234567890')
 
 # CORS Configuration (django-cors-headers)
 # Configure Cross-Origin Resource Sharing to allow some cool dev tools you're using to access resources on this server.
@@ -129,9 +129,7 @@ TWILIO_FROM_NUMBER = ''                              # Your Twilio phone number 
 # Required for HttpOnly cookie-based refresh tokens.
 # CORS_ALLOW_CREDENTIALS = True
 
-# =============================================================================
 # Cross-Domain Redirects Configuration
-# =============================================================================
 # Allow redirects to specific domains after login/logout (for SSO)
 # This is required for:
 # 1. Google OAuth login redirects to external domains
