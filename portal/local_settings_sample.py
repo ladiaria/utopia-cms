@@ -82,19 +82,6 @@ CRM_API_BASE_URI = 'http://localhost:8000/api/'
 # Set to True to use Google One Tap and forward login_hint, or False to use the default Google OAuth2 backend.
 ENABLE_GOOGLE_ONE_TAP = False
 
-# Add GIGAN to subscription types
-THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
-    ('DDIGM', 'Suscripción digital'),
-    ('DDIGMFS', 'Suscripción digital + Fin de semana'),
-    ('PAPYDIM', 'Suscripción papel'),
-    ('LDFS', 'la diaria fin de semana'),
-    ('PAPYLAS', 'la diaria lunes a sábados'),
-    ('LENM', 'Revista Lento'),
-    ('LEMONDE', 'Le Monde diplomatique'),
-    ('GIGAN', 'Gigantes'),  # Children's magazine
-)
-
-
 # SMS Registration Settings
 THEDAILY_SMS_MAX_SEND_ATTEMPTS = 5          # Maximum SMS send attempts per email/phone
 THEDAILY_SMS_MAX_VERIFY_ATTEMPTS = 5        # Maximum code verification attempts per code
@@ -127,3 +114,31 @@ SMS_CRM_COUNTRY_CODES = {
 TWILIO_ACCOUNT_SID = ''        # Your Twilio Account SID (e.g., 'ACxxxxx...')
 TWILIO_AUTH_TOKEN = ''           # Your Twilio Auth Token (keep secret!)
 TWILIO_FROM_NUMBER = ''                              # Your Twilio phone number (e.g., '+1234567890')
+
+# CORS Configuration (django-cors-headers)
+# Configure Cross-Origin Resource Sharing to allow some cool dev tools you're using to access resources on this server.
+# IMPORTANT: Only add trusted domains to prevent unauthorized access.
+#
+# For example, for development in localhost:
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",      # Next.js development server
+#     "http://127.0.0.1:3000",      # Alternative localhost
+# ]
+
+# Allow credentials (cookies, authorization headers) to be sent in CORS requests.
+# Required for HttpOnly cookie-based refresh tokens.
+# CORS_ALLOW_CREDENTIALS = True
+
+# =============================================================================
+# Cross-Domain Redirects Configuration
+# =============================================================================
+# Allow redirects to specific domains after login/logout (for SSO)
+# This is required for:
+# 1. Google OAuth login redirects to external domains
+# 2. Login/logout with ?next=https://external-domain parameter
+#
+# Security: Only add trusted domains you control, examples:
+# ALLOWED_REDIRECT_HOSTS = [
+#     'crm.yoogle.com',      # utopia-CRM sibling paired with this utopia-cms
+#     'comments.yoogle.com', # Coral talk site used by articles paired with this utopia-cms
+# ]
