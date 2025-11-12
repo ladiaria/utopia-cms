@@ -301,8 +301,10 @@
             {% include subscribe_notice_template %}
           {% endif %}
         {% endif %}
-      {% elif user_newsletters_notice_template and is_portada and publication == default_pub or is_detail %}
+      {% elif user_newsletters_notice_template %}
+        {% if is_portada and publication == default_pub or is_detail %}
           {% include user_newsletters_notice_template %}
+        {% endif %}
       {% endif %}
     {% endblock %}
 
