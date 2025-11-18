@@ -388,3 +388,7 @@ if settings.DEBUG:
     # )
 else:
     urlpatterns.append(re_path(r'^.*.css$', TemplateView.as_view(template_name='devnull.html')))
+
+# Radio API URLs (only if JWT is enabled and utopia_cms_radio is installed)
+if getattr(settings, 'JWT_ENABLED', False) and 'utopia_cms_radio' in settings.INSTALLED_APPS:
+    urlpatterns.insert(0, path('', include('utopia_cms_radio.urls', namespace='utopia_cms_radio')))
