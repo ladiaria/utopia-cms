@@ -291,9 +291,10 @@ urlpatterns.extend(
 
         # Rest Framework API
         path('api/', include(router.urls)),
-        # Django REST Framework browsable API auth (HTML forms for testing in browser)
-        # Moved to /api/drf-auth/ to avoid conflict with JWT endpoints at /api/auth/
-        path('api/drf-auth/', include('rest_framework.urls', namespace='rest_framework')),
+        path(
+            f'api/{getattr(settings, "PORTAL_URLS_DRF_AUTH_URL_PREFIX", "")}auth/',
+            include('rest_framework.urls', namespace='rest_framework'),
+        ),
 
         # Editions
         path('ediciones/', edition_list, name='edition_list'),

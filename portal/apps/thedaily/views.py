@@ -352,6 +352,20 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 @readerid_assoc
 def login(request, product_slug=None, product_variant=None):
     # next_page value got here will be available in session (TODO: explain how this happen)
+    # TODO: SECURITY - Open Redirect Vulnerability
+    # This function does not validate the 'next' parameter before redirecting.
+    # This allows attackers to redirect users to external malicious sites (phishing).
+    # Solution: Validate redirects with url_has_allowed_host_and_scheme() + ALLOWED_REDIRECT_HOSTS
+    # Example fix:
+    #   from django.utils.http import url_has_allowed_host_and_scheme
+    #   requested_next = request.GET.get('next', request.session.get('next', '/'))
+    #   allowed_hosts = {request.get_host()}
+    #   if hasattr(settings, 'ALLOWED_REDIRECT_HOSTS'):
+    #       allowed_hosts |= set(settings.ALLOWED_REDIRECT_HOSTS)
+    #   if url_has_allowed_host_and_scheme(requested_next, allowed_hosts=allowed_hosts, require_https=request.is_secure()):
+    #       next_page = requested_next
+    #   else:
+    #       next_page = '/'
     return_param = amp_login_param(request, 'return')
     if return_param:
         # redirect email/google AMP logins (google social auth do not redirect to external urls)
@@ -1569,13 +1583,11 @@ def update_user_from_crm(request):
         mapped_field = settings.CRM_UPDATE_SUBSCRIBER_FIELDS.get(field)
         if not mapped_field:
             return  # Skip if no field mapping found
-
         # Conversion for boolean fields
         field_value = value
-        if isinstance(getattr(subscriber, mapped_field), bool):
+        if isinstance(getattr(s, mapped_field), bool):
             field_value = value if type(value) is bool else value.lower() in ['true', '1', 'yes']
-
-        setattr(subscriber, mapped_field, field_value)
+        setattr(s, mapped_field, field_value)
 
     def updatesubscriberemail(user, newemail):
         """

@@ -84,7 +84,7 @@ def render_related(context, article, amp=False):
             ) else publication.name,
         }
 
-    elif category and category.slug in getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', ()):
+    elif category and category.slug in getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY', ()):
         # use the category
         upd_dict = {
             'articles': section.latest4relatedbycategory(category.id, article.id),
@@ -93,7 +93,7 @@ def render_related(context, article, amp=False):
 
     else:
         # use a category also, defined in settings and if it belongs to the article and the section is not skipped.
-        use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY_SKIPPING_SECTIONS', [])
+        use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY_SKIPPING_SECTIONS', [])
         if use_category_skip_sections:
             article_categories = article.get_categories_slugs()
             for category_slug, section_slugs in use_category_skip_sections:

@@ -373,6 +373,7 @@ CELERY_RESULT_EXTENDED = True
 # NOTE: The elasticsearch recommended version to use is 7.*
 #       If your linux distribution doesn't have it, you can use docker to run an specific version (for example 7.17.7).
 #       Follow this guide to do that: https://hub.docker.com/_/elasticsearch
+#       TODO: update, we have fresh info about ElasticSearch
 ELASTICSEARCH_DSL = {}
 ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
@@ -584,8 +585,6 @@ PHONENUMBER_DEFAULT_REGION = None
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 ENABLE_GOOGLE_ONE_TAP = False
-JWT_ENABLED = False  # Enable JWT authentication for REST API (override in local_settings.py)
-UTOPIA_CMS_RADIO_API_DOCS_ENABLED = False  # Enable API documentation (override in local_settings.py)
 
 # ====================================================================================== visual separator =============
 
@@ -595,7 +594,9 @@ from local_settings import *  # noqa
 
 
 AUTHENTICATION_BACKENDS = (
-    "libs.google_oauth2_backend.CustomGoogleOAuth2" if ENABLE_GOOGLE_ONE_TAP else "social_core.backends.google.GoogleOAuth2",
+    "libs.google_oauth2_backend.CustomGoogleOAuth2"
+    if ENABLE_GOOGLE_ONE_TAP
+    else "social_core.backends.google.GoogleOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 )
 
@@ -612,39 +613,19 @@ if ENABLE_GOOGLE_ONE_TAP:
         "/usuarios/registrate/?step=3",
     ]
 
-    # =============================================================================
-    # Google One Tap Configuration
-    # =============================================================================
-    # These settings are required for Google One Tap authentication to work
-    # properly in browsers with Enhanced Tracking Protection (Firefox, Safari)
-    # and strict Content Security Policies.
-
-    # -----------------------------------------------------------------------------
-    # Third-party Cookie Configuration
-    # -----------------------------------------------------------------------------
-    # Enable cross-site cookie sharing for Google's authentication flow.
-    # Required for One Tap to maintain session state across domains.
-    SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-site session cookies
-    CSRF_COOKIE_SAMESITE = 'None'     # Allow cross-site CSRF cookies
-
     # Allow popups to external domains while maintaining same-origin security
     SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
-    # -----------------------------------------------------------------------------
     # Frame Options Configuration
-    # -----------------------------------------------------------------------------
     # Allow Google to embed authentication iframes in our pages.
     # SAMEORIGIN is more secure than ALLOWALL while still permitting Google's flow.
     X_FRAME_OPTIONS = 'SAMEORIGIN'
 
-    # -----------------------------------------------------------------------------
     # Middleware Configuration
-    # -----------------------------------------------------------------------------
     # Remove XFrameOptionsMiddleware to prevent conflicts with Google One Tap iframes.
     # The middleware would override X_FRAME_OPTIONS and block Google's authentication popup.
     MIDDLEWARE = tuple([
-        m for m in MIDDLEWARE
-        if m not in ["django.middleware.clickjacking.XFrameOptionsMiddleware",]
+        m for m in MIDDLEWARE if m not in ["django.middleware.clickjacking.XFrameOptionsMiddleware"]
     ])
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
@@ -722,56 +703,3 @@ if "THEDAILY_SUBSCRIPTION_TYPE_DEFAULT" not in locals():
         THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0] if THEDAILY_SUBSCRIPTION_TYPE_CHOICES else None
 if THEDAILY_DEBUG_SIGNALS is None:
     THEDAILY_DEBUG_SIGNALS = DEBUG
-
-# =============================================================================
-# JWT Authentication and Radio App Configuration (conditional)
-# =============================================================================
-# JWT_ENABLED controls:
-# - JWT authentication (rest_framework_simplejwt)
-# - CORS middleware (for cross-subdomain API requests)
-# - utopia_cms_radio app (requires JWT for API authentication)
-# - Radio API URLs (registered conditionally in urls.py)
-#
-# Set JWT_ENABLED=True in local_settings.py to enable radio functionality.
-# Set JWT_ENABLED=False to disable radio app (useful for minimal environments).
-if JWT_ENABLED:
-    # Add JWT apps to INSTALLED_APPS
-    INSTALLED_APPS += (
-        'rest_framework_simplejwt',
-        'rest_framework_simplejwt.token_blacklist',
-        'corsheaders',
-        'utopia_cms_radio',  # Radio app requires JWT authentication
-    )
-
-    # JWT authentication is NOT added to DEFAULT_AUTHENTICATION_CLASSES
-    # to avoid affecting existing API endpoints (thedaily, core, etc.)
-    # JWT is only used in utopia_cms_radio views via explicit authentication_classes
-
-    # Add JWT CSRF exempt middleware (BEFORE CsrfViewMiddleware at position 8)
-    # This exempts JWT auth endpoints from CSRF verification
-    MIDDLEWARE = MIDDLEWARE[:8] + ("utopia_cms_radio.middleware.JWTAuthCSRFExemptMiddleware",) + MIDDLEWARE[8:]
-
-    CORS_MIDDLEWARE = 'corsheaders.middleware.CorsMiddleware'
-    SECURITY_MIDDLEWARE = 'django.middleware.security.SecurityMiddleware'
-
-    if CORS_MIDDLEWARE not in MIDDLEWARE:
-        try:
-            pos = MIDDLEWARE.index(SECURITY_MIDDLEWARE) + 1
-        except ValueError:
-            pos = 0
-        MIDDLEWARE = list(MIDDLEWARE)
-        MIDDLEWARE.insert(pos, CORS_MIDDLEWARE)
-        MIDDLEWARE = tuple(MIDDLEWARE)
-
-    # Note: CORS middleware is already added at line 664 when DEBUG=True
-    # No need to add it again here to avoid duplication
-
-# =============================================================================
-# API Documentation Configuration (drf-spectacular)
-# =============================================================================
-# Add drf-spectacular if API docs are enabled (controlled by UTOPIA_CMS_RADIO_API_DOCS_ENABLED)
-# This flag is defined in local_settings.py (imported at line 593)
-if UTOPIA_CMS_RADIO_API_DOCS_ENABLED:
-    INSTALLED_APPS += ('drf_spectacular',)
-    # Configure drf-spectacular for OpenAPI/Swagger documentation
-    REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'

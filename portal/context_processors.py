@@ -87,7 +87,9 @@ def publications(request):
                 )
             elif getattr(settings, "HOMEV3_USER_NEWSLETTERS_NOTICE_ENABLED", True):
                 result['user_newsletters_notice_template'] = getattr(
-                    settings, "HOMEV3_USER_NEWSLETTERS_NOTICE_TEMPLATE", "homev3/templates/user_newsletters_notice.html"
+                    settings,
+                    "HOMEV3_USER_NEWSLETTERS_NOTICE_TEMPLATE",
+                    "homev3/templates/user_newsletters_notice.html",
                 )
 
     # use this context processor to load also some other useful variables configured in settings

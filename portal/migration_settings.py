@@ -125,6 +125,7 @@ INSTALLED_APPS = (
     "django_celery_beat",
     "phonenumber_field",
     "closed_site",
+    'solo',
 )
 
 SITE_ID = 1
@@ -298,6 +299,7 @@ TEMPLATES = [
                 "adzone.context_processors.get_source_ip",
                 "apps.thedaily.context_processors.permissions",
                 "django.template.context_processors.csrf",
+                "context_processors.google_client_id",
                 "context_processors.google_one_tap_enabled",
             ],
             "loaders": [
@@ -550,7 +552,7 @@ FREEZE_TIME = None
 CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 PHONENUMBER_DEFAULT_REGION = None
-
+ENABLE_GOOGLE_ONE_TAP = False
 
 # ====================================================================================== visual separator =============
 
