@@ -225,6 +225,102 @@
       <!-- End user data -->
     {% endif %}
 
+    <!-- Sentry JavaScript SDK (Error Tracking) - Lazy Loaded from /static/ -->
+    {% if SENTRY_ENABLED and SENTRY_DSN %}
+      <script>
+        // Lazy load Sentry after page is fully loaded to avoid blocking main content
+        window.addEventListener('load', function() {
+          // Create script element - served from /static/ to avoid ad blocker issues
+          const sentryScript = document.createElement('script');
+          sentryScript.src = '{% static "js/vendor/sentry.min.js" %}';
+
+          // Initialize Sentry after script loads
+          sentryScript.onload = function() {
+            Sentry.init({
+              dsn: "{{ SENTRY_DSN }}",
+              environment: "{{ SENTRY_ENVIRONMENT }}",
+              // Release tracking (optional): Links errors to specific deployments
+              // release: "utopia-cms@{{ git_commit }}",  // Set git_commit in context if needed
+
+              // Performance monitoring: 0.0 = disabled (Phase 1), 1.0 = track all page loads
+              tracesSampleRate: 0.0,
+
+              // Capture user context automatically from LDUser global variable
+              beforeSend(event, hint) {
+                // Add user info from LDUser if available
+                if (typeof LDUser !== 'undefined' && LDUser.is_authenticated) {
+                  event.user = {
+                    id: LDUser.id,
+                    email: LDUser.email || undefined,
+                    subscriber: LDUser.subscriber,
+                    subscriber_id: LDUser.subscriber_id,
+                  };
+                }
+
+                // Filter out errors from browser extensions (chrome-extension://, moz-extension://)
+                if (hint.originalException && hint.originalException.stack) {
+                  const stack = hint.originalException.stack;
+                  if (stack.includes('chrome-extension://') || stack.includes('moz-extension://')) {
+                    return null; // Don't send to Sentry
+                  }
+                }
+
+                // Filter out network errors that are not bugs (user went offline, etc.)
+                if (hint.originalException && hint.originalException.message) {
+                  const message = hint.originalException.message.toLowerCase();
+                  const ignoredMessages = ['network request failed', 'failed to fetch', 'networkerror'];
+                  if (ignoredMessages.some(ignored => message.includes(ignored))) {
+                    return null;
+                  }
+                }
+
+                return event;
+              },
+
+              // Ignore expected errors
+              ignoreErrors: [
+                // Browser extension errors
+                'top.GLOBALS',
+                'canvas.contentDocument',
+                // Random plugins/extensions
+                'atomicFindClose',
+                // Facebook errors
+                'fb_xd_fragment',
+                // Network errors
+                'NetworkError',
+                'Network request failed',
+                'Failed to fetch',
+                // Script loading errors (CDN issues, ad blockers)
+                'ChunkLoadError',
+                'Loading chunk',
+                // ResizeObserver errors (browser-specific, not bugs)
+                'ResizeObserver loop limit exceeded',
+                'ResizeObserver loop completed with undelivered notifications',
+              ],
+            });
+
+            // Set publication context tag if available
+            {% if publication %}
+              Sentry.setTag('publication', '{{ publication.slug }}');
+            {% endif %}
+
+            // Set page type context
+            {% if is_portada %}
+              Sentry.setTag('page_type', 'frontpage');
+            {% elif is_detail %}
+              Sentry.setTag('page_type', 'article');
+            {% else %}
+              Sentry.setTag('page_type', 'other');
+            {% endif %}
+          };
+
+          // Append script to head
+          document.head.appendChild(sentryScript);
+        });
+      </script>
+    {% endif %}
+    <!-- End Sentry JavaScript SDK -->
+
     <!-- JavaScript -->
     <script src="{% static 'js/index_functions.js' %}"></script>
     {% if PWA_ENABLED %}<script src="{% static 'js/index_pwa_function.js' %}"></script>{% endif %}
