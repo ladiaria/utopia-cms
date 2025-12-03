@@ -29,9 +29,10 @@
 {% block navbar %}{% with disable_nav=True %}{{ block.super }}{% endwith %}{% endblock %}
 
 {% comment %}
-  Tenemos 2 situaciones que mostrar segun valor de "browser_type":
+  Tenemos 3 situaciones que mostrar segun valor de "browser_type":
   1 - Facebook iOS - Facebook Android - Instagram iOS (browser_type="fb")
   2 - Instagram Android (browser_type="ig_android")
+  3 - X/Twitter iOS - X/Twitter Android (browser_type="twitter")
 {% endcomment %}
 
 {% block content %}

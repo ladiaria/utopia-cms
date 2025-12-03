@@ -142,3 +142,9 @@ TWILIO_FROM_NUMBER = ''        # Your Twilio phone number (e.g., '+1234567890')
 #     'crm.yoogle.com',      # utopia-CRM sibling paired with this utopia-cms
 #     'comments.yoogle.com', # Coral talk site used by articles paired with this utopia-cms
 # ]
+
+# Signupwall Configuration
+# Enable landing page for X in-app browser to guide users to open articles in external browser
+# This solves the "Access blocked" error when users try to login with Google from X's in-app browser
+# Set to True to enable the feature, False to disable it
+# SIGNUPWALL_X_BROWSERWALL_ENABLED = True
