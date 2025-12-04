@@ -210,7 +210,7 @@ class SubscriberViewSet(viewsets.ModelViewSet):
     queryset = Subscriber.objects.all()
     serializer_class = SubscriberSerializer
     http_method_names = ['get', 'head']
-    filter_fields = ('contact_id',)
+    filterset_fields = ('contact_id',)
 
 
 class DollarExchangeViewSet(viewsets.ModelViewSet):
