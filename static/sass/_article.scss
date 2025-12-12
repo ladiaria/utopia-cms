@@ -987,6 +987,9 @@ body.article {
 
   &__list {
     margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
     &:first-of-type {
       margin-bottom: 50px;
