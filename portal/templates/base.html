@@ -261,6 +261,7 @@
           // Create script element dynamically - served from /static/ to avoid ad blocker blocking
           const sentryScript = document.createElement('script');
           sentryScript.src = '{% static "js/vendor/sentry.min.js" %}';  // 73KB minified
+          sentryScript.setAttribute('data-cfasync', 'false');  // Prevent Cloudflare Rocket Loader modification
 
           // Initialize Sentry after SDK script loads successfully
           sentryScript.onload = function() {
