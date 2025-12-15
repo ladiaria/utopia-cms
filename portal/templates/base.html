@@ -254,9 +254,10 @@
     ========================================================================== -->
     {% if SENTRY_ENABLED and SENTRY_DSN %}
       <script>
-        // Lazy load Sentry after page is fully loaded to avoid blocking main content rendering
-        // This ensures 0% impact on First Contentful Paint (FCP) and page load speed
-        window.addEventListener('load', function() {
+        // Load Sentry after DOM is ready (before full page load) to capture early errors
+        // Using dynamic script loading (createElement) ensures 0% impact on First Contentful Paint (FCP)
+        // DOMContentLoaded vs load: captures errors during user interactions that happen before full page load
+        document.addEventListener('DOMContentLoaded', function() {
           // Create script element dynamically - served from /static/ to avoid ad blocker blocking
           const sentryScript = document.createElement('script');
           sentryScript.src = '{% static "js/vendor/sentry.min.js" %}';  // 73KB minified
