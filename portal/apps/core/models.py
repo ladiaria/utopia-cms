@@ -12,6 +12,7 @@ from kombu.exceptions import OperationalError as KombuOperationalError
 from sorl.thumbnail import get_thumbnail
 from bs4 import BeautifulSoup
 import readtime
+import logging
 import mutagen
 import w3storage
 import re
@@ -93,6 +94,9 @@ from .utils import (
     get_category_template,
 )
 from solo.models import SingletonModel
+
+logger = logging.getLogger(__name__)
+
 
 def remove_media_root(path):
     return path.replace(settings.MEDIA_ROOT, '')
@@ -1486,8 +1490,12 @@ class ArticleBase(Model, CT):
         if self.audio:
             try:
                 td = timedelta(seconds=int(mutagen.File(self.audio.file).info.length))
-            except (AttributeError, FileNotFoundError):
-                pass
+            except (FileNotFoundError, AttributeError) as e:
+                logger.error(
+                    f"get_audio_length error - Article ID: {self.id}, "
+                    f"Slug: {self.slug}, Audio file: {self.audio.file.name}, "
+                    f"Error type: {type(e).__name__}, Error: {e}"
+                )
             else:
                 if seconds:
                     return td.seconds
