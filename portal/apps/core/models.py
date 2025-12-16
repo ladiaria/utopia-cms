@@ -1486,7 +1486,7 @@ class ArticleBase(Model, CT):
         if self.audio:
             try:
                 td = timedelta(seconds=int(mutagen.File(self.audio.file).info.length))
-            except FileNotFoundError:
+            except (AttributeError, FileNotFoundError):
                 pass
             else:
                 if seconds:
