@@ -225,33 +225,35 @@
       <!-- End user data -->
     {% endif %}
 
-    <!-- ========================================================================
-         Sentry JavaScript SDK - Frontend Error Tracking
-         ========================================================================
+    {% comment %}
+    ========================================================================
+    Sentry JavaScript SDK - Frontend Error Tracking
+    ========================================================================
 
-         Purpose: Captures JavaScript errors and exceptions from user browsers
+    Purpose: Captures JavaScript errors and exceptions from user browsers
 
-         Configuration:
-         - Loaded from /static/js/vendor/sentry.min.js (not CDN to avoid ad blockers)
-         - Lazy loaded after page content (zero impact on page load performance)
-         - Only enabled when SENTRY_ENABLED=True in settings
+    Configuration:
+    - Loaded from /static/js/vendor/sentry.min.js (not CDN to avoid ad blockers)
+    - Lazy loaded after page content (zero impact on page load performance)
+    - Only enabled when SENTRY_ENABLED=True in settings
 
-         What gets tracked:
-         - Uncaught JavaScript exceptions
-         - Console errors
-         - MercadoPago payment errors (see subscribe_mercadopago_brick.html)
-         - User context (email, subscriber status) for debugging
+    What gets tracked:
+    - Uncaught JavaScript exceptions
+    - Console errors
+    - MercadoPago payment errors (see subscribe_mercadopago_brick.html)
+    - User context (email, subscriber status) for debugging
 
-         What gets filtered out (noise reduction):
-         - Browser extension errors
-         - Network errors (offline users)
-         - Facebook widget errors
-         - Script loading failures (CDN/ad blocker issues)
+    What gets filtered out (noise reduction):
+    - Browser extension errors
+    - Network errors (offline users)
+    - Facebook widget errors
+    - Script loading failures (CDN/ad blocker issues)
 
-         Free plan limits: ~5,000 errors/month
+    Free plan limits: ~5,000 errors/month
 
-         Dashboard: https://sentry.io/organizations/ladiaria/issues/
-    ========================================================================== -->
+    Dashboard: https://sentry.io/organizations/ladiaria/issues/
+    ==========================================================================
+    {% endcomment %}
     {% if SENTRY_ENABLED and SENTRY_DSN %}
       <script>
         {# Load Sentry after DOM is ready (before full page load) to capture early errors #}
