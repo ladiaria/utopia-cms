@@ -225,166 +225,168 @@
       <!-- End user data -->
     {% endif %}
 
-    <!-- ========================================================================
-         Sentry JavaScript SDK - Frontend Error Tracking
-         ========================================================================
+    {% comment %}
+    ========================================================================
+    Sentry JavaScript SDK - Frontend Error Tracking
+    ========================================================================
 
-         Purpose: Captures JavaScript errors and exceptions from user browsers
+    Purpose: Captures JavaScript errors and exceptions from user browsers
 
-         Configuration:
-         - Loaded from /static/js/vendor/sentry.min.js (not CDN to avoid ad blockers)
-         - Lazy loaded after page content (zero impact on page load performance)
-         - Only enabled when SENTRY_ENABLED=True in settings
+    Configuration:
+    - Loaded from /static/js/vendor/sentry.min.js (not CDN to avoid ad blockers)
+    - Lazy loaded after page content (zero impact on page load performance)
+    - Only enabled when SENTRY_ENABLED=True in settings
 
-         What gets tracked:
-         - Uncaught JavaScript exceptions
-         - Console errors
-         - MercadoPago payment errors (see subscribe_mercadopago_brick.html)
-         - User context (email, subscriber status) for debugging
+    What gets tracked:
+    - Uncaught JavaScript exceptions
+    - Console errors
+    - MercadoPago payment errors (see subscribe_mercadopago_brick.html)
+    - User context (email, subscriber status) for debugging
 
-         What gets filtered out (noise reduction):
-         - Browser extension errors
-         - Network errors (offline users)
-         - Facebook widget errors
-         - Script loading failures (CDN/ad blocker issues)
+    What gets filtered out (noise reduction):
+    - Browser extension errors
+    - Network errors (offline users)
+    - Facebook widget errors
+    - Script loading failures (CDN/ad blocker issues)
 
-         Free plan limits: ~5,000 errors/month
+    Free plan limits: ~5,000 errors/month
 
-         Dashboard: https://sentry.io/organizations/ladiaria/issues/
-    ========================================================================== -->
+    Dashboard: https://sentry.io/organizations/ladiaria/issues/
+    ==========================================================================
+    {% endcomment %}
     {% if SENTRY_ENABLED and SENTRY_DSN %}
       <script>
-        // Load Sentry after DOM is ready (before full page load) to capture early errors
-        // Using dynamic script loading (createElement) ensures 0% impact on First Contentful Paint (FCP)
-        // DOMContentLoaded vs load: captures errors during user interactions that happen before full page load
+        {# Load Sentry after DOM is ready (before full page load) to capture early errors #}
+        {# Using dynamic script loading (createElement) ensures 0% impact on First Contentful Paint (FCP) #}
+        {# DOMContentLoaded vs load: captures errors during user interactions that happen before full page load #}
         document.addEventListener('DOMContentLoaded', function() {
-          // Create script element dynamically - served from /static/ to avoid ad blocker blocking
+          {# Create script element dynamically - served from /static/ to avoid ad blocker blocking #}
           const sentryScript = document.createElement('script');
-          sentryScript.src = '{% static "js/vendor/sentry.min.js" %}';  // 73KB minified
-          sentryScript.setAttribute('data-cfasync', 'false');  // Prevent Cloudflare Rocket Loader modification
+          sentryScript.src = '{% static "js/vendor/sentry.min.js" %}';
+          sentryScript.setAttribute('data-cfasync', 'false');
 
-          // Initialize Sentry after SDK script loads successfully
+          {# Initialize Sentry after SDK script loads successfully #}
           sentryScript.onload = function() {
             Sentry.init({
-              // Data Source Name - connects to your Sentry project
+              {# Data Source Name - connects to your Sentry project #}
               dsn: "{{ SENTRY_DSN }}",
 
-              // Environment (auto-detected in settings.py based on DEBUG and SITE_DOMAIN)
-              // Values: "development", "piques" (staging), "production"
+              {# Environment (auto-detected in settings.py based on DEBUG and SITE_DOMAIN) #}
+              {# Values: "development", "piques" (staging), "production" #}
               environment: "{{ SENTRY_ENVIRONMENT }}",
 
-              // Release tracking (optional): Links errors to specific git commits for debugging
-              // Uncomment and set GIT_COMMIT environment variable to enable:
-              //   export GIT_COMMIT=$(git rev-parse --short HEAD)
-              // release: "utopia-cms@{{ git_commit }}",
+              {# Release tracking (optional): Links errors to specific git commits for debugging #}
+              {# Uncomment and set GIT_COMMIT environment variable to enable: #}
+              {#   export GIT_COMMIT=$(git rev-parse --short HEAD) #}
+              {# release: "utopia-cms@{{ git_commit }}", #}
 
-              // Performance Monitoring (tracing) - CURRENTLY DISABLED
-              // Controls what % of page loads send performance data to Sentry
-              //
-              // Values:
-              //   0.0 = Disabled (current) - Only error tracking, no performance data
-              //   0.1 = 10% sample - Good for testing performance monitoring
-              //   1.0 = 100% - Track all page loads (expensive, needs paid plan)
-              //
-              // Cost impact example:
-              //   0.0: ~1,000 errors/month = stay within free 5k limit ✓
-              //   0.1: ~2,000 errors + 60k spans/month = need paid plan ($26+/mo)
-              //   1.0: ~2,000 errors + 600k spans/month = need business plan ($80+/mo)
-              //
-              // Recommendation: Keep at 0.0 until you need to debug performance issues
+              {# Performance Monitoring (tracing) - CURRENTLY DISABLED #}
+              {# Controls what % of page loads send performance data to Sentry #}
+              {# #}
+              {# Values: #}
+              {#   0.0 = Disabled (current) - Only error tracking, no performance data #}
+              {#   0.1 = 10% sample - Good for testing performance monitoring #}
+              {#   1.0 = 100% - Track all page loads (expensive, needs paid plan) #}
+              {# #}
+              {# Cost impact example: #}
+              {#   0.0: ~1,000 errors/month = stay within free 5k limit ✓ #}
+              {#   0.1: ~2,000 errors + 60k spans/month = need paid plan ($26+/mo) #}
+              {#   1.0: ~2,000 errors + 600k spans/month = need business plan ($80+/mo) #}
+              {# #}
+              {# Recommendation: Keep at 0.0 until you need to debug performance issues #}
               tracesSampleRate: 0.0,
 
-              // beforeSend hook - Filters and enriches events before sending to Sentry
-              // This is where we:
-              //   1. Add user context (email, subscriber info)
-              //   2. Filter out noise (extensions, network errors)
-              //   3. Remove sensitive data
+              {# beforeSend hook - Filters and enriches events before sending to Sentry #}
+              {# This is where we: #}
+              {#   1. Add user context (email, subscriber info) #}
+              {#   2. Filter out noise (extensions, network errors) #}
+              {#   3. Remove sensitive data #}
               beforeSend(event, hint) {
-                // === USER CONTEXT ===
-                // Add user info from LDUser global variable (set in base.html around line 213)
-                // This helps identify which users are experiencing errors
+                {# === USER CONTEXT === #}
+                {# Add user info from LDUser global variable (set in base.html around line 213) #}
+                {# This helps identify which users are experiencing errors #}
                 if (typeof LDUser !== 'undefined' && LDUser.is_authenticated) {
                   event.user = {
-                    id: LDUser.id,                          // User ID
-                    email: LDUser.email || undefined,       // Email (for support)
-                    subscriber: LDUser.subscriber,          // Is subscriber? (true/false)
-                    subscriber_id: LDUser.subscriber_id,    // Subscriber ID from CRM
+                    id: LDUser.id,
+                    email: LDUser.email || undefined,
+                    subscriber: LDUser.subscriber,
+                    subscriber_id: LDUser.subscriber_id,
                   };
                 }
 
-                // === FILTER: BROWSER EXTENSIONS ===
-                // Don't report errors from browser extensions (not our code, can't fix)
-                // Examples: ad blockers, password managers, translation extensions
+                {# === FILTER: BROWSER EXTENSIONS === #}
+                {# Don't report errors from browser extensions (not our code, can't fix) #}
+                {# Examples: ad blockers, password managers, translation extensions #}
                 if (hint.originalException && hint.originalException.stack) {
                   const stack = hint.originalException.stack;
                   if (stack.includes('chrome-extension://') || stack.includes('moz-extension://')) {
-                    return null; // Returning null = don't send to Sentry
+                    return null;
                   }
                 }
 
-                // === FILTER: NETWORK ERRORS ===
-                // Don't report network errors (user offline, slow connection, timeout)
-                // These are not bugs in our code, just connectivity issues
+                {# === FILTER: NETWORK ERRORS === #}
+                {# Don't report network errors (user offline, slow connection, timeout) #}
+                {# These are not bugs in our code, just connectivity issues #}
                 if (hint.originalException && hint.originalException.message) {
                   const message = hint.originalException.message.toLowerCase();
                   const ignoredMessages = ['network request failed', 'failed to fetch', 'networkerror'];
                   if (ignoredMessages.some(ignored => message.includes(ignored))) {
-                    return null; // Don't send to Sentry
+                    return null;
                   }
                 }
 
-                // If we got here, the error is real and should be reported
+                {# If we got here, the error is real and should be reported #}
                 return event;
               },
 
-              // === IGNORE ERRORS ===
-              // List of error messages/patterns to completely ignore (won't even reach beforeSend)
-              // These are known issues that are not bugs or can't be fixed
+              {# === IGNORE ERRORS === #}
+              {# List of error messages/patterns to completely ignore (won't even reach beforeSend) #}
+              {# These are known issues that are not bugs or can't be fixed #}
               ignoreErrors: [
-                // Browser extension errors (common when users have many extensions)
+                {# Browser extension errors (common when users have many extensions) #}
                 'top.GLOBALS',
                 'canvas.contentDocument',
                 'atomicFindClose',
 
-                // Facebook SDK errors (third-party, can't fix)
+                {# Facebook SDK errors (third-party, can't fix) #}
                 'fb_xd_fragment',
 
-                // Network/connectivity errors (not bugs)
+                {# Network/connectivity errors (not bugs) #}
                 'NetworkError',
                 'Network request failed',
                 'Failed to fetch',
 
-                // Script loading errors (CDN down, ad blockers, slow connections)
+                {# Script loading errors (CDN down, ad blockers, slow connections) #}
                 'ChunkLoadError',
                 'Loading chunk',
 
-                // Browser-specific quirks (not bugs, just browser implementation details)
-                // ResizeObserver fires when element size changes, browsers handle this differently
+                {# Browser-specific quirks (not bugs, just browser implementation details) #}
+                {# ResizeObserver fires when element size changes, browsers handle this differently #}
                 'ResizeObserver loop limit exceeded',
                 'ResizeObserver loop completed with undelivered notifications',
               ],
             });
 
-            // === CONTEXT TAGS ===
-            // Tags help filter/search errors in Sentry dashboard
-            // Example: See all errors from "ladiaria" publication, or all "article" page errors
+            {# === CONTEXT TAGS === #}
+            {# Tags help filter/search errors in Sentry dashboard #}
+            {# Example: See all errors from "ladiaria" publication, or all "article" page errors #}
 
-            // Publication context - Which publication/site this error occurred on
+            {# Publication context - Which publication/site this error occurred on #}
             {% if publication %}
-              Sentry.setTag('publication', '{{ publication.slug }}');  // e.g., "ladiaria", "la-pupila"
+              Sentry.setTag('publication', '{{ publication.slug }}');
             {% endif %}
 
-            // Page type context - What type of page the user was viewing
+            {# Page type context - What type of page the user was viewing #}
             {% if is_portada %}
-              Sentry.setTag('page_type', 'frontpage');  // Homepage
+              Sentry.setTag('page_type', 'frontpage');
             {% elif is_detail %}
-              Sentry.setTag('page_type', 'article');    // Article detail page
+              Sentry.setTag('page_type', 'article');
             {% else %}
-              Sentry.setTag('page_type', 'other');      // Other pages (sections, search, etc.)
+              Sentry.setTag('page_type', 'other');
             {% endif %}
           };
 
-          // Append SDK script to document head to start loading
+          {# Append SDK script to document head to start loading #}
           document.head.appendChild(sentryScript);
         });
       </script>
