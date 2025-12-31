@@ -86,3 +86,7 @@ git+https://github.com/ladiaria/django-favit.git
 git+https://github.com/ladiaria/django-tagging-autocomplete-tag-it.git
 git+https://github.com/ladiaria/django-amp-tools.git
 git+https://github.com/ladiaria/django-updown.git
+
+# Django Admin Locking - prevents concurrent editing conflicts
+# Shows a warning banner when another user is editing the same object
+django-admin-locking==0.10.0
