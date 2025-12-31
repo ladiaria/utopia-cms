@@ -586,6 +586,9 @@ CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is r
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 ENABLE_GOOGLE_ONE_TAP = False
 SENTRY_ENABLED = False
+# Django Admin Locking - prevents concurrent editing conflicts (pessimistic locking)
+# Override to True in local_settings.py to enable
+ADMIN_PAGE_LOCK_ENABLED = False
 
 # ====================================================================================== visual separator =============
 
