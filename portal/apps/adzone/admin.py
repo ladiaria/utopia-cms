@@ -64,7 +64,13 @@ class AdClickAdmin(admin.ModelAdmin):
                          'Advertiser ID',
                          'Advertiser name',
                          'Zone'))
-        queryset = queryset.select_related('ad', 'ad__advertiser')
+        # Fix: Get IDs and create fresh queryset to avoid deferred field conflict
+        # The get_queryset() method uses .only() which defers ad.advertiser field
+        # We need a fresh queryset without that restriction to use select_related
+        ids = list(queryset.values_list('id', flat=True))
+        queryset = AdClick.objects.filter(id__in=ids).select_related(
+            'ad', 'ad__advertiser', 'ad__zone'
+        )
         for impression in queryset:
             writer.writerow((impression.ad.title,
                              impression.ad.url,
@@ -110,7 +116,13 @@ class AdImpressionAdmin(admin.ModelAdmin):
                          'Advertiser ID',
                          'Advertiser name',
                          'Zone'))
-        queryset = queryset.select_related('ad', 'ad__advertiser')
+        # Fix: Get IDs and create fresh queryset to avoid deferred field conflict
+        # The get_queryset() method uses .only() which defers ad.advertiser field
+        # We need a fresh queryset without that restriction to use select_related
+        ids = list(queryset.values_list('id', flat=True))
+        queryset = AdImpression.objects.filter(id__in=ids).select_related(
+            'ad', 'ad__advertiser', 'ad__zone'
+        )
         for impression in queryset:
             writer.writerow((impression.ad.title,
                              impression.ad.url,

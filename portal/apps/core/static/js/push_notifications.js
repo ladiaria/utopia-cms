@@ -37,14 +37,19 @@ function unsubscribeUser(){
   navigator.serviceWorker.getRegistration()
   .then(reg => reg.pushManager.getSubscription())
   .then(subscription => {
+    // Always update cookie state, regardless of subscription existence
+    setCookie('notifyme', "false", 1);
+    deleteCookie('home_arriving', 1);
+
     if (subscription) {
       subscription_to_delete = subscription;
-      setCookie('notifyme', "false", 1);
-      deleteCookie('home_arriving', 1);
       return subscription.unsubscribe();
     }
   }).catch(err => {
     console.log('Error unsubscribing', err);
+    // Also set cookie to false on error
+    setCookie('notifyme', "false", 1);
+    deleteCookie('home_arriving', 1);
   }).then(() => {
     updateSubscriptionOnServer(null);
   });
