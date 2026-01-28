@@ -33,32 +33,15 @@
   {% include 'pwa-module.html' %}
 {% endif %}
 
-{% if allow_ads and not is_subscriber %}
-  <div class="frontpage-section frontpage-section--white frontpage-section--ad frontpage-section">
-    <div class="container">
-      <section id="header-pub" class="col s12 center-align"></section>
+{% block cover_ads %}
+  {% if allow_ads and not is_subscriber %}
+    <div class="frontpage-section frontpage-section--white frontpage-section--ad frontpage-section">
+      <div class="container">
+        <section id="header-pub" class="col s12 center-align"></section>
+      </div>
     </div>
-  </div>
-{% comment "Temporary solution until 30 12 2025" %}{% endcomment %}
-{% elif allow_ads %}
-  <div class="frontpage-section frontpage-section--white frontpage-section--ad frontpage-section">
-    <div class="container">
-      <section id="header-pub-not-subscriber" class="col s12 center-align">
-        <span class="ld-caption article__bottom-ad-title" aria-label="Espacio publicitario">Espacio publicitario</span>
-        <div class="ad_banner pub ">
-          <a target="_blank" href="/adzone/view/667/" rel="sponsored">
-            <picture>
-              <img class="responsive-img ad-mobile" loading="lazy" src="{% static "img/banner_LVA_mobile.jpeg" %}" width="300" height="250" alt="La vaca atada">
-            </picture>
-            <picture>
-              <img class="responsive-img ad-desktop" loading="lazy" src="{% static "img/banner_LVA_desktop.jpeg" %}" width="970" height="250" alt="La vaca atada">
-            </picture>
-          </a>
-        </div>
-      </section>
-    </div>
-  </div>
-{% endif %}
+  {% endif %}
+{% endblock %}
 
 {% block mas_leidos %}
   {% if allow_mas_leidos %}
