@@ -10,9 +10,47 @@ from core.models import DeviceSubscribed, PushNotification
 class Command(BaseCommand):
     help = """
         Shows push notification statistics from logs and database.
+<<<<<<< Updated upstream
         Ex.: ./manage.py push_notification_stats --last 7
              ./manage.py push_notification_stats --date 2026-01-29
              ./manage.py push_notification_stats --summary
+=======
+
+        Usage:
+            ./manage.py push_notification_stats --last 7
+            ./manage.py push_notification_stats --date 2026-01-29
+            ./manage.py push_notification_stats --summary
+
+        Example output:
+
+            === DATABASE STATS ===
+
+            Total subscribed devices: 2035
+            Total push notifications created: 45
+              - Sent: 42
+              - Pending: 3
+
+            === LOG FILE STATS ===
+
+            Log file: /var/log/utopiacms/push_notifications.log
+            Total log lines: 1523
+
+            Send operations found: 42 (last 7 days)
+
+            Timestamp            Tag             Sent    Failed    Total
+            -----------------------------------------------------------------
+            2026-01-28 10:30:45  article_123     2000        35     2035
+            2026-01-28 15:22:10  article_456     1998        37     2035
+            ...
+
+            === SUMMARY ===
+
+            Total send operations: 42
+            Total notifications sent successfully: 84000
+            Total notifications failed: 1470
+            Success rate: 98.3%
+            Total errors in log: 1470
+>>>>>>> Stashed changes
     """
 
     def add_arguments(self, parser):
