@@ -242,6 +242,11 @@ $(function(){
             } else {
               // Neither first nor 2nd in the same day, so, check if last arrived date is +24h ago;
               // to only offer allow notifications once per day.
+              // TODO: Bug - .getDate() returns day of month (1-31), not timestamp.
+              //       Should be .getTime() instead. Current behavior: always resets when
+              //       day changes, regardless of 24h. Low priority - only affects edge case
+              //       of visits crossing midnight with less than 24h difference.
+              //       Fix: new Date(home_arriving_value.time).getTime() + (24 * 60 * 60 * 1000)
               if (new Date(home_arriving_value.time).getDate() + (24 * 60 * 60 * 1000) < now.getTime()) {
                 setCookie('home_arriving', JSON.stringify({'moment': 1, 'time': now}), 1);
               }
