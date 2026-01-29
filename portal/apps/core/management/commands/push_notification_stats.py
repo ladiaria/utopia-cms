@@ -10,11 +10,6 @@ from core.models import DeviceSubscribed, PushNotification
 class Command(BaseCommand):
     help = """
         Shows push notification statistics from logs and database.
-<<<<<<< Updated upstream
-        Ex.: ./manage.py push_notification_stats --last 7
-             ./manage.py push_notification_stats --date 2026-01-29
-             ./manage.py push_notification_stats --summary
-=======
 
         Usage:
             ./manage.py push_notification_stats --last 7
@@ -50,7 +45,6 @@ class Command(BaseCommand):
             Total notifications failed: 1470
             Success rate: 98.3%
             Total errors in log: 1470
->>>>>>> Stashed changes
     """
 
     def add_arguments(self, parser):
@@ -110,7 +104,7 @@ class Command(BaseCommand):
             return
 
         try:
-            with open(log_file, 'r') as f:
+            with open(log_file, 'r', encoding='utf-8', errors='replace') as f:
                 lines = f.readlines()
         except FileNotFoundError:
             self.stdout.write(self.style.ERROR(f'Log file not found: {log_file}'))
