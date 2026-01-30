@@ -1090,31 +1090,6 @@ a.ld-link-low {
   }
 }
 
-/* Chile  */
-.section-project {
-  background: $color-light-blue;
-  padding: 50px 5%;
-  margin-bottom: 120px;
-
-  .section-detail__title {
-    hyphens: none;
-  }
-
-  .section-credits {
-    > li {
-      margin-bottom: 15px;
-
-      b {
-        display: block;
-      }
-    }
-  }
-}
-.chile--attribution {
-  display: block;
-  margin-top: 30px;
-}
-
 .sections-grid {
   @media (max-width: 768px) {
     > .container > .row {
@@ -1131,17 +1106,6 @@ a.ld-link-low {
   a {
     color: $off-black;
     text-decoration: underline;
-  }
-}
-
-#partidos-dropdown {
-  li {
-    a {
-      color: #262626;
-      font-size: 12px;
-      font-weight: 500;
-      line-height: 1.2;
-    }
   }
 }
 
@@ -1297,6 +1261,7 @@ select.browser-default {
     }
   }
 }
+
 /* rebranding forms */
 input:not([type]):focus:not([readonly]),
 input[type="text"]:not(.browser-default):focus:not([readonly]),
@@ -1336,6 +1301,7 @@ textarea.materialize-textarea:focus:not([readonly]) {
 .dropdown-content li > span {
   color: $grey !important;
 }
+
 #contact_form {
   .btn {
     color: $off-black !important;
@@ -1349,6 +1315,7 @@ textarea.materialize-textarea:focus:not([readonly]) {
     }
   }
 }
+
 #subscribe {
   .btn {
     color: $off-black !important;
@@ -1392,6 +1359,7 @@ nav.subscription_black {
     }
   }
 }
+
 #div_id_time {
   input[type="radio"] {
     position: relative;
@@ -1431,263 +1399,6 @@ nav.subscription_black {
 
     &:hover {
       opacity: 0.8;
-    }
-  }
-}
-
-// Lista de lectura
-.read-later,
-.fav {
-  text-align: center;
-  padding: 0 20px;
-  margin-top: 50px;
-
-  &.top {
-    margin-top: 10px;
-  }
-
-  &__btn {
-    font-family: "Roboto", sans-serif;
-    font-size: 15px;
-    line-height: 22px;
-    font-weight: 700;
-    text-transform: uppercase;
-    text-decoration: none;
-    text-align: center;
-    display: inline-block;
-    border-radius: 100px;
-    padding: 7px 18px;
-    box-sizing: border-box;
-    border: 2px solid $off-black;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition:
-      background 0.35s ease,
-      color 0.35s ease,
-      box-shadow 0.35s ease;
-    vertical-align: middle;
-    background: transparent;
-
-    svg {
-      position: relative;
-      top: 2px;
-      max-height: 16px;
-      width: auto;
-
-      path {
-        transition: fill 0.35s ease;
-      }
-    }
-
-    &:hover {
-      background: $off-black;
-      color: white;
-      border: none;
-      padding: 9px 20px;
-      box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3);
-
-      svg path.change-fill {
-        fill: white;
-      }
-    }
-
-    &:focus {
-      background-color: transparent;
-    }
-
-    &:active {
-      background: #4d4f4f;
-      border-color: #4d4f4f;
-      border: none;
-      padding: 9px 20px;
-      transform: translateY(1px);
-
-      svg path.change-fill {
-        fill: white;
-      }
-    }
-  }
-  &__saved {
-    background: $off-black;
-    color: white;
-    border: none;
-    padding: 9px 20px;
-
-    svg path.change-fill {
-      fill: white;
-    }
-
-    &:hover {
-      box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3);
-      color: white;
-      background-color: #3a3a3a;
-    }
-    &:focus {
-      background-color: $off-black;
-      color: white;
-    }
-
-    &:active {
-      box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.3);
-      color: white;
-      background: #4d4f4f;
-      transform: translateY(1px);
-    }
-  }
-  .info {
-    display: block;
-    margin-top: 10px;
-    margin-bottom: 10px;
-
-    a:hover {
-      text-decoration: none;
-    }
-  }
-}
-.lista-lectura_nav {
-  margin: 0;
-  display: flex;
-  justify-content: space-between;
-
-  @media (min-width: 600px) {
-    justify-content: initial;
-  }
-
-  li {
-    text-transform: uppercase;
-    font-size: 14px;
-    font-weight: 500;
-
-    @media (min-width: 600px) {
-      margin-right: 20px;
-    }
-
-    a {
-      display: block;
-      padding: 10px 0;
-
-      &.active {
-        border-bottom: 3px solid $off-black;
-      }
-
-      svg {
-        position: relative;
-        top: 7px;
-        display: block;
-        margin: 0 auto 10px;
-
-        @media (min-width: 600px) {
-          margin: 0 5px 0 0;
-          display: inline-block;
-        }
-      }
-      .count {
-        display: none;
-
-        @media (min-width: 420px) {
-          display: inline-block;
-          margin-left: 5px;
-        }
-      }
-
-      $spinnerSize: 16;
-
-      svg.spinner {
-        width: $spinnerSize + px;
-        height: $spinnerSize + px;
-        x: 0px;
-        y: 0px;
-        viewbox: 0 0 $spinnerSize $spinnerSize;
-        display: inline;
-        vertical-align: top;
-        position: relative;
-        top: 2px;
-
-        circle {
-          fill: transparent;
-          stroke: #212121;
-          stroke-width: 4;
-          stroke-linecap: round;
-          stroke-dasharray: (3.14 * $spinnerSize);
-          -webkit-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
-          -moz-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
-          -ms-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
-          -o-transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
-          transform-origin: (0.5px * $spinnerSize) (0.5px * $spinnerSize) 0;
-          -webkit-animation: spinner 2s linear infinite;
-          -moz-animation: spinner 2s linear infinite;
-          -ms-animation: spinner 2s linear infinite;
-          -o-animation: spinner 2s linear infinite;
-          animation: spinner 2s linear infinite;
-        }
-      }
-
-      @keyframes spinner {
-        0% {
-          transform: rotate(0deg);
-          stroke-dashoffset: (0.66 * $spinnerSize);
-        }
-        50% {
-          transform: rotate(720deg);
-          stroke-dashoffset: (3.14 * $spinnerSize);
-        }
-        100% {
-          transform: rotate(1080deg);
-          stroke-dashoffset: (0.66 * $spinnerSize);
-        }
-      }
-    }
-
-    @media (min-width: 700px) {
-      + li {
-        margin-left: 10px;
-      }
-    }
-  }
-}
-.lista-lectura-tab {
-  margin-bottom: 100px;
-
-  .empty-feed {
-    background: #f8f8f8;
-    padding: 100px 35px;
-    text-align: center;
-    border-radius: 10px;
-
-    .icon {
-      display: inline-block;
-      margin-bottom: 10px;
-    }
-    .msg {
-      display: block;
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
-    a {
-      text-decoration: underline;
-
-      &:hover {
-        text-decoration: none;
-      }
-    }
-  }
-
-  .feed-info {
-    background: #f8f8f8;
-    border-radius: 10px;
-    padding: 10px 15px 10px 45px;
-    font-size: 16px;
-    line-height: 24px;
-    margin-top: -10px;
-    margin-bottom: 20px;
-    position: relative;
-
-    svg {
-      display: inline-block;
-      vertical-align: top;
-      position: absolute;
-      left: 15px;
-      top: 10px;
     }
   }
 }

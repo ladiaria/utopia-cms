@@ -1,9 +1,6 @@
-@charset 'UTF-8';
-
 @import "_variables";
 @import "utopia_materialize/variables";
 @import "utopia_materialize/global";
-@import "utopia_materialize/date_picker/default";
 @import "../materialize/sass/components/normalize";
 @import "../materialize/sass/components/grid";
 @import "../materialize/sass/components/navbar";
@@ -12,7 +9,6 @@
 @import "../materialize/sass/components/tabs";
 @import "../materialize/sass/components/dropdown";
 @import "../materialize/sass/components/modal";
-@import "../materialize/sass/components/collapsible.scss";
 @import "utopia_forms";
 @import "utopia_base";
 @import "utopia_fonts";
@@ -28,11 +24,7 @@
 @import "utopia_all";
 @import "components/subscribe_box";
 @import "components/masleidos";
-@import "subscription";
-@import "pages/notice";
-@import "pages/unsubscribe";
-@import "pages/search";
-@import "pages/edit-profile";
+
 /*
 * Do not include styles directly here.
 * Add in separate stylesheet or add to _utopia_all.scss

@@ -1,7 +1,6 @@
 // Notices. Example: nlunsubscribe.html
 
 .ld-notice {
-
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -35,10 +34,10 @@
   .ld-subscribe-box {
     margin-bottom: 24px;
     margin-top: 42px;
-      a, a:visited {
-        color: $off-black;
-        font-weight: normal;
-      }
+    a,
+    a:visited {
+      color: $off-black;
+      font-weight: normal;
+    }
   }
-
 }
