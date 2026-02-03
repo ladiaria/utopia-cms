@@ -10,7 +10,10 @@ function setNotificationCheckStatus() {
       revertSwitch(switchElement);  // Since it always load in false, we revert to true
     }
   }).catch(err => {
-    console.log('Error initializing push notifications switch', err);
+    capturePushNotificationError(err, {
+      action: 'setNotificationCheckStatus',
+      step: 'getRegistration_or_getSubscription'
+    });
   });
 }
 
