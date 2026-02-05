@@ -71,6 +71,10 @@
         {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.1 %}{% endwith %}
       {% endif %}
 
+      {% if featured_publications.2 %}
+        {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.2 %}{% endwith %}
+      {% endif %}
+
       {% with prefetched_article_data=False %}
         {% for section in featured_sections.2 %}{% render_section section %}{% endfor %}
       {% endwith %}
@@ -95,19 +99,4 @@
   <script defer src="{% static 'materialize/js/tabs.js' %}"></script>
 {% endblock %}
 
-{% block footer_scripts %}
-  <script type="text/javascript">
-    $(function(){
-      $('#bn-module').load("{% url 'bn-content' %}?publication={{ publication.slug }}", function(response){
-        if(response){
-          var btn_close = $('.btn-close', this);
-          if(btn_close.length){
-            btn_close.click(function(){
-              notification_close(this);
-            });
-          }
-        }
-      });
-    });
-  </script>
-{% endblock %}
+{% block footer_scripts %}{% include bn_module_footer_scripts_template %}{% endblock %}

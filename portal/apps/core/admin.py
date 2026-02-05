@@ -4,6 +4,7 @@ import json
 from urllib.parse import urljoin
 from pydoc import locate
 from kombu.exceptions import OperationalError
+from solo.admin import SingletonModelAdmin
 
 from actstream.models import Action
 from tagging.models import Tag, TaggedItem
@@ -24,14 +25,15 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
-from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea
+from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
-from django.forms.fields import CharField, IntegerField
+from django.forms.fields import CharField, IntegerField, BooleanField
 from django.forms.widgets import TextInput, HiddenInput
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.utils.text import Truncator
+from django.utils.safestring import mark_safe
 
 from .models import (
     Article,
@@ -57,6 +59,7 @@ from .models import (
     BreakingNewsModule,
     DeviceSubscribed,
     PushNotification,
+    PerplexityAPISettings,
 )
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
@@ -69,40 +72,157 @@ class PrintOnlyArticleInline(TabularInline):
     extra = 10
 
 
-class ArticleRelForm(ModelForm):
+"""
+core.models.Edition model admin.
+Articles related to editions are categorized into two distinct blocks in the admin add/change edition page:
 
-    class Meta:
-        fields = ('article', 'top_position')
-        model = ArticleRel
+- "Home Top": This block features articles prominently displayed on the home page. Although this scenario is less
+  common, it is the most frequently used, as the database is expected to contain numerous editions, mirroring the
+  periodic nature of news publications. In essence, this block represents the featured articles of an edition,
+  regardless of whether it is currently displayed on the home page.
+
+- "Non-Top Articles": This block comprises articles that are not featured in the edition.
+
+- Implementation: The solution employs inline formsets to filter articles into one of these two blocks. The UI logic
+  allows for the insertion of any article into either block, but not vice versa. To remove a featured article from an
+  edition, it must first be removed from the "Home Top" block, after which it will appear in the "Non-Top Articles"
+  block, enabling its removal from the edition. Note that dragging articles across blocks is not currently supported,
+  but may be implemented in the future.
+
+Happy publishing!
+"""
 
 
 class TopArticleRelBaseInlineFormSet(BaseInlineFormSet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.can_delete = False
+        self.queryset = self.queryset.filter(home_top=True)
+
+    def clean(self):
+        # this also can be done using javascript after add a new row or drag the row to a new position
+        # but allways is a good practice to make server side validation
+        # TODO: 1. DRY: this can be encapsulated in a new base class method receiving the order field name
+        #               (be caution with the last condition, the one after "DELETE")
+        #       2. Test cases, as many combinations as possible of this actions:
+        #          1 - Untouched form
+        #          2 - Empty form, add rows
+        #          3 - drag
+        #          4 - unmark featured
+        #          5 - mark featured
+        #          6 - delete
+        super().clean()
+        last_idx = 0
+        for form in self.forms:
+            f_cleaned_data = form.cleaned_data
+            if f_cleaned_data and not f_cleaned_data.get('DELETE') and f_cleaned_data.get('home_top'):
+                position = f_cleaned_data.get('top_position')
+                if position:
+                    if position > last_idx:
+                        last_idx = position
+                else:
+                    last_idx += 1
+                    form.cleaned_data['top_position'] = form.instance.top_position = last_idx
+            # if for any reason the article has not position, set it = 1
+            if not form.cleaned_data.get('position'):
+                form.cleaned_data['position'] = form.instance.position = 1
 
 
-TopArticleRelInlineFormSet = inlineformset_factory(
-    Edition, ArticleRel, form=ArticleRelForm, formset=TopArticleRelBaseInlineFormSet
-)
+class NoTopArticleRelBaseInlineFormSet(BaseInlineFormSet):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.queryset = self.queryset.filter(home_top=False)
+
+    def clean(self):
+        # this also can be done using javascript after add a new row or drag the row to a new position
+        # but allways is a good practice to make server side validation
+        super().clean()
+        last_idx = 0
+        for form in self.forms:
+            f_cleaned_data = form.cleaned_data
+            if f_cleaned_data and not f_cleaned_data.get('DELETE') and not f_cleaned_data.get('home_top'):
+                position = f_cleaned_data.get('position')
+                if position:
+                    if position > last_idx:
+                        last_idx = position
+                else:
+                    last_idx += 1
+                    form.cleaned_data['position'] = form.instance.position = last_idx
 
 
-class HomeTopArticleInline(TabularInline):
+class ArticleRelAdminBaseModelForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['article'].label = 'artículo'
+        self.fields['section'].label = 'sección'
+        self.fields['section'].choices = section_choices()
+        self.fields['home_top'].label = 'en portada'
+
+    class Meta:
+        model = ArticleRel
+        fields = "__all__"
+
+
+class ReadOnlyDisplayWidget(Widget):
+    # TODO: a better base class to inherit from would be HiddenInput using readonly=True by default, try to do it.
+
+    def render(self, name, value, attrs=None, renderer=None):
+        text_display = f'<span>{value if value is not None else ""}</span>'
+        hidden_input = f'<input type="hidden" id="{name}" name="{name}" value="{value}"/>'
+        return mark_safe(text_display + hidden_input)
+
+
+class ArticleRelHomeTopForm(ArticleRelAdminBaseModelForm):
+    top_position = IntegerField(
+        label='posición',
+        widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}),
+        help_text=(
+            'Arrastre la fila del artículo deseado hacia abajo o arriba para cambiar su posición en '
+            'portada; las posiciones serán recalculadas al guardar la edición con esta página.'
+        ),
+        required=False,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['home_top'].help_text = \
+            'Utilice esta opción para desmarcar y poder quitar el artículo de los artículos en portada.'
+        self.initial['home_top'] = True
+
+    class Meta:
+        model = ArticleRel
+        fields = "__all__"
+
+
+class ArticleRelHomeNoTopForm(ArticleRelAdminBaseModelForm):
+    # TODO: draggable ordering is not working, FIX asap
+
+    position = IntegerField(
+        label='orden',
+        widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}),
+        help_text=(
+            'Arrastre la fila del artículo deseado hacia abajo o arriba para cambiar su orden en '
+            'la edición; los valores serán recalculados al guardar la edición con esta página.'
+        ),
+        required=False,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['home_top'].help_text = 'Marque esta opción para agregar el artículo en portada.'
+
+    class Meta:
+        model = ArticleRel
+        fields = "__all__"
+
+
+class EditionBaseArticleInline(TabularInline):
     model = ArticleRel
     extra = 0
-    max_num = 0
-    ordering = ('top_position', )
-    fields = ('article', 'section', 'top_position')
-    readonly_fields = ('section', )
-    raw_id_fields = ('article', )
-    verbose_name_plural = 'Nota de tapa y titulines'
-    formset = TopArticleRelInlineFormSet
-    classes = ('dynamic-order', )
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(home_top=True)
+    raw_id_fields = ('article',)
+    classes = ('dynamic-order',)
 
     class Media:
         # jquery loaded again (admin uses custom js namespaces and we use jquery-ui)
@@ -115,64 +235,64 @@ class HomeTopArticleInline(TabularInline):
         css = {'all': ('css/home_admin.css',)}
 
 
-class SectionArticleRelForm(ModelForm):
+TopArticleRelInlineFormSet = inlineformset_factory(
+    Edition,
+    ArticleRel,
+    form=ArticleRelHomeTopForm,
+    formset=TopArticleRelBaseInlineFormSet,
+)
+NoTopArticleRelInlineFormSet = inlineformset_factory(
+    Edition,
+    ArticleRel,
+    form=ArticleRelHomeNoTopForm,
+    formset=NoTopArticleRelBaseInlineFormSet,
+)
 
-    class Meta:
-        fields = ('article', 'position', 'home_top')
-        model = ArticleRel
+
+class HomeTopArticleInline(EditionBaseArticleInline):
+    ordering = ('top_position',)
+    fields = ('top_position', 'article', 'section', "home_top")
+    verbose_name = 'artículo destacado'
+    verbose_name_plural_default = 'artículos destacados en portada'
+    verbose_name_plural = verbose_name_plural_default
+    form = ArticleRelHomeTopForm
+    formset = TopArticleRelInlineFormSet
+    can_delete = False
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        if (
+            obj
+            and obj.publication.slug == settings.DEFAULT_PUB
+            and self.verbose_name_plural == self.verbose_name_plural_default
+        ):
+            self.verbose_name_plural += " principal"
+        return fieldsets
 
 
-SectionArticleRelInlineFormSet = inlineformset_factory(Edition, ArticleRel, form=SectionArticleRelForm)
-
-
-def section_top_article_inline_class(section):
-
-    class SectionTopArticleInline(HomeTopArticleInline):
-        max_num = 20
-        verbose_name_plural = 'Artículos en %s [[%d]]' % (section.name, section.id)
-        fields = ('article', 'position', 'home_top')
-        raw_id_fields = ('article', )
-        ordering = ('position', )
-        formset = SectionArticleRelInlineFormSet
-
-        def get_queryset(self, request):
-            # calling super of HomeTopArticleInline to avoid top=true filter
-            qs = super(HomeTopArticleInline, self).get_queryset(request)
-            return qs.filter(section=section)
-
-    return SectionTopArticleInline
+class NoHomeTopArticleInline(EditionBaseArticleInline):
+    ordering = ('position',)
+    fields = ('position', 'article', 'section', "home_top")
+    verbose_name = 'artículo'
+    verbose_name_plural = 'artículos'
+    form = ArticleRelHomeNoTopForm
+    formset = NoTopArticleRelInlineFormSet
 
 
 @admin.register(Edition, site=site)
 class EditionAdmin(ModelAdmin):
-    # TODO: This class should be improved/fixed:
-    #       - section_id missing for "new" ArticleRel rows, this can be fixed handling the js event, we did this some
-    #         time ago in the article admin js.
-    #       - the header cells for each fieldset get broken when a row has a new td because of errors (no position)
-    #       - rearrange better the rows with info and data (new article link inserts at the begginig)
-    #       - It's necessary to show the section_id in the fieldset header? ("[[id]]")
-    #       - But all this, for what? with more than ~20 sections this UX is useless, it must be migrated to something
-    #         similar to the "publihed in" at the bottom of the Article's change form, and only keep here in the actual
-    #         version, the first draggable block with the featured articles. And also try to allow insertion of "new"
-    #         rows in the draggable block.
     fields = ('date_published', 'pdf', 'cover', 'publication')
     list_display = ('edition_pub', 'title', 'pdf', 'cover', 'get_supplements')
     list_filter = ('date_published', 'publication')
-    search_fields = ('title', )
+    search_fields = ('title',)
     date_hierarchy = 'date_published'
     publication = None
+    inlines = [HomeTopArticleInline, NoHomeTopArticleInline]
 
     def get_form(self, request, obj=None, **kwargs):
         if obj:
             self.publication = obj.publication
         return super().get_form(request, obj, **kwargs)
-
-    def get_inline_instances(self, request, obj=None):
-        self.inlines = [HomeTopArticleInline]
-        if self.publication:
-            for section in self.publication.section_set.order_by('home_order'):
-                self.inlines.append(section_top_article_inline_class(section))
-        return super().get_inline_instances(request)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'cover':
@@ -292,16 +412,8 @@ class ArticleBodyImageInline(TabularInline):
         return instance.image.date_added
 
 
-class ArticleRelAdminModelForm(ModelForm):
+class ArticleRelAdminModelForm(ArticleRelAdminBaseModelForm):
     main = ChoiceField(label='principal', widget=RadioSelect, choices=((1, ''), ), required=False)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['section'].choices = section_choices()
-
-    class Meta:
-        model = ArticleRel
-        fields = "__all__"
 
 
 class ArticleEditionInline(TabularInline):
@@ -336,12 +448,17 @@ class ArticleAdminModelForm(ModelForm):
     )
     slug = CharField(
         label='Slug',
-        widget=TextInput(attrs={'style': 'width:600px', 'readonly': 'readonly'}),
+        widget=TextInput(attrs={'readonly': 'readonly'}),
         help_text='Se genera automáticamente en base al título.',
     )
     tags = TagField(widget=TagAutocompleteTagIt(max_tags=False), required=False)
     pw_radio_choice = ChoiceField(
         label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
+    )
+    input_ia_used = BooleanField(
+        widget=HiddenInput(),
+        required=False,  # Allows the field to be omitted in the form submission
+        initial=False  # Sets the default value to False
     )
 
     def __init__(self, *args, **kwargs):
@@ -352,6 +469,12 @@ class ArticleAdminModelForm(ModelForm):
             self.initial['pw_radio_choice'] = 'public_true'
         else:
             self.initial['pw_radio_choice'] = 'none'
+        nowval = timezone.now()
+        if not self.instance.pk:
+            self.initial['date_published'] = nowval
+        self.fields['date_published'].widget.attrs['min'] = nowval.isoformat()
+        self.fields['date_published'].required = False
+        self.fields['date_published'].label = ""
 
     def clean_tags(self):
         """
@@ -370,13 +493,29 @@ class ArticleAdminModelForm(ModelForm):
         # TODO: "add" errors right way (as django doc says) instead of raising them
         if self.errors:
             raise ValidationError("")
+
         cleaned_data = super().clean()
         if cleaned_data.get("ipfs_upload") and not getattr(settings, "IPFS_TOKEN", None):
             raise ValidationError("La configuración necesaria para publicar en IPFS no está definida.")
-        date_value = (
-            cleaned_data.get('date_published') if cleaned_data.get('is_published')
-            else cleaned_data.get('date_created')
-        ) or timezone.now()
+
+        # TODO: DRY (Article.save does the same logic)
+        nowval = timezone.now()
+        date_published = cleaned_data.get('date_published')
+        is_published, to_be_published = cleaned_data.get('is_published'), cleaned_data.get('to_be_published')
+
+        if is_published:
+            if to_be_published:
+                self.add_error(None, 'No se permite programar publicación de un artículo ya publicado')
+        elif to_be_published:
+            if not date_published:
+                self.add_error(None, 'Para programar la publicación de un artículo se debe especificar la fecha')
+            elif date_published <= nowval:
+                self.add_error(None, 'La fecha de publicación programada no puede estar en el pasado')
+
+        if self.errors:
+            raise ValidationError("")
+
+        date_value = (date_published if is_published else cleaned_data.get('date_created')) or nowval
         # conversion to UTC is needed, it's not done automatically like Article.save does.
         # (save gets values from obj and not from the form), TODO: improve or investigate to explain better the cause.
         date_value = timezone.localtime(
@@ -454,6 +593,7 @@ class ArticleAdmin(VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
+    change_form_template = "core/templates/admin/core/article/change_form.html"
     formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
@@ -465,17 +605,20 @@ class ArticleAdmin(VersionAdmin):
         'get_sections',
         'creation_date',
         'publication_date',
-        'is_published',
+        "published_status",
         has_photo,
         'surl',
     )
     list_select_related = True
-    list_filter = ('type', 'date_created', 'is_published', 'date_published', 'newsletter_featured', 'byline')
+    list_filter = (
+        'type', 'date_created', 'is_published',
+        # 'to_be_published',  # TODO: add this filter when the field gets fully implemented
+        'date_published', 'newsletter_featured', 'byline'
+    )
     search_fields = ['headline', 'slug', 'deck', 'lead', 'body']
     date_hierarchy = 'date_published'
     ordering = ('-date_created',)
     raw_id_fields = ('photo', 'gallery', "audio", 'main_section')
-    readonly_fields = ('date_published',)
     inlines = article_optional_inlines + [ArticleExtensionInline, ArticleBodyImageInline, ArticleEditionInline]
     fieldsets = (
         (
@@ -483,10 +626,14 @@ class ArticleAdmin(VersionAdmin):
             {
                 'fields': (
                     'type',
-                    ('headline', 'alt_title_metadata', 'alt_title_newsletters'),
+                    'headline',
+                    'alt_title_metadata',
+                    'alt_title_newsletters',
                     'slug',
                     'keywords',
-                    ('deck', "alt_desc_metadata", "alt_desc_newsletters"),
+                    'deck',
+                    'alt_desc_metadata',
+                    'alt_desc_newsletters',
                     'lead',
                     'body',
                 ),
@@ -500,7 +647,20 @@ class ArticleAdmin(VersionAdmin):
                 'classes': ('wide',),
             },
         ),
-        ('Metadatos', {'fields': ('date_published', 'tags', 'main_section')}),
+        (
+            'Metadatos',
+            {
+                'fields': (
+                    (
+                        'is_published',
+                        # 'to_be_published',  # TODO: add this field when it gets fully implemented
+                        'date_published'
+                    ),
+                    'tags',
+                    'main_section'
+                )
+            }
+        ),
         ('Autor', {'fields': ('byline', 'only_initials', 'location'), 'classes': ('collapse',)}),
         ('Multimedia', {'fields': ('photo', 'gallery', 'video', 'youtube_video', 'audio'), 'classes': ('collapse',)}),
         (
@@ -508,7 +668,6 @@ class ArticleAdmin(VersionAdmin):
             {
                 'fields': (
                     'allow_comments',
-                    'is_published',
                     'allow_related',
                     'show_related_articles',
                     'newsletter_featured',
@@ -521,20 +680,24 @@ class ArticleAdmin(VersionAdmin):
                 'classes': ('collapse',),
             },
         ),
+        (None, {'fields': ('copy_para_redes',)}),
     )
 
-    @admin.action(description="Publicar o despublicar según valor del campo 'publicado'")
+    @admin.action(description="Intercambiar estado de publicación: publicado <-> borrador")
     def toggle_published(self, request, queryset):
         if 'apply' in request.POST:
             success_counter, error_counter = 0, 0
-            for article in queryset:
-                article.is_published = not article.is_published
-                try:
-                    article.save()
-                except Exception:
-                    error_counter += 1
-                else:
-                    success_counter += 1
+            if queryset.filter(to_be_published=True).exists():
+                self.message_user(request, "No se pueden seleccionar artículos programados para ejecutar esta acción")
+            else:
+                for article in queryset:
+                    article.is_published = not article.is_published
+                    try:
+                        article.save()
+                    except Exception:
+                        error_counter += 1
+                    else:
+                        success_counter += 1
             if success_counter:
                 self.message_user(request, "Fueron modificados {} artículo(s)".format(success_counter))
             if error_counter:
@@ -561,9 +724,18 @@ class ArticleAdmin(VersionAdmin):
     def creation_date(self, obj):
         return timezone.template_localtime(obj.date_created).strftime("%d %b %Y %H:%M")
 
+    @admin.display(description='Estado')
+    def published_status(self, obj):
+        result = "Borrador"
+        if obj.is_published:
+            result = "" if obj.to_be_published else "Publicado"
+        elif obj.to_be_published:
+            result = "Programado"
+        return result
+
     @admin.display(description='Publicado', ordering='date_published')
     def publication_date(self, obj):
-        if obj.date_published:
+        if obj.is_published and obj.date_published:
             return timezone.template_localtime(obj.date_published).strftime("%d %b %Y %H:%M")
         else:
             return ''
@@ -599,6 +771,10 @@ class ArticleAdmin(VersionAdmin):
         if form.is_valid():
             try:
                 obj.admin = True  # tell model's save method that we are calling it from the admin
+                # Get the value from the custom hidden form field
+                ia_used_value = form.cleaned_data.get('input_ia_used', None)
+                if ia_used_value:
+                    obj.ia_used = ia_used_value
                 super().save_model(request, obj, form, change)
                 self.obj = obj
             except Exception as e:
@@ -1096,10 +1272,10 @@ class CategoryAdmin(ModelAdmin):
 
 
 class CategoryHomeArticleForm(ModelForm):
-    pos = IntegerField(label='orden', widget=TextInput(attrs={'size': 3, 'readonly': True}))
+    position = IntegerField(label='orden', widget=ReadOnlyDisplayWidget(attrs={'size': 3, 'readonly': True}))
 
     class Meta:
-        fields = ['position', 'pos', 'home', 'article', 'fixed']
+        fields = ['position', 'home', 'article', 'fixed']
         model = CategoryHomeArticle
         widgets = {
             "article": ForeignKeyRawIdWidgetMoreWords(
@@ -1115,22 +1291,22 @@ class CategoryHomeArticleFormSet(CategoryHomeArticleFormSetBase):
 
     def add_fields(self, form, index):
         super().add_fields(form, index)
-        form.fields["position"].widget = HiddenInput()
         if index is not None:
-            form.fields["pos"].initial = index + 1
             form.fields["position"].initial = index + 1
 
 
 class CategoryHomeArticleInline(TabularInline):
     model = CategoryHome.articles.through
-    extra = 20
-    max_num = 20
+    max_num = getattr(settings, "CORE_UPDATE_CATEGORY_HOMES_ARTICLES_INLINE_MAX_NUM", 20)
+    extra = max_num
     form = CategoryHomeArticleForm
     formset = CategoryHomeArticleFormSet
     raw_id_fields = ('article',)
     verbose_name_plural = 'Artículos en portada'
+    classes = ('dynamic-order',)
 
     class Media:
+        js = ('admin/js/jquery.js', 'js/jquery-ui-1.13.2.custom.min.js', 'js/homev2/dynamic_edition_admin.js')
         css = {'all': ('css/category_home.css',)}
 
 
@@ -1257,7 +1433,7 @@ class TagAdmin(admin.ModelAdmin):
 
 class TaggedItemAdmin(admin.ModelAdmin):
     model = TaggedItem
-    search_fields = ('name',)
+    search_fields = ('tag__name',)
 
 
 @admin.register(DeviceSubscribed, site=site)
@@ -1352,6 +1528,21 @@ class PushNotificationAdmin(admin.ModelAdmin):
     def send_me_push_notification(self, request, queryset):
         self.send_notifications(request, queryset, False)
 
+
+class ArticleInline2(admin.TabularInline):
+    model = Article
+    extra = 0
+    max_num = 2
+    # raw_id_fields = ('articles',)
+    verbose_name_plural = 'Artículos relacionados'
+
+
+from django.db import models
+@admin.register(PerplexityAPISettings)
+class PerplexityAPISettingsAdmin(SingletonModelAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': admin.widgets.AdminTextareaWidget(attrs={'rows': 10, 'cols': 80})},
+    }
 
 site.unregister(Tag)
 site.unregister(TaggedItem)

@@ -53,9 +53,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
-from django.contrib.sites.models import Site
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
+from django.views.generic import ListView
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.cache import never_cache, cache_control, cache_page
@@ -65,7 +65,7 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 
 from apps import mongo_db, bouncer_blocklisted
-from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs
+from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs, get_site_name
 from libs.tokens.email_confirmation import get_signup_validation_url, send_validation_email
 from utils.error_log import error_log
 from decorators import render_response
@@ -93,6 +93,10 @@ from .forms import (
     SubscriberAddressForm,
     GoogleSigninForm,
     PasswordResetForm,
+    WebSubscriptionForm,
+    WebSubscriptionPromoCodeForm,
+    WebSubscriptionCaptchaForm,
+    WebSubscriptionPromoCodeCaptchaForm,
     SubscriptionForm,
     SubscriptionPromoCodeForm,
     SubscriptionCaptchaForm,
@@ -112,6 +116,7 @@ from .forms import (
     phone_is_blocklisted,
     SUBSCRIPTION_PHONE_TIME_CHOICES,
     get_default_province,
+    check_password_strength,
 )
 from .utils import (
     get_or_create_user_profile,
@@ -127,13 +132,13 @@ from .utils import (
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
-from .tasks import send_notification, notify_digital, notify_paper, send_notification_message
+from .tasks import send_notification, notify_subscription, send_notification_message
 
 
 standard_library.install_aliases()
 to_response = render_response('thedaily/templates/')
 delivery_err = "Error interno, intentá de nuevo más tarde."
-site_name = Site.objects.get_current().name
+account_verify_msg = 'Verificá tu cuenta de' + get_site_name()
 
 
 def no_op_decorator(func):
@@ -347,6 +352,20 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 @readerid_assoc
 def login(request, product_slug=None, product_variant=None):
     # next_page value got here will be available in session (TODO: explain how this happen)
+    # TODO: SECURITY - Open Redirect Vulnerability
+    # This function does not validate the 'next' parameter before redirecting.
+    # This allows attackers to redirect users to external malicious sites (phishing).
+    # Solution: Validate redirects with url_has_allowed_host_and_scheme() + ALLOWED_REDIRECT_HOSTS
+    # Example fix:
+    #   from django.utils.http import url_has_allowed_host_and_scheme
+    #   requested_next = request.GET.get('next', request.session.get('next', '/'))
+    #   allowed_hosts = {request.get_host()}
+    #   if hasattr(settings, 'ALLOWED_REDIRECT_HOSTS'):
+    #       allowed_hosts |= set(settings.ALLOWED_REDIRECT_HOSTS)
+    #   if url_has_allowed_host_and_scheme(requested_next, allowed_hosts=allowed_hosts, require_https=request.is_secure()):
+    #       next_page = requested_next
+    #   else:
+    #       next_page = '/'
     return_param = amp_login_param(request, 'return')
     if return_param:
         # redirect email/google AMP logins (google social auth do not redirect to external urls)
@@ -360,6 +379,12 @@ def login(request, product_slug=None, product_variant=None):
         return HttpResponseRedirect(next_page)
 
     article_id, login_formclass, response, login_error, context = None, LoginForm, None, None, {}
+    default_planslug = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+    if default_planslug:
+        try:
+            context["default_subscription_type"] = SubscriptionPrices.objects.get(subscription_type=default_planslug)
+        except SubscriptionPrices.DoesNotExist:
+            pass
 
     market_next_page, market_next_qparams = None, {}
     if product_slug:
@@ -388,7 +413,7 @@ def login(request, product_slug=None, product_variant=None):
             template = hard_paywall_template()
             context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "article": article})
 
-    context.update({'next_page': next_page, 'next': pathname2url(next_page.encode('utf8'))})
+    context.update({'next_page': next_page, 'next': pathname2url(next_page.encode('utf8').decode())})
 
     initial, name_or_mail = {}, request.GET.get('name_or_mail')
     if name_or_mail:
@@ -399,36 +424,84 @@ def login(request, product_slug=None, product_variant=None):
     if request.method == 'POST':
         login_form = login_formclass(request.POST)
         if login_form.is_valid():
-            password = request.POST.get('password')
+            password = request.POST.get('password')  # Taken directly from POST (not all form classes have password)
             if password:
-                user = authenticate(username=login_form.username, password=password)
-                if user is not None:
-                    if user.is_active:
-                        do_login(request, user)
-                        request.session.pop('next', None)
-                        # also remove possible unfinished google sign-in information from the session, if not,
-                        # the social pipelines will try to finish and an error will be raised regarding to the conflict
-                        # between the user that just logged-in and the user that has this "unfinished" google signin
-                        # attempt.
-                        request.session.pop("google-oauth2_state", None)
-                        request.session.modified = True
-                        # terms and conds acceptance save
-                        if (
-                            request.session.get("terms_and_conds_accepted")
-                            and not user.subscriber.terms_and_conds_accepted
-                        ):
-                            user.subscriber.terms_and_conds_accepted = True
-                            try:
-                                user.subscriber.save()
-                            except Exception:
-                                # do not break login if an error raised during the subscriber object save
-                                pass
-                        response = HttpResponseRedirect(next_page)
+
+                # First check if user exists, regardless of active status
+                try:
+                    existing_user = User.objects.get(username=login_form.username)
+
+                    # Check if password is correct
+                    if existing_user.check_password(password):
+                        if existing_user.is_active:
+                            # Active user - proceed with normal login
+                            user = existing_user
+                            if user.is_staff:
+                                try:
+                                    check_password_strength(password, user)
+                                except ValidationError:
+                                    mail_managers(
+                                        "Weak password for staff user", f"User: {user}, Id: {user.id}",
+                                        fail_silently=True
+                                    )
+                            # Set backend for multiple authentication backends
+                            user.backend = 'django.contrib.auth.backends.ModelBackend'
+                            do_login(request, user)
+                            request.session.pop('next', None)
+                            # also remove possible unfinished google sign-in information from the session, if not,
+                            # the social pipelines will try to finish and an error will be raised regarding to the
+                            # conflict between the user that just logged-in and the user that has this "unfinished"
+                            # google signin attempt.
+                            request.session.pop("google-oauth2_state", None)
+                            request.session.modified = True
+                            # terms and conds acceptance save
+                            if (
+                                request.session.get("terms_and_conds_accepted")
+                                and not user.subscriber.terms_and_conds_accepted
+                            ):
+                                user.subscriber.terms_and_conds_accepted = True
+                                try:
+                                    user.subscriber.save()
+                                except Exception:
+                                    # do not break login if an error raised during the subscriber object save
+                                    pass
+                            response = HttpResponseRedirect(next_page)
+                        else:
+                            # CASO 3: User/pass login - CUENTA NO ACTIVA - Detectar qué falta
+                            subscriber = getattr(existing_user, 'subscriber', None)
+
+                            # 3a. Si falta teléfono → redirigir a pantalla de teléfono
+                            if subscriber and not subscriber.phone:
+                                # Configurar sesión para flujo SMS como registro normal
+                                from django.utils import timezone
+                                request.session['signup_data'] = {
+                                    'user_created': True,
+                                    'user_id': existing_user.id,
+                                    'email': existing_user.email,
+                                    'google_flow': False,  # Es flujo normal email/pass
+                                    'sms_verified': False,
+                                    'session_created': timezone.now().isoformat(),  # Required by step 3 validation
+                                }
+                                request.session.modified = True
+                                response = HttpResponseRedirect('/usuarios/registrate/?step=2')
+
+                            # 3b. Si falta activar email → mostrar mensaje con enlace para reenviar
+                            else:
+                                confirm_url = reverse('account-confirm_email') + '?email=' + existing_user.email
+                                login_error = (
+                                    'Tu cuenta no está activada. Revisá tu correo y seguí el enlace para activarla. '
+                                    '<a href="{}">Reenviar mail</a>'.format(confirm_url)
+                                )
+
+                    # Si contraseña incorrecta
                     else:
-                        response = HttpResponseRedirect(reverse('account-confirm_email'))
-                else:
+                        login_error = 'Usuario y/o contraseña incorrectos.'
+
+                # Si usuario no existe
+                except User.DoesNotExist:
                     login_error = 'Usuario y/o contraseña incorrectos.'
             else:
+                # No password provided - redirect to signup
                 request.session["terms_and_conds_accepted"] = True
                 request.session.modified = True
                 qparams = market_next_qparams if product_slug else {"article": article_id}
@@ -555,14 +628,25 @@ def signup(request):
 @never_cache
 def welcome(request, signup=False, subscribed=False):
     """
-    welcome page, will be rendered only if welcome in session has a value, otherwise will be redirected to home.
+    welcome page, will be rendered only if welcome in session has a value OR activated=1 parameter,
+    otherwise will be redirected to home.
     """
-    if request.session.get('welcome'):
-        request.session.pop('welcome')
+    # Check both session (for SMS flow) and URL parameter (for email activation)
+    has_welcome_session = request.session.get('welcome')
+    is_activated = request.GET.get('activated') == '1'
+
+    if has_welcome_session or is_activated:
+        # Clean session data if present
+        if has_welcome_session:
+            request.session.pop('welcome')
+        signup_mail = request.session.pop('signup_mail', None)
+        email_error = request.session.pop('email_error', None)
+
         return render(
             request,
             get_app_template("welcome.html"),
-            {'signup': signup, 'subscribed': subscribed, "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
+            {'signup': signup, 'subscribed': subscribed, 'signup_mail': signup_mail, 'email_error': email_error,
+             "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
     else:
         return HttpResponseRedirect(reverse('home'))
@@ -653,15 +737,20 @@ def google_phone(request):
     return 'google_signup.html', ctx
 
 
+class SubscriptionPricesListView(ListView):
+    model = SubscriptionPrices
+    template_name = get_app_template("subscribe-landing.html")
+
+
 @never_cache
-@to_response
 def subscribe(request, planslug, category_slug=None):
     """
     This view handles the plan subscriptions.
     """
     custom_module, article_id = getattr(settings, 'THEDAILY_VIEWS_CUSTOM_MODULE', None), request.GET.get("article")
 
-    context, template, article = {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}, "subscribe.html", None
+    context, article = {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS}, None
+    template = get_app_template("subscribe.html")
     if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
         try:
             article = Article.objects.get(id=article_id)
@@ -678,9 +767,10 @@ def subscribe(request, planslug, category_slug=None):
         # category_slug is allowed only if custom_module is defined
         if category_slug:
             raise Http404
-        auth, qparams, user_is_authenticated = request.GET.get('auth'), {}, request.user.is_authenticated
+        user, auth, qparams = request.user, request.GET.get('auth'), {}
+        user_is_auth = user.is_authenticated
         if article_id:
-            if not user_is_authenticated:
+            if not user_is_auth:
                 return HttpResponseRedirect(reverse("account-login") + "?article=%s" % article_id)
             qparams["article"] = article_id
         qparams_str = urlencode(qparams)
@@ -704,24 +794,26 @@ def subscribe(request, planslug, category_slug=None):
             except OAuthState.DoesNotExist:
                 request.session.pop('google-oauth2_state')
                 return HttpResponseRedirect(request.path + qparams_str_wqmark)
+            else:
+                user = oas.user
 
         product = get_object_or_404(Publication, slug=settings.DEFAULT_PUB)
         # TODO post release: Usage guide should describe when 404 is raised here
         subscription_price = get_object_or_404(SubscriptionPrices, subscription_type=planslug)
-        oauth2_button, subscription_in_process = True, False
-        default_province = get_default_province()
+        oauth2_button, subscription_in_process, default_province = True, False, get_default_province()
+        online = subscription_price.ga_category == 'D'
 
-        if user_is_authenticated:
-
-            is_subscriber = request.user.subscriber.is_subscriber()
+        if user_is_auth:
+            subscriber = user.subscriber
+            is_subscriber = subscriber.is_subscriber()
 
             if is_subscriber and article:
                 return HttpResponseRedirect(article.get_absolute_url())
 
             if oauth2_state:
                 oauth2_button = False
-                profile = get_or_create_user_profile(oas.user)
-                if subscription_price.ga_category == 'D':
+                profile = get_or_create_user_profile(user)
+                if online:
                     subscriber_form = GoogleSignupForm(instance=profile)
                 else:
                     if not profile.province and default_province:
@@ -729,23 +821,21 @@ def subscribe(request, planslug, category_slug=None):
                     subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
                 initial = {
-                    'email': request.user.email,
-                    'first_name': request.user.subscriber.name
-                    or ' '.join([request.user.first_name, request.user.last_name]).strip(),
+                    'email': user.email, 'first_name': user.first_name.strip() or subscriber.name or user.username
                 }
-                if request.user.subscriber.phone:
-                    initial['telephone'] = request.user.subscriber.phone
+                if subscriber.phone:
+                    initial['phone'] = subscriber.phone
 
-                if subscription_price.ga_category == 'D':
+                if online:
                     subscriber_form = SubscriberForm(initial=initial)
                 else:
-                    initial.update({'address': request.user.subscriber.address, 'city': request.user.subscriber.city})
-                    if request.user.subscriber.province:
-                        initial['province'] = request.user.subscriber.province
+                    initial.update({'address': subscriber.address, 'city': subscriber.city})
+                    if subscriber.province:
+                        initial['province'] = subscriber.province
                     subscriber_form = SubscriberAddressForm(initial=initial)
 
                 # do not show oauth button if this user is already associated
-                if request.user.social_auth.filter(provider='google-oauth2').exists():
+                if user.social_auth.filter(provider='google-oauth2').exists():
                     oauth2_button = False
 
         else:
@@ -753,8 +843,8 @@ def subscribe(request, planslug, category_slug=None):
             is_subscriber = False
             if oauth2_state:
                 oauth2_button = False
-                profile = get_or_create_user_profile(oas.user)
-                if subscription_price.ga_category == 'D':
+                profile = get_or_create_user_profile(user)
+                if online:
                     subscriber_form = GoogleSignupForm(instance=profile)
                 else:
                     if not profile.province and default_province:
@@ -762,67 +852,83 @@ def subscribe(request, planslug, category_slug=None):
                     subscriber_form = GoogleSignupAddressForm(instance=profile)
             else:
                 subscriber_form = (
-                    SubscriberSignupForm if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm
+                    SubscriberSignupForm if online else SubscriberSignupAddressForm
                 )(initial={'next_page': request.path})
             # check session and if a new user was created, encourage login
             if request.method == 'GET':
                 subscription = request.session.get('subscription')
                 subscription_in_process = subscription and subscription.subscriber
 
-        PROMOCODE_ENABLED = getattr(settings, 'THEDAILY_PROMOCODE_ENABLED', False)
+        PROMOCODE_ENABLED, nocaptcha = getattr(settings, 'THEDAILY_PROMOCODE_ENABLED', False), no_captcha(request)
+
         subscription_formclass = (
+            (WebSubscriptionPromoCodeForm if PROMOCODE_ENABLED else WebSubscriptionForm)
+            if nocaptcha else (
+                WebSubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else WebSubscriptionCaptchaForm
+            )
+        ) if online else (
             (SubscriptionPromoCodeForm if PROMOCODE_ENABLED else SubscriptionForm)
-            if no_captcha(request)
-            else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
+            if nocaptcha else (SubscriptionPromoCodeCaptchaForm if PROMOCODE_ENABLED else SubscriptionCaptchaForm)
         )
 
-        subscription_form = (
-            subscription_formclass if subscription_price.ga_category == 'D' else SubscriptionForm
-        )(initial={'subscription_type_prices': planslug})
+        initial = {
+            'subscription_type_prices': planslug,
+            "terms_and_conds_accepted": (
+                subscriber.terms_and_conds_accepted
+                if user_is_auth else request.session.get("terms_and_conds_accepted", False)
+            ),
+        }
+        subscription_form = subscription_formclass(initial=initial)
 
         if not is_subscriber and request.method == 'POST':
             post = request.POST.copy()
 
-            if request.user.is_authenticated:
+            if user_is_auth:
                 subscription = request.session.get('subscription')
                 subscription_type = request.session.get('subscription_type')
                 if subscription and subscription_type:
                     # delete possible in-process subscription
+                    # TODO: delete only matched against a new setting
                     subscription.subscription_type_prices.remove(subscription_type)
-                if oauth2_state:
-                    # if for any reason, a google state is still "unfinished" for an authenticated user, do the same
-                    # things that would be done in our next "elif" condition (bind the form). If not, the form save
-                    # that will be called will create a new Subscriber instead of update the existing one.
-                    # Note that to avoid security issues, the login view removes this unfinished google signin
-                    # information from the session if a "new" login is made.
-                    subscriber_form_v = (
-                        GoogleSignupForm if subscription_price.ga_category == 'D' else GoogleSignupAddressForm
-                    )(post, instance=get_or_create_user_profile(oas.user))
-                else:
-                    # instance here is the user logged-in (no doubt on that), this is useful in case that for any
-                    # reason, the Subscriber object has a blank phone, the form will submit a phone value and then
-                    # the form.save call must save the field in the Subscriber obj.
-                    subscriber_form_v = (
-                        SubscriberForm if subscription_price.ga_category == 'D' else SubscriberAddressForm
-                    )(post, instance=get_or_create_user_profile(request.user))
+
+                # if for any reason, a google state is still "unfinished" for an authenticated user, do the same
+                # things that would be done in our next "elif" condition (bind the form). If not, the form save
+                # that will be called will create a new Subscriber instead of update the existing one.
+                # Note that to avoid security issues, the login view removes this unfinished google signin
+                # information from the session if a "new" login is made.
+                # Also, instance here is the user logged-in (no doubt on that), this is useful in case that for any
+                # reason, the Subscriber object has a blank phone, the form will submit a phone value and then
+                # the form.save call must save the field in the Subscriber obj.
+                subscriber_form_v = (
+                    GoogleSignupForm if online else GoogleSignupAddressForm
+                ) if oauth2_state else (
+                    SubscriberForm if online else SubscriberAddressForm
+                )(post, instance=get_or_create_user_profile(request.user))
             elif oauth2_state:
                 subscriber_form_v = (
-                    GoogleSignupForm if subscription_price.ga_category == 'D' else GoogleSignupAddressForm
-                )(post, instance=get_or_create_user_profile(oas.user))
+                    GoogleSignupForm if online else GoogleSignupAddressForm
+                )(post, instance=get_or_create_user_profile(user))
             else:
-                subscriber_form_v = (
-                    SubscriberSignupForm if subscription_price.ga_category == 'D' else SubscriberSignupAddressForm
-                )(post)
+                subscriber_form_v = (SubscriberSignupForm if online else SubscriberSignupAddressForm)(post)
 
-            subscription_form_v = (
-                subscription_formclass if subscription_price.ga_category == 'D' else SubscriptionForm
-            )(
-                post
-            )  # TODO: is initial=initial also needed here?
+            # TODO: commented code is the old one, remove it after testing
+            # subscription_form_v = (
+            #     subscription_formclass(post, initial=initial) if online else (
+            #         SubscriptionForm if nocaptcha else SubscriptionCaptchaForm
+            #     )(post)
+            # )
+            subscription_form_v = subscription_formclass(post, initial=initial)
 
             if subscriber_form_v.is_valid(planslug) and subscription_form_v.is_valid():
+                # TODO: (DRY_start) can be moved to a function (one of our custom apps does near exactly the same,
+                #       not exactly exactly because for example, the "category_slug" thing is not yet implemented here)
                 # TODO: use form.cleaned_data instead of post.get
-                email = oas.user.email if oauth2_state else subscriber_form_v.cleaned_data['email']
+                email = user.email if user_is_auth else (
+                    subscriber_form_v.cleaned_data['email'] if user.is_anonymous else user.username
+                )
+                if not email:
+                    # TODO: decide what to do in this case
+                    pass
                 subscriptions = Subscription.objects.filter(email=email)
 
                 if subscriptions:
@@ -830,8 +936,8 @@ def subscribe(request, planslug, category_slug=None):
                         subscription = subscriptions.get(subscriber=None)
                     except Subscription.DoesNotExist:
                         try:
-                            if request.user.is_authenticated:
-                                subscription = subscriptions.get(subscriber=request.user)
+                            if user_is_auth:
+                                subscription = subscriptions.get(subscriber=user)
                             else:
                                 subscription = subscriptions.get(subscriber__email=email)
                         except Subscription.DoesNotExist:
@@ -847,14 +953,15 @@ def subscribe(request, planslug, category_slug=None):
                 sp = SubscriptionPrices.objects.get(subscription_type=post['subscription_type_prices'])
                 subscription.subscription_type_prices.add(sp)
 
-                subscriber_form_v.save()
+                first_name = subscriber_form_v.cleaned_data.get("first_name")
                 if oauth2_state:
+                    subscriber_form_v.save()
                     if not subscription.first_name:
                         # take first_name from oas (it can be not present due a previous not finished google signup)
                         subscription.first_name = oas.fullname
                     subscription.telephone = post.get('phone')
                 else:
-                    subscription.first_name = post['first_name']
+                    subscription.first_name = first_name
                     subscription.telephone = post['phone']
 
                 for post_key in ('address', 'city', 'province', 'promo_code'):
@@ -862,31 +969,42 @@ def subscribe(request, planslug, category_slug=None):
                     if post_value:
                         setattr(subscription, post_key, post_value)
 
-                if request.user.is_authenticated:
-                    subscription.subscriber = request.user
+                user_created = False
+                if user_is_auth:
+                    # possible user new first name should be updated
+                    if first_name and user.first_name != first_name:
+                        user.first_name = first_name
+                        user.save()
+                    # terms and conds have been accepted because the form is valid
+                    if (
+                        settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID
+                        and not subscriber.terms_and_conds_accepted
+                    ):
+                        subscriber.terms_and_conds_accepted = True
+                        subscriber.save()
+                    subscription.subscriber = user
+                    subscription.save()
                 else:
                     if oauth2_state:
-                        user = oas.user
                         # succesfull google sigin usage (form saved lines above), we can remove the oas object (just
                         # like the google_phone view does after a succesfull POST)
+                        subscription.subscriber = user
+                        subscription.save()
                         oas.delete()
                     else:
-                        user = subscriber_form_v.signup_form.create_user()
+                        user, user_created = subscriber_form_v.signup_form.create_user(), True
                         try:
                             was_sent = send_validation_email(
-                                f'Verificá tu cuenta de {site_name}',
+                                account_verify_msg,
                                 user,
                                 'notifications/account_signup_subscribed.html',
                                 get_signup_validation_url,
                             )
                             if not was_sent:
-                                raise Exception(
-                                    "No se pudo enviar el email de verificación de suscripción para el usuario: %s."
-                                    % (user)
-                                )
+                                raise Exception("Error al enviar email de verificación para el usuario %s" % user)
                         except Exception as exc:
-                            msg = "Error al enviar email de verificación de suscripción para el usuario: %s." % user
-                            error_log(msg + " Detalle: {}".format(str(exc)))
+                            msg = str(exc)
+                            error_log(msg)
                             subscription.delete()
                             errors = subscriber_form_v._errors.setdefault("email", ErrorList())
                             errors.append(
@@ -901,40 +1019,51 @@ def subscribe(request, planslug, category_slug=None):
                             context.update(
                                 {'subscriber_form': subscriber_form_v, 'subscription_form': subscription_form_v}
                             )
-                            return template, context
-                    subscription.subscriber = user
-
-                subscription.save()
+                            return render(request, template, context)
+                        else:
+                            subscription.subscriber = user
+                            subscription.save()
 
                 # we should save the subscription and its type in the session
-                request.session['subscription'] = subscription
-                request.session['subscription_type'] = sp
+                request.session['subscription'], request.session['subscription_type'] = subscription, sp
+                # TODO (DRY_end)
+
                 if oauth2_state:
-                    request.session['notify_phone_subscription'] = True
-                    request.session['preferred_time'] = post.get('preferred_time')
+                    if online:
+                        social_next = reverse("online-subscription")  # TODO: this pattern must be mapped
+                    else:
+                        request.session['notify_phone_subscription'] = True
+                        request.session['preferred_time'] = post.get('preferred_time')
+                        social_next = reverse('phone-subscription')
                     request.session.modified = True  # TODO: see comments in portal.libs.social_auth_pipeline
                     return HttpResponseRedirect(
-                        '%s?next=%s'
-                        % (reverse('social:begin', kwargs={'backend': 'google-oauth2'}), reverse('phone-subscription'))
+                        '%s?next=%s' % (reverse('social:begin', kwargs={'backend': 'google-oauth2'}), social_next)
                     )
                 else:
-                    request.session['notify_phone_subscription'] = True
-                    request.session['preferred_time'] = post.get('preferred_time')
-                    return HttpResponseRedirect(reverse('phone-subscription'))
+                    if online:
+                        context.update({"type": sp, "planslug": planslug, "user_created": user_created})
+                        # TODO: decide the best way to render the template related to the online version of "planslug"
+                        return render(request, get_app_template("online_subscription.html"), context)
+                    else:
+                        request.session['notify_phone_subscription'] = True
+                        request.session['preferred_time'] = post.get('preferred_time')
+                        return HttpResponseRedirect(reverse('phone-subscription'))
 
             else:
+                error_msg = "\n".join(
+                    f'{type(form)} errors: {form.errors}' for form in (subscriber_form_v, subscription_form_v)
+                )
                 if settings.DEBUG:
-                    print('%s errors: %s' % (type(subscriber_form_v), subscriber_form_v.errors))
-                    print('%s errors: %s' % (type(subscription_form_v), subscription_form_v.errors))
+                    print(error_msg)
                 context.update(
                     {
                         'subscriber_form': subscriber_form_v,
                         'subscription_form': subscription_form_v,
                         'oauth2_button': oauth2_button,
-                        'product': product,
+                        'planslug': planslug,
                     }
                 )
-                return template, context
+                return render(request, template, context)
 
         context.update(
             {
@@ -948,7 +1077,7 @@ def subscribe(request, planslug, category_slug=None):
                 'subscription_in_process': subscription_in_process,
             }
         )
-        return template, context
+        return render(request, template, context)
 
 
 def hash_validate(user_id, hash):
@@ -999,12 +1128,8 @@ def complete_signup(request, user_id, hash):
         st = user.suscripciones.all()[0].subscription_type_prices
         if st.count() == 1:
             subscription_type = st.all()[0].subscription_type
-            if subscription_type == 'DDIGM':
-                send_default_welcome = False
-                notify_digital(user)
-            elif subscription_type == 'PAPYDIM':
-                send_default_welcome = False
-                notify_paper(user)
+            send_default_welcome = False
+            notify_subscription(user, subscription_type)
 
     if send_default_welcome:
         send_notification(
@@ -1014,16 +1139,13 @@ def complete_signup(request, user_id, hash):
             {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
 
-    request.session['welcome'] = 'account-welcome' + ('-s' if is_subscriber_any else '')
-
+    # Use URL parameter instead of session to avoid session loss between redirects
     if not user.has_usable_password():
         # email is valid, so, generate pass token and redirect to change form
         return HttpResponseRedirect(get_password_validation_url(user))
 
-    if is_subscriber_any:
-        return HttpResponseRedirect(reverse('account-welcome-s'))
-    else:
-        return HttpResponseRedirect(reverse('account-welcome'))
+    welcome_url = reverse('account-welcome-s' if is_subscriber_any else 'account-welcome')
+    return HttpResponseRedirect(f"{welcome_url}?activated=1")
 
 
 @never_cache
@@ -1038,21 +1160,14 @@ def password_reset(request, user_id=None, hash=None):
         if reset_form.is_valid():
             try:
                 user = reset_form.cleaned_data["user"]
-                if user.is_active:
-                    send_validation_email(
-                        'Recuperación de contraseña',
-                        user,
-                        get_app_template('notifications/password_reset_body.html'),
-                        get_password_validation_url,
-                    )
-                else:
-                    is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
-                    notification_template = get_app_template(
-                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
-                    )
-                    send_validation_email(
-                        f'Verificá tu cuenta de {site_name}', user, notification_template, get_signup_validation_url
-                    )
+                # Send reset email for ALL users (active and inactive)
+                # Inactive users will complete phone verification after choosing password
+                send_validation_email(
+                    'Recuperación de contraseña',
+                    user,
+                    get_app_template('notifications/password_reset_body.html'),
+                    get_password_validation_url,
+                )
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
@@ -1067,6 +1182,42 @@ def confirm_email(request):
     if request.user.is_authenticated:
         raise Http404
     ctx = {}
+
+    # Caso 3b: Si viene del login, mostrar mensaje específico
+    if request.session.get('from_login'):
+        ctx['from_login'] = True
+        request.session.pop('from_login', None)  # Limpiar después de usar
+        request.session.modified = True
+
+    # Si viene con email en URL (desde mensaje de login inactivo), enviar automáticamente
+    email_param = request.GET.get('email')
+    if email_param:
+        try:
+            from django.contrib.auth.models import User
+            user = User.objects.get(email__iexact=email_param, is_active=False)
+            is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
+
+            send_validation_email(
+                account_verify_msg,
+                user,
+                get_app_template(
+                    'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                ),
+                get_signup_validation_url,
+            )
+
+            # Configurar sesión para mostrar pantalla "Revisá tu mail"
+            request.session['welcome'] = 'account-email-verification'
+            request.session['signup_mail'] = user.email
+            request.session['email_sent_from_resend'] = True
+            request.session.modified = True
+
+            # Redirigir a página de verificación de email
+            return HttpResponseRedirect(reverse('account-email-verification'))
+        except Exception as exc:
+            error_log(delivery_err + " Detalle: {}".format(str(exc)))
+            ctx['error'] = delivery_err
+
     if request.method == 'POST':
         confirm_email_form = ConfirmEmailRequestForm(request.POST)
         if confirm_email_form.is_valid():
@@ -1074,7 +1225,7 @@ def confirm_email(request):
                 user = confirm_email_form.cleaned_data["user"]
                 is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
                 send_validation_email(
-                    f'Verificá tu cuenta de {site_name}',
+                    account_verify_msg,
                     user,
                     get_app_template(
                         'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
@@ -1121,19 +1272,37 @@ def password_change(request, user_id=None, hash=None):
     post = request.POST.copy() if is_post else None
     if user_id and hash:
         user = get_object_or_404(User, id=user_id)
-        form_kwargs = {'user': user_id, 'hash': hash}
+        form_kwargs = {'user': user, 'hash': hash}
         password_change_form = PasswordResetForm(post, **form_kwargs) if is_post else PasswordResetForm(**form_kwargs)
     else:
         if not request.user.is_authenticated:
             raise Http404('Unauthorized access.')
         user = request.user
         if user.has_usable_password():
-            password_change_form = PasswordChangeForm(post, user=request.user) if is_post else PasswordChangeForm()
+            password_change_form = PasswordChangeForm(post, user=user) if is_post else PasswordChangeForm()
         else:
-            password_change_form = PasswordChangeBaseForm(post) if is_post else PasswordChangeBaseForm()
+            password_change_form = PasswordChangeBaseForm(post, user=user) if is_post else PasswordChangeBaseForm()
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])
+
+        # If user is NOT active (account not fully verified)
+        # they must verify phone before activation
+        if not user.is_active:
+            from django.utils import timezone
+            # Create signup_data for phone verification flow
+            request.session['signup_data'] = {
+                'user_id': user.id,
+                'email': user.email,
+                'user_created': True,
+                'from_password_reset': True,  # Flag to identify this flow
+                'session_created': timezone.now().isoformat(),
+            }
+            request.session.modified = True
+            # Redirect to step 2 (verify phone) - user is NOT logged in
+            return HttpResponseRedirect(reverse('account-signup') + '?step=2')
+
+        # Active user: normal flow (login and redirect)
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
@@ -1413,13 +1582,11 @@ def update_user_from_crm(request):
         mapped_field = settings.CRM_UPDATE_SUBSCRIBER_FIELDS.get(field)
         if not mapped_field:
             return  # Skip if no field mapping found
-
         # Conversion for boolean fields
         field_value = value
-        if isinstance(getattr(subscriber, mapped_field), bool):
+        if isinstance(getattr(s, mapped_field), bool):
             field_value = value if type(value) is bool else value.lower() in ['true', '1', 'yes']
-
-        setattr(subscriber, mapped_field, field_value)
+        setattr(s, mapped_field, field_value)
 
     def updatesubscriberemail(user, newemail):
         """
@@ -1505,6 +1672,7 @@ def update_user_from_crm(request):
                 #           after this sync is made, the Subscriber's NLs set must be equal to the set given
                 #       (that was exactly what the commented and now removed code used to do)
                 #       NOTE: is very probbable that the "if" now will require also be True for "area_newsletters"
+                s.updatefromcrm = True
                 s.newsletters.set(Publication.objects.filter(slug__in=set_newsletters))
                 s.category_newsletters.set(Category.objects.filter(slug__in=set_cat_newsletters))
             else:
@@ -1514,6 +1682,11 @@ def update_user_from_crm(request):
         if save_subscriber:
             s.updatefromcrm = True
             s.save()
+        if settings.DEBUG:
+            fields_keys, flag = fields.keys(), getattr(s, 'updatefromcrm', False)
+            print(
+                f"DEBUG: sync API: Subscriber={s} fields={fields_keys} save_subscriber={save_subscriber} flag={flag}"
+            )
 
     try:
         contact_id = request.data['contact_id']
@@ -1603,10 +1776,10 @@ def update_user_from_crm(request):
             except IntegrityError as ie:
                 mail_managers('IntegrityError saving user', "%s: %s" % (newemail, strip_tags(str(ie))), True)
                 return HttpResponseBadRequest()
-    except IntegrityError as ie:
+    except (IntegrityError, AttributeError) as ie_or_ae:
         mail_managers(
-            'IntegrityError saving User or Subscriber',
-            "contact_id=%s, %s" % (contact_id, strip_tags(str(ie))),
+            f'{type(ie_or_ae).__name__} saving User or Subscriber',
+            "contact_id=%s, %s" % (contact_id, strip_tags(str(ie_or_ae))),
             True,
         )
         return HttpResponseBadRequest()
@@ -1904,8 +2077,8 @@ def email_check_api(request):
         if Subscriber.objects.filter(contact_id=contact_id).exists():
 
             s = User.objects.select_related('subscriber').get(
-                    Q(username=email) | Q(email=email) | Q(social_auth__uid=email)
-                ).subscriber
+                Q(username=email) | Q(email=email) | Q(social_auth__uid=email)
+            ).subscriber
             cid = getattr(s, "contact_id", None)
             if cid != contact_id:
                 msg, retval = 'Ya existe otro usuario en la web utilizando ese email', getattr(s, "id", 0)
@@ -2172,16 +2345,14 @@ def nlunsubscribe(request, publication_slug, hashed_id):
             subscriber = get_object_or_404(Subscriber, id=subscriber_id)
             if not subscriber.user:
                 raise Http404
-            email = subscriber.user.email
             try:
                 subscriber.newsletters.remove(publication)
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
-                ctx['error'] = e.displaymessage
-        else:
-            email = 'anonymous_user@localhost'
-        ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+                error_message = getattr(e, 'displaymessage', str(e))
+                ctx['error'] = error_message
+                return 'nlunsubscribe.html', ctx
+            return redirect(f"{reverse('user_newsletters')}?nl={publication.newsletter_name or publication.name}")
     except IndexError:
         raise Http404
 
@@ -2203,16 +2374,14 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
             subscriber = get_object_or_404(Subscriber, id=subscriber_id)
             if not subscriber.user:
                 raise Http404
-            email = subscriber.user.email
             try:
                 subscriber.category_newsletters.remove(category)
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
-                ctx['error'] = e.displaymessage
-        else:
-            email = 'anonymous_user@localhost'
-        ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+                error_message = getattr(e, 'displaymessage', str(e))
+                ctx['error'] = error_message
+                return 'nlunsubscribe.html', ctx
+        return redirect(f"{reverse('user_newsletters')}?nl={category.name}")
     except IndexError:
         raise Http404
 
@@ -2360,7 +2529,7 @@ def phone_subscription(request):
         user.subscriber.province = subscription.province
         preferred_time = request.session.get('preferred_time')
 
-        phone_blisted = phone_is_blocklisted(user.subscriber.phone.as_e164)
+        phone_blisted = user.subscriber.phone and phone_is_blocklisted(user.subscriber.phone.as_e164)
         if phone_blisted:
             template, ctx["phone_blocklisted"] = thankyou_template, phone_blisted
         else:

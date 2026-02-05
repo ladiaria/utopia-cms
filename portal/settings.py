@@ -59,8 +59,8 @@ STATICFILES_FINDERS = (
 
 INSTALLED_APPS = (
     "amp_tools",
-    "django.contrib.staticfiles",
     "admin_shortcuts",
+    "django.contrib.staticfiles",
     "django.contrib.admin",
     "django.contrib.admindocs",
     "django.contrib.auth",
@@ -125,9 +125,19 @@ INSTALLED_APPS = (
     "django_celery_results",
     "django_celery_beat",
     "phonenumber_field",
+    "closed_site",
+    'solo',
 )
 
 SITE_ID = 1
+
+# password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 9}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
 
 # martor
 # disable emoji (our markdown filter not yet support this)
@@ -156,15 +166,15 @@ ADMIN_SHORTCUTS = [
     {
         "title": "Links directos (edición)",
         "shortcuts": [
-            {"url_name": "admin:core_publication_changelist", "title": "Publicaciones", "icon": "newspaper"},
-            {"url_name": "admin:core_edition_changelist", "title": "Ediciones", "icon": "newspaper"},
+            {"url_name": "admin:core_publication_changelist", "title": "Publicaciones", "icon": "📰"},
+            {"url_name": "admin:core_edition_changelist", "title": "Ediciones", "icon": "📰"},
             {"url_name": "admin:core_edition_add", "title": "Crear edición"},
             {"url_name": "admin:core_article_add", "title": "Crear Artículo"},
         ],
     },
     {
         "title": "Reportes y otras utilidades",
-        "shortcuts": [{"url": "/dashboard/", "title": 'Reportes, estadísticas y "previews"', "icon": "chart-line"}],
+        "shortcuts": [{"url": "/dashboard/", "title": 'Reportes, estadísticas y "previews"', "icon": "📊"}],
     },
 ]
 
@@ -186,6 +196,8 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap", "uni_form", "bootstrap3", "bootstr
 CRISPY_TEMPLATE_PACK = "materialize_css_forms"
 
 MIDDLEWARE = (
+    "closed_site.middleware.ClosedSiteMiddleware",
+    "closed_site.middleware.RestrictedAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.cache.UpdateCacheMiddleware",  # runs during the response phase (top -> last)
     "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)
@@ -279,6 +291,7 @@ TEMPLATES = [
                 "context_processors.article_content_type",
                 "django.template.context_processors.static",
                 "apps.core.context_processors.aniosdias",
+                "apps.core.context_processors.bn_module",
                 "social_django.context_processors.backends",
                 "social_django.context_processors.login_redirect",
                 "django.contrib.messages.context_processors.messages",
@@ -287,6 +300,8 @@ TEMPLATES = [
                 "adzone.context_processors.get_source_ip",
                 "apps.thedaily.context_processors.permissions",
                 "django.template.context_processors.csrf",
+                "context_processors.google_client_id",
+                "context_processors.google_one_tap_enabled",
             ],
             "loaders": [
                 "amp_tools.loader.Loader",
@@ -358,6 +373,7 @@ CELERY_RESULT_EXTENDED = True
 # NOTE: The elasticsearch recommended version to use is 7.*
 #       If your linux distribution doesn't have it, you can use docker to run an specific version (for example 7.17.7).
 #       Follow this guide to do that: https://hub.docker.com/_/elasticsearch
+#       TODO: update, we have fresh info about ElasticSearch
 ELASTICSEARCH_DSL = {}
 ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
@@ -401,8 +417,14 @@ CORE_ARTICLE_DETAIL_DATE_TOOLTIP = True
 # override to False to show the tooltip only since "Yesterday" dates
 CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 
+# audio transcript only for subscribers by default, change to False to enable for all registered users
+CORE_ARTICLE_DETAIL_AUDIO_TRANSCRIPT_ONLY_SUBSCRIBERS = True
+
 # show or hide photo credits in article cards
 CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
+
+# class to use for the body field in articles
+CORE_ARTICLE_BODY_FIELD_CLASS = "martor.models.MartorField"
 
 # use job to build journalist absolute url
 CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
@@ -440,10 +462,8 @@ SUBSCRIPTION_BY_PHONE_EMAIL_TO = SUBSCRIPTION_EMAIL_TO
 MAX_USERS_API_SESSIONS = 3
 THEDAILY_GOOGLE_OAUTH2_ASK_PHONE = False
 THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID = None
-THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
-    ("DDIGM", "Suscripción digital"),
-    ("PAPYDIM", "Suscripción papel"),
-)
+THEDAILY_SUBSCRIPTION_TYPE_CHOICES = ()
+THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
@@ -498,11 +518,6 @@ LOGIN_ERROR_URL = "/usuarios/error/login/"
 
 MESSAGETAGS = {messages.ERROR: "danger"}
 
-AUTHENTICATION_BACKENDS = (
-    "social_core.backends.google.GoogleOAuth2",
-    "django.contrib.auth.backends.ModelBackend",
-)
-
 # django-social-auth
 SOCIAL_AUTH_GOOGLE_OAUTH2_STRATEGY = "social_django.strategy.DjangoStrategy"
 SOCIAL_AUTH_STORAGE = "social_django.models.DjangoStorage"
@@ -520,7 +535,7 @@ SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.user.get_username",
     "libs.social_auth_pipeline.check_email_in_use",
     "social_core.pipeline.social_auth.associate_by_email",
-    "social_core.pipeline.user.create_user",
+    "libs.social_auth_pipeline.create_user_inactive",  # Create user with is_active=False
     "libs.social_auth_pipeline.get_phone_number",
     "social_core.pipeline.social_auth.associate_user",
     "social_core.pipeline.social_auth.load_extra_data",
@@ -569,11 +584,50 @@ CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP versio
 PHONENUMBER_DEFAULT_REGION = None
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
+ENABLE_GOOGLE_ONE_TAP = False
+SENTRY_ENABLED = False
+
+# ====================================================================================== visual separator =============
 
 
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
 
+
+AUTHENTICATION_BACKENDS = (
+    "libs.google_oauth2_backend.CustomGoogleOAuth2"
+    if ENABLE_GOOGLE_ONE_TAP
+    else "social_core.backends.google.GoogleOAuth2",
+    "django.contrib.auth.backends.ModelBackend",
+)
+
+if ENABLE_GOOGLE_ONE_TAP:
+    # Exclude URLs that should not use Google One Tap
+    EXCLUDE_ONE_TAP_FOR_URLS = [
+        "/usuarios/entrar/",
+        "/usuarios/suscribite/",
+        "/usuarios/restablecer/",
+        "/usuarios/registrate/google/",
+        "/usuarios/verificar-email/",
+        "/usuarios/registrate/?step=2",
+        "/usuarios/registrate/?step=2.5",
+        "/usuarios/registrate/?step=3",
+    ]
+
+    # Allow popups to external domains while maintaining same-origin security
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+
+    # Frame Options Configuration
+    # Allow Google to embed authentication iframes in our pages.
+    # SAMEORIGIN is more secure than ALLOWALL while still permitting Google's flow.
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+    # Middleware Configuration
+    # Remove XFrameOptionsMiddleware to prevent conflicts with Google One Tap iframes.
+    # The middleware would override X_FRAME_OPTIONS and block Google's authentication popup.
+    MIDDLEWARE = tuple([
+        m for m in MIDDLEWARE if m not in ["django.middleware.clickjacking.XFrameOptionsMiddleware"]
+    ])
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
 SITE_URL = f"{SITE_URL_SD}/"
@@ -581,6 +635,15 @@ CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
 LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
 COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
+
+if locals().get("DEBUG_TOOLBAR_ENABLE"):
+    # NOTE when enabled, you need to: pip install django-debug-toolbar && ./manage.py collectstatic
+    INSTALLED_APPS += ('debug_toolbar',)
+    MIDDLEWARE = MIDDLEWARE[:9] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[9:]
+
+DEBUG = locals().get("DEBUG", False)
+if DEBUG:
+    MIDDLEWARE = MIDDLEWARE[:8] + ("corsheaders.middleware.CorsMiddleware",) + MIDDLEWARE[8:]
 
 # phonenumbers default region (if not set) will default to LOCAL_COUNTRY
 if PHONENUMBER_DEFAULT_REGION is None:
@@ -613,6 +676,15 @@ if CORE_ARTICLE_DETAIL_ENABLE_AMP:
         + (MIDDLEWARE[-1],)
     )
 
+# breaking news module footer template script for publications
+if "CORE_BN_MODULE_FOOTER_SCRIPTS_TEMPLATE" not in locals():
+    CORE_BN_MODULE_FOOTER_SCRIPTS_TEMPLATE = (
+        locals().get(
+            "CORE_BN_MODULE_LIVEBLOG_FOOTER_SCRIPTS_TEMPLATE", "utopia_cms_liveblog/bn_module_publications_loader.html"
+        ) if "utopia_cms_liveblog.apps.UtopiaCmsLiveblogConfig" in INSTALLED_APPS
+        else "breaking_news_module/publications_loader.html"
+    )
+
 # CRM API
 if CRM_API_BASE_URI:
     CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + "updateuserweb/")
@@ -621,10 +693,13 @@ if CRM_UPDATE_USER_CREATE_CONTACT is None:
     # defaults to the same value of the "base sync"
     CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED
 
-if ENV_HTTP_BASIC_AUTH and not locals().get("API_KEY_CUSTOM_HEADER"):
+if ENV_HTTP_BASIC_AUTH and "API_KEY_CUSTOM_HEADER" not in locals():
     # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
     API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
 
-# thedaily debug signals
+# thedaily default subscription type and debug signals
+if "THEDAILY_SUBSCRIPTION_TYPE_DEFAULT" not in locals():
+    THEDAILY_SUBSCRIPTION_TYPE_DEFAULT = \
+        THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0] if THEDAILY_SUBSCRIPTION_TYPE_CHOICES else None
 if THEDAILY_DEBUG_SIGNALS is None:
-    THEDAILY_DEBUG_SIGNALS = locals().get("DEBUG", False)
+    THEDAILY_DEBUG_SIGNALS = DEBUG

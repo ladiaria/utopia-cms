@@ -11,7 +11,6 @@ from libs.utils import smtp_connect
 from thedaily.models import SentMail
 
 
-welcome_email_template = 'notifications/new_subscription%s.html'
 welcome_email_sub = 'Tu suscripción %s está activa'
 
 
@@ -47,22 +46,16 @@ def send_notification(user, email_template, email_subject, extra_context={}):
     send_notification_message(email_subject, msg, user.email)
 
 
-def notify_digital(user, seller_fullname=None):
+def notify_subscription(user, subscription_type, seller_fullname=None):
+    site = Site.objects.get_current()
+    subj_inner = getattr(settings, "THEDAILY_WELCOME_EMAIL_SUBJECT_INNER", {}).get(subscription_type, f"a {site.name}")
     send_notification(
         user,
-        welcome_email_template,
-        welcome_email_sub % 'digital',
+        settings.THEDAILY_WELCOME_EMAIL_TEMPLATES.get(subscription_type, 'notifications/new_subscription.html'),
+        welcome_email_sub % subj_inner,
         {'seller_fullname': seller_fullname} if seller_fullname else {},
     )
-    SentMail.objects.create(subscriber=user.subscriber, subject="Bienvenida DI")
-
-
-def notify_paper(user, seller_fullname=None):
-    extra_context = {'seller_fullname': seller_fullname} if seller_fullname else {}
-    send_notification(
-        user, welcome_email_template % '_PAPYDIM', welcome_email_sub % 'a la edición papel', extra_context,
-    )
-    SentMail.objects.create(subscriber=user.subscriber, subject="Bienvenida Papel (PAPYDIM)")
+    SentMail.objects.create(subscriber=user.subscriber, subject=f"Bienvenida {subj_inner}")
 
 
 """

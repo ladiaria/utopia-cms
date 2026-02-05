@@ -178,7 +178,7 @@ def add_default_newsletters(subscriber):
     add_default_mailtrain_lists(subscriber)
 
 
-def unsubscribed_newsletters(subscriber):
+def unsubscribed_newsletters(subscriber, randomize=True):
     """
     Get unsubscribed newsletters for subscriber supplied
     @params: subscriber instance
@@ -190,7 +190,7 @@ def unsubscribed_newsletters(subscriber):
     if subscriber:
         subscribed_nls = list(subscriber.newsletters.all()) + list(subscriber.category_newsletters.all())
         result_nl = list(set(all_nl) - set(subscribed_nls))
-        rdm.shuffle(result_nl)
+        rdm.shuffle(result_nl) if randomize else None
         return result_nl
     else:
         return all_nl
@@ -246,7 +246,7 @@ def get_profile_newsletters_ordered():
     nl_alpha = [nl_obj for nl_obj in nl_unsorted if nl_obj not in nl_custom_ordered]
     nl_alpha.sort(key=attrgetter("slug"))
     return [nl_obj for nl_obj in nl_custom_ordered if nl_obj] + nl_alpha
-
+    
 
 def google_phone_next_page(request, is_new):
     next_page = request.session.pop("next", None)  # allways pop next page from session

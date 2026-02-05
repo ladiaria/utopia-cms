@@ -10,7 +10,7 @@ from django.contrib.sites.models import Site
 
 from libs.tokens.email_confirmation import send_validation_email, get_signup_validation_url
 from thedaily.views import get_password_validation_url
-from thedaily.tasks import notify_paper, send_notification
+from thedaily.tasks import notify_subscription, send_notification
 
 
 class Command(BaseCommand):
@@ -69,17 +69,19 @@ class Command(BaseCommand):
             msg = "Error al enviar email de verificación de suscripción para el usuario: %s." % u
             print(msg + " Detalle: {}".format(str(exc)))
 
-        # new_subscription.html <- (validation_email.html, new_subscription_PAPYDIM.html, sccount_info.html[x])
+        # new subscriptions
         html_message = render_to_string(
             'notifications/validation_email.html',
             {"site": site, "SITE_URL_SD": settings.SITE_URL_SD, 'logo_url': settings.HOMEV3_SECONDARY_LOGO},
         )
-        # # validation_email.html
+        # validation_email.html
         u.email_user(
             '[%s] Tu cuenta de usuario' % site.name, message=markdownify(html_message), html_message=html_message
         )
-        # # new_subscription_PAPYDIM.html
-        notify_paper(u)
+
+        for subscription_type in settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES:
+            notify_subscription(u, subscription_type)
+            notify_subscription(u, subscription_type, "Vendedornombre Vendedorapellido")
 
         # password_reset_body.html
         try:

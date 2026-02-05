@@ -1,13 +1,25 @@
 # -*- coding: utf-8 -*-
+from pydoc import locate
 
-from django.db.models import (
-    Model, FileField, DateTimeField, CharField, PositiveIntegerField, SlugField, BooleanField, TextField
-)
-from django.utils import timezone
+from django.conf import settings
+from django.db.models import Model, DateTimeField, CharField, PositiveIntegerField, SlugField, BooleanField, TextField
+
+
+# in case a pool by year is needed, uncomment and update file field definition with "... upload_to=audio_upload_path)"
+# A one-time script to update the already uploaded files file paths is provided.
+"""
+import os
+def audio_upload_path(instance, filename):
+    # Use the year of date_uploaded for the upload path
+    year = instance.date_uploaded.year
+    return os.path.join('audiologue', str(year), filename)
+"""
 
 
 class Audio(Model):
-    file = FileField('audio', upload_to='audiologue')
+    file = locate(
+        getattr(settings, "AUDIOLOGUE_FILE_FIELD_CLASS", "django.db.models.FileField")
+    )('audio', upload_to='audiologue')
     title = CharField('título', max_length=255)
     slug = SlugField('slug', null=True, blank=True, editable=False)
     caption = CharField('pie', max_length=255, null=True, blank=True)
@@ -19,11 +31,6 @@ class Audio(Model):
 
     class Meta:
         ordering = ('-date_uploaded',)
-
-    def save(self):
-        if not self.id:
-            self.date_uploaded = timezone.now()
-        super(Audio, self).save()
 
     def __str__(self):
         if self.title:

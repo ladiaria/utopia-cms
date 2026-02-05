@@ -191,6 +191,10 @@ article {
         text-decoration: underline;
       }
     }
+
+    iframe {
+      max-width: 100%;
+    }
   }
 
   p,
@@ -983,6 +987,9 @@ body.article {
 
   &__list {
     margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
     &:first-of-type {
       margin-bottom: 50px;
@@ -1453,16 +1460,6 @@ header.with-article-counter-container {
   z-index: 2;
   background: #8ebbff;
 
-  @media screen and (max-width: 282px) {
-    flex-direction: column;
-    gap: 0;
-    padding: 8px 16px;
-
-    svg {
-      display: none;
-    }
-  }
-
   button {
     position: absolute;
     right: 48px;
@@ -1497,6 +1494,27 @@ header.with-article-counter-container {
   }
   p a {
     font-weight: 700;
+  }
+
+  p.only-mobile {
+    display: none;
+  }
+
+  @media #{$medium-and-down} {
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 16px;
+
+    > svg {
+      display: none;
+    }
+
+    p.only-desktop {
+      display: none;
+    }
+    p.only-mobile {
+      display: block;
+    }
   }
 
   &.six-articles {

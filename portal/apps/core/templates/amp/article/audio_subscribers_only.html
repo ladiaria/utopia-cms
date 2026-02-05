@@ -1,0 +1,16 @@
+{% extends "core/templates/amp/article/audio.html" %}
+
+{% block amp_access_denied1 %}NOT subscriber{% endblock %}
+
+{% block overlay_title %}Este audio es una característica exclusiva para suscripciones.{% endblock %}
+
+{% block overlay_links %}
+  <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=audio-banner">Suscribite</a>
+  <span class="d-inline-block" amp-access="NOT authenticated" amp-access-hide>
+    o <a on="tap:amp-access.login">Ingresá</a>
+  </span>
+{% endblock %}
+
+{% block amp_access_allowed %}subscriber{% endblock %}
+
+{% block amp_access_denied2 %}NOT subscriber{% endblock %}

@@ -4,6 +4,7 @@ from builtins import str
 
 from django.conf import settings
 from django.http import HttpResponseRedirect
+from django.db import IntegrityError
 from django.db.models.deletion import Collector
 from django.contrib import admin
 from django.contrib.auth.models import User
@@ -30,13 +31,47 @@ from .utils import collector_analysis
 from .exceptions import UpdateCrmEx
 
 
+class HasEmailFilter(admin.SimpleListFilter):
+    """
+    Filter to show users with or without email address.
+
+    Useful for finding users that:
+    - Have no email (email is None or empty string)
+    - Have email address
+
+    This helps identify users that should not sync to CMS.
+    """
+    title = '¿Tiene email?'
+    parameter_name = 'has_email'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Sí, tiene email'),
+            ('no', 'No tiene email (vacío o nulo)'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            # Users with email (not null and not empty string)
+            return queryset.exclude(email__isnull=True).exclude(email='')
+        elif self.value() == 'no':
+            # Users without email (null or empty string)
+            from django.db.models import Q
+            return queryset.filter(Q(email__isnull=True) | Q(email=''))
+        return queryset
+
+
 class UserAdmin(BaseUserAdmin):
     list_display = ("id", "username", "email", "first_name", "last_name", "is_active", "is_staff")
+    list_filter = (HasEmailFilter,) + BaseUserAdmin.list_filter
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         result = None
         try:
             result = super().change_view(request, object_id, form_url, extra_context)
+        except IntegrityError as ie:
+            self.message_user(request, str(ie), level=messages.ERROR)
+            result = HttpResponseRedirect(request.get_full_path())
         except UpdateCrmEx:
             self.message_user(
                 request, 'Error de comunicación con el CRM, no se aplicaron los cambios', level=messages.ERROR
@@ -185,8 +220,23 @@ class SubscriberAdmin(ModelAdmin):
 
 
 class SubscriptionPricesAdmin(ModelAdmin):
-    list_display = ('id', 'subscription_type', 'price', 'order', 'auth_group', 'publication')
-    list_editable = ('subscription_type', 'price', 'order', 'auth_group', 'publication')
+    list_display = (
+        '__str__', 'order', 'months', 'price', 'price_total', "discount", 'auth_group', 'publication'
+    )
+    list_editable = list_display[1:]
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        field = super().formfield_for_dbfield(db_field, **kwargs)
+        if db_field.name in ('price', 'price_total'):
+            field.widget.attrs['style'] = 'width:8em;'
+        elif db_field.name == 'discount':
+            field.widget.attrs['style'] = 'width:5em;'
+        elif db_field.name in ('order', 'months'):
+            field.widget.attrs['style'] = 'width:3em;'
+        elif db_field.name == 'extra_info':
+            field.required = False
+            field.widget.attrs = {'style': 'width:80%;font-family:monospace', 'spellcheck': "false", 'rows': 10}
+        return field
 
 
 class RemainingContentAdmin(ModelAdmin):

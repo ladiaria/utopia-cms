@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
+from django.core.validators import MinValueValidator, MaxValueValidator
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
 import locale
-import tempfile
 import operator
 import json
+from pydoc import locate
 from collections import OrderedDict
 from requests.exceptions import ConnectionError
 from kombu.exceptions import OperationalError as KombuOperationalError
 from sorl.thumbnail import get_thumbnail
-from PIL import Image
 from bs4 import BeautifulSoup
 import readtime
+import logging
 import mutagen
 import w3storage
-from martor.models import MartorField
+import re
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -24,7 +25,7 @@ from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sitemaps import ping_google
-from django.db import IntegrityError, connection
+from django.db import IntegrityError, ProgrammingError, connection
 from django.db.models import (
     Q,
     Manager,
@@ -49,6 +50,9 @@ from django.db.models import (
     Index,
     SET_NULL,
     CASCADE,
+    URLField,
+    TextChoices,
+    FloatField,
 )
 from django.db.models.signals import post_save
 from django.db.utils import OperationalError
@@ -61,6 +65,7 @@ from django.utils.timezone import datetime, timedelta, make_aware, now, template
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 from django.utils.html import escape
+from django.core.exceptions import ValidationError
 
 from apps import blocklisted
 from photologue_ladiaria.models import PhotoExtended
@@ -71,7 +76,13 @@ from tagging.models import Tag
 import thedaily
 from videologue.models import Video, YouTubeVideo
 
-from .managers import get_published_kwargs, PublishedArticleManager, EditionManager, SlugNaturalManager
+from .managers import (
+    get_published_kwargs,
+    PublishedArticleManager,
+    EditionManager,
+    SlugNaturalManager,
+    PublishedBreakingNewsModuleManager,
+)
 from .templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from .utils import (
     datetime_isoformat,
@@ -82,6 +93,9 @@ from .utils import (
     update_article_url_in_coral_talk,
     get_category_template,
 )
+from solo.models import SingletonModel
+
+logger = logging.getLogger(__name__)
 
 
 def remove_media_root(path):
@@ -201,7 +215,10 @@ class Publication(Model):
 
     @staticmethod
     def multi():
-        return Publication.objects.count() > 1
+        try:
+            return Publication.objects.count() > 1
+        except ProgrammingError:
+            return False
 
     def newsletter_preview_url(self):
         """
@@ -267,17 +284,19 @@ class Publication(Model):
     def image_tag(self):
         url = None
         if self.image:
-            logo_filename = self.image.path
             try:
-                logo_image = Image.open(logo_filename)
-            except IOError:
-                logo_image = None
-            if logo_image and logo_image.size[0] > 120:
-                tmpfile, f = tempfile.mkstemp('.png', dir=settings.MEDIA_ROOT)
-                logo_image.convert('RGB').save(f, optimize=True)
-                url = get_thumbnail(f, '120', crop='center', quality=99).url
-            else:
-                url = '%s%s' % (settings.MEDIA_URL, self.image)
+                # If image is wider than 120px, create a PNG thumbnail
+                if self.image.width > 120:
+                    url = get_thumbnail(self.image, '120', crop='center', quality=99, format='PNG').url
+                else:
+                    # Otherwise, use the original image url
+                    url = self.image.url
+            except Exception:
+                # Fallback to original image url if thumbnailing or width check fails
+                try:
+                    url = self.image.url
+                except ValueError:
+                    pass  # url remains None
         return mark_safe(
             '<a href="/admin/core/publication/%d/"><img src="%s" style="background:%s;"/></a>' % (
                 self.id, url, self.newsletter_header_color
@@ -1180,7 +1199,7 @@ class ArticleBase(Model, CT):
 
     publication = ForeignKey(
         Publication,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='publicación',
         blank=True,
         null=True,
@@ -1199,7 +1218,7 @@ class ArticleBase(Model, CT):
     lead = TextField(
         'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
-    body = MartorField("cuerpo")
+    body = locate(settings.CORE_ARTICLE_BODY_FIELD_CLASS)("cuerpo")
     header_display = CharField(
         'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
     )
@@ -1238,13 +1257,14 @@ class ArticleBase(Model, CT):
     longitude = DecimalField('longitud', max_digits=10, decimal_places=6, blank=True, null=True)
     location = ForeignKey(
         Location,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='ubicación',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
     is_published = BooleanField('publicado', default=True, db_index=True)
+    to_be_published = BooleanField('programar publicación', default=False, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField('última actualización', auto_now=True)
@@ -1252,27 +1272,29 @@ class ArticleBase(Model, CT):
     allow_comments = BooleanField('Habilitar comentarios', default=True)
     created_by = ForeignKey(
         User,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='creado por',
         related_name='created_articles_%(app_label)s',
         editable=False,
         blank=False,
         null=True,
     )
-    photo = ForeignKey(Photo, on_delete=CASCADE, blank=True, null=True, verbose_name='imagen')
-    gallery = ForeignKey(Gallery, on_delete=CASCADE, verbose_name='galería', blank=True, null=True)
+    photo = ForeignKey(Photo, on_delete=SET_NULL, blank=True, null=True, verbose_name='imagen')
+    gallery = ForeignKey(Gallery, on_delete=SET_NULL, verbose_name='galería', blank=True, null=True)
     video = ForeignKey(
         Video,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='video',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    youtube_video = ForeignKey(YouTubeVideo, on_delete=CASCADE, verbose_name='video de YouTube', blank=True, null=True)
+    youtube_video = ForeignKey(
+        YouTubeVideo, on_delete=SET_NULL, verbose_name='video de YouTube', blank=True, null=True
+    )
     audio = ForeignKey(
         Audio,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
         verbose_name='audio',
         related_name='articles_%(app_label)s',
         blank=True,
@@ -1323,6 +1345,8 @@ class ArticleBase(Model, CT):
         nowval = now()
 
         if self.is_published:
+            if self.to_be_published:
+                raise Exception("No se permite programar publicación de un artículo ya publicado")
             if not self.date_published:
                 self.date_published = nowval
             if not settings.DEBUG:
@@ -1330,6 +1354,14 @@ class ArticleBase(Model, CT):
                     ping_google()
                 except Exception:
                     pass
+        elif self.to_be_published:
+            if not self.date_published:
+                raise Exception("Para programar la publicación de un artículo se debe especificar la fecha")
+            elif self.date_published <= nowval:
+                raise Exception("La fecha de publicación programada no puede estar en el pasado")
+            else:
+                # TODO: update/create schedule task associated with this article
+                pass
         else:
             self.date_published = None
 
@@ -1349,9 +1381,13 @@ class ArticleBase(Model, CT):
             targets = targets.exclude(id=self.id)
         if targets:
             # TODO: IntegrityError may be better exception to raise
-            raise Exception('Ya existe un artículo en ese mes con el mismo título.')
+            raise Exception('Ya existe un artículo en ese mes con el mismo título')
 
         super(ArticleBase, self).save(*args, **kwargs)
+
+        if not self.to_be_published:
+            # TODO: delete any scheduled task associated with this article
+            pass
 
     def is_photo_article(self):
         return self.type == settings.CORE_PHOTO_ARTICLE
@@ -1454,8 +1490,12 @@ class ArticleBase(Model, CT):
         if self.audio:
             try:
                 td = timedelta(seconds=int(mutagen.File(self.audio.file).info.length))
-            except FileNotFoundError:
-                pass
+            except (FileNotFoundError, AttributeError) as e:
+                logger.error(
+                    f"get_audio_length error - Article ID: {self.id}, "
+                    f"Slug: {self.slug}, Audio file: {self.audio.file.name}, "
+                    f"Error type: {type(e).__name__}, Error: {e}"
+                )
             else:
                 if seconds:
                     return td.seconds
@@ -1723,6 +1763,16 @@ class Article(ArticleBase):
     )
     # SuperDesk article ID
     sp_id = CharField(max_length=100, null=True, blank=True)
+
+    ia_used = BooleanField(
+        default=False,
+        editable=False,
+        help_text="Indica si se utilizó IA en este artículo."
+    )
+
+    copy_para_redes = TextField(
+        blank=True,
+    )
 
     def save(self, *args, **kwargs):
 
@@ -2187,13 +2237,13 @@ class ArticleViews(Model):
 
 
 class CategoryHomeArticle(Model):
+    # TODO: review the "custom label" comment in the position field (still needed?)
     home = ForeignKey('CategoryHome', on_delete=CASCADE)
     article = ForeignKey(
         Article,
         on_delete=CASCADE,
         verbose_name='artículo',
         related_name='home_articles',
-        limit_choices_to={'is_published': True},
     )
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
@@ -2214,7 +2264,6 @@ class CategoryHomeArticle(Model):
 
     class Meta:
         ordering = ('position',)
-        unique_together = ('home', 'position')
 
 
 class CategoryHome(Model):
@@ -2447,6 +2496,8 @@ class BreakingNewsModule(Model):
     publications = ManyToManyField(Publication, verbose_name='portada de publicaciones', blank=True)
     categories = ManyToManyField(Category, verbose_name='portada de áreas', blank=True)
 
+    published = PublishedBreakingNewsModuleManager()
+
     def __str__(self):
         return self.headline or ''
 
@@ -2616,3 +2667,128 @@ class PushNotification(Model):
 
     def __str__(self):
         return "%s - %s" % (self.tag, self.message)
+
+
+def validar_ejemplo_formato(valor):
+    """
+    Valida que el texto contenga 'Ejemplo de formato esperado:' seguido inmediatamente por un bloque entre llaves.
+    """
+    # Busca la frase y luego un bloque entre llaves (puede tener cualquier cosa dentro)
+    patron = r"Ejemplo de formato esperado:\s*\{.*?\}"
+    if not re.search(patron, valor, re.DOTALL):
+        raise ValidationError(
+            "El texto debe contener 'Ejemplo de formato esperado:' seguido de un bloque entre llaves {}."
+        )
+
+
+def validar_default_context(valor):
+    # Verifica Título: {titulo}
+    if not re.search(r"Título:\s*\{titulo\}", valor):
+        raise ValidationError("El texto debe contener 'Título: {titulo}' (puede haber espacios entre ':' y '{').")
+    # Verifica Descripción: {descripcion}
+    if not re.search(r"Descripción:\s*\{descripcion\}", valor):
+        raise ValidationError(
+            "El texto debe contener 'Descripción: {descripcion}' (puede haber espacios entre ':' y '{')."
+        )
+    # Si aparece Cuerpo:, debe ir seguido de {cuerpo}
+    match_cuerpo = re.search(r"Cuerpo:\s*\{cuerpo\}", valor)
+    if "Cuerpo:" in valor and not match_cuerpo:
+        raise ValidationError(
+            "Si incluyes 'Cuerpo:', debe ir seguido de '{cuerpo}' (puede haber espacios entre ':' y '{')."
+        )
+
+
+class PerplexityAPISettings(SingletonModel):
+    class PerplexityModelChoices(TextChoices):
+        SONAR_PRO = "sonar-pro", "sonar-pro"
+        SONAR = "sonar", "sonar"
+        SONAR_REASONING_PRO = "sonar-reasoning-pro", "sonar-reasoning-pro"
+        SONAR_REASONING = "sonar-reasoning", "sonar-reasoning"
+        SONAR_DEEP_RESEARCH = "sonar-deep-research", "sonar-deep-research"
+        R1_1776 = "r1-1776", "r1-1776"
+
+    nombre_del_asistente = CharField(max_length=50, default="tIA", help_text="Nombre del asistente IA a utilizar")
+
+    class WebSearchContextSizeChoices(TextChoices):
+        LOW = "low", "low"
+        MEDIUM = "medium", "medium"
+        HIGH = "high", "high"
+
+    activar_asistente = BooleanField(default=True, help_text="para activar o desactivar el uso del asistente IA ")
+
+    endpoint = URLField(
+        default="https://api.perplexity.ai/chat/completions", help_text="Endpoint de la API de Perplexity"
+    )
+    model = CharField(
+        max_length=50,
+        choices=PerplexityModelChoices.choices,
+        default=PerplexityModelChoices.SONAR,
+        help_text="Modelo de IA a utilizar",
+    )
+    temperature = FloatField(
+        validators=[MinValueValidator(0), MaxValueValidator(2)],
+        blank=True,
+        null=True,
+        help_text="La cantidad de aleatoriedad en la respuesta, valorada entre 0 y 2. "
+        "Los valores bajos (por ejemplo, 0.1) hacen que la salida sea más enfocada, "
+        "determinista y menos creativa. Los valores altos (por ejemplo, 1.5) hacen "
+        "que la salida sea más aleatoria y creativa. Usa valores bajos para tareas de "
+        "recuperación de información o hechos y valores altos para aplicaciones creativas. "
+        "Por defecto se usa 0.2",
+    )
+    context_size = CharField(
+        max_length=10,
+        choices=WebSearchContextSizeChoices.choices,
+        default=WebSearchContextSizeChoices.LOW,
+        help_text='Opcion "search_context_size" a utilizar: low, medium o high',
+    )
+    search_domain_filter = CharField(
+        max_length=500,
+        blank=True,
+        default="ladiaria.com.uy",
+        help_text="Dominios permitidos o restringidos, separados por coma, "
+        'si queires excliur alguno use "-" delante del dominio, ej. -redis.com',
+    )
+    max_tokens = PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text="Máximo de tokens por respuesta, si no se configura se usa "
+        "el valor por defecto que depende del modelo escogido.",
+    )
+    default_context = TextField(
+        default="Responde en español de manera clara y concisa.",
+        validators=[validar_default_context],
+        help_text="Contexto por defecto que siempre se enviará a Perplexity",
+    )
+    result_instructions = TextField(
+        default=(
+            "\nPor favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys.\n"
+            '- El campo "metatitles" debe ser un array de exactamente 3 strings, cada uno con un metatítulo diferente y adecuado para Google Discover, siguiendo el estilo de la diaria.\n'
+            '- El campo "copys" debe ser un array de exactamente 2 strings. Cada string debe incluir primero el copy para redes sociales y, en la misma string y separado por un salto de línea, los hashtags correspondientes.\n'
+            "- No agregues elementos adicionales ni comentarios fuera del objeto JSON.\n\n"
+            "Ejemplo de formato esperado:\n"
+            "{\n"
+            '  "metatitles": [\n'
+            '    "Metatítulo 1",\n'
+            '    "Metatítulo 2",\n'
+            '    "Metatítulo 3"\n'
+            "  ],\n"
+            '  "copys": [\n'
+            '    "Copy para redes sociales 1.\\n#Hashtag1 #Hashtag2",\n'
+            '    "Copy para redes sociales 2.\\n#Hashtag3 #Hashtag4"\n'
+            "  ]\n"
+            "}"
+        ),
+        verbose_name="Instrucciones para el resultado",
+        help_text="Describe detalladamente cómo debe presentarse el resultado. Ejemplo: 'Incluya unidades y redondee a dos decimales.'",
+        validators=[validar_ejemplo_formato],
+    )
+
+    def get_domain_list(self):
+        return [d.strip() for d in self.search_domain_filter.split(",") if d.strip()]
+
+    def get_conocimiento(self):
+        return [line.strip() for line in self.conocimiento.strip().split("\n") if line.strip()]
+
+    def __str__(self):
+        return "Configuración de la API de Perplexity"

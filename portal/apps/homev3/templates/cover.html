@@ -1,6 +1,6 @@
 {% load core_tags homev3_tags adzone_tags static %}
 
-<div id="bn-module"></div>
+{% if bn_module_published_count %}<div id="bn-module"></div>{% endif %}
 
 {% if event %}
   {% if event.is_free or is_subscriber_any %}
@@ -33,13 +33,15 @@
   {% include 'pwa-module.html' %}
 {% endif %}
 
-{% if allow_ads and not is_subscriber %}
-  <div class="frontpage-section frontpage-section--white frontpage-section--ad frontpage-section">
-    <div class="container">
-      <section id="header-pub" class="col s12 center-align"></section>
+{% block cover_ads %}
+  {% if allow_ads and not is_subscriber %}
+    <div class="frontpage-section frontpage-section--white frontpage-section--ad frontpage-section">
+      <div class="container">
+        <section id="header-pub" class="col s12 center-align"></section>
+      </div>
     </div>
-  </div>
-{% endif %}
+  {% endif %}
+{% endblock %}
 
 {% block mas_leidos %}
   {% if allow_mas_leidos %}

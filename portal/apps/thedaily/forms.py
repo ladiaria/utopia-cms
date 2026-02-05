@@ -5,8 +5,8 @@ from pydoc import locate
 from django.conf import settings
 from django.http import UnreadablePostError
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password, get_password_validators
 from django.contrib.auth.tokens import default_token_generator
-from django.shortcuts import get_object_or_404
 from django.core.mail import mail_managers
 from django.forms import (
     Form,
@@ -46,17 +46,35 @@ SUBSCRIPTION_PHONE_TIME_CHOICES = (
     ('4', 'En la tarde-noche (18:00 a 20:00)'),
 )
 TEMPLATE_PACK = get_template_pack()
-PASSWORD_MIN_LENGTH = getattr(settings, "THEDAILY_PASSWORD_MIN_LENGTH", 8)
+
+# password validators
+PASSWORD_MIN_LENGTH, PASSWORD_VALIDATORS = None, getattr(settings, 'AUTH_PASSWORD_VALIDATORS', None)
+min_len_found = False
+if PASSWORD_VALIDATORS:
+    for validator in PASSWORD_VALIDATORS:
+        for key, value in validator.items():
+            if key == "NAME" and value == "django.contrib.auth.password_validation.MinimumLengthValidator":
+                PASSWORD_MIN_LENGTH, min_len_found = validator.get("OPTIONS", {}).get("min_length"), True
+                break
+        if min_len_found:
+            break
+PASSWORD_MIN_LENGTH = PASSWORD_MIN_LENGTH or 8
 
 
 def get_default_province():
     return getattr(settings, 'THEDAILY_PROVINCE_CHOICES_INITIAL', None)
 
 
-def custom_layout(form_id):
+def custom_layout(form_id, *args, **kwargs):
     custom_layout_module = getattr(settings, "THEDAILY_CRISPY_CUSTOM_LAYOUTS_MODULE", None)
     if custom_layout_module:
-        return locate(f"{custom_layout_module}.layouts").get(form_id)
+        layout_function = locate(f"{custom_layout_module}.{form_id}")
+        if callable(layout_function):
+            try:
+                return layout_function(*args, **kwargs)
+            except Exception as exc:
+                if settings.DEBUG:
+                    print(f"Error calling the custom layout function for '{form_id}' form: {exc}")
 
 
 def terms_and_conditions_field():
@@ -79,8 +97,10 @@ terms_and_conditions_prelogin = (
 )
 
 
-def check_password_strength(password):
-    return len(password) >= PASSWORD_MIN_LENGTH
+def check_password_strength(password, user=None):
+    return validate_password(
+        password, user, get_password_validators(PASSWORD_VALIDATORS) if PASSWORD_VALIDATORS else None
+    )
 
 
 def clean_terms_and_conds(form):
@@ -229,7 +249,7 @@ class LoginForm(CrispyForm):
                     self.username = nom
                     result = data
                 else:
-                    self.add_eror(error=ValidationError(USER_PASS_ERROR))
+                    self.add_error(None, ValidationError(USER_PASS_ERROR))
             else:
                 result = data
         return result
@@ -255,6 +275,7 @@ class BaseUserForm(CrispyModelForm):
         return self.custom_clean()
 
     def clean_first_name(self):
+        # TODO: sync with django-admin validations because for ex. "@" is allowed there and not here
         first_name = self.cleaned_data.get('first_name')
         if not RE_ALPHANUM.match(first_name):
             self.add_error(
@@ -372,10 +393,7 @@ class SignupForm(BaseUserForm):
     def clean_password(self):
         data = self.cleaned_data
         password = data.get('password')
-        if check_password_strength(password):
-            return password
-        else:
-            self.add_error('password', ValidationError('La contraseña debe tener 6 o más caracteres.'))
+        return check_password_strength(password) or password
 
     def clean_terms_and_conds_accepted(self):
         return clean_terms_and_conds(self)
@@ -477,7 +495,7 @@ class ProfileExtraDataForm(CrispyModelForm):
                     "profile/push_notifications.html"
                 )
             ),
-            Field('newsletters', template='profile/newsletters.html'),
+            Field('newsletters', template=get_app_template('profile/newsletters.html')),
             HTML('{%% include "%s" %%}' % get_app_template('profile/communications_start_section.html')),
             Field('allow_news', template=get_app_template('profile/allow_news.html')),
             Field('allow_promotions', template=get_app_template('profile/allow_promotions.html')),
@@ -489,6 +507,8 @@ class ProfileExtraDataForm(CrispyModelForm):
         model = Subscriber
         fields = ('allow_news', 'allow_promotions', 'allow_polls', "newsletters")
 
+
+# TODO: from this line on, s/first_name/name
 
 class SubscriberForm(CrispyModelForm):
     first_name = first_name_field()
@@ -742,7 +762,7 @@ class PhoneSubscriptionForm(CrispyForm):
             HTML('<h3 class="small">Tus datos</h3>'),
             "full_name",
             "phone",
-            HTML('<div class="row">'),  # next field will close this div tag
+            HTML('<div class="">'),  # next field will close this div tag
             Field('preferred_time', template='preferred_time_visible.html'),
             HTML('<div class="ld-block--sm align-center">'),
             FormActions(Submit('save', 'Enviar', css_class='ut-btn ut-btn-l')),
@@ -750,14 +770,52 @@ class PhoneSubscriptionForm(CrispyForm):
         )
 
 
-class SubscriptionForm(ModelForm):
+class WebSubscriptionForm(ModelForm):
     subscription_type_prices = ChoiceField(choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, widget=HiddenInput())
+    if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
+        terms_and_conds_accepted = terms_and_conditions_field()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = CrispyFormHelper()
+        self.helper.layout = Layout(
+            *terms_and_conditions_layout_tuple()
+            + (
+                HTML('<div class="ld-block--sm align-center">'),
+                FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
+                HTML(
+                    '<div class="ld-text-secondary align-center ld-subscription-step" style="display:none;">'
+                    'Paso 1 de 2'
+                ),
+                Field('subscription_type_prices'),
+            )
+        )
+
+    def clean_terms_and_conds_accepted(self):
+        return clean_terms_and_conds(self)
+
+    class Meta:
+        model = Subscription
+        fields = ['subscription_type_prices']
+
+
+class WebSubscriptionPromoCodeForm(WebSubscriptionForm):
+    promo_code = CharField(label='Código promocional (opcional)', required=False, max_length=8)
+
+
+class WebSubscriptionCaptchaForm(WebSubscriptionForm):
+    captcha = ReCaptchaField(label='')
+
+
+class WebSubscriptionPromoCodeCaptchaForm(WebSubscriptionPromoCodeForm):
+    captcha = ReCaptchaField(label='')
+
+
+class SubscriptionForm(WebSubscriptionForm):
     payment_type = ChoiceField(
         label='Elegí la forma de suscribirte', choices=(('tel', 'Telefónica (te llamamos)'),), initial='tel'
     )
     preferred_time = preferred_time_field()
-    if settings.THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID:
-        terms_and_conds_accepted = terms_and_conditions_field()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -780,13 +838,6 @@ class SubscriptionForm(ModelForm):
                 Field('subscription_type_prices'),
             )
         )
-
-    def clean_terms_and_conds_accepted(self):
-        return clean_terms_and_conds(self)
-
-    class Meta:
-        model = Subscription
-        fields = ['subscription_type_prices']
 
     class Media:
         js = ('js/preferred_time.js',)
@@ -1058,15 +1109,20 @@ class PasswordChangeBaseForm(CrispyForm):
     )
 
     def __init__(self, *args, **kwargs):
+        if 'user' in kwargs:
+            self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.form_id = 'change_password'
-        self.helper.layout = Layout(
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id, False)
+            or Layout(
+                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+                HTML('<div class="align-center">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def clean(self):
@@ -1074,7 +1130,7 @@ class PasswordChangeBaseForm(CrispyForm):
         if p1 and p2:
             if p1 != p2:
                 self.add_error('new_password_1', ValidationError('Las contraseñas no coinciden.'))
-            elif check_password_strength(p1):
+            elif not check_password_strength(p1, getattr(self, 'user', None)):
                 return self.data
 
     def get_password(self):
@@ -1090,17 +1146,17 @@ class PasswordChangeForm(PasswordChangeBaseForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.get('user')
-        if 'user' in kwargs:
-            del kwargs['user']
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Field('old_password', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+        self.helper.layout = (
+            custom_layout(self.helper.form_id)
+            or Layout(
+                Field('old_password', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+                HTML('<div class="align-center">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def clean_old_password(self):
@@ -1132,23 +1188,25 @@ class PasswordResetForm(PasswordChangeBaseForm):
         initial = {}
         if 'hash' not in kwargs:
             raise AttributeError('Missing hash')
-        self.user = kwargs.get('user')
         self.hash = kwargs.get('hash')
         initial['hash'] = self.hash
         initial['gonzo'] = self.gen_gonzo()
         kwargs['initial'] = initial
         del kwargs['hash']
-        del kwargs['user']
 
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
-            Field('new_password_1', template='materialize_css_forms/layout/password.html'),
-            Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-            Field('gonzo', type='hidden', value=initial['gonzo']),
-            Field('hash', type='hidden', value=initial['gonzo']),
-            HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
-            HTML('</div>'),
+
+        self.helper.layout = (
+            custom_layout(self.helper.form_id, False, initial['gonzo'])
+            or Layout(
+                Field('new_password_1', template='materialize_css_forms/layout/password.html'),
+                Field('new_password_2', template='materialize_css_forms/layout/password.html'),
+                Field('gonzo', type='hidden', value=initial['gonzo']),
+                Field('hash', type='hidden', value=initial['gonzo']),
+                HTML('<div class="align-center">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('</div>'),
+            )
         )
 
     def gen_gonzo(self):
@@ -1163,8 +1221,7 @@ class PasswordResetForm(PasswordChangeBaseForm):
             if self.data.get('gonzo') != self.gen_gonzo():
                 self.add_error(None, ValidationError(err_msg))
             else:
-                user = get_object_or_404(User, id=self.user)
-                if not default_token_generator.check_token(user, self.hash):
+                if not default_token_generator.check_token(self.user, self.hash):
                     self.add_error(None, ValidationError(err_msg))
                 else:
                     return self.data

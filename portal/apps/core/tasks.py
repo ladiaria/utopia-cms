@@ -4,8 +4,8 @@ from kombu.exceptions import OperationalError
 from django.conf import settings
 from django.core.management.base import CommandError
 
+from core.models import Article
 from celeryapp import celery_app
-
 from .actions import update_category_home as update_category_home_func
 from .management.commands.send_notification import send_notification_func
 from .management.commands.update_article_urls import update_article_urls as update_article_urls_func
@@ -57,14 +57,37 @@ def test_task(test_arg=None):
     return "test_task executed with arg: %s" % test_arg
 
 
+@celery_app.task(name="article-publishing")
+def article_publishing(article_id):
+    # publish a scheduled article
+    result = None
+    try:
+        article = Article.objects.get(pk=article_id)
+    except Article.DoesNotExist:
+        result = f"Article with id {article_id} does not exist."
+    else:
+        article.is_published, article.to_be_published = True, False
+        try:
+            article.save()
+        except Exception as e:
+            result = f"Article {article} (id: {article.id}) could not be published: {e}"
+        else:
+            result = f"Article {article} (id: {article.id}) scheduled for publishing was published correctly."
+    return result
+
+
 def get_workers_for_queue(queue_name):
     # Get the list of all registered workers and their queues
-    active_queues = inspector.active_queues() or {}
+    try:
+        active_queues = inspector.active_queues() or {}
+    except (TimeoutError, BrokenPipeError):
+        active_queues = {}
     workers_handling_queue = set()
-    for worker, queues in active_queues.items():
-        for queue in queues:
-            if queue['name'] == queue_name:
-                workers_handling_queue.add(worker)
+    if active_queues:
+        for worker, queues in active_queues.items():
+            for queue in queues:
+                if queue['name'] == queue_name:
+                    workers_handling_queue.add(worker)
     return list(workers_handling_queue)
 
 
@@ -78,33 +101,39 @@ except (AttributeError, KeyError, OperationalError):
 
 
 def update_category_home():
-
     # Check if the task is already running or enqueued before enqueueing it again
     task_name, found = update_category_home_task.name, False
     if update_category_home_workers:
-        active_tasks, found = inspector.active() or {}, False
-        for w in update_category_home_workers:
-            for task in active_tasks.get(w, []):
-                if task.get('name') == task_name:
-                    if settings.DEBUG:
-                        print("found active")
-                    found = True
-                    break
-            if found:
-                break
-
-        if not found:
-            queued_tasks = inspector.scheduled() or {}
+        try:
+            active_tasks = inspector.active() or {}
+        except (TimeoutError, BrokenPipeError):
+            active_tasks = {}
+        if active_tasks:
             for w in update_category_home_workers:
-                for task in queued_tasks.get(w, []):
+                for task in active_tasks.get(w, []):
                     if task.get('name') == task_name:
                         if settings.DEBUG:
-                            print("found queued")
+                            print("found active")
                         found = True
                         break
                 if found:
                     break
 
+        if not found:
+            try:
+                queued_tasks = inspector.scheduled() or {}
+            except (TimeoutError, BrokenPipeError):
+                queued_tasks = {}
+            if queued_tasks:
+                for w in update_category_home_workers:
+                    for task in queued_tasks.get(w, []):
+                        if task.get('name') == task_name:
+                            if settings.DEBUG:
+                                print("found queued")
+                            found = True
+                            break
+                    if found:
+                        break
     if not found:
         try:
             update_category_home_task.delay()

@@ -6,7 +6,7 @@
     <div class="ld-subscribe-box__info ld-caption">
       {% block subscribe_box_nl_subscribe_anon %}{{ publication.subscribe_box_nl_subscribe_anon|safe }}{% endblock %}
     </div>
-    <a href="{% if category_signup %}{% url 'subscribe' planslug='DDIGM' category_slug=category.slug %}{% else %}{% url 'subscribe' planslug='DDIGM' %}{% endif %}"
+    <a href="{% if category_signup %}{% url 'subscribe-default' category_slug=category.slug %}{% else %}{% url 'subscribe-default' %}{% endif %}"
        class="ld-btn-default ld-btn-default--sm ld-btn-default--icon-envelope ld-btn-default--inverted">
       Suscribite
     </a>

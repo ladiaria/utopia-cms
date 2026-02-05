@@ -1,6 +1,5 @@
 """
 TODO: docstring for this file, authors, etc.
-      Also, a sample is not needed anymore, this can be the real file used in deployments.
 """
 import os
 import sys

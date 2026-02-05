@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-
+import logging
 from os.path import join
-
 from future import standard_library
 from builtins import str
 import requests
 import json
+import importlib
 from dateutil.relativedelta import relativedelta
 from requests.exceptions import ConnectionError
 from urllib.parse import urlsplit, urlunsplit
+import time
+from typing import Any, Dict
 
 from django.conf import settings
 from django.core.paginator import Paginator, InvalidPage, EmptyPage, PageNotAnInteger
@@ -19,6 +21,7 @@ from django.http import Http404, HttpResponse, BadHeaderError, HttpResponsePerma
 from django.views.generic import DetailView
 from django.forms import ValidationError
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_protect
 from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache, cache_page
@@ -26,20 +29,61 @@ from django.views.decorators.vary import vary_on_cookie
 from django.template import Engine, TemplateDoesNotExist
 from django.template.defaultfilters import slugify
 from django.utils.timezone import timedelta, now, datetime, utc
+from django.http import JsonResponse
+from django.contrib.auth.decorators import user_passes_test
 
 from actstream.models import following
 from favit.models import Favorite
 
 from tagging.models import Tag
 from apps import mongo_db
-from signupwall.middleware import subscriber_access
+from signupwall.middleware import signupwall_exclude, subscriber_access
 from decorators import decorate_if_no_auth, decorate_if_auth
 from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
-from core.models import Publication, Category, Article, ArticleUrlHistory
+from core.models import Publication, Category, Article, ArticleUrlHistory, PerplexityAPISettings
 from thedaily.templatetags.thedaily_tags import has_restricted_access
+from core.utils import ia_use_group
+from pydantic import BaseModel, Field
+from typing import List
 
+
+logging.basicConfig(level=logging.INFO)
 
 standard_library.install_aliases()
+
+
+class ClienteException(Exception):
+    pass
+
+
+def import_from_string(dotted_path):
+    """
+    This function is for importing a module from a string. It's used for importing the extra context module
+    """
+    try:
+        module_path, attr = dotted_path.rsplit(".", 1)
+        module = importlib.import_module(module_path)
+        return getattr(module, attr)
+    except (ImportError, AttributeError) as e:
+        raise ImportError(f"Could not import '{dotted_path}': {e}") from e
+
+
+def get_article_detail_extra_context(request):
+    """
+    This function is for adding extra context to the article detail template. For now it's only for logged users
+    """
+    extra_context_module_path = getattr(settings, "ARTICLE_DETAIL_EXTRA_CONTEXT_MODULE", None)
+    extra_context = {}
+    credits = getattr(request, "credits", 0)
+    if extra_context_module_path and request.user.is_authenticated and request.user.subscriber:
+        try:
+            get_extra_context = import_from_string(extra_context_module_path)
+            extra_context = get_extra_context(request.user, credits)
+        except ImportError as e:
+            if settings.DEBUG:
+                print(f"Error importing extra context: {e}")
+            pass
+    return extra_context
 
 
 class ArticleDetailView(DetailView):
@@ -144,6 +188,48 @@ def article_detail(request, year, month, slug, domain_slug=None):
     if not article.is_published and not request.user.is_staff:
         raise Http404
 
+    signupwall_exclude_request_condition = signupwall_exclude(request)
+    # If the call to the condition with the request as argument returns True, the visit is not logged to mongodb.
+
+    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
+    template_engine = Engine.get_default()
+
+    # 3. render "landing facebook" if fb browser detected and previous condition is not met
+    if not signupwall_exclude_request_condition:
+        """
+        this code can be migrated to the middleware itself, this way you can use the same logic for all the views, not
+        only for the article detail view, it will cover the use case of links clicked mostly on IG that is more often
+        editors put non-article links there. middleware has already comments about this "ref_core.views.article.py:153"
+        """
+        fb_browser_type = getattr(request, 'fb_browser_type', None)
+        if fb_browser_type:
+            template = "article/landing_facebook.html"
+            template_try = join(template_dir, template)
+            try:
+                template_engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template = template_try
+            return render(request, template, {'browser_type': fb_browser_type})
+
+    # 4. log article views
+    is_amp_detect, user_is_authenticated = getattr(request, "is_amp_detect", False), request.user.is_authenticated
+    if settings.CORE_LOG_ARTICLE_VIEWS and not (
+        signupwall_exclude_request_condition or getattr(request, 'restricted_article', False) or is_amp_detect
+    ):
+        if request.user.is_authenticated and mongo_db is not None:
+            # register this view
+            set_values = {'viewed_at': now()}
+            if getattr(request, 'article_allowed', False):
+                set_values['allowed'] = True
+            mongo_db.core_articleviewedby.update_one(
+                {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
+            )
+        # inc this article visits
+        if mongo_db is not None:
+            mongo_db.core_articlevisits.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
+
     # render/handle feedback/feedback_sent, if any
     report_form, report_form_sent = None, False
     if feedback_allowed(request, article):
@@ -159,25 +245,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         else:
             report_form = feedback_form(article=article, request=request)
 
-    signupwall_exclude_request_condition = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
-    # If the call to the condition with the request as argument returns True, the visit is not logged to mongodb.
-
-    is_amp_detect, user_is_authenticated = getattr(request, "is_amp_detect", False), request.user.is_authenticated
-    if settings.CORE_LOG_ARTICLE_VIEWS and not (
-        signupwall_exclude_request_condition(request) or getattr(request, 'restricted_article', False) or is_amp_detect
-    ):
-        if request.user.is_authenticated and mongo_db is not None:
-            # register this view
-            set_values = {'viewed_at': now()}
-            if getattr(request, 'article_allowed', False):
-                set_values['allowed'] = True
-            mongo_db.core_articleviewedby.update_one(
-                {'user': request.user.id, 'article': article.id}, {'$set': set_values}, upsert=True
-            )
-        # inc this article visits
-        if mongo_db is not None:
-            mongo_db.core_articlevisits.update_one({'article': article.id}, {'$inc': {'views': 1}}, upsert=True)
-
+    # comments count/widget
     try:
         talk_url = getattr(settings, 'TALK_URL', None)
         if talk_url and article.allow_comments:
@@ -221,6 +289,11 @@ def article_detail(request, year, month, slug, domain_slug=None):
             and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())
         ),
         "enable_amp": settings.CORE_ARTICLE_DETAIL_ENABLE_AMP and not article.extensions_have_invalid_amp_tags(),
+        "audio_template": (
+            "article/audio"
+            + ("_subscribers_only" if settings.CORE_ARTICLE_DETAIL_AUDIO_TRANSCRIPT_ONLY_SUBSCRIBERS else "")
+            + ".html"
+        )
     }
 
     context.update(
@@ -232,10 +305,12 @@ def article_detail(request, year, month, slug, domain_slug=None):
         } if user_is_authenticated else {"signupwall_remaining_banner": settings.SIGNUPWALL_ENABLED}
     )  # NOTE: banner is rendered despite of setting for anon users
 
-    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', "")
-    template = "article/detail"
-    template_engine = Engine.get_default()
+    # This is for adding extra context to the article detail template. For now it's only for logged users
+    extra_context = get_article_detail_extra_context(request)
+    if extra_context:
+        context.update(extra_context)
 
+    template = "article/detail"
     # custom template support and custom article.type-based tmplates, search for the template iterations:
     # TODO: 16 tests cases: this 4 scenarios * 2 combinations of dir custom settings * 2 cann/AMP
     # 1- search w custom dir w tp
@@ -359,3 +434,174 @@ Podés ver el artículo aquí: %(url)s
     else:
         data = {"status": "ERROR", "errors": str(form.errors["email"])}
     return HttpResponse(json.dumps(data), content_type="application/json")
+
+
+@never_cache
+@csrf_protect
+@login_required
+@user_passes_test(ia_use_group)
+def perplexity_ask(request):
+    def extract_valid_json(response: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extracts and returns only the valid JSON part from a response object.
+
+        This function assumes that the response has a structure where the valid JSON
+        is included in the 'content' field of the first choice's message, after the
+        closing "</think>" marker. Any markdown code fences (e.g. ```json) are stripped.
+
+        Parameters:
+            response (dict): The full API response object.
+
+        Returns:
+            dict: The parsed JSON object extracted from the content.
+
+        Raises:
+            ValueError: If no valid JSON can be parsed from the content.
+        """
+        # Navigate to the 'content' field; adjust if your structure differs.
+        content = response.get("choices", [{}])[0].get("message", {}).get("content", "")
+
+        # Find the index of the closing </think> tag.
+        marker = "</think>"
+        idx = content.rfind(marker)
+
+        if idx == -1:
+            # If marker not found, try parsing the entire content.
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError as e:
+                raise ValueError("No </think> marker found and content is not valid JSON") from e
+
+        # Extract the substring after the marker.
+        json_str = content[idx + len(marker) :].strip()
+
+        # Remove markdown code fence markers if present.
+        if json_str.startswith("```json"):
+            json_str = json_str[len("```json") :].strip()
+        if json_str.startswith("```"):
+            json_str = json_str[3:].strip()
+        if json_str.endswith("```"):
+            json_str = json_str[:-3].strip()
+
+        try:
+            parsed_json = json.loads(json_str)
+            return parsed_json
+        except json.JSONDecodeError as e:
+            raise ValueError("Failed to parse valid JSON from response content") from e
+
+    def built_schema():
+        class PerplexityAnswerFormat(BaseModel):
+            metatitles: List[str] = Field(..., min_items=3, max_items=3)
+            copys: List[str] = Field(..., min_items=2, max_items=2)
+
+        return PerplexityAnswerFormat.model_json_schema()
+
+    if request.method == "POST":
+        config = PerplexityAPISettings.get_solo()
+        if config.activar_asistente is False:
+            message = "Asistente IA desactivado."
+            response = {"error": True, "message": message, "status": 400}
+            logging.error(f"{message}")
+            return JsonResponse(response)
+
+        data = json.loads(request.body.decode("utf-8"))
+        titulo = data.get("titulo", "")
+        cuerpo = data.get("cuerpo", "")
+        descripcion = data.get("descripcion", "")
+        article_id = data.get("article_id", "")
+        api_response = None
+
+        try:
+            fields = [
+                ("titulo", titulo, "No se envio el titulo."),
+                ("cuerpo", cuerpo, "No se envio el cuerpo."),
+            ]
+
+            for field_name, value, error_message in fields:
+                if value == "":
+                    raise ClienteException(error_message)
+
+            article = None
+            if article_id != "":
+                article = Article.objects.filter(id=article_id).first()
+                if article is not None:
+                    if article.ia_used:
+                        raise ClienteException("No puede usarse la IA mas de una vez.")
+                else:
+                    raise Exception("El articulo no existe.")
+
+            api_key = getattr(settings, "PERPLEXITY_API_KEY", None)
+            if not api_key:
+                raise Exception("API key de Perplexity no configurada.")
+
+            url = config.endpoint
+            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+            # Concatenate the default context and the question
+            default_context = config.default_context.strip()
+
+            if descripcion == "":
+                # The description is not mandatory, and if it is not sent, then it is not sent to Perplexity.
+                default_context = default_context.replace("Descripción: {descripcion}", "")
+            else:
+                default_context += default_context.replace("{descripcion}", descripcion)
+
+            full_prompt = default_context.replace("{titulo}", titulo).replace("{cuerpo}", cuerpo)
+
+            full_prompt += f" \n{config.result_instructions}"
+
+            schema = built_schema()
+
+            logging.info(f"pydentic schema: {schema}")
+
+            payload = {
+                "model": config.model,
+                "messages": [
+                    {"role": "system", "content": "Responde de manera clara y concisa."},
+                    {"role": "user", "content": full_prompt},
+                ],
+                "search_domain_filter": config.get_domain_list(),
+                "web_search_options": {"search_context_size": config.context_size},
+                "response_format": {"type": "json_schema", "json_schema": {"schema": schema}},
+            }
+
+            search_domain_filter = config.get_domain_list()
+            if len(search_domain_filter) > 0:
+                payload["search_domain_filter"] = search_domain_filter
+
+            # Solo incluye max_tokens si está definido en la configuración
+            if config.temperature:
+                payload["temperature"] = config.temperature
+            if config.max_tokens:
+                payload["max_tokens"] = config.max_tokens
+            elif settings.DEBUG:
+                payload["max_tokens"] = 100
+
+            logging.info(f"calling the api with this data: {payload}")
+            start_time = time.time()
+            api_response = requests.post(url, headers=headers, json=payload, timeout=30)
+            elapsed = time.time() - start_time
+            logging.info(f"Tiempo de respuesta de Perplexity API: {elapsed:.2f} segundos")
+
+            api_response.raise_for_status()
+            data = extract_valid_json(api_response.json())
+
+            if article is not None:
+                article.ia_used = True
+                article.save()
+
+            response = {"error": False, "message": data}
+
+        except ClienteException as ex:
+            response = {"error": True, "message": str(ex), "status": 400}
+            logging.error(f"Unexpected Error: {ex}", exc_info=True)
+        except Exception as ex:
+            answer = "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo más tarde."
+            logging.error(f"Unexpected Error: {ex}", exc_info=True)
+            response = {"error": True, "message": answer, "status": 500}
+            if api_response is not None:
+                answer = api_response.json()["error"]["message"]
+                logging.error(f"API Respuesta: {answer}")
+                response = {"error": True, "message": answer, "status": 500}
+        return JsonResponse(response)
+    return JsonResponse({"error": True, "message": "Método no permitido."}, status=405)

@@ -18,8 +18,8 @@ def notification_closed(request, bn_id):
 @never_cache
 def content(request):
     category_id, publication_id, bn_mod = request.GET.get('category_id'), request.GET.get('publication'), None
-    bn_modules_published = BreakingNewsModule.objects.filter(is_published=True)
-    if bn_modules_published:
+    bn_modules_published = BreakingNewsModule.published
+    if bn_modules_published.count():
         if category_id:
             # category detail
             bn_mod = bn_modules_published.filter(categories=Category.objects.get(id=category_id))
