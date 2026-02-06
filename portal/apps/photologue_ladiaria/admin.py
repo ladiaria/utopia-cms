@@ -47,14 +47,12 @@ class PhotoExtendedInline(admin.StackedInline):
     form = PhotoExtendedModelForm
     can_delete = False
     fieldsets = (
-        (None, {'fields': ('enable_webp', 'original_image')}),
         ('Metadatos', {'fields': ('date_taken', 'type', 'photographer', 'agency')}),
         (
             'Recorte para versión cuadrada',
             {'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse',)},
         ),
     )
-    readonly_fields = ['original_image']
 
     class Media:
         js = ('js/jquery.cropbox.js',)
