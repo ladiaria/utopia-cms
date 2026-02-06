@@ -11,6 +11,7 @@ from photologue.models import Photo, PhotoSize, get_storage_path
 
 from .utils import convert_to_webp
 
+
 class Agency(models.Model):
     name = models.CharField('nombre', max_length=50, unique=True)
     info = models.EmailField('email', blank=True, null=True)
@@ -67,7 +68,9 @@ class PhotoExtended(models.Model):
     agency = models.ForeignKey(
         Agency, on_delete=models.CASCADE, verbose_name='agencia', related_name='photos', blank=True, null=True
     )
-    enable_webp = models.BooleanField("Convertir a webp", default=True)
+    original_image = models.ImageField(
+        'imagen original', upload_to=get_storage_path, max_length=255, blank=True, null=True
+    )
 
     class Meta:
         verbose_name = 'configuración extra'
@@ -139,6 +142,6 @@ def photo_post_save_handler(sender, **kwargs):
 
     if not hasattr(instance, 'extended'):
         PhotoExtended.objects.create(image=instance)
-    elif instance.extended.enable_webp:
-        print('jijiji')
-        convert_to_webp(instance)
+
+    # Always convert to webp
+    convert_to_webp(instance)

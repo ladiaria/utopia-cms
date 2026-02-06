@@ -48,7 +48,6 @@ class PhotoExtendedInline(admin.StackedInline):
     can_delete = False
     fieldsets = (
         ('Metadatos', {'fields': ('date_taken', 'type', 'photographer', 'agency')}),
-        ('Guardar como webp', { 'fields': ('enable_webp',) }),
         (
             'Recorte para versión cuadrada',
             {'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse',)},
@@ -68,21 +67,15 @@ class PhotoGalleryInline(admin.TabularInline):
     verbose_name_plural = 'fotos'
     readonly_fields = ['photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
 
-    @admin.display(
-        description='thumbnail'
-    )
+    @admin.display(description='thumbnail')
     def photo_admin_thumbnail(self, instance):
         return instance.photo.admin_thumbnail()
 
-    @admin.display(
-        description='tomada el'
-    )
+    @admin.display(description='tomada el')
     def photo_date_taken(self, instance):
         return instance.photo.date_taken
 
-    @admin.display(
-        description='fecha de creación'
-    )
+    @admin.display(description='fecha de creación')
     def photo_date_added(self, instance):
         return instance.photo.date_added
 
@@ -103,43 +96,30 @@ class PhotographerAdmin(admin.ModelAdmin):
 
 
 class PhotoEffectAdmin(admin.ModelAdmin):
-    list_display = (
-        'name', 'description', 'color', 'brightness', 'contrast', 'sharpness',
-        'filters', 'admin_sample')
+    list_display = ('name', 'description', 'color', 'brightness', 'contrast', 'sharpness', 'filters', 'admin_sample')
     fieldsets = (
-        (None, {
-            'fields': ('name', 'description')
-        }),
-        ('Adjustments', {
-            'fields': ('color', 'brightness', 'contrast', 'sharpness')
-        }),
-        ('Filters', {
-            'fields': ('filters',)
-        }),
-        ('Reflection', {
-            'fields': (
-                'reflection_size', 'reflection_strength', 'background_color')
-        }),
-        ('Transpose', {
-            'fields': ('transpose_method',)
-        }),
+        (None, {'fields': ('name', 'description')}),
+        ('Adjustments', {'fields': ('color', 'brightness', 'contrast', 'sharpness')}),
+        ('Filters', {'fields': ('filters',)}),
+        ('Reflection', {'fields': ('reflection_size', 'reflection_strength', 'background_color')}),
+        ('Transpose', {'fields': ('transpose_method',)}),
     )
 
 
 class PhotoSizeAdmin(admin.ModelAdmin):
-    list_display = (
-        'name', 'width', 'height', 'crop', 'pre_cache', 'effect',
-        'increment_count')
+    list_display = ('name', 'width', 'height', 'crop', 'pre_cache', 'effect', 'increment_count')
     fieldsets = (
-        (None, {
-            'fields': ('name', 'width', 'height', 'quality')
-        }),
-        ('Options', {
-            'fields': ('upscale', 'crop', 'pre_cache', 'increment_count')
-        }),
-        ('Enhancements', {
-            'fields': ('effect', 'watermark',)
-        }),
+        (None, {'fields': ('name', 'width', 'height', 'quality')}),
+        ('Options', {'fields': ('upscale', 'crop', 'pre_cache', 'increment_count')}),
+        (
+            'Enhancements',
+            {
+                'fields': (
+                    'effect',
+                    'watermark',
+                )
+            },
+        ),
     )
 
 
@@ -156,9 +136,11 @@ class AgencyFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         agency = self.value()
-        return queryset.filter(
-            id__in=PhotoExtended.objects.filter(agency=agency).values_list('image', flat=True)
-        ) if agency else queryset
+        return (
+            queryset.filter(id__in=PhotoExtended.objects.filter(agency=agency).values_list('image', flat=True))
+            if agency
+            else queryset
+        )
 
 
 class PhotographerFilter(admin.SimpleListFilter):
@@ -170,9 +152,13 @@ class PhotographerFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         photographer = self.value()
-        return queryset.filter(
-            id__in=PhotoExtended.objects.filter(photographer=photographer).values_list('image', flat=True)
-        ) if photographer else queryset
+        return (
+            queryset.filter(
+                id__in=PhotoExtended.objects.filter(photographer=photographer).values_list('image', flat=True)
+            )
+            if photographer
+            else queryset
+        )
 
 
 class PhotoAdmin(PhotoAdminDefault):
