@@ -116,7 +116,7 @@
         {% block materialize_forms_css %}
           <link href="{% static 'sass/utopia_materialize/_forms.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
         {% endblock %}
-        <link href="{% static 'sass/base_all.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+        <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endblock %}
       {% if HOMEV3_CUSTOM_CSS %}
         <link href="{% static HOMEV3_CUSTOM_CSS %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
@@ -282,7 +282,7 @@
 
               {# Performance Monitoring (tracing) - CURRENTLY DISABLED #}
               {# Controls what % of page loads send performance data to Sentry #}
-              {# #}
+
               {# Values: #}
               {#   0.0 = Disabled (current) - Only error tracking, no performance data #}
               {#   0.1 = 10% sample - Good for testing performance monitoring #}
@@ -315,7 +315,7 @@
                 }
 
                 {# === FILTER: BROWSER EXTENSIONS === #}
-                {# Don't report errors from browser extensions (not our code, can't fix) #}
+                {# Don’t report errors from browser extensions (not our code, can‘t fix) #}
                 {# Examples: ad blockers, password managers, translation extensions #}
                 if (hint.originalException && hint.originalException.stack) {
                   const stack = hint.originalException.stack;
@@ -325,7 +325,7 @@
                 }
 
                 {# === FILTER: NETWORK ERRORS === #}
-                {# Don't report network errors (user offline, slow connection, timeout) #}
+                {# Don’t report network errors (user offline, slow connection, timeout) #}
                 {# These are not bugs in our code, just connectivity issues #}
                 if (hint.originalException && hint.originalException.message) {
                   const message = hint.originalException.message.toLowerCase();
@@ -340,15 +340,15 @@
               },
 
               {# === IGNORE ERRORS === #}
-              {# List of error messages/patterns to completely ignore (won't even reach beforeSend) #}
-              {# These are known issues that are not bugs or can't be fixed #}
+              {# List of error messages/patterns to completely ignore (won’t even reach beforeSend) #}
+              {# These are known issues that are not bugs or can’t be fixed #}
               ignoreErrors: [
                 {# Browser extension errors (common when users have many extensions) #}
                 'top.GLOBALS',
                 'canvas.contentDocument',
                 'atomicFindClose',
 
-                {# Facebook SDK errors (third-party, can't fix) #}
+                {# Facebook SDK errors (third-party, can’t fix) #}
                 'fb_xd_fragment',
 
                 {# Network/connectivity errors (not bugs) #}
@@ -436,8 +436,11 @@
 
     <!-- cabezal -->
     {% block navbar %}
-      <header{% if request.signupwall_header %} class="with-article-counter-container {{ request.remaining_articles_word }}-articles"{% endif %}>
+      {% comment %} <header{% if request.signupwall_header %} class="with-article-counter-container {{ request.remaining_articles_word }}-articles"{% endif %}>
         {% render_header %}
+      </header> {% endcomment %}
+      <header>
+        {% include "header.html" %}
       </header>
       {% if PWA_ENABLED %}
         <div class="pwa-prompt" style="display:none;">

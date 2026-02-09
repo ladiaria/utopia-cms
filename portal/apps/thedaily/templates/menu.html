@@ -1,5 +1,24 @@
 {% load core_tags %}
 
+
+{% if publication == default_pub %}
+<nav class="navbar">
+  <ul>
+    {% for category, sections in MENU_CATEGORIES.items %}
+    <li><a href="{% url 'home' domain_slug=category.slug %}">{{ category.slug|capfirst }}</a></li>
+    {% endfor %}
+  </ul>
+</nav>
+{% elif category %}
+<nav class="navbar category-navbar">
+  <a class="home-link" href="{% url "home" %}">Portada</a>
+  <ul>
+    {% include 'core/templates/category/detail_header_sections.html' %}
+  </ul>
+</nav>
+{% endif %}
+
+{% comment %}
 <ul class="main-menu center hide-on-small-and-down{% if publication != default_pub %} {{ publication.slug }}{% endif %}">
   <li class="nav-menu__portada">
     <a href="{% url 'home' %}"><span class="inner">Portada</span></a>
@@ -110,3 +129,4 @@
 {% endif %}
 
 {% block extra_dropdowns_contents %}{% endblock %}
+{% endcomment %}

@@ -3,25 +3,24 @@
 @import "utopia_materialize/global";
 @import "../materialize/sass/components/normalize";
 @import "../materialize/sass/components/grid";
-@import "../materialize/sass/components/navbar";
 @import "../materialize/sass/components/typography";
 @import "../materialize/sass/components/cards";
 @import "../materialize/sass/components/tabs";
 @import "../materialize/sass/components/dropdown";
 @import "../materialize/sass/components/modal";
+@import "utopia_global";
 @import "utopia_forms";
 @import "utopia_base";
 @import "utopia_fonts";
 @import "utopia_btn";
 @import "utopia_snackbar";
 @import "utopia_modal";
-@import "utopia_navbar";
+@import "utopia_header";
 @import "utopia_unsubscribed_nls";
 @import "utopia_footer";
 @import "utopia_cards";
 @import "components/big_photo";
 @import "components/news_wall.scss";
-@import "utopia_all";
 @import "components/subscribe_box";
 @import "components/masleidos";
 

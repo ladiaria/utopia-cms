@@ -3,6 +3,21 @@
   margin-bottom: 25px;
 }
 
+button {
+  background-color: transparent;
+  padding: 0;
+  border: none;
+}
+
+.btn {
+  font-size: 1rem;
+  line-height: 0.75rem;
+  background-color: #000;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+}
+
 .ld-heading {
   font-family: "Roboto", sans-serif;
   margin: 10px 0 35px 0;
@@ -110,7 +125,6 @@ a.ld-text-secondary,
 }
 
 // animación
-
 @include keyframes(slide-down) {
   0% {
     opacity: 1;

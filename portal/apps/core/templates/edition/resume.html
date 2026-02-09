@@ -1,10 +1,9 @@
 {% load homev3_tags thedaily_tags %}
 
-<div class="today col s12 l4ths">
-
+<div class="ld-main-menu__col">
   {% if is_subscriber_any %}
     <div class="ld-main-menu__block">
-      <span class="ld-main-menu__title">Tu cuenta</span>
+      <h2 class="ld-main-menu__title">Tu cuenta</h2>
       <ul class="navmenu-list  ld-menu-list">
         <li class="ld-main-menu__item small">
           <a href="{% url 'edit-profile' %}">Perfil</a>
@@ -27,7 +26,7 @@
       </ul>
     </div>
     <div class="ld-main-menu__block">
-      <span class="ld-main-menu__title">Lista de lectura</span>
+      <h2 class="ld-main-menu__title">Lista de lectura</h2>
       <ul class="navmenu-list ">
         <li class="ld-main-menu__item small">
           <a href="{% url 'lista-lectura-leer-despues' %}">Leer después <span class="num">{{ user|count_following }}</span></a>
@@ -42,7 +41,7 @@
     </div>
   {% elif user.is_authenticated %}
     <div class="ld-main-menu__block">
-      <span class="ld-main-menu__title">Tu cuenta</span>
+      <h2 class="ld-main-menu__title">Tu cuenta</h2>
       <ul class="navmenu-list ">
         <li class="ld-main-menu__item small">
           <a href="{% url 'edit-profile' %}">Perfil</a>
@@ -64,7 +63,7 @@
       </ul>
     </div>
     <div class="ld-main-menu__block">
-      <span class="ld-main-menu__title">Lista de lectura</span>
+      <h2 class="ld-main-menu__title">Lista de lectura</h2>
       <ul class="navmenu-list ">
         <li class="ld-main-menu__item small">
           <a href="{% url 'lista-lectura-leer-despues' %}">Leer después <span class="num">{{ user|count_following }}</span></a>
@@ -78,7 +77,8 @@
       </ul>
     </div>
   {% else %}
-    <div class="ld-main-menu__block ld-main-menu__block--padded">
+    <div class="ld-main-menu__block">
+      <h2 class="ld-main-menu__title">Tu cuenta</h2>
       <ul>
         <li class="ld-main-menu__item--btn">
           <a class="ut-btn ut-btn-outline" href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresá</a>
@@ -89,21 +89,20 @@
       </ul>
     </div>
   {% endif %}
-
 </div>
 
-<div class="col s12 l4ths">
+<div class="ld-main-menu__col">
   <div class="ld-main-menu__block">
-    <span class="ld-main-menu__title">Inicio</span>
+    <h2 class="ld-main-menu__title">Inicio</h2>
     <ul class="navmenu-list">
       <li class="ld-main-menu__item">
         <a href="{{ default_pub.get_absolute_url }}">Portada</a>
       </li>
     </ul>
   </div>
-  <div class="ld-main-menu__block">
-    {% if MENU_CATEGORIES %}
-      <span class="ld-main-menu__title">Áreas</span>
+  {% if MENU_CATEGORIES %}
+    <div class="ld-main-menu__block">
+      <h2 class="ld-main-menu__title">Áreas</h2>
       <ul class="navmenu-list">
         {% for category in MENU_CATEGORIES.keys %}
           <li class="ld-main-menu__item">
@@ -111,33 +110,34 @@
           </li>
         {% endfor %}
       </ul>
-    {% endif %}
-  </div>
-  <div class="ld-main-menu__block">
-    {% if MENU_PUBLICATIONS %}
-      <span class="ld-main-menu__title">Emergentes</span>
-      <ul class="navmenu-list">
-        {% for pub in MENU_PUBLICATIONS %}
-          <li class="ld-main-menu__item">
-            <a href="{{ pub.get_absolute_url }}">
-              {% if pub.slug in HOMEV3_MENU_PUBLICATIONS_USE_HEADLINE %}
-                {{ pub.headline }}
-              {% else %}
-                {{ pub }}
-              {% endif %}
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  </div>
-  {% block extra_items %}{% endblock %}
+    </div>
+  {% endif %}
 </div>
+{% comment "" %}
+<div>
+  {% if MENU_PUBLICATIONS %}
+    <span class="ld-main-menu__title">Emergentes</span>
+    <ul class="navmenu-list">
+      {% for pub in MENU_PUBLICATIONS %}
+        <li class="ld-main-menu__item">
+          <a href="{{ pub.get_absolute_url }}">
+            {% if pub.slug in HOMEV3_MENU_PUBLICATIONS_USE_HEADLINE %}
+              {{ pub.headline }}
+            {% else %}
+              {{ pub }}
+            {% endif %}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+{% endcomment %}
+{% block extra_items %}{% endblock %}
 
-<div class="col s12 l4ths">
-
+<div class="ld-main-menu__col">
   <div class="ld-main-menu__block">
-    <span class="ld-main-menu__title">Más</span>
+    <h2 class="ld-main-menu__title">Más</h2>
     <ul class="navmenu-list">
       <li class="ld-main-menu__item"><a href="{% url 'search' %}">Buscar</a></li>
       {% block extra_items_plus %}{% endblock %}
@@ -163,7 +163,6 @@
       {% endblock %}
     </ul>
   </div>
-
 </div>
 
 {% block custom_extra %}{% endblock %}
