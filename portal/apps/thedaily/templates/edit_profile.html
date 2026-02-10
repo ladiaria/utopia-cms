@@ -265,8 +265,14 @@
     $(function() {
 
       {% if push_notifications_keys_set %}
-        setNotificationCheckStatus();
-        switch_change_events($('#notificaciones .switch-container'), true);
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        var hasPushSupport = ('Notification' in window) && ('PushManager' in window);
+        if (!isIOS && hasPushSupport) {
+          setNotificationCheckStatus();
+          switch_change_events($('#notificaciones .switch-container'), true);
+        } else {
+          $('#notificaciones').hide();
+        }
       {% endif %}
 
       phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");
