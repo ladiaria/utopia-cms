@@ -7,6 +7,10 @@
   <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
 {% endblock %}
 
+{% block css %}
+  <link href="{% static 'sass/pages/_edit-profile.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
 {% block body_class %}thedaily ld-profile-edit{% endblock %}
 
 {% block page_header %}

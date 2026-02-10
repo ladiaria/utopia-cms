@@ -1,5 +1,4 @@
 // Meta Serif Pro
-
 @font-face {
   font-family: "Meta Serif";
   src: url("/static/fonts/meta/MetaSerifPro-Book.eot");
@@ -244,6 +243,120 @@
   font-family: "AntennaCond";
   src: url("/static/fonts/antenna/AntennaCond-Bold.woff") format("woff");
   font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Dialect Gothic A */
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Book.otf") format("opentype");
+  font-weight: 350;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Booktalic.otf") format("opentype");
+  font-weight: 350;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-BookSemiItalic.otf") format("opentype");
+  font-weight: 350;
+  font-style: oblique;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-SemiItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: oblique;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-MediumItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-MediumSemiItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: oblique;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-BoldSemiItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: oblique;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Heavy.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-HeavyItalic.otf") format("opentype");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-HeavySemiItalic.otf") format("opentype");
+  font-weight: 800;
+  font-style: oblique;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Review Condensed";
+  src: url("/static/fonts/ReviewCondensed/ReviewCondensed-Bold.otf") format("opentype");
+  font-weight: 700;
   font-style: normal;
   font-display: swap;
 }

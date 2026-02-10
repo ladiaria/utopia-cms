@@ -1,156 +1,155 @@
 {% load homev3_tags thedaily_tags %}
 
-<div class="today col s12 l4ths">
-
+<div class="ld-main-menu__col">
   {% if is_subscriber_any %}
     <div class="ld-main-menu__block">
-      <span class="ld-main-menu__title">Tu cuenta</span>
+      <h2 class="ld-main-menu__title">Tu cuenta</h2>
       <ul class="navmenu-list  ld-menu-list">
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="{% url 'edit-profile' %}">Perfil</a>
         </li>
         {% if user.is_staff %}
-          <li class="ld-main-menu__item small">
+          <li class="">
             <a href="//{{ site.domain }}/admin/">Admin</a>
           </li>
         {% endif %}
         {% block extra_your_account %}{% endblock %}
         {% if poll_url %}
-          <li class="ld-main-menu__item small"><a href="{{ poll_url }}" rel="noreferrer noopener">Danos tu opinión <svg class="external" xmlns="http://www.w3.org/2000/svg" width="13.25" height="13.25" viewBox="0 0 13.25 13.25"><path d="M0,0H13.25V13.25H0Z" fill="none"></path><g transform="translate(1.656 1.656)"><path d="M12.385,7.969h0a.554.554,0,0,0-.552.552v3.312H4.1V4.1H7.417a.554.554,0,0,0,.552-.552h0A.554.554,0,0,0,7.417,3H4.1A1.107,1.107,0,0,0,3,4.1v7.729a1.107,1.107,0,0,0,1.1,1.1h7.729a1.107,1.107,0,0,0,1.1-1.1V8.521A.554.554,0,0,0,12.385,7.969Z" transform="translate(-3 -3)" fill="#262626"></path><path d="M15.218,3H12.3a.273.273,0,0,0-.193.469L13.175,4.54,8.869,8.847a.55.55,0,0,0,0,.778h0a.55.55,0,0,0,.778,0l4.3-4.3L15.019,6.4a.279.279,0,0,0,.475-.2V3.276A.273.273,0,0,0,15.218,3Z" transform="translate(-5.556 -3)" fill="#262626"></path></g></svg></a></li>
+          <li class=""><a href="{{ poll_url }}" rel="noreferrer noopener">Danos tu opinión <svg class="external" xmlns="http://www.w3.org/2000/svg" width="13.25" height="13.25" viewBox="0 0 13.25 13.25"><path d="M0,0H13.25V13.25H0Z" fill="none"></path><g transform="translate(1.656 1.656)"><path d="M12.385,7.969h0a.554.554,0,0,0-.552.552v3.312H4.1V4.1H7.417a.554.554,0,0,0,.552-.552h0A.554.554,0,0,0,7.417,3H4.1A1.107,1.107,0,0,0,3,4.1v7.729a1.107,1.107,0,0,0,1.1,1.1h7.729a1.107,1.107,0,0,0,1.1-1.1V8.521A.554.554,0,0,0,12.385,7.969Z" transform="translate(-3 -3)" fill="#262626"></path><path d="M15.218,3H12.3a.273.273,0,0,0-.193.469L13.175,4.54,8.869,8.847a.55.55,0,0,0,0,.778h0a.55.55,0,0,0,.778,0l4.3-4.3L15.019,6.4a.279.279,0,0,0,.475-.2V3.276A.273.273,0,0,0,15.218,3Z" transform="translate(-5.556 -3)" fill="#262626"></path></g></svg></a></li>
         {% endif %}
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="/ayuda/">Ayuda</a>
         </li>
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="{% url 'account-logout' %}">Cerrar sesión</a>
         </li>
       </ul>
     </div>
     <div class="ld-main-menu__block">
-      <span class="ld-main-menu__title">Lista de lectura</span>
+      <h2 class="ld-main-menu__title">Lista de lectura</h2>
       <ul class="navmenu-list ">
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="{% url 'lista-lectura-leer-despues' %}">Leer después <span class="num">{{ user|count_following }}</span></a>
         </li>
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="{% url 'lista-lectura-favoritos' %}">Favoritos</a>
         </li>
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="{% url 'lista-lectura-historial' %}">Historial</a>
         </li>
       </ul>
     </div>
   {% elif user.is_authenticated %}
     <div class="ld-main-menu__block">
-      <span class="ld-main-menu__title">Tu cuenta</span>
+      <h2 class="ld-main-menu__title">Tu cuenta</h2>
       <ul class="navmenu-list ">
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="{% url 'edit-profile' %}">Perfil</a>
         </li>
         {% if not is_subscriber_any %}
-          <li class="ld-main-menu__item small">
+          <li class="">
             <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=headerbtn">Suscribite</a>
           </li>
         {% endif %}
         {% if poll_url %}
-          <li class="ld-main-menu__item small"><a href="{{ poll_url }}" rel="noreferrer noopener">Danos tu opinión <svg  class="external" xmlns="http://www.w3.org/2000/svg" width="13.25" height="13.25" viewBox="0 0 13.25 13.25"><path  d="M0,0H13.25V13.25H0Z" fill="none"></path><g transform="translate(1.656 1.656)"><path d="M12.385,7.969h0a.554.554,0,0,0-.552.552v3.312H4.1V4.1H7.417a.554.554,0,0,0,.552-.552h0A.554.554,0,0,0,7.417,3H4.1A1.107,1.107,0,0,0,3,4.1v7.729a1.107,1.107,0,0,0,1.1,1.1h7.729a1.107,1.107,0,0,0,1.1-1.1V8.521A.554.554,0,0,0,12.385,7.969Z" transform="translate(-3 -3)" fill="#262626"></path><path d="M15.218,3H12.3a.273.273,0,0,0-.193.469L13.175,4.54,8.869,8.847a.55.55,0,0,0,0,.778h0a.55.55,0,0,0,.778,0l4.3-4.3L15.019,6.4a.279.279,0,0,0,.475-.2V3.276A.273.273,0,0,0,15.218,3Z" transform="translate(-5.556 -3)" fill="#262626"></path></g></svg></a></li>
+          <li class=""><a href="{{ poll_url }}" rel="noreferrer noopener">Danos tu opinión <svg  class="external" xmlns="http://www.w3.org/2000/svg" width="13.25" height="13.25" viewBox="0 0 13.25 13.25"><path  d="M0,0H13.25V13.25H0Z" fill="none"></path><g transform="translate(1.656 1.656)"><path d="M12.385,7.969h0a.554.554,0,0,0-.552.552v3.312H4.1V4.1H7.417a.554.554,0,0,0,.552-.552h0A.554.554,0,0,0,7.417,3H4.1A1.107,1.107,0,0,0,3,4.1v7.729a1.107,1.107,0,0,0,1.1,1.1h7.729a1.107,1.107,0,0,0,1.1-1.1V8.521A.554.554,0,0,0,12.385,7.969Z" transform="translate(-3 -3)" fill="#262626"></path><path d="M15.218,3H12.3a.273.273,0,0,0-.193.469L13.175,4.54,8.869,8.847a.55.55,0,0,0,0,.778h0a.55.55,0,0,0,.778,0l4.3-4.3L15.019,6.4a.279.279,0,0,0,.475-.2V3.276A.273.273,0,0,0,15.218,3Z" transform="translate(-5.556 -3)" fill="#262626"></path></g></svg></a></li>
         {% endif %}
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="/ayuda/">Ayuda</a>
         </li>
-        <li class="ld-main-menu__item small ld-main-menu__item-btn">
+        <li class=" -btn">
           <a href="{% url 'account-logout' %}">Cerrar sesión</a>
         </li>
       </ul>
     </div>
     <div class="ld-main-menu__block">
-      <span class="ld-main-menu__title">Lista de lectura</span>
+      <h2 class="ld-main-menu__title">Lista de lectura</h2>
       <ul class="navmenu-list ">
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="{% url 'lista-lectura-leer-despues' %}">Leer después <span class="num">{{ user|count_following }}</span></a>
         </li>
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="{% url 'lista-lectura-favoritos' %}">Favoritos</a>
         </li>
-        <li class="ld-main-menu__item small">
+        <li class="">
           <a href="{% url 'lista-lectura-historial' %}">Historial</a>
         </li>
       </ul>
     </div>
   {% else %}
-    <div class="ld-main-menu__block ld-main-menu__block--padded">
+    <div class="ld-main-menu__block">
+      <h2 class="ld-main-menu__title">Tu cuenta</h2>
       <ul>
-        <li class="ld-main-menu__item--btn">
+        <li class="">
           <a class="ut-btn ut-btn-outline" href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresá</a>
         </li>
-        <li class="ld-main-menu__item--btn">
+        <li class="">
           <a class="ut-btn ut-btn-outline" href="{% url 'subscribe_landing' %}">Suscribite</a>
         </li>
       </ul>
     </div>
   {% endif %}
-
 </div>
 
-<div class="col s12 l4ths">
+<div class="ld-main-menu__col">
   <div class="ld-main-menu__block">
-    <span class="ld-main-menu__title">Inicio</span>
+    <h2 class="ld-main-menu__title">Inicio</h2>
     <ul class="navmenu-list">
-      <li class="ld-main-menu__item">
+      <li class="">
         <a href="{{ default_pub.get_absolute_url }}">Portada</a>
       </li>
     </ul>
   </div>
-  <div class="ld-main-menu__block">
-    {% if MENU_CATEGORIES %}
-      <span class="ld-main-menu__title">Áreas</span>
+  {% if MENU_CATEGORIES %}
+    <div class="ld-main-menu__block">
+      <h2 class="ld-main-menu__title">Áreas</h2>
       <ul class="navmenu-list">
         {% for category in MENU_CATEGORIES.keys %}
-          <li class="ld-main-menu__item">
+          <li class="">
             <a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a>
           </li>
         {% endfor %}
       </ul>
-    {% endif %}
-  </div>
-  <div class="ld-main-menu__block">
-    {% if MENU_PUBLICATIONS %}
-      <span class="ld-main-menu__title">Emergentes</span>
-      <ul class="navmenu-list">
-        {% for pub in MENU_PUBLICATIONS %}
-          <li class="ld-main-menu__item">
-            <a href="{{ pub.get_absolute_url }}">
-              {% if pub.slug in HOMEV3_MENU_PUBLICATIONS_USE_HEADLINE %}
-                {{ pub.headline }}
-              {% else %}
-                {{ pub }}
-              {% endif %}
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  </div>
-  {% block extra_items %}{% endblock %}
+    </div>
+  {% endif %}
 </div>
-
-<div class="col s12 l4ths">
-
-  <div class="ld-main-menu__block">
-    <span class="ld-main-menu__title">Más</span>
+{% comment "" %}
+<div>
+  {% if MENU_PUBLICATIONS %}
+    <span class="ld-main-menu__title">Emergentes</span>
     <ul class="navmenu-list">
-      <li class="ld-main-menu__item"><a href="{% url 'search' %}">Buscar</a></li>
+      {% for pub in MENU_PUBLICATIONS %}
+        <li class="">
+          <a href="{{ pub.get_absolute_url }}">
+            {% if pub.slug in HOMEV3_MENU_PUBLICATIONS_USE_HEADLINE %}
+              {{ pub.headline }}
+            {% else %}
+              {{ pub }}
+            {% endif %}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+{% endcomment %}
+{% block extra_items %}{% endblock %}
+
+<div class="ld-main-menu__col">
+  <div class="ld-main-menu__block">
+    <h2 class="ld-main-menu__title">Más</h2>
+    <ul class="navmenu-list">
       {% block extra_items_plus %}{% endblock %}
-      <li class="ld-main-menu__item"><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
+      <li class=""><a href="{% url 'mas_leidos' %}">Lo más leído</a></li>
       {% block extra_items_more %}{% endblock %}
       {% for s_slug, desktop_short, mobile_short, text_long in MENU_LATEST_ARTICLE_LINKS %}
-        <li class="ld-main-menu__item{% if forloop.last %} ld-main-menu__divider{% endif %}">
+        <li class="{% if forloop.last %} ld-main-menu__divider{% endif %}">
           <a href="{% url 'section-latest-article' section_slug=s_slug %}">{{ text_long }}</a>
         </li>
       {% endfor %}
       {% block more_extra %}
         {% for pub in MENU_PUBLICATIONS_MORE_EXTRA %}
-          <li class="ld-main-menu__item{% if divider_at_end and forloop.last %} ld-main-menu__divider{% endif %}">
+          <li class="{% if divider_at_end and forloop.last %} ld-main-menu__divider{% endif %}">
             <a href="{{ pub.get_absolute_url }}">
               {% if pub.slug in HOMEV3_MENU_PUBLICATIONS_USE_HEADLINE %}
                 {{ pub.headline }}
@@ -163,7 +162,6 @@
       {% endblock %}
     </ul>
   </div>
-
 </div>
 
 {% block custom_extra %}{% endblock %}
