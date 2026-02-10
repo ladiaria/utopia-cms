@@ -1209,9 +1209,9 @@ body {
   font-size: 18px;
   font-weight: 400;
   width: 100%;
-  height: calc(100% - 100px);
+  height: calc(100% - 90px);
   max-height: 100%;
-  top: 100px;
+  top: 90px;
   right: 0;
   bottom: 0;
   left: 0;
@@ -1270,45 +1270,28 @@ body {
     padding-right: 15px;
   }
 
+  &__open,
+  &__close {
+    width: 35px;
+    display: flex;
+    justify-content: center;
+
+    &.hidden {
+      display: none;
+    }
+  }
+
   &__close {
     margin: 0;
     padding: 0;
-    position: fixed;
-    top: 20px;
-    right: 20px;
     transition: 200ms ease-in-out;
-    transform: scale(1);
     border: none;
     outline: 0;
     background: none;
     border-radius: 100%;
-    height: 40px;
-    width: 40px;
 
-    &:hover {
-      background: rgba(0, 0, 0, 0.1);
-      transform: scale(1);
-    }
-
-    &:active,
-    &:focus {
-      background: rgba(0, 0, 0, 0.2);
-      transform: scale(1);
-    }
     &:last-child {
       margin-bottom: 0;
-    }
-
-    &--btn {
-      text-align: center;
-
-      @media (min-width: 992px) {
-        text-align: left;
-      }
-    }
-
-    @media (min-width: 992px) {
-      top: 10px;
     }
 
     .material-icons {
@@ -1322,6 +1305,7 @@ body {
     display: grid;
     grid-template-columns: repeat(5, auto);
     max-width: $container-width;
+    justify-content: space-between;
   }
 
   &__col {
