@@ -362,7 +362,11 @@ def login(request, product_slug=None, product_variant=None):
     #   allowed_hosts = {request.get_host()}
     #   if hasattr(settings, 'ALLOWED_REDIRECT_HOSTS'):
     #       allowed_hosts |= set(settings.ALLOWED_REDIRECT_HOSTS)
-    #   if url_has_allowed_host_and_scheme(requested_next, allowed_hosts=allowed_hosts, require_https=request.is_secure()):
+    #   if url_has_allowed_host_and_scheme(
+    #       requested_next,
+    #       allowed_hosts=allowed_hosts,
+    #       require_https=request.is_secure(),
+    #   ):
     #       next_page = requested_next
     #   else:
     #       next_page = '/'
