@@ -1,0 +1,205 @@
+#choose-nl-container {
+  background-color: #4f4f4f;
+  padding: 16px 0;
+
+  .choose-nl-header {
+    max-width: 1140px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    justify-content: space-between;
+    align-items: center;
+    font-family: AntennaCond, sans-serif;
+    @media #{$medium-and-down} {
+      align-items: flex-start;
+      padding: 0 16px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    > div {
+      display: grid;
+      place-items: center;
+
+      &:first-child {
+        justify-content: flex-start;
+      }
+      &:last-child {
+        justify-content: flex-end;
+      }
+    }
+
+    .choose-nl__title p {
+      color: #f2f2f2;
+      font-size: px-to-rem(22px);
+      margin: 0;
+      @media #{$medium-and-down} {
+        font-size: px-to-rem(16px);
+        padding-top: 4px;
+      }
+    }
+    .choose-nl__see-all {
+      @media #{$medium-and-down} {
+        display: none;
+      }
+
+      button {
+        border: none;
+        background-color: transparent;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #e0e0e0;
+
+        &:disabled {
+          opacity: 0.4;
+        }
+      }
+    }
+    .choose-nl__close-btn button {
+      background-color: transparent;
+      display: flex;
+      align-items: center;
+      border: none;
+      padding: 5px;
+      padding-right: 0;
+      color: white;
+      svg {
+        margin-left: 10px;
+      }
+
+      @media #{$medium-and-down} {
+        padding: 8px;
+
+        span {
+          display: none;
+        }
+      }
+    }
+  }
+
+  .choose-nl-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1140px;
+    margin: 0 auto;
+    scroll-behavior: smooth;
+    overflow-x: auto;
+    position: relative;
+
+    .choose-nl-list {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      justify-content: space-between;
+      margin: 16px 0 10px;
+      width: 100%;
+      gap: 16px;
+
+      @media #{$medium-and-down} {
+        width: auto;
+        margin: 10px 0 0 16px;
+        display: flex;
+      }
+
+      .choose-nl-item {
+        background-color: #f6f5f5;
+        flex: 1;
+        border-radius: 4px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-sizing: border-box;
+        border: 2px solid transparent;
+        transition: opacity 500ms ease-in-out;
+
+        @media #{$medium-and-down} {
+          min-width: 260px;
+        }
+
+        &.selected {
+          border: 2px solid #3eab6d;
+        }
+
+        &__header {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 16px;
+
+          .switch-container {
+            flex-direction: column;
+            min-width: 57px;
+            .label-text {
+              margin-right: 0;
+              font-size: px-to-rem(12px);
+              font-weight: 400;
+              text-transform: uppercase;
+              margin-top: 4px;
+              line-height: normal;
+              @media #{$medium-and-down} {
+                display: none !important;
+              }
+            }
+          }
+        }
+
+        &__title {
+          margin: 0;
+          font-weight: 700;
+        }
+
+        &__periodicity {
+          background-color: #e8e6e6;
+          padding: 4px 6px;
+          border-radius: 2px;
+          margin: 0;
+          text-transform: uppercase;
+          font-size: px-to-rem(13px);
+          line-height: normal;
+
+          @media #{$medium-and-down} {
+            font-size: 13px;
+          }
+        }
+      }
+    }
+    .see-more-nls-btn {
+      border: none;
+      background-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #e0e0e0;
+      display: none;
+      min-width: max-content;
+      margin-left: 10px;
+
+      &:disabled {
+        opacity: 0.4;
+      }
+
+      @media #{$medium-and-down} {
+        display: flex;
+      }
+    }
+    #all-nl-marked-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #d8d8d8;
+      margin: 0;
+      border-radius: 8px;
+      background: #414141;
+      display: flex;
+      padding: 16px;
+      justify-content: center;
+      font-family: "Roboto", sans-serif;
+      line-height: normal;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      z-index: 10;
+    }
+  }
+}

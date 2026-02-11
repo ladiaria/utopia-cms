@@ -2,7 +2,7 @@
   <div class="row ld-text-secondary align-center">
     <div class="col s12">
       <div>
-        {% if not user.is_authenticated %}
+        {% if not user.is_authenticated and not disable_first_row %}
           {% if not disable_signup %}
             <b>¿No tenés cuenta?</b><br>
             <a href="{% url 'subscribe_landing' %}">Suscribite</a> o <a href="{% url 'account-signup' %}">registrate</a>.

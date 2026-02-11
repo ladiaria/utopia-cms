@@ -1,20 +1,52 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from builtins import str
 
+from socket import error
 from hashlib import md5
 import re
 import smtplib
+from random import choices
 from hashids import Hashids
-
-from django.conf import settings
-from django.db import IntegrityError
-from django.http import HttpResponseBadRequest
-
+from requests.auth import HTTPBasicAuth
+from pymailcheck import split_email
 from tagging.models import Tag, TaggedItem
 
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+from django.db import IntegrityError, ProgrammingError
+from django.db.models.query import QuerySet
+from django.http import HttpResponseBadRequest
+from django.contrib.sites.models import Site
+
 from core.models import Article
+
+
+def get_site_name():
+    try:
+        return Site.objects.get_current().name
+    except (ProgrammingError, ImproperlyConfigured):
+        return settings.SITE_DOMAIN
+
+
+def crm_rest_api_kwargs(api_key, data=None):
+    """
+    Get the CRM API standard args.
+    @param api_key: CRM API key.
+    @param data: request body data to be send.
+    @return result: dictionary with all params.
+    """
+    # we require the api_key as arg (we can obtain it from settings) because the caller code needs also it most of the
+    # time to make previous conditions to call us or build the data arg, this way the code is a bit less repeated but
+    # of course that the calls in all the code that call us can be refactored lettng this function with only one arg.
+    http_basic_auth = settings.CRM_API_HTTP_BASIC_AUTH
+    result = {"headers": {"X-Api-Key": api_key} if http_basic_auth else {'Authorization': 'Api-Key ' + api_key}}
+    if not getattr(settings, "CRM_API_VERIFY_SSL", True):
+        result["verify"] = False
+    if data:
+        result["data"] = data
+    if http_basic_auth:
+        result["auth"] = HTTPBasicAuth(*http_basic_auth)
+    return result
 
 
 def remove_spaces(s):
@@ -84,16 +116,19 @@ def md5file(filename):
     return digest.hexdigest()
 
 
+# TODO: check if the functions above this line are used, if not, remove.
+
+
 def set_amp_cors_headers(request, response):
     try:
         amp_source_origin = request.GET['__amp_source_origin']
     except KeyError:
         return HttpResponseBadRequest()
-    if request.META.get('HTTP_AMP_SAME_ORIGIN') == 'true':
+    if request.headers.get('amp-same-origin') == 'true':
         access_control_allow_origin = amp_source_origin
     else:
         try:
-            access_control_allow_origin = request.META['HTTP_ORIGIN']
+            access_control_allow_origin = request.headers['origin']
         except KeyError:
             return HttpResponseBadRequest()
     amp_access_main_header_name = 'AMP-Access-Control-Allow-Source-Origin'
@@ -104,24 +139,106 @@ def set_amp_cors_headers(request, response):
     return response
 
 
-def smtp_connect(alternative=False):
+def smtp_quit(smtp_servers):
+    for smtp_conn in smtp_servers:
+        if smtp_conn:
+            try:
+                smtp_conn.quit()
+            except smtplib.SMTPServerDisconnected:
+                pass
+
+
+def alt_email_conf():
+    return getattr(settings, "EMAIL_ALTERNATIVE", [])
+
+
+def smtp_connect(alternative=0):
     """
     Authenticate to SMTP (if any auth needed) and return the conn instance.
-    If alternative is True, connect to the alternative SMTP instead of the default.
+    If alternative > 0, connect to the alternative SMTP configured in setting list (1-indexed).
     """
     email_conf = {}
-    for setting in ('HOST', 'PORT', 'HOST_USER', 'HOST_PASSWORD', 'USE_TLS'):
-        email_conf[setting] = getattr(settings, ('EMAIL_%s' + setting) % ('ALTERNATIVE_' if alternative else ''), None)
-
-    s = smtplib.SMTP(email_conf['HOST'], email_conf['PORT'])
-    if email_conf['USE_TLS']:
-        s.starttls()
-    if email_conf['HOST_USER']:
+    if alternative:
         try:
-            s.login(email_conf['HOST_USER'], email_conf['HOST_PASSWORD'])
+            email_conf = alt_email_conf()[alternative - 1]
+        except IndexError:
+            pass
+    else:
+        for setting in ('HOST', 'PORT', 'HOST_USER', 'HOST_PASSWORD', 'USE_TLS'):
+            email_conf[setting] = getattr(settings, 'EMAIL_' + setting, None)
+
+    host, port = email_conf.get('HOST'), email_conf.get('PORT')
+    try:
+        s = smtplib.SMTP(host, port) if host and port else None
+    except error:
+        s = None
+    if s and email_conf.get('USE_TLS'):
+        s.starttls()
+    if s and email_conf.get('HOST_USER'):
+        try:
+            s.login(email_conf.get('HOST_USER'), email_conf.get('HOST_PASSWORD'))
         except smtplib.SMTPException:
             pass
     return s
+
+
+def smtp_servers_meta():
+
+    not_allowed = [getattr(settings, "EMAIL_DOMAINS_NOT_ALLOWED", [])]
+
+    try:
+        weights = [settings.EMAIL_MAIN_SERVER_WEIGHT]
+    except AttributeError:
+        # when using weights, all weights must be configured, otherwise they are ignored
+        weights = None
+
+    for email_conf in alt_email_conf():
+        not_allowed.append(email_conf.get("DOMAINS_NOT_ALLOWED", []))
+        if weights:
+            try:
+                weights.append(email_conf["WEIGHT"])
+            except KeyError:
+                weights = None
+
+    return weights, not_allowed
+
+
+def smtp_server_choice(user_email, servers_available, force_ignore_weights=False, ignore_from_available=None):
+    """
+    This function will return the index to the (main server + alternative servers) list filtered by the availability
+    list given, not using the one ignored (if such arg received), randomnly choosed to deliver the email given.
+    TODO: choices are "fixed" for the same domain in the same delivery, then, to avoid unnecesary repeated calls to
+          this function, a class can be written to fill a hashtable for caching those per-domain choices.
+          The class instance will be created and used only in the delivery command.
+          (Note that the servers availability can change in the same delivery execution, also be careful if
+          "ignore_from_available" is not None)
+    """
+    email_domain, choices_data = split_email(user_email)["domain"], []
+    servers_weights, smtp_dom_blocked = smtp_servers_meta()
+    for alt_index, not_allowed in enumerate(smtp_dom_blocked):
+        if servers_available[alt_index] and email_domain not in not_allowed and ignore_from_available != alt_index:
+            choices_data.append(alt_index)
+    if choices_data:
+        if not force_ignore_weights and servers_weights:
+            weights = [servers_weights[alt_index] for alt_index in choices_data]
+        else:
+            weights = None
+        # TODO: avoid zero-prob only servers chosen
+        index_chosen = choices(choices_data, weights=weights if sum(weights or []) else None)[0]
+    else:
+        index_chosen = None
+    return index_chosen
+
+
+def nl_serialize_multi(article_many, category, for_cover=False, dates=True):
+    if type(article_many) in (QuerySet, list):
+        return [
+            (
+                t[0].nl_serialize(t[1], category=category, dates=dates), t[1]
+            ) if isinstance(t, tuple) else t.nl_serialize(category=category, dates=dates) for t in article_many
+        ]
+    elif article_many:
+        return article_many.nl_serialize(for_cover, category=category, dates=dates)
 
 
 def decode_hashid(hashed_id):

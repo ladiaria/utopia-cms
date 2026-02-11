@@ -1,18 +1,19 @@
-from __future__ import unicode_literals
+
 from os.path import join
 from csv import writer
 import collections
-from datetime import date
 from dateutil.relativedelta import relativedelta
+
 from collections import OrderedDict
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from thedaily.email_logic import SUBJ_FREE_ARTICLES_LIMIT
+from thedaily.email_logic import DESC_FREE_ARTICLES_LIMIT
 from thedaily.models import SubscriberEvent, Subscriber
-
+from django.utils.timezone import now
 
 # 'heavy users' are free user that consume all free articles in a month
+
 
 class Command(BaseCommand):
     help = """
@@ -26,11 +27,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         file = join(getattr(settings, 'GENERAL_MANAGEMENT_COMMAND_EXPORT_PATH', '/tmp'), options.get('filename')[0])
 
-        today = date.today()
+        today = now().date()
         start = today.replace(day=1) - relativedelta(months=3)
 
         events = SubscriberEvent.objects.filter(
-            date_occurred__gte=start, description=SUBJ_FREE_ARTICLES_LIMIT
+            date_occurred__gte=start, description=DESC_FREE_ARTICLES_LIMIT
         ).order_by('date_occurred')
 
         # by construction, if the subscribear repeats, the last is valid

@@ -1,0 +1,7 @@
+<p>{% spaceless %}
+  {% if credits %}
+    Te queda{{ credits|pluralize:"n" }} {{ credits }} artículo{{ credits|pluralize }}
+  {% else %}
+    Este es tu último artículo gratuito
+  {% endif %}
+{% endspaceless %}</p>

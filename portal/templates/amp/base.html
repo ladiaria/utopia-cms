@@ -1,11 +1,11 @@
-{% load static core_tags homev3_tags %}
+{% load static homev3_tags %}
 
 <!doctype html>
 <html ⚡ class="ld-amp" lang="es-UY">
   <head>
     <!-- Title and description -->
-    <title>{% if debug %}⚡️{% endif %}{% block page_title %}{% endblock %}</title>
-    <meta name="description" content="{% block page_description %}{% endblock %}">
+    <title>{% spaceless %}{% block page_title %}{% endblock %}{% endspaceless %}</title>
+    <meta name="description" content="{% spaceless %}{% block page_description %}{% endblock %}{% endspaceless %}">
     <!-- End Title and description -->
 
     <!-- Meta tags base -->
@@ -32,14 +32,14 @@
     <script async custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js"></script>
     <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
     <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
+    <script async custom-element="amp-video" src="https://cdn.ampproject.org/v0/amp-video-0.1.js"></script>
     <script id="amp-access" type="application/json">
       {
-        "authorization": "https://{{ site.domain }}/usuarios/amp-access/authorization?rid=READER_ID&url=CANONICAL_URL&ref=DOCUMENT_REFERRER&_=RANDOM",
-        "pingback": "https://{{ site.domain }}/usuarios/amp-access/pingback?rid=READER_ID&url=CANONICAL_URL&ref=DOCUMENT_REFERRER&article_allowed=AUTHDATA(article_allowed)&article_restricted=AUTHDATA(article_restricted)&_=RANDOM",
-        "login": {
-          "sign-in": "https://{{ site.domain }}/usuarios/amp-access/login?rid=READER_ID&url=CANONICAL_URL",
-          "sign-out": "https://{{ site.domain }}/usuarios/amp-access/logout"
-        },
+        {% with common_params="?rid=READER_ID&url=CANONICAL_URL" %}
+          "authorization": "https://{{ site.domain }}{% url "amp-access-authorization" %}{{ common_params }}&ref=DOCUMENT_REFERRER&_=RANDOM",
+          "pingback": "https://{{ site.domain }}{% url "amp-access-pingback" %}{{ common_params }}&ref=DOCUMENT_REFERRER&article_allowed=AUTHDATA(article_allowed)&article_restricted=AUTHDATA(article_restricted)&_=RANDOM",
+          "login": "https://{{ site.domain }}{% url 'account-login' %}{{ common_params }}",
+        {% endwith %}
         "authorizationFallbackResponse": {"error": true, "access": false, "subscriber": false}
       }
     </script>
@@ -106,7 +106,6 @@
       .header-pill--coronavirus {}
       .mobile-header { width: 100%; background-color: #262626; color: #fff; text-align: center; display: flex; align-items: center; justify-content: center; height: 60px; z-index: 100; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2); }
       .section-subheader { text-align: center; box-shadow: 0px 3px 6px #00000029; padding:10px 0 7px; z-index:1; position:relative;}
-      {% block css %}{% endblock %}
       .section-subheader .header-logo img { position:relative; overflow:visible;}
       .subscribe, #subscribe { background-color: #39f; color: #fff; }
       .subscribe { line-height: 30px; height: 30px; padding: 0 24px; margin: 0 auto; border-radius: 100px; }.amp-selector-custom div.tabButton { outline: none; }
@@ -132,13 +131,14 @@
       .read-later .hide, .fav .hide { display:none; }
 
       .u-mb-60 { margin-bottom:60px;}
-      .article-date-author, .reading-time {padding: 0 20px }
+      .article-date-author, .reading-time {padding: 0 20px; }
       .article-date-author span, .reading-time span { font-size: 1rem; }
       .article-date-author span a,
       .article-date-author a span,
       .reading-time span a,
       .reading-time a span { color: #000; }
-      .article-title, .article-caption, .article-date-author, .reading-time { text-align: center; }.article-title { margin-top: .5em; margin-bottom: .5em; margin-left: auto; margin-right: auto; padding-left: 20px; padding-right: 20px; text-align: center; font-weight: bold; font-family: 'Meta Serif', serif; font-size: 32px; max-width: 1000px; font-weight: 500; line-height: 120%; }@media (min-width: 769px) { .article-title { font-size: 52px; } }
+      .article-title, .article-caption, .article-date-author, .reading-time { text-align: center; }.article-title { margin-top: .5em; margin-bottom: .5em; margin-left: auto; margin-right: auto; padding-left: 20px; padding-right: 20px; text-align: center; font-weight: bold; font-family: 'Meta Serif', serif; font-size: 32px; max-width: 1000px; font-weight: 500; line-height: 120%; }
+      @media (min-width: 769px) { .article-title { font-size: 52px; } }
       .article-date-author, .article-caption, .reading-time { font-family: "Roboto", sans-serif; color: #262626; }.article-caption { margin: 0 auto; margin-top: 10px; color: #262626; font-size: 1rem; line-height: 22px; }.soft { opacity: .5; font-family: 'Roboto', sans-serif; } .article-caption p { margin:10px 0 6px; font-size: 16px; line-height:1.5; } .article-caption p + p { margin-top:0;}
 
       .article-body { font-family: "Meta Serif",serif; margin: 0 auto; max-width: 700px; margin: 20px auto; font-size: 20px; line-height: 1.5; margin-bottom: 50px; padding-left: 20px; padding-right: 20px; position: relative; }.article-body .ld-caption { text-align: center; margin-top: 0; padding:0 20px; }.article-body strong { font-weight: 500; }
@@ -146,20 +146,52 @@
       .article-body * { text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.004); text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }.article-body--faded:after { content: ''; width: 100%; height: 30%; position: absolute; left: 0; bottom: 0; background: linear-gradient(rgba(255, 255, 255, 0.001) 70%, #fff); -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }.article-body img { max-width: 100%; }
       @media (min-width: 769px) { .article-body { font-size: 22px; } }
       .article-body p { margin-bottom: 50px; }
-      .article-body h1, .article-body h2, .article-body h3, .article-body hr { max-width: 700px; margin: 20px auto; }.article-body h3, .article-body h4, .article-body h5, .article-body h6 { line-height: 1.5; }.article-body ul, .article-body ol { font-size: 18px; line-height: 34px; max-width: 700px; margin: 20px auto 50px auto; padding-left: 22px; }@media (min-width: 769px) { .article-body ul, .article-body ol { font-size: 20px; } }.article-body ul li { list-style-type: disc; }
+      .article-body h1, .article-body h2, .article-body h3, .article-body hr { max-width: 700px; margin: 20px auto; }.article-body h3, .article-body h4, .article-body h5, .article-body h6 { line-height: 1.5; }.article-body ul, .article-body ol { font-size: 18px; line-height: 34px; max-width: 700px; margin: 20px auto 50px auto; padding-left: 22px; }
+      @media (min-width: 769px) { .article-body ul, .article-body ol { font-size: 20px; } }
+      .article-body ul li { list-style-type: disc; }
+      div.article-body h2 {
+        font-size: 1.75rem;
+      }
+      div.article-body h3 {
+        font-size: 1.375rem;
+      }
+      div.article-body h4 {
+        font-size: 1.25rem;
+        line-height: 1.5;
+      }
+      @media only screen and (max-width: 767px) {
+        div.article-body h2 {
+          font-size: 1.5rem;
+        }
+        div.article-body h3 {
+          font-size: 1.25rem;
+        }
+        div.article-body h4 {
+          font-size: 1rem;
+        }
+      }
       .article-body hr { margin:100px 0; background:#595959;}
       .article-body li { line-height: 1.5; }
       .article-body ul, .article-body ol { margin: 10px 0; }
-      .extension { max-width: 700px; background: #eaeaea; border-radius: 10px; padding: 20px; font-size: 16px; word-break: break-word; margin: 50px auto; }@media (min-width: 740px) { .extension { padding: 40px; } }
+      .extension { max-width: 700px; background: #eaeaea; border-radius: 10px; padding: 20px; font-size: 16px; word-break: break-word; margin: 50px auto; }
+      @media (min-width: 740px) { .extension { padding: 40px; } }
       .extension p { margin-bottom: 20px; }
       .extension p:last-of-type { margin-bottom: 0; }
       .extension__title { margin: 0 0 20px 0; }
       .extension .twitter-tweet { margin: 0 auto; }
       .article-body .extension h3 { margin-top: 0; }
-      .article__deck, .article-lead { font-family: "Meta Serif",serif; font-weight: 500; line-height: 1.5; max-width: 700px; max-width: 700px; margin: 20px auto; font-size: 20px; line-height: 1.5; margin-bottom: 50px; padding: 0 20px; }@media (min-width: 769px) { .article__deck, .article-lead { font-size: 20px; line-height: 1.7; } }h2, h3, h4, h5, h6 { font-family: 'Meta Serif', serif; }
+      .article__deck, .article-lead { font-family: "Meta Serif",serif; font-weight: 500; line-height: 1.5; max-width: 700px; max-width: 700px; margin: 20px auto; font-size: 20px; line-height: 1.5; margin-bottom: 50px; padding: 0 20px; }
+      @media (min-width: 769px) {
+        .article__deck, .article-lead {
+          font-size: 20px;
+          line-height: 1.7;
+        }
+      }
+      h2, h3, h4, h5, h6 { font-family: 'Meta Serif', serif; }
       h3 { font-size: 24px; }
       #header-pub { margin-top: 20px; margin-bottom: 20px; }
-      .ld-fin { background-image: url(/static/img/fin-dark.svg); background-repeat: no-repeat; background-position: center; background-size: 134px; height: 14px; width: 100%; margin: 100px auto; }@media (min-width: 600px) { .card p { font-size: 1.25rem; } }
+      .ld-fin { background-image: url(/static/img/fin-dark.svg); background-repeat: no-repeat; background-position: center; background-size: 134px; height: 14px; width: 100%; margin: 100px auto; }
+      @media (min-width: 600px) { .card p { font-size: 1.25rem; } }
       .btn, .btn-large { font-weight: bold; -webkit-box-shadow: none; box-shadow: none; text-transform: none; background: #6EF9FF; color: #262626; text-decoration:none; }
       .card .card-content { font-family: "Meta Serif",serif; padding: 24px; }.card .card-content .card-title { display: block; line-height: 32px; margin-bottom: 8px; }.card .card-title { font-size: 24px; font-weight: 400; }
       #paywall { margin-bottom: 30px; border-radius: 10px; }
@@ -196,7 +228,20 @@
       .breaking-notice .msg-link { color: #fff; text-decoration: underline; }
       .breaking-notice .btn-close { position: absolute; right: 20px; top: 10px; cursor: pointer; background-image: url(/static/img/icon-cross.svg); background-position: center; background-repeat: no-repeat; background-color: transparent; background-size: 12px; display: block; width: 12px; height: 12px; text-indent: -100px; overflow: hidden; }
       .mobile-header .header-pill { height: 29px; margin-left:4px; } .mobile-header:not(.logged-in) .header-pill--coronavirus { height: 27px; } .mobile-header .header-pill svg { height: 29px;  width: auto; } .mobile-header:not(.logged-in) .header-pill--coronavirus svg { height: 27px;  width: auto;}
-      @media (max-width: 640px) { .mobile-header:not(.logged-in) { justify-content: left;}  .mobile-header .ladiaria-amp-logo-img { height: 25px; margin-left:15px }   .mobile-header:not(.logged-in) .btn.ingresar { position:absolute; right:15px; top:0; }}
+      @media (max-width: 640px) {
+        .mobile-header:not(.logged-in) {
+          justify-content: left;
+        }
+        .mobile-header .ladiaria-amp-logo-img {
+          height: 25px;
+          margin-left:15px;
+        }
+        .mobile-header:not(.logged-in) .btn.ingresar {
+          position:absolute;
+          right:15px;
+          top:0;
+        }
+      }
 
       /* Base styles */
       .ld-heading { font-family: "Roboto", sans-serif; margin: 10px 0 35px 0; font-size: 50px; color: #262626; font-weight: 500; }
@@ -205,6 +250,99 @@
       a.ld-text-secondary, .ld-text-secondary a { color: #595959; text-decoration: underline; }
       .ld-paywall-ending { margin-bottom: 10vh; }
       .card { box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2); }
+
+      /* Collections */
+      .collection-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        place-items: center;
+        background: linear-gradient(#edf6f5,#d3dad9);
+      }
+      @media (max-width: 992px) {
+        .collection-header {
+          grid-template-columns: 1fr;
+        }
+      }
+      .collection-header .collection-intro {
+        text-align: center;
+        max-width: 460px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .collection-header .collection-intro h1.article-title {
+        font-size: px-to-rem(40px);
+        margin: 0;
+      }
+      .collection-header .collection-intro svg {
+        margin: 16px 0;
+      }
+      .collection-header .collection-intro .collection-description {
+        font-size: px-to-rem(24px);
+        margin: 0;
+      }
+      .collection-header .collection-intro .photo-author {
+        font-size: px-to-rem(12px);
+        font-family: "Roboto", sans-serif;
+        margin: 16px 0 0;
+      }
+      @media (max-width: 992px) {
+        .collection-header .collection-intro {
+          order: 2;
+          padding: 16px;
+        }
+        .collection-header .collection-intro h1.article-title {
+          font-size: px-to-rem(24px);
+        }
+        .collection-header .collection-intro svg {
+          margin: 8px 0;
+        }
+        .collection-header .collection-intro svg:last-child {
+          margin-bottom: 0;
+        }
+        .collection-header .collection-intro .collection-description {
+          font-size: px-to-rem(20px);
+        }
+        .collection-header .collection-intro .photo-author {
+          margin-top: 8px;
+        }
+      }
+      .collection-articles {
+        border: 1px solid #d8d8d8;
+        padding: 16px;
+        border-radius: 4px;
+      }
+      .collection-articles .title {
+        margin: 0;
+      }
+      .collection-articles .collection-article {
+        margin-top: 14px;
+        display: flex;
+        background: #edf6f5;
+        border: 1px solid #d8d8d8;
+      }
+      .collection-articles .collection-article .photo {
+        order: 2;
+        min-width: 250px;
+      }
+      .collection-articles .collection-article .content {
+        padding: 12px 16px;
+      }
+      .collection-articles .collection-article .title {
+        font-size: 20px;
+        line-height: 1.2;
+        margin: 0 0 5px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #d8d8d8;
+      }
+      .collection-articles .collection-article .title a {
+        text-decoration: none;
+      }
+      .collection-articles .collection-article .text {
+        margin: 0;
+        font-size: 18px;
+        line-height: 1.2;
+      }
 
       /* Grid / Materialize */
       .container { margin: 0 auto; max-width: 1280px; width: 90%; }
@@ -350,7 +488,11 @@
       .ld-snackbar p.desc { color:#262626; font-size:16px;}
       .ld-snackbar .btn.bordered { font-size: 18px;  text-transform: uppercase;  padding: 14px 23px 13px; line-height: 1; height: auto; background:none; border:2px solid #262626; color:#262626;}
       .ld-snackbar--static { position: static; -webkit-animation: none; animation: none; -webkit-transform: none; -ms-transform: none; transform: none; margin: 0 auto; border-radius: 10px; border-bottom: 0; padding-bottom: 25px; max-width: 90%; margin-bottom: 100px; }
-      @media (min-width:700px){ .ld-snackbar--static { max-width: 700px; }}
+      @media (min-width:700px) {
+        .ld-snackbar--static {
+          max-width: 700px;
+        }
+      }
       .ld-snackbar--static .ld-snackbar__col { padding-bottom: 40px; }
       .ld-snackbar--narrow .ld-snackbar__text { max-width: 450px; margin-left: auto; margin-right: auto; }
       .ld-snackbar--active { -webkit-animation: none; animation: none; }
@@ -370,7 +512,12 @@
       .ld-snackbar .row { margin-bottom: 0; }
       #notification-subscribe1,
       #notification-subscribe2 { display: block; bottom: 0; position:relative; left:0; transform:none;  margin: 0 20px; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2); border-radius:10px; width:auto; }
-      @media (min-width: 740px) { #notification-subscribe1, #notification-subscribe2 { margin: 0 auto;  max-width:700px;} }
+      @media (min-width: 740px) {
+        #notification-subscribe1, #notification-subscribe2 {
+          margin: 0 auto;
+          max-width:700px;
+        }
+      }
       .ad_banner { max-width: 700px; margin: 0 auto; }
       .ld-block { margin: 100px 0; }
       .ld-block--sm { margin: 50px 0; }
@@ -462,6 +609,7 @@
       @media (min-width: 640px) { .ld-grid-simple { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); } }
       .btn.ingresar { margin: 13px 0 15px 15px; line-height: 28px; height: 30px; padding: 0 14px; text-decoration: none; border:2px solid white; color:white;box-sizing: border-box; background:none; text-transform: uppercase; font-weight:500; font-size:12px; }
       .btn.ingresar:hover { background:#fff; color:#262626;}
+
       /* tags */
       .article-tags { margin-bottom: 100px; padding: 0 20px; }
       .article-tags .title { display: block; margin-bottom: 10px; }
@@ -477,12 +625,86 @@
       .mid-article-notice .ut-btn-outline { background: transparent; border: 2px solid #262626; padding: 8px 18px; color: #262626; font-family: "Roboto",sans-serif; font-size: 15px; line-height: 20px; text-transform: uppercase; border-radius: 100px; display: inline-block; outline: none;
       cursor: pointer; text-align: center; text-decoration: none; vertical-align: middle; font-weight: bold; }
       .mid-article-notice .ut-btn.disabled { font-family: roboto,sans-serif; font-size: 15px; font-weight: 700; line-height: 20px; text-transform: uppercase; color: #fff; padding: 10px 20px; background: #262626; border-radius: 100px; display: inline-block; outline: none; text-align: center; text-decoration: none; vertical-align: middle; text-decoration: none; border: none; transition: background .35s ease,color .35s ease,box-shadow .35s ease; }
+
+      .signupwall-header {
+        display: flex;
+        padding: 16px;
+        justify-content: center;
+        background: #8ebbff;
+      }
+      .signupwall-header p {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .signupwall-header button {
+        position: absolute;
+        right: 48px;
+        background: transparent;
+        border: none;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      @media (max-width: 280px) {
+        .signupwall-header {
+          flex-direction: column;
+          align-items: center;
+        }
+      }
+      @media (max-width: 767px) {
+        .signupwall-header {
+          padding: 8px 16px;
+        }
+        .signupwall-header button {
+          display: none;
+        }
+      }
+      /* feedback form link */
+      .send-feedback {
+        max-width: 500px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding-bottom: 30px;
+      }
+      .send-feedback p {
+        margin: 0;
+        font-family: Roboto, sans-serif;
+        font-size: 12px;
+      }
+      .send-feedback p:first-child {
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-align: center;
+      }
+      {% block css %}{% endblock %}
     </style>
     <!-- End CSS -->
   </head>
 
   <body class="{% block body_class %}{% endblock %}">
-    <amp-analytics config="https://www.googletagmanager.com/amp.json?id={{ GTM_AMP_CONTAINER_ID }}&gtm.url=SOURCE_URL" data-credentials="include"></amp-analytics>
+    {% if GTM_AMP_CONTAINER_ID %}
+      <amp-analytics config="https://www.googletagmanager.com/amp.json?id={{ GTM_AMP_CONTAINER_ID }}&gtm.url=SOURCE_URL" data-credentials="include"></amp-analytics>
+    {% endif %}
+
+    {% block body_begin %}{% endblock %}
+
+    {% if not article.public %}
+      <header id="signupwall-header" amp-access="signupwall_header AND access">
+        <template amp-access-template type="amp-mustache">
+          <div class="signupwall-header {% templatetag openvariable %} remaining_articles_word {% templatetag closevariable %}-articles">
+            {% templatetag openvariable %}{ remaining_articles_msg }{% templatetag closevariable %}
+            {% include "../remaining_articles_separator.html" %}
+            {% templatetag openvariable %}{ remaining_articles_content }{% templatetag closevariable %}
+            {% include "../remaining_articles_close.html" with extra_args='on="tap:signupwall-header.hide"' %}
+          </div>
+        </template>
+      </header>
+    {% endif %}
+
     <header amp-access="NOT authenticated" amp-access-hide>
       {% render_header %}
       {% if extra_header_template %}{% include extra_header_template %}{% endif %}

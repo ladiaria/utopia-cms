@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
-from __future__ import unicode_literals
 
 from django.db.models import Model, URLField
+from django.utils.safestring import mark_safe
 
 
 class Url(Model):
@@ -10,10 +10,15 @@ class Url(Model):
     def __str__(self):
         return self.url
 
-    def surl(self):
-        return '<a href="/short/U/%i/">sURL</a>' % self.id
+    def url_formatted(self):
+        if len(self.url) > 150:
+            return f"{str(self.url)[:150]}..."
+        else:
+            return f"{str(self.url)}"
+    url_formatted.short_description = 'URL'
 
-    surl.allow_tags = True
+    def surl(self):
+        return mark_safe('<a href="/short/U/%d/">sURL</a>' % self.id)
 
     def get_absolute_url(self):
-        return "/short/url/%i/" % self.id
+        return "/short/url/%d/" % self.id

@@ -23,45 +23,42 @@
         <div class="section-detail__sub-cats">
           <ul class="section-detail__sub-cats-list">
             {% for section in publication.primary_sections %}
-              <li><a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">{% section_name_in_publication_menu publication section %}</a></li>
+              <li>
+                <a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">
+                  {% section_name_in_publication_menu publication section %}
+                </a>
+              </li>
             {% endfor %}
           </ul>
         </div>
       </div>
     </div>
   {% endif %}
+
   {% render_cover %}
+
+  {% block after_cover %}{% endblock %}
 
   {% for section in featured_sections %}
     {% render_section section %}
   {% endfor %}
 
-  {# news wall commented out due to performance issues #}
-  {# include 'news_wall.html' #}
+  {% if news_wall_enabled %}
+    {% include 'news_wall.html' %}
+  {% endif %}
+
   {% include bigphoto_template %}
 
 {% endblock %}
 
 {% block javascript %}
+  {% if allow_mas_leidos %}<script src="{% static 'js/most_read.js' %}"></script>{% endif %}
   <script type="text/javascript">
     $(function(){
-      resizeSubnav($('.section-detail__sub-cats'), $('.section-detail__sub-cats-list'), 2);
-      resizeSubnav($('.section-subheader .submenu'), $('.submenu--list'), 1);
+      resizeSubnav(document.querySelector(".section-subheader .submenu"), document.querySelector(".submenu--list"), 1);
       $('#header-pub').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
     });
   </script>
 {% endblock %}
 
-{% block footer_scripts %}
-  <script type="text/javascript">
-    $(function(){
-      $('#bn-module').load("{% url 'bn-content' %}?publication={{ publication.slug }}", function(response){
-        if(response){
-          $('.btn-close', this).click(function(){
-            notification_close(this);
-          });
-        }
-      });
-    });
-  </script>
-{% endblock %}
+{% block footer_scripts %}{% include bn_module_footer_scripts_template %}{% endblock %}

@@ -10,7 +10,7 @@
                 {% crispy_field field %}
             {% endif %}
 
-            <label for="{{ field.id_for_label }}" {% if field.field.required %}class="required"{% endif %}>
+            <label for="{{ field.id_for_label }}" {% if field.field.required %}class="required active"{% endif %}>
                 {{ field.label|safe }}
             </label>
         {% endif %}

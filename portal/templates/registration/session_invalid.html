@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load core_tags %}
 
-{% block page_title %}Tu sesión fue finalizada | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block page_title %}{% title_joinparts 'Tu sesión fue finalizada' %}{% endblock %}
 {% block body_class %}login no-footer{% endblock %}
 
 {% block content %}

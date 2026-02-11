@@ -1,0 +1,16 @@
+<div class="payment-container__anonymous">
+  {% block hp_anon_before_content %}{% endblock %}
+  <p>o ingresá con Google</p>
+  <div class="google-auth align-center">
+    <a href="{% url 'social:begin' 'google-oauth2' %}?next={% block hp_anon_social_next %}{{ article.get_absolute_url }}{% endblock %}"
+       class="ld-btn-google">
+      ingresar con google
+    </a>
+  </div>
+  {% block hp_anon_after_content %}
+    <div class="payment-container__anonymous__log-in">
+      <p>¿Ya tenés cuenta?</p>
+      <a href="{% url 'account-login' %}?next={{ article.get_absolute_url }}">Ingresá</a>
+    </div>
+  {% endblock %}
+</div>

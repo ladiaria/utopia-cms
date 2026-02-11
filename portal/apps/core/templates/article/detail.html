@@ -1,7 +1,15 @@
-{% extends "base.html" %}
-{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags %}
+{% extends base_template %}
+{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags signupwall_tags %}
 
-{% block page_title %}{{ article.headline|remove_markup }} | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block head_first_content %}
+  <!-- Canonical and AMP (if allowed) urls -->
+  <link rel="canonical" href="{{ SITE_URL_SD }}{{ article.get_absolute_url }}">
+  {% if enable_amp %}
+    <link rel="amphtml" href="{{ SITE_URL_SD }}{{ article.get_absolute_url }}?display=amp">
+  {% endif %}
+{% endblock %}
+
+{% block page_title %}{% include 'article/page_title.html' %}{% endblock %}
 
 {% block page_description %}
   {% firstof article.deck|remove_markup article.body|remove_markup|truncatewords:25 %}
@@ -11,24 +19,20 @@
 
 {% block robots %}{% spaceless %}
   {# only override if allowed by robots app #}
-  {% ifnotequal meta_robots_content 'noindex' %}
+  {% if meta_robots_content != 'noindex' %}
     {% if section.is_satirical %}noindex{% elif not article.public %}noarchive{% else %}{{ block.super }}{% endif %}
   {% else %}
     {{ block.super }}
-  {% endifnotequal %}
+  {% endif %}
 {% endspaceless %}{% endblock %}
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
-  <meta property="og:title" content="{{ article.headline|remove_markup }}">
+  <meta property="og:title" content="{% firstof article.alt_title_metadata article.headline|remove_markup %}">
 {% endblock %}
 
 {% block meta %}
-  {% include 'article/detail_meta.html' %}
-  <!-- AMP -->
-  <link rel="canonical" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}">
-  <link rel="amphtml" href="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}?display=amp">
-  <!-- End AMP -->
+  {% include meta_include_template|default:'article/detail_meta.html' %}
 {% endblock %}
 
 {% block json_ld %}{% include 'article/detail_json_ld.html' %}{% endblock %}
@@ -38,10 +42,15 @@
 {% endblock %}
 
 {% block header_scripts %}
-  <link rel="preload" href="{% static 'js/most_read.js' %}" as="script" />
   <script type="text/javascript">
     $(function(){
       $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
+      {% if request.signupwall_header %}
+        $("#close-article-alert").on("click", function(){
+          $(this).parent().hide();
+          $("header").removeClass("with-article-counter-container");
+        });
+      {% endif %}
     });
   </script>
 {% endblock %}
@@ -63,47 +72,58 @@
 
 {% block main_open %}{% endblock %}
 
+{% block navbar %}
+  {% if request.signupwall_header %}
+    <div class="article-counter-container {{ request.remaining_articles_word }}-articles">
+      {% include "remaining_articles.html" %}
+    </div>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+
+{% block subscribe_notice %}
+  {# TODO: check when it should appear and use super #}
+{% endblock %}
+
 {% block page_header %}
-  <div id="bn-module"></div>
+  {% if bn_module_published_count %}<div id="bn-module"></div>{% endif %}
   <div id="live_embed_event_notification"></div>
 {% endblock %}
 
 {% block content %}
+  {% include 'profile/notification_box.html' %}
+
   <main>
     <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
 
-      {% if article.photo %}
-        {% if article.photo.is_public %}{# TODO: do this check also in all places rendering article's photos #}
-          {% if header_display == 'FW' %}
-            <div>{# closed in line 247 #}
-              <div class="fullwidth-container">
-                <div class="main-photo">
-                  <div>
-                    <figure class="js-figure principal {{ card_size }}"
-                            alt="{% if article.photo.caption %}{{ article.photo.caption }}{% else %}Foto principal del artículo '{{ article.headline|remove_markup }}'{% endif %}"
-                            data-src="{{ article.photo.get_1200w_url }}">
-                      <picture>
-                        <!--[if IE 9]><video style="display: none;"><![endif]-->
-                        <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                        <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
-                        <source srcset="{{ article.photo.get_800w_url }}" media="(min-width: 700px)">
-                        <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
-                        <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
-                        <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
-                        <!--[if IE 9]></video><![endif]-->
-                        <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
-                            data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
-                      </picture>
-                      <figcaption class="caption">
-                        {% if article.photo.caption %}
-                          <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
-                        {% endif %}
-                        {% if article.photo_author %}
-                          <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
-                        {% endif %}
-                      </figcaption>
-                    </figure>
-                  </div>
+      {# TODO: - apply this 'render_allowed' condition also in all places that render article's photos #}
+      {#       - img tag should have the width and height attribute (ask UX for help)                  #}
+      {% if photo_render_allowed %}
+        {% if header_display == 'FW' %}
+          <div>{# closed in line 300 #}
+            <div class="fullwidth-container">
+              <div class="main-photo">
+                <div>
+                  <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}"
+                          alt="{{ article.photo_caption }}">
+                    <picture>
+                      <!--[if IE 9]><video style="display: none;"><![endif]-->
+                      <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                      <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+                      <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+                      <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+                      <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+                      <!--[if IE 9]></video><![endif]-->
+                      <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
+                           data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
+                    </picture>
+                    <figcaption class="caption">
+                      {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+                      {% if article.photo_author %}
+                        <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
+                      {% endif %}
+                    </figcaption>
+                  </figure>
                 </div>
               </div>
             {# missing close div here is closed correctly in line 247 #}
@@ -126,6 +146,64 @@
                 </figcaption>
               </figure>
             </div>
+          {# missing close div here is closed correctly in line 300 #}
+        {% else %}
+          {% if article.articlecollection %}
+            <div class="collection-header">
+              <div class="collection-intro">
+                <svg id="collection-logo" xmlns="http://www.w3.org/2000/svg" width="22" height="21" viewBox="0 0 22 21" fill="none">
+                  <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
+                </svg>
+                <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+                {% if include_after_headline %}{% include include_after_headline %}{% endif %}
+                <svg id="line-svg" xmlns="http://www.w3.org/2000/svg" width="180" height="2" viewBox="0 0 180 2" fill="none">
+                  <path d="M0 1.08124H180" stroke="#A4A4A4"/>
+                </svg>
+                {% if article.has_deck %}
+                  <p class="collection-description">{{ article.deck|ldmarkup|bleach }}</p>
+                {% endif %}
+                {% if article.photo_author %}
+                  <p class="photo-author">{{ article.photo_type }}: {{ article.photo_author }}</p>
+                {% endif %}
+                <svg width="44" height="35" viewBox="0 0 44 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12.82 10.0812L22 19.2612L31.18 10.0812L34 12.9212L22 24.9212L10 12.9212L12.82 10.0812Z" fill="#A4A4A4"/>
+                </svg>
+              </div>
+              <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}"
+                      alt="{{ article.photo_caption }}">
+                <picture>
+                  <!--[if IE 9]><video style="display: none;"><![endif]-->
+                  <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                  <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+                  <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+                  <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+                  <!--[if IE 9]></video><![endif]-->
+                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
+                       data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
+                </picture>
+              </figure>
+            </div>
+          {% else %}
+            <div class="container-photo photo BG {{ article.photo_layout }}">
+              <figure class="principal" data-src="{{ article.photo.get_1200w_url }}" alt="{{ article.photo_caption }}">
+                <picture class="materialboxed">
+                  <!--[if IE 9]><video style="display: none;"><![endif]-->
+                  <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                  <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 500px)">
+                  <source srcset="{{ article.photo.get_450w_url }}" media="(min-width: 300px)">
+                  <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+                  <!--[if IE 9]></video><![endif]-->
+                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
+                       data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
+                </picture>
+                <figcaption class="article-caption container ld-caption">
+                  {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+                  {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
+                </figcaption>
+              </figure>
+            </div>
           {% endif %}
         {% endif %}
       {% endif %}
@@ -136,7 +214,15 @@
             <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
           </div>
         {% endif %}
-        <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+        {% if not article.articlecollection %}
+          <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
+          {% comment "conditions to show are not yet implemented" %}
+          <div class="chip-article-already-viewd">
+            <p>Artículo desbloqueado con tu cuenta gratuita. <a href="{% url 'subscribe_landing' %}">Suscribite para acceder sin límites</a></p>
+          </div>
+          {% endcomment %}
+          {% if include_after_headline %}{% include include_after_headline %}{% endif %}
+        {% endif %}
         {% if article.date_published %}
           <div class="article-date-author">
             Publicado{% if date_published_use_main_publication %} el <span class="date small">{{ article.main_section.edition.date_published_verbose }}</span>{% else %}{% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small"><time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time></span>{% endif %}
@@ -164,37 +250,23 @@
           {% endwith %}
           {% if section %}
             <span class="small">
-              {% if 'elecciones' in article.get_categories_slugs %}
-                {% with special_sections='apuntes-de-campana datos-elecciones-2019' %}
-                  {% if section.slug in special_sections.split %}
-                    <a href="{{ section.get_absolute_url }}">{{ section }}</a>
-                  {% else %}
-                    <a href="{% url 'section_detail' section_slug='elecciones-2019' %}">{{ section.category }}</a>
-                  {% endif %}
-                {% endwith %}
-              {% else %}
+              {% block byline_section %}
                 <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
-              {% endif %}
+              {% endblock %}
             </span>
           {% endif %}
         </div>
-        {% if not article.is_restricted or user|has_restricted_access:article %}
+        {% if not article_restricted_cf or restricted_access %}
           <div class="reading-time">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
               <path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/>
             </svg> <span class="eta">{{ article.reading_time }}</span> de lectura
           </div>
         {% endif %}
-        {% if article.is_restricted and user|has_restricted_access:article %}
-          <div class="premium">
-            <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12.1296 7.33325H4.87037C4.29763 7.33325 3.83333 7.93021 3.83333 8.66659V13.3333C3.83333 14.0696 4.29763 14.6666 4.87037 14.6666H12.1296C12.7024 14.6666 13.1667 14.0696 13.1667 13.3333V8.66659C13.1667 7.93021 12.7024 7.33325 12.1296 7.33325Z" fill="#262626" stroke="#262626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M5.16667 7.33344V4.66677C5.16584 3.84013 5.47219 3.04268 6.02625 2.42921C6.58031 1.81575 7.34255 1.43004 8.165 1.34696C8.98745 1.26389 9.81143 1.48937 10.477 1.97964C11.1425 2.46992 11.6022 3.19 11.7667 4.0001" stroke="#262626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Contenido exclusivo con tu suscripción de pago
-          </div>
+        {% if article_restricted_cf and restricted_access %}
+          {% include 'article/paywall/pw_premium.html' %}
         {% endif %}
-        {% if not article.is_restricted or user|has_restricted_access:article %}
+        {% if not article_restricted_cf or restricted_access %}
           {% if user.is_authenticated and not followed %}
             <div class="read-later top">
               <a class="read-later__btn read-later__add">
@@ -243,89 +315,117 @@
           {% endif %}
         {% endif %}
       </div>
-      {% if article.photo and article.photo.is_public and header_display == 'FW' %}
-        </div>{# opened in line 78 #}
+      {% if photo_render_allowed and header_display == 'FW' %}
+        </div>{# opened in line 103 #}
       {% endif %}
 
       {% if article.has_deck or article.has_lead %}
         {% if article.has_deck %}
-          <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+          {% block article_deck %}
+            <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+          {% endblock %}
         {% endif %}
-        {% if article.has_lead %}
-          <p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>
-        {% endif %}
+        {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
       {% endif %}
 
       {# begin restricted content #}
-      {% if not request.signupwall or not article.is_restricted or user|has_restricted_access:article %}
+      {% if not request.signupwall or not article_restricted_cf or restricted_access %}
 
-        {% if article.audio %}{% include 'article/audio.html' %}{% endif %}
+        {% if article.audio %}{% include audio_template %}{% endif %}
 
-        {# signupwall #}
+        {% if not request.signupwall %}{# closed in line 677 #}
 
-        {% if not user.is_authenticated %}
+          {% include 'article/paywall/pw_not_in_request.html' %}
 
-          {% if not request.signupwall %}
-            {# Soft wall: Registro|Suscripción #}
-            {% if not article.public %}
-              {% include 'article/paywall/pw_anon_with_credits.html' %}
-            {% endif %}
-          {% else %}
-            {# signupwall raised #}
-            <!-- Hard wall -->
-            <div class="article-body article-body--faded">{{ article.body|ldmarkup:article.id|truncatehtml:100 }}</div>
-            {% include 'article/paywall/pw_anon_wo_credits.html' %}
-          {% endif %}
-
-        {% else %}
-
-          <!-- user is authenticated -->
-          {% if is_subscriber %}
-            <!-- user is subscriber -->
-          {% else %}
-            <!-- user is not subscriber -->
-            {% if not request.signupwall %}
-              {# Soft wall: Suscripción #}
-              {% if not article.public %}
-                {% include 'article/paywall/pw_auth_with_credits.html' %}
-              {% endif %}
-            {% else %}{# signupwall raised #}
-              {# Hard wall -> Suscripción #}
-              <!-- Hard wall / suscripción-->
-              <div class="article-body article-body--faded">
-                {{ article.body|ldmarkup:article.id|truncatehtml:100 }}
-              </div>
-              {% include 'article/paywall/pw_auth_wo_credits.html' %}
-            {% endif %}
-          {% endif %}
-
-        {% endif %}
-
-        {# END signupwall #}
-
-        {% if not request.signupwall %}{# closed in line 558 #}
-
-          <div class="article-body paywalled-content">
+          <div class="article-body paywalled-content{% block article_body_extra_class %}{% endblock %}">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
+
+            {# colection articles #}
+            {% if article.articlecollection %}
+              <div class="collection-articles">
+                {% with related_articles=article.articlecollection.related_articles_ordered %}
+                  {% if related_articles %}
+                    <h2 class="collection-articles--title">Artículos en la colección</h2>
+
+                    {% for ra in related_articles %}
+                      <div class="collection-article">
+                        <div class="collection-article--photo">
+                          {% if ra.photo_render_allowed %}
+                            <a href="{{ ra.get_absolute_url }}?referer_collection={{ article.id }}">
+                              <img class="ld-card__img" src="{{ ra.photo.get_450w_url }}" loading="lazy"
+                                   title="{{ ra.photo_caption }}" alt="{{ ra.photo_caption }}"
+                                   width="450" height="{{ ra.photo.get_450w_size.1 }}">
+                            </a>
+                          {% endif %}
+                        </div>
+                        <div class="collection-article--content">
+                          <h3 class="collection-article--title">
+                            <a href="{{ ra.get_absolute_url }}?referer_collection={{ article.id }}">{{ ra }}</a>
+                          </h3>
+                          {% if ra.has_deck or ra.has_lead %}
+                            {% if ra.has_deck %}
+                              <p class="collection-article--text">{{ ra.deck|ldmarkup|bleach }}</p>
+                            {% endif %}
+                            {% if ra.has_lead %}
+                              <p class="collection-article--text">{{ ra.get_lead|urlize|ldmarkup|bleach }}</p>
+                            {% endif %}
+                          {% endif %}
+                        </div>
+                      </div>
+                    {% endfor %}
+
+                  {% else %}
+                    Esta colección aún no tiene artículos publicados.
+                  {% endif %}
+                {% endwith %}
+              </div>
+            {% else %}
+              {% with linked_collections=article.published_collections %}
+                {% if linked_collections %}
+                  <div class="collection-articles">
+                    <svg id="collection-logo" xmlns="http://www.w3.org/2000/svg" width="22" height="21" viewBox="0 0 22 21" fill="none">
+                      <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
+                    </svg>
+                    <span>Este artículo forma parte de las colecciones:</span>
+                    <ul>
+                      {% for collection in linked_collections %}
+                        <li>
+                          <a href="{{ collection.get_absolute_url }}">{{ collection }}</a>
+                          {% comment "example to use a 'back' link if arrived from a collection page" %}
+                            {% if request.GET.referer_collection|add:"0" == collection.article_ptr_id %}
+                              (<a href="{{ collection.get_absolute_url }}">back to collection</a>)
+                            {% endif %}
+                          {% endcomment %}
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endif %}
+              {% endwith %}
+            {% endif %}
+            {# END collection articles #}
           </div>
 
-          {% if article.type == "PA" or article.gallery.photos %}
+          {% if article.gallery %}
             <div class="thumbnails container gallery-wrap">
               <div id="galeriadefotos" class="responsive-images">
                 <div class="row">
-                  {% for photo in article.gallery.photos.all %}
+                  {% for photo in article.gallery_photos %}
                     <div data-responsive="{{ photo.get_400w_url }} 400px,
                                           {{ photo.get_700w_url }} 700px,
                                           {{ photo.get_900w_url }} 1000px"
-                         data-src="{{ photo.get_1200w_url }}"
-                         data-sub-html="{{ photo.caption }}"
+                         data-src="{{ photo.get_1200w_url }}" data-sub-html="{{ photo.caption }}"
                          class="col s4 m4 l4 gallery_thumb">
-                      <a href="{{ photo.get_1200w_url }}" class="item img-{{ forloop.counter }}" data-sub-html=".caption">
-                        <img src="{{ photo.get_article_thumb_url }}" alt="{{ photo.caption }}" class="gallery_thumb">
+                      <a href="{{ photo.get_1200w_url }}" class="item img-{{ forloop.counter }}"
+                         data-sub-html=".caption">
+                        <img src="{{ photo.get_article_thumb_url }}" class="gallery_thumb"
+                             alt="{% if photo.caption %}{{ photo.caption }}{% else %}Foto Nº{{ forloop.counter }} de la galería del artículo '{{ article.headline|remove_markup }}'{% endif %}">
                         <div class="caption hide">
                           {{ photo.caption }}
-                          {% if article.photo_author %}
-                            <span class="small soft">{{ article.photo_type }}: {{ article.photo_author }}</span>
+                          {% if photo.extended.photographer %}
+                            <span class="small soft">
+                              {{ photo.extended.get_type_display }}: {{ photo.extended.photographer }}
+                            </span>
                           {% endif %}
                         </div>
                       </a>
@@ -389,6 +489,44 @@
           {% block after_content %}{% endblock %}
 
           <div class="ld-fin ld-block"></div>
+
+          {% if report_form %}
+            <div id="send-feedback" class="send-feedback">
+              {% if report_form_sent %}
+                <p class="success-message">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.3325 2.33337L8.33242 14.3307L3.66775 9.66754L0 13.3352L8.33249 21.6665L24 6.00112L20.3325 2.33337Z" fill="black"/>
+                  </svg>
+                  Muchas gracias. El mensaje fue enviado correctamente.
+                </p>
+              {% else %}
+                {% include "article/feedback_form_header.html" %}
+                <form method="post" action="#send-feedback">
+                  {% csrf_token %}
+                  {{ report_form.article_token }}
+                  {% for field in report_form reversed %}
+                    <div class="form-control">
+                      {{ field.errors }}
+                      {% if not field.is_hidden %}
+                        <label for="id_{{ field.name }}">
+                          {{ field.label }} {% if field.field.required %}<span>*</span>{% endif %}
+                        </label>
+                      {% endif %}
+                      {{ field }}
+                    </div>
+                  {% endfor %}
+                  <button type="submit">Enviar</button>
+                  {% if report_form.non_field_errors %}
+                    <div class="feedback-error">
+                      <p class="error-message">
+                        {{ report_form.render_non_field_errors }}
+                      </p>
+                    </div>
+                  {% endif %}
+                </form>
+              {% endif %}
+            </div>
+          {% endif %}
 
           {% if followed %}
             <div class="read-later u-mb-60">
@@ -487,7 +625,7 @@
                   <p class="desc">Suscribite para guardar este artículo como favorito</p>
                   <!-- caso leer después -->
                   <p class="desc">Suscribite para guardar este artículo para leer después</p>
-                  <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">Suscribite</a>
+                  <a href="{% url 'subscribe-default' %}" class="ut-btn ut-btn-l">Suscribite</a>
                   <p class="desc">¿Ya tenés suscripción?</p>
                   <a href="{% url 'account-login' %}?next={{ request.path }}" class="ut-btn ut-btn-l ut-btn-outline">
                     Ingresá
@@ -504,7 +642,7 @@
                           Suscribite para guardar este artículo para leer después
                         </div>
                         <div class="ld-snackbar__block">
-                          <a href="{% url 'subscribe' planslug='DDIGM' %}" class="ut-btn ut-btn-l">
+                          <a href="{% url 'subscribe-default' %}" class="ut-btn ut-btn-l">
                             Suscribite
                           </a>
                         </div>
@@ -555,7 +693,7 @@
             </div>
           {% endif %}
 
-        {% endif %}{# opened in line 306 #}
+        {% endif %}{# opened in line 317 #}
 
       {% else %}{# restricted content message #}
 
@@ -572,7 +710,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 702 #}
+    {% if not request.signupwall %}{# closed in line 823 #}
 
       {% if article.public %}
 
@@ -588,26 +726,29 @@
 
       {% endif %}
 
-      {% if not article.is_restricted or user|has_restricted_access:article %}{# begin restricted content2 #}
+      {% if not article_restricted_cf or restricted_access %}{# begin restricted content2 #}
 
         {% if TALK_URL and article.allow_comments %}
           <div id="comentarios">
             <div class="container">
 
-              <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}" data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}" data-article-url="{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-login-url="{{ URL_SCHEME }}://{{ site.domain }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
+              <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}"
+                       data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}"
+                       data-article-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
+                       data-login-url="{{ SITE_URL_SD }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
                 <span class="title">Comentar este artículo</span>
                 <button class="ut-btn">
-                  {% if comments_count > 0 %}{{ comments_count }} comentario{{comments_count|pluralize:"s"}}{% else %}Comentar{% endif %}
+                  {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
                 </button>
               </section>
 
               <div class="talk-login align-center display-hidden">
                 {% if user.is_authenticated %}
                   {% if not is_subscriber %}
-                    <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+                    <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
                   {% endif %}
                 {% else %}
-                  <a href="{% url 'subscribe' planslug='DDIGM' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+                  <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
                   <span class="ld-caption ld-caption-subscribe-to-comment">
                     ¿Ya tenés suscripción?
                     <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
@@ -623,8 +764,8 @@
           <span class="small ld-share-widget__title" aria-label="Compartir">Compartir este artículo</span>
           <ul class="inline share ld-share-widget__list">
             <li class="whatsapp">
-              <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }}%20{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}"
-                 data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
+              <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
+                 data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp" rel="noopener noreferrer">
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#262626"/>
                   <title>Compartir en WhatsApp</title>
@@ -632,7 +773,7 @@
               </a>
             </li>
             <li>
-              <a href="https://www.facebook.com/sharer/sharer.php?u={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
+              <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL_SD }}{{ article.get_absolute_url }}" rel="noopener" aria-label="Compartir en Facebook">
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#262626"/>
                   <title>Compartir en Facebook</title>
@@ -640,15 +781,13 @@
               </a>
             </li>
             <li>
-              <a href="https://twitter.com/intent/tweet?original_referer={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}" target="_blank" rel="noopener" aria-label="Compartir en Twitter">
-                <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#262626"/>
-                  <title>Compartir en Twitter</title>
-                </svg>
+              <a href="https://x.com/intent/tweet?original_referer={{ SITE_URL_SD }}{{ article.get_absolute_url }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ SITE_URL_SD }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}"
+                rel="noopener" aria-label="Compartir en X">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 28 28"><g clip-path="url(#clip0_1_2)"><path fill="#000" d="M21.064 2.4h3.79l-8.28 9.488L26.317 24.8H18.69l-5.978-7.83-6.833 7.83H2.086l8.855-10.151L1.6 2.402h7.82l5.396 7.155zm-1.333 20.126h2.101L8.273 4.556H6.021z"/></g><defs><clipPath id="clip0_1_2"><path fill="#fff" d="M0 0h27.2v27.2H0z"/></clipPath></defs></svg>
               </a>
             </li>
             <li>
-              <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
+              <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ SITE_URL_SD }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M29 5H5C4.20695 5.00397 3.44774 5.32179 2.88837 5.88397C2.329 6.44615 2.01499 7.20694 2.015 8L2 26C2.00237 26.7949 2.31921 27.5566 2.8813 28.1187C3.4434 28.6808 4.20508 28.9976 5 29H29C29.7949 28.9976 30.5566 28.6808 31.1187 28.1187C31.6808 27.5566 31.9976 26.7949 32 26V8C31.9976 7.20508 31.6808 6.4434 31.1187 5.8813C30.5566 5.31921 29.7949 5.00237 29 5ZM28.4 11.375L17.8 18C17.5609 18.1471 17.2857 18.225 17.005 18.225C16.7243 18.225 16.4491 18.1471 16.21 18L5.6 11.375C5.45357 11.2886 5.32591 11.1737 5.22456 11.0372C5.12321 10.9007 5.05022 10.7452 5.00988 10.5801C4.96954 10.4149 4.96268 10.2433 4.98969 10.0754C5.0167 9.90755 5.07704 9.74679 5.16716 9.6026C5.25728 9.45841 5.37534 9.33372 5.5144 9.23588C5.65347 9.13804 5.81071 9.06902 5.97686 9.0329C6.14301 8.99678 6.31471 8.99428 6.48184 9.02555C6.64897 9.05683 6.80815 9.12124 6.95 9.215L17 15.5L27.05 9.215C27.1918 9.12124 27.351 9.05683 27.5182 9.02555C27.6853 8.99428 27.857 8.99678 28.0231 9.0329C28.1893 9.06902 28.3465 9.13804 28.4856 9.23588C28.6247 9.33372 28.7427 9.45841 28.8328 9.6026C28.923 9.74679 28.9833 9.90755 29.0103 10.0754C29.0373 10.2433 29.0305 10.4149 28.9901 10.5801C28.9498 10.7452 28.8768 10.9007 28.7754 11.0372C28.6741 11.1737 28.5464 11.2886 28.4 11.375Z" fill="#262626"/>
                   <title>Compartir vía email</title>
@@ -656,32 +795,31 @@
               </a>
             </li>
             <li class="hide-on-med-and-down">
-              <span class="a cur-p" onclick="window.print()" aria-label="Imprimir artículo"><svg class="share-print-icon"  width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M28.3075 10.5395H5.6945C5.05786 10.5386 4.42729 10.6633 3.83893 10.9065C3.25057 11.1497 2.71598 11.5066 2.26581 11.9568C1.81563 12.407 1.45871 12.9416 1.2155 13.5299C0.972295 14.1183 0.847579 14.7489 0.848501 15.3855V21.8465C0.851138 22.7023 1.19229 23.5224 1.79746 24.1275C2.40263 24.7327 3.22266 25.0739 4.0785 25.0765H7.3085V28.3065C7.31114 29.1623 7.65229 29.9824 8.25746 30.5875C8.86263 31.1927 9.68266 31.5339 10.5385 31.5365H23.4615C24.3173 31.5339 25.1374 31.1927 25.7425 30.5875C26.3477 29.9824 26.6889 29.1623 26.6915 28.3065V25.0765H29.9215C30.7773 25.0739 31.5974 24.7327 32.2025 24.1275C32.8077 23.5224 33.1489 22.7023 33.1515 21.8465V15.3855C33.1524 14.749 33.0278 14.1186 32.7847 13.5304C32.5416 12.9422 32.1849 12.4077 31.7349 11.9575C31.2849 11.5074 30.7506 11.1504 30.1625 10.9071C29.5743 10.6638 28.944 10.5388 28.3075 10.5395ZM21.8485 28.3065H12.1545C11.7266 28.3052 11.3166 28.1346 11.014 27.832C10.7114 27.5294 10.5408 27.1194 10.5395 26.6915V20.2305H23.4615V26.6915C23.4602 27.1191 23.2899 27.5288 22.9877 27.8313C22.6856 28.1338 22.2761 28.3047 21.8485 28.3065ZM28.3095 17.0005C27.9901 17.0005 27.6778 16.9058 27.4123 16.7283C27.1467 16.5509 26.9397 16.2986 26.8174 16.0035C26.6952 15.7084 26.6632 15.3837 26.7255 15.0704C26.7878 14.7572 26.9417 14.4694 27.1675 14.2435C27.3934 14.0177 27.6812 13.8638 27.9944 13.8015C28.3077 13.7392 28.6324 13.7712 28.9275 13.8934C29.2226 14.0157 29.4749 14.2227 29.6523 14.4883C29.8298 14.7538 29.9245 15.0661 29.9245 15.3855C29.9232 15.8138 29.7523 16.2241 29.4493 16.5267C29.1463 16.8294 28.7358 16.9997 28.3075 17.0005H28.3095ZM25.0765 2.4635H8.9245C8.49658 2.46482 8.08657 2.63539 7.78398 2.93798C7.48139 3.24057 7.31082 3.65058 7.3095 4.0785V7.3085C7.31082 7.73642 7.48139 8.14644 7.78398 8.44902C8.08657 8.75161 8.49658 8.92218 8.9245 8.9235H25.0765C25.5044 8.92218 25.9144 8.75161 26.217 8.44902C26.5196 8.14644 26.6902 7.73642 26.6915 7.3085V4.0785C26.6902 3.65058 26.5196 3.24057 26.217 2.93798C25.9144 2.63539 25.5044 2.46482 25.0765 2.4635Z" fill="#262626"/>
-                <title>Imprimir artículo</title>
-              </svg></span>
+              <span class="a cur-p" onclick="window.print()" aria-label="Imprimir artículo">
+                <svg class="share-print-icon" width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M28.3075 10.5395H5.6945C5.05786 10.5386 4.42729 10.6633 3.83893 10.9065C3.25057 11.1497 2.71598 11.5066 2.26581 11.9568C1.81563 12.407 1.45871 12.9416 1.2155 13.5299C0.972295 14.1183 0.847579 14.7489 0.848501 15.3855V21.8465C0.851138 22.7023 1.19229 23.5224 1.79746 24.1275C2.40263 24.7327 3.22266 25.0739 4.0785 25.0765H7.3085V28.3065C7.31114 29.1623 7.65229 29.9824 8.25746 30.5875C8.86263 31.1927 9.68266 31.5339 10.5385 31.5365H23.4615C24.3173 31.5339 25.1374 31.1927 25.7425 30.5875C26.3477 29.9824 26.6889 29.1623 26.6915 28.3065V25.0765H29.9215C30.7773 25.0739 31.5974 24.7327 32.2025 24.1275C32.8077 23.5224 33.1489 22.7023 33.1515 21.8465V15.3855C33.1524 14.749 33.0278 14.1186 32.7847 13.5304C32.5416 12.9422 32.1849 12.4077 31.7349 11.9575C31.2849 11.5074 30.7506 11.1504 30.1625 10.9071C29.5743 10.6638 28.944 10.5388 28.3075 10.5395ZM21.8485 28.3065H12.1545C11.7266 28.3052 11.3166 28.1346 11.014 27.832C10.7114 27.5294 10.5408 27.1194 10.5395 26.6915V20.2305H23.4615V26.6915C23.4602 27.1191 23.2899 27.5288 22.9877 27.8313C22.6856 28.1338 22.2761 28.3047 21.8485 28.3065ZM28.3095 17.0005C27.9901 17.0005 27.6778 16.9058 27.4123 16.7283C27.1467 16.5509 26.9397 16.2986 26.8174 16.0035C26.6952 15.7084 26.6632 15.3837 26.7255 15.0704C26.7878 14.7572 26.9417 14.4694 27.1675 14.2435C27.3934 14.0177 27.6812 13.8638 27.9944 13.8015C28.3077 13.7392 28.6324 13.7712 28.9275 13.8934C29.2226 14.0157 29.4749 14.2227 29.6523 14.4883C29.8298 14.7538 29.9245 15.0661 29.9245 15.3855C29.9232 15.8138 29.7523 16.2241 29.4493 16.5267C29.1463 16.8294 28.7358 16.9997 28.3075 17.0005H28.3095ZM25.0765 2.4635H8.9245C8.49658 2.46482 8.08657 2.63539 7.78398 2.93798C7.48139 3.24057 7.31082 3.65058 7.3095 4.0785V7.3085C7.31082 7.73642 7.48139 8.14644 7.78398 8.44902C8.08657 8.75161 8.49658 8.92218 8.9245 8.9235H25.0765C25.5044 8.92218 25.9144 8.75161 26.217 8.44902C26.5196 8.14644 26.6902 7.73642 26.6915 7.3085V4.0785C26.6902 3.65058 26.5196 3.24057 26.217 2.93798C25.9144 2.63539 25.5044 2.46482 25.0765 2.4635Z" fill="#262626"/>
+                  <title>Imprimir artículo</title>
+                </svg>
+              </span>
             </li>
             <li>
               <span class="a cur-p btn-copy" onclick="copyToClipboard('#url', '.tooltip-article')" aria-label="Copiar enlace">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/>
-                <title>Copiar enlace</title>
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15">
+                  <path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/>
+                  <title>Copiar enlace</title>
                 </svg>
               </span>
               <span class="copied-tooltip off tooltip-article"></span>
-              <span class="hide" id="url">{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}</span>
+              <span class="hide" id="url">{{ SITE_URL_SD }}{{ article.get_absolute_url }}</span>
             </li>
           </ul>
         </section>
 
-        {% if user.is_authenticated %}
-          {% include 'pwa-module.html' %}
-        {% endif %}
+        {% if user.is_authenticated %}{% include 'pwa-module.html' %}{% endif %}
 
         {% block featured_content %}{% endblock %}
 
-        {% if article.show_related_articles %}
-          {% render_related article %}
-        {% endif %}
+        {% if article.show_related_articles %}{% render_related article %}{% endif %}
 
         {% if not is_subscriber %}
           <section id="header-pub" class="col s12 center-align article__bottom-ad ld-block">
@@ -699,11 +837,11 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 575 #}
+    {% endif %}{# opened in line 694 #}
 
     {% block article_extra %}{% endblock %}
 
-    {% if not request.signupwall or article.is_restricted and not user|has_restricted_access:article %}
+    {% if not request.signupwall or article_restricted_cf and not restricted_access %}
       <div class="align-center u-mb-50 footer-section">
         <a href="{% url 'home' %}" class="ut-btn ut-btn-outline">Ir a la portada</a>
       </div>
@@ -719,7 +857,7 @@
             <span class="title">Compartir este artículo</span>
             <ul class="inline share">
               <li class="whatsapp">
-                <a href="whatsapp://send?text={{ article.headline|remove_markup|urlencode }}%20{{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
+                <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
                   <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#595959"/>
                     <title>Compartir en WhatsApp</title>
@@ -727,7 +865,7 @@
                 </a>
               </li>
               <li>
-                <a href="https://www.facebook.com/sharer/sharer.php?u={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL_SD }}{{ article.get_absolute_url }}" rel="noopener" aria-label="Compartir en Facebook">
                   <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#595959"/>
                     <title>Compartir en Facebook</title>
@@ -735,16 +873,13 @@
                 </a>
               </li>
               <li>
-                <a href="https://twitter.com/intent/tweet?original_referer={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url|urlencode }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}"
-                   target="_blank" rel="noopener" aria-label="Compartir en Twitter">
-                  <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10.688 30.623C23.5191 30.623 30.536 19.993 30.536 10.775C30.536 10.473 30.5294 10.173 30.5161 9.87502C31.8814 8.88728 33.0598 7.66417 33.996 6.26302C32.7233 6.82816 31.3729 7.19893 29.9901 7.36299C31.4463 6.49132 32.5362 5.1203 33.057 3.50502C31.6874 4.31732 30.1893 4.88987 28.627 5.19801C27.5753 4.08004 26.1845 3.33976 24.6697 3.09175C23.155 2.84374 21.6007 3.1018 20.2474 3.82601C18.894 4.55021 17.8171 5.70018 17.183 7.09804C16.549 8.4959 16.3934 10.0638 16.7401 11.559C13.9663 11.4202 11.2528 10.6996 8.77557 9.44405C6.29838 8.18848 4.11289 6.42598 2.36102 4.27101C1.46897 5.80688 1.19575 7.62497 1.59705 9.35518C1.99834 11.0854 3.04394 12.5976 4.521 13.584C3.4134 13.5503 2.33007 13.2512 1.362 12.712C1.362 12.741 1.362 12.77 1.362 12.801C1.3626 14.412 1.92066 15.9732 2.94141 17.2196C3.96215 18.466 5.38272 19.3209 6.96204 19.639C5.93504 19.9194 4.85737 19.9605 3.81201 19.759C4.25751 21.1451 5.12513 22.3573 6.29346 23.226C7.46178 24.0947 8.87236 24.5765 10.328 24.604C7.85704 26.5436 4.8053 27.5954 1.664 27.59C1.10785 27.5894 0.552221 27.556 0 27.49C3.18966 29.5392 6.90186 30.6268 10.6931 30.623" fill="#595959"/>
-                    <title>Compartir en Twitter</title>
-                  </svg>
+                <a href="https://x.com/intent/tweet?original_referer={{ SITE_URL_SD }}{{ article.get_absolute_url|urlencode }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ SITE_URL_SD }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}"
+                   rel="noopener" aria-label="Compartir en X">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 28 28"><g clip-path="url(#clip0_1_2)"><path fill="#000" d="M21.064 2.4h3.79l-8.28 9.488L26.317 24.8H18.69l-5.978-7.83-6.833 7.83H2.086l8.855-10.151L1.6 2.402h7.82l5.396 7.155zm-1.333 20.126h2.101L8.273 4.556H6.021z"/></g><defs><clipPath id="clip0_1_2"><path fill="#fff" d="M0 0h27.2v27.2H0z"/></clipPath></defs></svg>
                 </a>
               </li>
               <li>
-                <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ URL_SCHEME }}://{{ site.domain }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
+                <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ SITE_URL_SD }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
                   <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M29 5H5C4.20695 5.00397 3.44774 5.32179 2.88837 5.88397C2.329 6.44615 2.01499 7.20694 2.015 8L2 26C2.00237 26.7949 2.31921 27.5566 2.8813 28.1187C3.4434 28.6808 4.20508 28.9976 5 29H29C29.7949 28.9976 30.5566 28.6808 31.1187 28.1187C31.6808 27.5566 31.9976 26.7949 32 26V8C31.9976 7.20508 31.6808 6.4434 31.1187 5.8813C30.5566 5.31921 29.7949 5.00237 29 5ZM28.4 11.375L17.8 18C17.5609 18.1471 17.2857 18.225 17.005 18.225C16.7243 18.225 16.4491 18.1471 16.21 18L5.6 11.375C5.45357 11.2886 5.32591 11.1737 5.22456 11.0372C5.12321 10.9007 5.05022 10.7452 5.00988 10.5801C4.96954 10.4149 4.96268 10.2433 4.98969 10.0754C5.0167 9.90755 5.07704 9.74679 5.16716 9.6026C5.25728 9.45841 5.37534 9.33372 5.5144 9.23588C5.65347 9.13804 5.81071 9.06902 5.97686 9.0329C6.14301 8.99678 6.31471 8.99428 6.48184 9.02555C6.64897 9.05683 6.80815 9.12124 6.95 9.215L17 15.5L27.05 9.215C27.1918 9.12124 27.351 9.05683 27.5182 9.02555C27.6853 8.99428 27.857 8.99678 28.0231 9.0329C28.1893 9.06902 28.3465 9.13804 28.4856 9.23588C28.6247 9.33372 28.7427 9.45841 28.8328 9.6026C28.923 9.74679 28.9833 9.90755 29.0103 10.0754C29.0373 10.2433 29.0305 10.4149 28.9901 10.5801C28.9498 10.7452 28.8768 10.9007 28.7754 11.0372C28.6741 11.1737 28.5464 11.2886 28.4 11.375Z" fill="#595959"/>
                     <title>Compartir vía email</title>
@@ -752,7 +887,12 @@
                 </a>
               </li>
               <li>
-                <span class="cur-p" onclick="copyToClipboard('#url', '.tooltip-navbar')" aria-label="Copiar enlace"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#ffffff"/><title>Copiar enlace</title></svg></span>
+                <span class="cur-p" onclick="copyToClipboard('#url', '.tooltip-navbar')" aria-label="Copiar enlace">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15">
+                    <path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#ffffff"/>
+                    <title>Copiar enlace</title>
+                  </svg>
+                </span>
                 <span class="copied-tooltip off tooltip-navbar"></span>
               </li>
             </ul>
@@ -773,10 +913,12 @@
   {# js for materialbox (main photo) #}
   <script defer src="{% static 'materialize/js/materialbox.js' %}"></script>
   {# js for image gallery #}
-  <script defer src="{% static 'lightGallery/src/js/lightgallery.js' %}"></script>
-  <script defer src="{% static 'lightGallery/modules/lg-pager.js' %}"></script>
-  <script defer src="{% static 'lightGallery/modules/lg-video.js' %}"></script>
-  <script defer src="{% static 'lightGallery/modules/lg-ladiaria.js' %}"></script>
+  {% if article.gallery %}
+    <script defer src="{% static 'lightGallery/src/js/lightgallery.js' %}"></script>
+    <script defer src="{% static 'lightGallery/modules/lg-pager.js' %}"></script>
+    <script defer src="{% static 'lightGallery/modules/lg-video.js' %}"></script>
+    <script defer src="{% static 'lightGallery/modules/lg-ladiaria.js' %}"></script>
+  {% endif %}
   <script>
     $(function(){
       $("p.atitlelist a").click(function(){
@@ -840,7 +982,7 @@
           beforeSend: function(xhr, settings) {
             xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
           },
-          url: '/favit/add-or-remove',
+          url: "{% url 'favit.views.add_or_remove' %}",
           async: true,
           cache: false,
           type: 'POST',
@@ -860,7 +1002,7 @@
             beforeSend: function(xhr, settings) {
               xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
             },
-            url: '/favit/add-or-remove',
+            url: "{% url 'favit.views.add_or_remove' %}",
             async: true,
             cache: false,
             type: 'POST',
@@ -937,8 +1079,6 @@
           $('.btn-close', this).click(function(){
             notification_close(this);
           });
-        }else{
-          $(window).trigger("subscribe_notice_show");
         }
       });
     });
@@ -946,18 +1086,24 @@
 {% endblock %}
 
 {% block footer_scripts_extra %}
+  <script src="{% static 'js/switch_change_events.js' %}"></script>
   <script type="text/javascript">
     $(function(){
-      $('#bn-module').load("{% url 'bn-content' %}", function(response){
-        if(response){
-          $('.btn-close', this).click(function(){
-            notification_close(this);
-          });
-        }else{
-          $(window).trigger("live_embed_event_notification_show");
-        }
-      });
+      {% if bn_module_published_count %}
+        $('#bn-module').load("{% url 'bn-content' %}", function(response){
+          if(response){
+            $('.btn-close', this).click(function(){
+              notification_close(this);
+            });
+          }else{
+            $(window).trigger("live_embed_event_notification_show");
+          }
+        });
+      {% else %}
+        $(window).trigger("live_embed_event_notification_show");
+      {% endif %}
     });
+    switch_change_events($('.switch-container'));{# used in article/subscribe_box.html file #}
   </script>
 {% endblock %}
 

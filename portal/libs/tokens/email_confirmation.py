@@ -1,86 +1,20 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
-from builtins import str
 
+from builtins import str
+import traceback
+
+from email.utils import make_msgid
 from emails.django import DjangoMessage as Message
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.mail import send_mail
 from django.contrib.sites.models import Site
-from django.utils.http import int_to_base36, base36_to_int
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth.tokens import default_token_generator
 from django.template import loader
 
 from libs.utils import smtp_connect
 from utils.error_log import error_log
-
-
-class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
-    """
-    Strategy object used to generate and check tokens for the email confirmation mechanism.
-    """
-
-    def __init__(self, *args, **kwargs):
-        if 'edition_download' in kwargs:
-            self.edition_download = kwargs.get('edition_download')
-            del(kwargs['edition_download'])
-        else:
-            self.edition_download = None
-        super(EmailConfirmationTokenGenerator, self).__init__(*args, **kwargs)
-
-    def make_token(self, user):
-        """
-        Returns a token that can be used once to do a password reset
-        for the given user.
-        """
-        return self._make_token_with_timestamp(user, self._num_days(self._today()))
-
-    def check_token(self, user, token, timeout_days=None):
-        """
-        Check that a password reset token is correct for a given user.
-        """
-        # Parse the token
-        try:
-            ts_b36, hash = token.split("-")
-        except ValueError:
-            return False
-
-        try:
-            ts = base36_to_int(ts_b36)
-        except ValueError:
-            return False
-
-        # Check that the timestamp/uid has not been tampered with
-        if self._make_token_with_timestamp(user, ts) != token:
-            return False
-
-        # Check the timestamp is within limit
-        if not timeout_days:
-            timeout_days = getattr(settings, 'EMAIL_CONFIRMATION_TIMEOUT_DAYS', None)
-        if timeout_days and (self._num_days(self._today()) - ts) > timeout_days:
-            return False
-
-        return True
-
-    def _make_token_with_timestamp(self, user, timestamp):
-        # from django.utils.hashcompat import sha_constructor
-        from hashlib import sha1
-
-        # timestamp is number of days since 2001-1-1.  Converted to
-        # base 36, this gives us a 3 digit string until about 2121
-        ts_b36 = int_to_base36(timestamp)
-        hash = (str(settings.SECRET_KEY) + str(user.id) + str(user.email) + str(bool(user.is_active)) + str(timestamp))
-        if self.edition_download:
-            hash += str(user.get_profile().get_downloads())
-        else:
-            hash += str(user.password)
-        return "%s-%s" % (ts_b36, sha1(bytes(hash, 'utf8')).hexdigest()[::2])
-
-
-default_token_generator = EmailConfirmationTokenGenerator()
-download_token_generator = EmailConfirmationTokenGenerator(edition_download=True)
 
 
 def send_confirmation_link(*args, **kwargs):
@@ -105,9 +39,10 @@ def send_confirmation_link(*args, **kwargs):
         mail_to=(user.first_name, user.email),
         mail_from=from_mail,
         subject=subject,
+        headers={'Message-Id': make_msgid("u." + str(user.id)), "Return-Path": settings.NOTIFICATIONS_FROM_MX}
     )
     if (
-        not getattr(settings, 'LOCAL_EMAIL_BACKEND_TEST', False)
+        not settings.LOCAL_EMAIL_BACKEND_TEST
         and settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
     ):
         smtp = smtp_connect()
@@ -118,13 +53,17 @@ def send_confirmation_link(*args, **kwargs):
             smtp.quit()
             result = True  # success confirmation
         except Exception as e:
-            error_log('Error sending confirmation email'.format(str(e)))
+            if settings.DEBUG:
+                print(traceback.format_exc())
+            error_log('Error sending confirmation email - ' + str(e))
 
     else:
         try:
             result = send_mail(subject, message.as_string(), settings.NOTIFICATIONS_FROM_MX, [user.email]) > 0
         except Exception as e:
-            error_log('Error sending confirmation email'.format(str(e)))
+            if settings.DEBUG:
+                print(traceback.format_exc())
+            error_log('Error sending confirmation email - ' + str(e))
 
     return result
 
@@ -133,7 +72,7 @@ def send_validation_email(subject, user, msg_template, url_generator, extra_cont
     extra_context.update(
         {
             'SITE_URL': settings.SITE_URL,
-            'URL_SCHEME': settings.URL_SCHEME,
+            'SITE_URL_SD': settings.SITE_URL_SD,
             'site': Site.objects.get_current(),
             'logo_url': settings.HOMEV3_SECONDARY_LOGO,
         },
@@ -150,4 +89,5 @@ def send_validation_email(subject, user, msg_template, url_generator, extra_cont
 
 def get_signup_validation_url(user):
     return reverse(
-        'account-signup-hash', kwargs={'user_id': str(user.id), 'hash': default_token_generator.make_token(user)})
+        'account-signup-hash', kwargs={'user_id': str(user.id), 'hash': default_token_generator.make_token(user)}
+    )

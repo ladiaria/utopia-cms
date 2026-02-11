@@ -1,0 +1,19 @@
+{% load bleach_tags core_tags ldml %}
+
+{% if image.is_public %}{# don't indent this block, it get broken and we don't know why #}
+<div class="inline-image-wrap article_body_image-{{ display }}">
+  <figure class="principal">
+    <amp-img
+      class="amp-inline-img"
+      height="{{ image.image.height }}"
+      width="{{ image.image.width }}"
+      layout="responsive"
+      src="{{ SITE_URL }}{{ image.get_700w_url }}"
+      alt="{% if image.caption %}{{ image.caption }}{% else %}Foto del artículo '{{ article.headline|remove_markup }}'{% endif %}">
+    </amp-img>
+    {% if image.caption or image.extended.photographer %}
+      <figcaption class="ld-caption">{% if image.caption %}<p>{{ image.caption|ldmarkup|bleach }}</p>{% endif %} {% if image.extended.photographer %}<p>{{ image.extended.get_type_display }}: {{ image.extended.photographer }}</p>{% endif %}</figcaption>
+    {% endif %}
+  </figure>
+</div>
+{% endif %}

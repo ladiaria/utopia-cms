@@ -1,21 +1,18 @@
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
 
 import os
 from os.path import join
 import operator
-from datetime import datetime, date, timedelta
 from csv import writer
 from progress.bar import Bar
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
-from django.core.urlresolvers import resolve
+from django.urls import resolve
+from django.utils.timezone import now, datetime, timedelta
 
 from apps import mongo_db
-from core.models import Article, Section, Publication, ArticleUrlHistory, Category
+from core.models import Article, ArticleRel, Section, Publication, ArticleUrlHistory, Category
 from signupwall.middleware import get_article_by_url_kwargs
 
 
@@ -44,19 +41,22 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if mongo_db is None:
-            return
+            raise CommandError("MongoDB database is not available, nothing done.")
+
+        reports_path = getattr(settings, "DASHBOARD_REPORTS_PATH", None)
+        if not reports_path:
+            raise CommandError("DASHBOARD_REPORTS_PATH setting is not configured, nothing done.")
 
         articles, live, out_prefix = {}, options.get("live"), options.get("out-prefix")
         main_sections, main_categories = {}, {}
         if live and not out_prefix:
-            print("ERROR: --live option should also specify a value for --out-prefix option")
-            return
-        this_month_first = date.today().replace(day=1)
+            raise CommandError("--live option should also specify a value for --out-prefix option")
+
+        this_month_first = now().date().replace(day=1)
         last_month = this_month_first - timedelta(1)
         last_month_first = datetime.combine(last_month.replace(day=1), datetime.min.time())
         month_before_last = last_month_first - timedelta(1)
         dt_until = datetime.combine(this_month_first, datetime.min.time())
-        print(f"{this_month_first}, {last_month_first}, {dt_until}")
 
         find_filters = {"user": {"$exists": True}, "path_visited": {"$exists": True}}
         if not live:
@@ -145,14 +145,13 @@ class Command(BaseCommand):
         sorted_x = sorted(list(counters.items()), key=operator.itemgetter(1), reverse=True)
 
         if not out_prefix:
-            os.rename(
-                join(settings.DASHBOARD_REPORTS_PATH, "articles.csv"),
-                join(
-                    settings.DASHBOARD_REPORTS_PATH,
-                    "%s%.2d_articles.csv" % (month_before_last.year, month_before_last.month),
-                ),
-            )
-        w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, "%sarticles.csv" % out_prefix), "w"))
+            prev_file = join(reports_path, "articles.csv")
+            if os.path.exists(prev_file):
+                os.rename(
+                    prev_file,
+                    join(reports_path, "%s%.2d_articles.csv" % (month_before_last.year, month_before_last.month)),
+                )
+        w = writer(open(join(reports_path, "%sarticles.csv" % out_prefix), "w"))
         i = 0
         for article_id, score in sorted_x:
             a, category_or_publication = Article.objects.get(id=article_id), ""
@@ -186,14 +185,13 @@ class Command(BaseCommand):
 
         sorted_y = sorted(list(counters.items()), key=operator.itemgetter(1), reverse=True)
         if not out_prefix:
-            os.rename(
-                join(settings.DASHBOARD_REPORTS_PATH, "sections.csv"),
-                join(
-                    settings.DASHBOARD_REPORTS_PATH,
-                    "%s%.2d_sections.csv" % (month_before_last.year, month_before_last.month),
-                ),
-            )
-        w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, "%ssections.csv" % out_prefix), "w"))
+            prev_file = join(reports_path, "sections.csv")
+            if os.path.exists(prev_file):
+                os.rename(
+                    prev_file,
+                    join(reports_path, "%s%.2d_sections.csv" % (month_before_last.year, month_before_last.month)),
+                )
+        w = writer(open(join(reports_path, "%ssections.csv" % out_prefix), "w"))
         i = 0
         for ar_id, score in sorted_y:
             i += 1
@@ -210,14 +208,13 @@ class Command(BaseCommand):
 
         sorted_y = sorted(counters.items(), key=operator.itemgetter(1), reverse=True)
         if not out_prefix:
-            os.rename(
-                join(settings.DASHBOARD_REPORTS_PATH, "categories.csv"),
-                join(
-                    settings.DASHBOARD_REPORTS_PATH,
-                    "%s%.2d_categories.csv" % (month_before_last.year, month_before_last.month),
-                ),
-            )
-        w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, "%scategories.csv" % out_prefix), "w"))
+            prev_file = join(reports_path, "categories.csv")
+            if os.path.exists(prev_file):
+                os.rename(
+                    prev_file,
+                    join(reports_path, "%s%.2d_categories.csv" % (month_before_last.year, month_before_last.month)),
+                )
+        w = writer(open(join(reports_path, "%scategories.csv" % out_prefix), "w"))
         i = 0
         for ar_id, score in sorted_y:
             i += 1
@@ -232,15 +229,20 @@ class Command(BaseCommand):
                     .count()
                 )
             elif isinstance(ar_id[0], Publication):
-                articles_count = 0
                 category_or_publication = ar_id[0]
-                for section in category_or_publication.section_set.all():
-                    articles_count += section.articles_core.filter(
-                        date_published__gte=last_month_first,
-                        date_published__lte=dt_until,
-                    ).count()
+                articles_count = len(
+                    set(
+                        [
+                            ar.article.id for ar in ArticleRel.objects.filter(
+                                edition__publication=category_or_publication,
+                                article__date_published__gte=last_month_first,
+                                article__date_published__lte=dt_until,
+                                article__is_published=True,
+                            )
+                        ]
+                    )
+                )
             elif isinstance(ar_id[0], Section):
-                articles_count = 0
                 category_or_publication = ar_id[0]
                 articles_count = category_or_publication.articles_core.filter(
                     date_published__gte=last_month_first,

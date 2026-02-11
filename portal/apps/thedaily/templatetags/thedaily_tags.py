@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from future.utils import raise_
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 import locale
 
 from django.conf import settings
 from django.template import Library, Node, NodeList, TemplateSyntaxError, Variable
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.flatpages.models import FlatPage
+from django.utils import timezone
 
 from core.models import Article
 from thedaily.models import SubscriptionPrices
@@ -47,9 +47,9 @@ class TimeNode(Node):
     def render(self, context):
         time = self.time.resolve(context)
         if self.future:
-            in_range = self.compare(time, datetime.now() + self.delta)
+            in_range = self.compare(time, timezone.now() + self.delta)
         else:
-            in_range = self.compare(datetime.now() - self.delta, time)
+            in_range = self.compare(timezone.now() - self.delta, time)
         if in_range:
             return self.nodelist_true.render(context)
         else:
@@ -63,8 +63,14 @@ def count_following(user):
 
 @register.filter(name='has_restricted_access')
 def has_restricted_access(user, article):
-    """ @pre: The article is restricted """
-    return hasattr(user, 'subscriber') and user.subscriber.is_subscriber(article.main_section.edition.publication.slug)
+    """
+    @pre: The article is restricted or is full restricted
+    """
+    if hasattr(user, 'subscriber'):
+        edition, subscribed = getattr(article.main_section, "edition", None), False
+        if edition:
+            subscribed = user.subscriber.is_subscriber(edition.publication.slug)
+        return subscribed or article.full_restricted and user.subscriber.is_subscriber_any()
 
 
 def if_time(parser, token):
@@ -101,14 +107,19 @@ register.tag('iftimeuntil', if_time)
 
 
 @register.simple_tag
-def subscriptionprice(subscription_type):
+def subscriptionprice(subscription_type=None):
+    # subscription_type arg cannot be assigned from settings in the function signature because Django can load
+    # this module before the custom settings are loaded
+    if not subscription_type:
+        subscription_type = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
     try:
         price = SubscriptionPrices.objects.get(subscription_type=subscription_type).price
     except SubscriptionPrices.DoesNotExist:
-        return ''
-    else:
+        price = getattr(settings, 'THEDAILY_SUBSCRIPTIONPRICES_OTHER', {}).get(subscription_type, "")
+    if price:
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
-        return f'{int(price):n}'
+        price = f'{int(price):n}'
+    return price
 
 
 @register.simple_tag
@@ -121,6 +132,15 @@ def terms_and_conditions():
             return ''
     else:
         return ''
+
+
+@register.simple_tag
+def nlsubscribed(user, nlobj, nltype=None):
+    nl_type = getattr(nlobj, "nltype", nltype)
+    return (
+        (nl_type == "p" and nlobj in user.subscriber.newsletters.all())
+        or (nl_type == "c" and nlobj in user.subscriber.category_newsletters.all())
+    )
 
 
 @register.filter(name='hasreplies')

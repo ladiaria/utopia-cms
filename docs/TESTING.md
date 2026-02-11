@@ -31,16 +31,31 @@ Install "chromedriver" (this can vary depending your Linux distro).
 
 ## Create and trust your SSL certificates
 
-The execution of the following script will ask you many questions, the most important are the first password, which should be set (do not left it blank) and remembered because it will be asked again, and the FQDN that should be set to "yoogle.com". The challenge password asked almost at the end can be left blank.
+### Create
+
+The execution of the following script will ask you many questions, the most important are the first password (after the "sudo" one, if asked), which should be set (do not left it blank) and remembered because it will be asked again in the next two steps and in the final step; and the FQDN that should be set to "yoogle.com". The challenge password asked almost at the end can be left blank.
 
 ```
 cd docs/ssl
 sudo ./ca.sh
 ```
 
-Runing the above script will generate some files, the `yoogle.com` cert and key should be set in your nginx conf files (our nginx samples conf files use the "/etc/nginx/certs" directory to read them, don't forget to restart nginx after copy the files and configure nginx). Also the CA (the `.pem` file generated also with the above script) should be imported in chrome using "Settings -> Privacy and Security -> Manage certificates -> Authorities -> Import", for Firefox is quite the same.
+Runing the above script will generate some files, the `yoogle.com` cert and key should be set in your nginx conf files (our nginx samples conf files included in this repository in the `docs/nginx_example_conf` directory; are using the `/etc/nginx/certs` directory to load these cert and key files, don't forget to restart nginx after copy your generated files to the destination directory and configure nginx).
 
-## Run tests
+### Trust
+
+There are two options, choose one or both.
+
+1. Import in browser: The `.pem` file generated with the above script can be imported in chrome using "Settings -> Privacy and Security -> Security -> Manage certificates -> Authorities -> Import", for Firefox is quite the same. When importing, at least check the first option "Trust this certificate for identifying websites".
+
+2. Import in the OS, in Linux you can trust a CA certificate like the one generated above, using the following commands (don't do it in a production environment unless you know well whay you're doing), the paths/binaries can vary by distribution/version:
+
+```
+sudo cp myCA.pem /usr/share/ca-certificates/trust-source/anchors
+sudo update-ca-trust
+```
+
+## Running Codeception tests (TODO: check if needed-working)
 
 1. Start chromedriver in another terminal using this command:
 
@@ -52,7 +67,7 @@ Runing the above script will generate some files, the `yoogle.com` cert and key 
 
 `php vendor/bin/codecept run --env=dev`
 
-# Load tests using locust.io
+# Load tests using locust.io (TODO: verify if working)
 
 1. Install locust
 

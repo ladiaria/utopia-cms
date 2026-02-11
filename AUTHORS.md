@@ -1,4 +1,4 @@
-## Authors that contributed to Utopia before opening the project
+## This list includes also people that contributed to Utopia before opening the project
 
 * The whole team at [la diaria](https://ayuda.ladiaria.com.uy/equipo/)
 * [Andrés Trífero](https://github.com/orgs/ladiaria/people/virusereturns)
@@ -16,6 +16,8 @@
 * [Gabriel Budiño](https://github.com/orgs/ladiaria/people/gbudino)
 * [Gabriel Márquez](https://github.com/orgs/ladiaria/people/gmarquezuy)
 * [Lucía Pardo](https://twitter.com/lpardogys)
+* Rodrigo Galván
+* Andrés Costa
 * Ignacio Toledo
 * José Callero
 * Marcelo Ramos
@@ -26,5 +28,6 @@
 * Guzmán Olivera
 * Álvaro Mouriño
 * Eduardo Roldán
+* Darío Clavijo
 * Diego García
 * Pedro Copelmayer

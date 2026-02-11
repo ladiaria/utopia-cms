@@ -1,3 +1,136 @@
+# From version 0.4.7 to 0.4.8
+
+Before start, make your database server timezone-aware using the first step described in the database section of `INSTALL.md`.
+
+```
+git pull
+git checkout 0.4.8
+cd portal
+# activate your virtual env
+pip uninstall django4-background-tasks
+# The tables `background_task_completedtask` and `background_task` can also be droped from the database.
+pip install celery django-celery-results django-celery-beat selenium
+./manage.py migrate
+./manage.py collectstatic -c
+# TODO: write steps left (settings, perms, any other?)
+```
+
+# From version 0.4.6 to 0.4.7
+
+```
+git pull
+git checkout 0.4.7
+cd portal
+rm -rf apps/memcached
+# if `nldelivery_sync_stats` command is a command that you use in your environment, update your local settings checking the changes for this version on this command and also in `settings.py`.
+# activate your virtual env
+pip uninstall auth2client google-api-python-client validate_email_address
+pip install --upgrade -r requirements.txt
+./manage.py migrate
+./manage.py collectstatic -c
+```
+
+# From version 0.4.5 to 0.4.6
+
+```
+git pull
+git checkout 0.4.6
+cd portal
+# update your local settings if necessary, checking the changes of settings.py and local_settings_sample.py since 0.4.5
+# activate your virtual env
+./manage.py migrate
+./manage.py collectstatic -c
+```
+
+# From version 0.4.4 to 0.4.5
+
+```
+git pull
+git checkout 0.4.5
+cd portal
+# activate your virtual env
+./manage.py migrate
+./manage.py collectstatic -c
+```
+
+# From version 0.4.3 to 0.4.4
+
+```
+git pull
+git checkout 0.4.4
+cd portal
+# activate your virtual env
+pip install -r requirements.txt
+./manage.py migrate
+./manage.py collectstatic -c
+```
+
+# From version 0.4.2 to 0.4.3
+
+```
+git pull
+git checkout 0.4.3
+cd portal
+# update your local settings based on local_settings_sample.py
+# activate your virtual env
+pip install django-reversion
+pip install --upgrade django-robots social-auth-app-django
+pip install --force-reinstall git+https://github.com/ladiaria/django-tagging-autocomplete-tag-it.git
+./manage.py migrate
+./manage.py createinitialrevisions
+./manage.py collectstatic -c
+```
+
+# From version 0.4.1 to 0.4.2
+
+```
+git pull
+git checkout 0.4.2
+cd portal
+# activate your virtual env
+./manage.py migrate
+```
+
+# From version 0.4.0 to 0.4.1
+
+```
+git pull
+git checkout 0.4.1
+cd portal
+# activate your virtual env
+pip uninstall django-admin-shortcuts django-shorturls django-favit django-tagging-autocomplete django-updown
+pip install --upgrade -r requirements.txt
+cat libs/scripts/one_time/20230516_background_task_prefake.sql | ./manage.py dbshell
+./manage.py migrate background_task 0001 --fake
+./manage.py migrate thumbnail 0001 --fake
+./manage.py migrate
+./manage.py collectstatic -c
+```
+
+# From version 0.3.9 to 0.4.0
+
+```
+git pull
+git checkout 0.4.0
+cd portal
+# activate your virtual env
+pip install -r requirements.txt
+./manage.py migrate
+```
+
+# From version 0.3.8 to 0.3.9
+
+```
+git pull
+git checkout 0.3.9
+# create a new Python virtualenv according to INSTALL.md
+# install Python requirements using pip with the new virtualenv activated
+# update your local settings based on local_settings_sample.py
+cd portal
+./manage.py migrate
+./manage.py collectstatic
+```
+
 # From version 0.3.7 to 0.3.8
 
 ```
@@ -307,7 +440,7 @@ pip install -r requirements.txt
 
 # From version 0.0.9 to 0.1.0
 
-[Upgrade from 0.0.9 to 0.1.0 guide](docs/upgrade_from_009_to_010.md)
+[Upgrade from 0.0.9 to 0.1.0 guide](docs/upgrade_from_009_to_010.md) (archived)
 
 # From version 0.0.8 to 0.0.9
 

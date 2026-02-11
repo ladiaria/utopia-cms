@@ -1,2 +1,0 @@
-#!/bin/sh
-pkill -u ladiaria memcached

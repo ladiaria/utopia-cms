@@ -1,6 +1,7 @@
 {% extends "base_epub_parser.html" %}
+{% load core_tags %}
 
-{% block page_title %}Nuevo Epub{% endblock %}
+{% block page_title %}{% title_joinparts 'Nuevo Epub' %}{% endblock %}
 
 {% block content %}
 

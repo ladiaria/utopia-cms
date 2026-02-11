@@ -1,84 +1,60 @@
 """ Adapted from: A simple example of how to access the Google Analytics API. """
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import sys
+import time
+import logging
 
-from apiclient.discovery import build
-from oauth2client.service_account import ServiceAccountCredentials
-from progress.bar import Bar
-
-from dashboard.models import NewsletterDelivery
+from google.oauth2 import service_account
+from google.analytics import data_v1beta
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.utils.timezone import now, datetime, timedelta
+
+from dashboard.models import NewsletterDelivery
 
 
-def initialize_analyticsreporting():
-    """
-    Initializes an Analytics Reporting API V4 service object.
+def get_report(event_name, start_date, end_date, campaign, delivery_date, limit=None):
 
-    Returns:
-    An authorized Analytics Reporting API V4 service object.
-    """
-    try:
-        KEY_FILE_LOCATION = settings.DASHBOARD_GA_SECRETS
-    except AttributeError:
-        sys.exit('ERROR: No secrets file configured in settings.')
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(
-        KEY_FILE_LOCATION, ['https://www.googleapis.com/auth/analytics.readonly']
+    credentials = service_account.Credentials.from_service_account_file(settings.DASHBOARD_GA_SECRETS)
+    client = data_v1beta.BetaAnalyticsDataClient(credentials=credentials)
+    request = data_v1beta.RunReportRequest(
+        property="properties/" + settings.DASHBOARD_GA_PROPERTY,
+        dimensions=[
+            {'name': "eventName"},
+            {"name": "customEvent:campaign"},
+            {"name": "customEvent:date"},
+            {"name": "customEvent:subscriber_id"},
+        ],
+        metrics=[{"name": "eventCount"}],
+        date_ranges=[{"start_date": start_date, "end_date": end_date}],
+        limit=limit,
+        dimension_filter={
+            "and_group": {
+                "expressions": [
+                    {
+                        "filter": {
+                            "field_name": "eventName",
+                            "string_filter": {"match_type": "EXACT", "value": event_name, "case_sensitive": True},
+                        }
+                    },
+                    {
+                        "filter": {
+                            "field_name": "customEvent:campaign",
+                            "string_filter": {"match_type": "EXACT", "value": campaign, "case_sensitive": True},
+                        }
+                    },
+                    {
+                        "filter": {
+                            "field_name": "customEvent:date",
+                            "string_filter": {"match_type": "EXACT", "value": delivery_date, "case_sensitive": True},
+                        }
+                    },
+                ]
+            }
+        },
     )
-
-    # Build the service object.
-    analytics = build('analyticsreporting', 'v4', credentials=credentials)
-
-    return analytics
-
-
-def get_report(analytics, start_date, end_date, campaign):
-    """
-    Queries the Analytics Reporting API V4.
-
-      Args:
-        analytics: An authorized Analytics Reporting API V4 service object.
-      Returns:
-        The Analytics Reporting API V4 response.
-    """
-    try:
-        VIEW_ID = settings.DASHBOARD_GA_VIEW_ID
-    except AttributeError:
-        sys.exit('ERROR: No view id configured in settings.')
-
-    # startDate can be also in format XdaysAgo (example: 2daysAgo)
-    # TODO: investigate sessions vs totalEvents vs uniqueEvents
-    request_data = {
-        'viewId': VIEW_ID, 'dateRanges': [{'startDate': start_date or 'yesterday', 'endDate': end_date or 'today'}],
-        # 'metrics': [{'expression': 'ga:sessions'}],
-        # 'metrics': [{'expression': 'ga:totalEvents'}],
-        'metrics': [{'expression': 'ga:uniqueEvents'}],
-        'dimensions': [
-            {'name': 'ga:eventLabel'}, {'name': 'ga:campaign'}, {'name': 'ga:pageTitle'},
-            # {'name': 'ga:date'}, {'name': 'ga:hour'}, {'name': 'ga:minute'}
-        ],
-        'dimensionFilterClauses': [
-            {
-                "operator": "AND",
-                "filters": [
-                    {"dimensionName": "ga:pageTitle", "not": True, "operator": "EXACT", "expressions": ['(not set)']},
-                    {"dimensionName": "ga:eventLabel", "operator": "BEGINS_WITH", "expressions": ['open_email']}
-                ],
-            },
-        ],
-    }
-
-    campaign_filter = {"dimensionName": "ga:campaign", "operator": "EXACT", "expressions": [campaign or '(not set)']}
-
-    if not campaign:
-        campaign_filter['not'] = True
-
-    request_data["dimensionFilterClauses"][0]['filters'].append(campaign_filter)
-
-    return analytics.reports().batchGet(body={'reportRequests': [request_data]}).execute()
+    return client.run_report(request=request)
 
 
 class Command(BaseCommand):
@@ -90,75 +66,105 @@ class Command(BaseCommand):
             action='store',
             type=str,
             dest='start_date',
-            help='Get Google Analytics stats from this date, default=yesterday',
+            default="2daysAgo",
+            help="Get data since this date, format: any string valid in GA reports. (default='2daysAgo')",
         )
         parser.add_argument(
             '--end-date',
             action='store',
             type=str,
             dest='end_date',
-            help='Get Google Analytics stats until this date, default=today',
+            default="today",
+            help="Get data until this date, format: any string valid in GA reports. (default='today')",
         )
         parser.add_argument(
             '--campaign',
             action='store',
             type=str,
             dest='campaign',
-            help='Get Google Analytics stats only for this campaign, default=all',
-        )
-        parser.add_argument(
-            '--progress', action='store_true', default=False, dest='progress', help='Show a progress bar'
+            help='Get Google Analytics stats only for this campaign, default=all campaigns delievered on start-date',
         )
         parser.add_argument(
             '--no-sync', action='store_true', default=False, dest='no_sync', help='No sync, only print'
         )
-        parser.add_argument(
-            '--sync-rangeonly',
-            action='store_true',
-            default=False,
-            dest='sync_rangeonly',
-            help='Only sync campaign objects if delivery date is in the custom date range that must be given',
-        )
 
     def handle(self, *args, **options):
-        analytics = initialize_analyticsreporting()
-        start_date, end_date = options.get('start_date'), options.get('end_date')
 
-        response = get_report(analytics, start_date, end_date, options.get('campaign'))
-        try:
-            rows = response['reports'][0]['data']['rows']
-        except (KeyError, IndexError):
-            sys.exit('ERROR: No data could be found')
+        start_date, end_date, verbosity = options.get('start_date'), options.get('end_date'), options.get('verbosity')
+        campaign_arg, empty_count, no_sync = options.get('campaign'), 0, options.get('no_sync')
+        today = now().date()
+
+        # log
+        log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%Y-%m-%d %H:%M:%S')
+        log = logging.getLogger(__name__)
+        log.setLevel(logging.DEBUG)
+        if settings.DEBUG or verbosity > 1:
+            # print also to stdout
+            stdout_handler = logging.StreamHandler(sys.stdout)
+            stdout_handler.setLevel(logging.DEBUG)
+            stdout_handler.setFormatter(log_formatter)
+            log.addHandler(stdout_handler)
+        if not settings.DEBUG:
+            # print also errors to stderr to receive cron alert
+            err_handler = logging.StreamHandler(sys.stderr)
+            err_handler.setLevel(logging.ERROR)
+            err_handler.setFormatter(log_formatter)
+            log.addHandler(err_handler)
+        logfile = getattr(settings, "DASHBOARD_NLDELIVERY_SYNC_STATS_LOGFILE", None)
+        if logfile:
+            h = logging.FileHandler(filename=logfile)
+            h.setFormatter(log_formatter)
+            log.addHandler(h)
+
+        if not (hasattr(settings, "DASHBOARD_GA_PROPERTY") and hasattr(settings, "DASHBOARD_GA_SECRETS")):
+            log.error('No Google Analytics property or secrets json file are configured in settings.')
+
+        filter_kwargs = {}
+        if campaign_arg:
+            campaigns = [campaign_arg]
+            filter_kwargs = {"newsletter_name": campaign_arg}
+        if start_date == "today":
+            delivery_date = today
+        elif start_date == "yesterday":
+            delivery_date = today - timedelta(1)
+        elif start_date.endswith("daysAgo"):
+            delivery_date = today - timedelta(int(start_date[0]))
         else:
-            bar = Bar('Processing', max=len(rows)) if options.get('progress') else None
+            delivery_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        filter_kwargs["delivery_date"] = delivery_date
+        campaigns = NewsletterDelivery.objects.filter(
+            **filter_kwargs
+        ).values_list("newsletter_name", flat=True).distinct()
 
-        no_sync, sync_rangeonly = options.get('no_sync'), start_date and end_date and options.get('sync_rangeonly')
-        for row in rows:
-            if bar:
-                bar.next()
+        delivery_date_formatted = delivery_date.strftime("%Y%m%d")
+        for campaign in campaigns:
+            for event_name in ['open_email_r', 'open_email_s']:
+                response = get_report(event_name, start_date, end_date, campaign, delivery_date_formatted, 1)
 
-            # TODO: run this command at 00:01 using default dates. date, hour, minute can help to debug
-            # event_label, campaign, page_title, ga_date, ga_hour, ga_minute = row['dimensions']
-
-            event_label, campaign, page_title = row['dimensions']
-            count = row['metrics'][0]['values'][0]
-
-            if sync_rangeonly and (page_title < start_date or page_title > end_date):
-                continue
-            if no_sync:
-                print('%s, %s, %s: %s' % (campaign, page_title, event_label, count))
-                # print('%s, %s, %s, %s %s:%s : %s' % (
-                #    campaign, page_title, event_label, ga_date, ga_hour, ga_minute, count))
-            else:
                 try:
-                    nl_delivery = NewsletterDelivery.objects.get(newsletter_name=campaign, delivery_date=page_title)
-                    if event_label == 'open_email':
-                        nl_delivery.user_opened = (nl_delivery.user_opened or 0) + int(count)
-                    else:
-                        nl_delivery.subscriber_opened = (nl_delivery.subscriber_opened or 0) + int(count)
-                    nl_delivery.save()
-                except NewsletterDelivery.DoesNotExist:
-                    pass
+                    rows = response.row_count
+                    assert rows > 0
+                except (KeyError, IndexError, AssertionError):
+                    empty_count += 1
+                    continue
 
-        if bar:
-            bar.finish()
+                if verbosity > 0:
+                    log.info('%s, %s, %s: %s' % (campaign, delivery_date_formatted, event_name, rows))
+
+                if not no_sync:
+                    try:
+                        nl_delivery = NewsletterDelivery.objects.get(
+                            newsletter_name=campaign, delivery_date=delivery_date
+                        )
+                        if event_name == 'open_email_r':
+                            nl_delivery.user_opened = rows
+                        else:
+                            nl_delivery.subscriber_opened = rows
+                        nl_delivery.save()
+                    except NewsletterDelivery.DoesNotExist:
+                        pass
+
+                time.sleep(1)  # wait a bit to be polite with GA api
+
+        if empty_count == len(campaigns) * 2:
+            log.error('No data could be found')

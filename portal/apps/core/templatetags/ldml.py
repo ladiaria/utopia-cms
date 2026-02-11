@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 # utopia-cms Markup Language
-from __future__ import unicode_literals
-import markdown
+
 import re
 
+from markdown2 import markdown
+
+from django.conf import settings
 from django.template import Library
 from django.template.loader import render_to_string
 from django.template.defaultfilters import stringfilter
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 from django.utils.html import strip_tags
 
@@ -15,16 +17,17 @@ from django.utils.html import strip_tags
 register = Library()
 
 TITLES_RE = r'^\s*S>\s*(.*[^\s])\s*$'
-EXTENSION_KW = '__recuadro__'
+EXTENSION_KW = getattr(settings, 'CORE_ARTICLE_DETAIL_EXTENSION_KW', '__recuadro__')
 EXTENSION_RE = r'%s\s*(\d*)' % EXTENSION_KW
 
-IMAGE_KW = '__imagen__'
+IMAGE_KW = getattr(settings, 'CORE_ARTICLE_DETAIL_IMAGE_KW', '__imagen__')
 IMAGE_RE = r'%s\s*(\d*)' % IMAGE_KW
+MD_EXTRAS = ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra', "strike"]
 
 
 def normalize(value):
     nre = re.compile(r'\r\n|\r|\n')
-    return nre.sub('\n', force_text(value))
+    return nre.sub('\n', force_str(value))
 
 
 def to_p(value):
@@ -69,13 +72,23 @@ def get_image(match, aid, amp=False):
                 return ''
             else:
                 return render_to_string(
-                    ('amp/' if amp else '') + 'core/templates/article/image.html',
+                    'core/templates/%sarticle/image.html' % ('amp/' if amp else ''),
                     {'article': article, 'image': article_body_image.image, 'display': article_body_image.display},
                 )
         else:
             return ''
     except Article.DoesNotExist:
         return ''
+
+
+@register.simple_tag
+def photo_byline(article, allowed=True):
+    # if allowed by setting and not disallowed by the allow arg given, it returns the article's "photo_autor" entry if
+    # article arg is dict (useful in "offline" rendering), otherwise (if it is an Article object) returns the method.
+    if settings.CORE_ARTICLE_ENABLE_PHOTO_BYLINE and allowed:
+        return (dict.get if isinstance(article, dict) else getattr)(article, "photo_author", "")
+    else:
+        return ""
 
 
 @register.filter
@@ -87,13 +100,13 @@ def ldmarkup(value, args='', amp=False):
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
     value = reg.sub(r'\n\n\1\n----', value)
     if args:
-        # TODO: Si hay un recuadro al final le aplica full width a todos los recuadros de la nota. (translate2english)
+        # TODO: Si hay un recuadro al final le aplica full width a todos los recuadros del artículo.
+        #       translate2english this comment asap or make it at all
         reg = re.compile(EXTENSION_RE, re.UNICODE + re.MULTILINE)
         value = reg.sub(lambda x: get_extension(x, args), value)
         reg = re.compile(IMAGE_RE, re.UNICODE + re.MULTILINE)
         value = reg.sub(lambda x: get_image(x, args, amp), value)
-    value = markdown.markdown(value, ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra'])
-    return mark_safe(force_text(value))
+    return mark_safe(force_str(markdown(value, extras=MD_EXTRAS).strip()))
 
 
 @register.filter
@@ -102,8 +115,8 @@ def ldmarkup_extension(value, args='', amp=False):
     """ Usage: {% article.body|ldmarkup_extension %} """
     reg = re.compile(TITLES_RE, re.UNICODE + re.MULTILINE)
     value = reg.sub(r'\n\n\1\n----', value)
-    value = markdown.markdown(value, ['abbr', "footnotes", "tables", "headerid", 'attr_list', 'extra'])
-    return mark_safe(force_text(value))
+    value = markdown(value, extras=MD_EXTRAS).strip()
+    return mark_safe(force_str(value))
 
 
 @register.filter
@@ -119,10 +132,10 @@ def amp_ldmarkup(value, args=''):
 @register.filter
 def remove_markup(value):
     if value:
-        value = re.sub(r"__recuadro__.", "", value)
-        value = value.replace("__recuadro__", "")
-        value = re.sub(r"__imagen__.", "", value)
-        value = value.replace("__imagen__", "")
+        value = re.sub(fr"{EXTENSION_KW}.", "", value)
+        value = value.replace(EXTENSION_KW, "")
+        value = re.sub(fr"{IMAGE_KW}.", "", value)
+        value = value.replace(IMAGE_KW, "")
         # quitamos cualquier link que haya quedado
         value = re.sub(r"\(http(.*)\)", "", value)
         value = cleanhtml(ldmarkup(value))

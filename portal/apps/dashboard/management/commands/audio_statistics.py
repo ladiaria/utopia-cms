@@ -2,12 +2,12 @@
 import os
 from os.path import join
 from csv import writer
-from datetime import date, datetime, timedelta
 
 from progress.bar import Bar
 
-from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
+from django.utils.timezone import now, datetime, timedelta
 
 from core.models import Article
 
@@ -23,7 +23,6 @@ class Command(BaseCommand):
         parser.add_argument(
             '--progress', action='store_true', default=False, dest='progress', help='Show a progress bar'
         )
-
         parser.add_argument(
             '--out-prefix',
             action='store',
@@ -64,7 +63,7 @@ class Command(BaseCommand):
         if (from_date or to_date) and not out_prefix:
             raise CommandError('out-prefix should be given when any filter date option is given')
 
-        this_month_first = date.today().replace(day=1)
+        this_month_first = now().date().replace(day=1)
         last_month = this_month_first - timedelta(1)
         last_month_first = datetime.combine(last_month.replace(day=1), datetime.min.time())
         month_before_last = last_month_first - timedelta(1)
@@ -87,14 +86,13 @@ class Command(BaseCommand):
 
         w = writer(open(join(settings.DASHBOARD_REPORTS_PATH, '{}audio_statistics.csv'.format(out_prefix)), 'w'))
         for article in articles.iterator():
-            # TODO: duration calculation disabled, it raises a UnicodeDecodeError and should be investigated.
-            # audio_info = mutagen.File(article.audio.file).info; duration = timedelta(seconds=int(audio_info.length))
             w.writerow(
                 [
                     article.headline,
                     article.get_absolute_url(),
                     article.section,
-                    article.date_published,
+                    article.date_published.date(),
+                    article.get_audio_length(),
                     article.audio.audiostatistics_set.filter(percentage__isnull=False).count(),
                     article.audio.audiostatistics_set.filter(amp_click=True).count(),
                     article.audio.audiostatistics_set.filter(percentage=0).count(),

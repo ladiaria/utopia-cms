@@ -1,9 +1,12 @@
-from __future__ import unicode_literals
-from django.conf.urls import url
+from django.urls import re_path
 from .views import index, sitemap
 
 urlpatterns = [
-    url(r'^sitemap.xml$', index, {'sitemap_url_name': 'sitemap'}),
-    url(r'^sitemap-(?P<section>.+)\.xml$', sitemap, name='sitemap'),
+    re_path(r'^sitemap.xml$', index, {'sitemap_url_name': 'sitemap'}),
+    re_path(r'^sitemap-news_48hs.xml$',
+            sitemap,
+            {'section': 'news_48hs', 'template_name': 'sitemaps/templates/sitemap_news.xml'},
+            name='sitemap_news_48hs'
+            ),
+    re_path(r'^sitemap-(?P<section>.+)\.xml$', sitemap, name='sitemap'),
 ]
-

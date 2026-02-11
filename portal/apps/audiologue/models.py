@@ -1,30 +1,39 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-from datetime import datetime
+from pydoc import locate
 
-from django.db.models import (
-    Model, FileField, DateTimeField, CharField, PositiveIntegerField, SlugField, BooleanField, TextField
-)
+from django.conf import settings
+from django.db.models import Model, DateTimeField, CharField, PositiveIntegerField, SlugField, BooleanField, TextField
+
+
+# in case a pool by year is needed, uncomment and update file field definition with "... upload_to=audio_upload_path)"
+# A one-time script to update the already uploaded files file paths is provided.
+"""
+import os
+def audio_upload_path(instance, filename):
+    # Use the year of date_uploaded for the upload path
+    year = instance.date_uploaded.year
+    return os.path.join('audiologue', str(year), filename)
+"""
 
 
 class Audio(Model):
-    file = FileField(u'audio', upload_to='audiologue')
-    title = CharField(u'título', max_length=255)
-    slug = SlugField(u'slug', null=True, blank=True, editable=False)
-    caption = CharField(u'pie', max_length=255, null=True, blank=True)
-    byline = CharField(u'autor/es', max_length=255, null=True, blank=True)
-    description = TextField(u'descripción', null=True, blank=True)
-    date_uploaded = DateTimeField(u'fecha de subida', null=True, blank=True, auto_now_add=True, editable=False)
-    times_viewed = PositiveIntegerField(u'visto', default=0, editable=False)
-    is_public = BooleanField(u'público', default=True)
+    file = locate(
+        getattr(settings, "AUDIOLOGUE_FILE_FIELD_CLASS", "django.db.models.FileField")
+    )('audio', upload_to='audiologue')
+    title = CharField('título', max_length=255)
+    slug = SlugField('slug', null=True, blank=True, editable=False)
+    caption = CharField('pie', max_length=255, null=True, blank=True)
+    byline = CharField('autor/es', max_length=255, null=True, blank=True)
+    description = TextField('descripción', null=True, blank=True)
+    date_uploaded = DateTimeField('fecha de subida', null=True, blank=True, auto_now_add=True, editable=False)
+    times_viewed = PositiveIntegerField('visto', default=0, editable=False)
+    is_public = BooleanField('público', default=True)
 
-    def save(self):
-        if not self.id:
-            self.date_uploaded = datetime.now()
-        super(Audio, self).save()
+    class Meta:
+        ordering = ('-date_uploaded',)
 
     def __str__(self):
         if self.title:
             return self.title
         else:
-            return u'Audio #%i' % self.id
+            return 'Audio #%i' % self.id

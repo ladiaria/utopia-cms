@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-from django.conf import settings
 from django import forms
 from django.contrib import admin
 
@@ -13,20 +9,27 @@ from photologue.admin import GalleryAdmin as GalleryAdminDefault
 from .models import PhotoExtended, Agency, Photographer
 
 
+@admin.register(Agency)
 class AgencyAdmin(admin.ModelAdmin):
     pass
 
 
 class PhotoExtendedModelForm(forms.ModelForm):
-    date_taken = forms.DateField(label=u'Tomada el', widget=admin.widgets.AdminDateWidget(), required=False)
+    date_taken = forms.DateField(label='Tomada el', widget=admin.widgets.AdminDateWidget(), required=False)
 
     def __init__(self, *args, **kwargs):
-        super(PhotoExtendedModelForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.instance.id:
             self.initial['date_taken'] = self.instance.image.date_taken
 
+    def clean_radius_length(self):
+        radius_length = self.cleaned_data.get('radius_length')
+        if radius_length == 0:
+            raise forms.ValidationError('El radio de recorte debe estar en blanco o ser un número mayor que cero.')
+        return radius_length
+
     def save(self, commit=True):
-        instance = super(PhotoExtendedModelForm, self).save(commit=commit)
+        instance = super().save(commit=commit)
         instance.image.date_taken = self.cleaned_data['date_taken']
         if not instance.image._old_image:
             # this is a new image, we need to "fake" the old image to avoid photologue.Photo attemp to rm a "None" file
@@ -36,7 +39,7 @@ class PhotoExtendedModelForm(forms.ModelForm):
 
     class Meta:
         model = PhotoExtended
-        fields = ('date_taken', )
+        fields = ('date_taken',)
 
 
 class PhotoExtendedInline(admin.StackedInline):
@@ -45,34 +48,42 @@ class PhotoExtendedInline(admin.StackedInline):
     can_delete = False
     fieldsets = (
         ('Metadatos', {'fields': ('date_taken', 'type', 'photographer', 'agency')}),
-        (u'Recorte para versión cuadrada', {
-            'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse', )}))
+        (
+            'Recorte para versión cuadrada',
+            {'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse',)},
+        ),
+    )
 
     class Media:
-        # jquery loaded again (admin uses custom js namespaces)
-        js = ('admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'), 'js/jquery.cropbox.js')
+        js = ('js/jquery.cropbox.js',)
+        css = {"all": ("css/headless_stacked_inline.css",)}
 
 
 class PhotoGalleryInline(admin.TabularInline):
     model = Gallery.photos.through
-    raw_id_fields = ('photo', )
+    raw_id_fields = ('photo',)
     extra = 0
-    verbose_name = u'foto'
-    verbose_name_plural = u'fotos'
+    verbose_name = 'foto'
+    verbose_name_plural = 'fotos'
     readonly_fields = ['photo_admin_thumbnail', 'photo_date_taken', 'photo_date_added']
 
+    @admin.display(
+        description='thumbnail'
+    )
     def photo_admin_thumbnail(self, instance):
         return instance.photo.admin_thumbnail()
-    photo_admin_thumbnail.short_description = u'thumbnail'
-    photo_admin_thumbnail.allow_tags = True
 
+    @admin.display(
+        description='tomada el'
+    )
     def photo_date_taken(self, instance):
         return instance.photo.date_taken
-    photo_date_taken.short_description = u'tomada el'
 
+    @admin.display(
+        description='fecha de creación'
+    )
     def photo_date_added(self, instance):
         return instance.photo.date_added
-    photo_date_added.short_description = u'fecha de creación'
 
 
 class GalleryAdmin(GalleryAdminDefault):
@@ -82,11 +93,12 @@ class GalleryAdmin(GalleryAdminDefault):
     prepopulated_fields = {'slug': ('title',)}
     filter_horizontal = ('photos',)
     inlines = [PhotoGalleryInline]
-    exclude = ('photos', )
+    exclude = ('photos',)
 
 
+@admin.register(Photographer)
 class PhotographerAdmin(admin.ModelAdmin):
-    search_fields = ('name', )
+    search_fields = ('name',)
 
 
 class PhotoEffectAdmin(admin.ModelAdmin):
@@ -163,11 +175,12 @@ class PhotographerFilter(admin.SimpleListFilter):
 
 
 class PhotoAdmin(PhotoAdminDefault):
-    list_display = ('title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public', 'view_count')
+    list_display = ('id', 'title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public')
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
     fieldsets = (
         (None, {'fields': ('title', 'image', 'caption')}),
-        ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse', )}))
+        ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}),
+    )
     inlines = [PhotoExtendedInline]
 
 
@@ -177,8 +190,6 @@ admin.site.register(Photo, PhotoAdmin)
 admin.site.unregister(Gallery)
 admin.site.register(Gallery, GalleryAdmin)
 
-admin.site.register(Agency, AgencyAdmin)
-admin.site.register(Photographer, PhotographerAdmin)
 
 admin.site.unregister(PhotoEffect)
 admin.site.register(PhotoEffect, PhotoEffectAdmin)

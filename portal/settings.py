@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import sys
-from distutils.sysconfig import get_python_lib
 from os.path import abspath, basename, dirname, join, realpath
-from datetime import datetime
 import mimetypes
 from freezegun import freeze_time
+from kombu import Queue
 
+import django
 from django.conf.global_settings import DEFAULT_CHARSET
 from django.contrib.messages import constants as messages
+from django.utils.encoding import smart_str, force_str
 
 
-LAST_OLD_DAY = datetime(2014, 7, 22)
-FIRST_DAY = datetime(2009, 8, 1)
+# this fix an error with smart_text on some apps (django-tagging)
+django.utils.encoding.smart_text = smart_str
+django.utils.encoding.force_text = force_str
 
 PROJECT_ABSOLUTE_DIR = dirname(abspath(__file__))
 PROJECT_NAME = basename(PROJECT_ABSOLUTE_DIR)
@@ -24,319 +22,368 @@ if APPS_DIR not in sys.path:
     sys.path.insert(0, APPS_DIR)
 
 SITE_ROOT = dirname(realpath(__file__))
-STATIC_URL = '/static/'
-STATIC_ROOT = '%s/static/' % SITE_ROOT
-STATICFILES_DIRS = (join(SITE_ROOT, "../static/"), )
-SITE_DOMAIN = 'example.com'
+STATIC_URL = "/static/"
+STATIC_ROOT = f"{SITE_ROOT}/static/"
+STATICFILES_DIRS = (join(SITE_ROOT, "../static/"),)
+SITE_DOMAIN = "example.com"
 URL_SCHEME = "https"
 DEFAULT_URL_SCHEME = URL_SCHEME
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+# default filename for the bse_template used to extend by variable
+PORTAL_BASE_TEMPLATE = "base.html"
+# country name in page titles
+PORTAL_TITLE_APPEND_COUNTRY = True
 
 # disable template settings warning until fixed migrating django-mobile to django-amp-tools
 SILENCED_SYSTEM_CHECKS = ["1_8.W001"]
 
-# django-mobile
-FLAVOURS = ('full', 'mobile', 'amp')
-FLAVOURS_GET_PARAMETER = 'display'
-FLAVOURS_COOKIE_SECURE = True
+# django-amp-tools
+AMP_TOOLS_GET_PARAMETER = "display"
 
 # Multi sub-domain secure cookie
 SESSION_COOKIE_DOMAIN = "." + SITE_DOMAIN
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_AGE = 2592000  # 30 days
 CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SAMESITE_FORCE_ALL = True
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_SERIALIZER = "django.contrib.sessions.serializers.PickleSerializer"
 
 AMP_DEBUG = False
 RAW_SQL_DEBUG = False
 
 STATICFILES_FINDERS = (
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     "compressor.finders.CompressorFinder",
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 )
 
 INSTALLED_APPS = (
-    'django_mobile',
-    'django.contrib.staticfiles',
-    'admin_shortcuts',
-    'django.contrib.admin',
-    'django.contrib.admindocs',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sitemaps',
-    'django.contrib.sites',
-    'background_task',
-    'subdomains',
-    'audiologue',
-    'tagging',
-    'core.config.CoreConfig',
-    'core.attachments',
-    'groupedtags.config.GroupedTagsConfig',
-    'django_extensions',
-    'generator',
-    'memcached',
-    'shoutbox',
-    'thedaily',
-    'videologue',
-    'short',
-    'adzone',
-    'exchange',
-    'faq',
-    'captcha',
-    'photologue',
-    'sortedm2m',
-    'photologue_ladiaria',
-    'robots',
-    'search',
-    'django_elasticsearch_dsl',
-    'sorl.thumbnail',
-    'shorturls',
-    'less',
-    'django_user_agents',
-    'updown',
-    'crispy_forms',
-    'crispy_forms_materialize',
-    'actstream',
-    'django.contrib.messages',
-    'signupwall',
-    'homev3',
-    'cartelera.config.CarteleraConfig',
-    'markdown',
-    'django_bleach',
-    'django_markdown',
-    'django_markup',
-    'comunidad',
-    'appconf',
-    'star_ratings',
-    'tagging_autocomplete_tagit',
-    'avatar',
-    'endless_pagination',
-    'notification',
-    'django.contrib.flatpages',
-    'epubparser',
-    'dashboard',
-    'django_filters',
-    'rest_framework',
-    'rest_framework.authtoken',
-    'compressor',
-    'favit',
-    'social_django',
+    "amp_tools",
+    "admin_shortcuts",
+    "django.contrib.staticfiles",
+    "django.contrib.admin",
+    "django.contrib.admindocs",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.sitemaps",
+    "django.contrib.sites",
+    "django.contrib.redirects",
+    "audiologue",
+    "tagging",
+    "core.config.CoreConfig",
+    "core.attachments",
+    "groupedtags.config.GroupedTagsConfig",
+    "django_extensions",
+    "generator",
+    # 'memcached',  TODO: replace this removed repo app with this app: https://github.com/bartTC/django-memcache-status
+    "shoutbox",
+    "thedaily",
+    "videologue",
+    "short",
+    "adzone",
+    "exchange",
+    "faq",
+    "django_recaptcha",
+    "photologue",
+    "sortedm2m",
+    "photologue_ladiaria",
+    "robots",
+    "search",
+    "django_elasticsearch_dsl",
+    "sorl.thumbnail",
+    "shorturls",
+    "less",
+    "django_user_agents",
+    "updown",
+    "crispy_forms",
+    "crispy_forms_materialize",
+    "actstream",
+    "django.contrib.messages",
+    "signupwall",
+    "homev3",
+    "cartelera.config.CarteleraConfig",
+    "martor",
+    "django_bleach",
+    "comunidad",
+    "star_ratings",
+    "tagging_autocomplete_tagit",
+    "avatar",
+    "notification",
+    "django.contrib.flatpages",
+    "epubparser",
+    "django_filters",
+    "rest_framework",
+    "rest_framework.authtoken",
+    "dashboard",  # placed after authtoken to unregister TokenAdmin and register a fixed version of it
+    "rest_framework_api_key",
+    "compressor",
+    "favit",
+    "social_django",
+    "django_amp_readerid.apps.DjangoAmpReaderidConfig",
+    "reversion",
+    "django_celery_results",
+    "django_celery_beat",
+    "phonenumber_field",
+    "closed_site",
+    'solo',
 )
 
 SITE_ID = 1
 
+# password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 9}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+# martor
+# disable emoji (our markdown filter not yet support this)
+MARTOR_TOOLBAR_BUTTONS = [
+    "bold",
+    "italic",
+    "horizontal",
+    "heading",
+    "pre-code",
+    "blockquote",
+    "unordered-list",
+    "ordered-list",
+    "link",
+    "image-link",
+    "image-upload",
+    "direct-mention",
+    "toggle-maximize",
+    "help",
+]
+MARTOR_ENABLE_LABEL = True  # enable field labels
+
 # photologue app need to add a custom migration
-MIGRATION_MODULES = {'photologue': 'photologue_ladiaria.photologue_migrations'}
+MIGRATION_MODULES = {"photologue": "photologue_ladiaria.photologue_migrations"}
 
 ADMIN_SHORTCUTS = [
     {
-        'title': 'Edición',
-        'shortcuts': [
-            {'url_name': 'admin:core_edition_changelist', 'title': 'Ediciones'},
-            {'url_name': 'admin:core_edition_add', 'title': 'Crear edición'},
-            {'url_name': 'admin:core_article_add', 'title': 'Crear Artículo'},
+        "title": "Links directos (edición)",
+        "shortcuts": [
+            {"url_name": "admin:core_publication_changelist", "title": "Publicaciones", "icon": "📰"},
+            {"url_name": "admin:core_edition_changelist", "title": "Ediciones", "icon": "📰"},
+            {"url_name": "admin:core_edition_add", "title": "Crear edición"},
+            {"url_name": "admin:core_article_add", "title": "Crear Artículo"},
         ],
     },
-    {'title': 'Reportes', 'shortcuts': [{'url': '/dashboard/', 'title': 'Estadísticas de usuarios'}]},
+    {
+        "title": "Reportes y otras utilidades",
+        "shortcuts": [{"url": "/dashboard/", "title": 'Reportes, estadísticas y "previews"', "icon": "📊"}],
+    },
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser', ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAdminUser",),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 20,
-    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend', ),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
 }
 
-ACTSTREAM_SETTINGS = {'FETCH_RELATIONS': False, 'USE_PREFETCH': True}
+ACTSTREAM_SETTINGS = {"FETCH_RELATIONS": False, "USE_PREFETCH": True}
 
-CRISPY_ALLOWED_TEMPLATE_PACKS = ('bootstrap', 'uni_form', 'bootstrap3', 'bootstrap4', 'materialize_css_forms')
-CRISPY_TEMPLATE_PACK = 'materialize_css_forms'
+CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap", "uni_form", "bootstrap3", "bootstrap4", "materialize_css_forms")
+CRISPY_TEMPLATE_PACK = "materialize_css_forms"
 
-MIDDLEWARE_CLASSES = (
-    'django.middleware.security.SecurityMiddleware',
-    'django_cookies_samesite.middleware.CookiesSameSite',
-    'core.middleware.AMP.FlavoursCookieSecure',
-    'django_mobile.cache.middleware.UpdateCacheFlavourMiddleware',
-    'django.middleware.cache.UpdateCacheMiddleware',              # runs during the response phase (top -> last)
-    'core.middleware.cache.AnonymousResponse',                    # hacks cookie header for anon users (resp phase)
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'subdomains.middleware.SubdomainMiddleware',
-    'subdomains.middleware.SubdomainURLRoutingMiddleware',
-    'libs.middleware.url.UrlMiddleware',
-    'django.middleware.gzip.GZipMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.RemoteUserMiddleware',
-    'django.contrib.admindocs.middleware.XViewMiddleware',
-    'core.middleware.threadlocals.ThreadLocals',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django_user_agents.middleware.UserAgentMiddleware',
-    'signupwall.middleware.SignupwallMiddleware',
-    'django.contrib.flatpages.middleware.FlatpageFallbackMiddleware',
-    'django_mobile.middleware.MobileDetectionMiddleware',
-    'django_mobile.middleware.SetFlavourMiddleware',
-    'core.middleware.cache.AnonymousRequest',                     # hacks cookie header for anon users (req phase)
-    'django_mobile.cache.middleware.FetchFromCacheFlavourMiddleware',
-    'django.middleware.cache.FetchFromCacheMiddleware',           # runs during the request phase (top -> first)
-    'social_django.middleware.SocialAuthExceptionMiddleware',
-    'core.middleware.AMP.OnlyArticleDetail',
+MIDDLEWARE = (
+    "closed_site.middleware.ClosedSiteMiddleware",
+    "closed_site.middleware.RestrictedAccessMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.middleware.cache.UpdateCacheMiddleware",  # runs during the response phase (top -> last)
+    "core.middleware.cache.AnonymousResponse",  # hacks cookie header for anon users (resp phase)
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "libs.middleware.url.UrlMiddleware",
+    "django.middleware.gzip.GZipMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.auth.middleware.RemoteUserMiddleware",
+    "django.contrib.admindocs.middleware.XViewMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_user_agents.middleware.UserAgentMiddleware",
+    "signupwall.middleware.SignupwallMiddleware",
+    "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
+    "core.middleware.cache.AnonymousRequest",  # hacks cookie header for anon users (req phase)
+    "django.middleware.cache.FetchFromCacheMiddleware",  # runs during the request phase (top -> first)
+    "social_django.middleware.SocialAuthExceptionMiddleware",
+    "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
 )
 
-LANGUAGES = (
-    ('es', 'Español'),
-)
+# Localization default settings
+LANGUAGES = (("es", "Español"),)
 USE_I18N = True
 USE_L10N = True
 
-LANGUAGE_CODE = 'es'
-LOCAL_LANG = 'es'
-LOCAL_COUNTRY = 'UY'
+LANGUAGE_CODE = "es"
+LOCAL_LANG = "es"
+LOCAL_COUNTRY = "UY"
 
+USE_TZ = True
 DATE_INPUT_FORMATS = (
-    '%Y-%m-%d', '%d/%m/%Y', '%d/%m/%y',  # 2006-10-25, 25/10/2006, 25/10/06
+    "%Y-%m-%d",
+    "%d/%m/%Y",
+    "%d/%m/%y",  # 2006-10-25, 25/10/2006, 25/10/06
 )
-DATETIME_FORMAT = 'j N, Y, P'
+DATETIME_FORMAT = "j N, Y, P"
+DATETIME_INPUT_FORMATS = ("%d/%m/%Y %H:%M",)  # '10/25/2006 14:30:59'
 
-DATETIME_INPUT_FORMATS = (
-    '%d/%m/%Y %H:%M',     # '10/25/2006 14:30:59'
-)
-
-ROOT_URLCONF = 'urls'
+ROOT_URLCONF = "urls"
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 
-# Base (TODO: check usage and remove or explain this setting)
-BASE_SUB = None
+# Default publication slug.
+DEFAULT_PUB = "default"
 
-# Default publication slug. Please read this related issue: https://github.com/ladiaria/utopia-cms/issues/29
-DEFAULT_PUB = 'default'
-
-FIRST_DAY_OF_WEEK = 0     # 0 is Sunday
-# Convert to calendar module, where 0 is Monday :/
+FIRST_DAY_OF_WEEK = 0  # 0 is Sunday
+# Convert to calendar module, where 0 is Monday:
 FIRST_DAY_OF_WEEK_CAL = (FIRST_DAY_OF_WEEK - 1) % 7
 
 HOME_PUBLICATIONS = []
 
-HASHIDS_SALT = 'top_secret_salt_phrase'
-USER_HASHID_SALT = 'top_secret_salt_phrase_for_users_ids_only'
-
-# A dictionary of urlconf module paths, keyed by their subdomain
-SUBDOMAIN_URLCONFS = {
-    None: 'urls',  # no subdomain, e.g. ``example.com``
-}
+HASHIDS_SALT = "top_secret_salt_phrase"
+USER_HASHID_SALT = "top_secret_salt_phrase_for_users_ids_only"
 
 # MEDIA
-MEDIA_ROOT = PROJECT_ABSOLUTE_DIR + '/media/'
-MEDIA_URL = '/media/'
-ADMIN_MEDIA_PREFIX = '/media/admin/'
+MEDIA_ROOT = PROJECT_ABSOLUTE_DIR + "/media/"
+MEDIA_URL = "/media/"
+ADMIN_MEDIA_PREFIX = "/media/admin/"
 
-CSS_URL = '%scss/' % MEDIA_URL
-IMG_URL = '%simg/' % MEDIA_URL
-JS_URL = '%sjs/' % MEDIA_URL
-SWF_URL = '%sswf/' % MEDIA_URL
+CSS_URL = f"{MEDIA_URL}css/"
+IMG_URL = f"{MEDIA_URL}img/"
+JS_URL = f"{MEDIA_URL}js/"
+SWF_URL = f"{MEDIA_URL}swf/"
 
 mimetypes.add_type("image/svg+xml", ".svg", True)
 mimetypes.add_type("image/svg+xml", ".svgz", True)
 
 # AVATAR
-AVATAR_DEFAULT_IMAGE = 'identicon'
+AVATAR_DEFAULT_IMAGE = "identicon"
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': ['127.0.0.1:11211']
-    }
+    "default": {"BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache", "LOCATION": ["127.0.0.1:11211"]}
 }
-
-# required for django mobile.
-# TODO: search for a django-mobile replacement because last version is not compatible with new "TEMPLATE" setting.
-TEMPLATE_LOADERS = (
-    (
-        'django_mobile.loader.CachedLoader',
-        (
-            'django_mobile.loader.Loader',
-            'django.template.loaders.filesystem.Loader',
-            'django.template.loaders.app_directories.Loader',
-            (
-                # needed to allow us to override admin_shortcuts' admin/index.html template
-                'django.template.loaders.filesystem.Loader', [join(get_python_lib(), "admin_shortcuts")],
-            ),
-        ),
-    ),
-)
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [join(PROJECT_ABSOLUTE_DIR, 'templates'), join(PROJECT_ABSOLUTE_DIR, 'apps')],
-        'OPTIONS': {
-            'context_processors': [
-                'django.contrib.auth.context_processors.auth',
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'context_processors.urls',
-                'context_processors.site',
-                'context_processors.publications',
-                'context_processors.gtm',
-                'context_processors.main_menus',
-                'context_processors.article_content_type',
-                'django.template.context_processors.static',
-                'apps.core.context_processors.aniosdias',
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [join(PROJECT_ABSOLUTE_DIR, "templates"), join(PROJECT_ABSOLUTE_DIR, "apps")],
+        "OPTIONS": {
+            "context_processors": [
+                "django.contrib.auth.context_processors.auth",
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "context_processors.urls",
+                "context_processors.site",
+                "context_processors.publications",
+                "context_processors.gtm",
+                "context_processors.main_menus",
+                "context_processors.article_content_type",
+                "django.template.context_processors.static",
+                "apps.core.context_processors.aniosdias",
+                "apps.core.context_processors.bn_module",
+                "social_django.context_processors.backends",
+                "social_django.context_processors.login_redirect",
+                "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
-                'django.template.context_processors.tz',
-                'adzone.context_processors.get_source_ip',
-                'django_mobile.context_processors.flavour',
-                'apps.thedaily.context_processors.permissions',
-                'django.template.context_processors.csrf',
+                "django.template.context_processors.tz",
+                "adzone.context_processors.get_source_ip",
+                "apps.thedaily.context_processors.permissions",
+                "django.template.context_processors.csrf",
+                "context_processors.google_client_id",
+                "context_processors.google_one_tap_enabled",
             ],
-            'loaders': TEMPLATE_LOADERS,
+            "loaders": [
+                "amp_tools.loader.Loader",
+                (
+                    "django.template.loaders.cached.Loader",
+                    ["django.template.loaders.filesystem.Loader", "django.template.loaders.app_directories.Loader"],
+                ),
+            ],
         },
     }
 ]
 
-FIXTURE_DIRS = (join(PROJECT_ABSOLUTE_DIR, 'fixtures'), )
+FIXTURE_DIRS = (join(PROJECT_ABSOLUTE_DIR, "fixtures"),)
 
 # EMAIL
 EMAIL_FAIL_SILENTLY = False
 
-NOTIFICATIONS_FROM_NAME = 'utopia cms'
-NOTIFICATIONS_FROM_ADDR1 = 'suscriptores@example.com'
-NOTIFICATIONS_FROM_ADDR2 = 'ventas@example.com'
-NOTIFICATIONS_TO_ADDR = 'suscripciones@example.com'
+NOTIFICATIONS_FROM_NAME = "utopia cms"
+NOTIFICATIONS_FROM_ADDR1 = "suscriptores@example.com"
+NOTIFICATIONS_FROM_ADDR2 = "ventas@example.com"
+NOTIFICATIONS_TO_NAME = "Suscripciones"
+NOTIFICATIONS_TO_ADDR = "suscripciones@example.com"
 NOTIFICATIONS_FROM_MX = NOTIFICATIONS_FROM_ADDR1
+NEWSLETTERS_FROM_MX = NOTIFICATIONS_FROM_MX
 
-NEWSLETTER_IMG_FORMAT = 'jpg'
+NEWSLETTER_IMG_FORMAT = "jpg"
 
-SENDNEWSLETTER_EXPORT_DIR = '/var/local/utopiacms/sendnewsletter_export'
-SENDNEWSLETTER_LOGFILE = '/var/log/utopiacms/sendnewsletter/%s-%s.log'
+SENDNEWSLETTER_EXPORT_DIR = "/var/local/utopiacms/sendnewsletter_export"
+SENDNEWSLETTER_LOGFILE = "/var/log/utopiacms/sendnewsletter/%s-%s.log"
 
-# apps
+# celery
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_CACHE_BACKEND = "default"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+"""
+With the following set of queues, 3 workers are started to process the 3 different queues, upd_* is meant to be used in
+a worker with only one process (concurrency 1), and the concurrent_tasks queue can be used with any concurrency, those
+3 workers can be started executing the following commands, also a .ini sample conf for supervisor is provided inside
+the "docs" directory in the root of the project. In portal directory, in a different shell for each command, run:
 
-# background tasks
-MAX_ATTEMPTS = 1
+$ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp worker -Q upd_category_home -c 1 -l INFO -n utopiacms_w1@%h
+$ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp worker -Q upd_articles_url -c 1 -l INFO -n utopiacms_w2@%h
+$ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp worker -Q concurrent_tasks -c 2 -l INFO -n utopiacms_w3@%h
+
+If you want to use/test celery-beat, you also need a worker for it which can be started this way:
+
+$ DJANGO_SETTINGS_MODULE=settings celery -A apps.celeryapp beat -l INFO
+
+NOTE: The provided sample supervisor conf file uses a "run" directory to store the worker's main process PIDs, needed
+      to restart them gracefully sending a TERM signal, read more about this in this two sections of the celery docs:
+      - https://docs.celeryq.dev/en/latest/userguide/workers.html#stopping-the-worker
+      - https://docs.celeryq.dev/en/latest/userguide/workers.html#restarting-the-worker
+"""
+CELERY_QUEUES = {
+    "upd_category_home": {"exchange": "upd_category_home", "binding_key": "upd_category_home"},
+    "upd_articles_url": {"exchange": "upd_articles_url", "binding_key": "upd_articles_url"},
+    "concurrent_tasks": {"exchange": "concurrent_tasks", "binding_key": "concurrent_tasks"},
+}
+CELERY_TASK_ROUTES = {
+    "update-category-home": {"queue": "upd_category_home"},
+    "update-article-urls": {"queue": "upd_articles_url"},
+    "send-push-notification": {"queue": "concurrent_tasks"},
+}
+CELERY_TASK_QUEUES = []  # will be populated after local settings imports
+CELERY_RESULT_EXTENDED = True
 
 # Elasticsearch is disabled by default, to enable it you need to adjust this settings according to your Elasticsearch
 # installation, see https://django-elasticsearch-dsl.readthedocs.io/en/latest/quickstart.html#install-and-configure
 # NOTE: The elasticsearch recommended version to use is 7.*
 #       If your linux distribution doesn't have it, you can use docker to run an specific version (for example 7.17.7).
 #       Follow this guide to do that: https://hub.docker.com/_/elasticsearch
+#       TODO: update, we have fresh info about ElasticSearch
 ELASTICSEARCH_DSL = {}
 ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
 SEARCH_ELASTIC_USE_FUZZY = False  # Ignored when previous setting is True (not allowed by Elasticsearch).
+
+# mongodb database
+MONGODB_DATABASE = "utopia_cms"
+MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
+
+# apps
 
 # core
 # publications that use the root url as their home page
@@ -349,15 +396,15 @@ CORE_UPDATE_CATEGORY_HOMES = []
 CORE_LOG_ARTICLE_VIEWS = True
 
 # Article types
-CORE_PHOTO_ARTICLE = 'PA'
-CORE_HTML_ARTICLE = 'HT'
-CORE_COMUNIDAD_ARTICLE = 'CM'
+CORE_PHOTO_ARTICLE = "PA"
+CORE_HTML_ARTICLE = "HT"
+CORE_COMUNIDAD_ARTICLE = "CM"
 CORE_ARTICLE_TYPES = (
-    ('NE', 'Noticia'),
-    ('OP', 'Opinión'),
-    (CORE_PHOTO_ARTICLE, 'Fotografía'),
-    (CORE_HTML_ARTICLE, 'HTML'),
-    (CORE_COMUNIDAD_ARTICLE, 'COMUNIDAD'),
+    ("NE", "Noticia"),
+    ("OP", "Opinión"),
+    (CORE_PHOTO_ARTICLE, "Fotografía"),
+    (CORE_HTML_ARTICLE, "HTML"),
+    (CORE_COMUNIDAD_ARTICLE, "COMUNIDAD"),
 )
 # Supplement names
 CORE_SUPPLEMENT_NAME_CHOICES = ()
@@ -370,164 +417,289 @@ CORE_ARTICLE_DETAIL_DATE_TOOLTIP = True
 # override to False to show the tooltip only since "Yesterday" dates
 CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP = True
 
+# audio transcript only for subscribers by default, change to False to enable for all registered users
+CORE_ARTICLE_DETAIL_AUDIO_TRANSCRIPT_ONLY_SUBSCRIBERS = True
+
 # show or hide photo credits in article cards
 CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 
+# class to use for the body field in articles
+CORE_ARTICLE_BODY_FIELD_CLASS = "martor.models.MartorField"
+
+# use job to build journalist absolute url
+CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
+
 # enable related articles in article detail
 CORE_ENABLE_RELATED_ARTICLES = True
-
-# mongodb database
-MONGODB_DATABASE = 'utopia_cms'
-MONGODB_NOTIMEOUT_CURSORS_ALLOWED = True
 
 # push notifications
 CORE_PUSH_NOTIFICATIONS_OFFER = True  # offer to allow push notifications on all pages
 CORE_PUSH_NOTIFICATIONS_VAPID_PRIVKEY = None
 CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY = None
 CORE_PUSH_NOTIFICATIONS_VAPID_CLAIMS = {"sub": "mailto:YourNameHere@example.com"}
-CORE_PUSH_NOTIFICATIONS_LOGFILE = '/var/log/utopiacms/push_notifications.log'
+CORE_PUSH_NOTIFICATIONS_LOGFILE = "/var/log/utopiacms/push_notifications.log"
 CORE_PUSH_NOTIFICATIONS_OPTIONS = {
-    'icon': '/static/meta/utopia-192x192.png',
-    'vibrate': [100, 50, 100],
-    'actions': [
-        {'action': 'explore', 'title': 'Ir al sitio web'},
-        {'action': 'close', 'title': 'Cerrar'},
+    "icon": "/static/meta/utopia-192x192.png",
+    "vibrate": [100, 50, 100],
+    "actions": [
+        {"action": "explore", "title": "Ir al sitio web"},
+        {"action": "close", "title": "Cerrar"},
     ],
 }
 
-# Change to false if the signupwall middleware is removed
-SIGNUPWALL_ENABLED = True
+# signupwall (other settings will be populated after local settings import)
+SIGNUPWALL_MAX_CREDITS = 10
+SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: values greater than 0 is not fully supported (only AMP endpoints need updates)
+SIGNUPWALL_RISE_REDIRECT = True
+SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily
-SUBSCRIPTION_EMAIL_SUBJECT = 'Nueva suscripción'
-PROMO_EMAIL_SUBJECT = 'Nueva promoción'
+# TODO: write comments to explain the usage (for the uncommented ones)
+SUBSCRIPTION_EMAIL_SUBJECT = "Nueva suscripción"
+PROMO_EMAIL_SUBJECT = "Nueva promoción"
 SUBSCRIPTION_EMAIL_TO = [NOTIFICATIONS_TO_ADDR]
 SUBSCRIPTION_BY_PHONE_EMAIL_TO = SUBSCRIPTION_EMAIL_TO
 MAX_USERS_API_SESSIONS = 3
+THEDAILY_GOOGLE_OAUTH2_ASK_PHONE = False
 THEDAILY_TERMS_AND_CONDITIONS_FLATPAGE_ID = None
-THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
-    ('DDIGM', 'Suscripción digital'),
-    ('PAPYDIM', 'Suscripción papel'),
-)
+THEDAILY_SUBSCRIPTION_TYPE_CHOICES = ()
+THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
-THEDAILY_WELCOME_TEMPLATE = 'welcome.html'
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 
 # photologue
-DEFAULT_BYLINE = 'Difusión, S/D de autor.'
+DEFAULT_BYLINE = "Difusión, S/D de autor."
 
 # django-tagging and autocomplete-taggit
 FORCE_LOWERCASE_TAGS = False
-TAGGING_AUTOCOMPLETE_JS_BASE_URL = '%sjs/jquery-tag-it-utopia/' % STATIC_URL
-TAGGING_AUTOCOMPLETE_JQUERY_UI_FILE = 'jquery-ui.min.js'
+TAGGING_AUTOCOMPLETE_JS_BASE_URL = f"{STATIC_URL}jquery-tag-it/"
+TAGGING_AUTOCOMPLETE_JQUERY_UI_FILE = "jquery-ui.min.js"
 
 # home
-PUBLISHING_TIME = '05:00'  # 'HH:MM'
+PUBLISHING_TIME = "05:00"  # 'HH:MM'
 
 # default logos
-HOMEV3_LOGO = HOMEV3_LOGO_FOOTER = 'img/logo-utopia.png'
-HOMEV3_SECONDARY_LOGO = 'img/logo-utopia-secondary.png'
-HOMEV3_LOGO_PRINTABLE = 'img/logo-utopia-printable.png'
-HOMEV3_LOGO_ALT_TEXT = 'utopia logo'
+HOMEV3_LOGO = HOMEV3_LOGO_FOOTER = "img/logo-utopia.png"
+HOMEV3_SECONDARY_LOGO = "img/logo-utopia-secondary.png"
+HOMEV3_LOGO_PRINTABLE = "img/logo-utopia-printable.png"
+HOMEV3_LOGO_ALT_TEXT = "utopia logo"
 
 # default footer template
-HOMEV3_FOOTER_TEMPLATE = 'footer.html'
+HOMEV3_FOOTER_TEMPLATE = "footer.html"
 
 # django reCaptcha
 NOCAPTCHA = True
 RECAPTCHA_USE_SSL = True
-
-# exchange
-EXCHANGE_UPDATE_MODULE = 'exchange.brou'
 
 # adzone
 ADZONE_LOG_AD_IMPRESSIONS = True
 ADZONE_LOG_AD_CLICKS = True
 
 SHORTEN_MODELS = {
-    'A': 'core.article',
-    'U': 'short.url',
+    "A": "core.article",
+    "U": "short.url",
 }
 
 TINYMCE_DEFAULT_CONFIG = {
-    'plugins': "table,spellchecker,paste,searchreplace",
-    'theme': "advanced",
+    "plugins": "table,spellchecker,paste,searchreplace",
+    "theme": "advanced",
 }
 
 AUTH_USER_EMAIL_UNIQUE = True
-AUTH_PROFILE_MODULE = 'thedaily.Subscriber'
+AUTH_PROFILE_MODULE = "thedaily.Subscriber"
 
-# login_required decorator redirects here
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/logged-in/'
-LOGIN_ERROR_URL = '/usuarios/error/login/'
+# TODO: use / check usage
+LOGIN_URL = "/usuarios/entrar/"  # login_required decorator redirects here
+LOGOUT_URL = "/usuarios/salir/"
+SIGNUP_URL = "/usuarios/registro/"
+LOGIN_REDIRECT_URL = "/"
+LOGIN_ERROR_URL = "/usuarios/error/login/"
 
-MESSAGETAGS = {messages.ERROR: 'danger', }
+MESSAGETAGS = {messages.ERROR: "danger"}
 
-AUTHENTICATION_BACKENDS = (
-    'social_core.backends.google.GoogleOAuth2',
-    'django.contrib.auth.backends.ModelBackend',
-)
-
-# Opciones de django-social-auth
-SOCIAL_ADMIN_EMAIL_TO = ['social-admin@ladiaria.com.uy']
-SOCIAL_AUTH_GOOGLE_OAUTH2_STRATEGY = 'social_django.strategy.DjangoStrategy'
-SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
+# django-social-auth
+SOCIAL_AUTH_GOOGLE_OAUTH2_STRATEGY = "social_django.strategy.DjangoStrategy"
+SOCIAL_AUTH_STORAGE = "social_django.models.DjangoStorage"
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
-    'https://www.googleapis.com/auth/plus.me',
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/userinfo.profile']
+    "https://www.googleapis.com/auth/plus.me",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+]
+SOCIAL_AUTH_USERNAME_IS_FULL_EMAIL = True
 SOCIAL_AUTH_PIPELINE = (
-    'social_core.pipeline.social_auth.social_details',
-    'social_core.pipeline.social_auth.social_uid',
-    'social_core.pipeline.social_auth.auth_allowed',
-    'social_core.pipeline.social_auth.social_user',
-    'social_core.pipeline.user.get_username',
-    'social_core.pipeline.social_auth.associate_by_email',
-    'social_core.pipeline.user.create_user',
-    'libs.social_auth_pipeline.get_phone_number',
-    'social_core.pipeline.social_auth.associate_user',
-    'social_core.pipeline.social_auth.load_extra_data',
-    'social_core.pipeline.user.user_details',
+    "social_core.pipeline.social_auth.social_details",
+    "social_core.pipeline.social_auth.social_uid",
+    "social_core.pipeline.social_auth.auth_allowed",
+    "social_core.pipeline.social_auth.social_user",
+    "social_core.pipeline.user.get_username",
+    "libs.social_auth_pipeline.check_email_in_use",
+    "social_core.pipeline.social_auth.associate_by_email",
+    "libs.social_auth_pipeline.create_user_inactive",  # Create user with is_active=False
+    "libs.social_auth_pipeline.get_phone_number",
+    "social_core.pipeline.social_auth.associate_user",
+    "social_core.pipeline.social_auth.load_extra_data",
+    "social_core.pipeline.user.user_details",
 )
-SOCIAL_AUTH_URL_NAMESPACE = 'social'
+SOCIAL_AUTH_URL_NAMESPACE = "social"
 
+# misc
 COMPRESS_PRECOMPILERS = (
-    ('text/less', 'lessc {infile} {outfile}'),
-    ('text/x-scss', 'sass --scss {infile} {outfile}'),
+    ("text/less", "lessc {infile} {outfile}"),
+    ("text/x-scss", "sass --scss {infile} {outfile}"),
 )
 
 BLEACH_STRIP_TAGS = True
 
-# Online sync User fields with CRM (empty, using hardcoded fields only)
+# Online sync User fields with CRM (key=crm_contact_field_name, value=cms_subscriber_field_name)
 CRM_UPDATE_SUBSCRIBER_FIELDS = {}
-# Online sync User fields with CRM enabled by default
-CRM_UPDATE_USER_ENABLED = True
+# Online sync User fields with CRM disabled by default
+CRM_UPDATE_USER_ENABLED = False
+# CRM API urls will be assigned after local_settings import, if not overrided
+CRM_API_BASE_URI = None
+CRM_API_UPDATE_USER_URI = None
+CRM_API_GET_USER_URI = None
 
 # PWA
-PWA_SERVICE_WORKER_TEMPLATE = 'core/templates/sw/serviceworker.js'
+PWA_SERVICE_WORKER_TEMPLATE = "core/templates/sw/serviceworker.js"
+# Override and increment next variable every time you change anything related to cookies or the server CSP
 PWA_SERVICE_WORKER_VERSION = 1
 
 # Useful settings for testing (test management command, should be overriden in local_test_settings.py if necessary)
 TESTING_CHROME_HEADLESS = True
 TESTING_PORT = 8000
+# A flag to tell us that we must use the default django functions to send emails because these emails will be read by
+# tests that validate the emails received, for example, take the token from the signup validation email.
+# Override to True only if you set an email backend for test that is not SMTP.
+LOCAL_EMAIL_BACKEND_TEST = False
 
-try:
-    UTILS_MODULE = __import__('utils', fromlist=[PROJECT_ABSOLUTE_DIR])
-except ImportError as e:
-    print(e)
-
+# defaults that will be assigned after local settings import
+COMPRESS_OFFLINE_CONTEXT = {}
+SIGNUPWALL_ENABLED = None
+SIGNUPWALL_HEADER_ENABLED = False
+SIGNUPWALL_REMAINING_BANNER_ENABLED = True
 FREEZE_TIME = None
+CRM_UPDATE_USER_CREATE_CONTACT = None
+CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP version article page
+PHONENUMBER_DEFAULT_REGION = None
+CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
+ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
+ENABLE_GOOGLE_ONE_TAP = False
+SENTRY_ENABLED = False
+
+# ====================================================================================== visual separator =============
+
 
 # Override previous settings with values in local_settings.py settings file
-from local_settings import *
+from local_settings import *  # noqa
 
-SITE_URL = '%s://%s/' % (URL_SCHEME, SITE_DOMAIN)
-ROBOTS_SITEMAP_URLS = [SITE_URL + 'sitemap.xml']
-LOCALE_NAME = "%s_%s.%s" % (LOCAL_LANG, LOCAL_COUNTRY, DEFAULT_CHARSET)
+
+AUTHENTICATION_BACKENDS = (
+    "libs.google_oauth2_backend.CustomGoogleOAuth2"
+    if ENABLE_GOOGLE_ONE_TAP
+    else "social_core.backends.google.GoogleOAuth2",
+    "django.contrib.auth.backends.ModelBackend",
+)
+
+if ENABLE_GOOGLE_ONE_TAP:
+    # Exclude URLs that should not use Google One Tap
+    EXCLUDE_ONE_TAP_FOR_URLS = [
+        "/usuarios/entrar/",
+        "/usuarios/suscribite/",
+        "/usuarios/restablecer/",
+        "/usuarios/registrate/google/",
+        "/usuarios/verificar-email/",
+        "/usuarios/registrate/?step=2",
+        "/usuarios/registrate/?step=2.5",
+        "/usuarios/registrate/?step=3",
+    ]
+
+    # Allow popups to external domains while maintaining same-origin security
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+
+    # Frame Options Configuration
+    # Allow Google to embed authentication iframes in our pages.
+    # SAMEORIGIN is more secure than ALLOWALL while still permitting Google's flow.
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+    # Middleware Configuration
+    # Remove XFrameOptionsMiddleware to prevent conflicts with Google One Tap iframes.
+    # The middleware would override X_FRAME_OPTIONS and block Google's authentication popup.
+    MIDDLEWARE = tuple([
+        m for m in MIDDLEWARE if m not in ["django.middleware.clickjacking.XFrameOptionsMiddleware"]
+    ])
+
+SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
+SITE_URL = f"{SITE_URL_SD}/"
+CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
+ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]
+LOCALE_NAME = f"{LOCAL_LANG}_{LOCAL_COUNTRY}.{DEFAULT_CHARSET}"
+COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
+
+if locals().get("DEBUG_TOOLBAR_ENABLE"):
+    # NOTE when enabled, you need to: pip install django-debug-toolbar && ./manage.py collectstatic
+    INSTALLED_APPS += ('debug_toolbar',)
+    MIDDLEWARE = MIDDLEWARE[:9] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[9:]
+
+DEBUG = locals().get("DEBUG", False)
+if DEBUG:
+    MIDDLEWARE = MIDDLEWARE[:8] + ("corsheaders.middleware.CorsMiddleware",) + MIDDLEWARE[8:]
+
+# phonenumbers default region (if not set) will default to LOCAL_COUNTRY
+if PHONENUMBER_DEFAULT_REGION is None:
+    PHONENUMBER_DEFAULT_REGION = LOCAL_COUNTRY
+
+# signupwall overrided/defaults
+if SIGNUPWALL_ENABLED is None:
+    SIGNUPWALL_ENABLED = "signupwall.middleware.SignupwallMiddleware" in MIDDLEWARE
+# header enabled only if signupwall is enabled and header itself was set to True in local_settings
+SIGNUPWALL_HEADER_ENABLED = SIGNUPWALL_ENABLED and SIGNUPWALL_HEADER_ENABLED
+# banner enabled if signupwall is enabled and the banner itself was not set to False in local_setings
+SIGNUPWALL_REMAINING_BANNER_ENABLED = SIGNUPWALL_ENABLED and SIGNUPWALL_REMAINING_BANNER_ENABLED
+
+# celery task queues, if not overrided, we populate with Queue objects based on default or overrided CELERY_QUEUES dict
+if not CELERY_TASK_QUEUES and CELERY_QUEUES and isinstance(CELERY_QUEUES, dict):
+    CELERY_TASK_QUEUES = [Queue(k, routing_key=k) for k in CELERY_QUEUES.keys()]
 
 if FREEZE_TIME:
     freezer = freeze_time(FREEZE_TIME)
     freezer.start()
 
-ABSOLUTE_URL_OVERRIDES = {'auth.user': SITE_URL + "usuarios/perfil/editar/"}
+ABSOLUTE_URL_OVERRIDES = {"auth.user": SITE_URL + "usuarios/perfil/editar/"}
+
+# AMP
+CORE_ARTICLE_DETAIL_ENABLE_AMP = "amp_tools" in INSTALLED_APPS
+if CORE_ARTICLE_DETAIL_ENABLE_AMP:
+    MIDDLEWARE = (
+        MIDDLEWARE[:-1]
+        + ("amp_tools.middleware.AMPDetectionMiddleware", "core.middleware.AMP.OnlyArticleDetail")
+        + (MIDDLEWARE[-1],)
+    )
+
+# breaking news module footer template script for publications
+if "CORE_BN_MODULE_FOOTER_SCRIPTS_TEMPLATE" not in locals():
+    CORE_BN_MODULE_FOOTER_SCRIPTS_TEMPLATE = (
+        locals().get(
+            "CORE_BN_MODULE_LIVEBLOG_FOOTER_SCRIPTS_TEMPLATE", "utopia_cms_liveblog/bn_module_publications_loader.html"
+        ) if "utopia_cms_liveblog.apps.UtopiaCmsLiveblogConfig" in INSTALLED_APPS
+        else "breaking_news_module/publications_loader.html"
+    )
+
+# CRM API
+if CRM_API_BASE_URI:
+    CRM_API_UPDATE_USER_URI = CRM_API_UPDATE_USER_URI or (CRM_API_BASE_URI + "updateuserweb/")
+    CRM_API_GET_USER_URI = CRM_API_GET_USER_URI or (CRM_API_BASE_URI + "existsuserweb/")
+if CRM_UPDATE_USER_CREATE_CONTACT is None:
+    # defaults to the same value of the "base sync"
+    CRM_UPDATE_USER_CREATE_CONTACT = CRM_UPDATE_USER_ENABLED
+
+if ENV_HTTP_BASIC_AUTH and "API_KEY_CUSTOM_HEADER" not in locals():
+    # by default, this variable is not defined, thats why we use locals() instead of set a "neutral" value
+    API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
+
+# thedaily default subscription type and debug signals
+if "THEDAILY_SUBSCRIPTION_TYPE_DEFAULT" not in locals():
+    THEDAILY_SUBSCRIPTION_TYPE_DEFAULT = \
+        THEDAILY_SUBSCRIPTION_TYPE_CHOICES[0][0] if THEDAILY_SUBSCRIPTION_TYPE_CHOICES else None
+if THEDAILY_DEBUG_SIGNALS is None:
+    THEDAILY_DEBUG_SIGNALS = DEBUG

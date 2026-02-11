@@ -63,21 +63,18 @@
 
 ### Built With
 
-* [Django](https://djangoproject.com/)
-* [Python 3.6.8 - 3.7.11](https://www.python.org/)
+* [Django 4.1](https://djangoproject.com/)
+* [Python 3.11.8](https://www.python.org/)
 
 <!-- GETTING STARTED -->
 ## Getting Started
 
-To get a local copy up and running follow these simple example steps.
+To setup and start a local environment follow the installation steps.
 
-### Prerequisites
-
-* ``pip install -r requirements.txt``
 
 ### Installation
 
-Follow our [INSTALL](INSTALL.md) instructions in this repository to install requirements, setup the database and modify configuration.
+Follow our [INSTALL](INSTALL.md) instructions in this repository to install requirements, setup the database, modify configuration and start the server and its web front-end.
 
 
 ## Usage
@@ -122,12 +119,12 @@ Distributed under the BSD 3-Clause "New" or "Revised" License. See `LICENSE` for
 
 la diaria - [@ladiaria](https://twitter.com/ladiaria)
 
-Project Link: [https://github.com/ladiaria/utopia-cms](https://github.com/ladiaria/utopia-cms)
+Project Link: [https://github.com/ladiaria/utopia-cms/](https://github.com/ladiaria/utopia-cms/)
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
 
-Utopia was developed at [La Diaria](https://ladiaria.com.uy) and it has been opened in 2020 thanks to the support of [Google News Initiative](https://newsinitiative.withgoogle.com/).
+Utopia was developed at [la diaria](https://ladiaria.com.uy/) and it has been opened in 2020 thanks to the support of [Google News Initiative](https://newsinitiative.withgoogle.com/).
 
 Utopía was one of the selected projects by Google News Initiative in Latin America to receive support from the Innovation Challenge Fund.
 

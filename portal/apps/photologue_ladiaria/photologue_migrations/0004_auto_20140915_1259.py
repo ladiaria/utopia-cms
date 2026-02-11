@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from django.db import models, migrations
 import sortedm2m.fields
@@ -20,16 +19,16 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='photo',
             name='effect',
-            field=models.ForeignKey(to='photologue.PhotoEffect', blank=True, related_name='photo_related', verbose_name='effect', null=True),
+            field=models.ForeignKey(on_delete=models.CASCADE, to='photologue.PhotoEffect', blank=True, related_name='photo_related', verbose_name='effect', null=True),
         ),
         migrations.AlterField(
             model_name='photosize',
             name='effect',
-            field=models.ForeignKey(to='photologue.PhotoEffect', blank=True, related_name='photo_sizes', verbose_name='photo effect', null=True),
+            field=models.ForeignKey(on_delete=models.CASCADE, to='photologue.PhotoEffect', blank=True, related_name='photo_sizes', verbose_name='photo effect', null=True),
         ),
         migrations.AlterField(
             model_name='photosize',
             name='watermark',
-            field=models.ForeignKey(to='photologue.Watermark', blank=True, related_name='photo_sizes', verbose_name='watermark image', null=True),
+            field=models.ForeignKey(on_delete=models.CASCADE, to='photologue.Watermark', blank=True, related_name='photo_sizes', verbose_name='watermark image', null=True),
         ),
     ]

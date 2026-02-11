@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-from __future__ import print_function
 
 import base64
 
@@ -7,10 +5,10 @@ from django.db import models
 from django.db.models.query import QuerySet
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.utils.translation import get_language, activate
-from django.utils.encoding import python_2_unicode_compatible
-from django.utils.six.moves import cPickle as pickle  # pylint: disable-msg=F
+from six import python_2_unicode_compatible
+from six.moves import cPickle as pickle  # pylint: disable-msg=F
 
 from .compat import AUTH_USER_MODEL
 
@@ -85,8 +83,8 @@ class NoticeSetting(models.Model):
     of a given type to a given medium.
     """
 
-    user = models.ForeignKey(AUTH_USER_MODEL, verbose_name=_("user"))
-    notice_type = models.ForeignKey(NoticeType, verbose_name=_("notice type"))
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name=_("user"))
+    notice_type = models.ForeignKey(NoticeType, on_delete=models.CASCADE, verbose_name=_("notice type"))
     medium = models.CharField(_("medium"), max_length=1, choices=NOTICE_MEDIA)
     send = models.BooleanField(_("send"), default=False)
 

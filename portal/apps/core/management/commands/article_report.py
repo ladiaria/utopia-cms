@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 import sys
 from csv import writer
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from core.models import Article

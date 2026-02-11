@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 import os
 from PIL import Image
@@ -49,18 +48,24 @@ class PhotoExtended(models.Model):
         (ILUSTRACION, 'Ilustración'),
     )
     type = models.CharField('tipo', max_length=1, choices=TYPE, default=FOTO)
-    image = models.OneToOneField(Photo, related_name='extended')
+    image = models.OneToOneField(Photo, on_delete=models.CASCADE, related_name='extended')
     focuspoint_x = models.CharField('punto de foco horizontal (x)', max_length=10, default=0, help_text='')
     focuspoint_y = models.CharField('punto de foco vertical (y)', max_length=10, default=0, help_text='')
     radius_length = models.SmallIntegerField(
         'radio', blank=True, null=True, help_text='mitad del lado del cuadrado para recorte (pixeles)'
     )
-    square_version = models.ImageField('versión cuadrada', upload_to=get_storage_path, blank=True, null=True)
+    square_version = models.ImageField(
+        'versión cuadrada', upload_to=get_storage_path, max_length=255, blank=True, null=True
+    )
     weight = models.SmallIntegerField(
         'orden de la imagen en la galería', default=0, help_text='el número más bajo se muestra primero.'
     )
-    photographer = models.ForeignKey(Photographer, verbose_name='autor', related_name='photos', blank=True, null=True)
-    agency = models.ForeignKey(Agency, verbose_name='agencia', related_name='photos', blank=True, null=True)
+    photographer = models.ForeignKey(
+        Photographer, on_delete=models.CASCADE, verbose_name='autor', related_name='photos', blank=True, null=True
+    )
+    agency = models.ForeignKey(
+        Agency, on_delete=models.CASCADE, verbose_name='agencia', related_name='photos', blank=True, null=True
+    )
 
     class Meta:
         verbose_name = 'configuración extra'
@@ -120,7 +125,7 @@ class PhotoExtended(models.Model):
                 pass
         else:
             self.square_version = None
-        super(PhotoExtended, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def get_square_version_filename(self):
         return os.path.basename(self.square_version.path)

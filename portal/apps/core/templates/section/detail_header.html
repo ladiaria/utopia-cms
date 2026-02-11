@@ -1,0 +1,10 @@
+{# TODO: Check if we can improve hardcoded white color #}
+{#       improve in what way? (white is the default field value) #}
+<div class="section_background{% if section.background_color != '#ffffff' %} styled{% endif %}"
+     style="background-color:{{ section.background_color }}{% block extra_style %} !important{% endblock %}">
+  <div class="container container--narrow">
+    <div class="section-detail__head {% if section.white_text %}white_text{% endif %}">
+      {% include 'core/templates/section/detail_header_content.html' %}
+    </div>
+  </div>
+</div>

@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 
 from builtins import str
 
@@ -7,7 +6,7 @@ from time import time
 from uuid import uuid4
 
 from django.conf import settings
-from django.core.urlresolvers import resolve, Resolver404
+from django.urls import resolve, Resolver404
 
 from core.models import Article, ArticleUrlHistory, Publication
 from signupwall.middleware import get_article_by_url_kwargs, subscriber_access
@@ -16,7 +15,7 @@ from signupwall.middleware import get_article_by_url_kwargs, subscriber_access
 def permissions(request):
     result, is_subscriber, is_subscriber_default = {}, False, False
 
-    if request.user.is_authenticated() and hasattr(request.user, 'subscriber'):
+    if request.user.is_authenticated and hasattr(request.user, 'subscriber'):
 
         subscriber = request.user.subscriber
 
@@ -55,15 +54,16 @@ def permissions(request):
             is_subscriber = is_subscriber_default
 
         # other analog context variables for publications defined in settings
-        result.update((
-            'is_subscriber_' + publication_slug, subscriber.is_subscriber(publication_slug)
-        ) for publication_slug in getattr(settings, 'THEDAILY_IS_SUBSCRIBER_CONTEXT_PUBLICATIONS', ()))
+        result.update(
+            ('is_subscriber_' + publication_slug, subscriber.is_subscriber(publication_slug))
+            for publication_slug in getattr(settings, 'THEDAILY_IS_SUBSCRIBER_CONTEXT_PUBLICATIONS', ())
+        )
 
     else:
         is_subscriber_any = False
 
     # A poll url path in google forms
-    pu_path = getattr(settings, 'THEDAILY_POLL_URL_PATH', None) if request.user.is_authenticated() else None
+    pu_path = getattr(settings, 'THEDAILY_POLL_URL_PATH', None) if request.user.is_authenticated else None
 
     result.update(
         {
@@ -78,13 +78,18 @@ def permissions(request):
     talk_url = getattr(settings, 'TALK_URL', None)
     if is_subscriber and talk_url:
         jti, exp = str(uuid4()), int(time()) + 60
+        # Use full name if available, otherwise use the part of the email before @ to avoid exposing full email
+        coral_username = request.user.get_full_name()
+        if not coral_username:
+            coral_username = request.user.email.split('@')[0] if request.user.email else request.user.username
         result['talk_auth_token'] = jwt.encode(
             {
                 'jti': jti,
                 'exp': exp + 3600,
                 'user': {
-                    'id': str(request.user.id), 'email': request.user.email,
-                    'username': request.user.get_full_name() or request.user.username,
+                    'id': str(request.user.id),
+                    'email': request.user.email,
+                    'username': coral_username,
                 },
             },
             settings.TALK_JWT_SECRET,

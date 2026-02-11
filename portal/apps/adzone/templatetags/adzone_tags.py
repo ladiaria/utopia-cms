@@ -4,14 +4,16 @@
 # This script is licensed under the BSD Open Source Licence
 # Please see the text file LICENCE for more information
 # If this script is distributed, it must be accompanied by the Licence
+#
+# Modifications made in utopia-cms (TODO: include them and the BSD Licence that the original author ask for)
 
-from __future__ import unicode_literals
-from datetime import datetime
+
 from random import randint
 
 from django import template
 from django.conf import settings
 from django.contrib.sites.models import Site
+from django.utils import timezone
 
 from apps import mongo_db
 
@@ -52,7 +54,7 @@ def random_zone_ad(context, ad_zone):
         if from_ip:
             try:
                 mongo_db.adzone_impressions.insert_one(
-                    {'ad': ad.id, 'source_ip': from_ip, 'impression_date': datetime.now()}
+                    {'ad': ad.id, 'source_ip': from_ip, 'impression_date': timezone.now()}
                 )
             except Exception:
                 pass
@@ -60,7 +62,7 @@ def random_zone_ad(context, ad_zone):
         context.update({'ad': ad})
         return template.loader.render_to_string('adzone/ad_tag.html', context=context.flatten())
     else:
-        return u''
+        return ''
 
 
 @register.inclusion_tag('adzone/ad_tag.html', takes_context=True)
@@ -87,7 +89,7 @@ def rr_zone_ad(context, ad_zone, index=0):
         from_ip = context.get('from_ip')
         try:
             AdImpression.objects.create(
-                ad=ad, impression_date=datetime.now(), source_ip=from_ip)
+                ad=ad, impression_date=timezone.now(), source_ip=from_ip)
         except Exception:
             pass
 
@@ -113,7 +115,7 @@ def random_category_ad(context, ad_zone, ad_category):
         from_ip = context.get('from_ip')
         try:
             AdImpression.objects.create(
-                ad=ad, impression_date=datetime.now(), source_ip=from_ip)
+                ad=ad, impression_date=timezone.now(), source_ip=from_ip)
         except Exception:
             pass
 
@@ -141,7 +143,7 @@ def rr_category_ad(context, ad_zone, ad_category, index=0):
         from_ip = context.get('from_ip')
         try:
             AdImpression.objects.create(
-                ad=ad, impression_date=datetime.now(), source_ip=from_ip)
+                ad=ad, impression_date=timezone.now(), source_ip=from_ip)
         except Exception:
             pass
 

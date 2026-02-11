@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static core_tags %}
 
-{% block page_title %}Lo más leído | {{ site.name }} | {{ country_name }}{% endblock %}
+{% block page_title %}{% title_joinparts 'Lo más leído' %}{% endblock %}
 
 {% block header_scripts %}
   <script type="text/javascript">

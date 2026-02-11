@@ -1,5 +1,4 @@
-from __future__ import unicode_literals
-from ..models import NOTICE_MEDIA
+from notification.models import NOTICE_MEDIA
 
 
 def get_backend_id(backend_name):

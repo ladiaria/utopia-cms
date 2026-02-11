@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
-from django.conf.urls import url
+from django.urls import path, re_path
 
-from .views import index, export_csv, load_table, audio_statistics_api, audio_statistics_api_amp
+from .views import index, export_csv, load_table, audio_statistics_api, audio_statistics_api_amp, nl_open
 
 
 tables = (
@@ -24,9 +22,10 @@ tables = (
 formatted_tables = "|".join(table_name for table_name in tables)
 
 urlpatterns = [
-    url(r'^$', index, name="index"),
-    url(r'^export/(?P<table_id>{})/$'.format(formatted_tables), export_csv, name="export_csv"),
-    url(r'^table/(?P<table_id>{})/$'.format(formatted_tables), load_table, name="load_table"),
-    url(r'^audio_statistics_api/$', audio_statistics_api, name="audio_statistics_api"),
-    url(r'^audio_statistics_api_amp/$', audio_statistics_api_amp, name="audio_statistics_api_amp"),
+    path('', index, name="index"),
+    re_path(r'^export/(?P<table_id>{})/$'.format(formatted_tables), export_csv, name="export_csv"),
+    re_path(r'^table/(?P<table_id>{})/$'.format(formatted_tables), load_table, name="load_table"),
+    path('audio_statistics_api/', audio_statistics_api, name="audio_statistics_api"),
+    path('audio_statistics_api_amp/', audio_statistics_api_amp, name="audio_statistics_api_amp"),
+    re_path(r"nl_open/(?P<nl_delivery_id>\d{1,})/(?P<nl_delivery_segment>user|subscriber)/", nl_open, name="nl_open"),
 ]

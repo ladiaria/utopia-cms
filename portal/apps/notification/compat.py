@@ -1,16 +1,12 @@
-from __future__ import unicode_literals
 from future import standard_library
 standard_library.install_aliases()
 import django
 from django.conf import settings
-from django.utils import six
+import six
 
 
 # Django 1.5 add support for custom auth user model
-if django.VERSION >= (1, 5):
-    AUTH_USER_MODEL = settings.AUTH_USER_MODEL
-else:
-    AUTH_USER_MODEL = "auth.User"
+AUTH_USER_MODEL = settings.AUTH_USER_MODEL
 
 try:
     from django.contrib.auth import get_user_model

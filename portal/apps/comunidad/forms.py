@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from django import forms
+from django.core.exceptions import ImproperlyConfigured
 from django.db.utils import ProgrammingError
 from django.contrib.sites.models import Site
 
@@ -16,7 +15,7 @@ from .models import SubscriberEvento, SubscriberArticle, Registro
 
 try:
     current_site_name = Site.objects.get_current().name
-except ProgrammingError:
+except (ProgrammingError, Site.DoesNotExist, ImproperlyConfigured):
     current_site_name = 'este sitio'
 
 
@@ -75,7 +74,8 @@ class EventoForm(forms.ModelForm):
 
 
 class RegistroForm(forms.ModelForm):
-    """ Registro de la utilización de un beneficio """
+    """Registro de la utilización de un beneficio"""
+
     document = forms.CharField(
         max_length=50,
         required=False,
@@ -108,8 +108,11 @@ class RegistroForm(forms.ModelForm):
                     raise forms.ValidationError("No es suscriptor activo")
                 else:
                     cleaned_data['subscriber'] = subscriber
-                if benefit and benefit.quota and benefit.quota - len(
-                        subscriber.registro_set.filter(benefit=benefit)) <= 0:
+                if (
+                    benefit
+                    and benefit.quota
+                    and benefit.quota - len(subscriber.registro_set.filter(benefit=benefit)) <= 0
+                ):
                     raise forms.ValidationError("Ya utilizó el beneficio")
             except Subscriber.DoesNotExist:
                 raise forms.ValidationError("Documento no encontrado")
@@ -122,3 +125,9 @@ class RegistroForm(forms.ModelForm):
     class Meta:
         model = Registro
         fields = ['document', 'benefit']
+
+
+class ScanQRForm(forms.Form):
+    code = forms.CharField(
+        max_length=50, required=True, label='Código', widget=forms.TextInput(attrs={'readonly': True})
+    )

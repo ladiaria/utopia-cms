@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 import re
 from generator.views import contribute
 from rest_framework import serializers, viewsets, routers
 
 from django.conf import settings
-from django.conf.urls import url, include
+from django.urls import include, path, re_path
 from django.db import ProgrammingError
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.views.generic import TemplateView, RedirectView
 from django.contrib import admin
 from django.contrib.sites.models import Site
@@ -21,16 +19,17 @@ from core.views.edition import edition_detail, edition_list, edition_list_ajax
 from core.views.supplement import supplement_list
 from core.views.sw import service_worker
 from core.views.subscribe import subscribe
+from core.views.article import perplexity_ask
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
 from thedaily.models import Subscriber
-from thedaily.views import fav_add_or_remove
 from comunidad.models import Url, Recommendation
 from homev3.views import index
 from cartelera.views import vivo
 
 
 admin.autodiscover()
+admin.site.site_header, admin.site.enable_nav_sidebar = "CMS - %s" % settings.SITE_DOMAIN, False
 
 
 # Serializers define the API representation.
@@ -102,7 +101,7 @@ class UrlSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Url
-        fields = ('recommendation_set', )
+        fields = ('recommendation_set',)
 
 
 class SubscriberSerializer(serializers.ModelSerializer):
@@ -120,7 +119,7 @@ class ExchangeSerializer(serializers.ModelSerializer):
 class JournalistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Journalist
-        fields = ('name', )
+        fields = ('name',)
 
 
 # ViewSets define the view behavior.
@@ -179,7 +178,7 @@ class JournalistViewSet(viewsets.ModelViewSet):
     queryset = Journalist.objects.all()
     serializer_class = JournalistSerializer
     http_method_names = ['get', 'head']
-    filter_fields = ('name', )
+    filter_fields = ('name',)
 
 
 class HomeArticleViewSet(viewsets.ModelViewSet):
@@ -193,7 +192,7 @@ class HomeArticleViewSet(viewsets.ModelViewSet):
         pk_list = []
     clauses = ' '.join(['WHEN id=%s THEN %s' % (pk, i) for i, pk in enumerate(pk_list)])
     ordering = 'CASE %s END' % clauses
-    queryset = Article.objects.filter(id__in=pk_list).extra(select={'ordering': ordering}, order_by=('ordering', ))
+    queryset = Article.objects.filter(id__in=pk_list).extra(select={'ordering': ordering}, order_by=('ordering',))
     serializer_class = ArticleSerializer
     http_method_names = ['get', 'head']
     filter_fields = ('headline', 'sections')
@@ -204,14 +203,14 @@ class UrlViewSet(viewsets.ModelViewSet):
     queryset = Url.objects.all()
     serializer_class = UrlSerializer
     http_method_names = ['get', 'head']
-    filter_fields = ('url', )
+    filter_fields = ('url',)
 
 
 class SubscriberViewSet(viewsets.ModelViewSet):
     queryset = Subscriber.objects.all()
     serializer_class = SubscriberSerializer
     http_method_names = ['get', 'head']
-    filter_fields = ('contact_id', )
+    filterset_fields = ('contact_id',)
 
 
 class DollarExchangeViewSet(viewsets.ModelViewSet):
@@ -227,132 +226,137 @@ router.register(r'publications', PublicationViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'sections', SectionViewSet)
 router.register(r'articles', ArticleViewSet)
-router.register(r'home', HomeArticleViewSet)
+router.register(r'home', HomeArticleViewSet, basename='home-article')
 router.register(r'journalists', JournalistViewSet)
 router.register(r'urls', UrlViewSet)
 router.register(r'subscribers', SubscriberViewSet)
 router.register(r'dollar_exchange', DollarExchangeViewSet)
 
+# error handlers
+handler403 = getattr(settings, 'CUSTOM_HANDLER_403', None)
+handler404 = getattr(settings, 'CUSTOM_HANDLER_404', None)
+handler500 = getattr(settings, 'CUSTOM_HANDLER_500', "homev3.views.custom_500_handler")
+
 urlpatterns = [
-    url(r'^photologue/', include('photologue.urls', namespace='photologue')),
-    url(r'^epubparser/', include('epubparser.urls')),
-
+    path('photologue/', include('photologue.urls', namespace='photologue_photologue')),
+    path('epubparser/', include('epubparser.urls')),
     # Admin
-    url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
-    url(r'^admin/', include(admin.site.urls)),
-
+    path('admin/doc/', include('django.contrib.admindocs.urls')),
+    path('admin/perplexity-ask/', perplexity_ask, name='perplexity_ask'),
+    path('admin/', admin.site.urls),
     # Search
-    url(r'^buscar/', include('search.urls')),
-
+    path('buscar/', include('search.urls')),
     # Service Worker
-    url(r'^sw\.js$', service_worker, name='serviceworker'),
-    url(r'^subscribe/$', subscribe, name='subscribe'),
-
+    re_path(r'^sw\.js$', service_worker, name='serviceworker'),
+    path('subscribe/', subscribe, name='subscribe'),  # TODO: check if makes any sense to have this url
     # Custom redirects
-    url(r'^suscribite-por-telefono/$', RedirectView.as_view(url='/usuarios/suscribite-por-telefono/')),
-    url(r'^suscribite/$', RedirectView.as_view(url=reverse_lazy('subscribe_landing'))),
-    url(r'^digital/$', RedirectView.as_view(url=reverse_lazy('subscribe', args=['DDIGM']))),
-    url(r'^contacto/', RedirectView.as_view(url=getattr(settings, 'CONTACT_REDIRECT_URL', '/')), name="contact-form"),
-
+    path('suscribite-por-telefono/', RedirectView.as_view(url='/usuarios/suscribite-por-telefono/')),
+    path('suscribite/', RedirectView.as_view(url=reverse_lazy('subscribe_landing'))),
+    re_path(
+        r'^contacto/', RedirectView.as_view(url=getattr(settings, 'CONTACT_REDIRECT_URL', '/')), name="contact-form"
+    ),
     # AMP copy iframe
-    url(r'^copier/', TemplateView.as_view(template_name="amp/core/templates/article/copier.html"), name='copier'),
+    re_path(r'^copier/', TemplateView.as_view(template_name="core/templates/amp/article/copier.html"), name='copier'),
+    # AMP reader ID
+    path('amp-readerid/', include('django_amp_readerid.urls')),
 ]
 
-# Used to add customized url patterns from a custom app
-urls_custom_module = getattr(settings, 'PORTAL_URLS_CUSTOM_MODULE', None)
-if urls_custom_module:
-    urlpatterns += __import__(urls_custom_module, fromlist=['urlpatterns']).urlpatterns
+# Used to add customized url patterns from custom modules
+urls_custom_modules = getattr(settings, 'PORTAL_URLS_CUSTOM_MODULES', [])
+for item in urls_custom_modules:
+    urlpatterns += __import__(item, fromlist=['urlpatterns']).urlpatterns
 
-urlpatterns.extend([
-    # Apps
-    url(r'^dashboard/', include('dashboard.urls')),
-    url(r'^fotos/', include('photologue.urls')),
-    url(r'^genera-la-noticia/$', contribute, name='generator-contribute'),
-    url(r'^memcached/', include('memcached.urls')),
-    url(r'^robots.txt', include('robots.urls')),
-    url(r'^shout/', include('shoutbox.urls')),
-    url(r'^activity/', include('actstream.urls')),
+urlpatterns.extend(
+    [
+        # Apps
+        path('dashboard/', include('dashboard.urls')),
+        path('fotos/', include('photologue.urls')),
+        path('genera-la-noticia/', contribute, name='generator-contribute'),
+        re_path(r'^robots.txt', include('robots.urls')),
+        path('shout/', include('shoutbox.urls')),
+        path('activity/', include('actstream.urls')),
+        path('favit/', include('favit.urls')),
 
-    # favit add-or-remove wrapper (TODO: favit should be replaced asap with a more compatible Django1.11+ app)
-    url(r'^favit/add-or-remove$', fav_add_or_remove),
+        # Vivo
+        path('vivo/', vivo, name="cartelera-vivo"),
+        path('vivo/archivo/<int:archived_event_id>/', vivo, name="cartelera-archive"),
 
-    # Vivo
-    url(r'^vivo/$', vivo, name="cartelera-vivo"),
-    url(r'^vivo/archivo/(?P<archived_event_id>\d+)/$', vivo, name="cartelera-archive"),
+        # Other apps
+        path('comunidad/', include('comunidad.urls')),
+        path("cartelera/", include("cartelera.urls")),
+        path('tagging_autocomplete_tagit/', include('tagging_autocomplete_tagit.urls')),
+        path('adzone/', include('adzone.urls')),
+        path('avatar/', include('avatar.urls')),
+        path('martor/', include('martor.urls')),
 
-    # Other apps
-    url(r'^comunidad/', include('comunidad.urls')),
-    url(r"^cartelera/", include("cartelera.urls")),
-    url(r'^tagging_autocomplete_tagit/', include('tagging_autocomplete_tagit.urls')),
-    url(r'^adzone/', include('adzone.urls')),
-    url(r'^avatar/', include('avatar.urls')),
-    url(r'^markdown/', include('django_markdown.urls')),
+        # Rest Framework API
+        path('api/', include(router.urls)),
+        path(
+            f'api/{getattr(settings, "PORTAL_URLS_DRF_AUTH_URL_PREFIX", "")}auth/',
+            include('rest_framework.urls', namespace='rest_framework'),
+        ),
 
-    # Rest Framework API
-    url(r'^api/', include(router.urls)),
-    url(r'^api/auth/', include('rest_framework.urls', namespace='rest_framework')),
+        # Editions
+        path('ediciones/', edition_list, name='edition_list'),
+        re_path(r'^ediciones/(?P<year>\d{4})/(?P<month>\d{1,2})/$', edition_list_ajax, name='edition_list_ajax'),
+        path('edicion/', include('core.urls.edition')),
+        re_path(
+            r'^(?P<publication_slug>[\w-]+)/edicion/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/$',
+            edition_detail,
+            name='edition_detail',
+        ),
 
-    # Editions
-    url(r'^ediciones/$', edition_list, name='edition_list'),
-    url(r'^ediciones/(?P<year>\d{4})/(?P<month>\d{1,2})/$', edition_list_ajax, name='edition_list_ajax'),
-    url(r'^edicion/', include('core.urls.edition')),
-    url(
-        r'^(?P<publication_slug>[\w-]+)/edicion/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/$',
-        edition_detail,
-        name='edition_detail',
-    ),
+        # Most read
+        path('masleidos/', include('core.urls.masleidos')),
 
-    # Most read
-    url(r'^masleidos/', include('core.urls.masleidos')),
+        # newsletters
+        path('newsletters/', include('core.urls.newsletters')),
 
-    # supplements
-    url(r'^suplementos/', supplement_list, name='supplement_list'),
-    url(r'^suplemento/', include('core.urls.supplement')),
+        # supplements
+        re_path(r'^suplementos/', supplement_list, name='supplement_list'),
+        path('suplemento/', include('core.urls.supplement')),
 
-    # Homes: domain_slug can be a publication slug or an area (core.Category) slug
-    url(r'^$', index, name='home'),
-    url(r'^(?P<domain_slug>[\w-]+)/$', index, name='home'),
+        # Homes: domain_slug can be a publication slug or an area (core.Category) slug
+        path('', index, name='home'),
+        re_path(r'^(?P<domain_slug>[\w-]+)/$', index, name='home'),
 
-    # Article detail pages: domain_slug can be a publication slug or an area slug
-    url(r'^articulo/', include('core.urls.article')),
-    url(r'^(?P<domain_slug>[\w-]+)/articulo/', include('core.urls.article')),
+        # Article detail pages: domain_slug can be a publication slug or an area slug
+        path('articulo/', include('core.urls.article')),
+        re_path(r'^(?P<domain_slug>[\w-]+)/articulo/', include('core.urls.article')),
 
-    # Artcles (other pages that show articles)
-    url(r'^articulos/', include('core.urls.article.type')),  # Articles by type
-    url(r'^seccion/', include('core.urls.section')),  # Articles by section
-    url(r'^tags/', include('core.urls.tag')),
+        # Artcles (other pages that show articles)
+        path('articulos/', include('core.urls.article.type')),  # Articles by type
+        path('seccion/', include('core.urls.section')),  # Articles by section
+        path('tags/', include('core.urls.tag')),
 
-    # Other pages (TODO: check and organize better)
-    url(r'^(?P<journalist_job>(periodista|columnista))/', include('core.urls.journalist')),
-    url(r'^area/', include('core.urls.category')),
-    url(r'^bn/', include('core.urls.breaking_news_module'))])
+        # Other pages (TODO: check and organize better)
+        re_path(r'^(?P<journalist_job>(periodista|columnista))/', include('core.urls.journalist')),
+        path('area/', include('core.urls.category')),
+        path('bn/', include('core.urls.breaking_news_module')),
+    ]
+)
 
 # Used to customize "/custom_email/*" urls using patterns from a custom app
 custom_email_urls_module = getattr(settings, 'CUSTOM_EMAIL_URLS_MODULE', None)
 if custom_email_urls_module:
-    urlpatterns.extend([url(r'^custom_email/', include(custom_email_urls_module))])
+    urlpatterns.append(path('custom_email/', include(custom_email_urls_module)))
 
-urlpatterns.extend([
-    url(r'^debug/', include('core.urls.debug')),
-
-    # Usuarios
-    url(r'^usuarios/', include('thedaily.urls')),
-
-    # notification (TODO: move to thedaily.urls)
-    url(r'^usuarios/alertas/', include('notification.urls')),
-
-    # TODO: verify if this repeated path (?) makes sense
-    url('', include('sitemaps.urls')),
-
-    url('', include('social_django.urls', namespace='social')),
-])
+urlpatterns.extend(
+    [
+        path('debug/', include('core.urls.debug')),
+        # Usuarios
+        path('usuarios/', include('thedaily.urls')),
+        # notification (TODO: move to thedaily.urls)
+        path('usuarios/alertas/', include('notification.urls')),
+        # TODO: verify if this repeated path (?) makes sense
+        path('', include('sitemaps.urls')),
+        path('', include('social_django.urls', namespace='social')),
+    ]
+)
 
 # Shorturl machinery (enabled by default) (TODO: check if working)
 if getattr(settings, 'ENABLE_SHORTURLS', True):
-    urlpatterns += [
-        url(r'^', include('shorturls.urls')),
-        url(r'^short/', include('short.urls')),
-    ]
+    urlpatterns += [path('', include('shorturls.urls')), path('short/', include('short.urls'))]
 
 # Syndication framework, only available when a Site object can be defined
 try:
@@ -360,35 +364,31 @@ try:
 except (ProgrammingError, Site.DoesNotExist):
     pass
 else:
-    from feeds import (
-        ArticlesByJournalist, LatestArticlesByCategory, LatestEditions, LatestSupplements, LatestArticles
-    )
+    from feeds import ArticlesByJournalist, LatestArticlesByCategory, LatestEditions, LatestSupplements, LatestArticles
     urlpatterns += [
-        url(r'^feeds/articulos/$', LatestArticles(), name='ultimos-articulos-rss'),
-        url(r'^feeds/ediciones/$', LatestEditions()),
-        url(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
-        url(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
-        url(r'^feeds/suplementos/$', LatestSupplements()),
+        path('feeds/articulos/', LatestArticles(), name='ultimos-articulos-rss'),
+        path('feeds/ediciones/', LatestEditions()),
+        re_path(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
+        re_path(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
+        path('feeds/suplementos/', LatestSupplements()),
     ]
 
 if 'debug_toolbar' in settings.INSTALLED_APPS:
-    # WARNING: more settings are needed to use django-debug-toolbar<1.11.1
+    # WARNING/TODO: more settings are needed to use django-debug-toolbar.
     import debug_toolbar
-    urlpatterns += [url(r'^__debug__/', include(debug_toolbar.urls))]
+    urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))
 
+# TODO: document a way to serve media in development runtime
 if settings.DEBUG:
     urlpatterns += staticfiles_urlpatterns()
-    urlpatterns += [
-        url(r'^media/(?P<path>.*)$', serve, {
-            'document_root': settings.MEDIA_ROOT,
-        }),
-    ]
-# TODO: explain this
-#    urlpatterns += patterns('',
-#            (r'^media/(?P<path>.*)$',
-#            {'document_root': settings.MEDIA_ROOT,
-#            'show_indexes': settings.DEBUG}),)
+    urlpatterns.append(re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}))
+    # TODO: explain this old commented code
+    # urlpatterns += patterns(
+    #    '', (r'^media/(?P<path>.*)$', {'document_root': settings.MEDIA_ROOT, 'show_indexes': settings.DEBUG})
+    # )
 else:
-    urlpatterns += [
-        url(r'^.*.css$', TemplateView.as_view(template_name='devnull.html')),
-    ]
+    urlpatterns.append(re_path(r'^.*.css$', TemplateView.as_view(template_name='devnull.html')))
+
+# Radio API URLs (only if JWT is enabled and utopia_cms_radio is installed)
+if getattr(settings, 'JWT_ENABLED', False) and 'utopia_cms_radio' in settings.INSTALLED_APPS:
+    urlpatterns.insert(0, path('', include('utopia_cms_radio.urls', namespace='utopia_cms_radio')))

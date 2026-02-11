@@ -1,5 +1,6 @@
 {% if perms.core.change_article %}
-  <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="ut-btn ut-btn-light ut-btn-xs ut-admin-edit-card">
+  <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/"
+     class="ut-btn ut-btn-light ut-btn-xs ut-admin-edit-card">
     Editar
   </a>
   {% if featured_order %}

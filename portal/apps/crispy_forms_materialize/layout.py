@@ -2,7 +2,6 @@
 Inherits from the "uni_form" Layout objects to force templates on TEMPLATE_PACK
 and  use of Materialize CSS classes
 """
-from __future__ import unicode_literals
 from django.conf import settings
 from django.template import Context
 from django.template.loader import render_to_string

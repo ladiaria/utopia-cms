@@ -1,0 +1,5 @@
+{% extends "core/templates/article/feedback_form_header.html" %}
+
+{% block extra_text %}, podés hacerlo completando
+<a href="{{ SITE_URL_SD }}{{ article.get_absolute_url }}#send-feedback">este formulario</a>.
+{% endblock %}

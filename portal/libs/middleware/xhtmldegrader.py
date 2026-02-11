@@ -7,7 +7,6 @@ rendering it.  If not, it changes the media type to text/html and makes the
 contents more "HTML-friendly" (as per the XHTML 1.0 HTML Compatibility
 Guidelines).
 """
-from __future__ import unicode_literals
 
 from builtins import object
 import re
@@ -22,7 +21,7 @@ def _supports_xhtml(request):
     """Examines an HTTP request header to determine whether the user agent
     supports the XHTML media type (application/xhtml+xml).  Returns True or
     False."""
-    if '/xhtml+xml' in request.META.get('HTTP_ACCEPT', '').lower():
+    if '/xhtml+xml' in request.headers.get('accept', '').lower():
         # User agent claims to support the XHTML media type.
         return True
     else:

@@ -1,39 +1,40 @@
 {% load static %}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
-    <head>
-        <title>{{ site.name }}</title>
-        <![if gte IE 6]><!-- Block all styles from IE5 and lower -->
-        <link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}">
-        <link rel="stylesheet" type="text/css" href="{% static 'admin/css/login.css' %}">
-        <!--[if lte IE 7]><link rel="stylesheet" type="text/css" href="{% static 'admin/css/ie.css' %}"><![endif]-->
-        <![endif]>
-        <meta name="robots" content="NONE,NOARCHIVE">
-    </head>
-    <body class="login">
-        <div id="container">
-            <div id="header">
-                <div id="branding">
-                    <h1 id="site-name">
-                        <a href="/"><img src="/static/img/ladiaria.png" alt="site logo"></a>
-                    </h1>
-                </div>
-            </div>
-            <div id="content" class="colM">
-                <div id="content-main">
-                    <h1 style="text-align:center;margin-bottom:12px;">
-                        Error de sistema
-                    </h1>
-                    <p>
-                        Ha ocurrido un error en el sistema, los administradores ya fueron alertados. A la brevedad será solucionado.
-                    </p>
-                    <p>
-                        Gracias por tu paciencia.
-                    </p>
-                </div>
-                <br class="clear">
-            </div>
-            <div id="footer"></div>
+  <head>
+    <title>{{ site.name }}</title>
+    <![if gte IE 6]><!-- Block all styles from IE5 and lower -->
+      <link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}">
+      <link rel="stylesheet" type="text/css" href="{% static 'admin/css/login.css' %}">
+      <!--[if lte IE 7]><link rel="stylesheet" type="text/css" href="{% static 'admin/css/ie.css' %}"><![endif]-->
+    <![endif]>
+    <meta name="robots" content="NONE,NOARCHIVE">
+  </head>
+  <body class="login">
+    <div id="container">
+      <div id="header">
+        <div id="branding">
+          <h1 id="site-name">
+            <a href="/"><img src="{% static HOMEV3_LOGO %}" alt="site logo"></a>
+          </h1>
         </div>
-    </body>
+      </div>
+      <div id="content" class="colM">
+        <div id="content-main">
+          <h1 style="text-align:center;margin-bottom:12px;">
+            Error de sistema
+          </h1>
+          <p>
+            Ha ocurrido un error en el sistema, los administradores ya fueron alertados.
+            A la brevedad será solucionado.
+          </p>
+          <p>
+            Gracias por tu paciencia.
+          </p>
+        </div>
+        <br class="clear">
+      </div>
+      <div id="footer"></div>
+    </div>
+  </body>
 </html>

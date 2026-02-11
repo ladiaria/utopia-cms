@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
+from rest_framework.authtoken.admin import TokenAdmin
+from rest_framework.authtoken.models import TokenProxy
+
+from django.contrib import admin
 from django.contrib.admin import ModelAdmin, SimpleListFilter, site
-from dashboard.models import NewsletterDelivery, AudioStatistics
+
+from apps.admin import ReadOnlyModelAdmin
+from .models import NewsletterDelivery, AudioStatistics
 
 
 class NLNameFilter(SimpleListFilter):
@@ -21,6 +26,7 @@ class NLNameFilter(SimpleListFilter):
         return queryset.filter(newsletter_name=newsletter_name) if newsletter_name else queryset
 
 
+@admin.register(NewsletterDelivery)
 class NewsletterDeliveryAdmin(ModelAdmin):
     list_display = ('delivery_date_short', 'get_newsletter_name', 'user_stats', 'subscriber_stats', 'total_stats')
     readonly_fields = (
@@ -28,8 +34,6 @@ class NewsletterDeliveryAdmin(ModelAdmin):
         'newsletter_name',
         'user_sent',
         'subscriber_sent',
-        'user_refused',
-        'subscriber_refused',
         'user_opened',
         'subscriber_opened',
         'user_bounces',
@@ -39,10 +43,21 @@ class NewsletterDeliveryAdmin(ModelAdmin):
     date_hierarchy = 'delivery_date'
 
 
-class AudioStatisticsAdmin(ModelAdmin):
+@admin.register(AudioStatistics)
+class AudioStatisticsAdmin(ReadOnlyModelAdmin):
+    # TODO: audio linked to audio asset
     list_display = ['audio', 'subscriber', 'percentage', 'amp_click']
-    raw_id_fields = ['audio', 'subscriber']
+    list_filter = ['percentage']
+
+    def has_delete_permission(self, request, obj=None):
+        # redefine calling super of parent class to avoid usage of parent class definition (we allow deletion)
+        return super(ReadOnlyModelAdmin, self).has_delete_permission(request, obj)
 
 
-site.register(NewsletterDelivery, NewsletterDeliveryAdmin)
-site.register(AudioStatistics, AudioStatisticsAdmin)
+class UtopiaTokenAdmin(TokenAdmin):
+    raw_id_fields = ("user",)
+
+
+# unregister broken TokenAdmin and register its fixed version
+site.unregister(TokenProxy)
+site.register(TokenProxy, UtopiaTokenAdmin)

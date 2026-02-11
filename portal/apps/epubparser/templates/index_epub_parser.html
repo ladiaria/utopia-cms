@@ -1,7 +1,7 @@
 {% extends "base_epub_parser.html" %}
-{% load static %}
+{% load core_tags static %}
 
-{% block page_title %}Home{% endblock %}
+{% block page_title %}{% title_joinparts 'Home' %}{% endblock %}
 
 {% block content %}
 

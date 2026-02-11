@@ -1,3 +1,176 @@
+# version 0.4.8 (2024-05-??)
+
+- paywall
+- celery
+- google oauth fixes
+- terms and conds improvements
+- api-keys
+- crm integration
+- mkdocs
+- ... TODO: describe each and find more
+
+# version 0.4.7 (2023-12-31)
+
+- Many improvements and fixes.
+- Email validation using a better python module.
+- Pixel track on NL templates to push events to GA4 + nldelivery_sync command migrated to use that info from GA4.
+- Also NL open email stats can be retrieved from GA4 events.
+- Memcached local repo app removed and a TODO commented to replace it by another app ASAP.
+- Documentation updates.
+- Allow to fail a first test in a test module.
+- Allow custom more items in dropdown menu using a custom template by settings.
+- Http forbidden custom template.
+- Support to include captcha also in signup page.
+- Fix layout bugs in edit profile.
+- An optional component in the home page to subscribe to Newsletter with one click.
+- Push notifications offer popup shown only if no NLs new header is present.
+- Better tools to deduplicate users.
+- Section detail view support to completely customize its context using functions defined in a python module by settings.
+- Important fixes in the send newsletter management command parent class.
+- Fix photo type and author on article's gallery photos.
+- Python module requirements updates.
+
+# version 0.4.6 (2023-10-20)
+
+- A new command super class to send newsletters, this was the first step on opensourcing the whole NL delivery that we pretend to publish in the next release.
+- Install doc updated.
+- New method in Article model.
+- Templates syntax style improved.
+- Unneeded refused count in NL stats model removed
+- Some settings variables names changed to a better name.
+- Unicode and syntax style improvements in some modules.
+- Max credits in signupwall unhardcoded keeping its default of 10 but now this value can be overrided in new setting.
+- Fixes in edit profile template.
+- Allow to override page desc in signup template.
+- wellcome template setting usage missing fixed
+- Some TODO's done.
+
+# version 0.4.5 (2023-10-03)
+
+- ReadOnlyModelAdmin class to use for some ModelAdmin.
+- allow logins and password changes with invalid email domains.
+- suqare version field length upd in photologue custom app.
+- better verbose name in Subscriber model.
+- Archived unused things, super calls simplifications. EditionAdmin fixes and TODO's.
+- Allow deletion in AudioStats modeladmin.
+- collector analysis "settings" updates.
+
+# version 0.4.4 (2023-09-29)
+
+- toggle pass js fixed.
+- Support for signupwall max credits configured by settings.
+- Better new style on login/registration/subscription forms
+- Truncate chars ammount for walled article given by settings.
+- Subscriber modelAdmin action to allow delete the user related whit constraints.
+- Support to whitelist domains on email domain validation that was also included now.
+- Allow to check on email validation against a bouncers email list.
+- Better position and css for article-extensions in Article admin.
+- Removed code already addressed by the new version of 'collapse.js' included (and used since we updated to Django4) in Django4.
+- dahsboard: report datetime column improved, css and js in admin for core.Article fixed and improved.
+- syntax code style improved in many modeules.
+- smtp exception handling improved in send_category_nl (wip).
+- photo rendering improved in cover article template.
+- fix latest activity value in dashboard app.
+- Handle CRM Exception in a better UserAdmin.
+- separate "From" header on notification and newsletter deliveries in two different settings.
+- core: martor custom script order fix.
+- dashboard: fix article counter for publication, remove custom hardcoded values and improve amother mngmnt command.
+- avoid error if more than one Google oauth assoc.
+- Support to receive also a featured section for the tag that renders a publication grid.
+
+# version 0.4.3 (2023-08-28)
+
+- Article collections feature.
+- Archived work to support a work-in-progress Superdesk integration.
+- Articles version management using django-reversion.
+- Migrations and Python requirements updated.
+- Fixes for Django Admin formset:added custom js event.
+- Better jQuery and many other static assets management.
+- Improvements on article rendering consistency according to the is_published method and the 'public' photo attribute.
+- Forbidden (403) new template for better used feedback when staff members are not logged-in or using a wrong user.
+- Install guide fix (branch name to fectn).
+- Avoid error in Adzone.admin when form data came with no files keys because a previous validation failed.
+- 'vivo' base template maedia queries improvements.
+- Article admin action to publish/unpublish.
+- Python code style improved.
+- Article model managers and methods simplifications and improvements.
+- Article detail AMP template improvements.
+- "with" template tag usage syntax updated.
+- Support for newsletters preview links in user profile.
+- Obsolete views and templates removed.
+- Sample settnigs updated.
+- Social auth new pipeline to check if the email is used by another user social auth association.
+
+# version 0.4.2 (2023-08-04)
+
+- User profile UX improvements.
+- core migrations updates, inculding Category and Publications new field to indicate if the newsletter is "new".
+- support for more than one alternative smtp server for newsletter delivery,
+- Avoid AttributeError when check if a request is AMP.
+- Respect image is_public attribute for inline articles images.
+- "with" template tag usage syntax updated.
+- homev3 and core tests fixes and updates to test AMP middleware.
+- "super" calls simplified in some modules.
+- "exclude" usage in forms changed unhardcoding fields that should be removed soon.
+- Custom ordering support for newswletters cards in user profile.
+- Pillow requirement added in requirements.txt.
+
+# version 0.4.1 (2023-07-10)
+
+- Django upgraded from 2.2 to 4.1.4.
+- The support for sections custom templates usage was improved.
+- randomgen template tag simplifications.
+- Unneeded "in-repo" apps removed.
+- Useful script to "clear" the paywall for anon users created.
+- GTM loaded in AMP only if configured.
+- Custom ForeignKeyRawIdWidget usage simplification.
+- Obsolete documentation and scripts archived.
+- SSL certificates generation scripts updated.
+- TODO's comments updated and added.
+- Dynamic imports using `__import__` were migrated to pydoc's `locate` (easier) usage.
+- A process_tasks command wrapper was created to ignore databse lock exceptions.
+- Fix `__str__` methods for some models.
+- Fix audio stats api usage in AMP.
+- Fix photo galleries template rendering in article detail.
+- Better login links in AMP.
+- Improvements rendering photos in category detail.
+- Improvements on newsletter browser previews.
+- Syntax code style improvements.
+- core.view.edition.rawpic_cover fix.
+- nldelivery_sync_stats management command improvements.
+- NewsletterDelivery model improvements.
+- subscribe_notice template fixes.
+- Obsolete settings removed.
+- OauthState objects better usage, removed in some scenarios to avoid dummy data creation.
+- Subscription, Login, Passwords forms improvements and fixed including extra validations.
+- "most read" API created to return user reading useful data.
+- subscribe_notice_closed view improvements to allow a "closed in session" status.
+- CSS improvements.
+
+# version 0.4.0 (2023-05-03)
+
+- The insecure and discouraged usage approach of SameSite=None on cookies that was active some time ago, to let the AMP pages work properly, was migrated to a better approach, using a new app just released by us which manages the relationships between the AMP reader ID and the Django user. Now the AMP pages will work again properly when the user is authenticated, but work is still needed to let the clicks on the fav and follow links work in AMP pages again; this will be addressed ASAP.
+- Fixed a duplicate csrf token loaded in login template.
+- AMP header template improved for better inheritance.
+- Many AMP page fixes of bugs introduced in previous release.
+- Subscribe notice moved to the bottom of the page and turn it render independent of other alerts that could be rendered at the same time. Also its close button action is now session-permanent and its content (moved to a template) can be overrided by settings.
+- CSS code and syntax improvements.
+- send_category_nl Management command fixed for django2.
+- sync_article_views Management command improvements.
+- Deprecated middleware removed.
+- cache middleware improvements using better "if" conditions.
+- Article cards templates improved specially taking care of settings that were ignored until now.
+- card_horizontal template not used, removed.
+- cache decorators changed from "staff" notion to "auth" because indeed was not working as expected for auth-but-non-staff users.
+- New management command to update NL delivery stats from the info parsed in the delivery log files.
+- Signupwall middleware improved when resolve path raises 404 error.
+- Emoji martor tool icon disabled because our markdown filter does not support it yet.
+- Settings module improved with comments and obsolote vars remotion.
+
+# version 0.3.9 (2023-04-18)
+
+- Django upgraded from 1.11 to 2.2.
+
 # version 0.3.8 (2023-03-31)
 
 - Support to upload article contents to IPFS (ipfs.io).

@@ -1,4 +1,5 @@
 {% load static %}
+
 <script>
   $('.date-picker').datepicker({
     format: "mm/yyyy",
@@ -105,7 +106,7 @@
                   <td>{{ category }}</td>
                   <td>{{ articles_total }}</td>
                   <td>{{ score }}</td>
-                  <td>{{ score_views|floatformat:0 }}</td>
+                  <td>{{ score_views|floatformat:2 }}</td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -481,6 +482,7 @@
               <th>Artículo</th>
               <th>Categoría</th>
               <th data-sortable="true">Fecha</th>
+              <th data-sortable="true">Duración</th>
               <th data-sortable="true">Clics AMP</th>
               <th data-sortable="true">Clics</th>
               <th data-sortable="true">&lt;25%</th>
@@ -494,13 +496,14 @@
               <tr>
                 <td><a href="{{ row.1 }}">{{ row.0 }}</a></td>
                 <td>{{ row.2 }}</td>
-                <td>{{ row.3 }}</td>
-                <td>{{ row.4 }}</td>
+                <td class="text-nowrap">{{ row.3 }}</td>
+                <td class="text-nowrap">{{ row.4 }}</td>
                 <td>{{ row.5 }}</td>
                 <td>{{ row.6 }}</td>
                 <td>{{ row.7 }}</td>
                 <td>{{ row.8 }}</td>
                 <td>{{ row.9 }}</td>
+                <td>{{ row.10 }}</td>
               </tr>
             {% endfor %}
           </tbody>

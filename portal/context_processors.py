@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import pycountry
-
-from django_mobile import get_flavour
 
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -12,35 +9,52 @@ from core.models import Publication, Category, Article
 
 
 def urls(request):
-    url_dict = {}
+    url_dict = {"SITE_DOMAIN_CLASS": settings.SITE_DOMAIN.replace('.', '-')}
     for attr in dir(settings):
         if attr.endswith('_URL'):
             try:
                 url_dict[attr] = getattr(settings, attr).replace('%s', '')
             except AttributeError:
                 pass
-    url_dict['URL_SCHEME'] = settings.URL_SCHEME
+    url_dict.update({'URL_SCHEME': settings.URL_SCHEME, "SITE_URL_SD": settings.SITE_URL_SD})
     return url_dict
 
 
 def gtm(request):
     return {
         'GTM_CONTAINER_ID': settings.GTM_CONTAINER_ID,
-        'GTM_AMP_CONTAINER_ID': settings.GTM_AMP_CONTAINER_ID,
+        'GTM_AMP_CONTAINER_ID': getattr(settings, "GTM_AMP_CONTAINER_ID", None),
         'GA_MEASUREMENT_ID': settings.GA_MEASUREMENT_ID,
     }
 
 
 def site(request):
-    site = Site.objects.get_current()
-    return {
-        'site': site,
-        'meta_robots_content': 'noindex' if any(
-            ['/' in r.disallowed.values_list('pattern', flat=True) for r in site.rule_set.all()]
-        ) else 'all',
-        'country_name': pycountry.countries.get(alpha2=settings.LOCAL_COUNTRY).name,
-        'site_description': getattr(settings, 'HOMEV3_SITE_DESCRIPTION', site.name),
+    result = {
+        "phonenumber_default_region": settings.PHONENUMBER_DEFAULT_REGION,
+        "local_lang": settings.LOCAL_LANG,
+        'country_name': pycountry.countries.get(alpha_2=settings.LOCAL_COUNTRY).name,
+        "base_template": getattr(settings, "PORTAL_BASE_TEMPLATE", "base.html"),
+        "title_append_country": settings.PORTAL_TITLE_APPEND_COUNTRY,
+        "admin_dark_mode_vars_template": getattr(
+            settings, "PORTAL_ADMIN_DARK_MODE_VARS_TEMPLATE", "admin/admin_dark_mode_vars_template.html",
+        ),
+        "admin_martor_change_form_custom_css": getattr(settings, "PORTAL_ADMIN_CHANGE_FORM_MARTOR_CUSTOM_CSS", None),
+        "intl_tel_input_cdn": "https://cdn.jsdelivr.net/npm/intl-tel-input@24.4.0/build/",
     }
+    try:
+        site = Site.objects.get_current()
+        result.update(
+            {
+                'site': site,
+                'meta_robots_content': 'noindex' if any(
+                    ['/' in r.disallowed.values_list('pattern', flat=True) for r in site.rule_set.all()]
+                ) else 'all',
+                'site_description': getattr(settings, 'HOMEV3_SITE_DESCRIPTION', site.name),
+            }
+        )
+    except Site.DoesNotExist:
+        pass
+    return result
 
 
 def publications(request):
@@ -51,7 +65,6 @@ def publications(request):
         default_pub = None
 
     result = {
-        'BASE_SUB': settings.BASE_SUB,
         'DEFAULT_PUB': DEFAULT_PUB,
         'default_pub': default_pub,
         'custom_icons_publications': getattr(settings, 'CORE_CUSTOM_ICONS_PUBLICATIONS', None),
@@ -61,13 +74,26 @@ def publications(request):
         slug_var = p.slug.replace('-', '_')
         result.update({slug_var.upper() + '_SUB': p.slug, slug_var + '_pub': p})
 
-    if get_flavour(request) == 'amp':
-        result['extra_header_template'] = getattr(settings, 'HOMEV3_EXTRA_HEADER_TEMPLATE_AMP', None)
-    else:
-        result['extra_header_template'] = getattr(settings, 'HOMEV3_EXTRA_HEADER_TEMPLATE', None)
+    is_amp_detect = getattr(request, "is_amp_detect", False)
+    result['extra_header_template'] = getattr(
+        settings, 'HOMEV3_EXTRA_HEADER_TEMPLATE%s' % ('_AMP' if is_amp_detect else ''), None
+    )
+    if not is_amp_detect:
         result['footer_template'] = settings.HOMEV3_FOOTER_TEMPLATE
+        if settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT:
+            if getattr(settings, "HOMEV3_SUBSCRIBE_NOTICE_ENABLED", True):
+                result['subscribe_notice_template'] = getattr(
+                    settings, "HOMEV3_SUBSCRIBE_NOTICE_TEMPLATE", "homev3/templates/subscribe_notice.html"
+                )
+            elif getattr(settings, "HOMEV3_USER_NEWSLETTERS_NOTICE_ENABLED", True):
+                result['user_newsletters_notice_template'] = getattr(
+                    settings,
+                    "HOMEV3_USER_NEWSLETTERS_NOTICE_TEMPLATE",
+                    "homev3/templates/user_newsletters_notice.html",
+                )
 
     # use this context processor to load also some other useful variables configured in settings
+    result['PWA_ENABLED'] = getattr(settings, 'PWA_ENABLED', True)
     result.update(
         (
             (var, getattr(settings, var, None)) for var in (
@@ -90,6 +116,7 @@ def publications(request):
                 'CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP',
                 'CORE_ARTICLE_ENABLE_PHOTO_BYLINE',
                 'PWA_MANIFEST_STATIC_PATH',
+                'LOCAL_COUNTRY',
             )
         )
     )
@@ -102,10 +129,10 @@ def main_menus(request):
     Fills context variables to be shown or needed in the main menus and other features.
     Also fill another context variables using to the visualization of many UX "modules".
     """
+    categories_with_order = Category.objects.filter(order__isnull=False)
     result = {
-        'MENU_CATEGORIES': dict(
-            (c, c.section_set.all() if c.dropdown_menu else None) for c in Category.objects.filter(order__isnull=False)
-        ),
+        'MENU_CATEGORIES': dict((c, c.section_set.all() if c.dropdown_menu else None) for c in categories_with_order),
+        "categories_with_order": [c.slug for c in categories_with_order],
         'CORE_PUSH_NOTIFICATIONS_OFFER': settings.CORE_PUSH_NOTIFICATIONS_OFFER,
         'CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY': settings.CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY,
         'push_notifications_keys_set': bool(
@@ -118,15 +145,18 @@ def main_menus(request):
         'MENU_PUBLICATIONS_MORE_EXTRA': Publication.objects.filter(
             public=True, is_emergente=False
         ).exclude(slug__in=getattr(settings, 'HOMEV3_EXCLUDE_MENU_PUBLICATIONS', (settings.DEFAULT_PUB, ))),
+        "article_card_read_later_enabled": getattr(settings, 'CORE_ENABLE_ARTICLE_CARD_READ_LATER', True),
+        "article_card_lock_tooltip_enabled": getattr(settings, 'CORE_ENABLE_ARTICLE_CARD_LOCK_TOOLTIP', True),
     }
 
     mobile_nav_search = getattr(settings, 'HOMEV3_MOBILE_NAV_SEARCH', 1)
+    mobile_nav_latest_article = getattr(settings, 'HOMEV3_MOBILE_NAV_LATEST_ARTICLE', 1)
     mobile_nav_ths = 3 + mobile_nav_search + getattr(settings, 'HOMEV3_MOBILE_NAV_EXTRA_THS', 0)
 
     menu_lal = getattr(settings, 'HOMEV3_LATEST_ARTICLE_LINKS', ())
     if menu_lal:
         result['MENU_LATEST_ARTICLE_LINKS'] = menu_lal
-        mobile_nav_ths += 1
+        mobile_nav_ths += mobile_nav_latest_article
         if len(menu_lal) > 1:
             result['MENU_LATEST_ARTICLE_LINKS_DROPDOWN'] = getattr(
                 settings, 'HOMEV3_LATEST_ARTICLE_LINKS_DROPDOWN', 'latest'
@@ -136,6 +166,7 @@ def main_menus(request):
         {
             'mobile_nav_ths': mobile_nav_ths,
             'mobile_nav_search': mobile_nav_search,
+            "mobile_nav_latest_article": mobile_nav_latest_article,
             'mobile_nav_detail_more': getattr(settings, 'HOMEV3_MOBILE_NAV_DETAIL_MORE', 1) or 0,
         }
     )
@@ -144,3 +175,32 @@ def main_menus(request):
 
 def article_content_type(request):
     return {'article_ct_id': ContentType.objects.get_for_model(Article).id}
+
+
+def google_client_id(request):
+    return {
+        'google_client_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', ''),
+    }
+
+
+def google_one_tap_enabled(request):
+    is_enable_google_one_tap = getattr(settings, 'ENABLE_GOOGLE_ONE_TAP', False)
+    context_to_update = {
+        'ENABLE_GOOGLE_ONE_TAP': is_enable_google_one_tap,
+    }
+
+    if is_enable_google_one_tap:
+        exclude_one_tap_for_urls = getattr(settings, 'EXCLUDE_ONE_TAP_FOR_URLS', [])
+
+        # Check if the current path start with any of the prefix
+        show_one_google_tap = not any(request.path.startswith(prefix) for prefix in exclude_one_tap_for_urls)
+
+        # Also check for registration steps with query parameters
+        if show_one_google_tap and request.path == '/usuarios/registrate/':
+            step = request.GET.get('step')
+            if step in ['2', '2.5', '3']:
+                show_one_google_tap = False
+
+        context_to_update.update({'SHOW_ONE_GOOGLE_TAP': show_one_google_tap})
+
+    return context_to_update

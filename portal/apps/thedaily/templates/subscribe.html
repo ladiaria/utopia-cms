@@ -1,14 +1,18 @@
-{% extends "base.html" %}
-{% load static crispy_forms_tags thedaily_tags %}
+{% extends base_template %}
+{% load static crispy_forms_tags thedaily_tags core_tags %}
 
-{% block page_title %}Suscripción a {{ product }}{% endblock %}
+{% block page_title %}Suscripción a {{ product }}{% title_joinparts '' %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
+{% endblock %}
 
 {% block body_class %}subscribe hide-mobile-nav{% endblock %}
 
 {% block navbar %}
   <div id="main-header">
     <nav class="subscription_black">
-      <a class="header-logo emergentes" href="{% url 'home' %}">
+      <a {% block navbar_a_attrs %}class="header-logo emergentes" href="{% url 'home' %}"{% endblock %}>
         <img src="{% static HOMEV3_LOGO %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_WIDTH }}" height="42">
       </a>
     </nav>
@@ -27,25 +31,14 @@
 {% block content %}
 
   {% if subscription_in_process %}
-
+    {# TODO: try to reproduce this condition and write how to do it #}
     <main class="ld-content">
       <div class="row">
         <div class="col s12 m8 offset-m2">
-          <h1 class="ld-title-huge">Validá tu cuenta</h1>
-          <p>
-            Te hemos enviado un email para activar tu cuenta, para poder completar la suscripción te pedimos que lo hagas y luego vuelvas a recargar esta página.
-          </p>
-          <p>
-            Si no te llegó el email de activación podés <a href="{% url 'account-confirm_email' %}">volver a solicitarlo</a>
-            o también <a href="{% url 'session-refresh' %}">refrescar la sesión</a> para comenzar nuevamente la solicitud de suscripción. Muchas gracias.
-          </p>
-          <p>
-            ¿Tenés consultas? Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
-          </p>
+          {% include 'subscription_in_process.html' %}
         </div>
       </div>
     </main>
-
   {% else %}
 
     {% if is_already_subscribed %}
@@ -126,22 +119,28 @@
 
 {% endblock %}
 
-{% block footer_block %}
-  {% include 'footer_simple.html' with disable_signup=True %}
+{% block footer_block %}{% include 'footer_simple.html' with disable_signup=True %}{% endblock %}
+
+{% block materialize_scripts %}
+  <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
+  <script defer src="{% static 'materialize/js/modal.js' %}"></script>
 {% endblock %}
 
 {% block javascript %}
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
+  <script src="{{ intl_tel_input_cdn }}js/intlTelInput.min.js"></script>
+  <script src="{% static 'js/phone_widget.js' %}"></script>
   <script>
     $(function(){
-      $('label[for="id_terms_and_conditions"] a').click(function(event){
+      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");
+      $('label[for="id_terms_and_conds_accepted"] a').on("click", function(event){
         event.preventDefault();
         $('.modal').modal('open');
       });
     });
     function accept_terms_and_conds(){
       $('.modal').modal('close');
-      $('#id_terms_and_conditions').prop('checked', true);
+      $('#id_terms_and_conds_accepted').prop('checked', true);
     }
   </script>
 {% endblock %}

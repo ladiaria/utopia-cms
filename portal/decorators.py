@@ -1,6 +1,7 @@
-from __future__ import unicode_literals
+
 from builtins import map
 from past.builtins import basestring
+
 from django.template import loader, Context, RequestContext, TemplateSyntaxError
 from django.http import HttpResponse
 
@@ -89,9 +90,9 @@ def render_response(template_prefix=None, always_use_requestcontext=True):
     return renderer
 
 
-def decorate_if_no_staff(decorator):
+def decorate_if_no_auth(decorator):
     """
-    Returns decorated view if user is not staff. Un-decorated otherwise
+    Returns decorated view if user is not authenticated. Un-decorated otherwise
     taken from: https://stackoverflow.com/questions/7315862/django-prevent-caching-view-if-user-is-logged-in
     """
 
@@ -101,7 +102,7 @@ def decorate_if_no_staff(decorator):
 
         def _view(request, *args, **kwargs):
 
-            if request.user.is_staff:     # If user is staff
+            if request.user.is_authenticated:
                 return view(request, *args, **kwargs)  # view without decorator
             else:
                 return decorated_view(request, *args, **kwargs)  # view with decorator
@@ -111,10 +112,31 @@ def decorate_if_no_staff(decorator):
     return _decorator
 
 
+def decorate_if_auth(decorator):
+    """
+    Returns decorated view if user is authenticated. Un-decorated otherwise
+    (the opposite version of decorate_if_no_auth)
+    """
+
+    def _decorator(view):
+
+        decorated_view = decorator(view)  # This holds the view with decorator
+
+        def _view(request, *args, **kwargs):
+
+            if request.user.is_authenticated:
+                return decorated_view(request, *args, **kwargs)  # view with decorator
+            else:
+                return view(request, *args, **kwargs)  # view without decorator
+
+        return _view
+
+    return _decorator
+
+
 def decorate_if_staff(decorator):
     """
     Returns decorated view if user is staff. Un-decorated otherwise
-    (the inverse version of decorate_if_no_staff)
     """
 
     def _decorator(view):

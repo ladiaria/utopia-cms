@@ -1,23 +1,24 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-from builtins import str, range
-import os
 import random
-from datetime import date, datetime, timedelta
+import string
+from builtins import str, range
+from datetime import datetime, timedelta
+from os.path import join
 
 from hashids import Hashids
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
-from django.template import Library, Node, TemplateSyntaxError, Variable, loader
-from django.template.defaultfilters import stringfilter
+from django.urls import reverse
+from django.template import Engine, Library, Node, TemplateSyntaxError, Variable, loader
+from django.template.defaultfilters import stringfilter, slugify
+from django.template.exceptions import TemplateDoesNotExist
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 
 from tagging.models import Tag, TaggedItem
 
-from core.models import Article, Supplement, Category
+from core.models import Article, ArticleCollection, Supplement, Category, Section, PerplexityAPISettings
 from core.forms import SendByEmailForm
 from core.utils import datetime_timezone
 
@@ -27,7 +28,42 @@ hashids = Hashids(settings.USER_HASHID_SALT, 32)
 
 
 @register.simple_tag(takes_context=True)
-def render_related(context, article):
+def updatectx(context, **kwargs):
+    """
+    updates the context with kwargs dict
+    """
+    context.update(kwargs)
+    return ""
+
+
+@register.simple_tag(takes_context=True)
+def published_articles(context, **kwargs):
+    """
+    Usage: {% published_articles field1=val1 field2__isnull=True ...
+              limit=10 exclude_ctx_vars='some_article_list:4 cover_article:0 another_list:1' %}
+    """
+    limit = kwargs.pop("limit", None)
+    exclude_ctx_vars = kwargs.pop("exclude_ctx_vars", None)
+    articles = Article.published.filter(**kwargs)
+    if exclude_ctx_vars:
+        exclude_ids = []
+        for var, head in [varhead.split(":") for varhead in exclude_ctx_vars.split()]:
+            varval, hval = context.get(var), int(head)
+            if not hval:
+                exclude_id = getattr(varval, "id", None)
+                if exclude_id:
+                    exclude_ids.append(exclude_id)
+            else:
+                exclude_ids.extend([ivar.id for ivar in varval[:hval] if hasattr(ivar, "id")])
+        articles = articles.exclude(id__in=exclude_ids)
+    return articles[:limit] if limit else articles
+
+
+@register.simple_tag(takes_context=True)
+def render_related(context, article, amp=False):
+
+    if not getattr(settings, "CORE_ARTICLE_DETAIL_ENABLE_RELATED", True):
+        return ""
 
     article, section = context.get('article'), context.get('section')
     if not section:
@@ -48,28 +84,52 @@ def render_related(context, article):
             ) else publication.name,
         }
 
-    elif category and category.slug in getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', ()):
+    elif category and category.slug in getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY', ()):
         # use the category
-        upd_dict = {'articles': section.latest4relatedbycategory(category.id, article.id), 'section': category.name}
+        upd_dict = {
+            'articles': section.latest4relatedbycategory(category.id, article.id),
+            'section': category.more_link_title or category.name,
+        }
 
     else:
         # use a category also, defined in settings and if it belongs to the article and the section is not skipped.
-        use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY_SKIPPING_SECTIONS', [])
+        use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY_SKIPPING_SECTIONS', [])
         if use_category_skip_sections:
             article_categories = article.get_categories_slugs()
             for category_slug, section_slugs in use_category_skip_sections:
                 if category_slug in article_categories and section.slug not in section_slugs:
                     category = Category.objects.get(slug=category_slug)
                     upd_dict = {
-                        'articles': section.latest4relatedbycategory(category.id, article.id), 'section': category.name
+                        'articles': section.latest4relatedbycategory(category.id, article.id),
+                        'section': category.name,
                     }
                     break
 
     if not upd_dict:
         upd_dict = {'articles': section.latest4related(article.id), 'section': section.name}
-    upd_dict['is_detail'] = False
-    context.update(upd_dict)
-    return loader.render_to_string('core/templates/article/related.html', context.flatten())
+
+    upd_dict.update({'is_detail': False, 'amp': amp})
+    flatten_ctx = context.flatten()
+    flatten_ctx.update(upd_dict)
+    # search custom template by slug
+    template, engine = 'core/templates/article/related.html', Engine.get_default()
+    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
+    if template_dir:
+        template_try = join(template_dir, "article/related", slugify(section) + ".html")
+        try:
+            engine.get_template(template_try)
+        except TemplateDoesNotExist:
+            # try to fallback to a possible custom "related.html"
+            template_try = join(template_dir, "article/related.html")
+            try:
+                engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template = template_try
+        else:
+            template = template_try
+    return loader.render_to_string(template, flatten_ctx)
 
 
 # Media select
@@ -84,8 +144,8 @@ class MediaSelectNode(Node):
             {'id': 'V', 'name': 'Video'},
         )
         select_html = loader.render_to_string(
-            'core/templates/media_select.html',
-            {'medias': medias, 'select_name': self.name})
+            'core/templates/media_select.html', {'medias': medias, 'select_name': self.name}
+        )
         return select_html
 
 
@@ -103,21 +163,24 @@ def media_select(parser, token):
 
 @register.simple_tag(takes_context=True)
 def render_article_card(context, article, media, card_size, card_type=None, img_load_lazy=True):
+    if not article:
+        return ""
+
     if not card_size:
         card_size = article.header_display
 
     if not card_type:
         card_type = article.type
 
-    card_display = "horizontal" if article.photo and article.photo.extended.is_portrait else "vertical"
+    card_display, template_try_to_override, template_override = None, False, None
 
     # WARN: template value assigned here may change in next if block. TODO: fix this anti-pattern.
     if card_size == "FW":
         template = "card_full.html"
     elif card_size == "FD":
-        template = "card_full_detailed.html"
+        template, template_try_to_override = "card_full_detailed.html", True
     elif card_size == "FF":
-        template = "card_big_new.html"
+        template, template_try_to_override = "card_big_new.html", True
         card_display = "horizontal"
     elif card_size == "BG":
         template = "card_big.html"
@@ -139,9 +202,29 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
         template = "card_summary.html"
 
     if card_size == "FN":
-        template = "article_card_new.html"
+        template, template_try_to_override = "article_card_new.html", True
 
-    context.update(
+    if template_try_to_override:
+        engine = Engine.get_default()
+        template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
+        if template_dir:
+            template_try = join(template_dir, "article", template)
+            try:
+                engine.get_template(template_try)
+            except TemplateDoesNotExist:
+                pass
+            else:
+                template_override = template_try
+
+    # compute card_display if not already done
+    if not card_display:
+        if article.photo_render_allowed() and article.photo.extended.is_portrait:
+            card_display = "horizontal"
+        else:
+            card_display = "vertical"
+
+    flatten_ctx = context.flatten()
+    flatten_ctx.update(
         {
             'article': article,
             'media': media,
@@ -151,7 +234,10 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
             'img_load_lazy': img_load_lazy,
         }
     )
-    return loader.render_to_string('core/templates/article/' + template, context.flatten())
+    return loader.render_to_string(
+        template_override or ('core/templates/%sarticle/%s' % ('amp/' if flatten_ctx.get("amp") else '', template)),
+        flatten_ctx,
+    )
 
 
 # Render article media list con foto a la izquierda para mostrar en sidebar
@@ -195,13 +281,14 @@ class ArticlesByTypeNode(Node):
 
     def render(self, context):
         from string import upper
+
         if isinstance(self.type, Variable):
             type = getattr(Article, upper(self.type.resolve(context)))
         else:
             type = getattr(Article, upper(self.type))
         articles = Article.published.filter(type=type)
         if self.limit:
-            articles = articles[:self.limit]
+            articles = articles[: self.limit]
         context.update({self.keyword: articles})
         return ''
 
@@ -230,27 +317,37 @@ def get_articles_by_type(parser, token):
 
 @register.simple_tag(takes_context=True)
 def render_toolbar_for(context, toolbar_object):
-    """ Usage example: {% render_toolbar_for article %} """
-    user = context.get('user')
-    if user and user.is_staff and isinstance(toolbar_object, Article):
-        toolbar_template = 'core/templates/article/toolbar.html'
-        params = {'article': toolbar_object, 'is_detail': False}
-        if context.get('is_cover'):
-            edition = context.get('edition')
-            if edition:
-                params.update(
-                    {
-                        'featured_order': ', '.join(
-                            str(tp) for tp in toolbar_object.articlerel_set.filter(
-                                edition=edition, home_top=True
-                            ).values_list('top_position', flat=True)
-                        ),
-                    }
-                )
-        context.update(params)
-        return loader.render_to_string(toolbar_template, context.flatten())
-    else:
-        return ''
+    """
+    Usage example: {% render_toolbar_for article %}
+    """
+    if getattr(settings, "CORE_ENABLE_ARTICLE_TOOLBAR", True):
+        user = context.get('user')
+        if user and user.is_staff and isinstance(toolbar_object, Article):
+            toolbar_template = getattr(settings, "CORE_TOOLBAR_TEMPLATE", 'core/templates/article/toolbar.html')
+            params = {'article': toolbar_object, 'is_detail': False}
+            if context.get('is_cover'):
+                edition = context.get('edition')
+                if edition:
+                    params.update(
+                        {
+                            'featured_order': ', '.join(
+                                str(tp) for tp in toolbar_object.articlerel_set.filter(
+                                    edition=edition, home_top=True
+                                ).values_list('top_position', flat=True)
+                            ),
+                        }
+                    )
+            context.update(params)
+            return loader.render_to_string(toolbar_template, context.flatten())
+    return ''
+
+
+@register.simple_tag
+def get_section(section_slug):
+    try:
+        return Section.objects.get(slug=section_slug)
+    except Section.DoesNotExist:
+        pass
 
 
 @register.simple_tag
@@ -259,28 +356,85 @@ def render_supplements():
     return loader.render_to_string('core/templates/supplement_list.html', {'supplements': supplements})
 
 
-@register.simple_tag
-def render_hierarchy(article):
+@register.simple_tag(takes_context=True)
+def publication_section(context, article, pub=None):
     """
-    Returns HTML to print links with the article hierarchy using its main category (or publication if the category is
-    None and publication is included in the custom setting) and its main section.
+    Returns the anchor tag with the atricle.publication_section using the publication given by parameter or:
+    publication_obj or publication context variables as the publication argument (or default_pub if both are None).
+    TODO: why default_pub as last option instead of the article's "main_pub"?
     """
-    section = article.section
+    result = ""
+    if article:
+        section = article.publication_section(
+            pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
+        )
+        if section:
+            use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
+            s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
+            if use_section_link:
+                result = '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
+            else:
+                result = '<span>%s</span>' % s_name
+    return result
+
+
+@register.simple_tag(takes_context=True)
+def render_hierarchy(context, article, force_use_links=False):
+    """
+    A "parent > child" two items hierarchy to be rendered as part of the article metadata, since an article can be
+    published in many sections of many publications, this information may be adjusted to match as best as possible the
+    context on which the article is part of. This function tries to do this automatically receiving the context.
+    But also can be very customized by settings, that's why the code is quite big and has many if-branches, the above
+    similar function publication_section, also helps here, is used when the most important object in the context is
+    a Publication and render a hierarchy structure with a possible parent can result redundant.
+    """
+    publication, category = context.get("publication"), context.get("category")
+    section = article.publication_section(publication) if publication else article.get_section(category)
     if section:
-        if section.category:
-            parent = (reverse('home', kwargs={'domain_slug': section.category.slug}), section.category)
+        use_section_link = (
+            force_use_links in (True, "True") or getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
+        )
+        parent, use_parent_link = [], getattr(settings, 'CORE_ARTICLE_CARDS_PARENT_LINK', use_section_link)
+        if section.category or category:
+            allowed, parent_allow = getattr(settings, "CORE_CATEGORY_ALLOW_RENDER_HIERARCHY", ()), True
+            # break with a return if no one of the categories is allowed
+            if allowed and not any(c.slug in allowed for c in (section.category, category) if c):
+                if publication:
+                    return publication_section(context, article)
+                parent_allow = False
+            if parent_allow:
+                # And now, give precedence to section's (only if allow)
+                if use_parent_link:
+                    parent.append(
+                        reverse('home', kwargs={'domain_slug': (section.category or category).slug})
+                    )
+                parent.append(section.category or category)
+        elif context.get("render_hierarchy", False):
+            if use_parent_link and not (
+                not article.main_section
+                or article.main_section.edition.publication.slug
+                in getattr(settings, 'CORE_HIERARCHY_USE_PUBLICATION', ())
+            ):
+                parent.append(
+                    reverse('home', kwargs={'domain_slug': article.main_section.edition.publication.slug})
+                )
+            parent.append(article.main_section.edition.publication)
         else:
-            parent = None if (
-                not article.main_section or article.main_section.edition.publication.slug in
-                getattr(settings, 'CORE_HIERARCHY_USE_PUBLICATION', ())
-            ) else (
-                reverse('home', kwargs={'domain_slug': article.main_section.edition.publication.slug}),
-                article.main_section.edition.publication,
-            )
-        child = '<a href="%s">%s</a>' % (section.get_absolute_url(), section)
-        return '&nbsp;›&nbsp;'.join(['<a href="%s">%s</a>' % parent, child]) if parent else child
-    else:
+            return publication_section(context, article)
+        s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
+        if use_section_link:
+            child = '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
+        else:
+            child = '<span>%s</span>' % s_name
+        if parent:
+            parent_html = ('<a href="%s">%s</a>' if use_parent_link else '<span>%s</span>') % tuple(parent)
+            return '&nbsp;›&nbsp;'.join([parent_html, child])
+        else:
+            return child
+    elif category:
         return ''
+    else:
+        return publication_section(context, article)
 
 
 @register.simple_tag(takes_context=True)
@@ -319,42 +473,53 @@ def render_tagrow(context, tagname, article_type, articles_max=4):
         return ''
 
 
+@register.simple_tag(takes_context=True)
+def render_collectionrow(context):
+    """
+    Renders a row with the latest 4 published collections for the publication or category assigned in the conext vars.
+    """
+    publication, filter_kwargs = context.get("publication"), {}
+    if publication:
+        filter_kwargs["main_section__edition__publication"] = publication
+    else:
+        category = context.get("category")
+        if category:
+            filter_kwargs["main_section__section__category"] = category
+        else:
+            return ""
+    articles = ArticleCollection.published.filter(**filter_kwargs)
+    if articles:
+        flatten_ctx = context.flatten()
+        flatten_ctx.update({'latest_articles': [a.article_ptr for a in articles[:4]]})
+        return loader.render_to_string('core/templates/tagrow.html', flatten_ctx)
+    else:
+        return ''
+
+
 @register.simple_tag
 def section_name_in_publication_menu(publication, section):
-    return getattr(
-        settings, 'CORE_SECTIONS_NAME_IN_PUBLICATION_MENU', {}
-    ).get((publication.slug, section.slug), section.name)
+    return getattr(settings, 'CORE_SECTIONS_NAME_IN_PUBLICATION_MENU', {}).get(
+        (publication.slug, section.slug), section.name
+    )
 
 
 @register.simple_tag(takes_context=True)
-def publication_section(context, article, pub=None):
-    """
-    Returns the anchor tag with the atricle.publication_section using the publication given by parameter or:
-    publication_obj or publication context variables as the publication argument (or default_pub if both are None).
-    TODO: why default_pub as last option instead of the article's "main_pub"?
-    """
-    section = article.publication_section(
-        pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
-    )
-    if section:
-        use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
-        if use_section_link:
-            return '<a href="%s">%s</a>' % (section.get_absolute_url(), section)
-        else:
-            return '<span>%s</span>' % section
-    else:
-        return ''
+def tags_joined(context):
+    return ", ".join(str(tag) for tag in context.get("tags"))
+
+
+@register.simple_tag(takes_context=True)
+def title_joinparts(context, first_part, first_separator=" | ", append_sitename=True):
+    result = first_separator.join([first_part, context.get('site').name]) if append_sitename else first_part
+    if context.get("title_append_country"):
+        result = " | ".join([result, context.get('country_name')])
+    return result
 
 
 @register.simple_tag(takes_context=True)
 def category_title(context):
     category = context.get('category')
-    return (
-        category.html_title
-        or "%s: noticias y artículos periodísticos | %s | %s" % (
-            category, context.get('site').name, context.get('country_name')
-        )
-    )
+    return category.html_title or title_joinparts(context, "%s: noticias y artículos periodísticos" % category)
 
 
 @register.simple_tag(takes_context=True)
@@ -366,20 +531,19 @@ def section_title(context):
     custom_title = getattr(section, 'html_title', None)
     if custom_title:
         return custom_title
-    default_title_parts = [
-        "Artículos en "
-        + getattr(section, 'name', section.get('name', "sección") if type(section) is dict else "sección")
-    ]
-    if getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_SITENAME", True):
-        default_title_parts.append(context.get('site').name)
-    if getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_COUNTRY", True):
-        default_title_parts.append(context.get('country_name'))
-    return " | ".join(default_title_parts)
+    first_part = "Artículos en " + getattr(
+        section, 'name', section.get('name', "sección") if isinstance(section, dict) else "sección"
+    )
+    return title_joinparts(
+        context, first_part, append_sitename=getattr(settings, "CORE_SECTION_DETAIL_TITLE_APPEND_SITENAME", True)
+    )
 
 
 @register.simple_tag(takes_context=True)
 def category_nl_subscribe_box(context):
-    """ renders the subscribe box for the article category, if proper conditions are met """
+    """
+    Renders the subscribe box for the article category, if proper conditions are met
+    """
     # TODO: can be improved and even removed making some modifications in caller templates
     subscriber = getattr(context.get('user'), 'subscriber', None)
     subscriber_nls = subscriber.get_newsletters_slugs() if subscriber else []
@@ -399,7 +563,7 @@ def timezone_verbose():
 
 
 @register.simple_tag
-def date_published_verbose(article):
+def date_published_verbose(article, flat=False):
     """
     Use settings to control when and how the date should be rendered in article cards.
     """
@@ -408,11 +572,15 @@ def date_published_verbose(article):
     main_section_edition = article.main_section.edition if article.main_section else None
     if (
         not getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_ONLY_ROOT_PUBLICATIONS', False)
-        or main_section_edition and main_section_edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL
+        or main_section_edition
+        and main_section_edition.publication.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL
     ):
-        today, now = date.today(), datetime.now()
+        now = timezone.now()
+        today = now.date()
         publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
-        publishing = datetime(today.year, today.month, today.day, publishing_hour, publishing_minute)
+        publishing = timezone.make_aware(
+            datetime(today.year, today.month, today.day, publishing_hour, publishing_minute)
+        )
         if main_section_edition:
             hide_delta = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_DELTA', None)
             if hide_delta:
@@ -427,9 +595,9 @@ def date_published_verbose(article):
             # return empty string if the custom_data is not None but evaluates to False
             if custom_data is not None and not custom_data:
                 return ''
-        return '%s<div class="ld-card__date">%s</div>' % (
-            ' - ' if article.has_byline() else '', custom_data or article.date_published_verbose()
-        )
+        return (
+            "%s%s" if flat else '%s<div class="ld-card__date">%s</div>'
+        ) % (' - ' if article.has_byline() else '', custom_data or article.date_published_verbose())
     else:
         return ''
 
@@ -450,6 +618,7 @@ def name_wrap(name):
 def initials(value, args=False):
     # TODO: not used, should be refactored without using "name_wrap"
     from django.template.defaultfilters import safe
+
     ret = ''
     names = value.split(', ')
     if not args:
@@ -492,32 +661,27 @@ def truncatehtml_chars(string, length):
 truncatehtml_chars.is_safe = True
 
 
-# randomgen is taken from https://github.com/bkeating/django-templatetag-randomgen and fixed (*) here
-@register.tag(name="randomgen")
-def randomgen(parser, token):
-    items = []
-    bits = token.split_contents()
-    for item in bits:
-        items.append(item)
-    return RandomgenNode(items[1:])
+@register.simple_tag
+def randomgen():
+    """
+    Returns a 16 char length random string starting with a letter
+    """
+    return (
+        random.choice(string.ascii_letters)
+        + ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(15))
+    )
 
 
-class RandomgenNode(Node):
-    def __init__(self, items):
-        self.items = []
-        for item in items:
-            self.items.append(item)
+@register.filter
+def in_group(user, group_name):
+    return user.groups.filter(name=group_name).exists()
 
-    def render(self, context):
-        # (*) Note: we fixed index error in arg1 and arg2, but they can still raise errors if not passed correctly
-        arg1 = self.items[0] if self.items else None
-        arg2 = self.items[1] if len(self.items) > 1 else None
-        if "hash" in self.items:
-            result = os.urandom(16).encode('hex')
-        elif "float" in self.items:
-            result = random.uniform(int(arg1), int(arg2))
-        elif not self.items:
-            result = random.random()
-        else:
-            result = random.randint(int(arg1), int(arg2))
-        return result
+
+@register.simple_tag
+def get_nombre_del_asistente():
+    return PerplexityAPISettings.get_solo().nombre_del_asistente
+
+
+@register.simple_tag
+def ia_activa():
+    return PerplexityAPISettings.get_solo().activar_asistente

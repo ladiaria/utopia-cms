@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load core_tags crispy_forms_tags %}
 
-{% block page_title %}Utilización de beneficios{% endblock %}
+{% block page_title %}{% title_joinparts 'Utilización de beneficios' %}{% endblock %}
 
 {% block javascript %}
 {% if success %}

@@ -1,32 +1,31 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
-
-from builtins import str
-from builtins import range
+from django.core.validators import MinValueValidator, MaxValueValidator
 from past.utils import old_div
-import os
-import time
+from os.path import basename, splitext, dirname, join, isfile
 import locale
-import tempfile
 import operator
-from copy import copy
-from datetime import date, datetime, timedelta
+import json
+from pydoc import locate
 from collections import OrderedDict
 from requests.exceptions import ConnectionError
+from kombu.exceptions import OperationalError as KombuOperationalError
 from sorl.thumbnail import get_thumbnail
-from PIL import Image
+from bs4 import BeautifulSoup
 import readtime
+import logging
+import mutagen
+import w3storage
+import re
 
 from django.conf import settings
-from django.core import urlresolvers
 from django.core.exceptions import ImproperlyConfigured
+from django.urls import reverse
+from django.urls.exceptions import NoReverseMatch
 from django.http import HttpResponse, Http404
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.sitemaps import ping_google
-from django.db import connection
+from django.db import IntegrityError, ProgrammingError, connection
 from django.db.models import (
     Q,
     Manager,
@@ -47,27 +46,44 @@ from django.db.models import (
     ManyToManyField,
     PositiveSmallIntegerField,
     URLField,
+    JSONField,
     Index,
-    permalink,
     SET_NULL,
+    CASCADE,
+    TextChoices,
+    FloatField,
 )
+from django.db.models.signals import post_save
+from django.db.utils import OperationalError
+from django.template import Engine, Context
 from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
+from django.template.exceptions import TemplateDoesNotExist
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
+from django.utils.timezone import datetime, timedelta, make_aware, now, template_localtime
 from django.utils.formats import date_format
+from django.utils.safestring import mark_safe
+from django.utils.html import escape
+from django.core.exceptions import ValidationError
 
-from apps import blacklisted
-from core.templatetags.ldml import ldmarkup, cleanhtml, remove_markup
+from apps import blocklisted
 from photologue_ladiaria.models import PhotoExtended
 from photologue.models import Gallery, Photo
 from audiologue.models import Audio
 from tagging.fields import TagField
 from tagging.models import Tag
+import thedaily
 from videologue.models import Video, YouTubeVideo
 import w3storage
 
-from .managers import PublishedArticleManager
+from .managers import (
+    get_published_kwargs,
+    PublishedArticleManager,
+    EditionManager,
+    SlugNaturalManager,
+    PublishedBreakingNewsModuleManager,
+)
+from .templatetags.ldml import ldmarkup, amp_ldmarkup, cleanhtml, remove_markup
 from .utils import (
     datetime_isoformat,
     get_pdf_pdf_upload_to,
@@ -75,7 +91,11 @@ from .utils import (
     CT,
     smart_quotes,
     update_article_url_in_coral_talk,
+    get_category_template,
 )
+from solo.models import SingletonModel
+
+logger = logging.getLogger(__name__)
 
 
 def remove_media_root(path):
@@ -83,6 +103,7 @@ def remove_media_root(path):
 
 
 class Publication(Model):
+    objects = SlugNaturalManager()
     name = CharField('nombre', max_length=100)
     twitter_username = CharField(
         'Nombre de usuario de Twitter',
@@ -90,16 +111,15 @@ class Publication(Model):
         blank=True,
         null=True,
         help_text='Nombre de usuario de Twitter que se menciona cuando artículos de esta publicación son compartidos '
-                  'en Twitter (escribir sin @)',
+        'en Twitter (escribir sin @)',
     )
-    description = TextField(
-        'descripción', null=True, blank=True, help_text='Se muestra en el componente de portada.'
-    )
+    description = TextField('descripción', null=True, blank=True, help_text='Se muestra en el componente de portada.')
     slug = SlugField('slug', unique=True)
     headline = CharField('título', max_length=100)
     weight = PositiveSmallIntegerField('orden', default=0)
     public = BooleanField('público', default=True)
     has_newsletter = BooleanField('tiene NL', default=False)
+    newsletter_new_pill = BooleanField('pill de "nuevo" para la newsletter en el perfil de usuario', default=False)
     newsletter_name = CharField(max_length=64, blank=True, null=True)
     newsletter_tagline = CharField(max_length=128, blank=True, null=True)
     newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
@@ -108,11 +128,23 @@ class Publication(Model):
     newsletter_automatic_subject = BooleanField(default=True)
     newsletter_subject = CharField('asunto', max_length=256, blank=True, null=True)
     newsletter_logo = ImageField('logo para NL', upload_to='publications', blank=True, null=True)
+    extra_context = JSONField(
+        "Contexto extra para portadas y newsletter",
+        default=dict,
+        help_text=mark_safe(
+            'Diccionario Python en formato JSON que se utilizará como contexto al inicio de la construcción del '
+            'contexto predeterminado, sus entradas, si hay colisión, serían sobreescritas por la vista de portada en '
+            'backend o comando de envío de newsletter.<br>'
+            'Ejemplo: <code>{"custom_footer_msg": "Esta newsletter fue generada utilizando utopia-cms"}</code>'
+        ),
+    )
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
     subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
     image = ImageField('logo', upload_to='publications', blank=True, null=True)
-    full_width_cover_image = ForeignKey(Photo, verbose_name='foto full de portada', blank=True, null=True)
+    full_width_cover_image = ForeignKey(
+        Photo, on_delete=CASCADE, verbose_name='foto full de portada', blank=True, null=True
+    )
     is_emergente = BooleanField('es emergente', default=False)
     new_pill = BooleanField('pill de "nuevo" en el componente de portada', default=False)
     html_title = CharField(
@@ -141,20 +173,72 @@ class Publication(Model):
     publisher_logo_width = PositiveSmallIntegerField(blank=True, null=True)
     publisher_logo_height = PositiveSmallIntegerField(blank=True, null=True)
 
+    __original_slug = None  # needed for articles url update on save
+
     def __str__(self):
-        return self.name or ''
+        return self.name
+
+    def __init__(self, *args, **kwargs):
+        # needed for articles url update on save
+        super().__init__(*args, **kwargs)
+        self.__original_slug = self.slug
 
     def save(self, *args, **kwargs):
-        super(Publication, self).save(*args, **kwargs)
+        # needed for articles url update
+        super().save(*args, **kwargs)
+        if getattr(settings, "CORE_PUBLICATIONS_PERMS_UPDATE", True):
+            # also permission creation for insert or update on save (see github issue 29)
+            try:
+                Permission.objects.update_or_create(
+                    codename="es_suscriptor_" + self.__original_slug,
+                    defaults={
+                        "name": "Es suscriptor " + ("actualmente" if self.slug == settings.DEFAULT_PUB else self.name),
+                        "content_type": ContentType.objects.get_for_model(thedaily.models.Subscriber),
+                        "codename": "es_suscriptor_" + self.slug,
+                    },
+                )
+            except IntegrityError:
+                pass
+        if self.__original_slug != self.slug:
+            try:
+                from .tasks import update_article_urls
+                update_article_urls.delay(self.slug)
+            except KombuOperationalError as oe_exc:
+                if settings.DEBUG:
+                    print("ERROR: update_article_urls could not be started (%s)" % oe_exc)
+        self.__original_slug = self.slug
 
     def get_absolute_url(self):
-        return urlresolvers.reverse(
-            'home',
-            kwargs={} if self.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL else {'domain_slug': self.slug}
+        return reverse(
+            'home', kwargs={} if self.slug in settings.CORE_PUBLICATIONS_USE_ROOT_URL else {'domain_slug': self.slug}
         )
 
+    @staticmethod
+    def multi():
+        try:
+            return Publication.objects.count() > 1
+        except (ProgrammingError, ImproperlyConfigured):
+            return False
+
+    def newsletter_preview_url(self):
+        """
+        Returns the url for the NL staff-allowed preview
+        """
+        try:
+            # allow a custom-by-slug override url pattern defined by a third-party module
+            result = reverse("publication-%s-nl-preview" % self.slug)
+        except NoReverseMatch:
+            try:
+                # TODO: not yet opensourced (we have a privative version that should be opensourced asap)
+                result = reverse("publication-nl-preview", kwargs={"publication_slug": self.slug})
+            except NoReverseMatch:
+                result = None
+        return result
+
     def profile_newsletter_name(self):
-        """ Returns the newsletter name to show in the edit profile view """
+        """
+        Returns the newsletter name to show in the edit profile view
+        """
         if self.slug in getattr(settings, "THEDAILY_EDIT_PROFILE_PUBLICATIONS_NL_USE_NAMEONLY", []):
             return self.name
         else:
@@ -188,44 +272,50 @@ class Publication(Model):
     def subscriber_count(self):
         return len(
             set(
-                self.subscriber_set.filter(
-                    user__is_active=True
-                ).exclude(user__email='').values_list('user__email', flat=True)
-            ) - blacklisted
+                self.subscriber_set.filter(user__is_active=True)
+                .exclude(user__email='')
+                .values_list('user__email', flat=True)
+            )
+            - blocklisted
         )
+
     subscriber_count.short_description = 'Suscrip. NL'
 
     def image_tag(self):
         url = None
         if self.image:
-            logo_filename = self.image.path
             try:
-                logo_image = Image.open(logo_filename)
-            except IOError:
-                logo_image = None
-            if logo_image and logo_image.size[0] > 120:
-                tmpfile, f = tempfile.mkstemp('.png', dir=settings.MEDIA_ROOT)
-                logo_image.convert('RGB').save(f, optimize=True)
-                url = get_thumbnail(f, '120', crop='center', quality=99).url
-            else:
-                url = '%s%s' % (settings.MEDIA_URL, self.image)
-        return (
+                # If image is wider than 120px, create a PNG thumbnail
+                if self.image.width > 120:
+                    url = get_thumbnail(self.image, '120', crop='center', quality=99, format='PNG').url
+                else:
+                    # Otherwise, use the original image url
+                    url = self.image.url
+            except Exception:
+                # Fallback to original image url if thumbnailing or width check fails
+                try:
+                    url = self.image.url
+                except ValueError:
+                    pass  # url remains None
+        return mark_safe(
             '<a href="/admin/core/publication/%d/"><img src="%s" style="background:%s;"/></a>' % (
                 self.id, url, self.newsletter_header_color
             )
         ) if url else ''
+
     image_tag.short_description = 'logo'
-    image_tag.allow_tags = True
 
     def get_full_width_cover_image_tag(self):
-        return (
-            '<a href="/admin/core/publication/%d/">'
-            '<img src="%s" alt="%s"></a>' % (
-                self.id, self.full_width_cover_image.get_admin_thumbnail_url(),
-                self.full_width_cover_image) if self.full_width_cover_image
-            else '')
+        return mark_safe(
+            '<a href="/admin/core/publication/%d/"><img src="%s" alt="%s"></a>' % (
+                self.id, self.full_width_cover_image.get_admin_thumbnail_url(), self.full_width_cover_image
+            )
+        ) if self.full_width_cover_image else ''
+
     get_full_width_cover_image_tag.short_description = 'foto full de portada'
-    get_full_width_cover_image_tag.allow_tags = True
+
+    def natural_key(self):
+        return (self.slug,)
 
     class Meta:
         ordering = ['weight']
@@ -245,7 +335,7 @@ class PortableDocumentFormatBaseModel(Model):
     pdf_md5 = CharField('checksum', max_length=32, editable=False)
     downloads = PositiveIntegerField('descargas', default=0)
     cover = ImageField('tapa', upload_to=get_pdf_cover_upload_to, blank=True, null=True)
-    date_published = DateField('fecha de publicación', default=timezone.now)
+    date_published = DateField('fecha de publicación', default=now, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
@@ -254,7 +344,7 @@ class PortableDocumentFormatBaseModel(Model):
     class Meta:
         abstract = True
         get_latest_by = 'date_published'
-        ordering = ('-date_published', )
+        ordering = ('-date_published',)
 
     def get_pdf_filename(self):
         return None
@@ -262,17 +352,15 @@ class PortableDocumentFormatBaseModel(Model):
     def get_cover_filename(self):
         return '%s.jpg' % self.get_pdf_filename()[:-4]
 
-    @permalink
     def get_download_url(self):
-        return (
+        return reverse(
             'edition_download',
-            (),
-            {
+            kwargs={
                 'publication_slug': self.publication.slug,
                 'year': self.date_published.year,
                 'month': '%02d' % self.date_published.month,
                 'day': '%02d' % self.date_published.day,
-                'filename': os.path.basename(self.pdf.path),
+                'filename': basename(self.pdf.path),
             },
         )
 
@@ -282,19 +370,21 @@ class PortableDocumentFormatBaseModel(Model):
         except IOError:
             raise Http404
         else:
-            response['Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(self.pdf.path)
+            response['Content-Disposition'] = 'attachment; filename=%s' % basename(self.pdf.path)
             return response
 
     def date_published_verbose(self, short=True):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
         result = (
-            ("{d:%a}. {d.day} {d:%b}." if date.today().year == self.date_published.year else "{d.day} {d:%b, %Y}")
-            if short else "{d:%A} {d.day} de {d:%B de %Y}"
+            (
+                "{d:%a}. {d.day} {d:%b}."
+                if now().date().year == self.date_published.year else "{d.day} {d:%b, %Y}"
+            ) if short else "{d:%A} {d.day} de {d:%B de %Y}"
         ).format(d=self.date_published)
         return result.title() if short else result.capitalize()
 
 
-""" TODO: better enable this after new structure works well (**)
+""" TODO: better enable this after new structure works well (**) (why? what does it improve?)
 class EditionSection(models.Model):
     edition = ForeignKey(Edition)
     section = ForeignKey(Section)
@@ -305,14 +395,20 @@ class EditionSection(models.Model):
 
 
 class Edition(PortableDocumentFormatBaseModel):
-    """ A publication's edition. """
+    """
+    A publication's edition.
+    """
+    objects = EditionManager()
     title = TextField('título', null=True)
-    publication = ForeignKey(Publication, verbose_name='publicación', related_name="%(app_label)s_%(class)s")
+    publication = ForeignKey(
+        Publication, on_delete=CASCADE, verbose_name='publicación', related_name="%(app_label)s_%(class)s"
+    )
     # (**) sections = ManyToManyField(Section, through='EditionSection')
 
     class Meta(PortableDocumentFormatBaseModel.Meta):
         verbose_name = 'edición'
         verbose_name_plural = 'ediciones'
+        unique_together = [["date_published", "publication"]]  # TODO: is this the right way? why not a single tuple?
 
     def __str__(self):
         try:
@@ -323,24 +419,37 @@ class Edition(PortableDocumentFormatBaseModel):
 
     def edition_pub(self):
         return str(self)
+
+    def natural_key(self):
+        return (self.date_published,) + self.publication.natural_key()
+    natural_key.dependencies = ['core.publication']
+
     edition_pub.short_description = 'Fecha publicada'
 
     def get_supplements(self):
         return self.supplements.values_list('pdf', 'cover') or ''
+
     get_supplements.short_description = 'suplementos'
 
     def get_absolute_url(self):
         reverse_kwargs = {
-            'year': self.date_published.year, 'month': self.date_published.month, 'day': self.date_published.day}
+            'year': self.date_published.year,
+            'month': self.date_published.month,
+            'day': self.date_published.day,
+        }
         if self.publication and self.publication.slug not in settings.CORE_PUBLICATIONS_USE_ROOT_URL:
             reverse_kwargs['publication_slug'] = self.publication.slug
-        return urlresolvers.reverse('edition_detail', kwargs=reverse_kwargs)
+        return reverse('edition_detail', kwargs=reverse_kwargs)
 
     def published_articles(self):
-        return Article.published.extra(
-            where=['core_article.id=core_articlerel.article_id', 'core_articlerel.edition_id=%d' % self.id],
-            tables=['core_articlerel'],
-        ).order_by('articlerel__top_position').distinct()
+        return (
+            Article.published.extra(
+                where=['core_article.id=core_articlerel.article_id', 'core_articlerel.edition_id=%d' % self.id],
+                tables=['core_articlerel'],
+            )
+            .order_by('articlerel__top_position')
+            .distinct()
+        )
 
     def newsletter_featured_articles(self):
         return self.published_articles().filter(newsletter_featured=True)
@@ -348,22 +457,50 @@ class Edition(PortableDocumentFormatBaseModel):
     def get_pdf_filename(self):
         return '%s-%s.pdf' % (self.publication.slug, self.date_published.strftime('%Y%m%d'))
 
+    def cover_image_file_exists(self):
+        try:
+            result = self.cover and bool(self.cover.file)
+        except IOError:
+            result = False
+        return result
+
     @property
     def top_articles(self):
-        return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.prefetch_related(
-            'article__main_section__edition__publication',
-            'article__main_section__section',
-            'article__photo__extended__photographer',
-            'article__byline',
-        ).filter(article__is_published=True, home_top=True).order_by('top_position')]))
+        try:
+            return list(
+                OrderedDict.fromkeys(
+                    [
+                        ar.article
+                        for ar in self.articlerel_set.prefetch_related(
+                            'article__main_section__edition__publication',
+                            'article__main_section__section',
+                            'article__photo__extended__photographer',
+                            'article__byline',
+                        )
+                        .filter(article__is_published=True, home_top=True)
+                        .order_by('top_position')
+                    ]
+                )
+            )
+        except OperationalError:
+            return []
 
     def get_articles_in_section(self, section):
-        return list(OrderedDict.fromkeys([ar.article for ar in self.articlerel_set.prefetch_related(
-            'article__main_section__edition__publication',
-            'article__main_section__section',
-            'article__photo__extended__photographer',
-            'article__byline',
-        ).filter(article__is_published=True, section=section).order_by('position')]))
+        return list(
+            OrderedDict.fromkeys(
+                [
+                    ar.article
+                    for ar in self.articlerel_set.prefetch_related(
+                        'article__main_section__edition__publication',
+                        'article__main_section__section',
+                        'article__photo__extended__photographer',
+                        'article__byline',
+                    )
+                    .filter(article__is_published=True, section=section)
+                    .order_by('position')
+                ]
+            )
+        )
 
     def previous_section(self, section):
         editions = [
@@ -384,7 +521,7 @@ class Edition(PortableDocumentFormatBaseModel):
     def next_edition(self):
         try:
             return Edition.objects.filter(
-                date_published__gt=self.date_published, date_published__lte=date.today()
+                date_published__gt=self.date_published, date_published__lte=now().date()
             ).order_by('date_published')[0]
         except Exception:
             return None
@@ -406,7 +543,7 @@ class Edition(PortableDocumentFormatBaseModel):
 
 
 class EditionHeader(Model):
-    edition = OneToOneField(Edition, verbose_name='edición')
+    edition = OneToOneField(Edition, on_delete=CASCADE, verbose_name='edición')
     title = CharField('título', max_length=127)
     subtitle = CharField('subtítulo', max_length=255, null=True, blank=True)
 
@@ -419,7 +556,7 @@ class EditionHeader(Model):
 
 
 class Supplement(PortableDocumentFormatBaseModel):
-    edition = ForeignKey(Edition, verbose_name='edición', related_name='supplements')
+    edition = ForeignKey(Edition, on_delete=CASCADE, verbose_name='edición', related_name='supplements')
     name = CharField('nombre', max_length=2, choices=settings.CORE_SUPPLEMENT_NAME_CHOICES)
     slug = SlugField('slug', unique=True)
     headline = CharField('titular', max_length=100)
@@ -450,17 +587,23 @@ class Supplement(PortableDocumentFormatBaseModel):
             x += 1
         return '%s-%i' % (name_slug, x)
 
-    @permalink
     def get_absolute_url(self):
-        return 'supplement_detail', (), {
-            'supplement_slug': self.slug, 'year': self.date_published.year,
-            'month': self.date_published.month, 'day': self.date_published.day}
+        return reverse(
+            'supplement_detail',
+            kwargs={
+                'supplement_slug': self.slug,
+                'year': self.date_published.year,
+                'month': self.date_published.month,
+                'day': self.date_published.day,
+            },
+        )
 
     def get_pdf_filename(self):
         return '%s-%s-%s.pdf' % (
             self.edition.get_name_display().replace(' ', '_'),
             self.date_published.strftime('%Y%m%d'),
-            self.slug.replace('-', '_'))
+            self.slug.replace('-', '_'),
+        )
 
     def get_pdf_url(self):
         try:
@@ -470,15 +613,28 @@ class Supplement(PortableDocumentFormatBaseModel):
 
 
 class Category(Model):
-    name = CharField('nombre', max_length=16, unique=True)
-    slug = CharField('slug', max_length=16, blank=True, null=True)
+    objects = SlugNaturalManager()
+    name = CharField('nombre', max_length=50, unique=True)
+    slug = SlugField('slug', blank=True, null=True)
     description = TextField('descripción', blank=True, null=True)
     order = PositiveSmallIntegerField('orden', blank=True, null=True)
     has_newsletter = BooleanField('tiene NL', default=False)
+    newsletter_new_pill = BooleanField('pill de "nuevo" para la newsletter en el perfil de usuario', default=False)
     newsletter_tagline = CharField(max_length=128, blank=True, null=True)
     newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
+    newsletter_from_name = CharField("nombre en el 'From' del mensaje", max_length=64, blank=True, null=True)
+    newsletter_from_email = EmailField("email en el 'From' del mensaje", blank=True, null=True)
     newsletter_automatic_subject = BooleanField(default=True)
     newsletter_subject = CharField('asunto', max_length=256, blank=True, null=True)
+    newsletter_extra_context = JSONField(
+        "Contexto extra para newsletter",
+        default=dict,
+        help_text=mark_safe(
+            'Diccionario Python en formato JSON que se utilizará como contexto al inicio de la construcción del '
+            'contexto predeterminado, sus entradas, si hay colisión, serían sobreescritas por el comando de envío.<br>'
+            'Ejemplo: <code>{"custom_footer_msg": "Esta newsletter fue generada utilizando utopia-cms"}</code>'
+        ),
+    )
     subscribe_box_question = CharField(max_length=64, blank=True, null=True)
     subscribe_box_nl_subscribe_auth = CharField(max_length=128, blank=True, null=True)
     subscribe_box_nl_subscribe_anon = CharField(max_length=128, blank=True, null=True)
@@ -487,7 +643,9 @@ class Category(Model):
         'texto en el link "más" del componente de portada', max_length=50, blank=True, null=True
     )
     new_pill = BooleanField('pill de "nuevo" en el componente de portada y menú', default=False)
-    full_width_cover_image = ForeignKey(Photo, verbose_name='foto full de portada', blank=True, null=True)
+    full_width_cover_image = ForeignKey(
+        Photo, on_delete=CASCADE, verbose_name='foto full de portada', blank=True, null=True
+    )
     full_width_cover_image_title = CharField(
         'título para foto full',
         max_length=50,
@@ -531,7 +689,8 @@ class Category(Model):
         """
         return Article.objects.filter(
             id__in=[
-                a.id for a in Article.objects.raw(
+                a.id
+                for a in Article.objects.raw(
                     """
                     SELECT DISTINCT core_article.id
                     FROM core_article
@@ -544,7 +703,8 @@ class Category(Model):
                     WHERE core_section.category_id = %d
                         AND is_published AND core_edition.date_published <= CURRENT_DATE
                     ORDER BY core_article.date_published DESC
-                    """ % self.id
+                    """
+                    % self.id
                 )
             ]
         )
@@ -555,7 +715,8 @@ class Category(Model):
         If max is given, the result will be allways less or equal this max value.
         """
         with connection.cursor() as cursor:
-            subquery_part = """
+            subquery_part = (
+                """
                 FROM core_article
                 JOIN core_articlerel ON
                     core_article.id = core_articlerel.article_id
@@ -564,12 +725,15 @@ class Category(Model):
                 JOIN core_edition ON
                     core_articlerel.edition_id = core_edition.id
                 WHERE core_section.category_id = %d AND is_published AND core_edition.date_published <= CURRENT_DATE
-            """ % self.id
+            """
+                % self.id
+            )
             if exclude_sections:
                 subquery_part += "AND core_section.slug NOT IN (%s)" % ",".join("'%s'" % s for s in exclude_sections)
             if max:
                 query = "SELECT COUNT(*) FROM (SELECT DISTINCT core_article.id %s LIMIT %d) final" % (
-                    subquery_part, max
+                    subquery_part,
+                    max,
                 )
             else:
                 query = "SELECT COUNT(DISTINCT core_article.id) " + subquery_part
@@ -581,26 +745,82 @@ class Category(Model):
     def subscriber_count(self):
         return len(
             set(
-                self.subscriber_set.filter(
-                    user__is_active=True
-                ).exclude(user__email='').values_list('user__email', flat=True)
-            ) - blacklisted
+                self.subscriber_set.filter(user__is_active=True)
+                .exclude(user__email='')
+                .values_list('user__email', flat=True)
+            )
+            - blocklisted
         )
+
     subscriber_count.short_description = 'Suscrip. NL'
 
     def get_full_width_cover_image_tag(self):
-        return (
-            '<a href="/admin/core/category/%d/">'
-            '<img src="%s" alt="%s"></a>' % (
-                self.id, self.full_width_cover_image.get_admin_thumbnail_url(),
-                self.full_width_cover_image) if self.full_width_cover_image
-            else '')
+        return mark_safe(
+            '<a href="/admin/core/category/%d/"><img src="%s" alt="%s"></a>' % (
+                self.id, self.full_width_cover_image.get_admin_thumbnail_url(), self.full_width_cover_image
+            )
+        ) if self.full_width_cover_image else ''
 
     get_full_width_cover_image_tag.short_description = 'foto full de portada'
-    get_full_width_cover_image_tag.allow_tags = True
 
     def get_absolute_url(self):
-        return urlresolvers.reverse('home', kwargs={'domain_slug': self.slug})
+        return reverse('home', kwargs={'domain_slug': self.slug})
+
+    def newsletter_preview_url(self):
+        """
+        Returns the url for the NL staff-allowed preview
+        """
+        try:
+            # allow a custom-by-slug override url pattern defined by a third-party module
+            result = reverse("category-%s-nl-preview" % self.slug)
+        except NoReverseMatch:
+            try:
+                result = reverse("category-nl-preview", kwargs={"slug": self.slug})
+            except NoReverseMatch:
+                result = None
+        return result
+
+    def profile_newsletter_name(self):
+        """
+        Returns the newsletter name to show in the edit profile view
+        TODO: instead of use a setting to customize (due an urgent req), this should be done like in Pubs, using a
+              new field "newsletter_name", this needs some time-work to propagate the impact of adding this new field,
+              because, for ex. nl subject should also use it prior to object name, etc.
+        """
+        if self.slug in getattr(settings, "THEDAILY_EDIT_PROFILE_CATEGORY_NL_USE_FROM_NAME", []):
+            return self.newsletter_from_name
+        else:
+            return self.name
+
+    def nl_featured_section_articles(self):
+        """
+        Returns a list containg the articles matching the 3 values that can be defined in the related setting.
+        Examples:
+        1. if settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS == {"this_category_slug": ("some_section", 1, 2)}
+            then, this method will return the 2 most recent articles within 1 day published in "some_section" section.
+        2. The third element of the tuple can be omitted and defaulted to 1:
+            if settings.CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS == {"this_category_slug": ("some_section", 7)}
+            then, this method will return the latest article within last 7 days published in "some_section" section.
+        """
+        settings_tuple = getattr(settings, "CORE_CATEGORY_NEWSLETTER_FEATURED_SECTIONS", {}).get(self.slug, ())
+        st_len, featured_section, days_ago, take_count = len(settings_tuple), None, None, None
+        result = Article.published.none()
+        if st_len:
+            if st_len == 3:
+                featured_section, days_ago, take_count = settings_tuple
+            elif st_len == 2:
+                (featured_section, days_ago), take_count = settings_tuple, 1
+            if all((featured_section, days_ago, take_count)):
+                try:
+                    result = self.section_set.get(
+                        slug=featured_section
+                    ).published_articles(date_published__gte=now() - timedelta(days_ago))[:take_count]
+                except Section.DoesNotExist:
+                    pass
+        return result
+
+    def natural_key(self):
+        return (self.slug,)
 
     class Meta:
         verbose_name = 'área'
@@ -608,18 +828,21 @@ class Category(Model):
 
 
 class Section(Model):
+    objects = SlugNaturalManager()
+
     SECTION_1 = '1'
     SECTION_2 = '2'
     SECTION_3 = '3'
 
-    category = ForeignKey(Category, verbose_name='área', blank=True, null=True)
+    category = ForeignKey(Category, on_delete=CASCADE, verbose_name='área', blank=True, null=True)
     name = CharField('nombre', max_length=50, unique=True)
+    included_in_category_menu = BooleanField("incluída en el menú del área", default=True)
     name_in_category_menu = CharField('nombre en el menú del área', max_length=50, blank=True, null=True)
     slug = SlugField('slug', unique=True)
     description = TextField('descripción', blank=True, null=True)
-    contact = EmailField('correo electrónico', blank=True, null=True)
+    contact = EmailField("email", blank=True, null=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
-    home_order = PositiveSmallIntegerField('orden en portada', default=0)
+    home_order = PositiveSmallIntegerField('orden', default=0)
     in_home = BooleanField(
         'en portada',
         default=False,
@@ -657,18 +880,31 @@ class Section(Model):
     def __str__(self):
         return self.name
 
+    def nl_display_name(self):
+        """
+        This method allows to include the "hierarchy" for those categories that allow that feature by settings for the
+        purpose to be rendered in newsletters cards, where calling the aticle hierarchy template tag will not be a good
+        approach.
+        """
+        if self.category:
+            allowed = getattr(settings, "CORE_CATEGORY_ALLOW_RENDER_HIERARCHY", ())
+            if allowed and self.category.slug in allowed:
+                return '&nbsp;›&nbsp;'.join([str(self.category), str(self)])
+        return str(self)
+
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
         super(Section, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return urlresolvers.reverse('section_detail', kwargs={'section_slug': self.slug})
+        return reverse('section_detail', kwargs={'section_slug': self.slug})
 
     def is_satirical(self):
         return self.slug in getattr(settings, 'CORE_SATIRICAL_SECTIONS', ())
 
     def get_publications(self):
         return ', '.join(self.publications.values_list('name', flat=True))
+
     get_publications.short_description = 'publicaciones'
 
     def get_tags(self):
@@ -683,6 +919,7 @@ class Section(Model):
         - include articles related to any section and not only this (self) section if all_sections=True.
         NOTE: ordering by position is not applied because this method can take articles in more than one edition and
               the position is an ordering that makes sense only inside a section in one edition.
+        TODO: SQL generation shuld be according with ..utils.get_section_articles_sql
         """
         extra_where, extra_join = '', ''
 
@@ -707,7 +944,11 @@ class Section(Model):
             GROUP BY id
             ORDER BY core_article.date_published DESC
             LIMIT %s
-        """ % (extra_join, extra_where, limit)
+        """ % (
+            extra_join,
+            extra_where,
+            limit,
+        )
 
         if settings.RAW_SQL_DEBUG:
             print(query)
@@ -725,21 +966,25 @@ class Section(Model):
         devuelve los últimos 4 articulos de la sección que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        return Article.objects.raw("""
+        return Article.objects.raw(
+            """
             SELECT core_article.*
             FROM core_article JOIN core_articlerel
                 ON core_article.id = core_articlerel.article_id
             WHERE core_articlerel.section_id=%s AND is_published
                 AND allow_related AND core_article.id!=%s
             GROUP BY id ORDER BY date_published DESC
-            LIMIT 4""" % (self.id, exclude_id))
+            LIMIT 4"""
+            % (self.id, exclude_id)
+        )
 
     def latest4relatedbycategory(self, category, exclude_id):
         """
         devuelve los últimos 4 articulos de la categoría que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        return Article.objects.raw("""
+        return Article.objects.raw(
+            """
             SELECT core_article.*
             FROM core_article JOIN core_articlerel
                 ON core_article.id = core_articlerel.article_id
@@ -748,19 +993,27 @@ class Section(Model):
             WHERE is_published AND allow_related
                 AND core_section.category_id=%s AND core_article.id!=%s
             GROUP BY id ORDER BY date_published DESC
-            LIMIT 4""" % (category, exclude_id))
+            LIMIT 4"""
+            % (category, exclude_id)
+        )
 
     def latest4relatedbypublication(self, publication, exclude_id):
         """
         devuelve los últimos 4 articulos de la publicacion que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        return Article.objects.raw("""
+        return (
+            Article.objects.raw(
+                """
             SELECT a.* FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
                 JOIN core_edition e ON ar.edition_id=e.id
             WHERE a.is_published AND a.allow_related AND e.publication_id=%s AND a.id!=%s
-            GROUP BY a.id ORDER BY a.date_published DESC LIMIT 4""" % (publication, exclude_id)) \
-            if settings.CORE_ENABLE_RELATED_ARTICLES else []
+            GROUP BY a.id ORDER BY a.date_published DESC LIMIT 4"""
+                % (publication, exclude_id)
+            )
+            if settings.CORE_ENABLE_RELATED_ARTICLES
+            else []
+        )
 
     def latest_article(self):
         """
@@ -772,14 +1025,14 @@ class Section(Model):
         return [latest_qs[0].article] if latest_qs.exists() else []
 
     def mas_vistos(self):
-        desde = datetime.now() - timedelta(days=60)
+        desde = now() - timedelta(days=60)
         return Article.objects.filter(sections__id=self.id, date_published__gt=desde).order_by('views')[:10]
 
-    def published_articles(self):
+    def published_articles(self, **filter_kwargs):
         """
-        Returns all this section's published articles
+        Returns all this section's published articles supporting filtering by keyword args
         """
-        return self.articles_core.filter(is_published=True).distinct()
+        return self.articles_core.filter(is_published=True, **filter_kwargs).distinct()
 
     def latest_articles(self):
         """
@@ -787,12 +1040,16 @@ class Section(Model):
         """
         return self.articles_core.filter(
             is_published=True,
-            date_published__gt=datetime.now() - timedelta(2 if date.today().isoweekday() < 7 else 3),
+            date_published__gt=now() - timedelta(2 if now().date().isoweekday() < 7 else 3),
         ).distinct()
 
     def articles_count(self):
         return self.articles_core.count()
+
     articles_count.short_description = '# Artículos'
+
+    def natural_key(self):
+        return (self.slug,)
 
     class Meta:
         get_latest_by = 'date_created'
@@ -802,14 +1059,13 @@ class Section(Model):
 
 
 class Journalist(Model):
-
+    objects = SlugNaturalManager()
     JOB_CHOICES = (
         ('PE', 'Periodista'),
         ('CO', 'Columnista'),
     )
-
     name = CharField('nombre', max_length=50, unique=True)
-    email = EmailField('correo electrónico', blank=True, null=True)
+    email = EmailField(blank=True, null=True)
     slug = SlugField('slug', unique=True)
     image = ImageField('imagen', upload_to='journalist', blank=True, null=True)
     job = CharField(
@@ -821,37 +1077,83 @@ class Journalist(Model):
     )
     bio = TextField('bio', null=True, blank=True, help_text='Bio aprox 200 caracteres.')
     sections = ManyToManyField(Section, verbose_name='secciones', blank=True)
-    fb = CharField('facebook', max_length=255, blank=True, null=True)
-    tt = CharField('twitter', max_length=255, blank=True, null=True)
-    gp = CharField('google plus', max_length=255, blank=True, null=True)
-    ig = CharField('instangram', max_length=255, blank=True, null=True)
+
+    # the order in which this class properties are declared is the order in which they'll be displayed unless
+    # overridden by CORE_JOURNALIST_SOCIAL_ORDER setting
+    bs = URLField('bluesky', blank=True, null=True)
+    fb = URLField('facebook', blank=True, null=True)
+    ig = URLField('instagram', blank=True, null=True)
+    lnkin = URLField('linkedin', blank=True, null=True)
+    mtdn = URLField('mastodon', blank=True, null=True)
+    thds = URLField('threads', blank=True, null=True)
+    tktk = URLField('tiktok', blank=True, null=True)
+    tr = URLField('tumblr', blank=True, null=True)
+    tw = URLField('twitch', blank=True, null=True)
+    tt = URLField('X', blank=True, null=True)
+    ytb = URLField('youtube', blank=True, null=True)
+    other_one = URLField('otro 1', blank=True, null=True)
+    other_two = URLField('otro 2', blank=True, null=True)
+    other_three = URLField('otro 3', blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+    def natural_key(self):
+        return (self.slug,)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
         super(Journalist, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return urlresolvers.reverse(
-            'journalist_detail',
-            kwargs={
-                'journalist_job': 'columnista' if self.job == 'CO' else 'periodista', 'journalist_slug': self.slug
-            },
+        reverse_kwargs = {'journalist_slug': self.slug}
+        if settings.CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB:
+            reverse_kwargs['journalist_job'] = self.get_job_display().lower()
+        return reverse(
+            getattr(settings, "CORE_JOURNALIST_GET_ABSOLUTE_URL_NAME", 'journalist_detail'), kwargs=reverse_kwargs
         )
-
-    def get_published(self):
-        if self.job == 'PE':
-            published = Article.objects.filter(byline__id=self.id)
-        if self.job == "FO":
-            published = PhotoExtended.objects.filter(byline__id=self.id)
-        else:
-            published = None
-        return published
 
     def get_sections(self):
         return self.sections.all()
+
+    def image_file_exists(self):
+        try:
+            result = self.image and bool(self.image.file)
+        except IOError:
+            result = False
+        return result
+
+    def get_socials(self):
+        """
+        Get all socials that has value
+        @return field_value: social fields with values in dict format
+        {"field_verbose_name": "field_value"}
+        """
+        default_order = [f.verbose_name for f in self._meta.fields if type(f) is URLField]
+        custom_order = getattr(settings, "CORE_JOURNALIST_SOCIAL_ORDER", None)
+        if custom_order:
+            if len(custom_order) < len(default_order):
+                # complete the full order based in the default oreder.
+                for prop in default_order:
+                    if prop not in custom_order:
+                        custom_order.append(prop)
+            verbose_names_of_interest = custom_order
+        else:
+            verbose_names_of_interest = default_order
+
+        # Create a mapping from verbose_name to field_name
+        verbose_name_to_field = {
+            field.verbose_name: field.name for field in self._meta.fields
+        }
+
+        field_values = {}
+        for verbose_name in verbose_names_of_interest:
+            field_name = verbose_name_to_field.get(verbose_name)
+            if field_name and hasattr(self, field_name) and getattr(self, field_name):
+                field_value = getattr(self, field_name)
+                field_values[verbose_name] = field_value
+
+        return field_values
 
     class Meta:
         ordering = ('name', )
@@ -897,25 +1199,26 @@ class ArticleBase(Model, CT):
 
     publication = ForeignKey(
         Publication,
+        on_delete=SET_NULL,
         verbose_name='publicación',
         blank=True,
         null=True,
         related_name='articles_%(app_label)s',
     )
     type = CharField('tipo', max_length=2, choices=TYPE_CHOICES, blank=True, null=True, db_index=True)
-    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en la nota.')
+    headline = CharField('título', max_length=200, help_text='Se muestra en la portada y en el artículo.')
     keywords = CharField(
         'titulín', max_length=45, blank=True, null=True, help_text='Se muestra encima del título en portada.'
     )
     slug = SlugField('slug', max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
-        'bajada', blank=True, null=True, help_text='Se muestra en la página de la nota debajo del título.'
+        'descripción', blank=True, null=True, help_text='Se muestra en la página del artículo debajo del título.'
     )
     lead = TextField(
-        'copete', blank=True, null=True, help_text='Se muestra en la página de la nota debajo de la bajada.'
+        'copete', blank=True, null=True, help_text='Se muestra en la página del artículo debajo de la bajada.'
     )
-    body = TextField('cuerpo')
+    body = locate(settings.CORE_ARTICLE_BODY_FIELD_CLASS)("cuerpo")
     header_display = CharField(
         'tipo de cabezal', max_length=2, choices=HEADER_DISPLAY_CHOICES, blank=True, null=True, default='BG'
     )
@@ -927,14 +1230,14 @@ class ArticleBase(Model, CT):
         null=True,
         default='SM',
     )
-    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada de la nota en portada.')
+    home_lead = TextField('bajada en portada', blank=True, null=True, help_text='Bajada del artículo en portada.')
     home_display = CharField('mostrar en portada', max_length=2, choices=DISPLAY_CHOICES, blank=True, null=True)
     home_top_deck = TextField(
         'bajada en destacados',
         blank=True,
         null=True,
         help_text=(
-            'Se muestra en los destacados de la portada, en el caso de estar vació se muestra la bajada de la nota.'
+            'Se muestra en los destacados de la portada, en el caso de estar vacío se muestra la bajada del artículo.'
         ),
     )
     byline = ManyToManyField(
@@ -954,12 +1257,14 @@ class ArticleBase(Model, CT):
     longitude = DecimalField('longitud', max_digits=10, decimal_places=6, blank=True, null=True)
     location = ForeignKey(
         Location,
+        on_delete=SET_NULL,
         verbose_name='ubicación',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    is_published = BooleanField('publicado', default=True)
+    is_published = BooleanField('publicado', default=True, db_index=True)
+    to_be_published = BooleanField('programar publicación', default=False, db_index=True)
     date_published = DateTimeField('fecha de publicación', null=True, db_index=True)
     date_created = DateTimeField('fecha de creación', auto_now_add=True, db_index=True)
     last_modified = DateTimeField('última actualización', auto_now=True)
@@ -967,24 +1272,29 @@ class ArticleBase(Model, CT):
     allow_comments = BooleanField('Habilitar comentarios', default=True)
     created_by = ForeignKey(
         User,
+        on_delete=SET_NULL,
         verbose_name='creado por',
         related_name='created_articles_%(app_label)s',
         editable=False,
         blank=False,
         null=True,
     )
-    photo = ForeignKey(Photo, blank=True, null=True, verbose_name='imagen')
-    gallery = ForeignKey(Gallery, verbose_name='galería', blank=True, null=True)
+    photo = ForeignKey(Photo, on_delete=SET_NULL, blank=True, null=True, verbose_name='imagen')
+    gallery = ForeignKey(Gallery, on_delete=SET_NULL, verbose_name='galería', blank=True, null=True)
     video = ForeignKey(
         Video,
+        on_delete=SET_NULL,
         verbose_name='video',
         related_name='articles_%(app_label)s',
         blank=True,
         null=True,
     )
-    youtube_video = ForeignKey(YouTubeVideo, verbose_name='video de YouTube', blank=True, null=True)
+    youtube_video = ForeignKey(
+        YouTubeVideo, on_delete=SET_NULL, verbose_name='video de YouTube', blank=True, null=True
+    )
     audio = ForeignKey(
         Audio,
+        on_delete=SET_NULL,
         verbose_name='audio',
         related_name='articles_%(app_label)s',
         blank=True,
@@ -998,6 +1308,11 @@ class ArticleBase(Model, CT):
         'mostrar artículos relacionados dentro de este artículo', default=True, blank=False, null=False
     )
     public = BooleanField('Artículo libre', default=False)
+    full_restricted = BooleanField(
+        'Disponible sólo para suscriptores',
+        default=False,
+        help_text="Acceso solamente a usuarios que tengan alguna suscripción activa."
+    )
 
     published = PublishedArticleManager()
 
@@ -1006,6 +1321,7 @@ class ArticleBase(Model, CT):
 
     def save(self, *args, **kwargs):
         from .utils import add_punctuation
+
         for attr in ('headline', 'deck', 'lead', 'body'):
             if getattr(self, attr, None):
                 setattr(self, attr, getattr(self, attr).strip())
@@ -1016,22 +1332,46 @@ class ArticleBase(Model, CT):
 
         self.slug = slugify(cleanhtml(ldmarkup(self.headline)))
 
-        now = datetime.now()
+        # full restricted / open consistency checks
+        # 1. If open => full_restricted == False
+        # 2. If full_restricted => open == False
+        if self.is_published and self.is_public() and self.full_restricted:
+            raise Exception(
+                "Un artículo publicado no puede ser libre y además estar disponible sólo para suscriptores."
+            )
+
+        # other checks
+
+        nowval = now()
 
         if self.is_published:
+            if self.to_be_published:
+                raise Exception("No se permite programar publicación de un artículo ya publicado")
             if not self.date_published:
-                self.date_published = now
+                self.date_published = nowval
             if not settings.DEBUG:
                 try:
                     ping_google()
                 except Exception:
                     pass
+        elif self.to_be_published:
+            if not self.date_published:
+                raise Exception("Para programar la publicación de un artículo se debe especificar la fecha")
+            elif self.date_published <= nowval:
+                raise Exception("La fecha de publicación programada no puede estar en el pasado")
+            else:
+                # TODO: update/create schedule task associated with this article
+                pass
         else:
             self.date_published = None
 
-        date_value = self.date_published or self.date_created or now
+        date_value = self.date_published or self.date_created or nowval
         # No puede haber otro publicado con date_published en el mismo mes que date_value o no publicado con
         # date_created en el mismo mes que date_value, con el mismo slug. TODO: translate this comment to english.
+        if isinstance(date_value, str):
+            # needed if for example, assigning from a shell using strings for dates.
+            # TODO: this only works if elasticsearch is off (improve this)
+            date_value = datetime.strptime(date_value, "%Y-%m-%d %H:%M:%S")
         targets = Article.objects.filter(
             Q(is_published=True) & Q(date_published__year=date_value.year) & Q(date_published__month=date_value.month)
             | Q(is_published=False) & Q(date_created__year=date_value.year) & Q(date_created__month=date_value.month),
@@ -1041,9 +1381,13 @@ class ArticleBase(Model, CT):
             targets = targets.exclude(id=self.id)
         if targets:
             # TODO: IntegrityError may be better exception to raise
-            raise Exception('Ya existe un artículo en ese mes con el mismo título.')
+            raise Exception('Ya existe un artículo en ese mes con el mismo título')
 
         super(ArticleBase, self).save(*args, **kwargs)
+
+        if not self.to_be_published:
+            # TODO: delete any scheduled task associated with this article
+            pass
 
     def is_photo_article(self):
         return self.type == settings.CORE_PHOTO_ARTICLE
@@ -1060,7 +1404,7 @@ class ArticleBase(Model, CT):
         return bool(self.lead)
 
     def get_lead(self):
-        return self.lead or self.body[:self.body.find('\n')]
+        return self.lead or self.body[: self.body.find('\n')]
 
     def get_keywords(self):
         if self.keywords:
@@ -1077,10 +1421,15 @@ class ArticleBase(Model, CT):
         return Tag.objects.get_for_object(self)
 
     def get_absolute_url(self):
-        return self.url_path or self.build_url_path()  # TODO: remove this "or" after url paths saved for all articles
+        # TODO: remove this "or" after proove that obj can't be saved with url_path blank or None
+        return self.url_path or self.build_url_path()
 
     def build_url_path(self):
         date_value = self.date_published or self.date_created
+        if isinstance(date_value, str):
+            # needed if for example, assigning from a shell using strings for dates.
+            # TODO: this only works if elasticsearch is off (improve this)
+            date_value = datetime.strptime(date_value, "%Y-%m-%d %H:%M:%S")
         reverse_kwargs = {'year': date_value.year, 'month': date_value.month, 'slug': self.slug}
         main_section = getattr(self, 'main_section', None)
         if main_section:
@@ -1089,7 +1438,7 @@ class ArticleBase(Model, CT):
                     reverse_kwargs['domain_slug'] = main_section.section.category.slug
             else:
                 reverse_kwargs['domain_slug'] = main_section.edition.publication.slug
-        return urlresolvers.reverse('article_detail', kwargs=reverse_kwargs)
+        return reverse('article_detail', kwargs=reverse_kwargs)
 
     def get_discussion_url(self):
         return '%sdiscusion/' % self.get_absolute_url()
@@ -1098,20 +1447,21 @@ class ArticleBase(Model, CT):
         return self.get_discussion_url()
 
     def get_feed_url(self):
-        return '/feeds/discusion/%(year)i/%(month)i/%(slug)s/' % \
-            {'year': self.date_published.year,
-             'month': self.date_published.month, 'slug': self.slug}
+        return '/feeds/discusion/%(year)i/%(month)i/%(slug)s/' % {
+            'year': self.date_published.year,
+            'month': self.date_published.month,
+            'slug': self.slug,
+        }
 
     def get_app_body(self):
-        """ Returns the body formatted for the app """
+        """Returns the body formatted for the app"""
         # TODO: raising encoding error, fix asap.
         # TODO: what does "for the app" mean?
         # TODO: check if the first TODO is still happening
         return render_to_string('article/app_body.html', {'article': self})
 
     def surl(self):
-        return '<a href="/short/A/%i/">sURL</a>' % self.id
-    surl.allow_tags = True
+        return mark_safe('<a href="/short/A/%i/">sURL</a>' % self.id)
 
     @property
     def display(self):
@@ -1125,18 +1475,32 @@ class ArticleBase(Model, CT):
 
     def edit_link(self):
         if self.id:
-            change_url = urlresolvers.reverse('admin:core_article_change', args=(self.id, ))
-            return "<a href='%s' target='_blank'>Editar</a>" % change_url
+            change_url = reverse('admin:core_article_change', args=(self.id,))
+            return mark_safe("<a href='%s' target='_blank'>Editar</a>" % change_url)
         else:
             return 'No Existe'
-    edit_link.allow_tags = True
 
     def is_public(self):
         return self.public
 
     def get_photos_wo_cover(self):
-        return self.gallery.photos.exclude(
-            id__exact=self.photo.id if self.photo else 0)
+        return self.gallery.photos.exclude(id__exact=self.photo.id if self.photo else 0)
+
+    def get_audio_length(self, seconds=False):
+        if self.audio:
+            try:
+                td = timedelta(seconds=int(mutagen.File(self.audio.file).info.length))
+            except (FileNotFoundError, AttributeError) as e:
+                logger.error(
+                    f"get_audio_length error - Article ID: {self.id}, "
+                    f"Slug: {self.slug}, Audio file: {self.audio.file.name}, "
+                    f"Error type: {type(e).__name__}, Error: {e}"
+                )
+            else:
+                if seconds:
+                    return td.seconds
+                strtd = str(td)
+                return strtd.split(":", 1)[-1] if td.seconds < 3600 else strtd
 
     def has_photo(self):
         try:
@@ -1146,10 +1510,26 @@ class ArticleBase(Model, CT):
 
     def photo_image_file_exists(self):
         try:
-            result = bool(self.photo.image.file)
+            result = self.has_photo() and bool(self.photo.image.file)
         except IOError:
             result = False
         return result
+
+    def photo_render_allowed(self):
+        return self.photo_image_file_exists() and self.photo.is_public
+
+    def amp_video_poster_image_url(self):
+        """
+        TODO: This approach should be used in all site calls to "get_<size>_url", helped by a mapping setting, then
+              each "get" method knows which size should ask for (and calls the "generic" method that makes the checks
+              like this method does).
+        """
+        if self.photo_render_allowed():
+            med_url = self.photo.get_med_url()  # this call will generate the "med" image if it not exist in cache
+            # but check again (cache can be old or broken)
+            if isfile(join(settings.MEDIA_ROOT, self.photo.get_med_filename())):
+                return med_url
+        return settings.STATIC_URL + "img/amp_video_default_poster.png"  # default poster (broken or not allowed/exist)
 
     @property
     def photo_width(self):
@@ -1170,6 +1550,10 @@ class ArticleBase(Model, CT):
     @property
     def photo_layout(self):
         return 'landscape' if not self.photo or self.photo.extended.is_landscape else 'portrait'
+
+    @property
+    def photo_filename_ext(self):
+        return self.photo_image_file_exists() and splitext(self.photo.image_filename())[1].lower()
 
     @property
     def photo_type(self):
@@ -1210,22 +1594,22 @@ class ArticleBase(Model, CT):
     def unformatted_lead(self):
         return cleanhtml(ldmarkup(self.lead))
 
-    def formatted_body(self):
-        return ldmarkup(self.body, self.id)
+    def formatted_body(self, amp=False):
+        return (amp_ldmarkup if amp else ldmarkup)(self.body, self.id)
 
     def unformatted_body(self):
         return cleanhtml(self.formatted_body())
 
     def reading_time(self):
         """
-           Based on article body text, returns the reading time of the article.
-           Rounds down, so 65 seconds are rounded to 1 min.
-           Assumes that body is in Markdown format. (simple text, and html
-           are also available)
+        Based on article body text, returns the reading time of the article.
+        Rounds down, so 65 seconds are rounded to 1 min.
+        Assumes that body is in Markdown format. (simple text, and html
+        are also available)
 
-           Examples: * menos de un minuto
-                     * 1 min
-                     * 3 min
+        Examples: * menos de un minuto
+                  * 1 min
+                  * 3 min
         """
         wpm = 250
         result = readtime.of_markdown(self.body, wpm=wpm)
@@ -1252,7 +1636,7 @@ class ArticleBase(Model, CT):
         return datetime_isoformat(self.last_modified)
 
     def date_published_seconds_ago(self):
-        return (datetime.now() - self.date_published).total_seconds()
+        return (now() - self.date_published).total_seconds()
 
     def datetime_published_verbose(self, day_name_and_time=True):
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
@@ -1264,11 +1648,11 @@ class ArticleBase(Model, CT):
             # call for cards, allow to hide year and a custom fmt by settings
             if (
                 getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_SAMEYEAR', False)
-                and date.today().year == self.date_published.year
+                and now().year == self.date_published.year
             ):
                 format_st = getattr(settings, 'CORE_ARTICLE_CARDS_DATE_PUBLISHED_SAMEYEAR_FMT', "{dt.day} de {dt:%B}")
 
-        return format_st.format(dt=self.date_published).lower().capitalize()
+        return format_st.format(dt=template_localtime(self.date_published)).lower().capitalize()
 
     def date_published_verbose(self):
         if settings.CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO:
@@ -1298,20 +1682,14 @@ class ArticleBase(Model, CT):
     class Meta:
         abstract = True
         get_latest_by = 'date_published'
-        ordering = ('-date_published', )
+        ordering = ('-date_published',)
         verbose_name = 'artículo'
         verbose_name_plural = 'artículos'
         indexes = [Index(fields=['type', 'date_published', 'is_published'])]
 
 
-class ArticleManager(Manager):
-    # TODO: this is the default, why overrided to do nothing?
-    def get_queryset(self):
-        return super(ArticleManager, self).get_queryset()
-
-
 class Article(ArticleBase):
-    objects = ArticleManager()  # TODO: @ArticleManager TODO comment
+    objects = Manager()  # needed because the parent class is abstract
     sections = ManyToManyField(
         Section,
         verbose_name='sección',
@@ -1346,29 +1724,72 @@ class Article(ArticleBase):
     )
     newsletter_featured = BooleanField('destacado en newsletter', default=False)
     ipfs_upload = BooleanField('Publicar en IPFS', default=False)
-    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID de la nota en IPFS')
+    ipfs_cid = TextField('id de IPFS', blank=True, null=True, help_text='CID del artículo en IPFS')
+    # alternative fields
+    alt_title_metadata = CharField(
+        'título alternativo para metadatos',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica a metadatos: meta title, Open Graph y Schema en el '
+        ) + escape("<head>") + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Título principal.')
+    )
+    alt_desc_metadata = TextField(
+        'descripción alternativa para metadatos',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica a metadatos: meta description, Open Graph y Schema en el '
+        ) + escape("<head>")
+        + mark_safe(' de la página del artículo.<br>Si se deja vacío aplica Descripción principal.')
+    )
+    alt_title_newsletters = CharField(
+        'título alternativo para newsletters',
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Título principal.'
+        )
+    )
+    alt_desc_newsletters = TextField(
+        'descripción alternativa para newsletters',
+        blank=True,
+        null=True,
+        help_text=mark_safe(
+            'Aplica en newsletters donde aparezca el artículo.<br>Si se deja vacío aplica Descripción principal'
+        )
+    )
+    # SuperDesk article ID
+    sp_id = CharField(max_length=100, null=True, blank=True)
+
+    ia_used = BooleanField(
+        default=False,
+        editable=False,
+        help_text="Indica si se utilizó IA en este artículo."
+    )
+
+    copy_para_redes = TextField(
+        blank=True,
+    )
 
     def save(self, *args, **kwargs):
 
         if self.pk and self.sections:
-            # Only valid if the instance has already been saved.
-            # TODO: this should be reviewed, what happens if another article
-            # in the same edition-section is viewed (viewed implies saving)
+            # If already saved, sets the article at the last position in all its sections where it has no position yet.
             for ar in ArticleRel.objects.filter(article=self):
                 if not ar.position:
                     ar.position = ArticleRel.objects.filter(edition=ar.edition, section=ar.section).count() + 1
 
-        # TODO: also this if block should be reviewed (broken)
+        # TODO: next commented "if" block should be reviewed (broken)
         # if self.home_top and self.top_position is None:
-        #    self.top_position = Article.objects.filter(
-        #        edition=self.edition, home_top=self.home_top).count() + 1
+        #    self.top_position = Article.objects.filter(edition=self.edition, home_top=self.home_top).count() + 1
         if self.type == settings.CORE_HTML_ARTICLE:
-            self.headline = 'HTML | %s | %s | %s' % (
-                str(self.edition), str(self.section), str(self.section_position)
-            )
+            self.headline = 'HTML | %s | %s | %s' % (str(self.edition), str(self.section), str(self.section_position))
 
         old_url_path = self.url_path
-        super(Article, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         # the instance has already been saved, force_insert should be turned into False if a save is called again
         kwargs['force_insert'] = False
 
@@ -1382,7 +1803,7 @@ class Article(ArticleBase):
             if url_changed:
                 self.url_path = new_url_path
                 self.do_ipfs_upload()
-                super(Article, self).save(*args, **kwargs)
+                super().save(*args, **kwargs)
                 talk_url = getattr(settings, 'TALK_URL', None)
                 # if this is an insert, old_url_path is '', then skip talk update
                 if old_url_path and talk_url and not settings.DEBUG:
@@ -1394,14 +1815,14 @@ class Article(ArticleBase):
                         # fail silently because we should not break any script or shell that is saving the article
                         pass
             elif self.do_ipfs_upload():
-                super(Article, self).save(*args, **kwargs)
+                super().save(*args, **kwargs)
 
             # add to history the new url
             if not ArticleUrlHistory.objects.filter(article=self, absolute_url=new_url_path).exists():
                 ArticleUrlHistory.objects.create(article=self, absolute_url=new_url_path)
 
         elif self.do_ipfs_upload():
-            super(Article, self).save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     def do_ipfs_upload(self):
         """
@@ -1422,7 +1843,7 @@ class Article(ArticleBase):
                             render_to_string(
                                 "article/detail_ipfs_upload.html",
                                 {
-                                    "site_url": '%s://%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN),
+                                    "site_url": settings.SITE_URL_SD,
                                     "ipfs_cid": self.ipfs_cid,
                                     "headline": self.headline,
                                     "date_published": self.date_published,
@@ -1457,18 +1878,34 @@ class Article(ArticleBase):
 
     def get_publications(self):
         return ', '.join([p.name for p in self.publications()])
+
     get_publications.short_description = 'publicaciones'
+
+    def get_section(self, category=None):
+        """
+        If category_slug is given, the result will be "filtered" by category, if this filtered set is not empty, the
+        result will be one of them, otherwise If the set is empty (or no category_slug is given) it returns the main
+        section where this article is published in, or the first section found if no main_section.
+        TODO: unify with self.publication_section
+        """
+        result, main_section = None, None
+        try:
+            if self.main_section:
+                main_section = self.main_section.section
+                if not category or main_section.category == category:
+                    result = main_section
+        except ArticleRel.DoesNotExist:
+            pass
+        # return first match by category, if no match at all, return main or first without filtering
+        s = self.sections
+        if not result:
+            if category:
+                result = s.filter(category=category).first()
+        return result or (main_section or s.first())
 
     @property
     def section(self):
-        try:
-            if self.main_section:
-                return self.main_section.section
-            else:
-                s = self.sections.all()[:1]
-                return s[0] if s else None
-        except ArticleRel.DoesNotExist:
-            return None
+        return self.get_section()
 
     def last_published_by_publication_slug(self, publication_slug=None):
         """
@@ -1480,9 +1917,13 @@ class Article(ArticleBase):
                 filter_kwargs = {'article': self}
                 if publication_slug:
                     filter_kwargs['edition__publication__slug'] = publication_slug
-                result = Edition.objects.filter(
-                    id__in=[v[0] for v in ArticleRel.objects.filter(**filter_kwargs).values_list('edition')]
-                ).order_by('-date_published')[0].date_published
+                result = (
+                    Edition.objects.filter(
+                        id__in=[v[0] for v in ArticleRel.objects.filter(**filter_kwargs).values_list('edition')]
+                    )
+                    .order_by('-date_published')[0]
+                    .date_published
+                )
             except IndexError:
                 result = self.date_published.date()
             return result
@@ -1494,19 +1935,33 @@ class Article(ArticleBase):
         """
         if self.is_published:
             try:
-                result = Edition.objects.filter(
-                    id__in=[
-                        v[0] for v in ArticleRel.objects.filter(
-                            article=self, section__in=category.section_set.all()
-                        ).values_list('edition')
-                    ]
-                ).order_by('-date_published')[0].date_published
+                result = (
+                    Edition.objects.filter(
+                        id__in=[
+                            v[0]
+                            for v in ArticleRel.objects.filter(
+                                article=self, section__in=category.section_set.all()
+                            ).values_list('edition')
+                        ]
+                    )
+                    .order_by('-date_published')[0]
+                    .date_published
+                )
             except IndexError:
                 result = self.date_published.date()
             return result
 
-    def publication_section(self, publication=None):
+    def last_published_by_category_slug(self, category_slug):
+        if self.is_published:
+            try:
+                category = Category.objects.get(slug=category_slug)
+            except Category.DoesNotExist:
+                pass
+            else:
+                return self.last_published_by_category(category)
 
+    def publication_section(self, publication=None):
+        # TODO: unify with self.publication_section
         if self.main_section:
 
             if not publication or self.main_section.edition.publication == publication:
@@ -1530,14 +1985,14 @@ class Article(ArticleBase):
 
     def get_sections(self):
         return ', '.join([s.name for s in self.sections.distinct()])
+
     get_sections.short_description = 'secciones'
 
     def get_categories_slugs(self):
         return set(
             [
-                s.category.slug for s in self.sections.filter(
-                    category__isnull=False
-                ).distinct().select_related('category')
+                s.category.slug
+                for s in self.sections.filter(category__isnull=False).distinct().select_related('category')
             ]
         )
 
@@ -1549,32 +2004,82 @@ class Article(ArticleBase):
         if self.photo:
             return self.photo
         else:
-            section_imgs = self.sections.filter(
-                imagen__isnull=False).values_list('imagen', flat=True)
+            section_imgs = self.sections.filter(imagen__isnull=False).values_list('imagen', flat=True)
             if section_imgs:
                 return PhotoExtended(image=section_imgs[0])
 
-    def is_restricted(self):
+    def is_restricted(self, consider_full=False):
         """
-        When the article's main pub is a restricted publication (by settings), also if no public and has no extra-perms
+        If the article is pulished:
+          If consider_full is True, the result will be True if this article is full_restricted.
+          If consider_full is False or the previous result was False, then, the result will be True when the article's
+            main pub is a restricted publication (by settings), plus the article is no public and has no extra-perms.
         """
         return (
-            not self.is_public() and self.main_section
-            and self.main_section.edition.publication.slug in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
-            and not self.additional_access.exists()
+            self.is_published
+            and (
+                consider_full
+                and self.full_restricted
+                or (
+                    not self.is_public()
+                    and self.main_section
+                    and (
+                        self.main_section.edition.publication.slug
+                        in getattr(settings, 'CORE_RESTRICTED_PUBLICATIONS', ())
+                    )
+                    and not self.additional_access.exists()
+                )
+            )
         )
 
-    def nl_serialize(self, for_cover=False):
+    def is_restricted_consider_full(self):
+        """
+        Wrapper for previous method
+        """
+        return self.is_restricted(True)
+
+    def published_collections(self):
+        return self.linked_collections.filter(**get_published_kwargs())
+
+    def extensions_have_invalid_amp_tags(self):
+        """
+        When this happen, we should not announce that an AMP version of the page is available
+        """
+        invalid_tags = "base img picture video audio iframe frame frameset object param applet embed".split()
+        invalid_filters = {"script": lambda node: "instagram.com/embed.js" in node.get("src", "")}
+        for e in self.extensions.iterator():
+            try:
+                soup = BeautifulSoup(e.body, 'html.parser')
+                for tag in invalid_tags:
+                    if soup.find_all(tag):
+                        return True
+                for tag, call in invalid_filters.items():
+                    for node in soup.find_all(tag):
+                        if call(node):
+                            return True
+            except Exception:
+                pass
+
+    def nl_serialize(self, for_cover=False, publication=None, category=None, dates=True):
         authors = self.get_authors()
+        section = self.publication_section(publication) if publication else self.get_section(category)
         result = {
             'id': self.id,
             'get_absolute_url': self.get_absolute_url(),
-            'date_published': str(self.date_published.date()),
+            'date_published': str(self.date_published.date()) if dates else self.date_published,
             'headline': self.headline,
             'home_lead': self.home_lead,
             'deck': self.deck,
             'has_byline': self.has_byline(),
-            'get_authors': [a.name for a in authors] if authors else None,
+            'get_authors': [
+                {
+                    "name": a.name,
+                    "image": {"url": getattr(a.image, "url", None)} if a.image_file_exists() else {},
+                } for a in authors
+            ] if authors else None,
+            "section": {
+                "slug": section.slug, "name": section.name, "nl_display_name": section.nl_display_name()
+            } if section else None,
         }
         if for_cover:
             result['body'] = self.body
@@ -1582,7 +2087,80 @@ class Article(ArticleBase):
                 result['photo'] = {'get_700w_url': self.photo.get_700w_url(), 'caption': self.photo.caption}
                 if self.photo_author:
                     result.update({'photo_author': self.photo_author.name, 'photo_type': self.photo_type})
+        # extra data for category NLs
+        if category:
+            nl_email_template = get_category_template(category.slug, "newsletter")
+            engine = Engine.get_default()
+            try:
+                extra_meta_template = engine.get_template(
+                    join(dirname(nl_email_template), "article_extra_meta/%s.json" % category.slug)
+                )
+            except TemplateDoesNotExist:
+                pass
+            else:
+                extra_meta_data = json.loads(extra_meta_template.render(Context({"article": self})))
+                result.update(extra_meta_data)
         return result
+
+
+class ArticleCollection(Article):
+    objects = Manager()  # needed to avoid django to use the "published" as the default manager
+    traversal_categorization = BooleanField(
+        "categorización transversal",
+        default=False,
+        help_text="Si está marcada, prioriza la categorización de la colección para todo el contenido de la colección",
+    )
+    related_articles = ManyToManyField(
+        Article,
+        blank=False,
+        through='ArticleCollectionRelated',
+        related_name='linked_collections',
+    )
+
+    def related_articles_ordered(self):
+        return self.related_articles.filter(**get_published_kwargs()).order_by("articlecollectionrelated")
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if settings.ELASTICSEARCH_DSL_AUTOSYNC:
+            # call post_save for the article obj to trigger potential elastic index upd
+            post_save.send(Article, instance=self.article_ptr, using="default")
+
+    class Meta:
+        verbose_name = "colección"
+        verbose_name_plural = "colecciones"
+        indexes = []
+
+
+class ArticleCollectionRelated(Model):
+    collection = ForeignKey(ArticleCollection, related_name="linked_articles", on_delete=CASCADE)
+    article = ForeignKey(
+        Article, verbose_name='artículo', limit_choices_to={"articlecollection__isnull": True}, on_delete=CASCADE
+    )
+    position = PositiveSmallIntegerField('orden en la colección', default=None, null=True)
+
+    def __str__(self):
+        # Custom text version to be useful in the admin change form
+        article_str = str(self.article)
+        return " - ".join(
+            [
+                (("%d: " % self.position) if self.position else "")
+                + (
+                    date_format(
+                        self.article.date_published,
+                        format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shorter format
+                        use_l10n=True,
+                    ) if self.article.is_published else "NP"
+                ),
+                (article_str[:10] + " …") if len(article_str) > 10 else article_str,
+            ]
+        )
+
+    class Meta:
+        verbose_name = "artículo vinculado"
+        verbose_name_plural = "artículos vinculados"
+        unique_together = ("collection", "article")
+        ordering = ('position', '-article__date_published')
 
 
 class ArticleRel(Model):
@@ -1592,9 +2170,10 @@ class ArticleRel(Model):
           duplicated with another row (unique_together allows null values) will cause a 500 error when trying to set
           the row as main (another row can exist).
     """
-    article = ForeignKey(Article)
-    edition = ForeignKey(Edition)
-    section = ForeignKey(Section)
+
+    article = ForeignKey(Article, on_delete=CASCADE)
+    edition = ForeignKey(Edition, on_delete=CASCADE)
+    section = ForeignKey(Section, on_delete=CASCADE)
     position = PositiveSmallIntegerField('orden en la sección', default=None, null=True)
     home_top = BooleanField(
         'destacado en portada',
@@ -1623,7 +2202,8 @@ class ArticleRel(Model):
                 subquery_part += "AND core_section.slug IN (%s)" % ",".join("'%s'" % s for s in section_slugs_only)
             if max:
                 query = "SELECT COUNT(*) FROM (SELECT DISTINCT core_article.id %s LIMIT %d) final" % (
-                    subquery_part, max
+                    subquery_part,
+                    max,
                 )
             else:
                 query = "SELECT COUNT(DISTINCT core_article.id) " + subquery_part
@@ -1638,8 +2218,8 @@ class ArticleRel(Model):
 
 
 class ArticleViewedBy(Model):
-    article = ForeignKey(Article)
-    user = ForeignKey(User)
+    article = ForeignKey(Article, on_delete=CASCADE)
+    user = ForeignKey(User, on_delete=CASCADE)
     viewed_at = DateTimeField(db_index=True)
 
     class Meta:
@@ -1647,7 +2227,7 @@ class ArticleViewedBy(Model):
 
 
 class ArticleViews(Model):
-    article = ForeignKey(Article)
+    article = ForeignKey(Article, on_delete=CASCADE)
     day = DateField(db_index=True)
     views = PositiveIntegerField(default=0)
 
@@ -1657,37 +2237,44 @@ class ArticleViews(Model):
 
 
 class CategoryHomeArticle(Model):
-    home = ForeignKey('CategoryHome')
+    # TODO: review the "custom label" comment in the position field (still needed?)
+    home = ForeignKey('CategoryHome', on_delete=CASCADE)
     article = ForeignKey(
-        Article, verbose_name='artículo', related_name='home_articles', limit_choices_to={'is_published': True}
+        Article,
+        on_delete=CASCADE,
+        verbose_name='artículo',
+        related_name='home_articles',
     )
     position = PositiveSmallIntegerField('publicado')  # a custom label useful in the CategoryHome admin change form
     fixed = BooleanField('fijo', default=False)
 
     def __str__(self):
         # also a custom text version to be useful in the CategoryHome admin change form
-        return date_format(
-            self.article.last_published_by_category(self.home.category),
-            format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
-            use_l10n=True,
-        ) + ('-F' if self.article.photo else '')
+        try:
+            result = (
+                date_format(
+                    self.article.last_published_by_category(self.home.category),
+                    format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
+                    use_l10n=True,
+                ) if self.article.is_published else "No publicado! "
+            ) + ('-F' if self.article.photo_render_allowed() else '')
+        except Exception:
+            result = super().__str__()
+        return result
 
     class Meta:
-        ordering = ('position', )
-        unique_together = ('home', 'position')
+        ordering = ('position',)
 
 
 class CategoryHome(Model):
-    category = OneToOneField(Category, verbose_name='área', related_name='home')
+    category = OneToOneField(Category, on_delete=CASCADE, verbose_name='área', related_name='home')
     articles = ManyToManyField(Article, through=CategoryHomeArticle)
 
     def __str__(self):
         return '%s - %s' % (self.category, self.cover())
 
     def articles_ordered(self):
-        return self.articles.order_by(
-            'home_articles'
-        ).prefetch_related(
+        return self.articles.filter(is_published=True).order_by('home_articles').prefetch_related(
             'main_section__edition__publication', 'main_section__section', 'photo__extended__photographer', 'byline'
         )
 
@@ -1718,225 +2305,85 @@ class CategoryHome(Model):
     def print(self):
         for ha in self.categoryhomearticle_set.all():
             print('%d:\t%s\t%s' % (ha.position, ha.article.date_published.date(), ha.article))
+
     class Meta:
         verbose_name = 'portada de área'
         verbose_name_plural = 'portadas de área'
-        ordering = ('category', )
-
-
-def update_category_home(categories=settings.CORE_UPDATE_CATEGORY_HOMES, dry_run=False, sql_debug=False):
-    """
-    Updates categories homes based on articles publishing dates
-    """
-    # fill each category bucket with latest articles.
-    # @dry_run: Do not change anything. It forces a debug message when a change would be made.
-    # TODO: calculate not fixed count before and better stop algorithm.
-    buckets, category_sections, cat_needed_defaults, cat_needed, start_time = {}, {}, {}, {}, time.time()
-    categories, categories_to_fill = Category.objects.filter(slug__in=categories), []
-
-    for cat in categories:
-        needed = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_ARTICLES_NEEDED', {}).get(cat.slug, 10)
-        cat_needed_defaults[cat.slug] = needed
-        exclude_sections = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_SECTIONS', {}).get(cat.slug, [])
-        articles_count = cat.articles_count(needed, exclude_sections, sql_debug)
-        include_extra_sections = getattr(
-            settings, 'CORE_UPDATE_CATEGORY_HOMES_INCLUDE_EXTRA_SECTIONS', {}
-        ).get(cat.slug, [])
-
-        # NOTICE: tag exclude filtering (if defined by settings) is ignored to evaluate this needed limits
-        if articles_count < needed and include_extra_sections:
-            articles_count += ArticleRel.articles_count(needed - articles_count, include_extra_sections, sql_debug)
-
-        if articles_count:
-            categories_to_fill.append(cat.slug)
-            buckets[cat.slug], cat_needed[cat.slug] = [], articles_count
-            category_sections[cat.slug] = set(
-                list(cat.section_set.values_list('id', flat=True))
-                + (
-                    list(Section.objects.filter(slug__in=include_extra_sections).values_list('id', flat=True))
-                    if include_extra_sections else []
-                )
-            ) - set(
-                Section.objects.filter(slug__in=exclude_sections).values_list('id', flat=True)
-                if exclude_sections else []
-            )
-
-    if categories_to_fill:
-        if settings.DEBUG:
-            print('DEBUG: update_category_home begin')
-
-        lowest_date, max_date = Edition.objects.last().date_published, date.today()
-        days_step = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_DAYS_STEP', 30)
-        exclude_tags = getattr(settings, 'CORE_UPDATE_CATEGORY_HOMES_EXCLUDE_TAGS', {})
-        min_date_iter, max_date_iter, stop = max_date - timedelta(days_step), max_date, False
-
-        while max_date_iter > lowest_date:
-
-            for ar in ArticleRel.objects.select_related('article', 'edition').filter(
-                edition__date_published__range=(min_date_iter, max_date_iter), article__is_published=True
-            ).order_by('-edition__date_published', '-article__date_published').iterator():
-
-                if categories_to_fill:
-                    # insert the article (if matches criteria) limiting upto needed quantity with no dupe articles
-                    article = ar.article
-                    for cat_slug in categories_to_fill:
-                        if (
-                            article not in [x[0] for x in buckets[cat_slug]]
-                            and ar.section_id in category_sections[cat_slug]
-                            and not (
-                                cat_slug in exclude_tags
-                                and any(slugify(t.name) in exclude_tags[cat_slug] for t in article.get_tags())
-                            )
-                        ):
-                            buckets[cat_slug].append((article, (ar.edition.date_published, article.date_published)))
-                            if len(buckets[cat_slug]) == cat_needed[cat_slug]:
-                                categories_to_fill.remove(cat_slug)
-                else:
-                    stop = True
-                    break
-
-            if stop:
-                break
-            else:
-                max_date_iter = min_date_iter - timedelta(1)
-                min_date_iter = max_date_iter - timedelta(days_step)
-
-    # iterate over the buckets and compute free places to fill
-    for category_slug, articles in list(buckets.items()):
-        category = categories.get(slug=category_slug)
-
-        try:
-            home = category.home
-        except CategoryHome.DoesNotExist:
-            continue
-
-        try:
-            home_cover = CategoryHomeArticle.objects.get(home=home, position=1)
-        except CategoryHomeArticle.DoesNotExist:
-            home_cover = None
-        cover_id = home_cover.article_id if home_cover else None
-        cover_fixed = home_cover.fixed if home_cover else False
-        category_fixed_content, free_places = ([cover_id], []) if cover_fixed else ([], [0])
-
-        try:
-            for i in range(2, cat_needed_defaults[category_slug] + 1):
-                try:
-                    position_i = CategoryHomeArticle.objects.get(home=home, position=i)
-                    a = position_i.article
-                    aid, afixed = a.id, position_i.fixed
-                    if afixed:
-                        category_fixed_content.append(aid)
-                    else:
-                        free_places.append(i)
-                except CategoryHomeArticle.DoesNotExist:
-                    free_places.append(i)
-
-        except IndexError:
-            pass
-
-        # if not free places nothing will be done, then continue
-        if not free_places:
-            continue
-
-        # make list with the new articles based on the free places
-        free_places2, category_content = copy(free_places), []
-        for article, date_published_tuple in articles:
-
-            if article.id in category_fixed_content:
-                continue
-
-            # append in category_content to be reordered later
-            category_content.append((free_places.pop(), date_published_tuple, article))
-
-            if not len(free_places):
-                break
-
-        # sort new articles
-        category_content.sort(key=operator.itemgetter(1), reverse=True)
-
-        # update the content
-        for i, ipos in enumerate(free_places2):
-
-            try:
-                old_pos, date_pub, art = category_content[i]
-
-                if ipos:
-                    if settings.DEBUG or dry_run:
-                        print('DEBUG: update %s home position %d: %s' % (home.category, ipos, art))
-                    if not dry_run:
-                        home.set_article(art, ipos)
-                else:
-                    if settings.DEBUG or dry_run:
-                        print('DEBUG: update %s home cover: %s' % (home.category, art))
-                    if not dry_run:
-                        home.set_article(art, 1)
-            except IndexError:
-                pass
-
-    if settings.DEBUG:
-        print('DEBUG: update_category_home completed in %.0f seconds' % (time.time() - start_time))
+        ordering = ('category',)
 
 
 class CategoryNewsletterArticle(Model):
-    newsletter = ForeignKey('CategoryNewsletter')
+    newsletter = ForeignKey('CategoryNewsletter', on_delete=CASCADE)
     article = ForeignKey(
-        Article, verbose_name='artículo', related_name='newsletter_articles', limit_choices_to={'is_published': True}
+        Article,
+        on_delete=CASCADE,
+        verbose_name='artículo',
+        related_name='newsletter_articles',
+        limit_choices_to={'is_published': True},
     )
     order = PositiveSmallIntegerField('orden', null=True, blank=True)
     featured = BooleanField('incluir sólo en bloque destacado', default=False)
 
     def __str__(self):
         # also a custom text version to be useful in the CategoryNewsletter admin change form
-        return date_format(
-            self.article.last_published_by_category(self.newsletter.category),
-            format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
-            use_l10n=True,
+        return (
+            date_format(
+                self.article.last_published_by_category(self.newsletter.category),
+                format=settings.SHORT_DATE_FORMAT.replace('Y', 'y'),  # shoter format
+                use_l10n=True,
+            ) if self.article.is_published else "No publicado! "
         ) + ('-F' if self.article.photo else '')
 
     class Meta:
-        ordering = ('order', )
+        ordering = ('order',)
 
 
 class CategoryNewsletter(Model):
     valid_until = DateTimeField('válida hasta')
-    category = OneToOneField(Category, verbose_name='área', related_name='newsletter')
+    category = OneToOneField(Category, on_delete=CASCADE, verbose_name='área', related_name='newsletter')
     articles = ManyToManyField(Article, through=CategoryNewsletterArticle)
 
     def __str__(self):
         return '%s - %s' % (self.category, self.cover())
 
     def non_featured_articles(self):
-        """ Returns the non-featured articles qs """
+        """
+        Returns the non-featured articles qs
+        """
         return self.articles.filter(newsletter_articles__featured=False)
 
     def cover(self):
-        """ Returns the non-featured article in the 1st position """
+        """
+        Returns the non-featured article in the 1st position
+        """
         non_featured = self.non_featured_articles()
         return non_featured.exists() and non_featured.order_by('newsletter_articles')[0]
 
     def non_cover_articles(self):
-        """ Returns the non-featured articles from 2nd position """
+        """
+        Returns the non-featured articles from 2nd position
+        """
         non_featured = self.non_featured_articles()
         return non_featured.order_by('newsletter_articles')[1:] if non_featured.exists() else []
 
     def featured_articles(self):
-        """ Returns the featured articles qs """
-        return self.articles.filter(newsletter_articles__featured=True)
+        """
+        Returns the featured articles qs
+        """
+        return self.articles.filter(newsletter_articles__featured=True).order_by('newsletter_articles')
 
     def featured_article(self):
-        """ Returns the featured article in the 1st position """
-        featured = self.featured_articles()
-        return featured.exists() and featured.order_by('newsletter_articles')[0]
-
-    def non_cover_featured_articles(self):
-        """ Returns the featured articles from 2nd position """
-        featured = self.featured_articles()
-        return featured.order_by('newsletter_articles')[1:] if featured.exists() else []
+        """
+        Returns the featured article in the 1st position
+        """
+        return getattr(
+            CategoryNewsletterArticle.objects.filter(newsletter=self, featured=True).first(), "article", None
+        )
 
     class Meta:
         verbose_name = 'newsletter de área'
         verbose_name_plural = 'newsletters de área'
-        ordering = ('category', )
+        ordering = ('category',)
 
 
 class ArticleExtension(Model):
@@ -1945,7 +2392,7 @@ class ArticleExtension(Model):
         ('M', 'Mediano'),
         ('F', 'Full'),
     )
-    article = ForeignKey(Article, verbose_name='artículo', related_name='extensions')
+    article = ForeignKey(Article, on_delete=CASCADE, verbose_name='artículo', related_name='extensions')
     headline = CharField('título', max_length=100, null=True, blank=True)
     body = TextField('cuerpo')
     size = CharField('size', max_length=1, choices=SIZE_CHOICES, default='R')
@@ -1956,6 +2403,7 @@ class ArticleExtension(Model):
 
     def _is_published(self):
         return self.article.is_published
+
     is_published = property(_is_published)
 
     class Meta:
@@ -1970,8 +2418,8 @@ class ArticleBodyImage(Model):
         ('MD', 'Ancho amplio'),
         ('FW', 'Ancho completo'),
     )
-    article = ForeignKey(Article, verbose_name='artículo', related_name='body_image')
-    image = ForeignKey(Photo, verbose_name='foto', related_name='photo')
+    article = ForeignKey(Article, on_delete=CASCADE, verbose_name='artículo', related_name='body_image')
+    image = ForeignKey(Photo, on_delete=CASCADE, verbose_name='foto', related_name='photo')
     display = CharField('display', max_length=2, choices=DISPLAY_CHOICES, default='MD')
 
     def __str__(self):
@@ -1985,7 +2433,7 @@ class ArticleBodyImage(Model):
 class PrintOnlyArticle(Model):
     headline = CharField('título', max_length=100)
     deck = CharField('bajada', max_length=255, blank=True, null=True)
-    edition = ForeignKey(Edition, verbose_name='edición', related_name='print_only_articles')
+    edition = ForeignKey(Edition, on_delete=CASCADE, verbose_name='edición', related_name='print_only_articles')
     date_created = DateTimeField('fecha de creación', auto_now_add=True)
 
     def __str__(self):
@@ -1993,14 +2441,14 @@ class PrintOnlyArticle(Model):
 
     class Meta:
         get_latest_by = 'date_created'
-        ordering = ('id', )
+        ordering = ('id',)
         unique_together = ('headline', 'edition')
         verbose_name = 'artículo impreso'
         verbose_name_plural = 'artículos impresos'
 
 
 class ArticleUrlHistory(Model):
-    article = ForeignKey(Article)
+    article = ForeignKey(Article, on_delete=CASCADE)
     absolute_url = URLField(max_length=500, db_index=True)
 
     class Meta:
@@ -2048,11 +2496,14 @@ class BreakingNewsModule(Model):
     publications = ManyToManyField(Publication, verbose_name='portada de publicaciones', blank=True)
     categories = ManyToManyField(Category, verbose_name='portada de áreas', blank=True)
 
+    published = PublishedBreakingNewsModuleManager()
+
     def __str__(self):
         return self.headline or ''
 
     def covers(self):
         return ', '.join([str(p) for p in self.publications.all()] + [str(c) for c in self.categories.all()])
+
     covers.short_description = 'portadas'
 
     def has_embed(self, i):
@@ -2109,17 +2560,17 @@ class BreakingNewsModule(Model):
 
 
 def get_publishing_datetime():
-    today = date.today()
+    today = now().date()
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
-    return datetime(
-        today.year, today.month, today.day, publishing_hour, publishing_minute)
+    return make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
 
 
 def get_published_date():
-    now = datetime.now()
+    # TODO: check usage, remove if not used, the same for get_publishing_datetime
+    nowval = now()
     publishing = get_publishing_datetime()
-    publishing_date = date(publishing.year, publishing.month, publishing.day)
-    if now > publishing:
+    publishing_date = datetime(publishing.year, publishing.month, publishing.day).date()
+    if nowval > publishing:
         return publishing_date
     return publishing_date - timedelta(1)
 
@@ -2129,20 +2580,29 @@ def get_current_edition(publication=None):
     Return last edition of publication if given, or the publications using root url as their home page if the
     publication slug is not given.
     """
-    today, now, filters = date.today(), datetime.now(), {}
+    nowval = now()
+    today, filters = nowval.date(), {}
     publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(':')]
-    publishing = datetime(today.year, today.month, today.day, publishing_hour, publishing_minute)
+    publishing = make_aware(datetime(today.year, today.month, today.day, publishing_hour, publishing_minute))
 
     if publication:
         filters['publication'] = publication.id
     else:
-        filters['publication__in'] = [
-            p.id for p in Publication.objects.filter(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL)
-        ]
+        filters['publication__in'] = Publication.objects.filter(
+            slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL
+        ).values_list('id', flat=True)
 
-    filters['date_published__lt' + ('e' if now > publishing else '')] = today
+    filters['date_published__lt' + ('e' if nowval > publishing else '')] = today
     try:
-        return Edition.objects.filter(**filters).latest()
+        results = Edition.objects.filter(**filters)
+        result = results.latest()
+        if not publication and result.publication.slug != settings.DEFAULT_PUB:
+            # give priority to default pub if no pub given and "latest" include at least one for the default pub
+            return results.filter(
+                publication__slug=settings.DEFAULT_PUB, date_published=result.date_published
+            ).first() or result
+        else:
+            return result
     except Exception as e:
         if settings.DEBUG:
             print('ERROR: %s' % e)
@@ -2160,11 +2620,11 @@ def get_current_feeds():
     NOTE: if no current_edition found, next editions are taken using "today" as date contition.
     """
     # editions for "root" publications (current and "next")
-    current_edition = get_current_edition()
+    today, current_edition = now().date(), get_current_edition()
     next_editions = Edition.objects.filter(
         publication__public=True,
         publication__slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL,
-        date_published__gt=current_edition.date_published if current_edition else date.today(),
+        date_published__gt=current_edition.date_published if current_edition else today,
     ).order_by('date_published')
     editions_ids = ([str(current_edition.id)] if current_edition else []) + (
         [str(next_editions[0].id)] if next_editions else []
@@ -2174,7 +2634,7 @@ def get_current_feeds():
     for p in Publication.objects.filter(public=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL):
         current_edition = get_current_edition(p)
         next_editions = Edition.objects.filter(
-            publication=p, date_published__gt=current_edition.date_published if current_edition else date.today()
+            publication=p, date_published__gt=current_edition.date_published if current_edition else today
         ).order_by('date_published')
         editions_ids += ([str(current_edition.id)] if current_edition else []) + (
             [str(next_editions[0].id)] if next_editions else []
@@ -2192,7 +2652,7 @@ def get_current_feeds():
 class DeviceSubscribed(Model):
     subscription_info = CharField(max_length=1024)
     time_created = DateTimeField(auto_now_add=True)
-    user = ForeignKey(User)
+    user = ForeignKey(User, on_delete=CASCADE)
 
     def __str__(self):
         return "%s %d (user %s)" % (self.__class__.__name__, self.id, self.user)
@@ -2200,10 +2660,135 @@ class DeviceSubscribed(Model):
 
 class PushNotification(Model):
     message = CharField(u'Mensaje', max_length=500)
-    article = ForeignKey(Article, verbose_name=u'Articulo')
+    article = ForeignKey(Article, on_delete=CASCADE, verbose_name=u'Articulo')
     sent = DateTimeField(u'Fecha de envio', null=True)
     tag = CharField(u'Tag', max_length=15, null=True, blank=True)
     overwrite = BooleanField(u'Sobrescribir notificacion', default=False)
 
     def __str__(self):
         return "%s - %s" % (self.tag, self.message)
+
+
+def validar_ejemplo_formato(valor):
+    """
+    Valida que el texto contenga 'Ejemplo de formato esperado:' seguido inmediatamente por un bloque entre llaves.
+    """
+    # Busca la frase y luego un bloque entre llaves (puede tener cualquier cosa dentro)
+    patron = r"Ejemplo de formato esperado:\s*\{.*?\}"
+    if not re.search(patron, valor, re.DOTALL):
+        raise ValidationError(
+            "El texto debe contener 'Ejemplo de formato esperado:' seguido de un bloque entre llaves {}."
+        )
+
+
+def validar_default_context(valor):
+    # Verifica Título: {titulo}
+    if not re.search(r"Título:\s*\{titulo\}", valor):
+        raise ValidationError("El texto debe contener 'Título: {titulo}' (puede haber espacios entre ':' y '{').")
+    # Verifica Descripción: {descripcion}
+    if not re.search(r"Descripción:\s*\{descripcion\}", valor):
+        raise ValidationError(
+            "El texto debe contener 'Descripción: {descripcion}' (puede haber espacios entre ':' y '{')."
+        )
+    # Si aparece Cuerpo:, debe ir seguido de {cuerpo}
+    match_cuerpo = re.search(r"Cuerpo:\s*\{cuerpo\}", valor)
+    if "Cuerpo:" in valor and not match_cuerpo:
+        raise ValidationError(
+            "Si incluyes 'Cuerpo:', debe ir seguido de '{cuerpo}' (puede haber espacios entre ':' y '{')."
+        )
+
+
+class PerplexityAPISettings(SingletonModel):
+    class PerplexityModelChoices(TextChoices):
+        SONAR_PRO = "sonar-pro", "sonar-pro"
+        SONAR = "sonar", "sonar"
+        SONAR_REASONING_PRO = "sonar-reasoning-pro", "sonar-reasoning-pro"
+        SONAR_REASONING = "sonar-reasoning", "sonar-reasoning"
+        SONAR_DEEP_RESEARCH = "sonar-deep-research", "sonar-deep-research"
+        R1_1776 = "r1-1776", "r1-1776"
+
+    nombre_del_asistente = CharField(max_length=50, default="tIA", help_text="Nombre del asistente IA a utilizar")
+
+    class WebSearchContextSizeChoices(TextChoices):
+        LOW = "low", "low"
+        MEDIUM = "medium", "medium"
+        HIGH = "high", "high"
+
+    activar_asistente = BooleanField(default=True, help_text="para activar o desactivar el uso del asistente IA ")
+
+    endpoint = URLField(
+        default="https://api.perplexity.ai/chat/completions", help_text="Endpoint de la API de Perplexity"
+    )
+    model = CharField(
+        max_length=50,
+        choices=PerplexityModelChoices.choices,
+        default=PerplexityModelChoices.SONAR,
+        help_text="Modelo de IA a utilizar",
+    )
+    temperature = FloatField(
+        validators=[MinValueValidator(0), MaxValueValidator(2)],
+        blank=True,
+        null=True,
+        help_text="La cantidad de aleatoriedad en la respuesta, valorada entre 0 y 2. "
+        "Los valores bajos (por ejemplo, 0.1) hacen que la salida sea más enfocada, "
+        "determinista y menos creativa. Los valores altos (por ejemplo, 1.5) hacen "
+        "que la salida sea más aleatoria y creativa. Usa valores bajos para tareas de "
+        "recuperación de información o hechos y valores altos para aplicaciones creativas. "
+        "Por defecto se usa 0.2",
+    )
+    context_size = CharField(
+        max_length=10,
+        choices=WebSearchContextSizeChoices.choices,
+        default=WebSearchContextSizeChoices.LOW,
+        help_text='Opcion "search_context_size" a utilizar: low, medium o high',
+    )
+    search_domain_filter = CharField(
+        max_length=500,
+        blank=True,
+        default="ladiaria.com.uy",
+        help_text="Dominios permitidos o restringidos, separados por coma, "
+        'si queires excliur alguno use "-" delante del dominio, ej. -redis.com',
+    )
+    max_tokens = PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text="Máximo de tokens por respuesta, si no se configura se usa "
+        "el valor por defecto que depende del modelo escogido.",
+    )
+    default_context = TextField(
+        default="Responde en español de manera clara y concisa.",
+        validators=[validar_default_context],
+        help_text="Contexto por defecto que siempre se enviará a Perplexity",
+    )
+    result_instructions = TextField(
+        default=(
+            "\nPor favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys.\n"
+            '- El campo "metatitles" debe ser un array de exactamente 3 strings, cada uno con un metatítulo diferente y adecuado para Google Discover, siguiendo el estilo de la diaria.\n'
+            '- El campo "copys" debe ser un array de exactamente 2 strings. Cada string debe incluir primero el copy para redes sociales y, en la misma string y separado por un salto de línea, los hashtags correspondientes.\n'
+            "- No agregues elementos adicionales ni comentarios fuera del objeto JSON.\n\n"
+            "Ejemplo de formato esperado:\n"
+            "{\n"
+            '  "metatitles": [\n'
+            '    "Metatítulo 1",\n'
+            '    "Metatítulo 2",\n'
+            '    "Metatítulo 3"\n'
+            "  ],\n"
+            '  "copys": [\n'
+            '    "Copy para redes sociales 1.\\n#Hashtag1 #Hashtag2",\n'
+            '    "Copy para redes sociales 2.\\n#Hashtag3 #Hashtag4"\n'
+            "  ]\n"
+            "}"
+        ),
+        verbose_name="Instrucciones para el resultado",
+        help_text="Describe detalladamente cómo debe presentarse el resultado. Ejemplo: 'Incluya unidades y redondee a dos decimales.'",
+        validators=[validar_ejemplo_formato],
+    )
+
+    def get_domain_list(self):
+        return [d.strip() for d in self.search_domain_filter.split(",") if d.strip()]
+
+    def get_conocimiento(self):
+        return [line.strip() for line in self.conocimiento.strip().split("\n") if line.strip()]
+
+    def __str__(self):
+        return "Configuración de la API de Perplexity"

@@ -6,7 +6,7 @@
   <p>{{ topic.description }}</p>
   </div>
   <dl>
-    {% for question in question_list %}
+    {% for question in topic.questions.published %}
       <dt id="{{ question.slug }}">
           {{ question.question }}
           <a href="#{{ question.slug }}">∞</a>

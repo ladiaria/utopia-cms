@@ -2,7 +2,7 @@
 
 {% block field_sets %}
 {% for fieldset in adminform %}
-  {% ifequal fieldset.name 'Asunto de newsletter' %}<a id="nlsubject"/>{% endifequal %}
+  {% if fieldset.name == 'Asunto de newsletter' %}<a id="nlsubject"/>{% endif %}
   {% include "admin/includes/fieldset.html" %}
 {% endfor %}
 {% endblock %}

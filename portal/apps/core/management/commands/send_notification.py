@@ -71,7 +71,9 @@ def send_notification_func(msg, tag, url, img_url, user_id):
             failed += 1
             log_error('could not send to this device: ' + sinfo)
 
-    logfile.info("Send results (tag, #sent-ok, #sent-failed): '%s', %d, %d" % (tag, success, failed))
+    send_results = "Send results (tag, #sent-ok, #sent-failed): '%s', %d, %d" % (tag, success, failed)
+    logfile.info(send_results)
+    return send_results
 
 
 class Command(BaseCommand):
@@ -96,6 +98,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        send_notification_func(
+        send_results = send_notification_func(
             options.get('msg'), options.get('tag'), options.get('url'), options.get('img_url'), options.get('user_id')
         )
+        if options.get("verbosity") > 1:
+            print(send_results)

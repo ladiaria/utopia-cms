@@ -2,9 +2,10 @@
 
 <header class="mobile-header mobile-header--amp mobile-header--{{ publication.slug }}{% block extra-class %}{% endblock %}">
   <a href="{% url 'home' %}" class="ladiaria-logo">{# TODO: change/remove ladiaria-logo class #}
-    <amp-img width="56" height="22" layout="fixed" class='ladiaria-amp-logo-img' src="{% static HOMEV3_SECONDARY_LOGO %}" alt="Logo de {{ site.name }}"></amp-img>
+    {% block logo_img %}
+      <amp-img width="56" height="22" layout="fixed" class='ladiaria-amp-logo-img' src="{% static HOMEV3_SECONDARY_LOGO %}" alt="Logo de {{ site.name }}"></amp-img>
+    {% endblock %}
   </a>
-  {% block login %}
-    <a href="{% url 'account-login' %}?next={% if is_portada %}{{ publication.get_absolute_url }}{% else %}{{ request.path }}{% endif %}" class="btn ingresar">Ingresá</a>
-  {% endblock %}
+  {% block content %}{% endblock %}
+  {% block login %}<a on="tap:amp-access.login" class="btn ingresar">Ingresá</a>{% endblock %}
 </header>

@@ -1,19 +1,13 @@
-
-// @import "../materialize/sass/components/prefixer";
-// @import "../materialize/sass/components/mixins";
-@import "../materialize/sass/components/color";
-
-// ladiaria mixins
 @import "utopia_mixins";
 
 ///////////////////////////////////////////////////////////////////////////
 // Variables Materialize
 ///////////////////////////////////////////////////////////////////////////
 
-$primary-color: #6EF9FF !default;
+$primary-color: #6ef9ff !default;
 $primary-color-accent: #fe5b4c !default;
-$secondary-color: #C2FCFF !default;
-$color-light-blue: #EDF6F5;
+$secondary-color: #c2fcff !default;
+$color-light-blue: #edf6f5;
 $link-color: #262626 !default;
 $link-color-hover: #595959 !default;
 $off-black: #262626 !default;
@@ -31,8 +25,8 @@ $button-radius: 100px !default;
 
 // typography
 $sans: Arial, Arial, Helvetica, sans-serif;
-$serif-body: 'Roboto', sans-serif;
-$serif-title: 'Meta Serif', serif;
+$serif-body: "Roboto", sans-serif;
+$serif-title: "Meta Serif", serif;
 $line-height: 60px;
 $font-size-sm: 20px;
 $font-size-lg: 22px;
@@ -40,11 +34,11 @@ $font-size-lg: 22px;
 $breakpoints: (
   small: 400px,
   medium: 600px,
-  large: 1200px,
+  large: 1200px
 );
 
-// Ajustes de alto y ancho de visual
-$view-full-height: calc(100vh - #{$line-height} * 2); // altura de visual menos ancho de una barra
+// Visual height and width adjustments
+$view-full-height: calc(100vh - #{$line-height} * 2); // visual height minus the width of a bar
 $view-full-width: 100vw;
-$view-image-title: calc(100vh - #{$line-height} * 4); // menos altura de barra menos alt titulo
+$view-image-title: calc(100vh - #{$line-height} * 4); // minus bar height minus title height
 $gridMinWidth: 1000px;

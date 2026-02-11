@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from builtins import range
-from datetime import date
+
+from django.conf import settings
+from django.utils.timezone import now
+
+from core.models import BreakingNewsModule
 
 
 def aniosdias(request):
@@ -19,4 +22,11 @@ def aniosdias(request):
         ('Noviembre', '11'),
         ('Diciembre', '12'),
     ]
-    return {'anios': list(range(2009, date.today().year + 1)), 'meses': meses}
+    return {'anios': list(range(2009, now().date().year + 1)), 'meses': meses}
+
+
+def bn_module(request):
+    return {
+        'bn_module_published_count': BreakingNewsModule.published.count(),
+        "bn_module_footer_scripts_template": settings.CORE_BN_MODULE_FOOTER_SCRIPTS_TEMPLATE,
+    }

@@ -3,17 +3,19 @@
 {% endspaceless %}<!doctype html>
 {% block html %}
 <!-- Legacy browsers support  -->
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="es-UY"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="es-UY"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9" lang="es-UY"> <![endif]-->
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}"> <![endif]-->
 <!-- End legacy browsers support  -->
-<html class="no-js" lang="es-UY">
+<html class="no-js" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}">
 {% endblock %}
   <head>
-    {% block head_first_content %}{% endblock %}
-    <!-- Progressive Web App (PWA) -->
-    <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
-    <!-- End Progressive Web App (PWA) -->
+    {% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
+    {% if PWA_ENABLED %}
+      <!-- Progressive Web App (PWA) -->
+      <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">
+      <!-- End Progressive Web App (PWA) -->
+    {% endif %}
     {% if not debug %}
       {# The preferred way to load GA is using GTM #}
       {% if GTM_CONTAINER_ID %}
@@ -54,8 +56,10 @@
     {% endif %}
 
     <!-- Title and description -->
-    <title>{% block page_title %}{% endblock %}</title>
-    <meta name="description" content="{% block page_description %}{{ site_description }}{% endblock %}">
+    <title>{% spaceless %}{% block page_title %}{% endblock %}{% endspaceless %}</title>
+    <meta name="description" content="{% spaceless %}
+      {% block page_description %}{{ site_description }}{% endblock %}
+    {% endspaceless %}">
     <!-- End Title and description -->
 
     <!-- Meta tags base -->
@@ -66,7 +70,7 @@
     <!-- End Meta tags base -->
 
     <!-- RSS feed -->
-    <link rel="alternate" type="application/rss+xml" href="{{ URL_SCHEME }}://{{ site.domain }}{% url 'ultimos-articulos-rss' %}" />
+    <link rel="alternate" type="application/rss+xml" href="{{ SITE_URL_SD }}{% url 'ultimos-articulos-rss' %}">
     <!-- End RSS feed -->
 
     <!-- Robots -->
@@ -101,31 +105,42 @@
       {% endif %}
     {% endif %}
     <meta name="theme-color" content="#F2F2F2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{ site.name }}">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- End Icons -->
 
     <!-- CSS -->
     {% compress css %}
-      <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+      {% block base_css %}
+        {% block materialize_forms_css %}
+          <link href="{% static 'sass/utopia_materialize/_forms.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+        {% endblock %}
+        <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+      {% endblock %}
       {% if HOMEV3_CUSTOM_CSS %}
         <link href="{% static HOMEV3_CUSTOM_CSS %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endif %}
-    {% endcompress %}
-
-    {% compress css %}
-      <link href="{% static 'sass/print.scss' %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
+      {% block print_css %}
+        <link href="{% static 'sass/print.scss' %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
+      {% endblock %}
       {% if HOMEV3_CUSTOM_PRINT_CSS %}
         <link href="{% static HOMEV3_CUSTOM_PRINT_CSS %}" rel="stylesheet" type="text/x-scss" media="print" charset="utf-8">
       {% endif %}
     {% endcompress %}
 
+    {# another compress tags needed (above one cannot be used) things get broken if not #}
     {% if user.is_staff %}
       {% compress css %}
         <link href="{% static 'sass/admin.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endcompress %}
     {% endif %}
+
+    {% compress css %}
+      {% block css %}{% endblock %}
+    {% endcompress %}
+
+    {% block extra_css %}{% endblock %}
     <!-- End CSS -->
 
     {% block meta_og_title %}
@@ -135,15 +150,19 @@
 
     {% block meta %}
       <meta property="og:type" content="website">
-      <meta property="og:description" content="{{ site_description }}">
-      <meta property="og:locale" content="es_UY">
+      {% block meta_og_description %}
+        <meta property="og:description" content="{{ site_description }}">
+      {% endblock %}
+      <meta property="og:locale" content="{{ local_lang }}_{{ LOCAL_COUNTRY }}">
       <meta property="og:site_name" content="{{ site.name }}">
-      <meta property="og:url" content="{{ URL_SCHEME }}://{{ site.domain }}{{ request.get_full_path }}">
-      {% if publication.slug in custom_icons_publications %}
-        <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static publication.open_graph_image %}">
-      {% elif default_pub.open_graph_image %}
-        <meta property="og:image" content="{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}">
-      {% endif %}
+      <meta property="og:url" content="{{ SITE_URL_SD }}{{ request.get_full_path }}">
+      {% block meta_og_image %}
+        {% if publication.slug in custom_icons_publications %}
+          <meta property="og:image" content="{{ SITE_URL_SD }}{% static publication.open_graph_image %}">
+        {% elif default_pub.open_graph_image %}
+          <meta property="og:image" content="{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}">
+        {% endif %}
+      {% endblock %}
       <!-- End Open Graph (http://ogp.me) -->
 
       <!-- Meta tags Twitter -->
@@ -170,9 +189,9 @@
             "url": "{{ SITE_URL }}",
             {% block json_ld_extra %}{% endblock %}
             {% if publication.slug in custom_icons_publications %}
-              "logo": "{{ URL_SCHEME }}://{{ site.domain }}{% static publication.open_graph_image %}",
+              "logo": "{{ SITE_URL_SD }}{% static publication.open_graph_image %}",
             {% elif default_pub.open_graph_image %}
-              "logo": "{{ URL_SCHEME }}://{{ site.domain }}{% static default_pub.open_graph_image %}",
+              "logo": "{{ SITE_URL_SD }}{% static default_pub.open_graph_image %}",
             {% endif %}
             "description": "{{ site_description }}"{% if HOMEV3_EXTRA_META %},
             {% autoescape off %}{{ HOMEV3_EXTRA_META }}{% endautoescape %}{% endif %}
@@ -196,6 +215,7 @@
           LDUser.is_authenticated = true;
           LDUser.id = {{ user.id }};
           LDUser.subscriber = {{ is_subscriber|lower }};
+          LDUser.subscriber_id = {{ user.subscriber.id }};
           LDUser.firstName = "{{ user.first_name }}";
           LDUser.lastName = "{{ user.last_name }}";
         {% else %}
@@ -205,136 +225,200 @@
       <!-- End user data -->
     {% endif %}
 
-    {% compress css %}
-      {% block css %}{% endblock %}
-    {% endcompress %}
-    {% block extra_css %}{% endblock %}
+    {% comment %}
+    ========================================================================
+    Sentry JavaScript SDK - Frontend Error Tracking
+    ========================================================================
 
-    <!-- JavaScript -->
-    <script src="{% static 'js/index.js' %}"></script>
-    <script src="{% static 'admin/js/jquery.min.js' %}"></script>
-    {% if user.is_authenticated and CORE_PUSH_NOTIFICATIONS_OFFER and push_notifications_keys_set %}
-      <script src="{% static 'js/push_notifications.js' %}"></script>
-      <script type="text/javascript">
+    Purpose: Captures JavaScript errors and exceptions from user browsers
 
-        function confirmFunction () {
-          rp();
-          $('.pwa-prompt').hide();
-        }
+    Configuration:
+    - Loaded from /static/js/vendor/sentry.min.js (not CDN to avoid ad blockers)
+    - Lazy loaded after page content (zero impact on page load performance)
+    - Only enabled when SENTRY_ENABLED=True in settings
 
-        function cancelFunction () {
-          $('.pwa-prompt').hide();
-          setCookie('notifyme', "false", 1);
-          deleteCookie('home_arriving', 1);
-        }
+    What gets tracked:
+    - Uncaught JavaScript exceptions
+    - Console errors
+    - MercadoPago payment errors (see subscribe_mercadopago_brick.html)
+    - User context (email, subscriber status) for debugging
 
-        $(function(){
-          navigator.permissions.query({name: 'notifications'}).then(function(result) {
+    What gets filtered out (noise reduction):
+    - Browser extension errors
+    - Network errors (offline users)
+    - Facebook widget errors
+    - Script loading failures (CDN/ad blocker issues)
 
-            if (result.state == 'granted' || result.state == 'prompt') {
+    Free plan limits: ~5,000 errors/month
 
-              if (getCookie('notifyme', 1) == null) {
+    Dashboard: https://sentry.io/organizations/ladiaria/issues/
+    ==========================================================================
+    {% endcomment %}
+    {% if SENTRY_ENABLED and SENTRY_DSN %}
+      <script>
+        {# Load Sentry after DOM is ready (before full page load) to capture early errors #}
+        {# Using dynamic script loading (createElement) ensures 0% impact on First Contentful Paint (FCP) #}
+        {# DOMContentLoaded vs load: captures errors during user interactions that happen before full page load #}
+        document.addEventListener('DOMContentLoaded', function() {
+          {# Create script element dynamically - served from /static/ to avoid ad blocker blocking #}
+          const sentryScript = document.createElement('script');
+          sentryScript.src = '{% static "js/vendor/sentry.min.js" %}';
+          sentryScript.setAttribute('data-cfasync', 'false');
 
-                let now = new Date();
-                const datesAreOnSameDay = (first, second) =>
-                  first.getFullYear() === second.getFullYear() &&
-                  first.getMonth() === second.getMonth() &&
-                  first.getDate() === second.getDate();
+          {# Initialize Sentry after SDK script loads successfully #}
+          sentryScript.onload = function() {
+            Sentry.init({
+              {# Data Source Name - connects to your Sentry project #}
+              dsn: "{{ SENTRY_DSN }}",
 
-                if (window.location.pathname == '/') {
-                  if (!getCookie('home_arriving', 1)) {
-                    // This is the first time in the home page, then set the moment variable to 1 and the time
-                    // variable to current time.
-                    setCookie('home_arriving', JSON.stringify({'moment': 1, 'time': now}), 1);
-                  } else {
-                    // 2nd time or more.
-                    let home_arriving_value = JSON.parse(getCookie('home_arriving', 1));
-                    if (
-                      home_arriving_value.moment == 1 && datesAreOnSameDay(new Date(home_arriving_value.time), now)
-                    ) {
-                      // 2nd time in the same day, offer to allow notifications.
-                      $('.pwa-prompt').show();
-                      setCookie('home_arriving', JSON.stringify({'moment': 2, 'time': now}), 1);
-                    } else {
-                      // Neither first nor 2nd in the same day, so, check if last arrived date is +24h ago;
-                      // to only offer allow notifications once per day.
-                      if (new Date(home_arriving_value.time).getDate() + (24 * 60 * 60 * 1000) < now.getTime()) {
-                        setCookie('home_arriving', JSON.stringify({'moment': 1, 'time': now}), 1);
-                      }
-                    }
+              {# Environment (auto-detected in settings.py based on DEBUG and SITE_DOMAIN) #}
+              {# Values: "development", "piques" (staging), "production" #}
+              environment: "{{ SENTRY_ENVIRONMENT }}",
+
+              {# Release tracking (optional): Links errors to specific git commits for debugging #}
+              {# Uncomment and set GIT_COMMIT environment variable to enable: #}
+              {#   export GIT_COMMIT=$(git rev-parse --short HEAD) #}
+              {# release: "utopia-cms@{{ git_commit }}", #}
+
+              {# Performance Monitoring (tracing) - CURRENTLY DISABLED #}
+              {# Controls what % of page loads send performance data to Sentry #}
+              {# #}
+              {# Values: #}
+              {#   0.0 = Disabled (current) - Only error tracking, no performance data #}
+              {#   0.1 = 10% sample - Good for testing performance monitoring #}
+              {#   1.0 = 100% - Track all page loads (expensive, needs paid plan) #}
+              {# #}
+              {# Cost impact example: #}
+              {#   0.0: ~1,000 errors/month = stay within free 5k limit ✓ #}
+              {#   0.1: ~2,000 errors + 60k spans/month = need paid plan ($26+/mo) #}
+              {#   1.0: ~2,000 errors + 600k spans/month = need business plan ($80+/mo) #}
+              {# #}
+              {# Recommendation: Keep at 0.0 until you need to debug performance issues #}
+              tracesSampleRate: 0.0,
+
+              {# beforeSend hook - Filters and enriches events before sending to Sentry #}
+              {# This is where we: #}
+              {#   1. Add user context (email, subscriber info) #}
+              {#   2. Filter out noise (extensions, network errors) #}
+              {#   3. Remove sensitive data #}
+              beforeSend(event, hint) {
+                {# === USER CONTEXT === #}
+                {# Add user info from LDUser global variable (set in base.html around line 213) #}
+                {# This helps identify which users are experiencing errors #}
+                if (typeof LDUser !== 'undefined' && LDUser.is_authenticated) {
+                  event.user = {
+                    id: LDUser.id,
+                    email: LDUser.email || undefined,
+                    subscriber: LDUser.subscriber,
+                    subscriber_id: LDUser.subscriber_id,
+                  };
+                }
+
+                {# === FILTER: BROWSER EXTENSIONS === #}
+                {# Don't report errors from browser extensions (not our code, can't fix) #}
+                {# Examples: ad blockers, password managers, translation extensions #}
+                if (hint.originalException && hint.originalException.stack) {
+                  const stack = hint.originalException.stack;
+                  if (stack.includes('chrome-extension://') || stack.includes('moz-extension://')) {
+                    return null;
                   }
                 }
 
-                if (
-                  getCookie(userName) == 'null'
-                  || getCookie('home_arriving', 1) && JSON.parse(getCookie('home_arriving', 1)).moment == 1
-                ) {
-                  // TODO: check this condition with UX
-                  // If current location contains 'utm_source=newsletter' I got here from NL, so I will show the push
-                  // notification offer only if also the homepage was visited once.
-                  if (window.location.href.search('utm_source=newsletter') > 0) {
-                    let targetDiv = $('.pwa-prompt')
-                    if (targetDiv.length) {
-                      targetDiv.show();
-                      // set home arrived to moment 2 to wait at least 24hs to offer again
-                      setCookie('home_arriving', JSON.stringify({'moment': 2, 'time': now}), 1);
-                    }
+                {# === FILTER: NETWORK ERRORS === #}
+                {# Don't report network errors (user offline, slow connection, timeout) #}
+                {# These are not bugs in our code, just connectivity issues #}
+                if (hint.originalException && hint.originalException.message) {
+                  const message = hint.originalException.message.toLowerCase();
+                  const ignoredMessages = ['network request failed', 'failed to fetch', 'networkerror'];
+                  if (ignoredMessages.some(ignored => message.includes(ignored))) {
+                    return null;
                   }
                 }
 
-              }
+                {# If we got here, the error is real and should be reported #}
+                return event;
+              },
 
-            } else {
-              deleteCookie('notifyme', 1);
-              deleteCookie('home_arriving', 1);
-            }
+              {# === IGNORE ERRORS === #}
+              {# List of error messages/patterns to completely ignore (won't even reach beforeSend) #}
+              {# These are known issues that are not bugs or can't be fixed #}
+              ignoreErrors: [
+                {# Browser extension errors (common when users have many extensions) #}
+                'top.GLOBALS',
+                'canvas.contentDocument',
+                'atomicFindClose',
 
-          });
+                {# Facebook SDK errors (third-party, can't fix) #}
+                'fb_xd_fragment',
+
+                {# Network/connectivity errors (not bugs) #}
+                'NetworkError',
+                'Network request failed',
+                'Failed to fetch',
+
+                {# Script loading errors (CDN down, ad blockers, slow connections) #}
+                'ChunkLoadError',
+                'Loading chunk',
+
+                {# Browser-specific quirks (not bugs, just browser implementation details) #}
+                {# ResizeObserver fires when element size changes, browsers handle this differently #}
+                'ResizeObserver loop limit exceeded',
+                'ResizeObserver loop completed with undelivered notifications',
+              ],
+            });
+
+            {# === CONTEXT TAGS === #}
+            {# Tags help filter/search errors in Sentry dashboard #}
+            {# Example: See all errors from "ladiaria" publication, or all "article" page errors #}
+
+            {# Publication context - Which publication/site this error occurred on #}
+            {% if publication %}
+              Sentry.setTag('publication', '{{ publication.slug }}');
+            {% endif %}
+
+            {# Page type context - What type of page the user was viewing #}
+            {% if is_portada %}
+              Sentry.setTag('page_type', 'frontpage');
+            {% elif is_detail %}
+              Sentry.setTag('page_type', 'article');
+            {% else %}
+              Sentry.setTag('page_type', 'other');
+            {% endif %}
+          };
+
+          {# Append SDK script to document head to start loading #}
+          document.head.appendChild(sentryScript);
         });
       </script>
     {% endif %}
-    <script type="text/javascript">
+    <!-- End Sentry JavaScript SDK -->
 
-      {% if user.is_authenticated and CORE_PUSH_NOTIFICATIONS_OFFER and push_notifications_keys_set %}
-        var userName = '{{ user.id|user_hashid }}';
-        let userNameFromCookie = getCookie(userName);
-        if(userNameFromCookie == null)
-          setCookie(userName, null);
-        if(getCookie('notifyme', 1) != "false") {
-          var applicationServerPublicKey = "{{ CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY }}";
-          var subscription_to_delete = null;
-        }
-      {% endif %}
-
-      function notification_close(btn_close){
-        var notification = $(btn_close).parents('.breaking-notice');
-        $.get('/' + $(btn_close).attr('data-object') + '/' + $(btn_close).attr('data-id') + '/closed/', function(data){
-          notification.toggle();
-        });
-      }
-
-      $(function(){
-        $('.btn-close').click(function(){
-          notification_close(this);
-        });
-        $(window).on("subscribe_notice_show", function(){
-          var subscribe_notice = $('.subscribe-notice');
-          if(subscribe_notice.length){
-            subscribe_notice.removeClass("hide");
-            $('.btn-close-notice', subscribe_notice).click(function(){
-              subscribe_notice.hide();
-            });
+    <!-- JavaScript -->
+    <script src="{% static 'js/index_functions.js' %}"></script>
+    {% if PWA_ENABLED %}<script src="{% static 'js/index_pwa_function.js' %}"></script>{% endif %}
+    <script src="{% static 'js/index_sw_call.js' %}"></script>
+    <script src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
+    {% if user.is_authenticated %}
+      <script type="text/javascript">var userName = '{{ user.id|user_hashid }}';</script>
+      {% if CORE_PUSH_NOTIFICATIONS_OFFER and push_notifications_keys_set %}
+        {# TODO: "many" random cookies are generated, why not use the session? #}
+        <script src="{% static 'js/push_notifications.js' %}"></script>
+        <script type="text/javascript">
+          let userNameFromCookie = getCookie(userName);
+          if(userNameFromCookie == null)
+            setCookie(userName, null);
+          if(getCookie('notifyme', 1) != "false"){
+            var applicationServerPublicKey = "{{ CORE_PUSH_NOTIFICATIONS_VAPID_PUBKEY }}";
+            var subscription_to_delete = null;
           }
-        });
-        {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
-      });
-
-    </script>
+        </script>
+      {% endif %}
+    {% endif %}
     {% block header_scripts %}{% endblock %}
     <!-- End JavaScript -->
 
   </head>
-  <body class="{% if user.is_authenticated %}logged-in{% endif %} {% if is_portada %}frontpage {% else %}interior {% endif %}{% block body_class %}{% endblock %} {{ publication.slug|default:DEFAULT_PUB }}-pub">
+  <body class="{% if user.is_authenticated %}logged-in{% endif %} {% if is_portada %}frontpage {% else %}interior {% endif %}{% block body_class %}{% endblock %} {{ publication.slug|default:DEFAULT_PUB }}-pub{% if subscribe_notice_template or user_newsletters_notice_template %} with-notice{% endif %}">
     <a class="skip-main" href="#main-content">Saltar a contenido</a>
     {% if not debug and GTM_CONTAINER_ID %}
       <!-- Google Tag Manager (noscript) -->
@@ -352,76 +436,81 @@
 
     <!-- cabezal -->
     {% block navbar %}
-      <header>
+      <header{% if request.signupwall_header %} class="with-article-counter-container {{ request.remaining_articles_word }}-articles"{% endif %}>
         {% render_header %}
       </header>
-      <div class="pwa-prompt" style="display:none;">
-        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <g clip-path="url(#clip0_722_4218)">
-            <path d="M34.8333 31.1667V21.6333C33.9167 21.8167 33 22 32.0833 22H31.1667V33H12.8333V20.1667C12.8333 15.0333 16.8667 11 22 11C22.1833 8.61666 23.2833 6.59999 24.75 4.94999C24.2 4.21666 23.1 3.66666 22 3.66666C19.9833 3.66666 18.3333 5.31666 18.3333 7.33332V7.88332C12.8333 9.53332 9.16667 14.4833 9.16667 20.1667V31.1667L5.5 34.8333V36.6667H38.5V34.8333L34.8333 31.1667ZM18.3333 38.5C18.3333 40.5167 19.9833 42.1667 22 42.1667C24.0167 42.1667 25.6667 40.5167 25.6667 38.5H18.3333Z" fill="#262626"/>
-            <path d="M38.5 11.9167C38.5 15.4 35.5667 18.3333 32.0834 18.3333C28.6 18.3333 25.6667 15.4 25.6667 11.9167C25.6667 8.43333 28.6 5.5 32.0834 5.5C35.5667 5.5 38.5 8.43333 38.5 11.9167Z" fill="#FE5B4C"/>
-          </g>
-          <defs><clipPath id="clip0_722_4218"><rect width="44" height="44" fill="white"/></clipPath></defs>
-          <title>Ícono campana</title>
-        </svg>
-        <span class="title">Activá nuestras notificaciones y<br>enterate antes</span>
-        <div class="actions">
-          <span class="ut-btn" onclick="return confirmFunction();">Activar</span>
-          <span class="ut-btn ut-btn-outline" style="cursor:pointer;" onclick="return cancelFunction();">No, gracias</span>
-        </div>
-        {# TODO: validate this message with UX because this div can appear again "tomorrow". #}
-        {# <span class="notice">Ésta es la única vez que vas a ver este mensaje</span> #}
-      </div>
-    {% endblock %}
-
-    <!-- Subscribe notice for logged-in non-subscribers -->
-    {% if not is_subscriber_any %}
-      {% if is_portada and publication == default_pub or is_detail %}
-        <div class="subscribe-notice hide-on-med-and-up hide">
-          <a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=mobile-banner">Suscribite <i>por ${% subscriptionprice 'DDIGM' %}/mes</i></a>
-          <span class="btn-close-notice" data-id="subscribe-notice">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#262626"/>
-            </svg>
-          </span>
-        </div>
-        <div class="subscribe-notice subscribe-notice__desktop hide-on-small-and-down hide">
-          <p>{% if default_pub.description %}{{ default_pub.description }} {% endif %}<a href="{% url 'subscribe' planslug='DDIGM' %}?utm_source=web&utm_medium=desktop-banner" class="ut-btn">Suscribite <span>por ${% subscriptionprice 'DDIGM' %}/mes</span></a></p>
-          <span class="btn-close-notice" data-id="subscribe-notice">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#262626"/>
-            </svg>
-          </span>
+      {% if PWA_ENABLED %}
+        <div class="pwa-prompt" style="display:none;">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g clip-path="url(#clip0_722_4218)">
+              <path d="M34.8333 31.1667V21.6333C33.9167 21.8167 33 22 32.0833 22H31.1667V33H12.8333V20.1667C12.8333 15.0333 16.8667 11 22 11C22.1833 8.61666 23.2833 6.59999 24.75 4.94999C24.2 4.21666 23.1 3.66666 22 3.66666C19.9833 3.66666 18.3333 5.31666 18.3333 7.33332V7.88332C12.8333 9.53332 9.16667 14.4833 9.16667 20.1667V31.1667L5.5 34.8333V36.6667H38.5V34.8333L34.8333 31.1667ZM18.3333 38.5C18.3333 40.5167 19.9833 42.1667 22 42.1667C24.0167 42.1667 25.6667 40.5167 25.6667 38.5H18.3333Z" fill="#262626"/>
+              <path d="M38.5 11.9167C38.5 15.4 35.5667 18.3333 32.0834 18.3333C28.6 18.3333 25.6667 15.4 25.6667 11.9167C25.6667 8.43333 28.6 5.5 32.0834 5.5C35.5667 5.5 38.5 8.43333 38.5 11.9167Z" fill="#FE5B4C"/>
+            </g>
+            <defs><clipPath id="clip0_722_4218"><rect width="44" height="44" fill="white"/></clipPath></defs>
+            <title>Ícono campana</title>
+          </svg>
+          <span class="title">Activá nuestras notificaciones y<br>enterate antes</span>
+          <div class="actions">
+            <span class="ut-btn" onclick="return confirmFunction();">Activar</span>
+            <span class="ut-btn ut-btn-outline" style="cursor:pointer;" onclick="return cancelFunction();">No, gracias</span>
+          </div>
+          {# TODO: validate this message with UX because this div can appear again "tomorrow". #}
+          {# <span class="notice">Ésta es la única vez que vas a ver este mensaje</span> #}
         </div>
       {% endif %}
-    {% endif %}
+    {% endblock %}
+
+    {% block subscribe_notice %}
+      {% if subscribe_notice_template %}
+        <!-- Subscribe notice for not authenticated users or non-subscribers -->
+        {# TODO: can we implement this kind of notice in AMP? (we never did that) #}
+        {% if not user.is_authenticated or not is_subscriber_any and not request.session.subscribe_notice_closed %}
+          {% if is_portada and publication == default_pub or is_detail %}
+            {% include subscribe_notice_template %}
+          {% endif %}
+        {% endif %}
+      {% elif user_newsletters_notice_template %}
+        {% if is_portada and publication == default_pub or is_detail %}
+          {% include user_newsletters_notice_template %}
+        {% endif %}
+      {% endif %}
+    {% endblock %}
 
     <!-- Main -->
     {% block main_open %}<main class="main" id="main-content">{% endblock %}
     {% if messages %}
-      <ul class="messages unstyled ld-messages">
-        {% for message in messages %}
-          <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
-            {{ message }}
-            <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
-          </li>
-        {% endfor %}
-      </ul>
+      {% block messages %}
+        <ul class="messages unstyled ld-messages">
+          {% for message in messages %}
+            <li{% if message.tags %} class="alert alert-{{ message.tags }} ld-message"{% endif %}>
+              {{ message }}
+              <button type="button" class="close ld-message__close js-dismiss-message">&times;</button>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endblock %}
     {% endif %}
 
     <!-- /container -->
     {% block page_header %}{% endblock %}
+
     {% if user_form %}
       <div class="profile-container">
     {% elif not is_portada and not is_detail %}
       <div class="container {% block container_class %}{% endblock %}">
     {% endif %}
+
     {% block content_pre %}{% endblock %}
+
     {% block content %}{% endblock %}
+
     {% block content_pos %}{% endblock %}
+
     {% if not is_portada and not is_detail %}
       </div>
     {% endif %}
+
+    {% block main_close %}</main>{% endblock %}
 
     {% block footer_block %}
       <footer class="footer-portada{% if category %} footer-{{ category.slug }}{% endif %}">
@@ -429,57 +518,326 @@
       </footer>
     {% endblock footer_block %}
 
-    <!-- Modal Structure -->
-    <div id="nav-mobile" class="nav-mobile navbar-fixed">
-      <nav>
-        <div class="nav-wrapper">
-          <ul class="center row">
-            {% if is_detail %}
-              {% with mobile_nav_ths=mobile_nav_ths|add:mobile_nav_detail_more %}
-                {% include 'mobile_nav_items.html' %}
-              {% endwith %}
-            {% else %}
-              {% include 'mobile_nav_items.html' %}
-            {% endif %}
-          </ul>
-        </div>
-      </nav>
-    </div>
+    {% block nav_mobile %}
+      <div id="nav-mobile" class="nav-mobile navbar-fixed">
+        <nav>
+          <div class="nav-wrapper">
+            <ul class="center row">
+              {% if is_detail %}
+                {% with mobile_nav_ths=mobile_nav_ths|add:mobile_nav_detail_more %}
+                  {% include 'mobile_nav_items.html' %}
+                {% endwith %}
+              {% else %}
+                {% block mobile_nav_not_is_detail%}{% include 'mobile_nav_items.html' %}{% endblock %}
+              {% endif %}
+            </ul>
+          </div>
+        </nav>
+      </div>
+    {% endblock %}
 
     <div id="alert_placeholder"></div>
 
-    {# js needed for the "dropdown" and "modal" menu items #}
-    <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
-    <script defer src="{% static 'materialize/js/global.js' %}"></script>
-    <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
-    <script defer src="{% static 'materialize/js/modal.js' %}"></script>
-    <script defer src="{% static 'materialize/js/forms.js' %}"></script>
+    {% block materialize_scripts %}
+      {# js needed for the "dropdown" and "modal" menu items #}
+      <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
+      <script defer src="{% static 'materialize/js/global.js' %}"></script>
+      <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
+      <script defer src="{% static 'materialize/js/modal.js' %}"></script>
+      <script defer src="{% static 'materialize/js/forms.js' %}"></script>
+    {% endblock %}
 
-    {% if user.is_authenticated %}
-      {# used only in pages that show article cards #}
-      <script defer src="{% static 'js/read_later_events.js' %}"></script>
-    {% endif %}
+    {% block ld_core_scripts %}
+      {% if user.is_authenticated %}
+        {# used only in pages that show article cards #}
+        <script defer src="{% static 'js/read_later_events.js' %}"></script>
+      {% endif %}
 
-    {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
-    <script defer src="{% static 'js/ld.js' %}"></script>
-    <script defer src="{% static 'js/resizeSubnav.js' %}" ></script>
+      {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
+      <script defer src="{% static 'js/ld.js' %}"></script>
+      <script defer src="{% static 'js/resizeSubnav.js' %}"></script>
 
-    {# Modernizr - Detect CSS Grid #}
-    <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
+      {# Modernizr - Detect CSS Grid #}
+      <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
+
+      {# picturefill #}
+      <script>
+        // Picture element HTML5 shiv
+        document.createElement("picture");
+      </script>
+      <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
+    {% endblock %}
 
     {# js.cookie #}
     <script src="{% static 'js/vendor/js.cookie.js' %}"></script>
 
-    {# picturefill #}
-    <script>
-      // Picture element HTML5 shiv
-      document.createElement("picture");
-    </script>
-    <script src="{% static 'js/vendor/picturefill.js' %}" async></script>
-
     {% block javascript %}{% endblock %}
     {% block footer_scripts %}{% endblock %}
     {% block footer_scripts_extra %}{% endblock %}
-    {% block main_close %}</main>{% endblock %}
+
+    {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP and SHOW_ONE_GOOGLE_TAP %}
+      <script src="https://accounts.google.com/gsi/client" async defer data-cfasync="false"></script>
+    {% endif %}
+
+    <script type="text/javascript">
+      function notification_close(btn_close){
+        var notification = $(btn_close).parents('.breaking-notice');
+        $.get('/' + $(btn_close).attr('data-object') + '/' + $(btn_close).attr('data-id') + '/closed/', function(data){
+          notification.toggle();
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", function() {
+        // Live notifications
+        $('.btn-close').click(function() {
+          notification_close(this);
+        });
+
+        {% block read_later_events %}
+          {% if user.is_authenticated %}read_later_events({{ article_ct_id }});{% endif %}
+        {% endblock %}
+
+        function sendGTMEvent(eventName) {
+          if (!window.dataLayer) return;
+          window.dataLayer.push({
+            event: eventName, // nlPopupDisplayed || nlPopupCTAClick || loggedWithOneTap
+            isSubscriber: {{ is_subscriber_any|yesno:"true,false" }},
+            isLoggedIn: {{ user.is_authenticated|yesno:"true,false" }}
+          });
+        }
+
+        {% if subscribe_notice_template or user_newsletters_notice_template %}
+          {% if is_portada and publication == default_pub or is_detail %}
+
+            function has48HoursPassed() {
+              const saved = localStorage.getItem('homeNoticeClosedAt');
+              if (!saved) return true; // no timestamp stored, treat as expired
+              const elapsed = Date.now() - Number(saved);
+              return elapsed >= (48 * 60 * 60 * 1000);
+            }
+
+            function getUserMetLandingCondition() {
+              const landingConditions = JSON.parse(localStorage.getItem('landingPopupData'));
+              if (!landingConditions) return false;
+
+              const numberOfDaysToCondition = landingConditions.numberOfDisplayed === 1 ? 7 :
+                                            landingConditions.numberOfDisplayed === 2 ? 14 : 30;
+
+              const now = new Date().getTime();
+              return (now - landingConditions.timestamp) < (numberOfDaysToCondition * 24 * 60 * 60 * 1000);
+            }
+
+            function setupLandingPupupData(numberOfDisplayed) {
+              localStorage.setItem('landingPopupData', JSON.stringify({
+                userActivatedNewsletter: false,
+                numberOfDisplayed: numberOfDisplayed ? numberOfDisplayed : 1,
+                timestamp: new Date().getTime()
+              }));
+            }
+
+            function showHomeNoticePupup(homePupup){
+              homePupup.removeClass("hide");
+
+              sendGTMEvent("nlPopupDisplayed");
+
+              const popupMobile = document.getElementById("home-notice-mobile");
+              const ctaPopupMobile = document.querySelector(".home-notice__footer a")
+              const popupDesktop = document.querySelector(".home-notice__desktop")
+
+              document.querySelector(".btn-close-notice").addEventListener("click", function() {
+                // Add local storage with a timestamp to avoid showing the notice again
+                localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
+                homePupup.hide();
+              });
+
+              const currentLandingData = JSON.parse(localStorage.getItem('landingPopupData'));
+
+              if (currentLandingData && !currentLandingData.userActivatedNewsletter) {
+                setupLandingPupupData(currentLandingData.numberOfDisplayed + 1);
+              }
+
+              document.getElementById("cta-pupup-desktop").addEventListener("click", function() {
+                setupLandingPupupData();
+                sendGTMEvent("nlPopupCTAClick");
+              });
+              document.getElementById("cta-pupup-mobile").addEventListener("click", function() {
+                setupLandingPupupData();
+                sendGTMEvent("nlPopupCTAClick");
+              });
+
+              document.getElementById("btn-toggle-banner").addEventListener("click", function() {
+                popupMobile.classList.toggle("collapsed");
+                popupMobile.classList.toggle("expanded");
+
+                ctaPopupMobile.classList.toggle("ut-btn");
+                ctaPopupMobile.classList.toggle("ut-btn-subscription");
+                ctaPopupMobile.classList.toggle("ut-btn-subscription--mobile");
+
+                localStorage.setItem('homeNoticeClosedAt', new Date().getTime());
+              });
+
+              setTimeout(() => {
+                popupDesktop.classList.add("hidden");
+
+                popupMobile.classList.remove("expanded");
+                popupMobile.classList.add("collapsed");
+
+                ctaPopupMobile.classList.remove("ut-btn");
+                ctaPopupMobile.classList.add("ut-btn-subscription", "ut-btn-subscription--mobile");
+              }, 20000);
+            }
+
+            function checkConditionsAndShowHomePopupNotice() {
+              const homeNotice = $('.home-notice');
+              const landingPopupData = JSON.parse(localStorage.getItem('landingPopupData'));
+              const userMetLandingCondition = getUserMetLandingCondition();
+              if (!homeNotice.length || landingPopupData?.userActivatedNewsletter || userMetLandingCondition || !has48HoursPassed()) return;
+
+              showHomeNoticePupup(homeNotice);
+            }
+
+            {% if user.is_authenticated %}
+              checkConditionsAndShowHomePopupNotice();
+            {% endif %}
+          {% endif %}
+        {% endif %}
+
+        {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP and SHOW_ONE_GOOGLE_TAP %}
+          // Variables to prevent multiple initializations
+          let oneTabInitialized = false;
+          let retryCount = 0;
+          const MAX_RETRIES = 2;
+
+          function initializeGoogleOneTap() {
+            // Prevent multiple initializations
+            if (oneTabInitialized) {
+              // Google One Tap already initialized
+              return;
+            }
+
+            if (!window.google || !google.accounts || !google.accounts.id) {
+              // Google One Tap script not loaded yet
+              if (retryCount < MAX_RETRIES) {
+                retryCount++;
+                setTimeout(initializeGoogleOneTap, 1000);
+              }
+              return;
+            }
+
+            try {
+              google.accounts.id.initialize({
+                client_id: '{{ google_client_id }}',
+                callback: handleCredentialResponse,
+                context: 'signin',
+                // Additional configurations for stability
+                itp_support: true,
+                use_fedcm_for_prompt: false,
+                // UI behavior configurations
+                cancel_on_tap_outside: true,
+                auto_select: false
+              });
+
+              oneTabInitialized = true;
+              // Google One Tap initialized successfully
+
+              google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                  const reason = notification.getNotDisplayedReason();
+                  const skippedReason = notification.getSkippedReason();
+                  console.log('Google One Tap not displayed. Reason:', reason || skippedReason);
+
+                  {% if subscribe_notice_template or user_newsletters_notice_template %}
+                    {% if is_portada and publication == default_pub or is_detail %}
+                      checkConditionsAndShowHomePopupNotice();
+                    {% endif %}
+                  {% endif %}
+                  // supressed_by_user => User closed the One Tap prompt and Google will not show it again until met conditions
+                  // tap_outside => User closed the One Tap prompt by tapping outside
+                  // user_cancel => User closed the One Tap prompt by clicking the cancel button
+                  // opt_out_or_no_session => User opted out of One Tap or no session available
+                } else {
+                  const dismissedReason = notification.getDismissedReason();
+                  if (!dismissedReason) return;
+                  sendGTMEvent("loggedWithOneTap");
+                }
+              });
+
+            } catch (error) {
+              console.error('Error initializing Google One Tap:', error);
+            }
+          }
+
+          function parseJwt(token) {
+            try {
+              const base64Url = token.split('.')[1];
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const jsonPayload = decodeURIComponent(
+                atob(base64).split('').map(function (c) {
+                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join('')
+              );
+              return JSON.parse(jsonPayload);
+            } catch (error) {
+              console.error('Error parsing JWT token:', error);
+              throw error;
+            }
+          }
+
+          function handleCredentialResponse(response) {
+            // Credential response received
+
+            if (!response || !response.credential) {
+              console.error('No credential received');
+              return;
+            }
+
+            try {
+              const payload = parseJwt(response.credential);
+              const email = payload.email;
+
+              if (!email) {
+                console.error('No email found in credential');
+                // Fallback without login_hint
+                const currentUrl = window.location.href;
+                const nextUrl = encodeURIComponent(currentUrl);
+                window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
+                return;
+              }
+
+              const currentUrl = window.location.href;
+              const nextUrl = encodeURIComponent(currentUrl);
+
+              // Redirecting to OAuth with email hint
+              window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl + "&login_hint=" + encodeURIComponent(email);
+
+            } catch (error) {
+              console.error('Error processing credential:', error);
+
+              // Fallback: redirect without login_hint
+              // Falling back to OAuth without login_hint
+              const currentUrl = window.location.href;
+              const nextUrl = encodeURIComponent(currentUrl);
+              window.location.href = "{% url 'social:begin' 'google-oauth2' %}?next=" + nextUrl;
+            }
+          }
+
+          // Initialize when DOM is ready
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeGoogleOneTap);
+          } else {
+            // DOM is already ready
+            initializeGoogleOneTap();
+          }
+
+          // Backup: initialize on window.onload if DOMContentLoaded didn't work
+          window.addEventListener('load', function() {
+            if (!oneTabInitialized) {
+              // Initializing via window.onload backup
+              initializeGoogleOneTap();
+            }
+          });
+        {% endif %}
+      });
+    </script>
   </body>
 </html>

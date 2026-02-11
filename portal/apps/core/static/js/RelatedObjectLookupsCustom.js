@@ -1,4 +1,6 @@
 // override some parts from django default js
+// TODO: describe the purpose of this custom script (seems needed to open popups on inlines' raw_id_fields)
+
 function dismissRelatedLookupPopupCustom(win, chosenId) {
     var name = windowname_to_id(win.name);
     var elem = opener.document.getElementById(name);
@@ -12,7 +14,7 @@ function dismissRelatedLookupPopupCustom(win, chosenId) {
     win.close();
 }
 
-$(document).ready(function() {
+$(function() {
     $("a[data-popup-opener]").click(function(event) {
         event.preventDefault();
         dismissRelatedLookupPopupCustom(window, $(this).data("popup-opener"));

@@ -7,9 +7,7 @@
     <title>URL shortener</title>
   </head>
   <body>
-    <div style="text-align:center;margin-top:2em;">
-      {{ URL_SCHEME }}://{{ site.domain }}{% shorturl object %}
-    </div>
+    <div style="text-align:center;margin-top:2em;">{{ SITE_URL_SD }}{% shorturl object %}</div>
     <div style="text-align:center;padding:2em;border-bottom:1px solid #ddd;">
       <a href="//{{ site.domain }}{% shorturl object %}">probar</a>
     </div>

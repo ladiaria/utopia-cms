@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends base_template %}
 {% load static core_tags homev3_tags thumbnail %}
 
 {% block page_title %}{% publication_title %}{% endblock %}
@@ -11,7 +11,7 @@
 {% block json_ld_extra %}
   "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://ladiaria.com.uy/buscar/?q={search_term_string}",
+      "target": "{{ SITE_URL }}buscar/?q={search_term_string}",
       "query-input": "required name=search_term_string"
   },
 {% endblock %}
@@ -21,80 +21,82 @@
 {% endblock %}
 
 {% block header_scripts %}
-  <link rel="preload" href="{% static 'js/most_read.js' %}" as="script" />
   <script type="text/javascript">
     $(function(){
       $('#header-pub').load("{% url 'adzone_ad_content' %}");
     });
   </script>
+  {% if unsubscribed_newsletters %}
+    <script src="{% static 'js/unsubscribed_nls.js' %}"></script>
+  {% endif %}
 {% endblock %}
 
 {% block body_class %}homepage{% endblock %}
 
+{% block navbar %}
+  {% if unsubscribed_newsletters %}
+    {% include 'unsubscribed_nls.html' %}
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+
+{% block content_pre %}{% render_cover %}{% endblock %}
+
 {% block content %}
 
-  {% render_cover %}
+  {# next include can changes this variables, so we backup them, and restore them later using the backed values #}
+  {% with publication_bak=publication category_bak=category %}
 
-  {% if fcategory %}{% with prefetched_article_data=True %}{% include 'category_grid.html' %}{% endwith %}{% endif %}
+    {% if fcategory %}
+      {% include fcategory_template|default:'category_grid.html' with prefetched_article_data=True %}
+    {% endif %}
 
-  {# "with" variable should be reset for the content that is not yet "prefetch-aware" #}
+    {% with publication=publication_bak category=category_bak %}
 
-  {% with prefetched_article_data=False %}
-    {% for section in featured_sections.0 %}{% render_section section %}{% endfor %}
-    {% for publication_slug in home_publications %}{% render_publication_row publication_slug %}{% endfor %}
+      {# prefetch var reset for content that is not yet "prefetch-aware" (on this and also more with blocks below) #}
+      {% with prefetched_article_data=False %}
+        {% for section in featured_sections.0 %}{% render_section section %}{% endfor %}
+        {% for publication_slug in home_publications %}{% render_publication_row publication_slug %}{% endfor %}
+      {% endwith %}
+
+      {% if not hide_first_featured_publication and featured_publications.0 %}
+        {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.0 %}{% endwith %}
+      {% endif %}
+
+      {% with prefetched_article_data=False %}
+        {% for section in featured_sections.1 %}{% render_section section %}{% endfor %}
+      {% endwith %}
+
+      {% if featured_publications.1 %}
+        {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.1 %}{% endwith %}
+      {% endif %}
+
+      {% if featured_publications.2 %}
+        {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.2 %}{% endwith %}
+      {% endif %}
+
+      {% with prefetched_article_data=False %}
+        {% for section in featured_sections.2 %}{% render_section section %}{% endfor %}
+      {% endwith %}
+
+      {% if news_wall_enabled %}
+        {% include 'news_wall.html' %}
+      {% endif %}
+
+      {% include bigphoto_template %}
+
+      {% block extra_homepage %}{% endblock %}
+
+    {% endwith %}
+
   {% endwith %}
-
-  {% if not hide_first_featured_publication and featured_publications.0 %}
-    {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.0 %}{% endwith %}
-  {% endif %}
-
-  {% with prefetched_article_data=False %}
-    {% for section in featured_sections.1 %}{% render_section section %}{% endfor %}
-  {% endwith %}
-
-  {% if featured_publications.1 %}
-    {% with prefetched_article_data=True %}{% render_publication_grid featured_publications.1 %}{% endwith %}
-  {% endif %}
-
-  {% with prefetched_article_data=False %}
-    {% for section in featured_sections.2 %}{% render_section section %}{% endfor %}
-  {% endwith %}
-
-  {# news wall commented out due to performance issues #}
-  {# include 'news_wall.html' #}
-
-  {% include bigphoto_template %}
-
-  {# other custom components can be included also like this commented includes: #}
-  {# include 'components.html' #}
-
-  {% block extra_homepage %}{% endblock %}
 
 {% endblock %}
 
 {% block javascript %}
-  <script src="{% static 'js/most_read.js' %}"></script>
+  {% if allow_mas_leidos %}<script src="{% static 'js/most_read.js' %}"></script>{% endif %}
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
   <script defer src="{% static 'materialize/js/tabs.js' %}"></script>
 {% endblock %}
 
-{% block footer_scripts %}
-  <script type="text/javascript">
-    $(function(){
-      $('#bn-module').load("{% url 'bn-content' %}?publication={{ publication.slug }}", function(response){
-        if(response){
-          var btn_close = $('.btn-close', this);
-          if(btn_close.length){
-            btn_close.click(function(){
-              notification_close(this);
-            });
-          }else{
-            $(window).trigger("subscribe_notice_show");
-          }
-        }else{
-          $(window).trigger("subscribe_notice_show");
-        }
-      });
-    });
-  </script>
-{% endblock %}
+{% block footer_scripts %}{% include bn_module_footer_scripts_template %}{% endblock %}

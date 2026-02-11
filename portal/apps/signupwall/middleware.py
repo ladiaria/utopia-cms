@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import unicode_literals
-
-from builtins import object
-from datetime import datetime
+from inflect import engine
 
 from django.conf import settings
-from django.http import Http404
-from django.core.urlresolvers import resolve
+from django.http import Http404, HttpResponseRedirect
+from django.urls import resolve, reverse
+from django.urls.exceptions import Resolver404
+from django.template.defaultfilters import slugify
+from django.utils import timezone
+from django.utils.timezone import now, timedelta
+from django.utils.deprecation import MiddlewareMixin
 
 from apps import mongo_db
 from signupwall.utils import get_ip
@@ -15,7 +16,12 @@ from core.models import Article
 from thedaily.email_logic import limited_free_article_mail
 
 
-debug = getattr(settings, 'SIGNUPWALL_DEBUG', False)
+debug = getattr(settings, 'SIGNUPWALL_DEBUG', settings.DEBUG)
+signupwall_exclude = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
+
+
+def number_to_words(number):
+    return slugify(engine().number_to_words(number))
 
 
 def get_article_by_url_kwargs(kwargs):
@@ -25,7 +31,7 @@ def get_article_by_url_kwargs(kwargs):
         )
     except Article.MultipleObjectsReturned:
         # TODO: Send a notification to "editors"
-        raise Http404(u"Múltiples artículos con igual identificación en el mes.")
+        raise Http404("Múltiples artículos con igual identificación en el mes.")
 
 
 def get_article_by_url_path(url_path):
@@ -33,15 +39,15 @@ def get_article_by_url_path(url_path):
         return Article.objects.get(url_path=url_path)
     except Article.MultipleObjectsReturned:
         # TODO: Send a notification to "editors"
-        raise Http404(u"Múltiples artículos con igual identificación en el mes.")
+        raise Http404("Múltiples artículos con igual identificación en el mes.")
 
 
 def get_session_key(request):
     if settings.SESSION_COOKIE_NAME in request.COOKIES:
-        # usa la cookie de sessionid como key
+        # use the sessionid cookie as key
         session_key = request.COOKIES[settings.SESSION_COOKIE_NAME]
     else:
-        # sino tiene le genera una
+        # if not present, generate it
         request.session.save()
         session_key = request.session.session_key
     return session_key
@@ -64,7 +70,7 @@ def get_or_create_visitor(request):
 
     if mongo_db is not None:
         result = mongo_db.signupwall_visitor.insert_one(
-            {'session_key': session_key, 'ip_address': ip_address, 'timestamp': datetime.now()}
+            {'session_key': session_key, 'ip_address': ip_address, 'timestamp': timezone.now()}
         )
         # generation time can be obtained in the returned value .get('_id').generation_time (TODO: re-check this)
         return mongo_db.signupwall_visitor.find_one({'_id': result.inserted_id})
@@ -73,33 +79,133 @@ def get_or_create_visitor(request):
 def subscriber_access(subscriber, article):
     """
     Returns True if the subscriber has subscriber access to the article, otherwise returns False
-    The logic applied is to give access if the subscriber is subscribed to the default pub or to any pub that the
-    article is published in (if it's not a restricted article, otherwise the subscriber must be subscribed to the main
-    pub of the article), or to any pub in article's additional_access field.
+    The logic applied is to give access if the subscriber is subscribed to the default pub or when the article is not
+    full restricted, to any pub that the article is published in (if it's not a restricted article, otherwise the
+    subscriber must be subscribed to the main pub of the article), or to any pub in article's additional_access field.
     """
     restricted_article = article.is_restricted()
     return (
         subscriber.is_subscriber()
 
-        or not restricted_article
-        and any(subscriber.is_subscriber(p.slug) for p in article.publications())
+        or
 
-        or restricted_article
-        and subscriber.is_subscriber(article.main_section.edition.publication.slug)
+        not article.full_restricted and (
 
-        or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+            not restricted_article
+            and any(subscriber.is_subscriber(p.slug) for p in article.publications())
+
+            or restricted_article
+            and subscriber.is_subscriber(article.main_section.edition.publication.slug)
+
+            or any(subscriber.is_subscriber(p.slug) for p in article.additional_access.all())
+
+        )
     )
 
 
-class SignupwallMiddleware(object):
+def is_google_amp(request):
+    # TODO: implement the validation of Google requests made to feed its AMP cache
+    return False
+
+
+def fb_browser_type(request):
+    if getattr(settings, 'SIGNUPWALL_FB_BROWSERWALL_ENABLED', True):
+        value, ua_os, ua_browser = None, request.user_agent.get_os(), request.user_agent.get_browser()
+        os_is_android, os_is_ios = ua_os.startswith("Android"), ua_os.startswith("iOS")
+        browser_is_fb = ua_browser.startswith("Facebook")
+        browser_is_ig = ua_browser.startswith("Instagram") or (
+            os_is_android and ua_browser.startswith("Chrome Mobile WebView")
+        )
+        # definitions taken from core/article/landing_facebook.html template
+        if browser_is_fb or (os_is_ios and browser_is_ig):
+            value = "fb"
+        elif os_is_android and browser_is_ig:
+            value = "ig_android"  # also used when coming from fb using Chrome Mobile WebView
+        if value:
+            request.fb_browser_type = value
+            return True
+
+
+class SignupwallMiddleware(MiddlewareMixin):
+
+    def anon_articles_visited_count(self, nowval, visitor, credits, debug=False):
+        """
+        anon users, count paths visited by session, we save at least 7-day back log.
+        No need to count more paths than credits + 1 in the last 7 days.
+        TODO: "credits" seems to be kindof reserved word (try to use a better var name for it)
+        """
+        paths_visited, articles_visited_count, dt = set(), 0, nowval - timedelta(7)
+        for v in mongo_db.signupwall_visitor.find(
+            {'session_key': visitor.get('session_key'), 'timestamp': {'$gt': dt}}
+        ):
+            paths_visited.add(v.get('path_visited'))
+            articles_visited_count = len(paths_visited)
+            if articles_visited_count > credits:
+                break
+
+        if debug:
+            print(
+                'DEBUG: signupwall.middleware.process_request - articles_visited_count (session): %d' % (
+                    articles_visited_count
+                )
+            )
+
+        if articles_visited_count <= credits:
+            # also search visits made with the session ips using other sessions
+            for v in mongo_db.signupwall_visitor.find(
+                {
+                    'session_key': {'$ne': visitor.get('session_key')},
+                    'timestamp': {'$gt': dt},
+                }
+            ):
+                paths_visited.add(v.get('path_visited'))
+                articles_visited_count = len(paths_visited)
+                if articles_visited_count > credits:
+                    break
+
+        if debug:
+            print(
+                'DEBUG: signupwall.middleware.process_request - articles_visited_count (session+ips): %d' % (
+                    articles_visited_count
+                )
+            )
+
+        return articles_visited_count
 
     def process_request(self, request):
 
-        # resolve path and get the target article
-        path_resolved = resolve(request.path)
+        # try to resolve path and get the target article
+        try:
+            path_resolved = resolve(request.path)
+        except Resolver404:
+            return
+
         if path_resolved.url_name == 'article_detail':
             try:
                 article = get_article_by_url_path(request.path)
+                # ignore AMP-feeding requests by Google, those excluded by settings, and AMP requests in "simulation"
+                excluded = signupwall_exclude(request)
+                ignored = (
+                    excluded
+                    or is_google_amp(request)
+                    or (
+                        getattr(settings, 'AMP_SIMULATE', False)
+                        and request.GET.get(settings.AMP_TOOLS_GET_PARAMETER) == 'amp'
+                    )
+                )
+                if debug:
+                    print(
+                        "DEBUG: signupwall request (user_agent, excluded, ignored): ('%s', %s, %s)" % (
+                            request.user_agent, excluded, ignored
+                        )
+                    )
+                if ignored:
+                    return
+                elif fb_browser_type(request):
+                    # ref_core.views.article.py:153
+                    # ignore also if the browser is facebook-type (article detail will render related info)
+                    # Also same comment of line 218 (that's why elif instead of "or" directly in the "if" part)
+                    return
             except Article.DoesNotExist:
                 # ignore signupwall for not-found articles (core.views.article.article_detail will redirect if the
                 # article is found in article's URL history)
@@ -108,6 +214,8 @@ class SignupwallMiddleware(object):
             # ignore signupwall for non article_detail paths
             if debug:
                 print('DEBUG: signupwall.middleware.process_request - non article_detail path')
+            # ref_core.views.article.py:153
+            # here you can return a "render" to the "fb landing" if using the "fb check" for all pages
             return
 
         user = request.user
@@ -116,10 +224,9 @@ class SignupwallMiddleware(object):
         if user.is_staff:
             return
 
-        user_is_authenticated = user.is_authenticated()
+        user_is_authenticated = user.is_authenticated
 
         # ignore also signupwall if the user has subscriber_access to the article
-        restricted_article = article.is_restricted()
         if (
             article.is_public()
             or user_is_authenticated
@@ -134,9 +241,12 @@ class SignupwallMiddleware(object):
             print('DEBUG: signupwall.middleware.process_request - non subscribed user')
             print('DEBUG: signupwall.middleware.process_request - requested URL: %s' % request.get_full_path())
 
-        visitor, raise_signupwall = None, True
+        # useful flag for a restricted_article, no credits should be spent because the user will not be allowed to read
+        # this article.
+        request.restricted_article = restricted_article = article.is_restricted_consider_full()
 
-        # if log views is enabled, set the path_visited to this visitor.
+        visitor = None
+        # if not restricted article and log views is enabled, set the path_visited to this visitor.
         if not restricted_article and settings.CORE_LOG_ARTICLE_VIEWS and mongo_db is not None:
             visitor = get_or_create_visitor(request)
             mongo_db.signupwall_visitor.update_one(
@@ -149,7 +259,8 @@ class SignupwallMiddleware(object):
             # for the user in this month and add 1 if this article is not restricted and is not in the set,
             # we not need to know if there are more than credits+2.
             # Raise signupwall if the user has more than credits.
-            credits, articles_visited = 10, set() if restricted_article else set([article.id])
+            credits = settings.SIGNUPWALL_MAX_CREDITS
+            articles_visited = set() if restricted_article else set([article.id])
             articles_visited_count = len(articles_visited)
             if mongo_db is not None:
                 for x in mongo_db.core_articleviewedby.find({'user': user.id, 'allowed': None}):
@@ -160,21 +271,45 @@ class SignupwallMiddleware(object):
 
             if debug:
                 print(
-                    'DEBUG: signupwall.middleware.process_request - articles_visited_count (logged-in): %s' % (
-                        articles_visited_count
-                    )
+                    'DEBUG: signupwall.middleware.process_request - articles_visited_count (logged-in): %s'
+                    % (articles_visited_count)
                 )
+
         else:
 
-            # anon users, they will face the signupwall.
-            articles_visited_count, credits = 1, 0
+            # anon users
+            credits = settings.SIGNUPWALL_ANON_MAX_CREDITS
+            if credits and visitor and mongo_db is not None:
+                nowval = now()
+                articles_visited_count = self.anon_articles_visited_count(nowval, visitor, credits, debug)
+            else:
+                articles_visited_count = 1
 
-        if raise_signupwall and user_is_authenticated:
+        if user_is_authenticated:
             if articles_visited_count == credits + 1:
                 limited_free_article_mail(user)
 
-        if raise_signupwall and (articles_visited_count > credits) or restricted_article:
-            # TODO: Why is this next function set here?
-            request.signupwall = {'next': next}
+        if (articles_visited_count > credits) or restricted_article:
+            if settings.SIGNUPWALL_RISE_REDIRECT:
+                if restricted_article:
+                    request.signupwall = True
+                else:
+                    default_planslug = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
+                    if user_is_authenticated and default_planslug:
+                        urlname, reverse_kwargs = "subscribe", {"planslug": default_planslug}
+                    else:
+                        urlname, reverse_kwargs = "account-login", {}
+                    # TODO: check redirect status code for the next line
+                    return HttpResponseRedirect(reverse(urlname, kwargs=reverse_kwargs) + "?article=%d" % article.id)
+            else:
+                request.signupwall = True
         else:
             request.credits = credits - articles_visited_count
+            request.signupwall_header = (
+                settings.SIGNUPWALL_HEADER_ENABLED
+                and user_is_authenticated
+                and request.credits >= 0
+                and not (settings.SIGNUPWALL_REMAINING_BANNER_ENABLED and user.subscriber.is_subscriber_any())
+            )
+            if request.signupwall_header:
+                request.remaining_articles_word = number_to_words(request.credits)

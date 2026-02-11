@@ -1,0 +1,14 @@
+{% load core_tags %}
+
+{% if render_hierarchy or article.section or article.is_restricted %}
+  <div class="ld-card__section">
+    {% block hierarchy_or_section %}
+      {% if render_hierarchy %}
+        {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
+      {% elif article.section %}
+        <a href="{{ article.section.get_absolute_url }}">{{ article.section }}</a>
+      {% endif %}
+    {% endblock %}
+    {% include 'article/article_card_lock_tooltip.html' %}
+  </div>
+{% endif %}

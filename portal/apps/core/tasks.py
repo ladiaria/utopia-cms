@@ -1,47 +1,148 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-import re
-
-from background_task import background
-from background_task.models import Task
+from time import sleep
+from kombu.exceptions import OperationalError
 
 from django.conf import settings
 from django.core.management.base import CommandError
 
-from .models import update_category_home as uch
+from core.models import Article
+from celeryapp import celery_app
+from .actions import update_category_home as update_category_home_func
 from .management.commands.send_notification import send_notification_func
+from .management.commands.update_article_urls import update_article_urls as update_article_urls_func
 
 
-@background(schedule=1)
+inspector = celery_app.control.inspect()
+
+
+@celery_app.task(name="update-category-home")
 def update_category_home_task():
-    uch()
+    result = update_category_home_func()
+    if settings.DEBUG:
+        # TODO: log somewhere instead of print in celery worker stdout
+        print(result)
+
+
+@celery_app.task(name="update-article-urls")
+def update_article_urls(pub_slug):
+    return update_article_urls_func([pub_slug])
+
+
+@celery_app.task(name="send-push-notification")
+def send_push_notification_task(msg, tag, url, img_url, user_id):
+    try:
+        return send_notification_func(msg, tag, url, img_url, user_id)
+    except CommandError as cmd_err:
+        # TODO: maybe this exception also can be catched in the admin
+        if settings.DEBUG:
+            return "ERROR: %s" % cmd_err
+
+
+@celery_app.task(name="test-sleep-task")
+def test_sleep_task(secs=0, feedback_step=None):
+    # was used for development only
+    secs_remaining = secs
+    while secs_remaining > 0:
+        sleep_by = feedback_step if feedback_step and feedback_step < secs_remaining else secs_remaining
+        sleep(sleep_by)
+        secs_remaining -= sleep_by
+        if feedback_step and secs_remaining:
+            print("still sleeping, %s seconds remaining to wakeup." % secs_remaining)
+    print("wokeup, task finished.")
+    return "test_sleep_task executed with args: %s%s" % (secs, (", %s" % feedback_step) if feedback_step else "")
+
+
+@celery_app.task(name="test-task")
+def test_task(test_arg=None):
+    # was used for development only
+    return "test_task executed with arg: %s" % test_arg
+
+
+@celery_app.task(name="article-publishing")
+def article_publishing(article_id):
+    # publish a scheduled article
+    result = None
+    try:
+        article = Article.objects.get(pk=article_id)
+    except Article.DoesNotExist:
+        result = f"Article with id {article_id} does not exist."
+    else:
+        article.is_published, article.to_be_published = True, False
+        try:
+            article.save()
+        except Exception as e:
+            result = f"Article {article} (id: {article.id}) could not be published: {e}"
+        else:
+            result = f"Article {article} (id: {article.id}) scheduled for publishing was published correctly."
+    return result
+
+
+def get_workers_for_queue(queue_name):
+    # Get the list of all registered workers and their queues
+    try:
+        active_queues = inspector.active_queues() or {}
+    except (TimeoutError, BrokenPipeError):
+        active_queues = {}
+    workers_handling_queue = set()
+    if active_queues:
+        for worker, queues in active_queues.items():
+            for queue in queues:
+                if queue['name'] == queue_name:
+                    workers_handling_queue.add(worker)
+    return list(workers_handling_queue)
+
+
+# - workers may allways be the same, thats why this code is not inside a function, to be called only once per py proc.
+# - if you are not running celery you should set CELERY_QUEUES = {} in your local_settings.py, then CELERY_TASK_ROUTES
+#   will not be populated and a KeyError will be raised and handled here.
+try:
+    update_category_home_workers = get_workers_for_queue(settings.CELERY_TASK_ROUTES["update-category-home"]["queue"])
+except (AttributeError, KeyError, OperationalError):
+    update_category_home_workers = []
 
 
 def update_category_home():
-    """
-    Schedule a task only if not exists already a similar not failed task
-    """
-    if not Task.objects.filter(
-        task_name='core.tasks.update_category_home_task', failed_at=None
-    ).exists():
-        task = update_category_home_task()
-        # Need to remove the "apps." at the beggining of the task name
-        task.task_name = re.sub(r'^apps\.', '', task.task_name)
-        task.save()
+    # Check if the task is already running or enqueued before enqueueing it again
+    task_name, found = update_category_home_task.name, False
+    if update_category_home_workers:
+        try:
+            active_tasks = inspector.active() or {}
+        except (TimeoutError, BrokenPipeError):
+            active_tasks = {}
+        if active_tasks:
+            for w in update_category_home_workers:
+                for task in active_tasks.get(w, []):
+                    if task.get('name') == task_name:
+                        if settings.DEBUG:
+                            print("found active")
+                        found = True
+                        break
+                if found:
+                    break
 
-
-@background(schedule=1)
-def send_push_notification_task(msg, tag, url, img_url, user_id):
-    try:
-        send_notification_func(msg, tag, url, img_url, user_id)
-    except CommandError as cmd_err:
-        if settings.DEBUG:
-            print(cmd_err)
+        if not found:
+            try:
+                queued_tasks = inspector.scheduled() or {}
+            except (TimeoutError, BrokenPipeError):
+                queued_tasks = {}
+            if queued_tasks:
+                for w in update_category_home_workers:
+                    for task in queued_tasks.get(w, []):
+                        if task.get('name') == task_name:
+                            if settings.DEBUG:
+                                print("found queued")
+                            found = True
+                            break
+                    if found:
+                        break
+    if not found:
+        try:
+            update_category_home_task.delay()
+        except OperationalError as oe_exc:
+            if settings.DEBUG:
+                print("ERROR: update_category_home_task could not be started (%s)" % oe_exc)
+    elif settings.DEBUG:
+        print("Task '%s' is already active or scheduled, no action taken." % task_name)
 
 
 def send_push_notification(msg, tag, url, img_url, user):
-    task = send_push_notification_task(msg, tag, url, img_url, getattr(user, 'id', None))
-    # Need to remove the "apps." at the beggining of the task name
-    task.task_name = re.sub(r'^apps\.', '', task.task_name)
-    task.save()
+    send_push_notification_task.delay(msg, tag, url, img_url, getattr(user, 'id', None))

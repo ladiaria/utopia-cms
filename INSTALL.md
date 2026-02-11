@@ -1,26 +1,18 @@
 # Utopia Content Management System Installation
 
-Documentation about installing Utopia's CMS.
-
 ## Install requirements
 
 - Python:
 
-  The Python version we recomend to use is version 3.7.11
+  The Python version supported is any version starting from 3.10.6 to 3.12.8 (the highest version suported by the Django version we have as dependency, Django 4.2.19). But of course this will depend on the extra modules you plan to integrate in your project, since it's a Django project, you can install any Django app you want.
 
-  A lower version starting from 3.6.8 may also work well, but some dependencies may be installed in a different version of the one
-  specified in the requirements.txt file.
-
-  If your system has a native Python installation in version 3.7 (<=3.7.11) you can use it, and no installing a new Python
-  version may be required.
-
-  If not, we recommend install the version 3.7.11 using pyenv: https://github.com/pyenv/pyenv
+  If your system has a native Python installation in version 3.10.6 - 3.12.8 you can use it, without installing another Python version. If not, or even if you want to keep this project isolated from the rest of your system, you may consider installing version 3.12.8 (or any other supported version) using [pyenv](https://github.com/pyenv/pyenv)
 
 - System packages:
 
-  NOTES: package names can vary by OS/distribution.
+  The following list (ames can vary by OS/distribution) contains Linux/MacOS packages needed for a full functional environment, not all are 100% required because they can be replaced or dicarded depending each environment and local infrastructure:
 
-  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel rubygem-sass npm gcc libmaxminddb-devel
+  mariadb mariadb-devel nginx libtiff libtiff-devel giflib giflib-devel rubygem-sass npm gcc libmaxminddb-devel rabbitmq
 
 - npm (Node.js packages):
 
@@ -54,18 +46,23 @@ Documentation about installing Utopia's CMS.
   (utopiacms) user@host:~/utopia-cms $ pip install --upgrade pip && pip install -r portal/requirements.txt
   ```
 
-  NOTE: If you get an error that saying `OSError: mysql_config not found` you need to check that mysql is in your PATH,
-  for example, you can run `PATH=$PATH:/usr/local/mysql/bin` to add the directory `/usr/local/mysql/bin` to the current
-  PATH and then retry the `pip` command. We also have seen errors regarding to "not found" MySQL libraries on MacOS
-  installations that were solved doing symlinks.
+  NOTE: If you get an error that saying `OSError: mysql_config not found` you need to check that mysql is in your PATH, for example, you can run PATH=$PATH:/usr/local/mysql/bin` to add the directory `/usr/local/mysql/bin` to the current PATH and then retry the `pip` command. We also have seen errors regarding to "not found" MySQL libraries on MacOS installations that were solved doing symlinks.
 
 #### Database setup
+
+- Preparation
+
+Before create the databse, make it timzeone-aware, this is not mandatory but if not done you'll get many warnings and probabbly also errors depending on your local settings, complaining about comparisons or database writes attempts that use datetime objects with timezone information. This can be done using one command:
+
+```
+mariadb-tzinfo-to-sql /usr/share/zoneinfo | sudo mariadb mysql
+```
 
 - Create a new database and grant user privileges to a new or existing database user:
 
 ```
-(utopiacms) user@host:~/utopia-cms $ sudo mysqladmin create utopiacms
-(utopiacms) user@host:~/utopia-cms $ sudo mysql
+(utopiacms) user@host:~/utopia-cms $ sudo mariadb-admin create utopiacms
+(utopiacms) user@host:~/utopia-cms $ sudo mariadb
 MariaDB [(none)]> CREATE USER 'utopiacms_user'@'localhost' IDENTIFIED BY 'password';
 MariaDB [(none)]> GRANT ALL PRIVILEGES ON utopiacms.* TO 'utopiacms_user'@'localhost';
 ```
@@ -111,8 +108,9 @@ Then create your nginx conf file using the sample provided (edit it after copy, 
 
 - Login with superuser created before, edit the default site domain and create a publication with the same slug to the one configured in `settings.DEFAULT_PUB`:
 
-NOTE: If you change the default `settings.DEFAULT_PUB` value from `default` to any `otherslug` value in your local settings, then you should update the permission codename used to check when a user is subscribed to this publication, to perform this update, run this SQL sentence below. Ignore this note and the sentence related if the setting was not modified.
-
-`UPDATE auth_permission SET codename='es_suscriptor_otherslug' WHERE codename='es_suscriptor_default';`
-
 Point your preferred web browser to https://yoogle.com/admin/sites/site/1/ and you will be redirected to the Django's admin site login page, after login you will be redirected again to the default site change form, change its domain to `yoogle.com` and optionally also change its display name to any name you want, save the changes and then go to https://yoogle.com/admin/core/publication/add/ fill the form to create the new publication, save it and then you will be able to see the home page working at https://yoogle.com/.
+
+
+## Further reading
+
+Starting from now (just before the v0.4.8 release) there will be a documentation site, have a [look](docs/index.md), it was started with a topic covering Utopía CMS and CRM integration.

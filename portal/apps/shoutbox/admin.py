@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from shoutbox.models import Shout
 
 from django.contrib.admin import site, ModelAdmin

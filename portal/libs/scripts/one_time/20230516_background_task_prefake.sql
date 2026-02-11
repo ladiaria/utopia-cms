@@ -1,0 +1,27 @@
+ALTER TABLE background_task_completedtask MODIFY COLUMN task_name varchar(190);
+ALTER TABLE background_task_completedtask ADD COLUMN verbose_name varchar(255);
+ALTER TABLE background_task_completedtask MODIFY COLUMN run_at datetime(6);
+ALTER TABLE background_task_completedtask ADD COLUMN `repeat` bigint(20);
+UPDATE background_task_completedtask SET `repeat`=0;
+ALTER TABLE background_task_completedtask MODIFY COLUMN `repeat` bigint(20) NOT NULL;
+ALTER TABLE background_task_completedtask ADD COLUMN repeat_until datetime(6);
+ALTER TABLE background_task_completedtask MODIFY COLUMN queue varchar(190);
+ALTER TABLE background_task_completedtask MODIFY COLUMN failed_at datetime(6);
+ALTER TABLE background_task_completedtask MODIFY COLUMN locked_at datetime(6);
+ALTER TABLE background_task_completedtask ADD COLUMN creator_object_id int(10) unsigned;
+ALTER TABLE background_task_completedtask ADD COLUMN creator_content_type_id int(11);
+ALTER TABLE `background_task_completedtask` ADD CONSTRAINT `background_task_comp_creator_content_type_21d6a741_fk_django_co` FOREIGN KEY (`creator_content_type_id`) REFERENCES `django_content_type` (`id`);
+
+ALTER TABLE background_task MODIFY COLUMN task_name varchar(190);
+ALTER TABLE background_task ADD COLUMN verbose_name varchar(255);
+ALTER TABLE background_task MODIFY COLUMN run_at datetime(6);
+ALTER TABLE background_task ADD COLUMN `repeat` bigint(20);
+UPDATE background_task SET `repeat`=0;
+ALTER TABLE background_task MODIFY COLUMN `repeat` bigint(20) NOT NULL;
+ALTER TABLE background_task ADD COLUMN repeat_until datetime(6);
+ALTER TABLE background_task MODIFY COLUMN queue varchar(190);
+ALTER TABLE background_task MODIFY COLUMN failed_at datetime(6);
+ALTER TABLE background_task MODIFY COLUMN locked_at datetime(6);
+ALTER TABLE background_task ADD COLUMN creator_object_id int(10) unsigned;
+ALTER TABLE background_task ADD COLUMN creator_content_type_id int(11);
+ALTER TABLE `background_task` ADD CONSTRAINT `background_task_creator_content_type_61cc9af3_fk_django_co` FOREIGN KEY (`creator_content_type_id`) REFERENCES `django_content_type` (`id`);

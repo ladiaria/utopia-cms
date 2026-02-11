@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from tempfile import NamedTemporaryFile
 from ..cache import get_cache_key, get_hexdigest, get_hashed_mtime
 from ..settings import LESS_EXECUTABLE, LESS_USE_CACHE,\

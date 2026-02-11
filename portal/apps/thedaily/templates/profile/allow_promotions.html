@@ -1,12 +1,9 @@
-<div class="row ld-profile-row">
-  <div class="col">
-    <h3 class="ld-title-second">Promociones</h3>
-    <p>
-      Podemos contactarte para ofrecerte nuevos productos, promociones y otros beneficios.
-    </p>
-    <div class="">
-        <input id="id_{{ field.name }}" name="{{ field.name }}" class="filled-in" type="checkbox"{% if field.value %} checked{% endif %}/>
-        <label for="id_{{ field.name }}">Deseo recibir promociones</label>
-    </div>
-  </div>
-</div>
+{% extends "thedaily/templates/profile/allow_communication.html" %}
+
+{% block label %}Promociones{% endblock %}
+
+{% block data_url %}data-url="{% url 'communication-subscribe' com_type='allow_promotions' %}"{% endblock %}
+
+{% block description %}
+  <p>Podemos contactarte para ofrecerte nuevos productos, promociones y otros beneficios.</p>
+{% endblock %}

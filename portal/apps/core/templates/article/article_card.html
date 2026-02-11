@@ -6,10 +6,10 @@
             {% if card_display == 'horizontal' %}responsive{% endif %}"
          data-id="{{ article.id }}" data-template="article_card">
   {% block image %}
-    {% if article.photo and card_type %}
+    {% if not article_card_hide_photo and article.photo and card_type and article.photo_image_file_exists %}
       <a href="{{ article.get_absolute_url }}">
-        <img class="ld-card__img" src="{{ article.photo.get_700w_url }}" loading="lazy"
-             width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}
+        <img class="ld-card__img" src="{{ article.photo.get_700w_url }}" width="700"
+             height="{{ article.photo.get_700w_size.1 }}"{% if img_load_lazy %} loading="lazy"{% endif %}
              title="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
       </a>
     {% endif %}
@@ -39,7 +39,9 @@
             </div>
           {% endif %}
         {% endwith %}
-        {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
+        {% if not hide_date_published %}
+          {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
+        {% endif %}
         {% with a=article %}{% include 'article/article_card_read_later.html' %}{% endwith %}
       </div>
     </div>

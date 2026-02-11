@@ -1,8 +1,17 @@
-{% extends "base.html" %}
+{% extends base_template %}
+{% load static crispy_forms_tags core_tags thedaily_tags %}
 
-{% load crispy_forms_tags static thedaily_tags %}
+{% block page_title %}{% title_joinparts 'Cuenta gratuita' %}{% endblock %}
 
-{% block page_title %}Cuenta gratuita{% endblock %}
+{% block page_description %}{% spaceless %}
+{% with credits_pl=signupwall_max_credits|pluralize %}
+{{ signupwall_max_credits }} artículo{{ credits_pl }} gratuito{{ credits_pl }} al mes y newsletters. Para acceso ilimitado suscribite.
+{% endwith %}
+{% endspaceless %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
+{% endblock %}
 
 {% block body_class %}thedaily subscribe hide-mobile-nav{% endblock %}
 
@@ -32,15 +41,18 @@
         <h1 class="ld-title-big">Cuenta gratuita</h1>
         <div class="price">$0/mes</div>
         <span class="ld-text-secondary">
-          10 artículos gratuitos al mes y newsletters.<br>
-          Para acceso ilimitado <a href="{% url 'subscribe' planslug='DDIGM' %}">suscribite</a>.
+          {% with credits_pl=signupwall_max_credits|pluralize %}
+            {{ signupwall_max_credits }} artículo{{ credits_pl }} gratuito{{ credits_pl }} al mes y newsletters.
+          {% endwith %}
+          <br>
+          Para acceso ilimitado <a href="{% url 'subscribe-default' %}">suscribite</a>.
         </span>
       </div>
       <div class="col s12 m8 offset-m2">
         <div class="row">
           <h2 class="center-align u-mt-50">Creá tu cuenta</h2>
           <div class="col s12 align-center ld-block--sm">
-            <a href="{% url 'social:begin' backend='google-oauth2' %}?next={{ signup_form.next_page.value }}" class="ld-btn-google">con Google</a>
+            <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ signup_form.next_page.value|default:'/' }}" class="ld-btn-google">con Google</a>
           </div>
         </div>
         <div class="row">
@@ -56,18 +68,26 @@
   {% include 'footer_simple.html' with disable_signup=True %}
 {% endblock footer_block %}
 
+{% block materialize_scripts %}
+  <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
+  <script defer src="{% static 'materialize/js/modal.js' %}"></script>
+{% endblock %}
+
 {% block javascript %}
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
+  <script src="{{ intl_tel_input_cdn }}js/intlTelInput.min.js"></script>
+  <script src="{% static 'js/phone_widget.js' %}"></script>
   <script>
     $(function(){
-      $('label[for="id_terms_and_conditions"] a').click(function(event){
+      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");
+      $('label[for="id_terms_and_conds_accepted"] a').on("click", function(event){
         event.preventDefault();
         $('.modal').modal('open');
       });
     });
     function accept_terms_and_conds(){
       $('.modal').modal('close');
-      $('#id_terms_and_conditions').prop('checked', true);
+      $('#id_terms_and_conds_accepted').prop('checked', true);
     }
   </script>
 {% endblock %}

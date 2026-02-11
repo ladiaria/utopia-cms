@@ -1,0 +1,50 @@
+{% load bleach_tags core_tags ldml %}
+
+<div class="ld-grid-simple__area">
+
+  <div class="ld-card ld-card--reg ld-card--{{ article.type }}{% block article_extra_class %}{% endblock %}">
+
+    {% render_toolbar_for article %}
+    {% if not article_card_hide_photo and article.photo_render_allowed %}
+      <a href="{{ article.get_absolute_url }}">
+        <amp-img height="{{ article.photo.get_700w_size.1 }}" width="700" layout="responsive"
+                 id="main-photo-related" src="{{ article.photo.get_700w_url }}" alt="{{ article.photo_caption }}"
+                 title="{{ article.photo_caption }}"></amp-img>
+      </a>
+    {% endif %}
+
+    <div class="ld-card__body">
+      <div class="ld-card__section">
+        {% block article_section %}{% autoescape off %}{% render_hierarchy article %}{% endautoescape %}{% endblock %}
+      </div>
+      <h3 class="ld-card__title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
+        <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
+      </h3>
+      {% if article.home_lead %}
+        <div class="ld-card__intro">{{ article.home_lead|ldmarkup|bleach }}</div>
+      {% endif %}
+
+      <div class="ld-card__byline-wrap">
+        <div class="ld-card__byline">
+          {% if not article_card_hide_photo and CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo_render_allowed and article.photo_author %}
+            <div class="ld-card__photoauthor">{{ article.photo_type }}: {{ article.photo_author }}</div>
+          {% endif %}
+          {% with authors=article.get_authors %}
+            {% if authors %}
+              <div class="ld-card__author">
+                {% for author in authors %}
+                  <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+          {% if not hide_date_published %}
+            {% autoescape off %}{% date_published_verbose article %}{% endautoescape %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

@@ -1,29 +1,34 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 import re
 import json
 import requests
 import pymongo
 from hashids import Hashids
+from pymailcheck import split_email
+from pyisemail import is_email
+
+from social_django.models import UserSocialAuth
+from phonenumber_field.modelfields import PhoneNumberField
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group
-from django.core.validators import RegexValidator
+from django.contrib.auth.models import User, Group, Permission
+from django.core.mail import mail_managers
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, validate_email
+from django.core.exceptions import ValidationError
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
+from django.db.models import CASCADE
 from django.db.models import (
     BooleanField,
     CharField,
     DateTimeField,
     EmailField,
     ForeignKey,
+    JSONField,
     Model,
     OneToOneField,
     PositiveIntegerField,
     TextField,
-    permalink,
     ImageField,
     PositiveSmallIntegerField,
     DecimalField,
@@ -31,31 +36,46 @@ from django.db.models import (
     ManyToManyField,
 )
 from django.db.models.signals import post_save, pre_save, m2m_changed
+from django.db.utils import IntegrityError
 from django.dispatch import receiver
+from django.urls import reverse
 
-from apps import mongo_db
+from libs.utils import crm_rest_api_kwargs
+from apps import mongo_db, bouncer_blocklisted, whitelisted_domains
 from core.models import Edition, Publication, Category, ArticleViewedBy
-from .exceptions import UpdateCrmEx
+from .exceptions import UpdateCrmEx, EmailValidationError
 
 
-GA_CATEGORY_CHOICES = (('D', 'Digital'), ('P', 'Papel'))
+GA_CATEGORY_CHOICES, MIN0, MAX100 = (('D', 'Digital'), ('P', 'Papel')), MinValueValidator(0), MaxValueValidator(100)
 
 
 class SubscriptionPrices(Model):
+    # TODO: this first field can be migrated to 2 new fields; name and slug (both unique and required)
     subscription_type = CharField(
-        'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, default='PAPYDIM'
+        'tipo', max_length=7, choices=settings.THEDAILY_SUBSCRIPTION_TYPE_CHOICES, unique=True, blank=True, null=True
     )
-    price = DecimalField('Precio', max_digits=7, decimal_places=2)
-    order = PositiveSmallIntegerField('Orden', null=True)
+    order = PositiveSmallIntegerField('orden', null=True)
+    months = PositiveSmallIntegerField('meses', default=1)
+    price = DecimalField('precio', max_digits=9, decimal_places=2, validators=[MIN0])
+    price_total = DecimalField(
+        'precio total', max_digits=9, decimal_places=2, blank=True, null=True, validators=[MIN0]
+    )
+    discount = DecimalField(
+        'descuento (%)', max_digits=5, decimal_places=2, blank=True, null=True, validators=[MIN0, MAX100]
+    )
+    extra_info = JSONField("información extra", default=dict, help_text='Diccionario Python en formato JSON')
     paypal_button_id = CharField(max_length=13, null=True, blank=True)
-    auth_group = ForeignKey(Group, verbose_name='Grupo asociado al permiso', blank=True, null=True)
-    publication = ForeignKey(Publication, blank=True, null=True)
+    auth_group = ForeignKey(Group, on_delete=CASCADE, verbose_name='Grupo asociado al permiso', blank=True, null=True)
+    publication = ForeignKey(Publication, on_delete=CASCADE, blank=True, null=True)
     ga_sku = CharField(max_length=10, blank=True, null=True)
     ga_name = CharField(max_length=64, blank=True, null=True)
     ga_category = CharField(max_length=1, choices=GA_CATEGORY_CHOICES, blank=True, null=True)
 
     def __str__(self):
-        return "%s -- $ %s " % (self.get_subscription_type_display(), self.price)
+        return self.get_subscription_type_display() if self.subscription_type else self.periodicity()
+
+    def periodicity(self):
+        return "Mensual" if self.months == 1 else f"{self.months} meses"
 
     class Meta:
         verbose_name = 'Precio'
@@ -65,7 +85,7 @@ class SubscriptionPrices(Model):
 
 alphanumeric = RegexValidator(
     '^[A-Za-z0-9ñüáéíóúÑÜÁÉÍÓÚ _\'.\-]*$',
-    'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.'
+    'El nombre sólo admite caracteres alfanuméricos, apóstrofes, espacios, guiones y puntos.',
 )
 
 
@@ -78,27 +98,31 @@ class Subscriber(Model):
        changed its has_newsletter attr from True to False) now this M2M rows are removed when the subscriber is saved,
        for example in the admin or by the user itself using the edit profile page.
     """
+
     contact_id = PositiveIntegerField('CRM id', unique=True, editable=True, blank=True, null=True)
-    user = OneToOneField(User, verbose_name='usuario', related_name='subscriber', blank=True, null=True)
+    user = OneToOneField(
+        User, on_delete=CASCADE, verbose_name='usuario', related_name='subscriber', blank=True, null=True
+    )
 
     # TODO: ver la posibilidad de eliminarlo ya que es el "first_name" del modelo django.contrib.auth.models.User
     name = CharField('nombre', max_length=255, validators=[alphanumeric])
 
     # agregamos estos campos para unificar la info de User y Subscriber
     address = CharField('dirección', max_length=255, blank=True, null=True)
-    country = CharField('país', max_length=50, blank=True, null=True)
-    city = CharField('ciudad', max_length=64, blank=True, null=True)
+    country = CharField('país de residencia', max_length=50, blank=True, null=True)
+    city = CharField('ciudad de residencia', max_length=64, blank=True, null=True)
     province = CharField(
         'departamento', max_length=20, choices=settings.THEDAILY_PROVINCE_CHOICES, blank=True, null=True
     )
 
     profile_photo = ImageField(upload_to='perfiles', blank=True, null=True)
-    document = CharField('documento', max_length=50, blank=True, null=True)
-    phone = CharField('teléfono', max_length=20)
+    document = CharField('documento de identidad', max_length=50, blank=True, null=True)
+    phone = PhoneNumberField('teléfono', blank=True, default="", db_index=True)
 
     date_created = DateTimeField('fecha de registro', auto_now_add=True, editable=False)
     downloads = PositiveIntegerField('descargas', default=0, blank=True, null=True)
 
+    terms_and_conds_accepted = BooleanField(default=False)
     pdf = BooleanField(default=False)
     lento_pdf = BooleanField('pdf L.', default=False)
     ruta = PositiveSmallIntegerField(blank=True, null=True)
@@ -114,7 +138,11 @@ class Subscriber(Model):
     subscription_mode = CharField(max_length=1, null=True, blank=True, default=None)
     last_paid_subscription = DateTimeField('Ultima subscripcion comienzo', null=True, blank=True)
 
+    def __str__(self):
+        return self.name or self.get_full_name()
+
     def save(self, *args, **kwargs):
+        # TODO: this should be reviewed ASAP (a new field 'doc type' may be added resulting incompatibilities)
         if self.document:
             non_decimal = re.compile(r'[^\d]+')
             self.document = non_decimal.sub('', self.document)
@@ -133,7 +161,7 @@ class Subscriber(Model):
         self.downloads += 1
         self.save()
 
-    def is_subscriber(self, pub_slug=settings.DEFAULT_PUB):
+    def is_subscriber(self, pub_slug=settings.DEFAULT_PUB, operation="get"):
         try:
 
             if self.user:
@@ -145,10 +173,16 @@ class Subscriber(Model):
                     is_subscriber_custom = __import__(
                         settings.THEDAILY_IS_SUBSCRIBER_CUSTOM_MODULE, fromlist=['is_subscriber']
                     ).is_subscriber
-                    return is_subscriber_custom(self, pub_slug)
+                    return is_subscriber_custom(self, pub_slug, operation)
 
                 else:
-                    return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
+                    if operation == "get":
+                        return self.user.has_perm('thedaily.es_suscriptor_%s' % pub_slug)
+                    elif operation == "set":
+                        self.user.user_permissions.add(Permission.objects.get(codename='es_suscriptor_' + pub_slug))
+                        return True
+                    else:
+                        raise ValueError("Unknown operation")
 
         except User.DoesNotExist:
             # rare, but we saw once this exception happen
@@ -157,7 +191,7 @@ class Subscriber(Model):
         return False
 
     def is_digital_only(self):
-        """ Returns True only if this subcriber is subscribed only to the "digital" edition """
+        """Returns True only if this subcriber is subscribed only to the "digital" edition"""
         # TODO 2nd release: implement
         return self.is_subscriber()
 
@@ -174,34 +208,42 @@ class Subscriber(Model):
 
     def user_is_active(self):
         return self.user and self.user.is_active
+
     user_is_active.short_description = 'user act.'
     user_is_active.boolean = True
 
     def is_subscriber_any(self):
         return any(
-            self.is_subscriber(pub_slug) for pub_slug in getattr(
-                settings, 'THEDAILY_IS_SUBSCRIBER_ANY', Publication.objects.values_list('slug', flat=True)))
+            self.is_subscriber(pub_slug)
+            for pub_slug in getattr(
+                settings, 'THEDAILY_IS_SUBSCRIBER_ANY', Publication.objects.values_list('slug', flat=True)
+            )
+        )
 
     def get_publication_newsletters_ids(self, exclude_slugs=[]):
         return list(
-            self.newsletters.filter(
-                has_newsletter=True
-            ).exclude(slug__in=exclude_slugs).values_list('id', flat=True)
+            self.newsletters.filter(has_newsletter=True).exclude(slug__in=exclude_slugs).values_list('id', flat=True)
         )
 
     def get_category_newsletters_ids(self, exclude_slugs=[]):
         return list(
-            self.category_newsletters.filter(
-                has_newsletter=True
-            ).exclude(slug__in=exclude_slugs).values_list('id', flat=True)
+            self.category_newsletters.filter(has_newsletter=True)
+            .exclude(slug__in=exclude_slugs)
+            .values_list('id', flat=True)
         )
 
     def get_newsletters_slugs(self):
-        return list(self.newsletters.values_list('slug', flat=True)) + \
-            list(self.category_newsletters.values_list('slug', flat=True))
+        return list(self.newsletters.values_list('slug', flat=True)) + list(
+            self.category_newsletters.values_list('slug', flat=True)
+        )
+
+    def remove_newsletters(self):
+        self.newsletters.clear()
+        self.category_newsletters.clear()
 
     def get_newsletters(self):
         return ', '.join(self.get_newsletters_slugs())
+
     get_newsletters.short_description = 'newsletters'
 
     def updatecrmuser_publication_newsletters(self, exclude_slugs=[]):
@@ -232,9 +274,6 @@ class Subscriber(Model):
             else:
                 return qs[0].downloads
 
-    def __str__(self):
-        return self.name or self.get_full_name()
-
     def get_full_name(self):
         if not self.user.first_name and not self.user.last_name:
             return "Usuario sin nombre"
@@ -262,59 +301,221 @@ class Subscriber(Model):
     def user_email(self):
         return self.user.email if self.user else None
 
-    @permalink
+    def email_is_bouncer(self):
+        return self.user_email in bouncer_blocklisted
+
     def get_absolute_url(self):
-        return '/admin/thedaily/subscriber/%i/' % self.id
+        return reverse('admin:thedaily_subscriber_change', args=[self.id])
 
     def hashed_id(self):
         return Hashids(settings.HASHIDS_SALT, 32).encode(int(self.id))
 
     class Meta:
         verbose_name = 'suscriptor'
-        permissions = (("es_suscriptor_%s" % settings.DEFAULT_PUB, "Es suscriptor actualmente"), )
+        verbose_name_plural = "suscriptores"
+
+
+def put_data_to_crm(api_url, data):
+    """
+    Performs an PUT request to the CRM app
+    api_url is the request url and data is the request body data
+    If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request body data
+    @return: json data from the response
+    """
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        api_kwargs = crm_rest_api_kwargs(api_key, data)
+        res = requests.put(api_url, **api_kwargs)
+        res.raise_for_status()
+        return res.json()
+
+
+def post_data_to_crm(api_url, data):
+    """
+    Performs an POST request to the CRM app
+    api_url is the request url and data is the request body data
+    If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request body data
+    @return request response in json format
+    """
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        api_kwargs = crm_rest_api_kwargs(api_key, data)
+        res = requests.post(api_url, **api_kwargs)
+        res.raise_for_status()
+        return res.json()
+
+
+def delete_data_from_crm(api_url, data):
+    """
+    Performs an DELETE request to the CRM app
+    api_url is the request url and data is the request body data
+    If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request body data
+    @return reques response in json format
+    """
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        payload = json.dumps(data)
+        api_kwargs = crm_rest_api_kwargs(api_key, payload)
+        res = requests.delete(api_url, **api_kwargs)
+        res.raise_for_status()
+        return res.json()
+
+
+def get_data_from_crm(api_url, data):
+    """
+    Performs an GET request to the CRM app
+    api_url is the request url and data is the request param data
+    If there are missing data for do the request; return None
+    @param api_url: target url in str format
+    @param data: request query params data
+    """
+    api_key = getattr(settings, "CRM_UPDATE_USER_API_KEY", None)
+    if all((settings.CRM_UPDATE_USER_ENABLED, api_url, api_key)):
+        api_kwargs = crm_rest_api_kwargs(api_key)
+        api_kwargs["params"] = data  # get call send data like query params
+        res = requests.get(api_url, **api_kwargs)
+        res.raise_for_status()
+        return res.json()
 
 
 def updatecrmuser(contact_id, field, value):
+    api_url = settings.CRM_API_UPDATE_USER_URI
     data = {"contact_id": contact_id, "field": field, "value": value}
-    if settings.CRM_UPDATE_USER_ENABLED:
-        r = requests.post(settings.CRM_UPDATE_USER_URI, data=data)
-        r.raise_for_status()
+    return put_data_to_crm(api_url, data)
+
+
+def createcrmuser(name, email):
+    api_url = settings.CRM_API_UPDATE_USER_URI
+    return post_data_to_crm(api_url=api_url, data={"name": name, "email": email})
+
+
+def deletecrmuser(email):
+    api_url = settings.CRM_API_UPDATE_USER_URI
+    return delete_data_from_crm(api_url, {"email": email})
+
+
+def existscrmuser(email, contact_id=None):
+    api_url = settings.CRM_API_GET_USER_URI
+    data = {"email": email}
+    if contact_id:
+        data.update({"contact_id": contact_id})
+    return get_data_from_crm(api_url, data)
+
+
+def email_extra_validations(old_email, email, instance_id=None, next_page=None, allow_blank=False):
+    msg, error_msg_prefix, error_code = None, "El email ingresado ", None
+    error_msg_invalid = error_msg_prefix + 'no es un email válido.'
+    error_msg_exists = error_msg_prefix + "ya posee una cuenta de usuario"
+    error_msg_next = ("?next=" + next_page) if next_page else ""
+    exclude_kwargs_user = {'id': instance_id} if instance_id else {}
+    exclude_kwargs_user_sa = {'user_id': instance_id} if instance_id else {}
+
+    if not email:
+        if not allow_blank:
+            msg, error_code = error_msg_invalid, EmailValidationError.INVALID
+
+    else:
+        email = email.lower()
+        if old_email:
+            old_email = old_email.lower()
+
+        # 1. check if this email (only "on change") is included in our bouncers list
+        if old_email != email and email in bouncer_blocklisted:
+            msg = error_msg_prefix + "registra exceso de rebotes, no se permite su utilización."
+            error_code = EmailValidationError.INVALID
+        else:
+
+            # 2. Django email validation
+            try:
+                validate_email(email)
+            except ValidationError as ve:
+                msg, error_code = ve.message, EmailValidationError.INVALID
+            else:
+
+                # 3. Domain validation + already used validation
+                if (
+                    not split_email(email)["domain"] in whitelisted_domains()
+                    and not is_email(email, check_dns=getattr(settings, "THEDAILY_VALIDATE_EMAIL_CHECK_MX", True))
+                ):
+                    msg, error_code = error_msg_invalid, EmailValidationError.INVALID
+
+                elif User.objects.filter(email__iexact=email).exclude(**exclude_kwargs_user).exists():
+                    # TODO: use "reverse" to build the url
+                    msg = '%s. <a href="/usuarios/entrar/%s">Ingresar</a>.' % (error_msg_exists, error_msg_next)
+
+                elif UserSocialAuth.objects.filter(uid=email).exclude(**exclude_kwargs_user_sa).exists():
+                    # TODO: use "reverse" to build the url
+                    msg = '%s asociada a Google. <a href="/login/google-oauth2/%s">Ingresar con Google</a>.' % (
+                        error_msg_exists, error_msg_next
+                    )
+
+                elif User.objects.filter(username__iexact=email).exclude(**exclude_kwargs_user).exists():
+                    mail_managers("Multiple username in users", email)
+                    msg = error_msg_prefix + 'no puede ser utilizado.'
+
+    return msg, error_code
 
 
 @receiver(pre_save, sender=User)
 def user_pre_save(sender, instance, **kwargs):
+    email_extra_validations_done, error_msg = getattr(instance, "email_extra_validations_done", False), None
+    if email_extra_validations_done:
+        # remove flag
+        del instance.email_extra_validations_done
 
-    if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
-        return True
     try:
+        update_fields, bypass = kwargs.get("update_fields"), False
+        if update_fields:
+            bypass = len(update_fields) == 1 and any(field in update_fields for field in ("last_login", "password"))
         actualusr = sender.objects.get(pk=instance.id)
+        if not bypass and not email_extra_validations_done:
+            # email extra validations on user modification (login and password change actions are not considered).
+            error_msg, error_code = email_extra_validations(
+                actualusr.email, instance.email, instance.id, allow_blank=True
+            )
     except User.DoesNotExist:
+        if not email_extra_validations_done:
+            # email extra validations (user creation)
+            error_msg, error_code = email_extra_validations(None, instance.email, allow_blank=True)
         actualusr = instance
 
-    # sync email if changed
+    # raise if email extra validations returned something
+    if error_msg:
+        raise IntegrityError(error_msg)
+
+    if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
+        return
+
+    api_uri = settings.CRM_API_UPDATE_USER_URI
     if actualusr.email != instance.email:
         try:
             contact_id = instance.subscriber.contact_id if instance.subscriber else None
-            requests.post(
-                settings.CRM_UPDATE_USER_URI,
-                data={'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email},
-            ).raise_for_status()
+            data = {'contact_id': contact_id, 'email': actualusr.email, 'newemail': instance.email}
+            put_data_to_crm(api_uri, data)
         except requests.exceptions.RequestException:
-            raise UpdateCrmEx("No se ha podido actualizar tu email, contactate con nosotros")
+            err_msg = "No se ha podido actualizar tu email, contactate con nosotros"
+            raise UpdateCrmEx(err_msg)
 
 
 @receiver(pre_save, sender=Subscriber, dispatch_uid="subscriber_pre_save")
 def subscriber_pre_save(sender, instance, **kwargs):
-    if getattr(settings, 'THEDAILY_DEBUG_SIGNALS', False):
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print('DEBUG: subscriber_pre_save signal called')
     if not settings.CRM_UPDATE_USER_ENABLED or getattr(instance, "updatefromcrm", False):
         return True
     try:
         actual_sub = sender.objects.get(pk=instance.id)
-        for f in list(settings.CRM_UPDATE_SUBSCRIBER_FIELDS.values()):
+        # TODO: change this 1-field-per-request approach to a new 1-request-only approach with all chanmges
+        for crm_field, f in list(settings.CRM_UPDATE_SUBSCRIBER_FIELDS.items()):
             if getattr(actual_sub, f) != getattr(instance, f):
                 try:
-                    updatecrmuser(instance.contact_id, f, getattr(instance, f))
+                    updatecrmuser(instance.contact_id, crm_field, getattr(instance, f))
                 except requests.exceptions.RequestException:
                     raise UpdateCrmEx("No se ha podido actualizar tu perfil, contactate con nosotros")
     except Subscriber.DoesNotExist:
@@ -327,11 +528,11 @@ def subscriber_pre_save(sender, instance, **kwargs):
     m2m_changed, sender=Subscriber.category_newsletters.through, dispatch_uid="subscriber_area_newsletters_changed"
 )
 def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
-    if settings.DEBUG:
+    if settings.THEDAILY_DEBUG_SIGNALS:
         print(
             'DEBUG: thedaily.models.subscriber_newsletters_changed called with action=%s, pk_set=%s' % (action, pk_set)
         )
-    if (getattr(instance, "updatefromcrm", False)):
+    if getattr(instance, "updatefromcrm", False):
         return True
     if instance.contact_id and action.startswith('post_'):
         # post_add with empty pk_set means "unchanged", do not sync in such scenario
@@ -339,7 +540,8 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
             try:
                 updatecrmuser(
                     instance.contact_id,
-                    ('area_' if model is Category else '') + 'newsletters'
+                    ('area_' if model is Category else '')
+                    + 'newsletters'
                     + ('_remove' if action == 'post_remove' else ''),
                     json.dumps(list(pk_set)) if pk_set else None,
                 )
@@ -349,11 +551,25 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
 
 
 @receiver(post_save, sender=User, dispatch_uid="createUserProfile")
-def createUserProfile(sender, instance, **kwargs):
+def createUserProfile(sender, instance, created, **kwargs):
     """
-    Create a UserProfile object each time a User is created ; and link it.
+    Creates a UserProfile object each time a User is created.
+    Also keep sync the email field on Subscriptions.
     """
-    Subscriber.objects.get_or_create(user=instance)
+    subscriber, created = Subscriber.objects.get_or_create(user=instance)
+    if instance.email:
+        try:
+            instance.suscripciones.exclude(email=instance.email).update(email=instance.email)
+        except Exception:
+            pass
+        if not settings.CRM_UPDATE_USER_CREATE_CONTACT or getattr(instance, "updatefromcrm", False):
+            return True
+        if created:
+            res = createcrmuser(instance.get_full_name(), instance.email)
+            contact_id = res.get('contact_id') if res else None
+            if not subscriber.contact_id:
+                subscriber.contact_id = contact_id
+                subscriber.save()
 
 
 class OAuthState(Model):
@@ -362,18 +578,22 @@ class OAuthState(Model):
     to ask then for extra fields, such as the telephone number.
     @see libs.social_auth_pipeline
     """
-    user = OneToOneField(User)
+
+    user = OneToOneField(User, on_delete=CASCADE)
     state = CharField(max_length=32, unique=True)
     fullname = CharField(max_length=255, blank=True, null=True)
+    phone_submitted_blank = BooleanField(default=False)
 
 
 class WebSubscriber(Subscriber):
-    referrer = ForeignKey(Subscriber, related_name='referred', verbose_name='referido', blank=True, null=True)
+    referrer = ForeignKey(
+        Subscriber, on_delete=CASCADE, related_name='referred', verbose_name='referido', blank=True, null=True
+    )
 
 
 class SubscriberEditionDownloads(Model):
-    subscriber = ForeignKey(Subscriber, related_name='edition_downloads', verbose_name='suscriptor')
-    edition = ForeignKey(Edition, related_name='subscribers_downloads', verbose_name='edición')
+    subscriber = ForeignKey(Subscriber, on_delete=CASCADE, related_name='edition_downloads', verbose_name='suscriptor')
+    edition = ForeignKey(Edition, on_delete=CASCADE, related_name='subscribers_downloads', verbose_name='edición')
     downloads = PositiveIntegerField('descargas', default=0)
 
     def __str__(self):
@@ -392,20 +612,20 @@ class SubscriberEditionDownloads(Model):
 
 
 class SentMail(Model):
-    subscriber = ForeignKey(Subscriber)
+    subscriber = ForeignKey(Subscriber, on_delete=CASCADE)
     subject = CharField('asunto', max_length=150)
     date_sent = DateTimeField('fecha de envio', auto_now_add=True, editable=False)
 
 
 class SubscriberEvent(Model):
-    subscriber = ForeignKey(Subscriber)
+    subscriber = ForeignKey(Subscriber, on_delete=CASCADE)
     description = CharField('descripcion', max_length=150)
     date_occurred = DateTimeField(auto_now_add=True, editable=False)
 
 
 class EditionDownload(Model):
     subscriber = ForeignKey(
-        SubscriberEditionDownloads, related_name='subscriber_downloads', verbose_name='suscriptor'
+        SubscriberEditionDownloads, on_delete=CASCADE, related_name='subscriber_downloads', verbose_name='suscriptor'
     )
     incomplete = BooleanField(default=True)
     download_date = DateTimeField(auto_now_add=True)
@@ -433,10 +653,12 @@ class Subscription(Model):
         (ANNUAL, 'Anual'),
     )
 
-    subscriber = ForeignKey(User, related_name='suscripciones', verbose_name='usuario', null=True, blank=True)
+    subscriber = ForeignKey(
+        User, on_delete=CASCADE, related_name='suscripciones', verbose_name='usuario', null=True, blank=True
+    )
     first_name = CharField('nombres', max_length=150)
     last_name = CharField('apellidos', max_length=150)
-    document = CharField('documento', max_length=11, blank=False, null=True)
+    document = CharField('documento', max_length=11, blank=False, null=True)  # TODO: remove default blank=False usage
     telephone = CharField('teléfono', max_length=20, blank=False, null=False)
     email = EmailField('email')
     address = CharField('dirección', max_length=255, blank=True, null=True)
@@ -496,9 +718,11 @@ class Subscription(Model):
 
 class ExteriorSubscriptionManager(Manager):
     def get_queryset(self):
-        return super(
-            ExteriorSubscriptionManager, self).get_queryset().filter(
-                subscriber__in=Group.objects.get(name='exterior_subscribers').user_set.all())
+        return (
+            super(ExteriorSubscriptionManager, self)
+            .get_queryset()
+            .filter(subscriber__in=Group.objects.get(name='exterior_subscribers').user_set.all())
+        )
 
 
 class ExteriorSubscription(Subscription):
@@ -509,7 +733,9 @@ class ExteriorSubscription(Subscription):
 
 
 class PollAnswer(Model):
-    """ General purpose document-answer for polls """
+    """
+    General purpose document-answer for polls
+    """
     document = CharField('documento', max_length=50, unique=True)
     answer = CharField('respuesta', max_length=16)
 
@@ -521,5 +747,39 @@ class UsersApiSession(Model):
     value to allow only a certain number of requests per-user with a different
     user device id (udid), for ex. 3. No clean-session policy is defined yet.
     """
-    user = ForeignKey(User, related_name='api_sessions', verbose_name='usuario')
+    user = ForeignKey(User, on_delete=CASCADE, related_name='api_sessions', verbose_name='usuario')
     udid = CharField(max_length=16)
+
+
+class RemainingContent(Model):
+    """
+    Stores the content to be rendered in signupwall HTML components depending on the user's remaining "credits"
+    """
+    remaining_articles = PositiveSmallIntegerField(unique=True)
+    template_content = TextField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "remaining content"
+        verbose_name_plural = "remaining contents"
+
+    def __str__(self):
+        return "content for %d credits remaining" % self.remaining_articles
+
+
+class MailtrainList(Model):
+    """
+    Exposes a Mailtrain (https://github.com/Mailtrain-org/mailtrain) list as a Newsletter, then users can subscribe or
+    unsubscribe to the list in their utopia-cms profiles, generating ajax requests to utopia-crm who acts as gateway
+    between the Mailtrain's API to perform the action needed. The delivering of this newsletters is exclusively
+    responsability of the Mailtrain deployment associated to utopia-crm, not ours.
+    WARN: You shouldn't mark "on_signup" without inform to the new user that you will do this.
+    """
+    list_cid = CharField(max_length=16, unique=True)
+    newsletter_name = CharField(max_length=64)
+    newsletter_tagline = CharField(max_length=128, blank=True, null=True)
+    newsletter_periodicity = CharField(max_length=64, blank=True, null=True)
+    on_signup = BooleanField('Activada para nuevas cuentas', default=False)  # TODO: implement when True
+    newsletter_new_pill = BooleanField('pill de "nuevo" para la newsletter en el perfil de usuario', default=False)
+
+    def __str__(self):
+        return self.newsletter_name

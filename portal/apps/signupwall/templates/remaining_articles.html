@@ -1,0 +1,9 @@
+{% load signupwall_tags %}
+
+{% include "remaining_articles_msg.html" with credits=request.credits %}
+
+{% include "remaining_articles_separator.html" %}
+
+{% remaining_articles_content %}
+
+{% include "remaining_articles_close.html" %}

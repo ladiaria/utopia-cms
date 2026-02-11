@@ -5,10 +5,8 @@
 # Please see the text file LICENCE for more information
 # If this script is distributed, it must be accompanied by the Licence
 
-from __future__ import unicode_literals
 import csv
 
-from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse
 
@@ -16,17 +14,20 @@ from .models import Advertiser, AdCategory, AdZone, TextAd, BannerAd, AdClick, A
 from .form import UploadFileForm
 
 
+@admin.register(Advertiser)
 class AdvertiserAdmin(admin.ModelAdmin):
     search_fields = ['company_name', 'website']
     list_display = ['company_name', 'website', 'user']
     raw_id_fields = ['user']
 
 
+@admin.register(AdCategory)
 class AdCategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ['title']}
     list_display = ['title', 'slug']
 
 
+@admin.register(AdZone)
 class AdZoneAdmin(admin.ModelAdmin):
     list_display = ['title', 'slug', 'description']
 
@@ -38,10 +39,10 @@ class AdBaseAdmin(admin.ModelAdmin):
     search_fields = ['title', 'url']
 
     class Media:
-        # jquery loaded again (admin uses custom js namespaces)
-        js = ('admin/js/jquery%s.js' % ('' if settings.DEBUG else '.min'), 'js/adbase_admin.js')
+        js = ('admin/js/jquery.init.js', 'js/adbase_admin.js')
 
 
+@admin.register(AdClick)
 class AdClickAdmin(admin.ModelAdmin):
     search_fields = ['ad', 'source_ip']
     list_display = ['ad', 'click_date', 'source_ip']
@@ -49,6 +50,9 @@ class AdClickAdmin(admin.ModelAdmin):
     date_hierarchy = 'click_date'
     actions = ['download_clicks']
 
+    @admin.action(
+        description="Download selected Ad Clicks"
+    )
     def download_clicks(self, request, queryset):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="clicks.csv"'
@@ -60,7 +64,13 @@ class AdClickAdmin(admin.ModelAdmin):
                          'Advertiser ID',
                          'Advertiser name',
                          'Zone'))
-        queryset = queryset.select_related('ad', 'ad__advertiser')
+        # Fix: Get IDs and create fresh queryset to avoid deferred field conflict
+        # The get_queryset() method uses .only() which defers ad.advertiser field
+        # We need a fresh queryset without that restriction to use select_related
+        ids = list(queryset.values_list('id', flat=True))
+        queryset = AdClick.objects.filter(id__in=ids).select_related(
+            'ad', 'ad__advertiser', 'ad__zone'
+        )
         for impression in queryset:
             writer.writerow((impression.ad.title,
                              impression.ad.url,
@@ -70,7 +80,6 @@ class AdClickAdmin(admin.ModelAdmin):
                              impression.ad.advertiser.company_name,
                              impression.ad.zone.title))
         return response
-    download_clicks.short_description = "Download selected Ad Clicks"
 
     def get_queryset(self, request):
         qs = super(AdClickAdmin, self).get_queryset(request)
@@ -79,6 +88,7 @@ class AdClickAdmin(admin.ModelAdmin):
                                             'source_ip',)
 
 
+@admin.register(AdImpression)
 class AdImpressionAdmin(admin.ModelAdmin):
     search_fields = ['ad', 'source_ip']
     list_display = ['ad', 'impression_date', 'source_ip']
@@ -92,6 +102,9 @@ class AdImpressionAdmin(admin.ModelAdmin):
                                             'impression_date',
                                             'source_ip')
 
+    @admin.action(
+        description="Download selected Ad Impressions"
+    )
     def download_impressions(self, request, queryset):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="impressions.csv"'
@@ -103,7 +116,13 @@ class AdImpressionAdmin(admin.ModelAdmin):
                          'Advertiser ID',
                          'Advertiser name',
                          'Zone'))
-        queryset = queryset.select_related('ad', 'ad__advertiser')
+        # Fix: Get IDs and create fresh queryset to avoid deferred field conflict
+        # The get_queryset() method uses .only() which defers ad.advertiser field
+        # We need a fresh queryset without that restriction to use select_related
+        ids = list(queryset.values_list('id', flat=True))
+        queryset = AdImpression.objects.filter(id__in=ids).select_related(
+            'ad', 'ad__advertiser', 'ad__zone'
+        )
         for impression in queryset:
             writer.writerow((impression.ad.title,
                              impression.ad.url,
@@ -113,25 +132,17 @@ class AdImpressionAdmin(admin.ModelAdmin):
                              impression.ad.advertiser.company_name,
                              impression.ad.zone.title))
         return response
-    download_impressions.short_description = "Download selected Ad Impressions"
 
 
+@admin.register(TextAd)
 class TextAdAdmin(AdBaseAdmin):
     search_fields = ['title', 'url', 'content']
 
 
+@admin.register(BannerAd)
 class BannerAdAdmin(AdBaseAdmin):
     form = UploadFileForm
     list_display = [
         'title', 'content_basename', 'mobile_content_basename',
         'start_showing', 'stop_showing', 'category', 'zone']
     search_fields = ['title', 'url', 'content', 'mobile_content']
-
-
-admin.site.register(Advertiser, AdvertiserAdmin)
-admin.site.register(AdCategory, AdCategoryAdmin)
-admin.site.register(AdZone, AdZoneAdmin)
-admin.site.register(TextAd, TextAdAdmin)
-admin.site.register(BannerAd, BannerAdAdmin)
-admin.site.register(AdClick, AdClickAdmin)
-admin.site.register(AdImpression, AdImpressionAdmin)
