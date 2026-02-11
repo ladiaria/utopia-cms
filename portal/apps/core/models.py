@@ -74,7 +74,6 @@ from tagging.fields import TagField
 from tagging.models import Tag
 import thedaily
 from videologue.models import Video, YouTubeVideo
-import w3storage
 
 from .managers import (
     get_published_kwargs,

@@ -126,25 +126,6 @@
                   </figure>
                 </div>
               </div>
-            {# missing close div here is closed correctly in line 247 #}
-          {% else %}
-            <div class="container-photo photo {{ card_size|default:'BG' }} {{ article.photo_layout }}">
-              <figure class="principal">
-                <picture class="materialboxed">
-                  <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                  <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 700px)">
-                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 0px)">
-                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
-                      data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}"
-                      width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}>
-                </picture>
-                <figcaption class="article-caption container ld-caption">
-                  <p>{{ article.photo.caption|ldmarkup|bleach }}</p>
-                  {% if article.photo_author %}
-                    <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
-                  {% endif %}
-                </figcaption>
-              </figure>
             </div>
           {# missing close div here is closed correctly in line 300 #}
         {% else %}
