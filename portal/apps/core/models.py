@@ -50,7 +50,6 @@ from django.db.models import (
     Index,
     SET_NULL,
     CASCADE,
-    URLField,
     TextChoices,
     FloatField,
 )
@@ -217,7 +216,7 @@ class Publication(Model):
     def multi():
         try:
             return Publication.objects.count() > 1
-        except ProgrammingError:
+        except (ProgrammingError, ImproperlyConfigured):
             return False
 
     def newsletter_preview_url(self):
