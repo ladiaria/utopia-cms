@@ -164,11 +164,20 @@ class PhotographerFilter(admin.SimpleListFilter):
 class PhotoAdmin(PhotoAdminDefault):
     list_display = ('id', 'title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public')
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
+    readonly_fields = ('original_image',)
     fieldsets = (
-        (None, {'fields': ('title', 'image', 'caption')}),
+        (None, {'fields': ('title', 'image', 'original_image', 'caption')}),
         ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}),
     )
     inlines = [PhotoExtendedInline]
+
+    @admin.display(description='Imagen original')
+    def original_image(self, obj):
+        if hasattr(obj, 'extended') and obj.extended.original_image:
+            from django.utils.html import format_html
+            url = obj.extended.original_image.url
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return '-'
 
 
 admin.site.unregister(Photo)
