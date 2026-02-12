@@ -217,6 +217,16 @@
 
     bindMobileShare();
 
+    const headerElement = qs("header");
+    if (headerElement) {
+      const updateHeaderStickyState = function () {
+        headerElement.classList.toggle("sticky", window.scrollY > 0);
+      };
+
+      window.addEventListener("scroll", updateHeaderStickyState, { passive: true });
+      updateHeaderStickyState();
+    }
+
     function loadComments() {
       const coralStream = qs("#coral_talk_stream");
       if (!coralStream) {
