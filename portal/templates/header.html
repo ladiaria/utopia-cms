@@ -23,8 +23,10 @@
         {% endif %}
       </div>
       <div class="upper-center-logo-container">
-        <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
-        {% block header_pill %}{% endblock %}
+        <div class="logo-vertical-center-container">
+          <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
+          {% block header_pill %}{% endblock %}
+        </div>
       </div>
       <div class="upper-right-content">
         <a href="{% url 'search' %}" class="search-btn">
