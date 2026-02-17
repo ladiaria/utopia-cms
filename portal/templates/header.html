@@ -1,63 +1,65 @@
-{% load static  %}
+{% load static homev3_tags  %}
 
-<header class="{% block header_classes %}{% if publication != default_pub %}pub-cat-header{% endif %}{% endblock %}">
-  <div class="header-container">
-    <div class="upper-content">
-      <div class="upper-left-content">
-        <button class="ld-main-menu__open js-ld-main-menu-toggle">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 32 32"><path stroke="#181818" stroke-width="1.298" d="M2 7.351h28m-28 8h28m-28 8h28"/></svg>
-        </button>
-        <button class="ld-main-menu__close js-ld-main-menu-toggle hidden" aria-label="Cerrar">
-          <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 19 19" fill="none"><path d="M0.5 0.5L18.5 18.5M18.5 0.5L0.5 18.5" stroke="black" stroke-linecap="round"/></svg>
-        </button>
-        {% if article %}
-          <div class="article-breadcrumb">
-            {% if category %}<a href="{% url 'home' domain_slug=category.slug %}">{{ category }}</a>{% endif %}
-            {% if section %}
-              <svg xmlns="http://www.w3.org/2000/svg" width="6" height="9" fill="none" viewBox="0 0 6 9"><path stroke="#000" stroke-linejoin="round" stroke-width="1.2" d="m.424 8.424 4-4-4-4"/></svg>
-              <a href="{{ section.get_absolute_url }}">{{ section }}</a>
-            {% endif %}
-          </div>
-        {% else %}
-          {% block upper_fixed_items %}{% endblock %}
-        {% endif %}
-      </div>
-      <div class="upper-center-logo-container">
-        <div class="logo-vertical-center-container">
-          <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
-          {% block header_pill %}{% endblock %}
+<div class="header-container">
+  <div class="upper-content">
+    <div class="upper-left-content">
+      <button class="ld-main-menu__open js-ld-main-menu-toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 32 32"><path stroke="#181818" stroke-width="1.298" d="M2 7.351h28m-28 8h28m-28 8h28"/></svg>
+      </button>
+      <button class="ld-main-menu__close js-ld-main-menu-toggle hidden" aria-label="Cerrar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 32 32"><path stroke="#000" stroke-linecap="round" d="m7 7 18 18m0-18L7 25"/></svg>
+      </button>
+      {% if article %}
+        <div class="article-breadcrumb">
+          {% if category %}
+            <a href="{% url 'home' domain_slug=category.slug %}">{{ category }}</a>
+          {% elif publication %}
+            <a href="{% url 'home' domain_slug=publication.slug %}">{{ publication }}</a>
+          {% endif %}
+          {% if section %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="6" height="9" fill="none" viewBox="0 0 6 9"><path stroke="#000" stroke-linejoin="round" stroke-width="1.2" d="m.424 8.424 4-4-4-4"/></svg>
+            <a href="{{ section.get_absolute_url }}">{{ section }}</a>
+          {% endif %}
         </div>
-      </div>
-      <div class="upper-right-content">
-        <a href="{% url 'search' %}" class="search-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#181818" d="m15.737 14.48-3.514-3.515a6.816 6.816 0 1 0-1.258 1.257l3.517 3.518a.889.889 0 1 0 1.258-1.258zM1.79 6.82a5.03 5.03 0 1 1 10.061 0 5.03 5.03 0 0 1-10.061 0"/></svg>
-        </a>
-        {% if user.is_authenticated %}
-          <button class="user-menu-button">
-            <span>{{ user.first_name }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" fill="none" viewBox="0 0 10 6"><path stroke="#ababab" stroke-linecap="round" stroke-linejoin="round" d="m.5.5 4.382 4.382L9.265.5"/></svg>
-          </button>
-        {% else %}
-          <a href="#">Ingresar</a>
-        {% endif %}
-        {% if not is_subscriber_any %}
-          <a href="#" class="btn">Suscribite</a>
-        {% endif %}
+      {% else %}
+        {% block upper_fixed_items %}{% endblock %}
+      {% endif %}
+    </div>
+    <div class="upper-center-logo-container">
+      <div class="logo-vertical-center-container">
+        <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
+        {% block header_pill %}{% endblock %}
       </div>
     </div>
-    <div class="logo-desktop-container{% if publication != default_pub %} publication{% endif %}">
-      <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
-    </div>
-    {% block navbar %}{% include "menu.html" %}{% endblock %}
-
-    <div id="nav-principal-full" class="full ld-main-menu js-ld-main-menu">
-      <div class="modal-content">
-        <nav class="ld-main-menu__wrap">
-          {% block resume %}
-            {% include 'core/templates/edition/resume.html' %}
-          {% endblock %}
-        </nav>
-      </div>
+    <div class="upper-right-content">
+      <a href="{% url 'search' %}" class="search-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#181818" d="m15.737 14.48-3.514-3.515a6.816 6.816 0 1 0-1.258 1.257l3.517 3.518a.889.889 0 1 0 1.258-1.258zM1.79 6.82a5.03 5.03 0 1 1 10.061 0 5.03 5.03 0 0 1-10.061 0"/></svg>
+      </a>
+      {% if user.is_authenticated %}
+        <button class="user-menu-button">
+          <span>{{ user.first_name }}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" fill="none" viewBox="0 0 10 6"><path stroke="#ababab" stroke-linecap="round" stroke-linejoin="round" d="m.5.5 4.382 4.382L9.265.5"/></svg>
+        </button>
+      {% else %}
+        <a href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresar</a>
+      {% endif %}
+      {% if not is_subscriber_any %}
+        <a href="{% url 'subscribe_landing' %}" class="btn">Suscribite</a>
+      {% endif %}
     </div>
   </div>
-</header>
+  <div class="logo-desktop-container{% if publication != default_pub %} publication{% endif %}">
+    <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
+  </div>
+  {% block navbar %}{% include "menu.html" %}{% endblock %}
+
+  <div id="nav-principal-full" class="full ld-main-menu js-ld-main-menu">
+    <div class="modal-content">
+      <nav class="ld-main-menu__wrap">
+        {% block resume %}
+          {% include 'core/templates/edition/resume.html' %}
+        {% endblock %}
+      </nav>
+    </div>
+  </div>
+</div>

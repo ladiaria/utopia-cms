@@ -1,14 +1,12 @@
 $navbarHeight: 60px;
 $headerMinHeight: px-to-rem(60px);
 
-// Header compact state for three contexts:
-// 1) `sticky`: when the user scrolls and JS adds `sticky` to `<header>`.
-// 2) `pub-cat-header`: header variant for publication/category pages.
-// 3) `body.article`: header variant for individual article pages.
-@mixin header-compact-state {
-  header.sticky &,
-  header.pub-cat-header &,
-  body.article & {
+// Header general state:
+// - Applies to every page except home (`header:not(.home-header)`).
+// - Also applies to home once it becomes sticky on scroll (`header.sticky`).
+@mixin header-general-state {
+  header:not(.home-header) &,
+  header.sticky & {
     @content;
   }
 }
@@ -57,7 +55,7 @@ header {
   justify-content: space-between;
   grid-template-columns: auto auto;
 
-  @include header-compact-state {
+  @include header-general-state {
     grid-template-columns: 1fr auto 1fr;
     width: 100%;
   }
@@ -86,7 +84,7 @@ header {
   .upper-center-logo-container {
     display: none;
 
-    @include header-compact-state {
+    @include header-general-state {
       display: flex;
       align-items: center;
     }
@@ -166,7 +164,7 @@ header {
   @media #{$medium-and-down} {
     display: none;
   }
-  @include header-compact-state {
+  @include header-general-state {
     display: none;
   }
 }
@@ -178,13 +176,8 @@ header {
   margin-top: 48px;
   padding: 16px 0;
 
-  header.sticky &,
-  body.article & {
+  header.sticky & {
     display: none;
-  }
-
-  header.pub-cat-header & {
-    margin-top: 32px;
   }
 
   @media #{$medium-and-down} {
@@ -225,6 +218,7 @@ header {
 
     ul {
       padding-left: 48px;
+      overflow: auto;
     }
   }
 
@@ -269,6 +263,8 @@ header {
     li {
       transition: background-color 0.3s;
       padding: 0;
+      display: flex;
+      align-items: center;
 
       &.active {
         background-color: rgba(0, 0, 0, 0.1);
@@ -279,6 +275,8 @@ header {
       cursor: pointer;
       font-weight: 500;
       line-height: px-to-rem(14px);
+      display: flex;
+      width: max-content;
 
       &.btn,
       &.btn-large,
@@ -1120,9 +1118,8 @@ body {
   font-size: 18px;
   font-weight: 400;
   width: 100%;
-  height: calc(100% - 90px);
   max-height: 100%;
-  top: 90px;
+  top: $headerMinHeight;
   right: 0;
   bottom: 0;
   left: 0;
@@ -1143,6 +1140,10 @@ body {
     opacity: 1;
     pointer-events: all;
     visibility: visible;
+  }
+
+  header.home-header:not(.sticky) & {
+    top: px-to-rem(100px);
   }
 
   a:not(.ut-btn) {

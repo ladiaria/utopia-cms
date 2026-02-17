@@ -439,7 +439,12 @@
       {% comment %} <header{% if request.signupwall_header %} class="with-article-counter-container {{ request.remaining_articles_word }}-articles"{% endif %}>
         {% render_header %}
       </header> {% endcomment %}
-      {% render_header %}
+      <header class="{% block header_classes %}{% endblock %}">
+        {% render_header %}
+      </header>
+      {% if extra_header_template %}
+        {% include extra_header_template %}
+      {% endif %}
       {% if PWA_ENABLED %}
         <div class="pwa-prompt" style="display:none;">
           <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
