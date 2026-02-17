@@ -1,7 +1,8 @@
-django<4.2
+django<5
 Pillow
 bleach
 bleach-whitelist
+django-admin-shortcuts
 django-activity-stream==1.4.2
 django-bleach==3.0.1
 freezegun
@@ -43,7 +44,8 @@ emails
 pandas
 ebooklib
 django-tagging==0.5.0
-django-elasticsearch-dsl
+django-elasticsearch-dsl<9
+elasticsearch-dsl>8
 django-model-utils==4.3.1
 django-phonenumber-field[phonenumberslite]
 django-photologue
@@ -73,9 +75,8 @@ factory-boy
 tqdm
 w3storage
 qrcode
-
-# Third party repo not updated yet in the latest pypi release:
-git+https://github.com/alesdotio/django-admin-shortcuts.git
+django-solo
+pydantic
 
 # Our own repos (TODO: change to pypi package when released there):
 git+https://github.com/ladiaria/django-amp-readerid.git

@@ -9,15 +9,23 @@ from random import choices
 from hashids import Hashids
 from requests.auth import HTTPBasicAuth
 from pymailcheck import split_email
-
-from django.conf import settings
-from django.db import IntegrityError
-from django.db.models.query import QuerySet
-from django.http import HttpResponseBadRequest
-
 from tagging.models import Tag, TaggedItem
 
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+from django.db import IntegrityError, ProgrammingError
+from django.db.models.query import QuerySet
+from django.http import HttpResponseBadRequest
+from django.contrib.sites.models import Site
+
 from core.models import Article
+
+
+def get_site_name():
+    try:
+        return Site.objects.get_current().name
+    except (ProgrammingError, ImproperlyConfigured):
+        return settings.SITE_DOMAIN
 
 
 def crm_rest_api_kwargs(api_key, data=None):
@@ -140,6 +148,10 @@ def smtp_quit(smtp_servers):
                 pass
 
 
+def alt_email_conf():
+    return getattr(settings, "EMAIL_ALTERNATIVE", [])
+
+
 def smtp_connect(alternative=0):
     """
     Authenticate to SMTP (if any auth needed) and return the conn instance.
@@ -148,7 +160,7 @@ def smtp_connect(alternative=0):
     email_conf = {}
     if alternative:
         try:
-            email_conf = getattr(settings, "EMAIL_ALTERNATIVE", [])[alternative - 1]
+            email_conf = alt_email_conf()[alternative - 1]
         except IndexError:
             pass
     else:
@@ -170,21 +182,25 @@ def smtp_connect(alternative=0):
     return s
 
 
-smtp_dom_not_allowed = [getattr(settings, "EMAIL_DOMAINS_NOT_ALLOWED", [])]
+def smtp_servers_meta():
 
-try:
-    smtp_servers_weights = [settings.EMAIL_MAIN_SERVER_WEIGHT]
-except AttributeError:
-    # when using weights, all weights must be configured, otherwise they are ignored
-    smtp_servers_weights = None
+    not_allowed = [getattr(settings, "EMAIL_DOMAINS_NOT_ALLOWED", [])]
 
-for email_conf in getattr(settings, "EMAIL_ALTERNATIVE", []):
-    smtp_dom_not_allowed.append(email_conf.get("DOMAINS_NOT_ALLOWED", []))
-    if smtp_servers_weights:
-        try:
-            smtp_servers_weights.append(email_conf["WEIGHT"])
-        except KeyError:
-            smtp_servers_weights = None
+    try:
+        weights = [settings.EMAIL_MAIN_SERVER_WEIGHT]
+    except AttributeError:
+        # when using weights, all weights must be configured, otherwise they are ignored
+        weights = None
+
+    for email_conf in alt_email_conf():
+        not_allowed.append(email_conf.get("DOMAINS_NOT_ALLOWED", []))
+        if weights:
+            try:
+                weights.append(email_conf["WEIGHT"])
+            except KeyError:
+                weights = None
+
+    return weights, not_allowed
 
 
 def smtp_server_choice(user_email, servers_available, force_ignore_weights=False, ignore_from_available=None):
@@ -197,14 +213,18 @@ def smtp_server_choice(user_email, servers_available, force_ignore_weights=False
           (Note that the servers availability can change in the same delivery execution, also be careful if
           "ignore_from_available" is not None)
     """
-    email_domain, choices_data, weights = split_email(user_email)["domain"], [], None
-    for alt_index, not_allowed in enumerate(smtp_dom_not_allowed):
+    email_domain, choices_data = split_email(user_email)["domain"], []
+    servers_weights, smtp_dom_blocked = smtp_servers_meta()
+    for alt_index, not_allowed in enumerate(smtp_dom_blocked):
         if servers_available[alt_index] and email_domain not in not_allowed and ignore_from_available != alt_index:
             choices_data.append(alt_index)
     if choices_data:
-        if not force_ignore_weights and smtp_servers_weights:
-            weights = [smtp_servers_weights[alt_index] for alt_index in choices_data]
-        index_chosen = choices(choices_data, weights=weights)[0]
+        if not force_ignore_weights and servers_weights:
+            weights = [servers_weights[alt_index] for alt_index in choices_data]
+        else:
+            weights = None
+        # TODO: avoid zero-prob only servers chosen
+        index_chosen = choices(choices_data, weights=weights if sum(weights or []) else None)[0]
     else:
         index_chosen = None
     return index_chosen

@@ -4,6 +4,7 @@ import json
 from urllib.parse import urljoin
 from pydoc import locate
 from kombu.exceptions import OperationalError
+from solo.admin import SingletonModelAdmin
 
 from actstream.models import Action
 from tagging.models import Tag, TaggedItem
@@ -26,7 +27,7 @@ from django.contrib.messages import constants as messages
 from django.contrib.admin import ModelAdmin, TabularInline, site, widgets
 from django.forms import ModelForm, ValidationError, ChoiceField, RadioSelect, TypedChoiceField, Textarea, Widget
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
-from django.forms.fields import CharField, IntegerField
+from django.forms.fields import CharField, IntegerField, BooleanField
 from django.forms.widgets import TextInput, HiddenInput
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -58,6 +59,7 @@ from .models import (
     BreakingNewsModule,
     DeviceSubscribed,
     PushNotification,
+    PerplexityAPISettings,
 )
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
@@ -250,11 +252,22 @@ NoTopArticleRelInlineFormSet = inlineformset_factory(
 class HomeTopArticleInline(EditionBaseArticleInline):
     ordering = ('top_position',)
     fields = ('top_position', 'article', 'section', "home_top")
-    verbose_name = 'artículo en portada'
-    verbose_name_plural = 'artículos en portada'
+    verbose_name = 'artículo destacado'
+    verbose_name_plural_default = 'artículos destacados en portada'
+    verbose_name_plural = verbose_name_plural_default
     form = ArticleRelHomeTopForm
     formset = TopArticleRelInlineFormSet
     can_delete = False
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        if (
+            obj
+            and obj.publication.slug == settings.DEFAULT_PUB
+            and self.verbose_name_plural == self.verbose_name_plural_default
+        ):
+            self.verbose_name_plural += " principal"
+        return fieldsets
 
 
 class NoHomeTopArticleInline(EditionBaseArticleInline):
@@ -442,6 +455,11 @@ class ArticleAdminModelForm(ModelForm):
     pw_radio_choice = ChoiceField(
         label="Paywall", choices=PW_OPTIONS, widget=RadioSelect(attrs={'style': 'display: block;'})
     )
+    input_ia_used = BooleanField(
+        widget=HiddenInput(),
+        required=False,  # Allows the field to be omitted in the form submission
+        initial=False  # Sets the default value to False
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -575,6 +593,7 @@ class ArticleAdmin(VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
+    change_form_template = "core/templates/admin/core/article/change_form.html"
     formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
@@ -607,10 +626,14 @@ class ArticleAdmin(VersionAdmin):
             {
                 'fields': (
                     'type',
-                    ('headline', 'alt_title_metadata', 'alt_title_newsletters'),
+                    'headline',
+                    'alt_title_metadata',
+                    'alt_title_newsletters',
                     'slug',
                     'keywords',
-                    ('deck', "alt_desc_metadata", "alt_desc_newsletters"),
+                    'deck',
+                    'alt_desc_metadata',
+                    'alt_desc_newsletters',
                     'lead',
                     'body',
                 ),
@@ -657,6 +680,7 @@ class ArticleAdmin(VersionAdmin):
                 'classes': ('collapse',),
             },
         ),
+        (None, {'fields': ('copy_para_redes',)}),
     )
 
     @admin.action(description="Intercambiar estado de publicación: publicado <-> borrador")
@@ -747,6 +771,10 @@ class ArticleAdmin(VersionAdmin):
         if form.is_valid():
             try:
                 obj.admin = True  # tell model's save method that we are calling it from the admin
+                # Get the value from the custom hidden form field
+                ia_used_value = form.cleaned_data.get('input_ia_used', None)
+                if ia_used_value:
+                    obj.ia_used = ia_used_value
                 super().save_model(request, obj, form, change)
                 self.obj = obj
             except Exception as e:
@@ -1269,8 +1297,8 @@ class CategoryHomeArticleFormSet(CategoryHomeArticleFormSetBase):
 
 class CategoryHomeArticleInline(TabularInline):
     model = CategoryHome.articles.through
-    extra = 20
-    max_num = 20
+    max_num = getattr(settings, "CORE_UPDATE_CATEGORY_HOMES_ARTICLES_INLINE_MAX_NUM", 20)
+    extra = max_num
     form = CategoryHomeArticleForm
     formset = CategoryHomeArticleFormSet
     raw_id_fields = ('article',)
@@ -1405,7 +1433,7 @@ class TagAdmin(admin.ModelAdmin):
 
 class TaggedItemAdmin(admin.ModelAdmin):
     model = TaggedItem
-    search_fields = ('name',)
+    search_fields = ('tag__name',)
 
 
 @admin.register(DeviceSubscribed, site=site)
@@ -1499,6 +1527,24 @@ class PushNotificationAdmin(admin.ModelAdmin):
     )
     def send_me_push_notification(self, request, queryset):
         self.send_notifications(request, queryset, False)
+
+
+class ArticleInline2(admin.TabularInline):
+    model = Article
+    extra = 0
+    max_num = 2
+    # raw_id_fields = ('articles',)
+    verbose_name_plural = 'Artículos relacionados'
+
+
+from django.db import models  # noqa
+
+
+@admin.register(PerplexityAPISettings)
+class PerplexityAPISettingsAdmin(SingletonModelAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': admin.widgets.AdminTextareaWidget(attrs={'rows': 10, 'cols': 80})},
+    }
 
 
 site.unregister(Tag)

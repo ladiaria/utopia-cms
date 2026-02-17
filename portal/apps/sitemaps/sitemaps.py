@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.sitemaps import Sitemap
+from django.utils import timezone
 
 from core.models import Article
-from . import NewsSitemap
+from . import NewsSitemap, NewsSitemap48hs
 
 
 published_non_satirical_articles = Article.published.exclude(
@@ -29,3 +31,12 @@ class ArticleNewsSitemap(NewsSitemap):
 
     def items(self):
         return published_non_satirical_articles
+
+
+class ArticleNews48hsSitemap(NewsSitemap48hs):
+    protocol = 'https'
+
+    def items(self):
+        cutoff = timezone.now() - timedelta(hours=48)
+
+        return published_non_satirical_articles.filter(date_published__gte=cutoff)

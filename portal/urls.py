@@ -19,6 +19,7 @@ from core.views.edition import edition_detail, edition_list, edition_list_ajax
 from core.views.supplement import supplement_list
 from core.views.sw import service_worker
 from core.views.subscribe import subscribe
+from core.views.article import perplexity_ask
 from photologue_ladiaria.models import PhotoExtended
 from exchange.models import Exchange
 from thedaily.models import Subscriber
@@ -209,7 +210,7 @@ class SubscriberViewSet(viewsets.ModelViewSet):
     queryset = Subscriber.objects.all()
     serializer_class = SubscriberSerializer
     http_method_names = ['get', 'head']
-    filter_fields = ('contact_id',)
+    filterset_fields = ('contact_id',)
 
 
 class DollarExchangeViewSet(viewsets.ModelViewSet):
@@ -225,7 +226,7 @@ router.register(r'publications', PublicationViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'sections', SectionViewSet)
 router.register(r'articles', ArticleViewSet)
-router.register(r'home', HomeArticleViewSet)
+router.register(r'home', HomeArticleViewSet, basename='home-article')
 router.register(r'journalists', JournalistViewSet)
 router.register(r'urls', UrlViewSet)
 router.register(r'subscribers', SubscriberViewSet)
@@ -241,6 +242,7 @@ urlpatterns = [
     path('epubparser/', include('epubparser.urls')),
     # Admin
     path('admin/doc/', include('django.contrib.admindocs.urls')),
+    path('admin/perplexity-ask/', perplexity_ask, name='perplexity_ask'),
     path('admin/', admin.site.urls),
     # Search
     path('buscar/', include('search.urls')),
@@ -289,7 +291,10 @@ urlpatterns.extend(
 
         # Rest Framework API
         path('api/', include(router.urls)),
-        path('api/auth/', include('rest_framework.urls', namespace='rest_framework')),
+        path(
+            f'api/{getattr(settings, "PORTAL_URLS_DRF_AUTH_URL_PREFIX", "")}auth/',
+            include('rest_framework.urls', namespace='rest_framework'),
+        ),
 
         # Editions
         path('ediciones/', edition_list, name='edition_list'),
@@ -303,6 +308,9 @@ urlpatterns.extend(
 
         # Most read
         path('masleidos/', include('core.urls.masleidos')),
+
+        # newsletters
+        path('newsletters/', include('core.urls.newsletters')),
 
         # supplements
         re_path(r'^suplementos/', supplement_list, name='supplement_list'),
@@ -380,3 +388,7 @@ if settings.DEBUG:
     # )
 else:
     urlpatterns.append(re_path(r'^.*.css$', TemplateView.as_view(template_name='devnull.html')))
+
+# Radio API URLs (only if JWT is enabled and utopia_cms_radio is installed)
+if getattr(settings, 'JWT_ENABLED', False) and 'utopia_cms_radio' in settings.INSTALLED_APPS:
+    urlpatterns.insert(0, path('', include('utopia_cms_radio.urls', namespace='utopia_cms_radio')))

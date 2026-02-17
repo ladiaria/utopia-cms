@@ -671,13 +671,16 @@ body.ld-profile-edit {
 
     @media #{$medium-and-down} {
       align-items: stretch;
+      padding: 75px 0;
     }
   }
 
   &__container {
     background-color: white;
-    padding: 8px;
+    padding: 16px 12px;
     height: fit-content;
+    width: 90%;
+    border-radius: 8px;
 
     @media #{$medium-and-up} {
       margin: 100px 8px;
@@ -698,10 +701,16 @@ body.ld-profile-edit {
       #edit_profile_modal__close_btn {
         background: none;
         border: none;
+        padding: 0 4px 0 0;
       }
     }
 
     form#user_form {
+      label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
       .input-field .required {
         .asterisk {
           display: none;
@@ -714,6 +723,13 @@ body.ld-profile-edit {
 
       #div_id_phone {
         padding-bottom: 20px;
+        label {
+          transform: translateY(-140%);
+          font-size: 0.8rem;
+        }
+        button.iti__selected-country:focus {
+          background-color: transparent;
+        }
         div.iti {
           width: 100%;
           input {
@@ -728,7 +744,6 @@ body.ld-profile-edit {
 
         label {
           position: relative;
-          top: 0;
           font-size: px-to-rem(14px);
         }
       }
@@ -759,7 +774,7 @@ body.ld-profile-edit {
       }
 
       @media #{$medium-and-down} {
-        padding: 8px 8px 16px;
+        padding: 12px 8px 16px;
       }
     }
 

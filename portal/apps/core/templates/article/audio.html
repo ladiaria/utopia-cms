@@ -1,36 +1,31 @@
 <div class="ld-block ld-block--sm">
   <div class="container">
     <div class="ld-audio ld-card card">
-        {% if not is_subscriber %}
+      {% block audio_overlay %}
+        {% if user.is_anonymous %}
           <div class="ld-audio__overlay">
             <button class="ld-audio__overlay-close-btn" aria-label="Cerrar">
               <svg tabindex="0" xmlns="http://www.w3.org/2000/svg" width="15.472" height="15.471" viewBox="0 0 15.472 15.471"><path d="M653.472,11679.547l-1.547-1.547-6.189,6.188-6.189-6.187-1.547,1.547,6.189,6.189-6.189,6.188,1.547,1.547,6.189-6.187,6.189,6.188,1.547-1.547-6.189-6.187,6.189-6.189" transform="translate(-638 -11678)" fill="#fff" fill-rule="evenodd"/><title>Cerrar</title></svg>
             </button>
             <div class="ld-audio__overlay-content">
               <div class="ld-audio__overlay-title">
-                Este audio es una característica exclusiva para suscripciones.
+                Podrán escuchar este artículo quienes estén registrados.
               </div>
               <div class="ld-audio__overlay-links">
-                {% if user.is_authenticated and not is_subscriber %}
-                  <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=audio-banner">Suscribite</a>
-                {% else %}
-                  <a href="{% url 'subscribe-default' %}?utm_source=web&utm_medium=audio-banner">Suscribite</a>
-                  o
-                  <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
-                {% endif %}
+                <a href="{% url 'account-signup' %}?utm_source=web&utm_medium=audio-banner">Creá tu cuenta</a>
+                o
+                <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a>
               </div>
             </div>
           </div>
         {% endif %}
-        <div class="ld-audio__title">{{ article.audio.title }}</div>
-        <audio class="ld-audio__audio"
-            preload="metadata"
-            controls
-            controlsList="nodownload"
-            src="{% if is_subscriber %}{{ SITE_URL }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}">
-            Tu navegador no soporta este elemento de <code>audio</code>.
-        </audio>
-        <div class="ld-audio__description">{{ article.audio.description }}</div>
+      {% endblock %}
+      <div class="ld-audio__title">{{ article.audio.title }}</div>
+      <audio class="ld-audio__audio" preload="metadata" controls controlsList="nodownload"
+             src="{% block audio_src %}{% if not user.is_anonymous %}{{ SITE_URL_SD }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}{% endblock %}">
+        Tu navegador no soporta este elemento de <code>audio</code>.
+      </audio>
+      <div class="ld-audio__description">{{ article.audio.description }}</div>
     </div>
   </div>
 </div>

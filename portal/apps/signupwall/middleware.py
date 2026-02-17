@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from inflect import engine
 
 from django.conf import settings
@@ -18,6 +17,7 @@ from thedaily.email_logic import limited_free_article_mail
 
 
 debug = getattr(settings, 'SIGNUPWALL_DEBUG', settings.DEBUG)
+signupwall_exclude = getattr(settings, 'SIGNUPWALL_EXCLUDE_REQUEST_CONDITION', lambda r: False)
 
 
 def number_to_words(number):
@@ -108,6 +108,24 @@ def is_google_amp(request):
     return False
 
 
+def fb_browser_type(request):
+    if getattr(settings, 'SIGNUPWALL_FB_BROWSERWALL_ENABLED', True):
+        value, ua_os, ua_browser = None, request.user_agent.get_os(), request.user_agent.get_browser()
+        os_is_android, os_is_ios = ua_os.startswith("Android"), ua_os.startswith("iOS")
+        browser_is_fb = ua_browser.startswith("Facebook")
+        browser_is_ig = ua_browser.startswith("Instagram") or (
+            os_is_android and ua_browser.startswith("Chrome Mobile WebView")
+        )
+        # definitions taken from core/article/landing_facebook.html template
+        if browser_is_fb or (os_is_ios and browser_is_ig):
+            value = "fb"
+        elif os_is_android and browser_is_ig:
+            value = "ig_android"  # also used when coming from fb using Chrome Mobile WebView
+        if value:
+            request.fb_browser_type = value
+            return True
+
+
 class SignupwallMiddleware(MiddlewareMixin):
 
     def anon_articles_visited_count(self, nowval, visitor, credits, debug=False):
@@ -165,14 +183,28 @@ class SignupwallMiddleware(MiddlewareMixin):
         if path_resolved.url_name == 'article_detail':
             try:
                 article = get_article_by_url_path(request.path)
-                # ignore AMP-feeding requests by Google and also AMP requests in "simulation"
-                if (
-                    is_google_amp(request)
+                # ignore AMP-feeding requests by Google, those excluded by settings, and AMP requests in "simulation"
+                excluded = signupwall_exclude(request)
+                ignored = (
+                    excluded
+                    or is_google_amp(request)
                     or (
                         getattr(settings, 'AMP_SIMULATE', False)
                         and request.GET.get(settings.AMP_TOOLS_GET_PARAMETER) == 'amp'
                     )
-                ):
+                )
+                if debug:
+                    print(
+                        "DEBUG: signupwall request (user_agent, excluded, ignored): ('%s', %s, %s)" % (
+                            request.user_agent, excluded, ignored
+                        )
+                    )
+                if ignored:
+                    return
+                elif fb_browser_type(request):
+                    # ref_core.views.article.py:153
+                    # ignore also if the browser is facebook-type (article detail will render related info)
+                    # Also same comment of line 218 (that's why elif instead of "or" directly in the "if" part)
                     return
             except Article.DoesNotExist:
                 # ignore signupwall for not-found articles (core.views.article.article_detail will redirect if the
@@ -182,6 +214,8 @@ class SignupwallMiddleware(MiddlewareMixin):
             # ignore signupwall for non article_detail paths
             if debug:
                 print('DEBUG: signupwall.middleware.process_request - non article_detail path')
+            # ref_core.views.article.py:153
+            # here you can return a "render" to the "fb landing" if using the "fb check" for all pages
             return
 
         user = request.user

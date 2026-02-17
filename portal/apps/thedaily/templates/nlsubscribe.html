@@ -22,14 +22,23 @@
   </div>
   <div class="ld-subscribe-box">
     <span class="ld-subscribe-box__title">
-      {% if error %}
-        {{ error }}.
+    {% if error %}
+      {{ error }}.
+    {% else %}
+      {% if category|cut:" "|lower == 'ladiariaradio' %}
+        Optaste por recibir novedades de la diaria Radio.
       {% else %}
         Optaste por recibir la newsletter de {% if category %}{{ category }}{% else %}{{ publication.headline }}{% endif %} con éxito.
       {% endif %}
-    </span>
+    {% endif %}
+  </span>
+
     <div class="ld-subscribe-box__info ld-caption">
+      {% if category|cut:" "|lower == 'ladiariaradio' %}
+      {#<p><a href="{% url 'edit-profile' %}#ld-newsletters">Configurar todos tus newsletters</a></p>#}
+      {% else %}
       <p><a href="{% url 'edit-profile' %}#ld-newsletters">Configurar todos tus newsletters</a></p>
+      {% endif %}
       <p><a href="/">Ir a la portada</a></p>
     </div>
   </div>

@@ -22,6 +22,12 @@ class PhotoExtendedModelForm(forms.ModelForm):
         if self.instance.id:
             self.initial['date_taken'] = self.instance.image.date_taken
 
+    def clean_radius_length(self):
+        radius_length = self.cleaned_data.get('radius_length')
+        if radius_length == 0:
+            raise forms.ValidationError('El radio de recorte debe estar en blanco o ser un número mayor que cero.')
+        return radius_length
+
     def save(self, commit=True):
         instance = super().save(commit=commit)
         instance.image.date_taken = self.cleaned_data['date_taken']
@@ -41,14 +47,12 @@ class PhotoExtendedInline(admin.StackedInline):
     form = PhotoExtendedModelForm
     can_delete = False
     fieldsets = (
-        (None, {'fields': ('enable_webp', 'original_image')}),
         ('Metadatos', {'fields': ('date_taken', 'type', 'photographer', 'agency')}),
         (
             'Recorte para versión cuadrada',
             {'fields': ('focuspoint_x', 'focuspoint_y', 'radius_length'), 'classes': ('collapse',)},
         ),
     )
-    readonly_fields = ['original_image']
 
     class Media:
         js = ('js/jquery.cropbox.js',)
@@ -160,11 +164,20 @@ class PhotographerFilter(admin.SimpleListFilter):
 class PhotoAdmin(PhotoAdminDefault):
     list_display = ('id', 'title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public')
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
+    readonly_fields = ('original_image',)
     fieldsets = (
-        (None, {'fields': ('title', 'image', 'caption')}),
+        (None, {'fields': ('title', 'image', 'original_image', 'caption')}),
         ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}),
     )
     inlines = [PhotoExtendedInline]
+
+    @admin.display(description='Imagen original')
+    def original_image(self, obj):
+        if hasattr(obj, 'extended') and obj.extended.original_image:
+            from django.utils.html import format_html
+            url = obj.extended.original_image.url
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return '-'
 
 
 admin.site.unregister(Photo)
