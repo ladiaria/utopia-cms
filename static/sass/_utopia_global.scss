@@ -630,45 +630,6 @@ a.ladiaria {
       }
     }
   }
-
-  &__header-sub-cat {
-    text-transform: uppercase;
-    font-family: "Roboto", sans-serif;
-    font-size: px-to-rem(14px);
-    font-weight: bold;
-    display: inline-block;
-    margin-right: 5px;
-    line-height: 25px;
-    color: #595959;
-    cursor: pointer;
-    padding: 0 8px;
-    border-radius: 4px;
-    transition: all 0.2s ease-in-out;
-
-    &:hover {
-      background: rgba($color: #000000, $alpha: 0.1);
-    }
-
-    &:active {
-      background: rgba($color: #000000, $alpha: 0.2);
-    }
-
-    &[href$="/suplemento/"] {
-      color: #e67e22;
-      &:hover {
-        color: #c5691a;
-      }
-    }
-    &.shaded {
-      background: #d8d8d8;
-      color: $off-black;
-    }
-  }
-  span.section-detail__header-sub-cat {
-    &:hover {
-      background: none;
-    }
-  }
 }
 
 // Grid for 5 columns in Materialize

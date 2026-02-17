@@ -1,21 +1,31 @@
 {% load core_tags %}
 
 
-{% if publication == default_pub %}
-<nav class="navbar">
-  <ul>
-    {% for category, sections in MENU_CATEGORIES.items %}
-    <li><a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a></li>
-    {% endfor %}
-  </ul>
-</nav>
-{% elif category %}
-<nav class="navbar category-navbar">
-  <a class="home-link" href="{% url "home" %}">Portada</a>
-  <ul>
-    {% include 'core/templates/category/detail_header_sections.html' %}
-  </ul>
-</nav>
+{% if publication == default_pub and request.path == '/' %}
+  <nav class="navbar">
+    <ul>
+      {% for category, sections in MENU_CATEGORIES.items %}
+      <li><a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a></li>
+      {% endfor %}
+    </ul>
+  </nav>
+{% elif not article and not section %}
+  <nav class="navbar category-navbar">
+    <a class="home-link" href="{% url "home" %}">Portada</a>
+    <ul>
+      {% if category %}
+        {% include 'core/templates/category/detail_header_sections.html' %}
+      {% elif publication %}
+        {% for section in publication.primary_sections %}
+          <li>
+            <a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">
+              {% section_name_in_publication_menu publication section %}
+            </a>
+          </li>
+        {% endfor %}
+      {% endif %}
+    </ul>
+  </nav>
 {% endif %}
 
 {% comment %}
