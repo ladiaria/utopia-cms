@@ -2,6 +2,20 @@
   --max-article-width: 46.875rem; /* 750px */
 }
 
+.upper-content .article-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.article-mobile-breadcrumb {
+  display: none;
+
+  @media #{$medium-and-down} {
+    display: block;
+  }
+}
+
 .talk-login {
   display: none;
   margin-top: 30px;
