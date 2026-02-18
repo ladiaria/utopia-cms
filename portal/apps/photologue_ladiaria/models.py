@@ -68,9 +68,6 @@ class PhotoExtended(models.Model):
     agency = models.ForeignKey(
         Agency, on_delete=models.CASCADE, verbose_name='agencia', related_name='photos', blank=True, null=True
     )
-    original_image = models.ImageField(
-        'imagen original', upload_to=get_storage_path, max_length=255, blank=True, null=True
-    )
 
     class Meta:
         verbose_name = 'configuración extra'

@@ -3,9 +3,16 @@ from pathlib import Path
 from PIL import Image
 from PIL.ExifTags import TAGS
 from io import BytesIO
+
+from django.conf import settings
 from django.core.files.base import ContentFile
 
 logger = logging.getLogger(__name__)
+
+# When True, photos are automatically converted to WebP on save (default: False).
+AUTO_CONVERT_TO_WEBP = getattr(
+    settings, 'PHOTOLOGUE_LADIARIA_AUTO_CONVERT_TO_WEBP', False
+)
 
 
 def get_exif_data(image):
@@ -23,36 +30,43 @@ def get_exif_data(image):
     return {}
 
 
-def convert_to_webp(photo):
-
-    if photo.image.name.endswith('.webp'):
-        # The photo is already a webp, there's no need to convert it
-        return
-
-    original_path = Path(photo.image.name)
-    original_filename = original_path.name
-
+def convert_photo_image_to_webp(photo):
+    """
+    Convert the photo's image to WebP if it is not already WebP (detected by format, not extension).
+    Deletes the original file after successful conversion (same behavior as default save).
+    Returns True if conversion was performed, False if skipped (already WebP or error).
+    """
     try:
-        # Backup the original image when the photo is saved as webp
-        photo.extended.original_image.save(original_filename, photo.image.file, save=False)
-
-        # Open the image file (works both with local and remote storage backends)
         with Image.open(photo.image) as img:
-            # Get the ICC profile from the original image to avoid different colors in the webp
-            icc_profile = img.info.get("icc_profile")
+            if getattr(img, 'format', None) == 'WEBP':
+                return False
 
-            # Prepare for saving to WebP with RGB conversion
+            icc_profile = img.info.get("icc_profile")
             output = BytesIO()
             img.convert("RGB").save(output, format="WEBP", quality=90, icc_profile=icc_profile)
 
-        # Define the correct path without modifying image.name directly
+        old_name = photo.image.name
+        original_path = Path(old_name)
         webp_name = original_path.stem + ".webp"
-
-        # Save the new image using the correct path
         photo.image.save(webp_name, ContentFile(output.getvalue()), save=False)
-
-        # Persist changes to the database (the .webp check at the top prevents infinite loops)
         photo.save(update_fields=['image'])
-        photo.extended.save(update_fields=['original_image'])
+
+        # Delete the old file (default save behavior when replacing)
+        if old_name != photo.image.name:
+            storage = photo.image.storage
+            if storage.exists(old_name):
+                try:
+                    storage.delete(old_name)
+                except Exception as e:
+                    logger.warning("Could not delete old file %s: %s", old_name, e)
+        return True
     except Exception as e:
         logger.error("Failed to convert image %s to WebP: %s", photo.image.name, e)
+        return False
+
+
+def convert_to_webp(photo):
+    """Convert photo to WebP on save if PHOTOLOGUE_LADIARIA_AUTO_CONVERT_TO_WEBP is enabled."""
+    if not AUTO_CONVERT_TO_WEBP:
+        return
+    convert_photo_image_to_webp(photo)
