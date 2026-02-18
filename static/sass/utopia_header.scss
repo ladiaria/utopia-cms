@@ -16,13 +16,9 @@ header {
   font-family: "Dialect Gothic A";
   background-color: white;
 
-  @media #{$medium-and-down} {
-    padding: 32px 20px 0;
-  }
-
   &.sticky,
+  &.section-detail-header,
   body.article & {
-    min-height: $headerMinHeight;
     border-bottom: 0.5px solid #ababab;
   }
 
@@ -34,15 +30,28 @@ header {
     display: flex;
     align-items: center;
   }
+  @media #{$medium-and-down} {
+    padding: 8px 20px 24px;
+
+    &.home-header {
+      padding: 32px 20px 24px;
+    }
+
+    &.sticky,
+    &.section-detail-header,
+    body.article & {
+      padding: 16px 0;
+    }
+  }
 }
 
 .header-container {
   max-width: $container-width;
   margin: 0 auto;
   width: 100%;
-  padding: 16px 0 0;
 
   header.sticky &,
+  body.section-detail,
   body.article & {
     padding: 0;
     display: flex;
@@ -54,10 +63,15 @@ header {
   display: grid;
   justify-content: space-between;
   grid-template-columns: auto auto;
+  min-height: $headerMinHeight;
 
   @include header-general-state {
     grid-template-columns: 1fr auto 1fr;
     width: 100%;
+  }
+
+  header.home-header & {
+    min-height: px-to-rem(54px);
   }
 
   .upper-left-content {
@@ -65,6 +79,7 @@ header {
     align-items: center;
     gap: 48px;
   }
+
   .fixed-items {
     display: flex;
     gap: 24px;
@@ -73,12 +88,6 @@ header {
       align-items: center;
       gap: 4px;
     }
-  }
-
-  .article-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
   }
 
   .upper-center-logo-container {
@@ -98,7 +107,7 @@ header {
       }
 
       img {
-        max-width: 102px;
+        max-width: 108px;
       }
     }
     body.article & {
@@ -125,31 +134,32 @@ header {
   }
 
   @media #{$medium-and-down} {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    @include header-general-state {
+      min-height: unset;
+      grid-template-columns: 1fr;
+    }
+
+    header.home-header & {
+      min-height: unset;
+      justify-content: center;
+    }
 
     .upper-left-content {
-      order: 2;
-      justify-content: flex-end;
-      .fixed-items {
-        display: none;
-      }
+      display: none;
     }
 
     .upper-center-logo-container {
-      order: 1;
       display: flex;
       img {
         max-width: 109px;
       }
+      .logo-vertical-center-container {
+        align-items: center;
+      }
     }
 
     .upper-right-content {
-      order: 0;
-      button:not(.search-btn),
-      a {
-        display: none;
-      }
+      display: none;
     }
   }
 }
@@ -174,31 +184,15 @@ header {
   border-top: 0.5px solid #ababab;
   border-bottom: 0.5px solid #ababab;
   margin-top: 48px;
-  padding: 16px 0;
+  padding: 8px 0;
 
   header.sticky & {
     display: none;
   }
 
-  @media #{$medium-and-down} {
-    border-top: none;
-    position: relative;
-    padding-bottom: 0;
-    margin-top: 32px;
-    padding-top: 6px;
-    &::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      top: 0;
-      right: 0;
-      width: 30px;
-      background: linear-gradient(to left, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
-    }
-  }
-
   &.category-navbar {
     display: flex;
+    margin-top: 32px;
 
     .home-link {
       padding-right: 48px;
@@ -252,13 +246,8 @@ header {
     margin: 0;
     display: flex;
     gap: 48px;
-
-    @media #{$medium-and-down} {
-      overflow-x: auto;
-      padding-right: 20px;
-      padding-bottom: 16px;
-      gap: 24px;
-    }
+    overflow-x: auto;
+    gap: 24px;
 
     li {
       transition: background-color 0.3s;
@@ -277,6 +266,7 @@ header {
       line-height: px-to-rem(14px);
       display: flex;
       width: max-content;
+      padding: 8px;
 
       &.btn,
       &.btn-large,
@@ -334,6 +324,42 @@ header {
       }
       &.active i {
         color: $navbar-font-color;
+      }
+    }
+  }
+
+  @media #{$medium-and-down} {
+    border-top: none;
+    position: relative;
+    margin-top: 16px;
+    padding: 0;
+    min-height: px-to-rem(44px);
+    display: flex;
+
+    header.home-header & {
+      margin-top: 32px;
+    }
+
+    > ul {
+      display: flex;
+      align-items: center;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      top: 0;
+      right: 0;
+      width: 30px;
+      background: linear-gradient(to left, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+    }
+    &.category-navbar {
+      .home-link {
+        display: none;
+      }
+      ul {
+        padding-left: 0;
       }
     }
   }

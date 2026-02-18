@@ -51,6 +51,21 @@
   <div class="logo-desktop-container{% if publication != default_pub %} publication{% endif %}">
     <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
   </div>
+
+  {% if article %}
+    <div class="article-mobile-breadcrumb">
+      {% if category %}
+        <a href="{% url 'home' domain_slug=category.slug %}">{{ category }}</a>
+      {% elif publication %}
+        <a href="{% url 'home' domain_slug=publication.slug %}">{{ publication }}</a>
+      {% endif %}
+      {% if section %}
+        <svg xmlns="http://www.w3.org/2000/svg" width="6" height="9" fill="none" viewBox="0 0 6 9"><path stroke="#000" stroke-linejoin="round" stroke-width="1.2" d="m.424 8.424 4-4-4-4"/></svg>
+        <a href="{{ section.get_absolute_url }}">{{ section }}</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
   {% block navbar %}{% include "menu.html" %}{% endblock %}
 
   <div id="nav-principal-full" class="full ld-main-menu js-ld-main-menu">
