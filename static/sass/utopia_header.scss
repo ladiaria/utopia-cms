@@ -30,17 +30,25 @@ header {
     display: flex;
     align-items: center;
   }
+
   @media #{$medium-and-down} {
-    padding: 8px 20px 24px;
+    padding: 8px 20px 16px;
 
     &.home-header {
       padding: 32px 20px 24px;
     }
+    &.home-header.sticky {
+      padding: 16px 20px;
+    }
 
-    &.sticky,
     &.section-detail-header,
-    body.article & {
-      padding: 16px 0;
+    &.category-pub-header {
+      padding: 8px 20px 24px;
+    }
+
+    body.article &,
+    body.article &.sticky {
+      padding: 8px 20px 16px;
     }
   }
 }
@@ -56,6 +64,13 @@ header {
     padding: 0;
     display: flex;
     align-items: center;
+  }
+
+  @media #{$medium-and-down} {
+    body.article & {
+      flex-direction: column;
+      gap: 8px;
+    }
   }
 }
 
@@ -150,9 +165,16 @@ header {
 
     .upper-center-logo-container {
       display: flex;
+      justify-content: center;
+
+      body.article & {
+        justify-content: center;
+      }
+
       img {
         max-width: 109px;
       }
+
       .logo-vertical-center-container {
         align-items: center;
       }
@@ -176,6 +198,27 @@ header {
   }
   @include header-general-state {
     display: none;
+  }
+}
+
+.upper-content .article-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.article-mobile-breadcrumb {
+  display: none;
+
+  @media #{$medium-and-down} {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: px-to-rem(44px);
+
+    header.sticky & {
+      display: none;
+    }
   }
 }
 
