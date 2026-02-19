@@ -194,7 +194,7 @@ class TestNewWebpThenSavesAndChanges(TestCase):
         photo.refresh_from_db()
         photo.extended.refresh_from_db()
         self.assertTrue(photo.image.name.endswith('.webp'))
-        self.assertEqual(get_last_original_content(photo), jpg1, '2g: jpg uploaded => converted, last_original is jpg1')
+        self.assertEqual(get_last_original_content(photo), jpg1, '2g: jpg upload => converted, last_original is jpg1')
 
         # 2h. Plain save: no tocar last_original (ya convertido en 2g)
         photo.title = 'Jpg'
@@ -222,7 +222,9 @@ class TestNewWebpThenSavesAndChanges(TestCase):
 
 
 def _parse_admin_form(response):
-    """Parse admin form HTML; return dict with csrf_token, formset_prefix, total_forms, initial_forms, min_num, max_num."""
+    """
+    Parse admin form HTML; return dict with csrf_token, formset_prefix, total_forms, initial_forms, min_num, max_num.
+    """
     content = response.content.decode()
     csrf_match = re.search(r'name="csrfmiddlewaretoken"\s+value="([^"]+)"', content)
     assert csrf_match, 'Form should contain csrfmiddlewaretoken'
@@ -285,19 +287,24 @@ def _build_change_post_data(photo, parsed, title=None, image_file=None):
     return post_data
 
 
-@override_settings(PHOTOLOGUE_LADIARIA_AUTO_CONVERT_TO_WEBP=True)
-class TestNewJpgViaAdmin(TestCase):
-    """Same as TestNewJpgThenSavesAndChanges but via Django admin (test client). Covers 1a through 1j."""
+class ViaAdminBase(TestCase):
+    add_url = reverse('admin:photologue_photo_add')
 
-    def test_1a_through_1j_via_admin(self):
+    def setUp(self):
         User = get_user_model()
         email = 'admin@%s' % settings.CORE_TEST_EMAIL_KNOWN_GOOD_DOMAIN
         user = User.objects.create_superuser('admin', email, 'password')
-        client = Client()
-        client.force_login(user)
+        self.client = Client()
+        self.client.force_login(user)
 
-        add_url = reverse('admin:photologue_photo_add')
-        response = client.get(add_url)
+
+@override_settings(PHOTOLOGUE_LADIARIA_AUTO_CONVERT_TO_WEBP=True)
+class TestNewJpgViaAdmin(ViaAdminBase):
+    """Same as TestNewJpgThenSavesAndChanges but via Django admin (test client). Covers 1a through 1j."""
+
+    def test_1a_through_1j_via_admin(self):
+        client = self.client
+        response = client.get(self.add_url)
         self.assertEqual(response.status_code, 200, 'GET add form should succeed')
         parsed = _parse_admin_form(response)
         p = parsed['formset_prefix']
@@ -326,7 +333,7 @@ class TestNewJpgViaAdmin(TestCase):
             post_data[f'{p}-{i}-radius_length'] = ''
 
         post_data['image'] = SimpleUploadedFile('first.jpg', jpg1, 'image/jpeg')
-        response = client.post(add_url, data=post_data, format='multipart', follow=False)
+        response = client.post(self.add_url, data=post_data, format='multipart', follow=False)
         self.assertIn(
             response.status_code, (302, 303),
             'POST add should redirect; got %s: %s'
@@ -347,7 +354,11 @@ class TestNewJpgViaAdmin(TestCase):
         parsed = _parse_admin_form(response)
         post_data = _build_change_post_data(photo, parsed, title='Updated title')
         response = client.post(change_url, data=post_data, format='multipart', follow=False)
-        self.assertIn(response.status_code, (302, 303), '1b POST: %s' % (response.content.decode()[:500] if response.content else ''))
+        self.assertIn(
+            response.status_code,
+            (302, 303),
+            '1b POST: %s' % (response.content.decode()[:500] if response.content else '')
+        )
         photo.refresh_from_db()
         photo.extended.refresh_from_db()
         self.assertTrue(photo.image.name.endswith('.webp'))
@@ -455,3 +466,174 @@ class TestNewJpgViaAdmin(TestCase):
         photo.extended.refresh_from_db()
         self.assertTrue(photo.image.name.endswith('.webp'))
         self.assertEqual(get_last_original_content(photo), jpg3, '1j: plain save => last_original unchanged')
+
+
+@override_settings(PHOTOLOGUE_LADIARIA_AUTO_CONVERT_TO_WEBP=True)
+class TestNewWebpViaAdmin(ViaAdminBase):
+    """Same as TestNewWebpThenSavesAndChanges but via Django admin (test client). Covers 2a through 2j."""
+
+    def test_2a_through_2j_via_admin(self):
+        client = self.client
+        response = client.get(self.add_url)
+        self.assertEqual(response.status_code, 200, 'GET add form should succeed')
+        parsed = _parse_admin_form(response)
+        p = parsed['formset_prefix']
+        total = parsed['total_forms']
+
+        # 2a. Imagen nueva WebP
+        webp1 = make_webp_bytes('blue')
+        post_data = {
+            'csrfmiddlewaretoken': parsed['csrf_token'],
+            'title': 'Test photo webp admin',
+            'slug': 'test-photo-admin-webp',
+            'caption': '',
+            'crop_from': 'top',
+            'is_public': 'on',
+            f'{p}-TOTAL_FORMS': str(total),
+            f'{p}-INITIAL_FORMS': str(parsed['initial_forms']),
+            f'{p}-MIN_NUM_FORMS': str(parsed['min_num']),
+            f'{p}-MAX_NUM_FORMS': str(parsed['max_num']),
+        }
+        for i in range(total):
+            post_data[f'{p}-{i}-date_taken'] = ''
+            post_data[f'{p}-{i}-type'] = 'f'
+            post_data[f'{p}-{i}-photographer'] = ''
+            post_data[f'{p}-{i}-agency'] = ''
+            post_data[f'{p}-{i}-focuspoint_x'] = '0'
+            post_data[f'{p}-{i}-focuspoint_y'] = '0'
+            post_data[f'{p}-{i}-radius_length'] = ''
+
+        post_data['image'] = SimpleUploadedFile('first.webp', webp1, 'image/webp')
+        response = client.post(self.add_url, data=post_data, format='multipart', follow=False)
+        self.assertIn(
+            response.status_code, (302, 303),
+            'POST add should redirect; got %s: %s'
+            % (response.status_code, (response.content.decode() if response.content else '')[:1500])
+        )
+
+        photo = Photo.objects.get(slug='test-photo-admin-webp')
+        photo.extended.refresh_from_db()
+        self.assertTrue(photo.image.name.endswith('.webp'), '2a: already webp stays webp')
+        self.assertIsNotNone(get_last_original_content(photo), '2a: last_original_uploaded should be set')
+        self.assertEqual(get_last_original_content(photo), webp1, '2a: last_original stores the uploaded webp')
+
+        change_url = reverse('admin:photologue_photo_change', args=[photo.pk])
+
+        # 2b. Plain save: no tocar last_original
+        response = client.get(change_url)
+        self.assertEqual(response.status_code, 200)
+        parsed = _parse_admin_form(response)
+        post_data = _build_change_post_data(photo, parsed, title='Updated')
+        response = client.post(change_url, data=post_data, format='multipart', follow=False)
+        self.assertIn(
+            response.status_code,
+            (302, 303),
+            '2b POST: %s' % (response.content.decode()[:500] if response.content else '')
+        )
+        photo.refresh_from_db()
+        photo.extended.refresh_from_db()
+        self.assertTrue(photo.image.name.endswith('.webp'))
+        self.assertEqual(get_last_original_content(photo), webp1, '2b: plain save => last_original unchanged')
+
+        # 2c. Cambiarla por un webp con distinto nombre pero mismo contenido
+        response = client.get(change_url)
+        parsed = _parse_admin_form(response)
+        post_data = _build_change_post_data(
+            photo, parsed,
+            image_file=SimpleUploadedFile('other.webp', webp1, 'image/webp'),
+        )
+        response = client.post(change_url, data=post_data, format='multipart', follow=False)
+        self.assertIn(response.status_code, (302, 303))
+        photo.refresh_from_db()
+        photo.extended.refresh_from_db()
+        self.assertTrue(photo.image.name.endswith('.webp'))
+        self.assertEqual(get_last_original_content(photo), webp1, '2c: same content => last_original unchanged')
+
+        # 2d. Plain save: no tocar last_original
+        response = client.get(change_url)
+        parsed = _parse_admin_form(response)
+        post_data = _build_change_post_data(photo, parsed, title='Again')
+        response = client.post(change_url, data=post_data, format='multipart', follow=False)
+        self.assertIn(response.status_code, (302, 303))
+        photo.refresh_from_db()
+        photo.extended.refresh_from_db()
+        self.assertTrue(photo.image.name.endswith('.webp'))
+        self.assertEqual(get_last_original_content(photo), webp1, '2d: plain save => last_original unchanged')
+
+        # 2e. Cambiarla por un webp con distinto nombre y contenido
+        webp2 = make_webp_bytes('green')
+        response = client.get(change_url)
+        parsed = _parse_admin_form(response)
+        post_data = _build_change_post_data(
+            photo, parsed,
+            image_file=SimpleUploadedFile('second.webp', webp2, 'image/webp'),
+        )
+        response = client.post(change_url, data=post_data, format='multipart', follow=False)
+        self.assertIn(response.status_code, (302, 303))
+        photo.refresh_from_db()
+        photo.extended.refresh_from_db()
+        self.assertTrue(photo.image.name.endswith('.webp'))
+        self.assertEqual(get_last_original_content(photo), webp2, '2e: new content => last_original is webp2')
+
+        # 2f. Plain save: no tocar last_original
+        response = client.get(change_url)
+        parsed = _parse_admin_form(response)
+        post_data = _build_change_post_data(photo, parsed, title='Green')
+        response = client.post(change_url, data=post_data, format='multipart', follow=False)
+        self.assertIn(response.status_code, (302, 303))
+        photo.refresh_from_db()
+        photo.extended.refresh_from_db()
+        self.assertTrue(photo.image.name.endswith('.webp'))
+        self.assertEqual(get_last_original_content(photo), webp2, '2f: plain save => last_original unchanged')
+
+        # 2g. Cambiarla por un jpg
+        jpg1 = make_jpg_bytes('red')
+        response = client.get(change_url)
+        parsed = _parse_admin_form(response)
+        post_data = _build_change_post_data(
+            photo, parsed,
+            image_file=SimpleUploadedFile('as_jpg.jpg', jpg1, 'image/jpeg'),
+        )
+        response = client.post(change_url, data=post_data, format='multipart', follow=False)
+        self.assertIn(response.status_code, (302, 303))
+        photo.refresh_from_db()
+        photo.extended.refresh_from_db()
+        self.assertTrue(photo.image.name.endswith('.webp'))
+        self.assertEqual(get_last_original_content(photo), jpg1, '2g: jpg upload => converted, last_original is jpg1')
+
+        # 2h. Plain save: no tocar last_original
+        response = client.get(change_url)
+        parsed = _parse_admin_form(response)
+        post_data = _build_change_post_data(photo, parsed, title='Jpg')
+        response = client.post(change_url, data=post_data, format='multipart', follow=False)
+        self.assertIn(response.status_code, (302, 303))
+        photo.refresh_from_db()
+        photo.extended.refresh_from_db()
+        self.assertTrue(photo.image.name.endswith('.webp'))
+        self.assertEqual(get_last_original_content(photo), jpg1, '2h: plain save => last_original unchanged')
+
+        # 2i. Cambiarla por un webp con distinto nombre y contenido
+        webp3 = make_webp_bytes('yellow', size=(12, 12))
+        response = client.get(change_url)
+        parsed = _parse_admin_form(response)
+        post_data = _build_change_post_data(
+            photo, parsed,
+            image_file=SimpleUploadedFile('third.webp', webp3, 'image/webp'),
+        )
+        response = client.post(change_url, data=post_data, format='multipart', follow=False)
+        self.assertIn(response.status_code, (302, 303))
+        photo.refresh_from_db()
+        photo.extended.refresh_from_db()
+        self.assertTrue(photo.image.name.endswith('.webp'))
+        self.assertEqual(get_last_original_content(photo), webp3, '2i: new webp => last_original is webp3')
+
+        # 2j. Plain save: no tocar last_original
+        response = client.get(change_url)
+        parsed = _parse_admin_form(response)
+        post_data = _build_change_post_data(photo, parsed, title='Yellow')
+        response = client.post(change_url, data=post_data, format='multipart', follow=False)
+        self.assertIn(response.status_code, (302, 303))
+        photo.refresh_from_db()
+        photo.extended.refresh_from_db()
+        self.assertTrue(photo.image.name.endswith('.webp'))
+        self.assertEqual(get_last_original_content(photo), webp3, '2j: plain save => last_original unchanged')
