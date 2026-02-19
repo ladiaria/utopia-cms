@@ -241,6 +241,8 @@ header {
       padding-right: 48px;
       font-weight: 500;
       position: relative;
+      display: flex;
+      align-items: center;
       &::after {
         content: "";
         position: absolute;
@@ -1229,7 +1231,6 @@ body {
   &__title {
     margin: 0 0 15px 0;
     font-size: 14px;
-    line-height: 20px;
     font-family: "Roboto", sans-serif;
     font-weight: bold;
     color: $off-black;
