@@ -39,7 +39,8 @@ class SubscribeTestCase(TestCase):
         planslug = self.var["test01_planslug"]
         phone_subscription_log_clear()
         user = response.wsgi_request.user
-        my_email, good_phone = user.email if user.is_authenticated else "userone@gmail.com", "+59896112233"
+        my_email = user.email if user.is_authenticated else f"userone@{settings.CORE_TEST_EMAIL_KNOWN_GOOD_DOMAIN}"
+        good_phone = "+59896112233"
         post_data = {
             "first_name": "User One",
             "email": my_email,

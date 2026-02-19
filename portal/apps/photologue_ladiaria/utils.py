@@ -8,6 +8,8 @@ from io import BytesIO
 from django.conf import settings
 from django.core.files.base import ContentFile
 
+from photologue.models import get_storage_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -38,6 +40,31 @@ def _last_original_has_same_content(ext, content):
             return f.read() == content
     except (IOError, OSError):
         return False
+
+
+def _save_last_original_file(ext, original_filename, content):
+    """
+    Save content to ext.last_original_uploaded. We always write via storage.save()
+    and set the field name manually so Django's FileField never runs delete()
+    with an empty previous name (ValueError: "The name must be given to delete().").
+    Returns '' so callers use update() to persist (no model save → no delete).
+    """
+    path = get_storage_path(ext, original_filename)
+    storage = ext.last_original_uploaded.storage
+    saved_name = storage.save(path, ContentFile(content))
+    ext.last_original_uploaded = saved_name
+    return ''
+
+
+def _persist_last_original_uploaded(ext, old_lor_name):
+    """
+    Persist ext.last_original_uploaded to DB. We always use update() to avoid
+    Django's FileField save() calling storage.delete() with an empty or stale
+    previous name (ValueError: "The name must be given to delete().").
+    """
+    ext.__class__.objects.filter(pk=ext.pk).update(
+        last_original_uploaded=ext.last_original_uploaded.name
+    )
 
 
 def _content_is_webp(content):
@@ -86,10 +113,9 @@ def convert_photo_image_to_webp(photo, save_last_original=True):
                     ext = photo.extended
                     if not _last_original_has_same_content(ext, content):
                         original_filename = Path(photo.image.name).name
-                        ext.last_original_uploaded.save(
-                            original_filename, ContentFile(content), save=False
-                        )
-                        ext.save(update_fields=['last_original_uploaded'])
+                        old_lor_name = _save_last_original_file(ext, original_filename, content)
+                        if ext.pk is not None:
+                            _persist_last_original_uploaded(ext, old_lor_name)
                 return False
 
             icc_profile = img.info.get("icc_profile")
@@ -105,17 +131,24 @@ def convert_photo_image_to_webp(photo, save_last_original=True):
         if save_last_original and hasattr(photo, 'extended'):
             ext = photo.extended
             if not _last_original_has_same_content(ext, content):
-                ext.last_original_uploaded.save(
-                    original_filename, ContentFile(content), save=False
-                )
-                ext.save(update_fields=['last_original_uploaded'])
+                old_lor_name = _save_last_original_file(ext, original_filename, content)
+                # Only update in DB if instance already has pk (e.g. model save).
+                # When pk is None we're in the middle of an insert (e.g. admin inline);
+                # the ongoing save will persist last_original_uploaded.
+                if ext.pk is not None:
+                    _persist_last_original_uploaded(ext, old_lor_name)
 
         photo.image.save(webp_name, ContentFile(output.getvalue()), save=False)
         photo._webp_just_converted = True  # so re-entry in "already WebP" branch won't overwrite last_original
-        photo.save(update_fields=['image'])
+        # Photologue's Photo.save() deletes _old_image; avoid storage.delete('') when name is empty
+        old_image_name = getattr(getattr(photo, '_old_image', None), 'name', None) or ''
+        if old_image_name:
+            photo.save(update_fields=['image'])
+        else:
+            photo.__class__.objects.filter(pk=photo.pk).update(image=photo.image.name)
 
         # Delete the old file (default save behavior when replacing)
-        if old_name != photo.image.name:
+        if old_name and old_name != photo.image.name:
             storage = photo.image.storage
             if storage.exists(old_name):
                 try:
