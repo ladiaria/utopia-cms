@@ -4,7 +4,7 @@ import os
 from PIL import Image
 
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from photologue.models import Photo, PhotoSize, get_storage_path
@@ -67,6 +67,14 @@ class PhotoExtended(models.Model):
     )
     agency = models.ForeignKey(
         Agency, on_delete=models.CASCADE, verbose_name='agencia', related_name='photos', blank=True, null=True
+    )
+    last_original_uploaded = models.ImageField(
+        'última subida original',
+        upload_to=get_storage_path,
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text='Copia del archivo tal como se subió la última vez (solo lectura).',
     )
 
     class Meta:
@@ -131,6 +139,20 @@ class PhotoExtended(models.Model):
 
     def get_square_version_filename(self):
         return os.path.basename(self.square_version.path)
+
+
+@receiver(pre_save, sender=Photo)
+def photo_pre_save_store_previous_image(sender, **kwargs):
+    """Store previous image name so we can tell if the image was replaced (vs plain save)."""
+    instance = kwargs['instance']
+    if instance.pk:
+        try:
+            old = Photo.objects.only('image').get(pk=instance.pk)
+            instance._previous_image_name = old.image.name if old.image else None
+        except Photo.DoesNotExist:
+            instance._previous_image_name = None
+    else:
+        instance._previous_image_name = None
 
 
 @receiver(post_save, sender=Photo)

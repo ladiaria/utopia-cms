@@ -9,10 +9,8 @@ from django.core.files.base import ContentFile
 
 logger = logging.getLogger(__name__)
 
-# When True, photos are automatically converted to WebP on save (default: False).
-AUTO_CONVERT_TO_WEBP = getattr(
-    settings, 'PHOTOLOGUE_LADIARIA_AUTO_CONVERT_TO_WEBP', False
-)
+
+AUTO_CONVERT_TO_WEBP = getattr(settings, 'PHOTOLOGUE_LADIARIA_AUTO_CONVERT_TO_WEBP', True)
 
 
 def get_exif_data(image):
@@ -30,15 +28,45 @@ def get_exif_data(image):
     return {}
 
 
-def convert_photo_image_to_webp(photo):
+def _last_original_has_same_content(ext, content):
+    """True if last_original_uploaded exists and its file content equals content (bytes)."""
+    if not ext.last_original_uploaded:
+        return False
+    try:
+        with ext.last_original_uploaded.open('rb') as f:
+            return f.read() == content
+    except (IOError, OSError):
+        return False
+
+
+def convert_photo_image_to_webp(photo, save_last_original=True):
     """
     Convert the photo's image to WebP if it is not already WebP (detected by format, not extension).
+    When save_last_original=True (e.g. auto-convert on save), saves a copy to last_original_uploaded.
     Deletes the original file after successful conversion (same behavior as default save).
     Returns True if conversion was performed, False if skipped (already WebP or error).
     """
     try:
-        with Image.open(photo.image) as img:
+        with photo.image.open('rb') as f:
+            content = f.read()
+        with Image.open(BytesIO(content)) as img:
             if getattr(img, 'format', None) == 'WEBP':
+                # Already WebP: only sync last_original when the image was actually replaced
+                # (pre_save stored _previous_image_name). Plain save (e.g. only caption changed)
+                # must not touch files. Re-entry right after JPG->WebP is skipped via flag.
+                if getattr(photo, '_webp_just_converted', False):
+                    photo._webp_just_converted = False
+                    return False
+                previous = getattr(photo, '_previous_image_name', None)
+                image_replaced = previous is None or photo.image.name != previous
+                if save_last_original and hasattr(photo, 'extended') and image_replaced:
+                    ext = photo.extended
+                    if not _last_original_has_same_content(ext, content):
+                        original_filename = Path(photo.image.name).name
+                        ext.last_original_uploaded.save(
+                            original_filename, ContentFile(content), save=False
+                        )
+                        ext.save(update_fields=['last_original_uploaded'])
                 return False
 
             icc_profile = img.info.get("icc_profile")
@@ -47,8 +75,20 @@ def convert_photo_image_to_webp(photo):
 
         old_name = photo.image.name
         original_path = Path(old_name)
+        original_filename = original_path.name
         webp_name = original_path.stem + ".webp"
+
+        # Save copy as last_original_uploaded (skip if content is already the same)
+        if save_last_original and hasattr(photo, 'extended'):
+            ext = photo.extended
+            if not _last_original_has_same_content(ext, content):
+                ext.last_original_uploaded.save(
+                    original_filename, ContentFile(content), save=False
+                )
+                ext.save(update_fields=['last_original_uploaded'])
+
         photo.image.save(webp_name, ContentFile(output.getvalue()), save=False)
+        photo._webp_just_converted = True  # so re-entry in "already WebP" branch won't overwrite last_original
         photo.save(update_fields=['image'])
 
         # Delete the old file (default save behavior when replacing)

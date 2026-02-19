@@ -165,16 +165,35 @@ class PhotographerFilter(admin.SimpleListFilter):
 class PhotoAdmin(PhotoAdminDefault):
     list_display = ('id', 'title', 'admin_thumbnail', 'date_taken', 'date_added', 'is_public')
     list_filter = tuple(PhotoAdminDefault.list_filter) + (AgencyFilter, PhotographerFilter)
-    fieldsets = (
-        (None, {'fields': ('title', 'image', 'caption')}),
-        ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}),
-    )
     inlines = [PhotoExtendedInline]
+
+    @admin.display(description='Última subida original')
+    def last_original_uploaded(self, obj):
+        if hasattr(obj, 'extended') and obj.extended.last_original_uploaded:
+            from django.utils.html import format_html
+            url = obj.extended.last_original_uploaded.url
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return '-'
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(super().get_readonly_fields(request, obj))
+        if AUTO_CONVERT_TO_WEBP:
+            readonly.append('last_original_uploaded')
+        return readonly
+
+    def get_fieldsets(self, request, obj=None):
+        none_fields = ['title', 'image', 'caption']
+        if AUTO_CONVERT_TO_WEBP:
+            none_fields.insert(2, 'last_original_uploaded')
+        return (
+            (None, {'fields': tuple(none_fields)}),
+            ('Avanzado', {'fields': ('slug', 'crop_from', 'is_public'), 'classes': ('collapse',)}),
+        )
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         if AUTO_CONVERT_TO_WEBP and 'image' in form.base_fields:
-            extra = 'La imagen se convertirá automáticamente a WebP al guardar.'
+            extra = 'La imagen se convertirá automáticamente a WebP al guardar si está en otro formato.'
             existing = form.base_fields['image'].help_text or ''
             form.base_fields['image'].help_text = f'{existing} {extra}'.strip()
         return form
