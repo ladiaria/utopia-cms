@@ -3,7 +3,7 @@ import logging
 from django.core.management import BaseCommand
 from photologue.models import Photo
 
-from ...utils import convert_photo_image_to_webp
+from ...utils import AUTO_CONVERT_TO_WEBP, convert_photo_image_to_webp
 
 
 class Command(BaseCommand):
@@ -52,6 +52,11 @@ class Command(BaseCommand):
             action='store_true',
             help='Show progress bar with tqdm.',
         )
+        parser.add_argument(
+            '--force',
+            action='store_true',
+            help='Run conversion even when PHOTOLOGUE_LADIARIA_AUTO_CONVERT_TO_WEBP is False.',
+        )
 
     def handle(self, *args, **options):
         photo_ids = options['photo_id']
@@ -60,6 +65,16 @@ class Command(BaseCommand):
         no_input = options['no_input']
         dry_run = options['dry_run']
         progress = options.get('progress', False)
+        force = options.get('force', False)
+
+        if not force and not AUTO_CONVERT_TO_WEBP:
+            self.stderr.write(
+                self.style.WARNING(
+                    'PHOTOLOGUE_LADIARIA_AUTO_CONVERT_TO_WEBP is False; no conversion will run. '
+                    'Use --force to convert anyway.'
+                )
+            )
+            return
 
         use_range = from_id is not None or to_id is not None
         if use_range:

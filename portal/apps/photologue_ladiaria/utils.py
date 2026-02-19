@@ -1,3 +1,4 @@
+import hashlib
 import logging
 from pathlib import Path
 from PIL import Image
@@ -39,6 +40,11 @@ def _last_original_has_same_content(ext, content):
         return False
 
 
+def _content_is_webp(content):
+    """True if bytes look like WebP (magic bytes)."""
+    return len(content) >= 12 and content[:4] == b'RIFF' and content[8:12] == b'WEBP'
+
+
 def convert_photo_image_to_webp(photo, save_last_original=True):
     """
     Convert the photo's image to WebP if it is not already WebP (detected by format, not extension).
@@ -57,8 +63,25 @@ def convert_photo_image_to_webp(photo, save_last_original=True):
                 if getattr(photo, '_webp_just_converted', False):
                     photo._webp_just_converted = False
                     return False
-                previous = getattr(photo, '_previous_image_name', None)
-                image_replaced = previous is None or photo.image.name != previous
+                previous_name = getattr(photo, '_previous_image_name', None)
+                image_replaced = previous_name is None or photo.image.name != previous_name
+                if not image_replaced and getattr(photo, '_previous_image_hash', None) is not None:
+                    # Same path: check if content changed (e.g. admin re-upload same filename)
+                    current_hash = hashlib.md5(content).hexdigest()
+                    if current_hash != photo._previous_image_hash:
+                        image_replaced = True
+                if not image_replaced and getattr(photo, '_previous_image_hash', None) is None and hasattr(photo, 'extended'):
+                    # No hash (e.g. read failed in pre_save): if both current and last_original are WebP
+                    # and differ, treat as re-uploaded WebP (sync). Avoid when last_original is JPG (plain save).
+                    ext = photo.extended
+                    if ext.last_original_uploaded and _content_is_webp(content):
+                        try:
+                            with ext.last_original_uploaded.open('rb') as f:
+                                last_content = f.read()
+                            if _content_is_webp(last_content) and last_content != content:
+                                image_replaced = True
+                        except (IOError, OSError):
+                            pass
                 if save_last_original and hasattr(photo, 'extended') and image_replaced:
                     ext = photo.extended
                     if not _last_original_has_same_content(ext, content):

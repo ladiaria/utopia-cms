@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import hashlib
 import os
 from PIL import Image
 
@@ -143,16 +144,26 @@ class PhotoExtended(models.Model):
 
 @receiver(pre_save, sender=Photo)
 def photo_pre_save_store_previous_image(sender, **kwargs):
-    """Store previous image name so we can tell if the image was replaced (vs plain save)."""
+    """Store previous image name and content hash so we can tell if the image was replaced (vs plain save).
+    Hash allows detecting same filename but different content (e.g. re-upload in admin)."""
     instance = kwargs['instance']
     if instance.pk:
         try:
             old = Photo.objects.only('image').get(pk=instance.pk)
             instance._previous_image_name = old.image.name if old.image else None
+            instance._previous_image_hash = None
+            if old.image and old.image.name:
+                try:
+                    with old.image.open('rb') as f:
+                        instance._previous_image_hash = hashlib.md5(f.read()).hexdigest()
+                except (IOError, OSError):
+                    pass
         except Photo.DoesNotExist:
             instance._previous_image_name = None
+            instance._previous_image_hash = None
     else:
         instance._previous_image_name = None
+        instance._previous_image_hash = None
 
 
 @receiver(post_save, sender=Photo)
