@@ -15,10 +15,13 @@ header {
   display: flex;
   font-family: "Dialect Gothic A";
   background-color: white;
+  border-bottom: 0.5px solid #ababab;
 
-  &.sticky,
-  &.section-detail-header,
-  body.article & {
+  &.category-pub-header,
+  &.home-header {
+    border-bottom: none;
+  }
+  &.sticky {
     border-bottom: 0.5px solid #ababab;
   }
 
@@ -114,7 +117,7 @@ header {
     }
     .logo-vertical-center-container {
       display: flex;
-      gap: 5px;
+      gap: 7px;
       align-items: flex-end;
 
       a {
