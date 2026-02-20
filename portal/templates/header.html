@@ -1,19 +1,35 @@
-{% load static  %}
+{% load static homev3_tags  %}
+
 <div class="header-container">
   <div class="upper-content">
     <div class="upper-left-content">
       <button class="ld-main-menu__open js-ld-main-menu-toggle">
-        <svg xmlns="http://www.w3.org/2000/svg" width="33" height="18" fill="none" viewBox="0 0 33 18"><path stroke="#181818" stroke-width="1.298" d="M0 .649h33m-33 8h33m-33 8h33"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 32 32"><path stroke="#181818" stroke-width="1.298" d="M2 7.351h28m-28 8h28m-28 8h28"/></svg>
       </button>
       <button class="ld-main-menu__close js-ld-main-menu-toggle hidden" aria-label="Cerrar">
-        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 19 19" fill="none"><path d="M0.5 0.5L18.5 18.5M18.5 0.5L0.5 18.5" stroke="black" stroke-linecap="round"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 32 32"><path stroke="#000" stroke-linecap="round" d="m7 7 18 18m0-18L7 25"/></svg>
       </button>
-      <div class="fixed-items">
+      {% if article %}
+        <div class="article-breadcrumb">
+          {% if category %}
+            <a href="{% url 'home' domain_slug=category.slug %}">{{ category }}</a>
+          {% elif publication %}
+            <a href="{% url 'home' domain_slug=publication.slug %}">{{ publication }}</a>
+          {% endif %}
+          {% if section %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="6" height="9" fill="none" viewBox="0 0 6 9"><path stroke="#000" stroke-linejoin="round" stroke-width="1.2" d="m.424 8.424 4-4-4-4"/></svg>
+            <a href="{{ section.get_absolute_url }}">{{ section }}</a>
+          {% endif %}
+        </div>
+      {% else %}
         {% block upper_fixed_items %}{% endblock %}
-      </div>
+      {% endif %}
     </div>
-    <div class="upper-mobile-logo-container">
-      <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
+    <div class="upper-center-logo-container">
+      <div class="logo-vertical-center-container">
+        <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
+        {% block header_pill %}{% endblock %}
+      </div>
     </div>
     <div class="upper-right-content">
       <a href="{% url 'search' %}" class="search-btn">
@@ -25,16 +41,31 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" fill="none" viewBox="0 0 10 6"><path stroke="#ababab" stroke-linecap="round" stroke-linejoin="round" d="m.5.5 4.382 4.382L9.265.5"/></svg>
         </button>
       {% else %}
-        <a href="#">Ingresar</a>
+        <a href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresar</a>
       {% endif %}
       {% if not is_subscriber_any %}
-        <a href="#" class="btn">Suscribite</a>
+        <a href="{% url 'subscribe_landing' %}" class="btn">Suscribite</a>
       {% endif %}
     </div>
   </div>
-  <div class="logo-desktop-container">
+  <div class="logo-desktop-container{% if publication != default_pub %} publication{% endif %}">
     <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
   </div>
+
+  {% if article %}
+    <div class="article-mobile-breadcrumb">
+      {% if category %}
+        <a href="{% url 'home' domain_slug=category.slug %}">{{ category }}</a>
+      {% elif publication %}
+        <a href="{% url 'home' domain_slug=publication.slug %}">{{ publication }}</a>
+      {% endif %}
+      {% if section %}
+        <svg xmlns="http://www.w3.org/2000/svg" width="6" height="9" fill="none" viewBox="0 0 6 9"><path stroke="#000" stroke-linejoin="round" stroke-width="1.2" d="m.424 8.424 4-4-4-4"/></svg>
+        <a href="{{ section.get_absolute_url }}">{{ section }}</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
   {% block navbar %}{% include "menu.html" %}{% endblock %}
 
   <div id="nav-principal-full" class="full ld-main-menu js-ld-main-menu">

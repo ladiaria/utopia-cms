@@ -128,6 +128,46 @@
   }
 
   onReady(function () {
+    let lockedScrollTop = 0;
+
+    function setDocumentScrollLocked(locked) {
+      if (locked) {
+        lockedScrollTop = window.scrollY || window.pageYOffset || 0;
+        document.body.style.position = "fixed";
+        document.body.style.top = "-" + lockedScrollTop + "px";
+        document.body.style.left = "0";
+        document.body.style.right = "0";
+        document.body.style.width = "100%";
+        return;
+      }
+
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      window.scrollTo(0, lockedScrollTop);
+    }
+
+    function setMainMenuState(isOpen) {
+      const body = document.body;
+      qsa(".js-ld-main-menu").forEach(function (menu) {
+        menu.classList.toggle("active", isOpen);
+      });
+      body.classList.toggle("main-menu-open", isOpen);
+      setDocumentScrollLocked(isOpen);
+
+      const openButton = qs(".ld-main-menu__open");
+      if (openButton) {
+        openButton.classList.toggle("hidden", isOpen);
+      }
+
+      const closeButton = qs(".ld-main-menu__close");
+      if (closeButton) {
+        closeButton.classList.toggle("hidden", !isOpen);
+      }
+    }
+
     if (window.M && window.M.Modal) {
       window.M.Modal.init(qsa(".modal"), {
         dismissible: true, // Modal can be dismissed by clicking outside of the modal
@@ -140,14 +180,8 @@
     }
 
     onAll(".js-ld-main-menu-toggle", "click", function (event) {
-      const body = document.body;
-      const menuIsOpen = body.classList.contains("main-menu-open");
-      qsa(".js-ld-main-menu").forEach(function (menu) {
-        menu.classList.toggle("active", !menuIsOpen);
-      });
-      body.classList.toggle("main-menu-open", !menuIsOpen);
-      qs(".ld-main-menu__open").classList.toggle("hidden", !menuIsOpen);
-      qs(".ld-main-menu__close").classList.toggle("hidden", menuIsOpen);
+      const menuIsOpen = document.body.classList.contains("main-menu-open");
+      setMainMenuState(!menuIsOpen);
       event.preventDefault();
     });
 
@@ -155,10 +189,7 @@
       if (event.key !== "Escape" && event.keyCode !== 27) {
         return;
       }
-      qsa(".js-ld-main-menu").forEach(function (menu) {
-        menu.classList.remove("active");
-      });
-      document.body.classList.remove("main-menu-open");
+      setMainMenuState(false);
       qsa(".ld-modal").forEach(function (modal) {
         modal.classList.remove("active");
       });
@@ -216,6 +247,16 @@
     });
 
     bindMobileShare();
+
+    const headerElement = qs("header");
+    if (headerElement) {
+      const updateHeaderStickyState = function () {
+        headerElement.classList.toggle("sticky", window.scrollY > 0);
+      };
+
+      window.addEventListener("scroll", updateHeaderStickyState, { passive: true });
+      updateHeaderStickyState();
+    }
 
     function loadComments() {
       const coralStream = qs("#coral_talk_stream");

@@ -55,10 +55,6 @@
     }
   }
 
-  .navmenu-list {
-    margin: 15px 0;
-  }
-
   .ld-main-menu {
     &__title {
       color: white;
@@ -87,11 +83,13 @@
       background: white;
     }
   }
+
   .header-logo {
     svg .dofill {
       fill: white;
     }
   }
+
   .ut-btn-outline {
     border-color: white;
     color: white;
@@ -111,6 +109,13 @@
 
     @media (min-width: 600px) {
       font-size: 32px;
+    }
+  }
+
+  @media #{$medium-and-down} {
+    &__container {
+      grid-template-columns: 1fr;
+      padding: 48px;
     }
   }
 }
