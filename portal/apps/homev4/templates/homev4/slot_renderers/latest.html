@@ -1,0 +1,11 @@
+<div class="slot-title">Últimos artículos</div>
+{% if latest_articles %}
+    {% for article in latest_articles %}
+    <div class="article-item">
+        <h3><a href="{{ article.get_absolute_url }}">{{ article.headline }}</a></h3>
+        <p class="meta">{{ article.date_published|date:"d/m/Y H:i" }}</p>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-slot">No hay artículos recientes</div>
+{% endif %}

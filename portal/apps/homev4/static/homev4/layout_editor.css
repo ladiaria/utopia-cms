@@ -1,0 +1,345 @@
+/* All rules scoped under #homev4-editor to beat Django admin CSS specificity */
+
+#homev4-editor {
+    padding: 0;
+    margin-top: 10px;
+}
+
+/* ── Action buttons ───────────────────────────────────────── */
+#homev4-editor .editor-actions {
+    margin-bottom: 12px;
+}
+
+#homev4-editor .editor-actions .button {
+    display: inline-block;
+    padding: 6px 15px;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 13px;
+    background: #417690;
+}
+#homev4-editor .editor-actions .button:hover { background: #205067; }
+#homev4-editor .editor-actions .btn-sync     { background: #27ae60; margin-left: 8px; }
+#homev4-editor .editor-actions .btn-sync:hover  { background: #1e8449; }
+#homev4-editor .editor-actions .btn-reset    { background: #ba2121; margin-left: 8px; }
+#homev4-editor .editor-actions .btn-reset:hover { background: #8a1515; }
+
+/* ── Two-column outer layout ─────────────────────────────── */
+#homev4-editor .editor-layout {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;  /* both columns same height */
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Left column: PRINCIPAL + SUPLEMENTO + ÁREAS stacked */
+#homev4-editor .editor-main {
+    flex: 2 1 0% !important;
+    min-width: 0;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px;
+}
+
+/* Right column: COMPONENTES sidebar — full height */
+#homev4-editor .editor-sidebar {
+    flex: 1 1 0% !important;
+    min-width: 160px;
+    max-width: 260px;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Componentes fills the sidebar height */
+#homev4-editor .block-componentes {
+    flex: 1 !important;
+}
+
+/* ── Generic block card ──────────────────────────────────── */
+#homev4-editor .editor-block {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ÁREAS block should not clip its inner grid */
+#homev4-editor .block-areas {
+    overflow: visible;
+}
+
+#homev4-editor .block-header {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px;
+    padding: 7px 10px;
+    background: #f5f6f7;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+/* Nested section headers (inside grid cells) are slightly smaller */
+#homev4-editor .area-header {
+    padding: 5px 8px;
+    background: #f9fafb;
+}
+
+#homev4-editor .block-badge {
+    display: inline-block !important;
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+#homev4-editor .badge-principal   { background: #2c3e50; }
+#homev4-editor .badge-suplemento  { background: #e67e22; }
+#homev4-editor .badge-areas       { background: #8e44ad; }
+#homev4-editor .badge-area        { background: #3498db; }
+#homev4-editor .badge-componentes { background: #16a085; }
+
+#homev4-editor .block-hint {
+    font-size: 11px;
+    color: #aaa;
+}
+
+/* ── Drag handle ─────────────────────────────────────────── */
+#homev4-editor .drag-handle {
+    cursor: grab;
+    color: #ccc;
+    font-size: 15px;
+    user-select: none;
+    line-height: 1;
+    flex-shrink: 0;
+}
+#homev4-editor .drag-handle:hover { color: #666; }
+
+/* ── PRINCIPAL / SUPLEMENTO: sortable article lists ─────── */
+#homev4-editor .articles-sortable {
+    padding: 4px 8px;
+}
+
+#homev4-editor .article-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline;
+    gap: 6px;
+    padding: 5px 4px;
+    border-bottom: 1px solid #f3f3f3;
+    border-radius: 3px;
+    cursor: grab;
+}
+#homev4-editor .article-row:last-child { border-bottom: none; }
+#homev4-editor .article-row:hover      { background: #f9f9f9; }
+
+#homev4-editor .article-num {
+    font-size: 11px;
+    color: #ccc;
+    font-weight: bold;
+    min-width: 16px;
+    flex-shrink: 0;
+}
+
+#homev4-editor .article-title {
+    font-size: 13px;
+    color: #333;
+    line-height: 1.3;
+}
+
+/* ── ÁREAS Y PUBLICACIONES: 3-column grid (locked) ──────── */
+#homev4-editor .sections-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px;
+    padding: 8px;
+}
+
+#homev4-editor .block-area {
+    cursor: default;
+}
+
+#homev4-editor .section-articles {
+    padding: 4px 6px 5px;
+}
+
+/* Draggable article row within a section */
+#homev4-editor .section-article-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline;
+    gap: 4px;
+    padding: 3px 2px;
+    border-bottom: 1px solid #f3f3f3;
+    border-radius: 2px;
+    cursor: grab;
+}
+#homev4-editor .section-article-row:last-child { border-bottom: none; }
+#homev4-editor .section-article-row:hover      { background: #f9f9f9; }
+
+#homev4-editor .small-handle {
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+#homev4-editor .section-article-title {
+    font-size: 11px;
+    color: #444;
+    line-height: 1.3;
+}
+
+/* Drag states for section articles */
+#homev4-editor .section-article-row.dragging  { opacity: 0.3; }
+#homev4-editor .section-article-row.drag-over {
+    background: #e8f4ff;
+    border-top: 2px solid #3498db;
+}
+
+/* ── COMPONENTES sidebar items ───────────────────────────── */
+#homev4-editor .componentes-list {
+    padding: 2px 0;
+}
+
+#homev4-editor .componente-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 6px;
+    padding: 7px 10px 7px 6px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: grab;
+    margin: 0;
+}
+#homev4-editor .componente-item:last-child { border-bottom: none; }
+#homev4-editor .componente-item:hover { background: #f9f9f9; }
+
+/* Drag states for component items */
+#homev4-editor .componente-item.dragging  { opacity: 0.3; }
+#homev4-editor .componente-item.drag-over {
+    background: #e6f9f5;
+    border-top: 2px solid #16a085;
+}
+
+/* Body that holds the label row + article list */
+#homev4-editor .comp-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Row with checkbox + name/description */
+#homev4-editor .comp-header {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 6px;
+    cursor: pointer;
+    margin: 0;
+}
+
+#homev4-editor .comp-header .comp-active {
+    margin-top: 2px;
+    flex-shrink: 0;
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+    accent-color: #16a085;
+}
+
+#homev4-editor .comp-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px;
+}
+
+#homev4-editor .comp-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.3;
+}
+
+#homev4-editor .comp-desc {
+    font-size: 11px;
+    color: #999;
+    font-style: italic;
+}
+
+/* Placeholder article list inside each component */
+#homev4-editor .comp-articles {
+    padding: 3px 0 0 20px;
+    border-top: 1px dotted #ececec;
+    margin-top: 2px;
+}
+
+#homev4-editor .comp-article-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline;
+    gap: 4px;
+    font-size: 11px;
+    color: #444;
+    padding: 3px 2px;
+    border-bottom: 1px solid #f3f3f3;
+    border-radius: 2px;
+    line-height: 1.3;
+    cursor: grab;
+}
+#homev4-editor .comp-article-row:last-child { border-bottom: none; }
+#homev4-editor .comp-article-row:hover      { background: #f9f9f9; }
+
+#homev4-editor .comp-article-title { flex: 1 1 auto; }
+
+/* Drag states for component article rows */
+#homev4-editor .comp-article-row.dragging  { opacity: 0.3; }
+#homev4-editor .comp-article-row.drag-over {
+    background: #e6f9f5;
+    border-top: 2px solid #16a085;
+}
+
+/* ── Drag states (INICIO articles only) ─────────────────── */
+#homev4-editor .article-row.dragging  { opacity: 0.3; }
+#homev4-editor .article-row.drag-over {
+    background: #e8f4ff;
+    border-top: 2px solid #417690;
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+#homev4-editor .empty-hint {
+    display: block !important;
+    font-size: 12px;
+    color: #bbb;
+    font-style: italic;
+    padding: 4px 0;
+}
+
+/* ── Save toast ──────────────────────────────────────────── */
+.save-status {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 10001;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    white-space: nowrap;
+}
+.save-status.success { background: #2ecc71; }
+.save-status.error   { background: #e74c3c; }

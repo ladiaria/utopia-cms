@@ -316,6 +316,9 @@ urlpatterns.extend(
         re_path(r'^suplementos/', supplement_list, name='supplement_list'),
         path('suplemento/', include('core.urls.supplement')),
 
+        # Homev4: visual layout editor and preview
+        path('homev4/', include('homev4.urls')),
+
         # Homes: domain_slug can be a publication slug or an area (core.Category) slug
         path('', index, name='home'),
         re_path(r'^(?P<domain_slug>[\w-]+)/$', index, name='home'),
