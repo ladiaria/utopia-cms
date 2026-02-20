@@ -102,6 +102,7 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "signupwall",
     "homev3",
+    "homev4.apps.Homev4Config",
     "cartelera.config.CarteleraConfig",
     "martor",
     "django_bleach",

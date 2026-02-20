@@ -1,0 +1,19 @@
+<div class="slot-title">Inicio</div>
+<div class="articles-sortable">
+{% if top_articles %}
+    {% for article in top_articles %}
+    <div class="article-item{% if forloop.first %} article-cover{% endif %}"
+         draggable="true"
+         data-article-id="{{ article.id }}">
+        <span class="drag-handle" title="Arrastrar para reordenar">⠿</span>
+        {% if forloop.first %}
+        <h2><a href="{{ article.get_absolute_url }}">{{ article.headline }}</a></h2>
+        {% else %}
+        <h3><a href="{{ article.get_absolute_url }}">{{ article.headline }}</a></h3>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-slot">No hay artículos en la edición actual</div>
+{% endif %}
+</div>

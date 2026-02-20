@@ -1,0 +1,131 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'homev4/layout_editor.css' %}"/>
+{% endblock %}
+
+{% block after_related_objects %}
+{{ block.super }}
+
+{% if original and editor_data %}
+<fieldset class="module">
+    <h2>Editor de Layout</h2>
+    <div id="homev4-editor">
+
+        <div class="editor-actions">
+            <button type="button" id="btn-save" class="button">Guardar Layout</button>
+            <a href="{{ sync_sections_url }}"
+               class="button btn-sync"
+               title="Recarga secciones, artículos de INICIO y artículos de cada sección desde la DB (se pierde el orden manual)"
+               onclick="return confirm('¿Sincronizar todo desde la DB? Se perderá el orden de artículos guardado.');">
+                Sincronizar Todo
+            </a>
+            <a href="{{ reset_grid_url }}"
+               class="button btn-reset"
+               onclick="return confirm('¿Resetear TODO el layout? Se perderá el orden de artículos guardado.');">
+                Resetear Layout
+            </a>
+        </div>
+
+        <!-- Two-column layout: left (INICIO + ÁREAS) | right (COMPONENTES full height) -->
+        <div class="editor-layout">
+
+            <!-- Left column -->
+            <div class="editor-main">
+
+                <!-- INICIO: articles are sortable by dragging -->
+                <div class="editor-block block-inicio">
+                    <div class="block-header">
+                        <span class="block-badge badge-inicio">INICIO 🔒</span>
+                        <span class="block-hint">Arrastrá para reordenar los artículos</span>
+                    </div>
+                    <div class="articles-sortable" id="inicio-articles">
+                        {% for article in editor_data.inicio_articles %}
+                        <div class="article-row" draggable="true" data-article-id="{{ article.id }}">
+                            <span class="drag-handle">⠿</span>
+                            <span class="article-num">{{ forloop.counter }}</span>
+                            <span class="article-title">{{ article.headline }}</span>
+                        </div>
+                        {% empty %}
+                        <div class="empty-hint">No hay artículos en la edición actual</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- ÁREAS Y PUBLICACIONES: sections are locked (auto from DB) -->
+                <div class="editor-block block-areas">
+                    <div class="block-header">
+                        <span class="block-badge badge-areas">ÁREAS Y PUBLICACIONES 🔒</span>
+                        <span class="block-hint">Configuradas desde el módulo de Secciones</span>
+                    </div>
+                    <div class="sections-grid" id="sections-list">
+                        {% for section in editor_data.sections %}
+                        <div class="editor-block block-area"
+                             data-section-type="{{ section.type }}"
+                             data-section-id="{{ section.id }}"
+                             data-section-name="{{ section.name }}">
+                            <div class="block-header area-header">
+                                <span class="block-badge badge-area">{{ section.name }}</span>
+                            </div>
+                            <div class="section-articles section-sortable">
+                                {% for article in section.preview_articles %}
+                                <div class="section-article-row" draggable="true" data-article-id="{{ article.id }}">
+                                    <span class="drag-handle small-handle">⠿</span>
+                                    <span class="section-article-title">{{ article.headline }}</span>
+                                </div>
+                                {% empty %}
+                                <div class="empty-hint">Sin artículos recientes</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="grid-column: 1/-1; padding: 16px; color: #999; font-size: 13px;">
+                            No hay áreas configuradas. Hacé click en "Resetear Layout".
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div><!-- .editor-main -->
+
+            <!-- Right column: COMPONENTES spans full height -->
+            <div class="editor-sidebar">
+                <div class="editor-block block-componentes">
+                    <div class="block-header">
+                        <span class="block-badge badge-componentes">COMPONENTES</span>
+                    </div>
+                    <div class="componentes-list">
+                        {% for comp in editor_data.componentes %}
+                        <label class="componente-item" data-comp-key="{{ comp.key }}">
+                            <input type="checkbox"
+                                   class="comp-active"
+                                   {% if comp.active %}checked{% endif %}>
+                            <span class="comp-info">
+                                <span class="comp-name">{{ comp.label }}</span>
+                                {% if comp.description %}
+                                <span class="comp-desc">{{ comp.description }}</span>
+                                {% endif %}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div><!-- .editor-sidebar -->
+
+        </div><!-- .editor-layout -->
+
+        <div id="save-status" class="save-status" style="display:none;"></div>
+    </div><!-- #homev4-editor -->
+</fieldset>
+
+<script>
+window.HOMEV4_DATA = {
+    saveUrl: "{{ save_grid_url }}",
+    csrfToken: "{{ csrf_token }}"
+};
+</script>
+<script src="{% static 'homev4/layout_editor.js' %}"></script>
+{% endif %}
+{% endblock %}

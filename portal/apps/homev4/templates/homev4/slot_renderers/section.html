@@ -1,0 +1,11 @@
+<div class="slot-title">{% if section %}{{ section.name }}{% else %}Sección{% endif %}</div>
+{% if articles %}
+    {% for article in articles %}
+    <div class="article-item">
+        <h3><a href="{{ article.get_absolute_url }}">{{ article.headline }}</a></h3>
+        {% if article.deck %}<p class="deck">{{ article.deck }}</p>{% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-slot">No hay artículos en esta sección</div>
+{% endif %}
