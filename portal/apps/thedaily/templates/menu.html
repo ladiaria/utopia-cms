@@ -10,7 +10,7 @@
       {% endfor %}
     </ul>
   </nav>
-{% elif not article and not section %}
+{% elif not article and category or publication and not section %}
   <nav class="navbar category-navbar">
     <a class="home-link" href="{% url "home" %}">Portada</a>
     <ul>
@@ -28,6 +28,7 @@
     </ul>
   </nav>
 {% endif %}
+
 
 {% comment %}
 <ul class="main-menu center hide-on-small-and-down{% if publication != default_pub %} {{ publication.slug }}{% endif %}">
