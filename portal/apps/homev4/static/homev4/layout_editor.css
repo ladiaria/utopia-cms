@@ -37,7 +37,7 @@
     box-sizing: border-box;
 }
 
-/* Left column: INICIO + ÁREAS stacked */
+/* Left column: PRINCIPAL + SUPLEMENTO + ÁREAS stacked */
 #homev4-editor .editor-main {
     flex: 2 1 0% !important;
     min-width: 0;
@@ -104,7 +104,8 @@
     white-space: nowrap;
 }
 
-#homev4-editor .badge-inicio      { background: #2c3e50; }
+#homev4-editor .badge-principal   { background: #2c3e50; }
+#homev4-editor .badge-suplemento  { background: #e67e22; }
 #homev4-editor .badge-areas       { background: #8e44ad; }
 #homev4-editor .badge-area        { background: #3498db; }
 #homev4-editor .badge-componentes { background: #16a085; }
@@ -125,7 +126,7 @@
 }
 #homev4-editor .drag-handle:hover { color: #666; }
 
-/* ── INICIO: sortable article list ──────────────────────── */
+/* ── PRINCIPAL / SUPLEMENTO: sortable article lists ─────── */
 #homev4-editor .articles-sortable {
     padding: 4px 8px;
 }
@@ -214,16 +215,42 @@
     display: flex !important;
     flex-direction: row !important;
     align-items: flex-start !important;
-    gap: 8px;
-    padding: 8px 12px;
+    gap: 6px;
+    padding: 7px 10px 7px 6px;
     border-bottom: 1px solid #f0f0f0;
-    cursor: pointer;
+    cursor: grab;
     margin: 0;
 }
 #homev4-editor .componente-item:last-child { border-bottom: none; }
 #homev4-editor .componente-item:hover { background: #f9f9f9; }
 
-#homev4-editor .componente-item .comp-active {
+/* Drag states for component items */
+#homev4-editor .componente-item.dragging  { opacity: 0.3; }
+#homev4-editor .componente-item.drag-over {
+    background: #e6f9f5;
+    border-top: 2px solid #16a085;
+}
+
+/* Body that holds the label row + article list */
+#homev4-editor .comp-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Row with checkbox + name/description */
+#homev4-editor .comp-header {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 6px;
+    cursor: pointer;
+    margin: 0;
+}
+
+#homev4-editor .comp-header .comp-active {
     margin-top: 2px;
     flex-shrink: 0;
     cursor: pointer;
@@ -232,23 +259,55 @@
     accent-color: #16a085;
 }
 
-#homev4-editor .componente-item .comp-info {
+#homev4-editor .comp-info {
     display: flex !important;
     flex-direction: column !important;
     gap: 1px;
 }
 
-#homev4-editor .componente-item .comp-name {
+#homev4-editor .comp-name {
     font-size: 13px;
     font-weight: 600;
     color: #333;
     line-height: 1.3;
 }
 
-#homev4-editor .componente-item .comp-desc {
+#homev4-editor .comp-desc {
     font-size: 11px;
     color: #999;
     font-style: italic;
+}
+
+/* Placeholder article list inside each component */
+#homev4-editor .comp-articles {
+    padding: 3px 0 0 20px;
+    border-top: 1px dotted #ececec;
+    margin-top: 2px;
+}
+
+#homev4-editor .comp-article-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline;
+    gap: 4px;
+    font-size: 11px;
+    color: #444;
+    padding: 3px 2px;
+    border-bottom: 1px solid #f3f3f3;
+    border-radius: 2px;
+    line-height: 1.3;
+    cursor: grab;
+}
+#homev4-editor .comp-article-row:last-child { border-bottom: none; }
+#homev4-editor .comp-article-row:hover      { background: #f9f9f9; }
+
+#homev4-editor .comp-article-title { flex: 1 1 auto; }
+
+/* Drag states for component article rows */
+#homev4-editor .comp-article-row.dragging  { opacity: 0.3; }
+#homev4-editor .comp-article-row.drag-over {
+    background: #e6f9f5;
+    border-top: 2px solid #16a085;
 }
 
 /* ── Drag states (INICIO articles only) ─────────────────── */

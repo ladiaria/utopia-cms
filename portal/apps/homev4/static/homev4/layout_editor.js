@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
         getItems().forEach(function (item) {
             item.addEventListener("dragstart", function (e) {
                 dragSrc = this;
+                e.stopPropagation();  // prevent parent draggable from stealing the drag
                 e.dataTransfer.effectAllowed = "move";
                 var self = this;
                 setTimeout(function () { self.classList.add("dragging"); }, 0);
@@ -74,36 +75,58 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Update the 1-7 numbers shown next to article titles after reorder
+    // Renumber position indicators after reorder
     function renumberArticles() {
-        var inicioContainer = document.getElementById("inicio-articles");
-        if (!inicioContainer) return;
-        inicioContainer.querySelectorAll(".article-num").forEach(function (el, i) {
-            el.textContent = i + 1;
+        ["principal-articles", "suplemento-articles"].forEach(function (containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            container.querySelectorAll(".article-num").forEach(function (el, i) {
+                el.textContent = i + 1;
+            });
         });
     }
 
-    // Init: article sorting within INICIO
-    makeSortable(document.getElementById("inicio-articles"), ".article-row[data-article-id]");
+    // Init: article sorting within PRINCIPAL
+    makeSortable(document.getElementById("principal-articles"), ".article-row[data-article-id]");
+
+    // Init: article sorting within SUPLEMENTO
+    makeSortable(document.getElementById("suplemento-articles"), ".article-row[data-article-id]");
 
     // Init: article sorting within each section block (only within its own container)
     document.querySelectorAll("#sections-list .section-sortable").forEach(function (container) {
         makeSortable(container, ".section-article-row[data-article-id]");
     });
 
+    // Init: component reordering
+    makeSortable(document.getElementById("componentes-list"), ".componente-item[data-comp-key]");
+
+    // Init: article sorting within each component
+    document.querySelectorAll(".comp-articles").forEach(function (container) {
+        makeSortable(container, ".comp-article-row[data-article-index]");
+    });
+
     // Build the JSON payload to save
     function serializeGrid() {
         var result = {
-            inicio: { article_ids: [] },
+            principal: { article_ids: [] },
+            suplemento: { article_ids: [] },
             sections: [],
-            componentes: {}
+            componentes: []
         };
 
-        // INICIO article order
-        var inicioContainer = document.getElementById("inicio-articles");
-        if (inicioContainer) {
-            inicioContainer.querySelectorAll(".article-row[data-article-id]").forEach(function (el) {
-                result.inicio.article_ids.push(parseInt(el.dataset.articleId, 10));
+        // PRINCIPAL article order
+        var principalContainer = document.getElementById("principal-articles");
+        if (principalContainer) {
+            principalContainer.querySelectorAll(".article-row[data-article-id]").forEach(function (el) {
+                result.principal.article_ids.push(parseInt(el.dataset.articleId, 10));
+            });
+        }
+
+        // SUPLEMENTO article order
+        var suplementoContainer = document.getElementById("suplemento-articles");
+        if (suplementoContainer) {
+            suplementoContainer.querySelectorAll(".article-row[data-article-id]").forEach(function (el) {
+                result.suplemento.article_ids.push(parseInt(el.dataset.articleId, 10));
             });
         }
 
@@ -126,11 +149,20 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
-        // Componentes active states
+        // Componentes: save as ordered list to preserve custom drag order
+        result.componentes = [];
         document.querySelectorAll(".componente-item[data-comp-key]").forEach(function (el) {
-            var key = el.dataset.compKey;
-            var active = el.querySelector(".comp-active").checked;
-            result.componentes[key] = { active: active };
+            var comp = {
+                key: el.dataset.compKey,
+                active: el.querySelector(".comp-active").checked
+            };
+            var articleRows = el.querySelectorAll(".comp-article-row[data-article-index]");
+            if (articleRows.length > 0) {
+                comp.article_order = Array.from(articleRows).map(function (ar) {
+                    return parseInt(ar.dataset.articleIndex, 10);
+                });
+            }
+            result.componentes.push(comp);
         });
 
         return result;
@@ -161,7 +193,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(function (resp) {
             if (resp.status === "ok") {
                 showStatus(
-                    "Guardado — INICIO: " + resp.saved_inicio + " arts, secciones: " + resp.saved_sections,
+                    "Guardado — principal: " + resp.saved_principal + " arts, secciones: " + resp.saved_sections,
                     "success"
                 );
             } else {

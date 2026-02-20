@@ -10,29 +10,31 @@ from core.models import Publication, Section, Category
 from .models import HomeLayout
 
 
-DEFAULT_COMPONENTES = {
-    "apuntes_del_dia":      {"active": True},
-    "opinion":              {"active": True},
-    "lo_ultimo":            {"active": True},
-    "recomendadas_lv":      {"active": True},
-    "recomendadas_domingo": {"active": True},
-    "lo_mas_leido":         {"active": True},
-}
+DEFAULT_COMPONENTES = [
+    {"key": "apuntes_del_dia",      "active": True},
+    {"key": "opinion",              "active": True},
+    {"key": "lo_ultimo",            "active": True},
+    {"key": "recomendadas_lv",      "active": True},
+    {"key": "recomendadas_domingo", "active": True},
+    {"key": "lo_mas_leido",         "active": True},
+]
 
 
 def get_default_grid_data():
     """
     Build the default layout data.
-    Format: {inicio: {article_ids: []}, sections: [{type, id, name}, ...], componentes: {key: {active: bool}}}
+    Format: {principal: {article_ids: []}, suplemento: {article_ids: []},
+             sections: [{type, id, name}, ...], componentes: [{key, active}, ...]}
     """
     sections = Section.objects.filter(in_home=True).order_by("home_order")
     return {
-        "inicio": {"article_ids": []},
+        "principal": {"article_ids": []},
+        "suplemento": {"article_ids": []},
         "sections": [
             {"type": "section", "id": s.pk, "name": s.name}
             for s in sections
         ],
-        "componentes": dict(DEFAULT_COMPONENTES),
+        "componentes": list(DEFAULT_COMPONENTES),
     }
 
 
@@ -52,11 +54,11 @@ def save_grid(request, layout_id):
         layout.save()
         # Re-fetch from DB to confirm the save actually persisted
         layout.refresh_from_db(fields=["grid_data"])
-        saved_inicio = len(layout.grid_data.get("inicio", {}).get("article_ids", []))
+        saved_principal = len(layout.grid_data.get("principal", {}).get("article_ids", []))
         saved_sections = len(layout.grid_data.get("sections", []))
         return JsonResponse({
             "status": "ok",
-            "saved_inicio": saved_inicio,
+            "saved_principal": saved_principal,
             "saved_sections": saved_sections,
         })
     except Exception as e:
@@ -92,7 +94,8 @@ def sync_sections(request, layout_id):
     ]
 
     layout.grid_data = {
-        "inicio": {"article_ids": []},
+        "principal": {"article_ids": []},
+        "suplemento": current.get("suplemento", {"article_ids": []}),
         "sections": new_sections,
         "componentes": componentes,
     }

@@ -18,7 +18,7 @@
             <button type="button" id="btn-save" class="button">Guardar Layout</button>
             <a href="{{ sync_sections_url }}"
                class="button btn-sync"
-               title="Recarga secciones, artículos de INICIO y artículos de cada sección desde la DB (se pierde el orden manual)"
+               title="Recarga todo desde la DB (se pierde el orden manual guardado)"
                onclick="return confirm('¿Sincronizar todo desde la DB? Se perderá el orden de artículos guardado.');">
                 Sincronizar Todo
             </a>
@@ -29,20 +29,20 @@
             </a>
         </div>
 
-        <!-- Two-column layout: left (INICIO + ÁREAS) | right (COMPONENTES full height) -->
+        <!-- Two-column layout: left (PRINCIPAL + SUPLEMENTO + ÁREAS) | right (COMPONENTES full height) -->
         <div class="editor-layout">
 
             <!-- Left column -->
             <div class="editor-main">
 
-                <!-- INICIO: articles are sortable by dragging -->
-                <div class="editor-block block-inicio">
+                <!-- PRINCIPAL: articles sortable by dragging -->
+                <div class="editor-block block-principal">
                     <div class="block-header">
-                        <span class="block-badge badge-inicio">INICIO 🔒</span>
+                        <span class="block-badge badge-principal">PRINCIPAL</span>
                         <span class="block-hint">Arrastrá para reordenar los artículos</span>
                     </div>
-                    <div class="articles-sortable" id="inicio-articles">
-                        {% for article in editor_data.inicio_articles %}
+                    <div class="articles-sortable" id="principal-articles">
+                        {% for article in editor_data.principal_articles %}
                         <div class="article-row" draggable="true" data-article-id="{{ article.id }}">
                             <span class="drag-handle">⠿</span>
                             <span class="article-num">{{ forloop.counter }}</span>
@@ -54,10 +54,29 @@
                     </div>
                 </div>
 
-                <!-- ÁREAS Y PUBLICACIONES: sections are locked (auto from DB) -->
+                <!-- SUPLEMENTO: articles sortable by dragging -->
+                <div class="editor-block block-suplemento">
+                    <div class="block-header">
+                        <span class="block-badge badge-suplemento">SUPLEMENTO</span>
+                        <span class="block-hint">Arrastrá para reordenar los artículos</span>
+                    </div>
+                    <div class="articles-sortable" id="suplemento-articles">
+                        {% for article in editor_data.suplemento_articles %}
+                        <div class="article-row suplemento-row" draggable="true" data-article-id="{{ article.id }}">
+                            <span class="drag-handle">⠿</span>
+                            <span class="article-num">{{ forloop.counter }}</span>
+                            <span class="article-title">{{ article.headline }}</span>
+                        </div>
+                        {% empty %}
+                        <div class="empty-hint">Sin artículos de suplemento</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- ÁREAS Y PUBLICACIONES: sections locked (auto from DB) -->
                 <div class="editor-block block-areas">
                     <div class="block-header">
-                        <span class="block-badge badge-areas">ÁREAS Y PUBLICACIONES 🔒</span>
+                        <span class="block-badge badge-areas">ÁREAS Y PUBLICACIONES</span>
                         <span class="block-hint">Configuradas desde el módulo de Secciones</span>
                     </div>
                     <div class="sections-grid" id="sections-list">
@@ -96,19 +115,34 @@
                     <div class="block-header">
                         <span class="block-badge badge-componentes">COMPONENTES</span>
                     </div>
-                    <div class="componentes-list">
+                    <div class="componentes-list" id="componentes-list">
                         {% for comp in editor_data.componentes %}
-                        <label class="componente-item" data-comp-key="{{ comp.key }}">
-                            <input type="checkbox"
-                                   class="comp-active"
-                                   {% if comp.active %}checked{% endif %}>
-                            <span class="comp-info">
-                                <span class="comp-name">{{ comp.label }}</span>
-                                {% if comp.description %}
-                                <span class="comp-desc">{{ comp.description }}</span>
+                        <div class="componente-item" draggable="true" data-comp-key="{{ comp.key }}">
+                            <span class="drag-handle">⠿</span>
+                            <div class="comp-body">
+                                <label class="comp-header">
+                                    <input type="checkbox"
+                                           class="comp-active"
+                                           {% if comp.active %}checked{% endif %}>
+                                    <span class="comp-info">
+                                        <span class="comp-name">{{ comp.label }}</span>
+                                        {% if comp.description %}
+                                        <span class="comp-desc">{{ comp.description }}</span>
+                                        {% endif %}
+                                    </span>
+                                </label>
+                                {% if comp.articles %}
+                                <div class="comp-articles">
+                                    {% for title in comp.articles %}
+                                    <div class="comp-article-row" draggable="true" data-article-index="{{ forloop.counter0 }}">
+                                        <span class="drag-handle small-handle">⠿</span>
+                                        <span class="comp-article-title">{{ title }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
                                 {% endif %}
-                            </span>
-                        </label>
+                            </div>
+                        </div>
                         {% endfor %}
                     </div>
                 </div>

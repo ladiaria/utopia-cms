@@ -5,8 +5,7 @@ from django.contrib import admin
 from .models import HomeLayout
 from .views import get_default_grid_data
 
-# Fixed component definitions — order and keys are stable across deployments.
-# "description" is a short hint shown in the editor.
+# Fixed component definitions — keys must stay stable; label/description can change.
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": ""},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área"},
@@ -16,16 +15,52 @@ COMPONENT_DEFINITIONS = [
     {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": ""},
 ]
 
+# Placeholder articles shown in the editor until real data sources are defined.
+COMPONENT_PLACEHOLDER_ARTICLES = {
+    "apuntes_del_dia": [
+        "Primer artículo de Apuntes del día",
+        "Segundo artículo de Apuntes del día",
+        "Tercer artículo de Apuntes del día",
+    ],
+    "opinion": [
+        "Primera columna de opinión",
+        "Segunda columna de opinión",
+        "Tercera columna de opinión",
+    ],
+    "lo_ultimo": [
+        "Último artículo publicado 1",
+        "Último artículo publicado 2",
+        "Último artículo publicado 3",
+    ],
+    "recomendadas_lv": [
+        "Recomendado lunes a viernes 1",
+        "Recomendado lunes a viernes 2",
+        "Recomendado lunes a viernes 3",
+    ],
+    "recomendadas_domingo": [
+        "Recomendado domingo 1",
+        "Recomendado domingo 2",
+        "Recomendado domingo 3",
+    ],
+    "lo_mas_leido": [
+        "Artículo más leído hoy 1",
+        "Artículo más leído hoy 2",
+        "Artículo más leído hoy 3",
+    ],
+}
+
+_COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
+
 
 @admin.register(HomeLayout)
 class HomeLayoutAdmin(admin.ModelAdmin):
     change_form_template = "homev4/admin_change_form.html"
-    list_display = ("name", "publication", "scheduled_time", "is_manual_override", "modified")
+    list_display = ("name", "publication", "day", "start_time", "end_time", "is_manual_override", "modified")
     list_filter = ("publication", "is_manual_override")
     list_editable = ("is_manual_override",)
     readonly_fields = ("created", "modified", "manual_override_by", "grid_data")
     fieldsets = (
-        (None, {"fields": ("name", "publication", "scheduled_time")}),
+        (None, {"fields": ("name", "publication", "day", "start_time", "end_time")}),
         ("Override", {"fields": ("is_manual_override", "manual_override_by")}),
         ("Datos del layout (JSON)", {"fields": ("grid_data",), "classes": ("collapse",)}),
         ("Fechas", {"fields": ("created", "modified")}),
@@ -50,31 +85,42 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         from core.models import Article, Section, Category, get_current_edition
 
         result = {
-            "inicio_articles": [],
+            "principal_articles": [],
+            "suplemento_articles": [],
             "sections": [],
             "componentes": [],
         }
 
-        # INICIO articles: DB is source of truth (edition.top_articles with home_top=True).
-        # The saved JSON defines the order. Merge rules:
-        #   - Articles in saved JSON that are no longer in DB → dropped
-        #   - Articles in DB not yet in saved JSON (newly added to edition) → appended at end
         edition = get_current_edition()
+
+        # PRINCIPAL articles: DB is source of truth (edition.top_articles with home_top=True).
+        # Saved JSON defines the order. Merge rules:
+        #   - Articles in saved JSON no longer in DB → dropped
+        #   - New DB articles not in saved JSON → appended at end
         db_articles = list(edition.top_articles) if edition else []
         db_by_id = {a.id: a for a in db_articles}
 
-        saved_ids = grid_data.get("inicio", {}).get("article_ids", [])
+        # Support migration from old "inicio" key to "principal"
+        principal_data = grid_data.get("principal") or grid_data.get("inicio") or {}
+        saved_ids = principal_data.get("article_ids", [])
         if saved_ids:
-            # Apply saved ordering, skip articles no longer in edition
             ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
-            # Append any new edition articles not yet in saved order
             saved_set = set(saved_ids)
             for a in db_articles:
                 if a.id not in saved_set:
                     ordered.append(a)
-            result["inicio_articles"] = ordered
+            result["principal_articles"] = ordered
         else:
-            result["inicio_articles"] = db_articles
+            result["principal_articles"] = db_articles
+
+        # SUPLEMENTO articles: same merge logic, independent list
+        # TODO: define DB source when the user clarifies which section/edition feeds SUPLEMENTO
+        suplemento_saved_ids = grid_data.get("suplemento", {}).get("article_ids", [])
+        if suplemento_saved_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=suplemento_saved_ids)}
+            result["suplemento_articles"] = [by_id[aid] for aid in suplemento_saved_ids if aid in by_id]
+        else:
+            result["suplemento_articles"] = []
 
         # Sections: up to 3 articles each, respecting saved order if available
         for sec_data in grid_data.get("sections", []):
@@ -110,16 +156,56 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                     pass
             result["sections"].append(sec_info)
 
-        # Componentes: merge saved active states with fixed definitions (default active=True)
-        saved_comps = grid_data.get("componentes", {})
-        for defn in COMPONENT_DEFINITIONS:
-            saved = saved_comps.get(defn["key"], {})
-            result["componentes"].append({
-                "key": defn["key"],
-                "label": defn["label"],
-                "description": defn["description"],
-                "active": saved.get("active", True),
-            })
+        # Componentes: merge saved order/active states with fixed definitions.
+        # Saved format can be:
+        #   - list (new): [{key, active}, ...]  — preserves custom drag order
+        #   - dict (old): {key: {active: bool}} — migrated to list order on next save
+        saved_comps_raw = grid_data.get("componentes", [])
+        def _apply_article_order(placeholders, order):
+            """Reorder placeholder list according to saved index order."""
+            if order and len(order) == len(placeholders):
+                try:
+                    return [placeholders[i] for i in order]
+                except IndexError:
+                    pass
+            return placeholders
+
+        if isinstance(saved_comps_raw, list):
+            seen_keys = set()
+            for item in saved_comps_raw:
+                key = item.get("key", "")
+                defn = _COMP_DEF_MAP.get(key)
+                if defn and key not in seen_keys:
+                    seen_keys.add(key)
+                    placeholders = COMPONENT_PLACEHOLDER_ARTICLES.get(key, [])
+                    result["componentes"].append({
+                        "key": key,
+                        "label": defn["label"],
+                        "description": defn["description"],
+                        "active": item.get("active", True),
+                        "articles": _apply_article_order(placeholders, item.get("article_order")),
+                    })
+            # Append any definitions not present in the saved list
+            for defn in COMPONENT_DEFINITIONS:
+                if defn["key"] not in seen_keys:
+                    result["componentes"].append({
+                        "key": defn["key"],
+                        "label": defn["label"],
+                        "description": defn["description"],
+                        "active": True,
+                        "articles": COMPONENT_PLACEHOLDER_ARTICLES.get(defn["key"], []),
+                    })
+        else:
+            # Old dict format — use fixed definition order
+            for defn in COMPONENT_DEFINITIONS:
+                saved = saved_comps_raw.get(defn["key"], {})
+                result["componentes"].append({
+                    "key": defn["key"],
+                    "label": defn["label"],
+                    "description": defn["description"],
+                    "active": saved.get("active", True),
+                    "articles": COMPONENT_PLACEHOLDER_ARTICLES.get(defn["key"], []),
+                })
 
         return result
 
