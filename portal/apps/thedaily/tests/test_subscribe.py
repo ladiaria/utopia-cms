@@ -2,12 +2,12 @@
 from string import ascii_letters, digits, punctuation
 
 from django.conf import settings
-from django.test import TestCase
 from django.test.client import Client
 from django.contrib.auth.models import User
 
 from apps import mongo_db
 from libs.scripts.pwclear import phone_subscription_log_clear
+from core.tests import PreCopyImage
 from core.factories import UserFactory
 from thedaily.models import SubscriptionPrices
 
@@ -17,7 +17,7 @@ def generate_password():
     return User.objects.make_random_password(allowed_chars=allowed)
 
 
-class SubscribeTestCase(TestCase):
+class SubscribeTestCase(PreCopyImage):
 
     fixtures = getattr(settings, "THEDAILY_TEST_SUBSCRIBE_FIXTURES", ["test"])
     var = {"test01_planslug": settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT}

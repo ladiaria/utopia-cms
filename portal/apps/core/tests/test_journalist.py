@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
-from django.test import TestCase, Client
+from django.test import Client
 
 from core.models import Journalist
+from . import PreCopyImage
 
 
-class BaseJournalistTestCase(TestCase):
+class BaseJournalistTestCase(PreCopyImage):
 
     fixtures = ['test']
 
     def setUp(self):
+        super().setUp()
         self.client = Client()
         self.journalist = Journalist.objects.get(slug="test-journalist")
         self.journalist_other_job = Journalist.objects.get(slug="test-columnist")

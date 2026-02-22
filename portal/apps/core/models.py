@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# TODO: replace print() calls with logger.xxx(...)
 from django.core.validators import MinValueValidator, MaxValueValidator
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
@@ -2574,7 +2575,7 @@ def get_published_date():
     return publishing_date - timedelta(1)
 
 
-def get_current_edition(publication=None):
+def get_current_edition(publication=None, quiet=False):
     """
     Return last edition of publication if given, or the publications using root url as their home page if the
     publication slug is not given.
@@ -2603,8 +2604,8 @@ def get_current_edition(publication=None):
         else:
             return result
     except Exception as e:
-        if settings.DEBUG:
-            print('ERROR: %s' % e)
+        if settings.DEBUG and not quiet:
+            logger.warning(e)
         return None
 
 

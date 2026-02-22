@@ -1,11 +1,12 @@
 # coding:utf-8
 from django.conf import settings
-from django.test import TestCase, Client
+from django.test import Client
 
 from core.models import Section
+from . import PreCopyImage
 
 
-class SectionTestCase(TestCase):
+class SectionTestCase(PreCopyImage):
 
     fixtures = ['test']
 
