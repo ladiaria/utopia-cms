@@ -18,6 +18,9 @@ header {
   border-bottom: 0.5px solid #ababab;
   display: flex;
   flex-direction: column;
+  z-index: 1001;
+  position: sticky;
+  top: 0;
 
   &.category-pub-header,
   &.home-header {
@@ -260,7 +263,7 @@ header {
 
     ul {
       padding-left: 48px;
-      overflow: auto;
+      @include scroll-navbar;
     }
   }
 
@@ -294,8 +297,8 @@ header {
     margin: 0;
     display: flex;
     gap: 48px;
-    overflow-x: auto;
     gap: 24px;
+    @include scroll-navbar;
 
     li {
       transition: background-color 0.3s;
@@ -399,6 +402,8 @@ header {
       background: linear-gradient(to left, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
     }
     &.category-navbar {
+      margin-top: 16px;
+
       .home-link {
         display: none;
       }
@@ -419,6 +424,7 @@ header {
     position: fixed;
   }
 }
+
 @media #{$medium-and-up} {
   nav.nav-extended .nav-wrapper {
     min-height: $navbar-height;
@@ -1061,18 +1067,11 @@ header {
     vertical-align: middle;
     height: 40px;
     width: auto;
-    margin: 20px;
   }
 }
 
 .navbar-fixed {
   height: $line-height;
-}
-
-header {
-  z-index: 1001;
-  position: sticky;
-  top: 0;
 }
 
 #main-header {
@@ -1559,171 +1558,23 @@ main > header {
 
 // subheader
 .section-subheader {
-  padding-bottom: 20px;
+  padding: 20px 0;
   box-shadow: 0px 3px 6px #00000029;
 
-  .header-logo {
-    margin-bottom: 15px;
-    svg {
-      margin: 40px 0 0;
-      height: 50px;
-      width: auto;
-    }
-  }
-  .submenu {
-    &:not(.js) {
-      .submenu--list {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-    }
-
-    &--list {
-      display: flex;
-      margin: 0;
-
-      > li {
-        font-family: "Roboto", sans-serif;
-        font-size: 14px;
-        font-weight: bold;
-        margin-right: 5px;
-        color: $off-black-2;
-        text-transform: uppercase;
-        white-space: nowrap;
-        margin-bottom: 10px;
-        line-height: 25px;
-
-        a {
-          display: inline-block;
-          padding: 0 8px;
-          border-radius: 4px;
-          transition: all 0.2s ease-in-out;
-        }
-
-        a:hover {
-          background: rgba($color: #000000, $alpha: 0.1);
-        }
-        a:active {
-          background: rgba($color: #000000, $alpha: 0.2);
-        }
-
-        &.more {
-          button {
-            border: none;
-            background: none;
-            display: inline-block;
-            vertical-align: top;
-            position: relative;
-            top: -2px;
-          }
-        }
-      }
-      &.full {
-        > li {
-          flex-grow: 1;
-        }
-      }
-      svg {
-        vertical-align: middle;
-
-        &.external {
-          position: relative;
-          top: -1px;
-        }
-      }
-    }
-
-    .secondary {
-      display: none;
-      margin: 0;
-
-      > li {
-        float: left;
-        font-family: "Roboto", sans-serif;
-        font-size: 14px;
-        font-weight: bold;
-        margin-right: 18px;
-        color: $off-black-2;
-        text-transform: uppercase;
-        white-space: nowrap;
-        margin-bottom: 10px;
-        line-height: 30px;
-
-        a {
-          display: inline-block;
-          padding: 0 8px;
-          border-radius: 4px;
-          transition: all 0.2s ease-in-out;
-        }
-
-        a:hover {
-          background: rgba($color: #000000, $alpha: 0.1);
-        }
-        a:active {
-          background: rgba($color: #000000, $alpha: 0.2);
-        }
-
-        svg {
-          vertical-align: top;
-          position: relative;
-          top: -3px;
-        }
-        .external {
-          top: -1px;
-          vertical-align: middle;
-        }
-      }
-
-      &:after {
-        content: "";
-        display: block;
-        clear: both;
-      }
-    }
-
-    &.show-secondary {
-      .secondary {
-        display: inline-block;
-      }
-    }
-    .dropdown-content {
-      min-width: 140px;
-      li {
-        min-height: 36px;
-        > a,
-        > span {
-          font-family: "Roboto", sans-serif;
-          font-size: 12px;
-          line-height: 16px;
-          text-transform: uppercase;
-          color: $off-black-2;
-          padding: 10px;
-        }
-      }
-    }
-
-    .sub-cat {
-      margin-right: 18px;
-    }
-
-    .hidden {
-      display: none;
-    }
+  .header-logo svg {
+    height: 50px;
+    width: auto;
   }
 
   &.detail {
     position: relative;
     z-index: 1;
-    text-align: center;
-    padding-bottom: 0;
 
     .header-logo {
       margin-bottom: 0;
 
       svg {
         height: 40px;
-        width: auto;
-        margin: 10px 0;
       }
     }
   }
@@ -1731,8 +1582,8 @@ main > header {
 
 .scroll-navbar {
   display: flex;
-  overflow: auto;
   gap: 24px;
+  @include scroll-navbar;
 }
 
 body.interior {
