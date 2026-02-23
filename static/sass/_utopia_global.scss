@@ -882,7 +882,7 @@ a.ladiaria {
   body {
     &.frontpage {
       .container {
-        max-width: $container-width;
+        @include utopia-container;
       }
       .footer-portada {
         .container {

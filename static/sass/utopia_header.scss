@@ -16,6 +16,8 @@ header {
   font-family: "Dialect Gothic A";
   background-color: white;
   border-bottom: 0.5px solid #ababab;
+  display: flex;
+  flex-direction: column;
 
   &.category-pub-header,
   &.home-header {
@@ -46,7 +48,7 @@ header {
 
     &.section-detail-header,
     &.category-pub-header {
-      padding: 8px 20px 24px;
+      padding: 32px 20px 24px;
     }
 
     body.article &,
@@ -57,14 +59,12 @@ header {
 }
 
 .header-container {
-  max-width: $container-width;
-  margin: 0 auto;
-  width: 100%;
+  @include utopia-container;
 
   header.sticky &,
   body.section-detail,
   body.article & {
-    padding: 0;
+    padding: 0 20px;
     display: flex;
     align-items: center;
   }
@@ -1273,12 +1273,10 @@ body {
   }
 
   &__wrap {
-    margin: 0 auto;
-    display: flex;
     display: grid;
     grid-template-columns: repeat(5, auto);
-    max-width: $container-width;
     justify-content: space-between;
+    @include utopia-container;
   }
 
   &__col {
@@ -1559,6 +1557,10 @@ main > header {
   }
 }
 
+.section-subheader-container {
+  @include utopia-container;
+}
+
 // subheader
 .section-subheader {
   padding-bottom: 20px;
@@ -1730,6 +1732,13 @@ main > header {
     }
   }
 }
+
+.scroll-navbar {
+  display: flex;
+  overflow: auto;
+  gap: 24px;
+}
+
 body.interior {
   .section-subheader {
     > .container {
