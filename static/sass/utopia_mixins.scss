@@ -11,6 +11,16 @@ $base-font-size: 16px;
   }
 }
 
+@mixin scroll-navbar {
+  overflow: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @function px-to-rem($px-value) {
   @return ($px-value / $base-font-size) * 1rem;
 }
