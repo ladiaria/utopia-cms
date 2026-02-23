@@ -384,10 +384,6 @@ header {
     min-height: px-to-rem(44px);
     display: flex;
 
-    header.home-header & {
-      margin-top: 32px;
-    }
-
     > ul {
       display: flex;
       align-items: center;

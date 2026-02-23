@@ -5,6 +5,10 @@ $base-font-size: 16px;
   max-width: $container-width;
   margin: 0 auto;
   padding: 0 $padding-inline;
+
+  @media #{$medium-and-down} {
+    padding: 0;
+  }
 }
 
 @function px-to-rem($px-value) {
