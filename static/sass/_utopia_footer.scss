@@ -4,9 +4,8 @@
   color: white;
 
   &__container {
-    max-width: $container-width;
-    margin: 0 auto;
-    padding: 80px 0;
+    @include utopia-container;
+    padding: 80px $padding-inline;
     display: grid;
     justify-content: space-between;
     grid-template-columns: repeat(5, auto);

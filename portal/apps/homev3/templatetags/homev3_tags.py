@@ -179,30 +179,33 @@ class RenderArticlesSliderNode(Node):
 
     def render(self, context):
         if self.type == 'category':
-            category = Category.objects.get(slug=self.slug)
-            latest_articles = category.latest_articles()[:self.limit]
-            flatten_ctx = context.flatten()
-            flatten_ctx.update(
-                {
-                    'category': category,
-                    'articles': latest_articles,
-                    'edition': get_current_edition(),
-                    'is_portada': True,
-                    'slug': self.slug,
-                    'name': category.name,
-                    'description': category.description,
-                    'art_count': len(latest_articles),
-                }
-            )
+            try:
+                category = Category.objects.get(slug=self.slug)
+            except Category.DoesNotExist:
+                return ""
+            else:
+                latest_articles = category.latest_articles()[:self.limit]
+                flatten_ctx = context.flatten()
+                flatten_ctx.update(
+                    {
+                        'category': category,
+                        'articles': latest_articles,
+                        'edition': get_current_edition(),
+                        'is_portada': True,
+                        'slug': self.slug,
+                        'name': category.name,
+                        'description': category.description,
+                        'art_count': len(latest_articles),
+                    }
+                )
+                try:
+                    return loader.render_to_string(get_articles_slider_template(self.slug), flatten_ctx)
+                except TemplateDoesNotExist:
+                    return loader.render_to_string('articles_slider.html', flatten_ctx)
         else:
             # TODO: maybe we can call get_articles_slider_template with a second argument like type="section" and use
             #       the analogous logic for sections.
             return ""
-
-        try:
-            return loader.render_to_string(get_articles_slider_template(self.slug), flatten_ctx)
-        except TemplateDoesNotExist:
-            return loader.render_to_string('articles_slider.html', flatten_ctx)
 
 
 @register.simple_tag(takes_context=True)

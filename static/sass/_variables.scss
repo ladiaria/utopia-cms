@@ -22,7 +22,9 @@ $grey-2: #fbfbfb;
 $grey-3: #e0e0e0;
 $error-color: #e74c3c;
 $button-radius: 100px !default;
-$container-width: 1280px !default;
+
+$padding-inline: 20px;
+$container-width: 1280px + $padding-inline * 2 !default;
 
 // typography
 $sans: Arial, Arial, Helvetica, sans-serif;

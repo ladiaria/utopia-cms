@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from calendar import LocaleHTMLCalendar
 
 from django.utils.timezone import now, datetime

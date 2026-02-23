@@ -1,6 +1,7 @@
 from factory import Sequence, Faker
 from factory.django import DjangoModelFactory
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 
 from .models import Publication
@@ -13,7 +14,7 @@ class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
 
-    email = Sequence(lambda n: f"user_03{n}@gmail.com")
+    email = Sequence(lambda n: f"user_03{n}@{settings.CORE_TEST_EMAIL_KNOWN_GOOD_DOMAIN}")
     first_name = Sequence(lambda n: f"User 03{n}")
     username = Sequence(lambda n: f"username03{n}")
     last_name = Sequence(lambda n: f"Last Name 03{n}")

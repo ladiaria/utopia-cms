@@ -1,15 +1,16 @@
 # coding:utf-8
 import re
+from pathlib import Path
 
 from django.conf import settings
-from django.test import TestCase, Client
+from django.test import Client
 
 from photologue_ladiaria.management.commands.utopiacms_photosizes import Command
+from . import PreCopyImage, FIXTURE_AND_APP_HOLDING_TEST_IMAGE
 
 
-class ArticleTestCase(TestCase):
-
-    fixtures = ['test']
+class ArticleTestCase(PreCopyImage):
+    fixtures = [Path(FIXTURE_AND_APP_HOLDING_TEST_IMAGE[0]).stem] + getattr(settings, 'CORE_TEST_EXTRA_FIXTURES', [])
     http_host_header_param = {'HTTP_HOST': settings.SITE_DOMAIN}
     # add articles urls here, but keep the other
     urls_to_test = [
@@ -24,6 +25,7 @@ class ArticleTestCase(TestCase):
     ]
 
     def setUp(self):
+        super().setUp()
         # run command for photo sizes
         self.setup_photo_sizes()
 
@@ -40,16 +42,26 @@ class ArticleTestCase(TestCase):
                 self.assertEqual(response.status_code, 200, (response.status_code, response))
                 # test article photo relationship
                 self.assertIsNotNone(response.context['article'].photo)
-                # test photo path in the context
-                self.assertEqual(response.context['article'].photo.image, 'fixtures/test_pou_img.jpg')
+                # test photo path: fixture image gets converted to WebP; stem comes from fixture
+                photo_image = str(response.context['article'].photo.image)
+                stem = self._test_photo_image_stem
+                self.assertTrue(
+                    stem and photo_image.endswith('.webp') and stem in photo_image,
+                    'photo.image should be converted webp path with stem %s: got %s' % (stem, photo_image),
+                )
 
                 content = response.content.decode()
                 context_article = response.context['article']
 
                 # test the image caption render
                 self.assertRegex(content, '<p.*>{}</p>'.format(str(context_article.photo.caption)))
-                # test image src values for render, at least 3 sizes count in template
-                self.assertGreater(content.count('/media/fixtures/cache/test_pou_img_'), 3)
+                # test image src values for render, at least 3 sizes for photo cached after template render
+                photo_image_dir = str(Path(photo_image).parent)  # e.g. photologue/photos from fixture/storage
+                self.assertGreater(
+                    content.count(f"/media/{photo_image_dir}/cache/{stem}"),
+                    3,
+                    'expected multiple image/cache refs for %s in content' % stem,
+                )
                 # test meta noindex for not humor articles
                 self.assertNotIn('<meta name="robots" content="noindex">', content)
 
