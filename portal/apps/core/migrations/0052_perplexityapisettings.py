@@ -17,7 +17,15 @@ class Migration(migrations.Migration):
                 ('endpoint', models.URLField(default='https://api.perplexity.ai/chat/completions', help_text='Endpoint de la API de Perplexity')),
                 ('model', models.CharField(choices=[('sonar-pro', 'sonar-pro'), ('sonar', 'sonar'), ('sonar-reasoning-pro', 'sonar-reasoning-pro'), ('sonar-reasoning', 'sonar-reasoning'), ('sonar-deep-research', 'sonar-deep-research'), ('r1-1776', 'r1-1776')], default='sonar', help_text='Modelo de IA a utilizar', max_length=50)),
                 ('context_size', models.CharField(choices=[('low', 'low'), ('medium', 'medium'), ('high', 'high')], default='low', help_text='Opcion "search_context_size" a utilizar: low, medium o high', max_length=10)),
-                ('search_domain_filter', models.CharField(blank=True, default='ladiaria.com.uy', help_text='Dominios permitidos o restringidos, separados por coma, si queires excliur alguno use "-" delante del dominio, ej. -redis.com', max_length=500)),
+                (
+                    'search_domain_filter',
+                    models.CharField(
+                        blank=True,
+                        default="example.com",
+                        help_text='Dominios permitidos o restringidos, separados por coma, si queires excliur alguno use "-" delante del dominio, ej. -example.com',
+                        max_length=500,
+                    ),
+                ),
                 ('max_tokens', models.PositiveIntegerField(blank=True, help_text='Máximo de tokens por respuesta, si no se configura se usa el valor por defecto que depende del modelo escogido.', null=True)),
                 ('default_context', models.TextField(default='Responde en español de manera clara y concisa.', help_text='Contexto por defecto que siempre se enviará a Perplexity')),
             ],

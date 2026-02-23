@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
 from django import forms
+from django.core.exceptions import ImproperlyConfigured
 from django.db.utils import ProgrammingError
 from django.contrib.sites.models import Site
 
@@ -15,7 +15,7 @@ from .models import SubscriberEvento, SubscriberArticle, Registro
 
 try:
     current_site_name = Site.objects.get_current().name
-except (ProgrammingError, Site.DoesNotExist):
+except (ProgrammingError, Site.DoesNotExist, ImproperlyConfigured):
     current_site_name = 'este sitio'
 
 
