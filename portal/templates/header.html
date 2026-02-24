@@ -78,4 +78,7 @@
     </div>
   </div>
 </div>
-{% block subheader_navbar %}{% endblock %}
+
+{% if extra_header_template %}
+  {% include extra_header_template %}
+{% endif %}
