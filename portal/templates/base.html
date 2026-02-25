@@ -525,7 +525,7 @@
       <div id="nav-mobile" class="nav-mobile navbar-fixed">
         <nav>
           <div class="nav-wrapper">
-            <ul class="center row">
+            <ul class="" data-col-numbers="{{ mobile_nav_ths }}">
               {% if is_detail %}
                 {% with mobile_nav_ths=mobile_nav_ths|add:mobile_nav_detail_more %}
                   {% include 'mobile_nav_items.html' %}
