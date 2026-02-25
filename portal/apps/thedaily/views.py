@@ -5,7 +5,6 @@ import os
 from pydoc import locate
 import json
 import requests
-import pymongo
 from functools import wraps
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
@@ -129,6 +128,7 @@ from .utils import (
     collector_analysis,
     get_app_template,
     subscribe_log,
+    user_read_history,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -362,7 +362,11 @@ def login(request, product_slug=None, product_variant=None):
     #   allowed_hosts = {request.get_host()}
     #   if hasattr(settings, 'ALLOWED_REDIRECT_HOSTS'):
     #       allowed_hosts |= set(settings.ALLOWED_REDIRECT_HOSTS)
-    #   if url_has_allowed_host_and_scheme(requested_next, allowed_hosts=allowed_hosts, require_https=request.is_secure()):
+    #   if url_has_allowed_host_and_scheme(
+    #       requested_next,
+    #       allowed_hosts=allowed_hosts,
+    #       require_https=request.is_secure(),
+    #   ):
     #       next_page = requested_next
     #   else:
     #       next_page = '/'
@@ -1468,25 +1472,9 @@ def lista_lectura_favoritos(request):
 @login_required
 def lista_lectura_historial(request):
     """
-    Returns a paginated view of all articles viewed by the user, ordered by recently viewewd.
-    They are the ones in mongodb that have not been synced yet, union the ones already sinced saved in the model used
-    for this purpose.
+    Returns a paginated view of all articles viewed by the user
     """
-    # start the result set with mongo because these are the most recent viewed.
-    historial, mids = [], []
-    if mongo_db is not None:
-        for a in mongo_db.core_articleviewedby.find({'user': request.user.id}).sort('viewed_at', pymongo.DESCENDING):
-            try:
-                article_id = a['article']
-                historial.append(Article.objects.get(id=article_id))
-                mids.append(article_id)
-            except Article.DoesNotExist:
-                # the article could be removed
-                pass
-    # perform the union with the ones in the model
-    historial += [
-        avb.article for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at')
-    ]
+    historial = user_read_history(request.user)
     historial_count = len(historial)
     if is_xhr(request):
         return HttpResponse(historial_count)
@@ -2142,27 +2130,23 @@ def most_read_api(request):
 @permission_classes([HasAPIKey])
 def last_read_api(request):
     """
-    Takes email from POST and get the five latest read articles for the given user
+    Receives an email by POST and returns a json list with the five latest articles and their viewed_at timestamps
+    viewed by the user found with the email provided.
     """
     try:
         email = request.POST['email']
         if not email:
             return HttpResponseForbidden()
-
         user = User.objects.get(email=email)
-
-        # get latest read articles for the user
-        latest_read_articles = user.articleviewedby_set.all().values(
-            'article__headline',
-            'article__url_path',
-            'viewed_at').order_by("-viewed_at")[:5]
-        # formatting the list for CRM
-        articles_list = [{
-            'headline': a['article__headline'],
-            'url': a['article__url_path'],
-            'viewed_at': a['viewed_at'].strftime("%Y-%m-%d %H:%M:%S")
-        } for a in latest_read_articles]
-
+        return JsonResponse(
+            {
+                'last_read': [
+                    {'headline': a.headline, 'url': a.url_path, 'viewed_at': va.strftime("%Y-%m-%d %H:%M:%S")}
+                    for a, va in user_read_history(user, True, 5)
+                ],
+                'last_login': user.last_login.strftime("%Y-%m-%d %H:%M:%S") if user.last_login else None,
+            }
+        )
     except KeyError:
         return HttpResponseBadRequest('Parameter missing')
     except ValueError:
@@ -2171,7 +2155,6 @@ def last_read_api(request):
         return JsonResponse({"message": "Usuario no encontrado"}, status=404)
     except MultipleObjectsReturned:
         return JsonResponse({"message": "Multiples usuarios encontrados con el mismo email"}, status=404)
-    return JsonResponse(articles_list, safe=False, status=200)
 
 
 @never_cache

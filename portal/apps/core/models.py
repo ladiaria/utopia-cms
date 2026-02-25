@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# TODO: replace print() calls with logger.xxx(...)
 from django.core.validators import MinValueValidator, MaxValueValidator
 from past.utils import old_div
 from os.path import basename, splitext, dirname, join, isfile
@@ -50,7 +51,6 @@ from django.db.models import (
     Index,
     SET_NULL,
     CASCADE,
-    URLField,
     TextChoices,
     FloatField,
 )
@@ -217,7 +217,7 @@ class Publication(Model):
     def multi():
         try:
             return Publication.objects.count() > 1
-        except ProgrammingError:
+        except (ProgrammingError, ImproperlyConfigured):
             return False
 
     def newsletter_preview_url(self):
@@ -2575,7 +2575,7 @@ def get_published_date():
     return publishing_date - timedelta(1)
 
 
-def get_current_edition(publication=None):
+def get_current_edition(publication=None, quiet=False):
     """
     Return last edition of publication if given, or the publications using root url as their home page if the
     publication slug is not given.
@@ -2604,8 +2604,8 @@ def get_current_edition(publication=None):
         else:
             return result
     except Exception as e:
-        if settings.DEBUG:
-            print('ERROR: %s' % e)
+        if settings.DEBUG and not quiet:
+            logger.warning(e)
         return None
 
 
@@ -2745,15 +2745,19 @@ class PerplexityAPISettings(SingletonModel):
     search_domain_filter = CharField(
         max_length=500,
         blank=True,
-        default="ladiaria.com.uy",
-        help_text="Dominios permitidos o restringidos, separados por coma, "
-        'si queires excliur alguno use "-" delante del dominio, ej. -redis.com',
+        default=settings.SITE_DOMAIN,
+        help_text=(
+            "Dominios permitidos o restringidos, separados por coma, "
+            'si queires excliur alguno use "-" delante del dominio, ej. -example.com'
+        ),
     )
     max_tokens = PositiveIntegerField(
         blank=True,
         null=True,
-        help_text="Máximo de tokens por respuesta, si no se configura se usa "
-        "el valor por defecto que depende del modelo escogido.",
+        help_text=(
+            "Máximo de tokens por respuesta, si no se configura se usa "
+            "el valor por defecto que depende del modelo escogido."
+        ),
     )
     default_context = TextField(
         default="Responde en español de manera clara y concisa.",
@@ -2763,8 +2767,11 @@ class PerplexityAPISettings(SingletonModel):
     result_instructions = TextField(
         default=(
             "\nPor favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys.\n"
-            '- El campo "metatitles" debe ser un array de exactamente 3 strings, cada uno con un metatítulo diferente y adecuado para Google Discover, siguiendo el estilo de la diaria.\n'
-            '- El campo "copys" debe ser un array de exactamente 2 strings. Cada string debe incluir primero el copy para redes sociales y, en la misma string y separado por un salto de línea, los hashtags correspondientes.\n'
+            '- El campo "metatitles" debe ser un array de exactamente 3 strings, cada uno con un metatítulo diferente '
+            "y adecuado para Google Discover.\n"
+            '- El campo "copys" debe ser un array de exactamente 2 strings. Cada string debe incluir primero el copy '
+            "para redes sociales y, en la misma string y separado por un salto de línea, los hashtags "
+            "correspondientes.\n"
             "- No agregues elementos adicionales ni comentarios fuera del objeto JSON.\n\n"
             "Ejemplo de formato esperado:\n"
             "{\n"
@@ -2780,7 +2787,10 @@ class PerplexityAPISettings(SingletonModel):
             "}"
         ),
         verbose_name="Instrucciones para el resultado",
-        help_text="Describe detalladamente cómo debe presentarse el resultado. Ejemplo: 'Incluya unidades y redondee a dos decimales.'",
+        help_text=(
+            "Describe detalladamente cómo debe presentarse el resultado. Ejemplo: 'Incluya unidades y redondee a dos "
+            "decimales.'",
+        ),
         validators=[validar_ejemplo_formato],
     )
 

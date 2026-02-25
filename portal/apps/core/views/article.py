@@ -473,11 +473,11 @@ def perplexity_ask(request):
                 raise ValueError("No </think> marker found and content is not valid JSON") from e
 
         # Extract the substring after the marker.
-        json_str = content[idx + len(marker) :].strip()
+        json_str = content[idx + len(marker):].strip()
 
         # Remove markdown code fence markers if present.
         if json_str.startswith("```json"):
-            json_str = json_str[len("```json") :].strip()
+            json_str = json_str[len("```json"):].strip()
         if json_str.startswith("```"):
             json_str = json_str[3:].strip()
         if json_str.endswith("```"):

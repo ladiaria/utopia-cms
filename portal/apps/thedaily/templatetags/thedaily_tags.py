@@ -107,7 +107,11 @@ register.tag('iftimeuntil', if_time)
 
 
 @register.simple_tag
-def subscriptionprice(subscription_type=settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT):
+def subscriptionprice(subscription_type=None):
+    # subscription_type arg cannot be assigned from settings in the function signature because Django can load
+    # this module before the custom settings are loaded
+    if not subscription_type:
+        subscription_type = settings.THEDAILY_SUBSCRIPTION_TYPE_DEFAULT
     try:
         price = SubscriptionPrices.objects.get(subscription_type=subscription_type).price
     except SubscriptionPrices.DoesNotExist:

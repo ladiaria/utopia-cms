@@ -183,7 +183,7 @@ class JournalistViewSet(viewsets.ModelViewSet):
 
 class HomeArticleViewSet(viewsets.ModelViewSet):
     try:
-        edition = get_current_edition() or get_latest_edition()
+        edition = get_current_edition(quiet=True) or get_latest_edition()
     except Exception:
         edition = None
     try:
