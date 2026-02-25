@@ -12,7 +12,7 @@
   </nav>
 {% elif not article and category or publication and not section %}
   {% block category_publication_navbar %}
-    <nav class="navbar category-navbar">
+    <nav class="navbar category-navbar with-right-gradient">
       <a class="home-link" href="{% url "home" %}">Portada</a>
       <ul>
         {% if category %}

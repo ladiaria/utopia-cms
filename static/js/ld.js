@@ -258,6 +258,62 @@
       updateHeaderStickyState();
     }
 
+    function initCategoryNavbarGradients() {
+      const categoryNavbars = qsa("nav.category-navbar");
+      if (categoryNavbars.length === 0) {
+        return;
+      }
+
+      const epsilon = 1; // Pixel tolerance for sub-pixel rounding differences.
+      const updateNavbarGradientState = function (navbar) {
+        const list = qs("ul", navbar);
+        if (!list) {
+          return;
+        }
+
+        const hasOverflow = list.scrollWidth - list.clientWidth > epsilon;
+        if (!hasOverflow) {
+          navbar.classList.remove("with-left-gradient");
+          navbar.classList.remove("with-right-gradient");
+          return;
+        }
+
+        const isAtLeftEdge = list.scrollLeft <= epsilon;
+        const isAtRightEdge =
+          list.scrollLeft + list.clientWidth >= list.scrollWidth - epsilon;
+
+        navbar.classList.toggle("with-left-gradient", !isAtLeftEdge);
+        navbar.classList.toggle("with-right-gradient", !isAtRightEdge);
+      };
+
+      const updateAllNavbars = function () {
+        categoryNavbars.forEach(function (navbar) {
+          updateNavbarGradientState(navbar);
+        });
+      };
+
+      categoryNavbars.forEach(function (navbar) {
+        const list = qs("ul", navbar);
+        if (!list) {
+          return;
+        }
+        list.addEventListener(
+          "scroll",
+          function () {
+            updateNavbarGradientState(navbar);
+          },
+          { passive: true }
+        );
+      });
+
+      window.addEventListener("resize", updateAllNavbars);
+      window.addEventListener("orientationchange", updateAllNavbars);
+      window.addEventListener("load", updateAllNavbars);
+      updateAllNavbars();
+    }
+
+    initCategoryNavbarGradients();
+
     function loadComments() {
       const coralStream = qs("#coral_talk_stream");
       if (!coralStream) {
