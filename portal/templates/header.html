@@ -44,7 +44,7 @@
         <a href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresar</a>
       {% endif %}
       {% if not is_subscriber_any %}
-        <a href="{% url 'subscribe_landing' %}" class="btn">Suscribite</a>
+        <a href="{% url 'subscribe_landing' %}" class="btn btn__dark">Suscribite</a>
       {% endif %}
     </div>
   </div>
