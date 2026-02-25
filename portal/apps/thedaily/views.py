@@ -2138,10 +2138,16 @@ def last_read_api(request):
         email = request.POST['email']
         if not email:
             return HttpResponseForbidden()
-        articles_list = [
-            {'headline': a.headline, 'url': a.url_path, 'viewed_at': va.strftime("%Y-%m-%d %H:%M:%S")}
-            for a, va in user_read_history(User.objects.get(email=email), True, 5)
-        ]
+        user = User.objects.get(email=email)
+        return JsonResponse(
+            {
+                'last_read': [
+                    {'headline': a.headline, 'url': a.url_path, 'viewed_at': va.strftime("%Y-%m-%d %H:%M:%S")}
+                    for a, va in user_read_history(user, True, 5)
+                ],
+                'last_login': user.last_login.strftime("%Y-%m-%d %H:%M:%S") if user.last_login else None,
+            }
+        )
     except KeyError:
         return HttpResponseBadRequest('Parameter missing')
     except ValueError:
@@ -2150,7 +2156,6 @@ def last_read_api(request):
         return JsonResponse({"message": "Usuario no encontrado"}, status=404)
     except MultipleObjectsReturned:
         return JsonResponse({"message": "Multiples usuarios encontrados con el mismo email"}, status=404)
-    return JsonResponse(articles_list, safe=False, status=200)
 
 
 @never_cache
