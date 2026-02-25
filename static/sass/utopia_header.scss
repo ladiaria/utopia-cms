@@ -1225,17 +1225,6 @@ body {
     }
   }
 
-  a:not(.ut-btn) {
-    color: $off-black;
-    font-family: "Roboto", sans-serif;
-    display: inline-block;
-
-    &:hover {
-      transition: 200ms ease;
-      text-decoration: none;
-    }
-  }
-
   &__title {
     margin: 0 0 15px 0;
     font-size: 14px;
@@ -1316,6 +1305,16 @@ body {
     }
   }
 
+  .mobile-login-items {
+    display: none;
+    @media #{$medium-and-down} {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: max-content;
+    }
+  }
+
   ul {
     margin: 0;
     padding: 0;
@@ -1332,8 +1331,12 @@ body {
   @media #{$medium-and-down} {
     &__wrap {
       grid-template-columns: 1fr;
-      gap: 32px;
+      gap: 48px;
       padding-bottom: 24px;
+    }
+
+    &__col {
+      gap: 48px;
     }
   }
 }

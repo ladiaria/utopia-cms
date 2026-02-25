@@ -12,10 +12,18 @@ button {
 .btn {
   font-size: 1rem;
   line-height: 0.75rem;
-  background-color: #000;
-  color: white;
+  background-color: transparent;
+  color: $off-black;
   padding: 0.75rem 1.5rem;
   border-radius: 5px;
+  border: 1px solid $off-black;
+  text-align: center;
+
+  &__dark {
+    background-color: $off-black;
+    color: white;
+    border: 1px solid $off-black;
+  }
 }
 
 .ld-heading {
