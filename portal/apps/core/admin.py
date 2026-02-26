@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
@@ -778,8 +780,10 @@ class ArticleAdmin(VersionAdmin):
                 super().save_model(request, obj, form, change)
                 self.obj = obj
             except Exception as e:
-                if settings.DEBUG:
-                    print("DEBUG: error in core.admin.ArticleAdmin.save_model: %s" % e)
+                logging.error(f"Error in save_model: {e}", exc_info=True)
+                if hasattr(e, 'errors'):
+                    logging.error(f"Secondary operation failed after DB save: {e.errors}")
+                raise
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
