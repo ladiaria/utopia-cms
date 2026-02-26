@@ -146,7 +146,11 @@ header {
     justify-content: flex-end;
 
     a.search-btn {
+      width: 27px;
+      height: 27px;
       display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     button.user-menu-button {
@@ -160,16 +164,26 @@ header {
       grid-template-columns: 1fr;
     }
 
+    body.main-menu-open & {
+      grid-template-columns: 1fr auto 1fr;
+    }
+
     header.home-header & {
       min-height: unset;
       justify-content: center;
     }
 
     .upper-left-content {
+      order: 3;
+      justify-content: flex-end;
+    }
+
+    body:not(.main-menu-open) & .upper-left-content {
       display: none;
     }
 
     .upper-center-logo-container {
+      order: 2;
       display: flex;
       justify-content: center;
 
@@ -185,8 +199,14 @@ header {
         align-items: center;
       }
     }
-
     .upper-right-content {
+      order: 1;
+      justify-content: flex-start;
+    }
+    body:not(.main-menu-open) & .upper-right-content {
+      display: none;
+    }
+    .user-menu-button {
       display: none;
     }
   }
@@ -825,6 +845,11 @@ header {
   &:hover {
     opacity: 0.8;
   }
+
+  // Hide pill when menu is open
+  body.main-menu-open & {
+    display: none !important;
+  }
 }
 
 .logged-in {
@@ -1209,6 +1234,7 @@ body {
   pointer-events: none;
   position: fixed;
   padding-bottom: 60px;
+  padding-top: 80px;
 
   &.active {
     transition: 300ms ease;
@@ -1231,6 +1257,10 @@ body {
     font-family: "Roboto", sans-serif;
     font-weight: bold;
     color: $off-black;
+
+    span {
+      display: block;
+    }
   }
 
   &__title-name {
@@ -1297,6 +1327,7 @@ body {
       gap: 4px;
       li {
         padding: 4px 0;
+        line-height: normal;
         a {
           font-family: "Dialect Gothic A";
           font-size: px-to-rem(16px);
@@ -1329,6 +1360,17 @@ body {
   }
 
   @media #{$medium-and-down} {
+    top: px-to-rem(50px);
+    padding-top: 10px;
+
+    body.homepage & {
+      top: px-to-rem(150px);
+    }
+
+    &__close {
+      height: 27px;
+    }
+
     &__wrap {
       grid-template-columns: 1fr;
       gap: 48px;
@@ -1337,6 +1379,10 @@ body {
 
     &__col {
       gap: 48px;
+    }
+
+    &__title span {
+      display: inline;
     }
   }
 }
