@@ -6,7 +6,7 @@ from pydoc import locate
 import json
 import requests
 from functools import wraps
-from datetime import timedelta
+from datetime import timedelta  # TODO: check if can be switched to django.utils.timezone.timedelta
 from dateutil.relativedelta import relativedelta
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlparse, urlencode
@@ -75,6 +75,7 @@ from signupwall.middleware import (
     get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access, number_to_words
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
+from dashboard.conf import MAIN_SECTION_SLUGS, EXCLUDE_PUBLICATION_SLUGS
 
 from .models import (
     Subscriber,
@@ -2138,13 +2139,16 @@ def last_read_api(request):
         if not email:
             return HttpResponseForbidden()
         user = User.objects.get(email=email)
+        last_login = (
+            user.last_login.astimezone(timezone.get_current_timezone()).strftime("%Y-%m-%d %H:%M:%S")
+        ) if user.last_login else None
         return JsonResponse(
             {
                 'last_read': [
                     {'headline': a.headline, 'url': a.url_path, 'viewed_at': va.strftime("%Y-%m-%d %H:%M:%S")}
-                    for a, va in user_read_history(user, True, 5)
+                    for a, va in user_read_history(user, include_viewed_at=True, limit=5)
                 ],
-                'last_login': user.last_login.strftime("%Y-%m-%d %H:%M:%S") if user.last_login else None,
+                'last_login': last_login,
             }
         )
     except KeyError:
@@ -2163,54 +2167,46 @@ def last_read_api(request):
 @permission_classes([HasAPIKey])
 def read_articles_percentage_api(request):
     """
-    Takes email from POST and get the five latest read articles categories expressed in percentages
-    This take in consideration the articles read in the last 6 months
+    Takes email from POST and get the read articles for the user with that email with categories in percentages
     """
     try:
         email = request.POST['email']
         if not email:
             return HttpResponseForbidden()
-
+        months = int(request.POST.get('months') or "0")
         user = User.objects.get(email=email)
-
-        # get six months ago date
-        six_moths_ago = timezone.datetime.today() - relativedelta(months=+6)
-        # get viewed articles
-        viewed_articles = Article.objects.filter(
-            viewed_by=user, articleviewedby__viewed_at__gt=six_moths_ago).select_related('main_section').distinct()
-        total_articles_count = viewed_articles.count()
-        index_object = dict()
-        category_ids_counts = dict()
-        for article in viewed_articles:
+        # months ago date
+        ago_date = (timezone.datetime.today() - relativedelta(months=+months)) if months else None
+        # get viewed articles from mongodb
+        mongodb_articles = user_read_history(user, mongo_db_only=True, date_from=ago_date)
+        # get viewed articles from relational database
+        filter_kwargs = {"viewed_by": user}
+        if ago_date:
+            filter_kwargs["articleviewedby__viewed_at__gt"] = ago_date
+        rdb_articles = Article.objects.filter(
+            **filter_kwargs
+        ).exclude(id__in=[a.id for a in mongodb_articles]).select_related("main_section").distinct()
+        total_articles, category_ids_counts = mongodb_articles + list(rdb_articles), {}
+        for article in total_articles:
             if article.main_section:
-                if article.main_section.section.slug in getattr(settings, 'DASHBOARD_MAIN_SECTION_SLUGS', []):
-                    index_object['object'] = article.main_section.section
-                    index_object['name'] = article.main_section.section.name
-                    index_object['slug_id'] = 'section-{}'.format(  # noqa
-                        index_object['name'], article.main_section.section.name  # TODO: fix unused arg at possition 1
-                    )
-                elif article.main_section.section and article.main_section.section.category:
-                    index_object['object'] = article.main_section.section.category
-                    index_object['name'] = article.main_section.section.category.name
-                    index_object['slug_id'] = 'category-{}'.format(
-                        str(article.main_section.section.category.name).lower()
-                    )
-                elif (
-                        article.main_section.edition.publication
-                        and article.main_section.edition.publication.slug
-                        not in getattr(settings, "DASHBOARD_EXCLUDE_PUBLICATION_SLUGS", [])
-                ):
-                    index_object['object'] = article.main_section.edition.publication
-                    index_object['name'] = article.main_section.edition.publication.name
-                    index_object['slug_id'] = 'publication-{}'.format(article.main_section.edition.publication.slug)
-                if len(index_object) > 0:
-                    category_viewed_count = category_ids_counts.get(index_object['slug_id'], {'count': 0})
-                    category_viewed_count = category_viewed_count['count'] + 1
-                    category_ids_counts[index_object['slug_id']] = {
-                        'name': index_object['name'],
-                        'count': category_viewed_count,
-                        'category_percentage': category_viewed_count * 100 / total_articles_count
-                    }
+                item_name, item_slug, msection = None, None, article.main_section
+                if msection.section:
+                    if msection.section.slug in MAIN_SECTION_SLUGS:
+                        item_name, item_slug = msection.section.name, f's_{msection.section.slug}'
+                    elif msection.section.category:
+                        item_name, item_slug = msection.section.category.name, f'c_{msection.section.category.slug}'
+                if not item_slug and msection.edition and msection.edition.publication:
+                    publication_slug = msection.edition.publication.slug
+                    if publication_slug not in EXCLUDE_PUBLICATION_SLUGS:
+                        item_name, item_slug = msection.edition.publication.name, f'p_{publication_slug}'
+                if item_slug:
+                    item = category_ids_counts.get(item_slug, {'count': 0, 'name': item_name})
+                    item['count'] += 1
+                    category_ids_counts[item_slug] = item
+        # calculate the percentage of each category
+        total_articles_count = sum(item['count'] for item in category_ids_counts.values())
+        for item in category_ids_counts.values():
+            item['category_percentage'] = item['count'] * 100 / total_articles_count
     except KeyError:
         return HttpResponseBadRequest('Parameter missing')
     except ValueError:
