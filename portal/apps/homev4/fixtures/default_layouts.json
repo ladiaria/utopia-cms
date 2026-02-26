@@ -1,0 +1,130 @@
+[
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "LMJV · Mañana",
+      "publication": ["ladiaria"],
+      "day": "lmjv",
+      "start_time": "06:00:00",
+      "end_time": "11:00:00",
+      "ends_next_day": false,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": [],
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "LMJV · Mediodía",
+      "publication": ["ladiaria"],
+      "day": "lmjv",
+      "start_time": "11:00:00",
+      "end_time": "15:00:00",
+      "ends_next_day": false,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": [],
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "LMJV · Tarde",
+      "publication": ["ladiaria"],
+      "day": "lmjv",
+      "start_time": "15:00:00",
+      "end_time": "06:00:00",
+      "ends_next_day": true,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": [],
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "Martes · Mañana",
+      "publication": ["ladiaria"],
+      "day": "ma",
+      "start_time": "06:00:00",
+      "end_time": "11:00:00",
+      "ends_next_day": false,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": [],
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "Martes · Mediodía",
+      "publication": ["ladiaria"],
+      "day": "ma",
+      "start_time": "11:00:00",
+      "end_time": "15:00:00",
+      "ends_next_day": false,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": [],
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "Martes · Tarde",
+      "publication": ["ladiaria"],
+      "day": "ma",
+      "start_time": "15:00:00",
+      "end_time": "06:00:00",
+      "ends_next_day": true,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": [],
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "Sábado · Mañana",
+      "publication": ["ladiaria"],
+      "day": "sa",
+      "start_time": "06:00:00",
+      "end_time": "08:00:00",
+      "ends_next_day": true,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": [],
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "Domingo",
+      "publication": ["ladiaria"],
+      "day": "do",
+      "start_time": "08:00:00",
+      "end_time": "06:00:00",
+      "ends_next_day": true,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": [],
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  }
+]

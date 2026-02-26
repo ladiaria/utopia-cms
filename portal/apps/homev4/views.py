@@ -5,7 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from core.models import Publication, Section, Category
+from core.models import Article, Publication, Section, Category, get_current_edition
 
 from .models import HomeLayout
 
@@ -117,3 +117,120 @@ def categories_json(request):
         Category.objects.filter(has_newsletter=True).order_by("order").values("id", "name", "slug")
     )
     return JsonResponse(categories, safe=False)
+
+
+@staff_member_required
+def preview_layout(request, layout_id):
+    """Render the home template for a specific layout (opens in new tab from admin)."""
+    layout = get_object_or_404(HomeLayout, pk=layout_id)
+    grid_data = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+    active_comps = [c for c in grid_data.get("componentes", []) if c.get("active")]
+    return render(request, "homev4/home.html", {
+        "layout": layout,
+        "publication": layout.publication,
+        "home_data": build_home_data(grid_data),
+        "componentes": active_comps,
+    })
+
+
+def build_home_data(grid_data):
+    """
+    Pre-fetch article objects for every section in grid_data so the template
+    does not need to hit the database.  Returns a dict with:
+      principal_articles, suplemento_articles, sections (list of dicts with articles)
+    """
+    result = {
+        "principal_articles": [],
+        "suplemento_articles": [],
+        "sections": [],
+    }
+
+    edition = get_current_edition()
+
+    # PRINCIPAL — merge saved ordering with current edition top_articles
+    db_articles = list(edition.top_articles) if edition else []
+    db_by_id = {a.id: a for a in db_articles}
+    principal_data = grid_data.get("principal") or grid_data.get("inicio") or {}
+    saved_ids = principal_data.get("article_ids", [])
+    if saved_ids:
+        ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
+        saved_set = set(saved_ids)
+        for a in db_articles:
+            if a.id not in saved_set:
+                ordered.append(a)
+        result["principal_articles"] = ordered
+    else:
+        result["principal_articles"] = db_articles
+
+    # SUPLEMENTO
+    suplemento_ids = grid_data.get("suplemento", {}).get("article_ids", [])
+    if suplemento_ids:
+        by_id = {a.id: a for a in Article.published.filter(id__in=suplemento_ids)}
+        result["suplemento_articles"] = [by_id[aid] for aid in suplemento_ids if aid in by_id]
+
+    # SECTIONS (sections + categories)
+    for sec_data in grid_data.get("sections", []):
+        sec_type = sec_data.get("type", "section")
+        sec_id = sec_data.get("id")
+        sec_name = sec_data.get("name", "")
+        saved_ids = sec_data.get("article_ids", [])
+        articles = []
+        url = ""
+
+        if sec_type == "section" and sec_id:
+            try:
+                section = Section.objects.get(pk=sec_id)
+                sec_name = section.name
+                url = section.get_absolute_url()
+                if saved_ids:
+                    by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+                    articles = [by_id[aid] for aid in saved_ids if aid in by_id]
+                else:
+                    articles = list(section.latest(limit=3))
+            except Section.DoesNotExist:
+                pass
+        elif sec_type == "category" and sec_id:
+            try:
+                category = Category.objects.get(pk=sec_id)
+                sec_name = category.name
+                url = f"/{category.slug}/"
+                if saved_ids:
+                    by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+                    articles = [by_id[aid] for aid in saved_ids if aid in by_id]
+                elif hasattr(category, "home"):
+                    articles = list(category.home.articles_ordered()[:3])
+            except Category.DoesNotExist:
+                pass
+
+        result["sections"].append({
+            "type": sec_type,
+            "id": sec_id,
+            "name": sec_name,
+            "url": url,
+            "articles": articles,
+        })
+
+    return result
+
+
+def active_layout(request, publication_slug=None):
+    if publication_slug:
+        publication = get_object_or_404(Publication, slug=publication_slug)
+    else:
+        publication = get_default_publication()
+    layout = HomeLayout.get_active_layout(publication)
+    if layout is None:
+        return render(request, "homev4/home.html", {
+            "layout": None,
+            "publication": publication,
+            "home_data": {},
+            "componentes": [],
+        })
+    grid_data = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+    active_comps = [c for c in grid_data.get("componentes", []) if c.get("active")]
+    return render(request, "homev4/home.html", {
+        "layout": layout,
+        "publication": publication,
+        "home_data": build_home_data(grid_data),
+        "componentes": active_comps,
+    })

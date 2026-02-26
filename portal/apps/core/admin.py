@@ -3,6 +3,7 @@ import logging
 
 from requests.exceptions import ConnectionError
 import json
+import logging
 from urllib.parse import urljoin
 from pydoc import locate
 from kombu.exceptions import OperationalError

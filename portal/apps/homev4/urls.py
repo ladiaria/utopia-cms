@@ -8,6 +8,9 @@ urlpatterns = [
     path("save/<int:layout_id>/", views.save_grid, name="save_grid"),
     path("reset/<int:layout_id>/", views.reset_grid, name="reset_grid"),
     path("sync/<int:layout_id>/", views.sync_sections, name="sync_sections"),
+    path("preview/<int:layout_id>/", views.preview_layout, name="preview_layout"),
     path("api/sections/", views.sections_json, name="sections_json"),
     path("api/categories/", views.categories_json, name="categories_json"),
+    path("api/active-layout/", views.active_layout, name="active_layout"),
+    path("api/active-layout/<slug:publication_slug>/", views.active_layout, name="active_layout_pub"),
 ]
