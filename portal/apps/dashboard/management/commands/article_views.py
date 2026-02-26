@@ -10,6 +10,7 @@ from django.db.models import Sum
 from django.utils.timezone import datetime, timedelta, now
 
 from core.models import Article
+from dashboard.conf import MAIN_SECTION_SLUGS, EXCLUDE_PUBLICATION_SLUGS
 
 
 class Command(BaseCommand):
@@ -56,9 +57,7 @@ class Command(BaseCommand):
 
         for article in articles.iterator():
             index_object = None
-            if article.main_section and article.main_section.section.slug in getattr(
-                settings, 'DASHBOARD_MAIN_SECTION_SLUGS', []
-            ):
+            if article.main_section and article.main_section.section.slug in MAIN_SECTION_SLUGS:
                 index_object = article.main_section.section
             elif article.main_section and article.main_section.section and article.main_section.section.category:
                 index_object = article.main_section.section.category
@@ -66,7 +65,7 @@ class Command(BaseCommand):
                 article.main_section
                 and article.main_section.edition.publication
                 and article.main_section.edition.publication.slug
-                not in getattr(settings, 'DASHBOARD_EXCLUDE_PUBLICATION_SLUGS', [])
+                not in EXCLUDE_PUBLICATION_SLUGS
             ):
                 index_object = article.main_section.edition.publication
             if index_object:
