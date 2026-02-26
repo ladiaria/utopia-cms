@@ -815,7 +815,6 @@ class ArticleAdmin(AdminLockingBase, VersionAdmin):
                 logging.error(f"Error in save_model: {e}", exc_info=True)
                 if hasattr(e, 'errors'):
                     logging.error(f"Secondary operation failed after DB save: {e.errors}")
-                raise
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)

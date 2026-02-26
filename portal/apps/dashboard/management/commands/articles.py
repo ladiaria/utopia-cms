@@ -14,6 +14,7 @@ from django.utils.timezone import now, datetime, timedelta
 from apps import mongo_db
 from core.models import Article, ArticleRel, Section, Publication, ArticleUrlHistory, Category
 from signupwall.middleware import get_article_by_url_kwargs
+from dashboard.conf import MAIN_SECTION_SLUGS, EXCLUDE_PUBLICATION_SLUGS
 
 
 class Command(BaseCommand):
@@ -105,14 +106,14 @@ class Command(BaseCommand):
                         section_viewed = main_sections.get(u.id, [])
                         section_viewed.append(article.main_section)
                         main_sections[u.id] = section_viewed
-                        if article.main_section.section.slug in getattr(settings, 'DASHBOARD_MAIN_SECTION_SLUGS', []):
+                        if article.main_section.section.slug in MAIN_SECTION_SLUGS:
                             index_object = article.main_section.section
                         elif article.main_section.section and article.main_section.section.category:
                             index_object = article.main_section.section.category
                         elif (
                             article.main_section.edition.publication
                             and article.main_section.edition.publication.slug
-                            not in getattr(settings, "DASHBOARD_EXCLUDE_PUBLICATION_SLUGS", [])
+                            not in EXCLUDE_PUBLICATION_SLUGS
                         ):
                             index_object = article.main_section.edition.publication
                         if index_object:

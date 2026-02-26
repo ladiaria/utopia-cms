@@ -59,14 +59,14 @@ button {
 
 .ld-caption {
   font-size: px-to-rem(16px);
-  font-family: "Roboto", sans-serif;
+  font-family: "Dialect Gothic A", sans-serif;
   color: $off-black;
   font-weight: normal;
 
   p {
     margin-bottom: 16px;
-    font-family: "Roboto", sans-serif;
-    font-size: 16px;
+    font-family: "Dialect Gothic A", sans-serif;
+    font-size: px-to-rem(14px);
     color: $off-black;
   }
 }
