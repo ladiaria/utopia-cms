@@ -603,8 +603,12 @@ def perplexity_ask(request):
             logging.error(f"Unexpected Error: {ex}", exc_info=True)
             response = {"error": True, "message": answer, "status": 500}
             if api_response is not None:
-                answer = api_response.json()["error"]["message"]
-                logging.error(f"API Respuesta: {answer}")
-                response = {"error": True, "message": answer, "status": 500}
+                logging.error(f"API status_code: {api_response.status_code}, body: {api_response.text[:500]}")
+                try:
+                    answer = api_response.json()["error"]["message"]
+                    logging.error(f"API Respuesta: {answer}")
+                    response = {"error": True, "message": answer, "status": 500}
+                except Exception:
+                    pass
         return JsonResponse(response)
     return JsonResponse({"error": True, "message": "Método no permitido."}, status=405)

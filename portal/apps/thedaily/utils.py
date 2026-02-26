@@ -25,6 +25,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
+from django.utils.timezone import make_aware, utc, get_current_timezone
 
 from libs.utils import crm_rest_api_kwargs
 from apps import mongo_db
@@ -250,7 +251,7 @@ def get_profile_newsletters_ordered():
     return [nl_obj for nl_obj in nl_custom_ordered if nl_obj] + nl_alpha
 
 
-def user_read_history(user, include_viewed_at=False, limit=None):
+def user_read_history(user, include_viewed_at=False, limit=None, date_from=None, mongo_db_only=False):
     """
     Returns a list of articles or a list tuples (article and viewed_at if requested by arg) ordered by viewed_at.
     They are the ones in mongodb that have not been synced yet, union the ones already sinced saved in the model used
@@ -258,11 +259,16 @@ def user_read_history(user, include_viewed_at=False, limit=None):
     - The user object
     - Bool indicating if the viewed_at date is also needed (False by default)
     - A limit parameter (None by default)
+    - A date_from filter parameter (None by default)
+    - A boolean parameter to indicate if the history should be only from the mongo db (False by default)
     """
     # start the result set with mongo because these are the most recent viewed.
-    historial, mids = [], []
+    historial, mids, ctz = [], [], get_current_timezone()
     if mongo_db is not None:
-        mquery = mongo_db.core_articleviewedby.find({'user': user.id}).sort('viewed_at', pymongo.DESCENDING)
+        mquery_kwargs = {'user': user.id}
+        if date_from:
+            mquery_kwargs['viewed_at'] = {'$gt': date_from}
+        mquery = mongo_db.core_articleviewedby.find(mquery_kwargs).sort('viewed_at', pymongo.DESCENDING)
         count = 0
         for a in mquery:
             if limit and count >= limit:
@@ -270,18 +276,25 @@ def user_read_history(user, include_viewed_at=False, limit=None):
             try:
                 article_id = a['article']
                 article = Article.objects.get(id=article_id)
-                historial.append((article, a['viewed_at']) if include_viewed_at else article)
+                historial.append(
+                    (article, make_aware(a['viewed_at'], utc).astimezone(ctz)) if include_viewed_at else article
+                )
                 mids.append(article_id)
                 count += 1
             except Article.DoesNotExist:
                 # the article could be removed
                 pass
     # perform the union with the ones in the model, if needed
-    if not limit or limit > count:
-        dbquery = user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at')
+    if not mongo_db_only and (not limit or limit > count):
+        dbquery = user.articleviewedby_set
+        if date_from:
+            dbquery = dbquery.filter(viewed_at__gt=date_from)
+        dbquery = dbquery.exclude(article_id__in=mids).order_by('-viewed_at')
         if limit:
             dbquery = dbquery[:limit - len(mids)]
-        historial += [((avb.article, avb.viewed_at) if include_viewed_at else avb.article) for avb in dbquery]
+        historial += [
+            ((avb.article, avb.viewed_at.astimezone(ctz)) if include_viewed_at else avb.article) for avb in dbquery
+        ]
     return historial
 
 
