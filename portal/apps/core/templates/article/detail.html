@@ -132,26 +132,19 @@
           {% if article.articlecollection %}
             <div class="collection-header">
               <div class="collection-intro">
-                <svg id="collection-logo" xmlns="http://www.w3.org/2000/svg" width="22" height="21" viewBox="0 0 22 21" fill="none">
-                  <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" id="collection-logo" width="22" height="21" fill="none" viewBox="0 0 22 21"><path fill="#a4a4a4" d="M11 .079c-.5 0-1 .19-1.41.59l-3.3 3.29 4.71 4.7 4.71-4.7-3.3-3.29c-.41-.4-.91-.59-1.41-.59m-6.12 5.29-3.29 3.3c-.79.78-.79 2.04 0 2.82l3.29 3.3 4.7-4.71zm12.24 0-4.7 4.71 4.7 4.71 3.29-3.3c.79-.78.79-2.04 0-2.82zM11 11.499l-4.71 4.7 3.3 3.29c.78.79 2.04.79 2.82 0l3.3-3.29z"/></svg>
                 <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
                 {% if include_after_headline %}{% include include_after_headline %}{% endif %}
-                <svg id="line-svg" xmlns="http://www.w3.org/2000/svg" width="180" height="2" viewBox="0 0 180 2" fill="none">
-                  <path d="M0 1.08124H180" stroke="#A4A4A4"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" id="line-svg" width="180" height="2" fill="none" viewBox="0 0 180 2"><path stroke="#a4a4a4" d="M0 1.081h180"/></svg>
                 {% if article.has_deck %}
                   <p class="collection-description">{{ article.deck|ldmarkup|bleach }}</p>
                 {% endif %}
                 {% if article.photo_author %}
                   <p class="photo-author">{{ article.photo_type }}: {{ article.photo_author }}</p>
                 {% endif %}
-                <svg width="44" height="35" viewBox="0 0 44 35" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12.82 10.0812L22 19.2612L31.18 10.0812L34 12.9212L22 24.9212L10 12.9212L12.82 10.0812Z" fill="#A4A4A4"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="35" fill="none" viewBox="0 0 44 35"><path fill="#a4a4a4" d="m12.82 10.081 9.18 9.18 9.18-9.18 2.82 2.84-12 12-12-12z"/></svg>
               </div>
-              <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}"
-                      alt="{{ article.photo_caption }}">
+              <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}" alt="{{ article.photo_caption }}">
                 <picture>
                   <!--[if IE 9]><video style="display: none;"><![endif]-->
                   <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
@@ -160,8 +153,7 @@
                   <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
                   <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
                   <!--[if IE 9]></video><![endif]-->
-                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
-                       data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
+                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}" data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
                 </picture>
               </figure>
             </div>
@@ -176,21 +168,12 @@
                   <source srcset="{{ article.photo.get_450w_url }}" media="(min-width: 300px)">
                   <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
                   <!--[if IE 9]></video><![endif]-->
-                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
-                       data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
+                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}" data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
                 </picture>
                 <figcaption class="article-caption ld-caption">
                   {% if article.photo.caption %}<p id="photo-caption">{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
                   {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
                 </figcaption>
-                <script type="text/javascript">
-                  $(function(){
-                    const captionHeight = $('#photo-caption').height();
-                    if (captionHeight > 20) {
-                      $('.article-caption').addClass('vertical');
-                    }
-                  });
-                </script>
               </figure>
             </div>
           {% endif %}
@@ -216,7 +199,7 @@
         {% if article.has_deck or article.has_lead %}
           {% if article.has_deck %}
             {% block article_deck %}
-              <p class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</p>
+              <p class="article__deck">{{ article.deck|ldmarkup|bleach }}</p>
             {% endblock %}
           {% endif %}
           {% if article.has_lead %}<p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>{% endif %}
@@ -278,9 +261,6 @@
           {% endif %}
         {% endif %}
         {% endcomment %}
-        {% if not article_restricted_cf or restricted_access %}
-          <p class="reading-time">{{ article.reading_time }} de lectura</p>
-        {% endif %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
         </div>{# opened in line 103 #}
@@ -369,33 +349,20 @@
         </div>
       </div>
 
-      {# begin restricted content #}
-      {% if not request.signupwall or not article_restricted_cf or restricted_access %}
-
-        {% comment %} {% if article.audio %}{% include 'article/audio.html' %}{% endif %} {% endcomment %}
-
-        <div class="article-author">
+      <div class="article-aditional-info">
+        <p class="article-author">
           {% with authors=article.get_authors %}
             {% if authors %}
-              Escribe
               {% for author in authors %}
-                <span class="small"><a href="{{ author.get_absolute_url }}">{{ author.name }}</a></span>
-                {% if not forloop.last %}, {% endif %}
+                {% if not forloop.first and not forloop.last %}, {% elif forloop.last and not forloop.first %} y {% endif %}
+                <span><a href="{{ author.get_absolute_url }}">{{ author.name }}</a></span>
               {% endfor %}
-              {% if section %} <span class="small">en </span>{% endif %}
             {% endif %}
           {% endwith %}
-          {% if section %}
-            <span class="small">
-              {% block byline_section %}
-                <a href="{% url 'section_detail' section_slug=section.slug %}">{{ section }}</a>
-              {% endblock %}
-            </span>
-          {% endif %}
-        </div>
-
+          <span class="reading-time"> - {{ article.reading_time }} de lectura</span>
+        </p>
         {% if article.date_published %}
-          <div class="article-date">
+          <p class="article-date">
             Publicado
             {% if date_published_use_main_publication %}
               el <span>{{ article.main_section.edition.date_published_verbose }}</span>
@@ -417,8 +384,16 @@
                 </span>
               {% endif %}
             {% endif %}
-          </div>
+          </p>
         {% endif %}
+      </div>
+
+      {# begin restricted content #}
+      {% if not request.signupwall or not article_restricted_cf or restricted_access %}
+
+        {% comment %} {% if article.audio %}{% include 'article/audio.html' %}{% endif %} {% endcomment %}
+
+
 
         {% if not request.signupwall %}{# closed in line 676 #}
 

@@ -60,14 +60,10 @@
         {% if article.articlecollection %}
           <div class="collection-header">
             <div class="collection-intro">
-              <svg id="collection-logo" xmlns="http://www.w3.org/2000/svg" width="22" height="21" viewBox="0 0 22 21" fill="none">
-                <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" id="collection-logo" width="22" height="21" fill="none" viewBox="0 0 22 21"><path fill="#a4a4a4" d="M11 .079c-.5 0-1 .19-1.41.59l-3.3 3.29 4.71 4.7 4.71-4.7-3.3-3.29c-.41-.4-.91-.59-1.41-.59m-6.12 5.29-3.29 3.3c-.79.78-.79 2.04 0 2.82l3.29 3.3 4.7-4.71zm12.24 0-4.7 4.71 4.7 4.71 3.29-3.3c.79-.78.79-2.04 0-2.82zM11 11.499l-4.71 4.7 3.3 3.29c.78.79 2.04.79 2.82 0l3.3-3.29z"/></svg>
               <h1 class="article-title after_foto">{{ article.headline|ldmarkup|bleach }}</h1>
               {% if include_after_headline %}{% include include_after_headline %}{% endif %}
-              <svg id="line-svg" xmlns="http://www.w3.org/2000/svg" width="180" height="2" viewBox="0 0 180 2" fill="none">
-                <path d="M0 1.08124H180" stroke="#A4A4A4"/>
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" id="line-svg" width="180" height="2" fill="none" viewBox="0 0 180 2"><path stroke="#a4a4a4" d="M0 1.081h180"/></svg>
               {% if article.has_deck %}
                 <p class="collection-description">{{ article.deck|ldmarkup|bleach }}</p>
               {% endif %}
@@ -208,7 +204,7 @@
     {% if article.has_deck or article.has_lead %}
       {% if article.has_deck %}
         {% block article_deck %}
-          <h2 class="article-deck article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+          <h2 class="article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
         {% endblock %}
       {% endif %}
       {% if article.has_lead %}
