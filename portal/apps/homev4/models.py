@@ -5,6 +5,7 @@ from django.utils import timezone
 
 DAY_CHOICES = [
     ("lv", "Lunes a Viernes"),
+    ("lmjv", "Lunes, Miércoles, Jueves y Viernes"),
     ("sa", "Sábado"),
     ("do", "Domingo"),
     ("lu", "Lunes"),
@@ -16,11 +17,11 @@ DAY_CHOICES = [
 
 # Maps Python weekday() (0=Monday … 6=Sunday) to matching day choice codes
 _WEEKDAY_TO_DAY_CODES = {
-    0: ["lv", "lu"],
+    0: ["lv", "lmjv", "lu"],
     1: ["lv", "ma"],
-    2: ["lv", "mi"],
-    3: ["lv", "ju"],
-    4: ["lv", "vi"],
+    2: ["lv", "lmjv", "mi"],
+    3: ["lv", "lmjv", "ju"],
+    4: ["lv", "lmjv", "vi"],
     5: ["sa"],
     6: ["do"],
 }
@@ -29,9 +30,13 @@ _WEEKDAY_TO_DAY_CODES = {
 class HomeLayout(models.Model):
     name = models.CharField("nombre", max_length=100)
     publication = models.ForeignKey("core.Publication", on_delete=models.CASCADE, verbose_name="publicación")
-    day = models.CharField("día", max_length=2, choices=DAY_CHOICES, null=True, blank=True)
+    day = models.CharField("día", max_length=4, choices=DAY_CHOICES, null=True, blank=True)
     start_time = models.TimeField("hora inicio", null=True, blank=True)
     end_time = models.TimeField("hora fin", null=True, blank=True)
+    ends_next_day = models.BooleanField(
+        "termina al día siguiente", default=False,
+        help_text="Activar cuando el rango horario cruza la medianoche (ej: 15:00 del sábado → 06:00 del domingo)",
+    )
     is_manual_override = models.BooleanField(
         "override manual", default=False,
         help_text="Cuando está activo, este layout tiene prioridad sobre los programados",
@@ -66,18 +71,40 @@ class HomeLayout(models.Model):
 
         now = timezone.localtime()
         current_time = now.time()
-        matching_days = _WEEKDAY_TO_DAY_CODES.get(now.weekday(), [])
+        current_weekday = now.weekday()
+        matching_days = _WEEKDAY_TO_DAY_CODES.get(current_weekday, [])
 
-        # Get candidates: matching day and already started
-        candidates = cls.objects.filter(
+        # Also check previous day's layouts that end_next_day and haven't ended yet
+        prev_weekday = (current_weekday - 1) % 7
+        prev_matching_days = _WEEKDAY_TO_DAY_CODES.get(prev_weekday, [])
+
+        candidates = []
+
+        # Layouts from today that have already started
+        today_candidates = cls.objects.filter(
             publication=publication,
             is_manual_override=False,
             day__in=matching_days,
             start_time__lte=current_time,
         ).order_by("-start_time")
 
-        # Return the first candidate whose end_time hasn't passed (None = no end)
-        for layout in candidates:
-            if layout.end_time is None or current_time <= layout.end_time:
-                return layout
-        return None
+        for layout in today_candidates:
+            if layout.ends_next_day:
+                # Starts today, ends tomorrow: active from start_time until midnight
+                candidates.append(layout)
+            elif layout.end_time is None or current_time <= layout.end_time:
+                candidates.append(layout)
+
+        # Layouts from yesterday that cross midnight and are still active
+        prev_candidates = cls.objects.filter(
+            publication=publication,
+            is_manual_override=False,
+            day__in=prev_matching_days,
+            ends_next_day=True,
+            end_time__gt=current_time,
+        )
+
+        for layout in prev_candidates:
+            candidates.append(layout)
+
+        return candidates[0] if candidates else None

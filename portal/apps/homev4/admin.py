@@ -1,9 +1,22 @@
 import json
 
 from django.contrib import admin
+from django.db.models import Case, IntegerField, Value, When
 
 from .models import HomeLayout
 from .views import get_default_grid_data
+
+_DAY_ORDER = {
+    "lmjv": 0,
+    "ma":   1,
+    "lv":   2,
+    "lu":   3,
+    "mi":   4,
+    "ju":   5,
+    "vi":   6,
+    "sa":   7,
+    "do":   8,
+}
 
 # Fixed component definitions — keys must stay stable; label/description can change.
 COMPONENT_DEFINITIONS = [
@@ -79,6 +92,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["save_grid_url"] = f"/homev4/save/{obj.pk}/"
             extra_context["reset_grid_url"] = f"/homev4/reset/{obj.pk}/"
             extra_context["sync_sections_url"] = f"/homev4/sync/{obj.pk}/"
+            extra_context["preview_url"] = f"/homev4/preview/{obj.pk}/"
         return super().change_view(request, object_id, form_url, extra_context)
 
     def _build_editor_data(self, grid_data):
@@ -208,6 +222,18 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                 })
 
         return result
+
+    def get_queryset(self, request):
+        # Cannot call super() here: the parent's get_queryset applies get_ordering()
+        # internally, which references "day_order" before the annotation exists.
+        # We annotate first, then order.
+        qs = self.model._default_manager.get_queryset()
+        day_order = Case(
+            *[When(day=day, then=Value(order)) for day, order in _DAY_ORDER.items()],
+            default=Value(99),
+            output_field=IntegerField(),
+        )
+        return qs.annotate(day_order=day_order).order_by("day_order", "start_time")
 
     @admin.action(description="Activar override manual")
     def activate_override(self, request, queryset):

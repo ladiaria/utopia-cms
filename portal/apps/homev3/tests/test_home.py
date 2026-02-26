@@ -1,14 +1,13 @@
 # coding:utf-8
-
 from django.conf import settings
-from django.test import TestCase
 from django.test.client import Client
 from django.contrib.auth.models import User
 
 from core.factories import UserFactory
+from core.tests import PreCopyImage
 
 
-class HomeTestCase(TestCase):
+class HomeTestCase(PreCopyImage):
 
     fixtures = ['test']
     http_host_header_param = {'HTTP_HOST': settings.SITE_DOMAIN}
@@ -27,6 +26,9 @@ class HomeTestCase(TestCase):
         {'url': '/test/articulo/2020/11/test-article3/', 'amp': True, 'headers': http_host_header_param},
     )
     amp_detection = '<link rel="amphtml"'
+
+    def _pre_setup(self, *args, **kwargs):
+        super()._pre_setup(*args, precreate_current_edition=True, **kwargs)
 
     def test1_home(self):
         # a way to make this test fail by settings (may be useful to know if you get noticed when tests are failing)

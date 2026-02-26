@@ -28,7 +28,7 @@ class CRMSyncTestCase(TestCase):
         super().setUpClass()
         if settings.CRM_API_UPDATE_USER_URI and cls.api_key:
             name, password = "John Doe", User.objects.make_random_password()
-            email = "%s%s@%s" % (cls.email_pre_prefix, rand_chars(), "gmail.com")
+            email = "%s%s@%s" % (cls.email_pre_prefix, rand_chars(), settings.CORE_TEST_EMAIL_KNOWN_GOOD_DOMAIN)
             # create a user with very low collission probability on email field
             cls.test_user = User.objects.create_user(email, email, password)
             cls.test_user.name, cls.test_user.is_active = name, True
@@ -53,7 +53,9 @@ class CRMSyncTestCase(TestCase):
         else:
             print("WARNING: 'CRM getuser API uri not set, test full validity can't be determined")
         # change email
-        self.test_user.email = "%s%s@%s" % (self.email_pre_prefix, rand_chars(), "gmail.com")
+        self.test_user.email = "%s%s@%s" % (
+            self.email_pre_prefix, rand_chars(), settings.CORE_TEST_EMAIL_KNOWN_GOOD_DOMAIN
+        )
         self.test_user.save()
         # check changed also in CRM
         api_uri = settings.CRM_API_GET_USER_URI
@@ -117,7 +119,7 @@ class CRMSyncTestCase(TestCase):
     def test4_not_create_user_without_sync(self):
         with override_settings(CRM_UPDATE_USER_CREATE_CONTACT=False):
             name, email_pre_prefix, password = "Jane Doe", "cms_test_crmsync_", User.objects.make_random_password()
-            email = "%s%s@%s" % (email_pre_prefix, rand_chars(), "gmail.com")
+            email = "%s%s@%s" % (email_pre_prefix, rand_chars(), settings.CORE_TEST_EMAIL_KNOWN_GOOD_DOMAIN)
             # create a user with very low collission probability on email field
             no_sync_user = User.objects.create_user(email, email, password)
             no_sync_user.name, no_sync_user.is_active = name, True

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from requests.exceptions import ConnectionError
 import json
+import logging
 from urllib.parse import urljoin
 from pydoc import locate
 from kombu.exceptions import OperationalError
@@ -809,8 +812,10 @@ class ArticleAdmin(AdminLockingBase, VersionAdmin):
                 super().save_model(request, obj, form, change)
                 self.obj = obj
             except Exception as e:
-                if settings.DEBUG:
-                    print("DEBUG: error in core.admin.ArticleAdmin.save_model: %s" % e)
+                logging.error(f"Error in save_model: {e}", exc_info=True)
+                if hasattr(e, 'errors'):
+                    logging.error(f"Secondary operation failed after DB save: {e.errors}")
+                raise
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
@@ -1570,12 +1575,15 @@ class ArticleInline2(admin.TabularInline):
     verbose_name_plural = 'Artículos relacionados'
 
 
-from django.db import models
+from django.db import models  # noqa
+
+
 @admin.register(PerplexityAPISettings)
 class PerplexityAPISettingsAdmin(SingletonModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': admin.widgets.AdminTextareaWidget(attrs={'rows': 10, 'cols': 80})},
     }
+
 
 site.unregister(Tag)
 site.unregister(TaggedItem)

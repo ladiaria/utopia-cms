@@ -15,8 +15,10 @@ class Migration(migrations.Migration):
             model_name="perplexityapisettings",
             name="result_instructions",
             field=models.TextField(
-                default='\nPor favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys.\n- El campo "metatitles" debe ser un array de exactamente 3 strings, cada uno con un metatítulo diferente y adecuado para Google Discover, siguiendo el estilo de la diaria.\n- El campo "copys" debe ser un array de exactamente 2 strings. Cada string debe incluir primero el copy para redes sociales y, en la misma string y separado por un salto de línea, los hashtags correspondientes.\n- No agregues elementos adicionales ni comentarios fuera del objeto JSON.\n\nEjemplo de formato esperado:\n{\n  "metatitles": [\n    "Metatítulo 1",\n    "Metatítulo 2",\n    "Metatítulo 3"\n  ],\n  "copys": [\n    "Copy para redes sociales 1.\\n#Hashtag1 #Hashtag2",\n    "Copy para redes sociales 2.\\n#Hashtag3 #Hashtag4"\n  ]\n}',
-                help_text="Describe detalladamente cómo debe presentarse el resultado. Ejemplo: 'Incluya unidades y redondee a dos decimales.'",
+                default='\nPor favor, devuelve un objeto JSON que contenga los siguientes campos: metatitles, copys.\n- El campo "metatitles" debe ser un array de exactamente 3 strings, cada uno con un metatítulo diferente y adecuado para Google Discover.\n- El campo "copys" debe ser un array de exactamente 2 strings. Cada string debe incluir primero el copy para redes sociales y, en la misma string y separado por un salto de línea, los hashtags correspondientes.\n- No agregues elementos adicionales ni comentarios fuera del objeto JSON.\n\nEjemplo de formato esperado:\n{\n  "metatitles": [\n    "Metatítulo 1",\n    "Metatítulo 2",\n    "Metatítulo 3"\n  ],\n  "copys": [\n    "Copy para redes sociales 1.\\n#Hashtag1 #Hashtag2",\n    "Copy para redes sociales 2.\\n#Hashtag3 #Hashtag4"\n  ]\n}',
+                help_text=(
+                    "Describe detalladamente cómo debe presentarse el resultado. Ejemplo: 'Incluya unidades y redondee a dos decimales.'",
+                ),
                 validators=[core.models.validar_ejemplo_formato],
                 verbose_name="Instrucciones para el resultado",
             ),
