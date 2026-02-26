@@ -125,6 +125,7 @@ INSTALLED_APPS = (
     "django_celery_beat",
     "phonenumber_field",
     "closed_site",
+    'solo',
 )
 
 SITE_ID = 1
@@ -298,6 +299,8 @@ TEMPLATES = [
                 "adzone.context_processors.get_source_ip",
                 "apps.thedaily.context_processors.permissions",
                 "django.template.context_processors.csrf",
+                "context_processors.google_client_id",
+                "context_processors.google_one_tap_enabled",
             ],
             "loaders": [
                 "amp_tools.loader.Loader",
@@ -494,11 +497,6 @@ LOGIN_ERROR_URL = "/usuarios/error/login/"
 
 MESSAGETAGS = {messages.ERROR: "danger"}
 
-AUTHENTICATION_BACKENDS = (
-    "social_core.backends.google.GoogleOAuth2",
-    "django.contrib.auth.backends.ModelBackend",
-)
-
 # django-social-auth
 SOCIAL_AUTH_GOOGLE_OAUTH2_STRATEGY = "social_django.strategy.DjangoStrategy"
 SOCIAL_AUTH_STORAGE = "social_django.models.DjangoStorage"
@@ -554,7 +552,7 @@ FREEZE_TIME = None
 CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True
 PHONENUMBER_DEFAULT_REGION = None
-
+ENABLE_GOOGLE_ONE_TAP = False
 
 # ====================================================================================== visual separator =============
 

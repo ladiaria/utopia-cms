@@ -18,7 +18,7 @@ from django.utils.text import Truncator
 
 from tagging.models import Tag, TaggedItem
 
-from core.models import Article, ArticleCollection, Supplement, Category, Section
+from core.models import Article, ArticleCollection, Supplement, Category, Section, PerplexityAPISettings
 from core.forms import SendByEmailForm
 from core.utils import datetime_timezone
 
@@ -84,7 +84,7 @@ def render_related(context, article, amp=False):
             ) else publication.name,
         }
 
-    elif category and category.slug in getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY', ()):
+    elif category and category.slug in getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY', ()):
         # use the category
         upd_dict = {
             'articles': section.latest4relatedbycategory(category.id, article.id),
@@ -93,7 +93,7 @@ def render_related(context, article, amp=False):
 
     else:
         # use a category also, defined in settings and if it belongs to the article and the section is not skipped.
-        use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_REALTED_USE_CATEGORY_SKIPPING_SECTIONS', [])
+        use_category_skip_sections = getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY_SKIPPING_SECTIONS', [])
         if use_category_skip_sections:
             article_categories = article.get_categories_slugs()
             for category_slug, section_slugs in use_category_skip_sections:
@@ -363,18 +363,19 @@ def publication_section(context, article, pub=None):
     publication_obj or publication context variables as the publication argument (or default_pub if both are None).
     TODO: why default_pub as last option instead of the article's "main_pub"?
     """
-    section = article.publication_section(
-        pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
-    )
-    if section:
-        use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
-        s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
-        if use_section_link:
-            return '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
-        else:
-            return '<span>%s</span>' % s_name
-    else:
-        return ''
+    result = ""
+    if article:
+        section = article.publication_section(
+            pub or context.get('publication_obj') or context.get('publication') or context.get('default_pub')
+        )
+        if section:
+            use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
+            s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
+            if use_section_link:
+                result = '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
+            else:
+                result = '<span>%s</span>' % s_name
+    return result
 
 
 @register.simple_tag(takes_context=True)
@@ -504,7 +505,7 @@ def section_name_in_publication_menu(publication, section):
 
 @register.simple_tag(takes_context=True)
 def tags_joined(context):
-    return ", ".join(str(tag).title() for tag in context.get("tags"))
+    return ", ".join(str(tag) for tag in context.get("tags"))
 
 
 @register.simple_tag(takes_context=True)
@@ -669,3 +670,18 @@ def randomgen():
         random.choice(string.ascii_letters)
         + ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(15))
     )
+
+
+@register.filter
+def in_group(user, group_name):
+    return user.groups.filter(name=group_name).exists()
+
+
+@register.simple_tag
+def get_nombre_del_asistente():
+    return PerplexityAPISettings.get_solo().nombre_del_asistente
+
+
+@register.simple_tag
+def ia_activa():
+    return PerplexityAPISettings.get_solo().activar_asistente

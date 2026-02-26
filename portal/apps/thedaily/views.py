@@ -54,7 +54,7 @@ from django.contrib.auth.views import LogoutView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import ListView
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
@@ -352,6 +352,20 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 @readerid_assoc
 def login(request, product_slug=None, product_variant=None):
     # next_page value got here will be available in session (TODO: explain how this happen)
+    # TODO: SECURITY - Open Redirect Vulnerability
+    # This function does not validate the 'next' parameter before redirecting.
+    # This allows attackers to redirect users to external malicious sites (phishing).
+    # Solution: Validate redirects with url_has_allowed_host_and_scheme() + ALLOWED_REDIRECT_HOSTS
+    # Example fix:
+    #   from django.utils.http import url_has_allowed_host_and_scheme
+    #   requested_next = request.GET.get('next', request.session.get('next', '/'))
+    #   allowed_hosts = {request.get_host()}
+    #   if hasattr(settings, 'ALLOWED_REDIRECT_HOSTS'):
+    #       allowed_hosts |= set(settings.ALLOWED_REDIRECT_HOSTS)
+    #   if url_has_allowed_host_and_scheme(requested_next, allowed_hosts=allowed_hosts, require_https=request.is_secure()):
+    #       next_page = requested_next
+    #   else:
+    #       next_page = '/'
     return_param = amp_login_param(request, 'return')
     if return_param:
         # redirect email/google AMP logins (google social auth do not redirect to external urls)
@@ -412,39 +426,82 @@ def login(request, product_slug=None, product_variant=None):
         if login_form.is_valid():
             password = request.POST.get('password')  # Taken directly from POST (not all form classes have password)
             if password:
-                user = authenticate(username=login_form.username, password=password)
-                if user is not None:
-                    if user.is_active:
-                        if user.is_staff:
-                            try:
-                                check_password_strength(password, user)
-                            except ValidationError:
-                                mail_managers("Staff user with weak password", f"User: {user}, Id: {user.id}")
-                        do_login(request, user)
-                        request.session.pop('next', None)
-                        # also remove possible unfinished google sign-in information from the session, if not,
-                        # the social pipelines will try to finish and an error will be raised regarding to the conflict
-                        # between the user that just logged-in and the user that has this "unfinished" google signin
-                        # attempt.
-                        request.session.pop("google-oauth2_state", None)
-                        request.session.modified = True
-                        # terms and conds acceptance save
-                        if (
-                            request.session.get("terms_and_conds_accepted")
-                            and not user.subscriber.terms_and_conds_accepted
-                        ):
-                            user.subscriber.terms_and_conds_accepted = True
-                            try:
-                                user.subscriber.save()
-                            except Exception:
-                                # do not break login if an error raised during the subscriber object save
-                                pass
-                        response = HttpResponseRedirect(next_page)
+
+                # First check if user exists, regardless of active status
+                try:
+                    existing_user = User.objects.get(username=login_form.username)
+
+                    # Check if password is correct
+                    if existing_user.check_password(password):
+                        if existing_user.is_active:
+                            # Active user - proceed with normal login
+                            user = existing_user
+                            if user.is_staff:
+                                try:
+                                    check_password_strength(password, user)
+                                except ValidationError:
+                                    mail_managers(
+                                        "Weak password for staff user", f"User: {user}, Id: {user.id}",
+                                        fail_silently=True
+                                    )
+                            # Set backend for multiple authentication backends
+                            user.backend = 'django.contrib.auth.backends.ModelBackend'
+                            do_login(request, user)
+                            request.session.pop('next', None)
+                            # also remove possible unfinished google sign-in information from the session, if not,
+                            # the social pipelines will try to finish and an error will be raised regarding to the
+                            # conflict between the user that just logged-in and the user that has this "unfinished"
+                            # google signin attempt.
+                            request.session.pop("google-oauth2_state", None)
+                            request.session.modified = True
+                            # terms and conds acceptance save
+                            if (
+                                request.session.get("terms_and_conds_accepted")
+                                and not user.subscriber.terms_and_conds_accepted
+                            ):
+                                user.subscriber.terms_and_conds_accepted = True
+                                try:
+                                    user.subscriber.save()
+                                except Exception:
+                                    # do not break login if an error raised during the subscriber object save
+                                    pass
+                            response = HttpResponseRedirect(next_page)
+                        else:
+                            # CASO 3: User/pass login - CUENTA NO ACTIVA - Detectar qué falta
+                            subscriber = getattr(existing_user, 'subscriber', None)
+
+                            # 3a. Si falta teléfono → redirigir a pantalla de teléfono
+                            if subscriber and not subscriber.phone:
+                                # Configurar sesión para flujo SMS como registro normal
+                                from django.utils import timezone
+                                request.session['signup_data'] = {
+                                    'user_created': True,
+                                    'user_id': existing_user.id,
+                                    'email': existing_user.email,
+                                    'google_flow': False,  # Es flujo normal email/pass
+                                    'sms_verified': False,
+                                    'session_created': timezone.now().isoformat(),  # Required by step 3 validation
+                                }
+                                request.session.modified = True
+                                response = HttpResponseRedirect('/usuarios/registrate/?step=2')
+
+                            # 3b. Si falta activar email → mostrar mensaje con enlace para reenviar
+                            else:
+                                confirm_url = reverse('account-confirm_email') + '?email=' + existing_user.email
+                                login_error = (
+                                    'Tu cuenta no está activada. Revisá tu correo y seguí el enlace para activarla. '
+                                    '<a href="{}">Reenviar mail</a>'.format(confirm_url)
+                                )
+
+                    # Si contraseña incorrecta
                     else:
-                        response = HttpResponseRedirect(reverse('account-confirm_email'))
-                else:
+                        login_error = 'Usuario y/o contraseña incorrectos.'
+
+                # Si usuario no existe
+                except User.DoesNotExist:
                     login_error = 'Usuario y/o contraseña incorrectos.'
             else:
+                # No password provided - redirect to signup
                 request.session["terms_and_conds_accepted"] = True
                 request.session.modified = True
                 qparams = market_next_qparams if product_slug else {"article": article_id}
@@ -571,14 +628,25 @@ def signup(request):
 @never_cache
 def welcome(request, signup=False, subscribed=False):
     """
-    welcome page, will be rendered only if welcome in session has a value, otherwise will be redirected to home.
+    welcome page, will be rendered only if welcome in session has a value OR activated=1 parameter,
+    otherwise will be redirected to home.
     """
-    if request.session.get('welcome'):
-        request.session.pop('welcome')
+    # Check both session (for SMS flow) and URL parameter (for email activation)
+    has_welcome_session = request.session.get('welcome')
+    is_activated = request.GET.get('activated') == '1'
+
+    if has_welcome_session or is_activated:
+        # Clean session data if present
+        if has_welcome_session:
+            request.session.pop('welcome')
+        signup_mail = request.session.pop('signup_mail', None)
+        email_error = request.session.pop('email_error', None)
+
         return render(
             request,
             get_app_template("welcome.html"),
-            {'signup': signup, 'subscribed': subscribed, "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
+            {'signup': signup, 'subscribed': subscribed, 'signup_mail': signup_mail, 'email_error': email_error,
+             "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
     else:
         return HttpResponseRedirect(reverse('home'))
@@ -1071,16 +1139,13 @@ def complete_signup(request, user_id, hash):
             {"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS},
         )
 
-    request.session['welcome'] = 'account-welcome' + ('-s' if is_subscriber_any else '')
-
+    # Use URL parameter instead of session to avoid session loss between redirects
     if not user.has_usable_password():
         # email is valid, so, generate pass token and redirect to change form
         return HttpResponseRedirect(get_password_validation_url(user))
 
-    if is_subscriber_any:
-        return HttpResponseRedirect(reverse('account-welcome-s'))
-    else:
-        return HttpResponseRedirect(reverse('account-welcome'))
+    welcome_url = reverse('account-welcome-s' if is_subscriber_any else 'account-welcome')
+    return HttpResponseRedirect(f"{welcome_url}?activated=1")
 
 
 @never_cache
@@ -1095,19 +1160,14 @@ def password_reset(request, user_id=None, hash=None):
         if reset_form.is_valid():
             try:
                 user = reset_form.cleaned_data["user"]
-                if user.is_active:
-                    send_validation_email(
-                        'Recuperación de contraseña',
-                        user,
-                        get_app_template('notifications/password_reset_body.html'),
-                        get_password_validation_url,
-                    )
-                else:
-                    is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
-                    notification_template = get_app_template(
-                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
-                    )
-                    send_validation_email(account_verify_msg, user, notification_template, get_signup_validation_url)
+                # Send reset email for ALL users (active and inactive)
+                # Inactive users will complete phone verification after choosing password
+                send_validation_email(
+                    'Recuperación de contraseña',
+                    user,
+                    get_app_template('notifications/password_reset_body.html'),
+                    get_password_validation_url,
+                )
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
@@ -1122,6 +1182,42 @@ def confirm_email(request):
     if request.user.is_authenticated:
         raise Http404
     ctx = {}
+
+    # Caso 3b: Si viene del login, mostrar mensaje específico
+    if request.session.get('from_login'):
+        ctx['from_login'] = True
+        request.session.pop('from_login', None)  # Limpiar después de usar
+        request.session.modified = True
+
+    # Si viene con email en URL (desde mensaje de login inactivo), enviar automáticamente
+    email_param = request.GET.get('email')
+    if email_param:
+        try:
+            from django.contrib.auth.models import User
+            user = User.objects.get(email__iexact=email_param, is_active=False)
+            is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
+
+            send_validation_email(
+                account_verify_msg,
+                user,
+                get_app_template(
+                    'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
+                ),
+                get_signup_validation_url,
+            )
+
+            # Configurar sesión para mostrar pantalla "Revisá tu mail"
+            request.session['welcome'] = 'account-email-verification'
+            request.session['signup_mail'] = user.email
+            request.session['email_sent_from_resend'] = True
+            request.session.modified = True
+
+            # Redirigir a página de verificación de email
+            return HttpResponseRedirect(reverse('account-email-verification'))
+        except Exception as exc:
+            error_log(delivery_err + " Detalle: {}".format(str(exc)))
+            ctx['error'] = delivery_err
+
     if request.method == 'POST':
         confirm_email_form = ConfirmEmailRequestForm(request.POST)
         if confirm_email_form.is_valid():
@@ -1189,6 +1285,24 @@ def password_change(request, user_id=None, hash=None):
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])
+
+        # If user is NOT active (account not fully verified)
+        # they must verify phone before activation
+        if not user.is_active:
+            from django.utils import timezone
+            # Create signup_data for phone verification flow
+            request.session['signup_data'] = {
+                'user_id': user.id,
+                'email': user.email,
+                'user_created': True,
+                'from_password_reset': True,  # Flag to identify this flow
+                'session_created': timezone.now().isoformat(),
+            }
+            request.session.modified = True
+            # Redirect to step 2 (verify phone) - user is NOT logged in
+            return HttpResponseRedirect(reverse('account-signup') + '?step=2')
+
+        # Active user: normal flow (login and redirect)
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
@@ -1468,13 +1582,11 @@ def update_user_from_crm(request):
         mapped_field = settings.CRM_UPDATE_SUBSCRIBER_FIELDS.get(field)
         if not mapped_field:
             return  # Skip if no field mapping found
-
         # Conversion for boolean fields
         field_value = value
-        if isinstance(getattr(subscriber, mapped_field), bool):
+        if isinstance(getattr(s, mapped_field), bool):
             field_value = value if type(value) is bool else value.lower() in ['true', '1', 'yes']
-
-        setattr(subscriber, mapped_field, field_value)
+        setattr(s, mapped_field, field_value)
 
     def updatesubscriberemail(user, newemail):
         """
@@ -2233,16 +2345,14 @@ def nlunsubscribe(request, publication_slug, hashed_id):
             subscriber = get_object_or_404(Subscriber, id=subscriber_id)
             if not subscriber.user:
                 raise Http404
-            email = subscriber.user.email
             try:
                 subscriber.newsletters.remove(publication)
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
-                ctx['error'] = e.displaymessage
-        else:
-            email = 'anonymous_user@localhost'
-        ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+                error_message = getattr(e, 'displaymessage', str(e))
+                ctx['error'] = error_message
+                return 'nlunsubscribe.html', ctx
+            return redirect(f"{reverse('user_newsletters')}?nl={publication.newsletter_name or publication.name}")
     except IndexError:
         raise Http404
 
@@ -2264,16 +2374,14 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
             subscriber = get_object_or_404(Subscriber, id=subscriber_id)
             if not subscriber.user:
                 raise Http404
-            email = subscriber.user.email
             try:
                 subscriber.category_newsletters.remove(category)
             except Exception as e:
                 # for some reason UpdateCrmEx does not work in test (Python ver?)
-                ctx['error'] = e.displaymessage
-        else:
-            email = 'anonymous_user@localhost'
-        ctx['email'] = email
-        return 'nlunsubscribe.html', ctx
+                error_message = getattr(e, 'displaymessage', str(e))
+                ctx['error'] = error_message
+                return 'nlunsubscribe.html', ctx
+        return redirect(f"{reverse('user_newsletters')}?nl={category.name}")
     except IndexError:
         raise Http404
 

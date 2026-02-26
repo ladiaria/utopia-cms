@@ -195,6 +195,10 @@ article {
         text-decoration: underline;
       }
     }
+
+    iframe {
+      max-width: 100%;
+    }
   }
 
   p,
@@ -1262,6 +1266,9 @@ body.article {
 
   &__list {
     margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
     &:first-of-type {
       margin-bottom: 50px;
