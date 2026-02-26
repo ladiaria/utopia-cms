@@ -68,12 +68,12 @@ _COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
 @admin.register(HomeLayout)
 class HomeLayoutAdmin(admin.ModelAdmin):
     change_form_template = "homev4/admin_change_form.html"
-    list_display = ("name", "publication", "day", "start_time", "end_time", "is_manual_override", "modified")
+    list_display = ("name", "publication", "day", "start_time", "end_time", "ends_next_day", "is_manual_override", "modified")
     list_filter = ("publication", "is_manual_override")
     list_editable = ("is_manual_override",)
     readonly_fields = ("created", "modified", "manual_override_by", "grid_data")
     fieldsets = (
-        (None, {"fields": ("name", "publication", "day", "start_time", "end_time")}),
+        (None, {"fields": ("name", "publication", "day", "start_time", "end_time", "ends_next_day")}),
         ("Override", {"fields": ("is_manual_override", "manual_override_by")}),
         ("Datos del layout (JSON)", {"fields": ("grid_data",), "classes": ("collapse",)}),
         ("Fechas", {"fields": ("created", "modified")}),
