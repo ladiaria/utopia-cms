@@ -15,10 +15,18 @@ header {
   display: flex;
   font-family: "Dialect Gothic A";
   background-color: white;
+  border-bottom: 0.5px solid #ababab;
+  display: flex;
+  flex-direction: column;
+  z-index: 1001;
+  position: sticky;
+  top: 0;
 
-  &.sticky,
-  &.section-detail-header,
-  body.article & {
+  &.category-pub-header,
+  &.home-header {
+    border-bottom: none;
+  }
+  &.sticky {
     border-bottom: 0.5px solid #ababab;
   }
 
@@ -35,7 +43,7 @@ header {
     padding: 8px 20px 16px;
 
     &.home-header {
-      padding: 32px 20px 24px;
+      padding: 16px 20px;
     }
     &.home-header.sticky {
       padding: 16px 20px;
@@ -43,25 +51,23 @@ header {
 
     &.section-detail-header,
     &.category-pub-header {
-      padding: 8px 20px 24px;
+      padding: 16px 20px;
     }
 
     body.article &,
     body.article &.sticky {
-      padding: 8px 20px 16px;
+      padding: 16px 20px;
     }
   }
 }
 
 .header-container {
-  max-width: $container-width;
-  margin: 0 auto;
-  width: 100%;
+  @include utopia-container;
 
   header.sticky &,
   body.section-detail,
   body.article & {
-    padding: 0;
+    padding: 0 20px;
     display: flex;
     align-items: center;
   }
@@ -114,7 +120,7 @@ header {
     }
     .logo-vertical-center-container {
       display: flex;
-      gap: 5px;
+      gap: 7px;
       align-items: flex-end;
 
       a {
@@ -257,7 +263,7 @@ header {
 
     ul {
       padding-left: 48px;
-      overflow: auto;
+      @include scroll-navbar;
     }
   }
 
@@ -291,8 +297,8 @@ header {
     margin: 0;
     display: flex;
     gap: 48px;
-    overflow-x: auto;
     gap: 24px;
+    @include scroll-navbar;
 
     li {
       transition: background-color 0.3s;
@@ -381,16 +387,12 @@ header {
     min-height: px-to-rem(44px);
     display: flex;
 
-    header.home-header & {
-      margin-top: 32px;
-    }
-
     > ul {
       display: flex;
       align-items: center;
     }
 
-    &::after {
+    &.with-right-gradient::after {
       content: "";
       position: absolute;
       bottom: 0;
@@ -399,7 +401,19 @@ header {
       width: 30px;
       background: linear-gradient(to left, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
     }
+    &.with-left-gradient::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      top: 0;
+      left: 0;
+      width: 30px;
+      background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+    }
+
     &.category-navbar {
+      margin-top: 16px;
+
       .home-link {
         display: none;
       }
@@ -420,6 +434,7 @@ header {
     position: fixed;
   }
 }
+
 @media #{$medium-and-up} {
   nav.nav-extended .nav-wrapper {
     min-height: $navbar-height;
@@ -1062,18 +1077,11 @@ header {
     vertical-align: middle;
     height: 40px;
     width: auto;
-    margin: 20px;
   }
 }
 
 .navbar-fixed {
   height: $line-height;
-}
-
-header {
-  z-index: 1001;
-  position: sticky;
-  top: 0;
 }
 
 #main-header {
@@ -1202,10 +1210,6 @@ body {
   position: fixed;
   padding-bottom: 60px;
 
-  @media (min-width: 992px) {
-    padding: 50px;
-  }
-
   &.active {
     transition: 300ms ease;
     opacity: 1;
@@ -1215,16 +1219,9 @@ body {
 
   header.home-header:not(.sticky) & {
     top: px-to-rem(100px);
-  }
 
-  a:not(.ut-btn) {
-    color: $off-black;
-    font-family: "Roboto", sans-serif;
-    display: inline-block;
-
-    &:hover {
-      transition: 200ms ease;
-      text-decoration: none;
+    @media #{$medium-and-down} {
+      top: px-to-rem(65px);
     }
   }
 
@@ -1270,12 +1267,10 @@ body {
   }
 
   &__wrap {
-    margin: 0 auto;
-    display: flex;
     display: grid;
     grid-template-columns: repeat(5, auto);
-    max-width: $container-width;
     justify-content: space-between;
+    @include utopia-container;
   }
 
   &__col {
@@ -1310,6 +1305,16 @@ body {
     }
   }
 
+  .mobile-login-items {
+    display: none;
+    @media #{$medium-and-down} {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: max-content;
+    }
+  }
+
   ul {
     margin: 0;
     padding: 0;
@@ -1322,128 +1327,18 @@ body {
   .ld-main-menu__wrap {
     background: $secondary-color;
   }
-}
 
-// Mobile navbar
-.nav-mobile {
-  visibility: hidden;
-  display: none;
-  position: fixed;
-  top: auto;
-  bottom: 0;
-  margin: 0;
-  width: 100%;
-  height: 65px;
-  border-radius: 0;
-  will-change: bottom, opacity;
-  box-shadow:
-    0 -2px 2px 0 rgba(0, 0, 0, 0.14),
-    0 1px 5px 0 rgba(0, 0, 0, 0.12),
-    0 3px 1px -2px rgba(0, 0, 0, 0.2);
-  z-index: 1005;
-
-  .nav-menu-button {
-    color: $off-black;
-    transition: 200ms;
-
-    &:hover {
-      background: transparent;
+  @media #{$medium-and-down} {
+    &__wrap {
+      grid-template-columns: 1fr;
+      gap: 48px;
+      padding-bottom: 24px;
     }
 
-    svg {
-      fill: $off-black;
-      width: auto;
-      vertical-align: top;
-      margin: 0 auto 5px auto;
-      display: block;
+    &__col {
+      gap: 48px;
     }
   }
-
-  .main-menu-open & {
-    .nav-menu-button.nav-menu-button-toggle svg path {
-      fill: $link-color;
-    }
-  }
-
-  nav {
-    height: 70px;
-    background: white;
-
-    ul {
-      margin-bottom: 0;
-    }
-
-    ul li {
-      position: relative;
-      height: 70px;
-
-      a {
-        height: 65px;
-        padding: 0;
-        width: 100%;
-        padding-top: 15px;
-        text-decoration: none;
-      }
-    }
-
-    i.material-icons {
-      display: block;
-      height: 24px;
-      width: 24px;
-      margin: 0 auto 5px auto;
-      line-height: 1;
-    }
-  }
-
-  &__num {
-    display: inline-block;
-    background: $off-black;
-    color: #fff !important;
-    border: 2px solid #fff;
-    font-size: 12px;
-    line-height: 14px;
-    border-radius: 14px;
-    padding: 0 4px;
-    position: absolute;
-    top: 11px;
-    left: 50%;
-  }
-
-  &__icon-text {
-    display: block;
-    text-transform: uppercase;
-    font-size: 8px;
-    color: $grey;
-    line-height: 1;
-    font-family: "Roboto", sans-serif;
-
-    @media (min-width: 375px) {
-      font-size: 9px;
-    }
-  }
-}
-
-.nav-mobile__new {
-  font-size: 8px;
-  color: white;
-  text-transform: uppercase;
-  background-color: $secondary-color;
-  position: absolute;
-  border-radius: 2px;
-  line-height: 1;
-  padding: 2px 4px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-50%);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
-  top: 11px;
-  z-index: 1;
-}
-
-#nav-mobile .row .col.s5ths {
-  padding: 0 2px;
-}
-#nav-mobile .row .col.s6ths {
-  padding: 0;
 }
 
 #header-pub {
@@ -1556,177 +1451,40 @@ main > header {
   }
 }
 
+.section-subheader-container {
+  @include utopia-container;
+}
+
 // subheader
 .section-subheader {
-  padding-bottom: 20px;
+  padding: 20px 0;
   box-shadow: 0px 3px 6px #00000029;
 
-  .header-logo {
-    margin-bottom: 15px;
-    svg {
-      margin: 40px 0 0;
-      height: 50px;
-      width: auto;
-    }
-  }
-  .submenu {
-    &:not(.js) {
-      .submenu--list {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-    }
-
-    &--list {
-      display: flex;
-      margin: 0;
-
-      > li {
-        font-family: "Roboto", sans-serif;
-        font-size: 14px;
-        font-weight: bold;
-        margin-right: 5px;
-        color: $off-black-2;
-        text-transform: uppercase;
-        white-space: nowrap;
-        margin-bottom: 10px;
-        line-height: 25px;
-
-        a {
-          display: inline-block;
-          padding: 0 8px;
-          border-radius: 4px;
-          transition: all 0.2s ease-in-out;
-        }
-
-        a:hover {
-          background: rgba($color: #000000, $alpha: 0.1);
-        }
-        a:active {
-          background: rgba($color: #000000, $alpha: 0.2);
-        }
-
-        &.more {
-          button {
-            border: none;
-            background: none;
-            display: inline-block;
-            vertical-align: top;
-            position: relative;
-            top: -2px;
-          }
-        }
-      }
-      &.full {
-        > li {
-          flex-grow: 1;
-        }
-      }
-      svg {
-        vertical-align: middle;
-
-        &.external {
-          position: relative;
-          top: -1px;
-        }
-      }
-    }
-
-    .secondary {
-      display: none;
-      margin: 0;
-
-      > li {
-        float: left;
-        font-family: "Roboto", sans-serif;
-        font-size: 14px;
-        font-weight: bold;
-        margin-right: 18px;
-        color: $off-black-2;
-        text-transform: uppercase;
-        white-space: nowrap;
-        margin-bottom: 10px;
-        line-height: 30px;
-
-        a {
-          display: inline-block;
-          padding: 0 8px;
-          border-radius: 4px;
-          transition: all 0.2s ease-in-out;
-        }
-
-        a:hover {
-          background: rgba($color: #000000, $alpha: 0.1);
-        }
-        a:active {
-          background: rgba($color: #000000, $alpha: 0.2);
-        }
-
-        svg {
-          vertical-align: top;
-          position: relative;
-          top: -3px;
-        }
-        .external {
-          top: -1px;
-          vertical-align: middle;
-        }
-      }
-
-      &:after {
-        content: "";
-        display: block;
-        clear: both;
-      }
-    }
-
-    &.show-secondary {
-      .secondary {
-        display: inline-block;
-      }
-    }
-    .dropdown-content {
-      min-width: 140px;
-      li {
-        min-height: 36px;
-        > a,
-        > span {
-          font-family: "Roboto", sans-serif;
-          font-size: 12px;
-          line-height: 16px;
-          text-transform: uppercase;
-          color: $off-black-2;
-          padding: 10px;
-        }
-      }
-    }
-
-    .sub-cat {
-      margin-right: 18px;
-    }
-
-    .hidden {
-      display: none;
-    }
+  .header-logo svg {
+    height: 50px;
+    width: auto;
   }
 
   &.detail {
     position: relative;
     z-index: 1;
-    text-align: center;
-    padding-bottom: 0;
 
     .header-logo {
       margin-bottom: 0;
 
       svg {
         height: 40px;
-        width: auto;
-        margin: 10px 0;
       }
     }
   }
 }
+
+.scroll-navbar {
+  display: flex;
+  gap: 24px;
+  @include scroll-navbar;
+}
+
 body.interior {
   .section-subheader {
     > .container {

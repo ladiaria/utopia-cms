@@ -1,0 +1,11 @@
+{% load core_tags %}
+
+{% block publication_navbar %}
+  {% for section in publication.primary_sections %}
+    <li>
+      <a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">
+        {% section_name_in_publication_menu publication section %}
+      </a>
+    </li>
+  {% endfor %}
+{% endblock %}

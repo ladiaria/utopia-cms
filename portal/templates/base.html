@@ -442,9 +442,6 @@
       <header class="{% block header_classes %}{% endblock %}">
         {% render_header %}
       </header>
-      {% if extra_header_template %}
-        {% include extra_header_template %}
-      {% endif %}
       {% if PWA_ENABLED %}
         <div class="pwa-prompt" style="display:none;">
           <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -529,7 +526,7 @@
       <div id="nav-mobile" class="nav-mobile navbar-fixed">
         <nav>
           <div class="nav-wrapper">
-            <ul class="center row">
+            <ul class="" data-col-numbers="{{ mobile_nav_ths }}">
               {% if is_detail %}
                 {% with mobile_nav_ths=mobile_nav_ths|add:mobile_nav_detail_more %}
                   {% include 'mobile_nav_items.html' %}
@@ -562,7 +559,7 @@
 
       {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
       <script defer src="{% static 'js/ld.js' %}"></script>
-      <script defer src="{% static 'js/resizeSubnav.js' %}"></script>
+      {% comment %} <script defer src="{% static 'js/resizeSubnav.js' %}"></script> {% endcomment %}
 
       {# Modernizr - Detect CSS Grid #}
       <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>
