@@ -180,7 +180,7 @@
         {% endif %}
       {% endif %}
 
-      <div class="article-header">
+      <div class="article-header article-container">
         {% if section.is_satirical %}
           <div class="align-center">
             <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
@@ -330,7 +330,7 @@
         </div>
       </div>
 
-      <div class="article-aditional-info">
+      <div class="article-aditional-info article-container">
         <p class="article-author">
           {% with authors=article.get_authors %}
             {% if authors %}
@@ -374,15 +374,11 @@
       {# begin restricted content #}
       {% if not request.signupwall or not article_restricted_cf or restricted_access %}
 
-        {% comment %} {% if article.audio %}{% include 'article/audio.html' %}{% endif %} {% endcomment %}
-
-
-
         {% if not request.signupwall %}{# closed in line 676 #}
 
           {% include 'article/paywall/pw_not_in_request.html' %}
 
-          <div class="article-body paywalled-content{% block article_body_extra_class %}{% endblock %}">
+          <div class="article-body article-container paywalled-content{% block article_body_extra_class %}{% endblock %}">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
 
             {# colection articles #}
@@ -533,8 +529,6 @@
 
           {% block after_content %}{% endblock %}
 
-          <div class="ld-fin ld-block"></div>
-
           {% if report_form %}
             <div id="send-feedback" class="send-feedback">
               {% if report_form_sent %}
@@ -570,70 +564,6 @@
                   {% endif %}
                 </form>
               {% endif %}
-            </div>
-          {% endif %}
-
-          {% if followed %}
-            <div class="read-later u-mb-60">
-              <div class="info read-later__saved__info">
-                Este artículo está guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a><br>
-                ¿Terminaste de leerlo?
-              </div>
-              <a class="read-later__btn read-later__saved">Quitar de leer después</a>
-              <div class="info hide">El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-              <a class="read-later__btn read-later__add hide">
-                <svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672">
-                  <path d="M0,0H17.672V17.672H0Z" fill="none"></path>
-                  <path class="change-fill" d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"></path>
-                </svg> Leer después
-              </a>
-              <div class="info read-later__add__info hide">
-                El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a>
-              </div>
-              <a class="read-later__btn read-later__saved hide">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
-                  <path d="M0,0H18V18H0Z" fill="none"/>
-                  <path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/>
-                </svg> Guardado
-              </a>
-              <div class="info read-later__saved__info hide">
-                El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a>
-              </div>
-            </div>
-          {% endif %}
-
-          {% if user.is_authenticated %}
-            <div class="fav u-mb-60">
-              <a class="fav__btn fav__saved{% if not favourited %} hide{% endif %}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
-                  <g transform="translate(-1306 -11387)">
-                    <g transform="translate(1306 11387)">
-                      <path d="M0,0H18V18H0Z" fill="none"/>
-                      <path d="M0,0H18V18H0Z" fill="none"/>
-                    </g>
-                    <g transform="translate(1303.557 11385.428)">
-                      <path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/>
-                    </g>
-                  </g>
-                </svg> Quitar de favoritos
-              </a>
-              <div class="info hide">
-                El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a>
-              </div>
-              <a class="fav__btn fav__add{% if favourited %} hide{% endif %}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
-                  <g transform="translate(-870 -11388)">
-                    <path d="M0,0H18V18H0Z" transform="translate(870 11388)" fill="none"/>
-                    <path class="change-fill" d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(867.557 11386.438)" fill="#262626"/>
-                  </g>
-                </svg> Guardar como favorito
-              </a>
-              <div class="info{% if not favourited %} hide{% endif %}">
-                Guardaste este artículo como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a>
-              </div>
-              <div class="info hide">
-                El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a>
-              </div>
             </div>
           {% endif %}
 
@@ -708,33 +638,26 @@
             </div>
           {% endif %}
 
+          <div class="article-container flex justify-center">
+            <button class="btn btn__dark btn-comments">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M10 17.5a7.5 7.5 0 1 1 6.667-4.06l.833 4.06-4.06-.833c-1.03.532-2.2.833-3.44.833"/></svg>
+              <p>
+                <span>10</span>
+                <span>comentarios</span>
+              </p>
+            </button>
+          </div>
+
           {% if tag_list %}
-            <div class="article-tags align-center">
-              <span class="title">Temas en este artículo</span>
-              {% for tag in tag_list %}
-                {% if forloop.counter < 4 %}
-                  <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
-                {% endif %}
-              {% endfor %}
-              {% if tag_list|length > 3 %}
-                <a href="#" class="tag expand" title="Mostrar todos los tags" aria-label="Mostrar todos los tags">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="6" viewBox="0 0 28 6">
-                    <g transform="translate(-684 -4183)">
-                      <circle cx="3" cy="3" r="3" transform="translate(706 4183)" fill="#262626"/>
-                      <circle cx="3" cy="3" r="3" transform="translate(695 4183)" fill="#262626"/>
-                      <circle cx="3" cy="3" r="3" transform="translate(684 4183)" fill="#262626"/>
-                    </g>
-                    <title>Mostrar todos los tags</title>
-                  </svg>
-                </a>
-              {% endif %}
-              <div class="more-tags hidden">
+            <div class="article-container article-tags">
+              <p class="title">Temas del artículo</p>
+              <ul class="">
                 {% for tag in tag_list %}
-                  {% if forloop.counter > 3 %}
+                  <li>
                     <a href="//{{ site.domain }}/tags/{{ tag.name|slugify }}/" class="tag">{{ tag.name }}</a>
-                  {% endif %}
+                  </li>
                 {% endfor %}
-              </div>
+              </ul>
             </div>
           {% endif %}
 
@@ -805,8 +728,6 @@
           </div>
         {% endif %}
 
-        {% if user.is_authenticated %}{% include 'pwa-module.html' %}{% endif %}
-
         {% block featured_content %}{% endblock %}
 
         {% if article.show_related_articles %}{% render_related article %}{% endif %}
@@ -817,25 +738,11 @@
           </section>
         {% endif %}
 
-        <section id="mas-leidos" class="col s12 ld-block">
-          <div class="container">
-            <div class="row">
-              <div id="mas-leidos-content" class="col s12" data-url="{% url 'mas_leidos_content' %}"></div>
-            </div>
-          </div>
-        </section>
-
       {% endif %}{# end restricted content2 #}
 
     {% endif %}{# opened in line 694 #}
 
     {% block article_extra %}{% endblock %}
-
-    {% if not request.signupwall or article_restricted_cf and not restricted_access %}
-      <div class="align-center u-mb-50 footer-section">
-        <a href="{% url 'home' %}" class="ut-btn ut-btn-outline">Ir a la portada</a>
-      </div>
-    {% endif %}
 
     {# TODO: skip render many things bellow if the content is restricted #}
   </aside>
