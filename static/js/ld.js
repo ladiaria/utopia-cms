@@ -403,15 +403,6 @@
       }
     });
 
-    // show more article tags
-    onAll(".article-tags > .expand", "click", function (event) {
-      event.preventDefault();
-      qsa(".article-tags .more-tags").forEach(function (tag) {
-        tag.classList.remove("hidden");
-      });
-      this.style.display = "none";
-    });
-
     // faq component behavior
     qsa(".ld-collapsible").forEach(function (collapsible) {
       collapsible.classList.add("js");

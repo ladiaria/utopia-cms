@@ -27,7 +27,8 @@ $padding-inline: 20px;
 $container-width: 1280px + $padding-inline * 2 !default;
 
 // typography
-$sans: "Dialect Gothic A", Arial, Helvetica, sans-serif;
+$sans: "Dialect Gothic A", "Roboto", Helvetica, sans-serif;
+$sans-title: "Review Condensed", "Roboto", Helvetica, sans-serif;
 $serif: "Society FullTrial", serif;
 $line-height: 60px;
 $font-size-sm: 20px;
