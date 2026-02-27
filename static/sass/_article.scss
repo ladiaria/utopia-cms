@@ -164,7 +164,7 @@ article {
     display: flex;
     justify-content: space-between;
     border-top: 1px solid #d9d9d9;
-    padding: 24px 0 60px;
+    padding: 24px 0 48px;
     gap: 16px;
 
     @media #{$medium-and-down} {
@@ -239,7 +239,6 @@ article {
       }
 
       > span {
-        text-transform: uppercase;
         transition: all 0.4s ease-in-out;
         opacity: 1;
       }
@@ -317,9 +316,18 @@ article {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    padding-bottom: 48px;
+
     p {
       margin: 0;
+      font-family: $sans;
     }
+  }
+
+  .article-author {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .article-body {
@@ -387,7 +395,7 @@ article {
 
   p,
   .article-body {
-    font-family: $serif-title;
+    font-family: $serif;
   }
 
   &.card {
@@ -684,7 +692,7 @@ article {
   font-size: $font-size-sm;
   position: relative;
   max-width: $max-article-width;
-  line-height: 1.5;
+  line-height: normal;
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.004);
   text-rendering: optimizeLegibility !important;
   -webkit-font-smoothing: antialiased !important;
@@ -1035,6 +1043,10 @@ article#main-article {
     margin: 20px auto;
     line-height: normal;
     margin-bottom: 50px;
+
+    &:first-child {
+      margin-top: 0;
+    }
 
     @media (min-width: 769px) {
       line-height: 1.5;
