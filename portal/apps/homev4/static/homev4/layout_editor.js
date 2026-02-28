@@ -86,6 +86,24 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Single function: toggle .is-inactive on the closest toggleable container
+    var TOGGLE_CONTAINER = ".editor-block, .componente-item";
+    var TOGGLE_CHECKBOXES = ".block-active, .section-active, .comp-active";
+
+    function applyActiveState(checkbox) {
+        var block = checkbox.closest(TOGGLE_CONTAINER);
+        if (!block) return;
+        block.classList.toggle("is-inactive", !checkbox.checked);
+    }
+
+    function initActiveToggles() {
+        document.querySelectorAll(TOGGLE_CHECKBOXES).forEach(function (cb) {
+            applyActiveState(cb);
+            cb.addEventListener("change", function () { applyActiveState(this); });
+        });
+    }
+    initActiveToggles();
+
     // Init: article sorting within PRINCIPAL
     makeSortable(document.getElementById("principal-articles"), ".article-row[data-article-id]");
 
@@ -108,13 +126,20 @@ document.addEventListener("DOMContentLoaded", function () {
     // Build the JSON payload to save
     function serializeGrid() {
         var result = {
-            principal: { article_ids: [] },
-            suplemento: { article_ids: [] },
+            principal:  { active: true, article_ids: [] },
+            suplemento: { active: true, article_ids: [] },
+            especial:   { active: true, article_ids: [] },
             sections: [],
             componentes: []
         };
 
-        // PRINCIPAL article order
+        function readBlockActive(blockName) {
+            var cb = document.querySelector(".block-active[data-block='" + blockName + "']");
+            return cb ? cb.checked : true;
+        }
+
+        // PRINCIPAL
+        result.principal.active = readBlockActive("principal");
         var principalContainer = document.getElementById("principal-articles");
         if (principalContainer) {
             principalContainer.querySelectorAll(".article-row[data-article-id]").forEach(function (el) {
@@ -122,7 +147,8 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
-        // SUPLEMENTO article order
+        // SUPLEMENTO
+        result.suplemento.active = readBlockActive("suplemento");
         var suplementoContainer = document.getElementById("suplemento-articles");
         if (suplementoContainer) {
             suplementoContainer.querySelectorAll(".article-row[data-article-id]").forEach(function (el) {
@@ -130,14 +156,27 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
-        // Sections with their article order
+        // ESPECIAL
+        result.especial.active = readBlockActive("especial");
+        var especialContainer = document.getElementById("especial-articles");
+        if (especialContainer) {
+            especialContainer.querySelectorAll(".article-row[data-article-id]").forEach(function (el) {
+                result.especial.article_ids.push(parseInt(el.dataset.articleId, 10));
+            });
+        }
+
+        // Sections with their article order, active state, slug and row
         var sectionsList = document.getElementById("sections-list");
         if (sectionsList) {
-            sectionsList.querySelectorAll(".block-area[data-section-id]").forEach(function (el) {
+            sectionsList.querySelectorAll(".block-area").forEach(function (el) {
+                var activeCheckbox = el.querySelector(".section-active");
                 var sec = {
-                    type: el.dataset.sectionType,
-                    id: parseInt(el.dataset.sectionId, 10),
-                    name: el.dataset.sectionName
+                    type: el.dataset.sectionType || "section",
+                    slug: el.dataset.sectionSlug || null,
+                    name: el.dataset.sectionName || "",
+                    row: parseInt(el.dataset.sectionRow, 10) || 1,
+                    active: activeCheckbox ? activeCheckbox.checked : true,
+                    article_ids: []
                 };
                 var articleRows = el.querySelectorAll(".section-article-row[data-article-id]");
                 if (articleRows.length > 0) {

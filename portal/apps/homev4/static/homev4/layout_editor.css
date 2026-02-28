@@ -326,6 +326,48 @@
     padding: 4px 0;
 }
 
+/* ── Badge especial ──────────────────────────────────────── */
+#homev4-editor .badge-especial { background: #2631ff; }
+
+/* ── Fila 2 badge ────────────────────────────────────────── */
+#homev4-editor .row-badge {
+    font-size: 10px;
+    color: #999;
+    font-style: italic;
+    margin-left: 4px;
+}
+
+/* ── Block active toggle label ───────────────────────────── */
+#homev4-editor .block-active-toggle {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px;
+    cursor: pointer;
+    margin: 0;
+    user-select: none;
+}
+#homev4-editor .block-active-toggle input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: #417690;
+}
+
+/* ── Inactive state: block or component is OFF ───────────── */
+#homev4-editor .editor-block.is-inactive,
+#homev4-editor .componente-item.is-inactive {
+    opacity: 0.35;
+    filter: grayscale(0.8);
+    transition: opacity 0.2s, filter 0.2s;
+}
+#homev4-editor .is-inactive .articles-sortable,
+#homev4-editor .is-inactive .section-articles,
+#homev4-editor .is-inactive .comp-articles {
+    pointer-events: none;
+}
+
 /* ── Save toast ──────────────────────────────────────────── */
 .save-status {
     position: fixed;

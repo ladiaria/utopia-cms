@@ -28,10 +28,11 @@ def get_default_grid_data():
     """
     sections = Section.objects.filter(in_home=True).order_by("home_order")
     return {
-        "principal": {"article_ids": []},
-        "suplemento": {"article_ids": []},
+        "principal":  {"active": True, "article_ids": []},
+        "suplemento": {"active": True, "article_ids": []},
+        "especial":   {"active": True, "article_ids": []},
         "sections": [
-            {"type": "section", "id": s.pk, "name": s.name}
+            {"type": "section", "id": s.pk, "slug": s.slug, "name": s.name, "row": 1, "active": True}
             for s in sections
         ],
         "componentes": list(DEFAULT_COMPONENTES),
@@ -172,14 +173,15 @@ def build_home_data(grid_data):
     for sec_data in grid_data.get("sections", []):
         sec_type = sec_data.get("type", "section")
         sec_id = sec_data.get("id")
+        sec_slug = sec_data.get("slug")
         sec_name = sec_data.get("name", "")
         saved_ids = sec_data.get("article_ids", [])
         articles = []
         url = ""
 
-        if sec_type == "section" and sec_id:
+        if sec_type == "section" and (sec_slug or sec_id):
             try:
-                section = Section.objects.get(pk=sec_id)
+                section = Section.objects.get(slug=sec_slug) if sec_slug else Section.objects.get(pk=sec_id)
                 sec_name = section.name
                 url = section.get_absolute_url()
                 if saved_ids:
@@ -205,6 +207,7 @@ def build_home_data(grid_data):
         result["sections"].append({
             "type": sec_type,
             "id": sec_id,
+            "slug": sec_slug,
             "name": sec_name,
             "url": url,
             "articles": articles,

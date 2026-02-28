@@ -10,7 +10,45 @@
       "ends_next_day": false,
       "is_manual_override": false,
       "manual_override_by": null,
-      "grid_data": [],
+      "grid_data": {
+        "principal":  {"active": true,  "article_ids": []},
+        "suplemento": {"active": true,  "article_ids": []},
+        "especial":   {"active": true,  "article_ids": []},
+        "sections": [
+          {"type": "section", "slug": "mundo",      "name": "Mundo",      "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "cultura",    "name": "Cultura",    "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "local",      "name": "Local",      "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "mundo",      "name": "Mundo",      "row": 2, "active": false, "article_ids": []},
+          {"type": "section", "slug": "cultura",    "name": "Cultura",    "row": 2, "active": false, "article_ids": []},
+          {"type": "section", "slug": "local",      "name": "Local",      "row": 2, "active": false, "article_ids": []},
+          {"type": "section", "slug": "ambiente",   "name": "Ambiente",   "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "economia",   "name": "Economía",   "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "justicia",   "name": "Justicia",   "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "ambiente",   "name": "Ambiente",   "row": 2, "active": false, "article_ids": []},
+          {"type": "section", "slug": "economia",   "name": "Economía",   "row": 2, "active": false, "article_ids": []},
+          {"type": "section", "slug": "justicia",   "name": "Justicia",   "row": 2, "active": false, "article_ids": []},
+          {"type": "section", "slug": "trabajo",    "name": "Trabajo",    "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "salud",      "name": "Salud",      "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "educacion",  "name": "Educación",  "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "trabajo",    "name": "Trabajo",    "row": 2, "active": false, "article_ids": []},
+          {"type": "section", "slug": "salud",      "name": "Salud",      "row": 2, "active": false, "article_ids": []},
+          {"type": "section", "slug": "educacion",  "name": "Educación",  "row": 2, "active": false, "article_ids": []},
+          {"type": "section", "slug": "feminismos", "name": "Feminismos", "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "ciencia",    "name": "Ciencia",    "row": 1, "active": true,  "article_ids": []},
+          {"type": "section", "slug": "feminismos", "name": "Feminismos", "row": 2, "active": false, "article_ids": []},
+          {"type": "section", "slug": "ciencia",    "name": "Ciencia",    "row": 2, "active": false, "article_ids": []}
+        ],
+        "componentes": [
+          {"key": "apuntes_del_dia",      "active": true},
+          {"key": "opinion",              "active": true},
+          {"key": "lo_ultimo",            "active": false},
+          {"key": "radio",                "active": false},
+          {"key": "recomendadas_lv",      "active": false},
+          {"key": "newsletter_dia",       "active": false},
+          {"key": "recomendadas_domingo", "active": false},
+          {"key": "lo_mas_leido",         "active": false}
+        ]
+      },
       "created": "2026-01-01T00:00:00Z",
       "modified": "2026-01-01T00:00:00Z"
     }
