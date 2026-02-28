@@ -41,7 +41,10 @@
                 <!-- PRINCIPAL: articles sortable by dragging -->
                 <div class="editor-block block-principal">
                     <div class="block-header">
-                        <span class="block-badge badge-principal">PRINCIPAL</span>
+                        <label class="block-active-toggle">
+                            <input type="checkbox" class="block-active" data-block="principal" {% if editor_data.principal_active %}checked{% endif %}>
+                            <span class="block-badge badge-principal">PRINCIPAL</span>
+                        </label>
                         <span class="block-hint">Arrastrá para reordenar los artículos</span>
                     </div>
                     <div class="articles-sortable" id="principal-articles">
@@ -60,7 +63,10 @@
                 <!-- SUPLEMENTO: articles sortable by dragging -->
                 <div class="editor-block block-suplemento">
                     <div class="block-header">
-                        <span class="block-badge badge-suplemento">SUPLEMENTO</span>
+                        <label class="block-active-toggle">
+                            <input type="checkbox" class="block-active" data-block="suplemento" {% if editor_data.suplemento_active %}checked{% endif %}>
+                            <span class="block-badge badge-suplemento">SUPLEMENTO</span>
+                        </label>
                         <span class="block-hint">Arrastrá para reordenar los artículos</span>
                     </div>
                     <div class="articles-sortable" id="suplemento-articles">
@@ -76,6 +82,28 @@
                     </div>
                 </div>
 
+                <!-- ESPECIAL: articles sortable by dragging -->
+                <div class="editor-block block-especial">
+                    <div class="block-header">
+                        <label class="block-active-toggle">
+                            <input type="checkbox" class="block-active" data-block="especial" {% if editor_data.especial_active %}checked{% endif %}>
+                            <span class="block-badge badge-especial">ESPECIAL</span>
+                        </label>
+                        <span class="block-hint">Arrastrá para reordenar los artículos</span>
+                    </div>
+                    <div class="articles-sortable" id="especial-articles">
+                        {% for article in editor_data.especial_articles %}
+                        <div class="article-row especial-row" draggable="true" data-article-id="{{ article.id }}">
+                            <span class="drag-handle">⠿</span>
+                            <span class="article-num">{{ forloop.counter }}</span>
+                            <span class="article-title">{{ article.headline }}</span>
+                        </div>
+                        {% empty %}
+                        <div class="empty-hint">Sin artículos de especial</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
                 <!-- ÁREAS Y PUBLICACIONES: sections locked (auto from DB) -->
                 <div class="editor-block block-areas">
                     <div class="block-header">
@@ -87,9 +115,15 @@
                         <div class="editor-block block-area"
                              data-section-type="{{ section.type }}"
                              data-section-id="{{ section.id }}"
-                             data-section-name="{{ section.name }}">
+                             data-section-slug="{{ section.slug }}"
+                             data-section-name="{{ section.name }}"
+                             data-section-row="{{ section.row }}">
                             <div class="block-header area-header">
-                                <span class="block-badge badge-area">{{ section.name }}</span>
+                                <label class="block-active-toggle">
+                                    <input type="checkbox" class="section-active" {% if section.active %}checked{% endif %}>
+                                    <span class="block-badge badge-area">{{ section.name }}</span>
+                                </label>
+                                {% if section.row > 1 %}<span class="row-badge">fila {{ section.row }}</span>{% endif %}
                             </div>
                             <div class="section-articles section-sortable">
                                 {% for article in section.preview_articles %}

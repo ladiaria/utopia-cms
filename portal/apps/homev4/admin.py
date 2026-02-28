@@ -98,9 +98,17 @@ class HomeLayoutAdmin(admin.ModelAdmin):
     def _build_editor_data(self, grid_data):
         from core.models import Article, Section, Category, get_current_edition
 
+        principal_data = grid_data.get("principal") or grid_data.get("inicio") or {}
+        suplemento_data = grid_data.get("suplemento", {})
+        especial_data = grid_data.get("especial", {})
+
         result = {
+            "principal_active": principal_data.get("active", True),
             "principal_articles": [],
+            "suplemento_active": suplemento_data.get("active", True),
             "suplemento_articles": [],
+            "especial_active": especial_data.get("active", True),
+            "especial_articles": [],
             "sections": [],
             "componentes": [],
         }
@@ -141,14 +149,21 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             sec_info = {
                 "type": sec_data.get("type", "section"),
                 "id": sec_data.get("id"),
+                "slug": sec_data.get("slug"),
                 "name": sec_data.get("name", ""),
+                "row": sec_data.get("row", 1),
+                "active": sec_data.get("active", True),
                 "preview_articles": [],
             }
             saved_ids = sec_data.get("article_ids", [])
 
-            if sec_info["type"] == "section" and sec_info["id"]:
+            if sec_info["type"] == "section" and (sec_info["slug"] or sec_info["id"]):
                 try:
-                    section = Section.objects.get(pk=sec_info["id"])
+                    section = (
+                        Section.objects.get(slug=sec_info["slug"])
+                        if sec_info["slug"]
+                        else Section.objects.get(pk=sec_info["id"])
+                    )
                     sec_info["name"] = section.name
                     if saved_ids:
                         by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
