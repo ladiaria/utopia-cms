@@ -113,6 +113,7 @@ class SendNLCommand(BaseCommand):
 
     def load_options(self, options):
         for arg in (
+            'verbosity',
             'partitions',
             'mod',
             'offline',
@@ -143,9 +144,18 @@ class SendNLCommand(BaseCommand):
         log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
         log.setLevel(logging.DEBUG)
         log.propagate = False
-        # print also errors to stderr to receive cron alert
+        # stderr: v0=ERROR+, v1=WARNING+, v2+=INFO+ (DEBUG only when settings.DEBUG)
+        verbosity = self.verbosity
+        if settings.DEBUG:
+            stderr_level = logging.DEBUG
+        elif verbosity > 1:
+            stderr_level = logging.INFO
+        elif verbosity == 1:
+            stderr_level = logging.WARNING
+        else:
+            stderr_level = logging.ERROR
         err_handler = logging.StreamHandler(sys.stderr)
-        err_handler.setLevel(logging.ERROR)
+        err_handler.setLevel(stderr_level)
         err_handler.setFormatter(log_formatter)
         log.addHandler(err_handler)
         if not self.export_only and not self.no_logfile:
@@ -154,6 +164,7 @@ class SendNLCommand(BaseCommand):
                     substitution_prefix + ("_as_news" if self.as_news else ""), self.nl_delivery_dt.strftime('%Y%m%d'),
                 )
             )
+            h.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
             h.setFormatter(log_formatter)
             log.addHandler(h)
 
