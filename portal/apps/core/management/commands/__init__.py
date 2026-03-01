@@ -142,6 +142,7 @@ class SendNLCommand(BaseCommand):
     def initlog(self, log, substitution_prefix):
         log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
         log.setLevel(logging.DEBUG)
+        log.propagate = False
         # print also errors to stderr to receive cron alert
         err_handler = logging.StreamHandler(sys.stderr)
         err_handler.setLevel(logging.ERROR)
