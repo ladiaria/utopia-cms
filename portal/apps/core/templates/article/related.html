@@ -3,7 +3,7 @@
 {% if articles %}
   <section class="ld-block ld-related article-container" data-nosnippet>
     <h2>{% block more_of_label %}Más de {{ section }}{% endblock %}</h2>
-    <div class="ld-grid-simple">
+    <div class="ld-grid-thirds">
       {% for article in articles %}
         {% render_article_card article=article media=article.home_display card_size="FD" %}
       {% endfor %}
