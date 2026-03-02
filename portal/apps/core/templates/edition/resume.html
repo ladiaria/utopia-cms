@@ -1,13 +1,16 @@
 {% load homev3_tags thedaily_tags %}
 
-<div class="mobile-login-items">
-  {% if not user.is_authenticated %}
-    <a class="btn" href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresar</a>
-  {% endif %}
-  {% if not is_subscriber_any %}
-    <a href="{% url 'subscribe_landing' %}" class="btn btn__dark">Suscribite</a>
-  {% endif %}
-</div>
+{% if not is_subscriber_any %}
+  <div class="mobile-login-items">
+    {% if not user.is_authenticated %}
+      <a class="btn" href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresar</a>
+    {% endif %}
+    {% if not is_subscriber_any %}
+      <a href="{% url 'subscribe_landing' %}" class="btn btn__dark">Suscribite</a>
+    {% endif %}
+  </div>
+{% endif %}
+
 <div class="ld-main-menu__col">
   <div class="ld-main-menu__block">
     <h2 class="ld-main-menu__title">Inicio</h2>

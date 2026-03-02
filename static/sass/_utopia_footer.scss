@@ -119,6 +119,13 @@
   }
 }
 
+.mobile-login-items {
+  display: none;
+  @media #{$medium-and-down} {
+    display: block;
+  }
+}
+
 // subscribe footer_popover
 #subscribe-footer {
   display: none;
@@ -205,23 +212,6 @@
   padding-top: 20px;
   background: white;
   background: transparent;
-}
-
-.separador-franja {
-  background: $primary-color;
-
-  .row {
-    margin: 20px 0 0 0;
-  }
-
-  .valign-wrapper {
-    height: $line-height;
-  }
-
-  .title {
-    width: 100%;
-    text-transform: uppercase;
-  }
 }
 
 // Mobile navbar
