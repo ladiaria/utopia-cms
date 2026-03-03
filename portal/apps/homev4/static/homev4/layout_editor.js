@@ -2,6 +2,17 @@ document.addEventListener("DOMContentLoaded", function () {
     var DATA = window.HOMEV4_DATA;
     var dragSrc = null;
 
+    // ── Logging helper ────────────────────────────────────────────────────────
+    // Single entry point for all editor events. Category examples: "drag", "toggle", "save".
+    function log(category, message, data) {
+        var prefix = "[homev4:" + category + "] " + message;
+        if (data !== undefined) {
+            console.log(prefix, data);
+        } else {
+            console.log(prefix);
+        }
+    }
+
     // Make a container's direct children sortable via HTML5 drag-and-drop
     function makeSortable(container, itemSelector) {
         if (!container) return;
@@ -53,6 +64,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 var destIdx = items.indexOf(this);
                 if (srcIdx === -1 || destIdx === -1) return;
 
+                var label = dragSrc.querySelector(".article-title, .section-article-title, .comp-name, .comp-article-title");
+                log("drag", "reordered", {
+                    item: label ? label.textContent.trim() : dragSrc.dataset.articleId || dragSrc.dataset.compKey,
+                    from: srcIdx + 1,
+                    to: destIdx + 1,
+                });
+
                 if (srcIdx < destIdx) {
                     container.insertBefore(dragSrc, this.nextSibling);
                 } else {
@@ -99,7 +117,14 @@ document.addEventListener("DOMContentLoaded", function () {
     function initActiveToggles() {
         document.querySelectorAll(TOGGLE_CHECKBOXES).forEach(function (cb) {
             applyActiveState(cb);
-            cb.addEventListener("change", function () { applyActiveState(this); });
+            cb.addEventListener("change", function () {
+                applyActiveState(this);
+                var block = this.closest(TOGGLE_CONTAINER);
+                var nameEl = block && block.querySelector(".block-badge, .comp-name");
+                log("toggle", (this.checked ? "activated" : "deactivated"), {
+                    block: nameEl ? nameEl.textContent.trim() : (this.dataset.block || "?"),
+                });
+            });
         });
     }
     initActiveToggles();
@@ -213,7 +238,12 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         var payload = serializeGrid();
-        console.log("[homev4] saving:", JSON.stringify(payload).slice(0, 300));
+        log("save", "sending", {
+            principal: payload.principal.article_ids.length,
+            suplemento: payload.suplemento.article_ids.length,
+            sections: payload.sections.length,
+            componentes: payload.componentes.length,
+        });
         fetch(DATA.saveUrl, {
             method: "POST",
             credentials: "same-origin",
@@ -231,18 +261,32 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(function (resp) {
             if (resp.status === "ok") {
-                showStatus(
-                    "Guardado — principal: " + resp.saved_principal + " arts, secciones: " + resp.saved_sections,
-                    "success"
-                );
+                var labels = (DATA && DATA.componentLabels) || {};
+                var activeLabels = (resp.componentes_active || []).map(function (key) {
+                    return labels[key] || key;
+                });
+                var compsStr = activeLabels.length
+                    ? activeLabels.join(", ")
+                    : "ninguno";
+                var msg = "Guardado"
+                    + " · portada: " + resp.principal + " arts"
+                    + " · áreas: " + resp.sections_active + "/" + resp.sections_total
+                    + " · activos: " + compsStr;
+                showStatus(msg, "success");
+                log("save", "ok", {
+                    principal: resp.principal,
+                    suplemento: resp.suplemento,
+                    sections: resp.sections_active + "/" + resp.sections_total,
+                    componentes_active: compsStr,
+                });
             } else {
                 showStatus("Error: " + (resp.error || "?"), "error");
-                console.error("[homev4] save error response:", resp);
+                log("save", "error response", resp);
             }
         })
         .catch(function (err) {
             showStatus("Error al guardar: " + err.message, "error");
-            console.error("[homev4] saveGrid error:", err);
+            log("save", "fetch error", err.message);
         });
     }
 

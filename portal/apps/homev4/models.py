@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -51,8 +52,18 @@ class HomeLayout(models.Model):
 
     class Meta:
         ordering = ["day", "start_time"]
-        verbose_name = "layout de portada"
-        verbose_name_plural = "layouts de portada"
+        verbose_name = "programación de portada"
+        verbose_name_plural = "programaciones de portada"
+
+    def clean(self):
+        if self.is_manual_override:
+            exists = HomeLayout.objects.filter(
+                publication=self.publication, is_manual_override=True
+            ).exclude(pk=self.pk).exists()
+            if exists:
+                raise ValidationError(
+                    {"is_manual_override": "Ya existe un override activo para esta publicación. Desactivalo primero."}
+                )
 
     def __str__(self):
         override = " [OVERRIDE]" if self.is_manual_override else ""
