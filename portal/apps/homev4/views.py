@@ -14,14 +14,21 @@ from .models import HomeLayout
 logger = logging.getLogger("homev4")
 
 
-DEFAULT_COMPONENTES = [
-    {"key": "apuntes_del_dia",      "active": True},
-    {"key": "opinion",              "active": True},
-    {"key": "lo_ultimo",            "active": True},
-    {"key": "recomendadas_lv",      "active": True},
-    {"key": "recomendadas_domingo", "active": True},
-    {"key": "lo_mas_leido",         "active": True},
+# Fixed component definitions — keys must stay stable; label/description can change.
+COMPONENT_DEFINITIONS = [
+    {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": ""},
+    {"key": "opinion",              "label": "Opinión",                  "description": "Área"},
+    {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM"},
+    {"key": "radio",                "label": "Radio",                    "description": ""},
+    {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a viernes"},
+    {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": ""},
+    {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos"},
+    {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": ""},
 ]
+
+_COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
+
+DEFAULT_COMPONENTES = [{"key": d["key"], "active": True} for d in COMPONENT_DEFINITIONS]
 
 
 def get_default_grid_data():
@@ -153,23 +160,27 @@ def preview_layout(request, layout_id):
     """Render the home template for a specific layout (opens in new tab from admin)."""
     layout = get_object_or_404(HomeLayout, pk=layout_id)
     grid_data = layout.grid_data if isinstance(layout.grid_data, dict) else {}
-    active_comps = [c for c in grid_data.get("componentes", []) if c.get("active")]
     return render(request, "homev4/home.html", {
         "layout": layout,
         "publication": layout.publication,
         "home_data": build_home_data(grid_data),
-        "componentes": active_comps,
     })
 
 
 def build_home_data(grid_data):
     """
-    Pre-fetch article objects for every active section in grid_data so the template
-    does not need to hit the database.  Returns a dict with:
-      principal_active, principal_articles,
-      suplemento_active, suplemento_articles,
-      especial_active, especial_articles,
-      sections (list of dicts, only active ones)
+    Pre-fetch all data needed to render the home template from grid_data.
+    Returns a single dict with everything ready — the template should not
+    need to hit the database or do any lookups.
+
+    Keys returned:
+      principal_active (bool), principal_articles (list of Article),
+      suplemento_active (bool), suplemento_articles (list of Article),
+      especial_active (bool), especial_articles (list of Article),
+      sections: list of dicts — only active ones — each with:
+        {type, id, slug, name, row, url, articles}
+      componentes: list of dicts — only active ones — each with:
+        {key, label, description}
     """
     result = {
         "principal_active": False,
@@ -179,12 +190,13 @@ def build_home_data(grid_data):
         "especial_active": False,
         "especial_articles": [],
         "sections": [],
+        "componentes": [],
     }
 
     edition = get_current_edition()
 
     # PRINCIPAL
-    principal_data = grid_data.get("principal") or grid_data.get("inicio") or {}
+    principal_data = grid_data.get("principal") or {}
     result["principal_active"] = principal_data.get("active", True)
     if result["principal_active"]:
         db_articles = list(edition.top_articles) if edition else []
@@ -266,6 +278,18 @@ def build_home_data(grid_data):
             "articles": articles,
         })
 
+    # COMPONENTES — active ones only, enriched with label and description
+    for item in grid_data.get("componentes", []):
+        if not item.get("active", True):
+            continue
+        key = item.get("key", "")
+        defn = _COMP_DEF_MAP.get(key, {})
+        result["componentes"].append({
+            "key": key,
+            "label": defn.get("label", key),
+            "description": defn.get("description", ""),
+        })
+
     return result
 
 
@@ -275,22 +299,9 @@ def active_layout(request, publication_slug=None):
     else:
         publication = get_default_publication()
     layout = HomeLayout.get_active_layout(publication)
-    if layout is None:
-        return render(request, "homev4/home.html", {
-            "layout": None,
-            "publication": publication,
-            "home_data": {},
-            "componentes": [],
-        })
-    grid_data = layout.grid_data if isinstance(layout.grid_data, dict) else {}
-    active_comps = [c for c in grid_data.get("componentes", []) if c.get("active")]
-    home_data = build_home_data(grid_data)
+    grid_data = layout.grid_data if (layout and isinstance(layout.grid_data, dict)) else {}
     return render(request, "homev4/home.html", {
         "layout": layout,
         "publication": publication,
-        "home_data": home_data,
-        "principal_active": home_data["principal_active"],
-        "suplemento_active": home_data["suplemento_active"],
-        "especial_active": home_data["especial_active"],
-        "componentes": active_comps,
+        "home_data": build_home_data(grid_data),
     })

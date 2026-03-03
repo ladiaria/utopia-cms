@@ -138,6 +138,7 @@
     <main class="home-main">
 
         <!-- PRINCIPAL -->
+        {% if home_data.principal_active %}
         <section class="home-section">
             <div class="home-section-header">
                 <h2>Principal</h2>
@@ -147,7 +148,7 @@
                     {% with featured=home_data.principal_articles.0 rest=home_data.principal_articles|slice:"1:" %}
                     <div class="article-featured">
                         <h2><a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a></h2>
-                        {% if featured.deck %}<p class="deck">{{ featured.deck }}</p>{% endif %}
+                        {% if featured.home_lead or featured.deck %}<p class="deck">{{ featured.home_lead|default:featured.deck }}</p>{% endif %}
                     </div>
                     {% if rest %}
                     <ul class="article-list">
@@ -165,14 +166,16 @@
                 {% endif %}
             </div>
         </section>
+        {% endif %}
 
         <!-- SUPLEMENTO -->
-        {% if home_data.suplemento_articles %}
+        {% if home_data.suplemento_active %}
         <section class="home-section">
             <div class="home-section-header">
                 <h2>Suplemento</h2>
             </div>
             <div class="home-section-body">
+                {% if home_data.suplemento_articles %}
                 <ul class="article-list">
                     {% for article in home_data.suplemento_articles %}
                     <li class="article-item">
@@ -181,6 +184,32 @@
                     </li>
                     {% endfor %}
                 </ul>
+                {% else %}
+                    <p class="empty-hint">Sin artículos de suplemento.</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- ESPECIAL -->
+        {% if home_data.especial_active %}
+        <section class="home-section">
+            <div class="home-section-header">
+                <h2>Especial</h2>
+            </div>
+            <div class="home-section-body">
+                {% if home_data.especial_articles %}
+                <ul class="article-list">
+                    {% for article in home_data.especial_articles %}
+                    <li class="article-item">
+                        <h3><a href="{{ article.get_absolute_url }}">{{ article.headline }}</a></h3>
+                        {% if article.deck %}<p class="deck">{{ article.deck }}</p>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                    <p class="empty-hint">Sin artículos de especial.</p>
+                {% endif %}
             </div>
         </section>
         {% endif %}
@@ -218,13 +247,14 @@
     <aside class="home-sidebar">
 
         <!-- COMPONENTES -->
-        {% if componentes %}
+        {% if home_data.componentes %}
         <div class="sidebar-block">
             <div class="sidebar-block-header">Componentes</div>
             <div class="sidebar-block-body">
-                {% for comp in componentes %}
+                {% for comp in home_data.componentes %}
                 <div class="comp-item">
-                    <span class="comp-label">{{ comp.key }}</span>
+                    <span class="comp-label">{{ comp.label }}</span>
+                    {% if comp.description %}<span class="comp-desc">{{ comp.description }}</span>{% endif %}
                 </div>
                 {% endfor %}
             </div>

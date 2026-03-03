@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.db.models import Case, IntegerField, Value, When
 
 from .models import HomeLayout
-from .views import get_default_grid_data
+from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP
 
 _DAY_ORDER = {
     "lmjv": 0,
@@ -17,18 +17,6 @@ _DAY_ORDER = {
     "sa":   7,
     "do":   8,
 }
-
-# Fixed component definitions — keys must stay stable; label/description can change.
-COMPONENT_DEFINITIONS = [
-    {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": ""},
-    {"key": "opinion",              "label": "Opinión",                  "description": "Área"},
-    {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM"},
-    {"key": "radio",                "label": "Radio",                    "description": ""},
-    {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a viernes"},
-    {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": ""},
-    {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos"},
-    {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": ""},
-]
 
 # Placeholder articles shown in the editor until real data sources are defined.
 COMPONENT_PLACEHOLDER_ARTICLES = {
@@ -64,9 +52,6 @@ COMPONENT_PLACEHOLDER_ARTICLES = {
     ],
 }
 
-_COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
-
-
 @admin.register(HomeLayout)
 class HomeLayoutAdmin(admin.ModelAdmin):
     change_form_template = "homev4/admin_change_form.html"
@@ -86,10 +71,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         obj = self.get_object(request, object_id)
         if obj:
-            grid_data = obj.grid_data if obj.grid_data else get_default_grid_data()
-            # Migrate old list format to new dict format automatically
-            if isinstance(grid_data, list):
-                grid_data = get_default_grid_data()
+            grid_data = obj.grid_data if isinstance(obj.grid_data, dict) else get_default_grid_data()
             extra_context["editor_data"] = self._build_editor_data(grid_data)
             extra_context["save_grid_url"] = f"/homev4/save/{obj.pk}/"
             extra_context["reset_grid_url"] = f"/homev4/reset/{obj.pk}/"
@@ -100,7 +82,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
     def _build_editor_data(self, grid_data):
         from core.models import Article, Section, Category, get_current_edition
 
-        principal_data = grid_data.get("principal") or grid_data.get("inicio") or {}
+        principal_data = grid_data.get("principal") or {}
         suplemento_data = grid_data.get("suplemento", {})
         especial_data = grid_data.get("especial", {})
 
@@ -124,8 +106,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         db_articles = list(edition.top_articles) if edition else []
         db_by_id = {a.id: a for a in db_articles}
 
-        # Support migration from old "inicio" key to "principal"
-        principal_data = grid_data.get("principal") or grid_data.get("inicio") or {}
+        principal_data = grid_data.get("principal") or {}
         saved_ids = principal_data.get("article_ids", [])
         if saved_ids:
             ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
