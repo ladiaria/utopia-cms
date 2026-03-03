@@ -1,7 +1,7 @@
 import logging
 
 from django.conf import settings
-from django.utils.timezone import now
+from django.utils.timezone import localtime
 
 from . import SendNLCommand
 
@@ -25,7 +25,7 @@ class Command(SendNLCommand):
     """
 
     def handle(self, *args, **options):
-        started_at = now()
+        started_at = localtime()
         self.load_options(options)
         log = logging.getLogger(__name__)
         self.initlog(log, LOG_SUFFIX)
