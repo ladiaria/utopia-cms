@@ -693,7 +693,6 @@ article {
     margin: 20px auto;
     line-height: px-to-rem(29.7px);
     margin-bottom: 32px;
-    color: #333;
 
     &:first-child {
       margin-top: 0;
@@ -1297,10 +1296,20 @@ aside {
   flex-direction: column;
   gap: 32px;
 
+  .ld-grid-simple__area:nth-child(4) {
+    display: none;
+  }
+
   h2 {
     font-family: $sans-title;
     font-size: px-to-rem(32px);
     margin: 0;
+  }
+
+  @media #{$medium-and-down} {
+    .d-grid-simple__area:nth-child(4) {
+      display: flex;
+    }
   }
 }
 
