@@ -194,7 +194,12 @@
 <script>
 window.HOMEV4_DATA = {
     saveUrl: "{{ save_grid_url }}",
-    csrfToken: "{{ csrf_token }}"
+    previewUrl: "{{ preview_url }}",
+    csrfToken: "{{ csrf_token }}",
+    componentLabels: {
+        {% for comp in editor_data.componentes %}"{{ comp.key }}": "{{ comp.label }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }
 };
 </script>
 <script src="{% static 'homev4/layout_editor.js' %}"></script>

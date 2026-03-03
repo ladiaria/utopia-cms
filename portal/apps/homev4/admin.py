@@ -23,7 +23,9 @@ COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": ""},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área"},
     {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM"},
+    {"key": "radio",                "label": "Radio",                    "description": ""},
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a viernes"},
+    {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": ""},
     {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos"},
     {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": ""},
 ]
