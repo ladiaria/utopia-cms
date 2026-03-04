@@ -259,7 +259,7 @@
     }
 
     function initCategoryNavbarGradients() {
-      const categoryNavbars = qsa("nav.category-navbar");
+      const categoryNavbars = qsa("nav.navbar");
       if (categoryNavbars.length === 0) {
         return;
       }
