@@ -163,11 +163,11 @@ def preview_layout(request, layout_id):
     return render(request, "homev4/home.html", {
         "layout": layout,
         "publication": layout.publication,
-        "home_data": build_home_data(grid_data),
+        "home_data": build_home_data(grid_data, publication=layout.publication),
     })
 
 
-def build_home_data(grid_data):
+def build_home_data(grid_data, publication=None):
     """
     Pre-fetch all data needed to render the home template from grid_data.
     Returns a single dict with everything ready — the template should not
@@ -193,7 +193,7 @@ def build_home_data(grid_data):
         "componentes": [],
     }
 
-    edition = get_current_edition()
+    edition = get_current_edition(publication=publication)
 
     # PRINCIPAL
     principal_data = grid_data.get("principal") or {}
@@ -303,5 +303,5 @@ def active_layout(request, publication_slug=None):
     return render(request, "homev4/home.html", {
         "layout": layout,
         "publication": publication,
-        "home_data": build_home_data(grid_data),
+        "home_data": build_home_data(grid_data, publication=publication),
     })

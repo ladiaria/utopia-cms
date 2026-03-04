@@ -25,6 +25,7 @@ from exchange.models import Exchange
 from thedaily.models import Subscriber
 from comunidad.models import Url, Recommendation
 from homev3.views import index
+from homev4.views import active_layout
 from cartelera.views import vivo
 
 
@@ -319,8 +320,13 @@ urlpatterns.extend(
         # Homev4: visual layout editor and preview
         path('homev4/', include('homev4.urls')),
 
+        ################################homev4#######################################
         # Homes: domain_slug can be a publication slug or an area (core.Category) slug
-        path('', index, name='home'),
+        # ROLLBACK: swap comments between the two lines below
+        path('', index, name='home'),          # homev3 (rollback)
+        # path('', active_layout, name='home'),    # homev4
+        #################################homev4######################################
+
         re_path(r'^(?P<domain_slug>[\w-]+)/$', index, name='home'),
 
         # Article detail pages: domain_slug can be a publication slug or an area slug

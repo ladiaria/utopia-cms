@@ -58,12 +58,12 @@ class HomeLayoutAdmin(admin.ModelAdmin):
     list_display = ("name", "publication", "day", "start_time", "end_time", "ends_next_day", "is_manual_override", "modified")
     list_filter = ("publication", "is_manual_override")
     list_editable = ("is_manual_override",)
-    readonly_fields = ("created", "modified", "manual_override_by", "grid_data")
+    readonly_fields = ("publication", "created", "modified", "manual_override_by", "grid_data")
     fieldsets = (
         (None, {"fields": ("name", "publication", "day", "start_time", "end_time", "ends_next_day")}),
         ("Override", {"fields": ("is_manual_override", "manual_override_by")}),
-        ("Datos del layout (JSON)", {"fields": ("grid_data",), "classes": ("collapse",)}),
         ("Fechas", {"fields": ("created", "modified")}),
+        ("Datos del layout (JSON)", {"fields": ("grid_data",), "classes": ("collapse",)}),
     )
     actions = ["activate_override", "deactivate_override"]
 
@@ -72,14 +72,14 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         obj = self.get_object(request, object_id)
         if obj:
             grid_data = obj.grid_data if isinstance(obj.grid_data, dict) else get_default_grid_data()
-            extra_context["editor_data"] = self._build_editor_data(grid_data)
+            extra_context["editor_data"] = self._build_editor_data(grid_data, publication=obj.publication)
             extra_context["save_grid_url"] = f"/homev4/save/{obj.pk}/"
             extra_context["reset_grid_url"] = f"/homev4/reset/{obj.pk}/"
             extra_context["sync_sections_url"] = f"/homev4/sync/{obj.pk}/"
             extra_context["preview_url"] = f"/homev4/preview/{obj.pk}/"
         return super().change_view(request, object_id, form_url, extra_context)
 
-    def _build_editor_data(self, grid_data):
+    def _build_editor_data(self, grid_data, publication=None):
         from core.models import Article, Section, Category, get_current_edition
 
         principal_data = grid_data.get("principal") or {}
@@ -97,7 +97,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             "componentes": [],
         }
 
-        edition = get_current_edition()
+        edition = get_current_edition(publication=publication)
 
         # PRINCIPAL articles: DB is source of truth (edition.top_articles with home_top=True).
         # Saved JSON defines the order. Merge rules:
