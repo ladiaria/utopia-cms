@@ -1332,6 +1332,10 @@ article#main-article {
 
 aside {
   padding-bottom: 64px;
+
+  @media #{$medium-and-down} {
+    padding-bottom: 24px;
+  }
 }
 
 .ld-related {

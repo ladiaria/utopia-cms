@@ -139,7 +139,23 @@ img {
 .ld-grid-4-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
 
+  > article {
+    position: relative;
+
+    &::before {
+      position: absolute;
+      content: "";
+      top: 0;
+      bottom: 0;
+      right: -24px;
+      width: 0.5px;
+      background: #ababab;
+    }
+  }
+
+  > article:nth-child(3)::before,
   > article:nth-child(4) {
     display: none;
   }
@@ -147,28 +163,24 @@ img {
   @media #{$medium-and-down} {
     grid-template-columns: repeat(4, 1fr);
     overflow-x: auto;
-    gap: 48px;
+    gap: 16px;
+    -ms-overflow-style: none; // IE and legacy Edge
+    scrollbar-width: none; // Firefox
+
+    &::-webkit-scrollbar {
+      display: none; // Chrome, Safari, Opera
+    }
 
     > article {
       width: px-to-rem(284px);
       position: relative;
 
       &::before {
-        position: absolute;
-        content: "";
-        top: 0;
-        bottom: 0;
-        right: -24px;
-        width: 1px;
-        background: #ababab;
+        display: none;
       }
     }
     > article:nth-child(4) {
       display: flex;
-
-      &::before {
-        display: none;
-      }
     }
   }
 }
