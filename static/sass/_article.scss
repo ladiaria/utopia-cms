@@ -364,7 +364,7 @@ article {
     h4,
     h5,
     h6 {
-      font-family: "Meta Serif", serif;
+      font-family: $serif;
       font-weight: 500;
     }
     h2 {
@@ -693,6 +693,7 @@ article {
     margin: 20px auto;
     line-height: px-to-rem(29.7px);
     margin-bottom: 32px;
+    font-size: px-to-rem(22px);
 
     &:first-child {
       margin-top: 0;
@@ -764,6 +765,12 @@ article {
     @media (min-width: 700px) {
       margin: 0 auto;
       max-width: 700px;
+    }
+  }
+  @media #{$medium-and-down} {
+    .article-lead,
+    .article-body p {
+      font-size: px-to-rem(20px);
     }
   }
 }
@@ -909,7 +916,6 @@ article {
 
 .article-body {
   font-family: $serif;
-  font-size: $font-size-sm;
   position: relative;
   max-width: $max-article-width;
   line-height: normal;
@@ -1398,12 +1404,6 @@ article .article-body .collection-articles {
   background: #f3f3f3;
   line-height: normal;
   margin: 0 auto 16px;
-  p {
-    font-family: "Roboto", sans-serif;
-    a {
-      text-decoration: underline;
-    }
-  }
 }
 
 header.with-article-counter-container {

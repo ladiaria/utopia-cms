@@ -1,6 +1,3 @@
-$navbarHeight: 60px;
-$headerMinHeight: px-to-rem(60px);
-
 // Header general state:
 // - Applies to every page except home (`header:not(.home-header)`).
 // - Also applies to home once it becomes sticky on scroll (`header.sticky`).
@@ -465,15 +462,15 @@ header {
 }
 
 #main-header {
-  height: $navbarHeight;
+  height: $headerMinHeight;
   left: 0;
   top: 0;
   width: 100%;
   font-size: 16px;
 
   .nav-wrapper {
-    height: $navbarHeight;
-    line-height: $navbarHeight;
+    height: $headerMinHeight;
+    line-height: $headerMinHeight;
     background: $off-black;
     box-shadow:
       0 2px 2px 0 rgba(0, 0, 0, 0.14),
@@ -481,8 +478,8 @@ header {
       0 3px 1px -2px rgba(0, 0, 0, 0.2);
   }
   #nav-principal nav {
-    height: $navbarHeight;
-    line-height: $navbarHeight;
+    height: $headerMinHeight;
+    line-height: $headerMinHeight;
     background: none;
     box-shadow: none;
   }
@@ -568,7 +565,7 @@ header {
   }
 
   #nav-principal {
-    height: $navbarHeight;
+    height: $headerMinHeight;
     position: relative;
     text-align: center;
 
@@ -608,8 +605,8 @@ header {
       }
 
       & > i {
-        height: $navbarHeight;
-        line-height: $navbarHeight;
+        height: $headerMinHeight;
+        line-height: $headerMinHeight;
         display: inline-block;
         vertical-align: bottom;
       }
@@ -618,7 +615,7 @@ header {
     .input-field {
       label i {
         color: white;
-        line-height: $navbarHeight;
+        line-height: $headerMinHeight;
       }
 
       input[type="search"] {
@@ -649,7 +646,7 @@ header {
       position: absolute;
       bottom: 0;
       right: 0;
-      height: $navbarHeight;
+      height: $headerMinHeight;
 
       .dropdown-content {
         a {

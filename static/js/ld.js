@@ -319,6 +319,10 @@
       if (!coralStream) {
         return;
       }
+      const commentsContainer = qs("#comentarios");
+      if (commentsContainer) {
+        commentsContainer.classList.remove("closed");
+      }
 
       const talkURL = coralStream.getAttribute("data-talk-url");
       if (!talkURL) {
@@ -359,8 +363,15 @@
         .catch(function () {});
     }
 
-    onAll("#coral_talk_stream button", "click", function () {
+    onAll(".btn-comments", "click", function () {
       loadComments();
+    });
+
+    onAll(".toggle-comments", "click", function () {
+      const commentsContainer = qs("#comentarios");
+      if (commentsContainer) {
+        commentsContainer.classList.add("closed");
+      }
     });
 
     // Load comments if coming from AMP version
