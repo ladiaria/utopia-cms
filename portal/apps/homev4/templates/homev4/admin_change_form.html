@@ -171,7 +171,7 @@
                                 {% if comp.articles %}
                                 <div class="comp-articles">
                                     {% for title in comp.articles %}
-                                    <div class="comp-article-row" draggable="true" data-article-id="{{ article.id }}">
+                                    <div class="comp-article-row" draggable="true" data-article-id="{{ title.id }}">
                                         <span class="drag-handle small-handle">⠿</span>
                                         <span class="comp-article-title">{{ title.headline }}</span>
                                     </div>
