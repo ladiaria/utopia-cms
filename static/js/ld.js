@@ -364,6 +364,23 @@
         .catch(function () {});
     }
 
+    function updateCommentsBorderState() {
+      const commentsContainer = qs("#comentarios");
+      if (!commentsContainer) {
+        return;
+      }
+
+      const upperContent = qs(".upper-content", commentsContainer);
+      if (!upperContent) {
+        return;
+      }
+
+      upperContent.classList.toggle(
+        "with-border-bottom",
+        commentsContainer.scrollTop > 0
+      );
+    }
+
     onAll(".btn-comments", "click", function () {
       loadComments();
     });
@@ -378,6 +395,18 @@
     // Load comments if coming from AMP version
     if (window.location.hash === "#comentarios") {
       loadComments();
+    }
+
+    const commentsContainer = qs("#comentarios");
+    if (commentsContainer) {
+      commentsContainer.addEventListener(
+        "scroll",
+        function () {
+          updateCommentsBorderState();
+        },
+        { passive: true }
+      );
+      updateCommentsBorderState();
     }
 
     onAll(".ld-audio__audio", "play", function (event) {

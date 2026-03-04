@@ -4,9 +4,9 @@
 // Variables Materialize
 ///////////////////////////////////////////////////////////////////////////
 
-$primary-color: #6ef9ff !default;
+$primary-color: #b3efff !default;
 $primary-color-accent: #fe5b4c !default;
-$secondary-color: #b3efff !default;
+$secondary-color: $primary-color !default;
 $color-light-blue: #edf6f5;
 $link-color: #000000 !default;
 $link-color-hover: #595959 !default;
