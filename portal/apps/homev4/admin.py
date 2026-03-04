@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.db.models import Case, IntegerField, Value, When
 
 from .models import HomeLayout
-from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP
+from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles
 
 _DAY_ORDER = {
     "lmjv": 0,
@@ -18,45 +18,12 @@ _DAY_ORDER = {
     "do":   8,
 }
 
-# Placeholder articles shown in the editor until real data sources are defined.
-COMPONENT_PLACEHOLDER_ARTICLES = {
-    "apuntes_del_dia": [
-        "Primer artículo de Apuntes del día",
-        "Segundo artículo de Apuntes del día",
-        "Tercer artículo de Apuntes del día",
-    ],
-    "opinion": [
-        "Primera columna de opinión",
-        "Segunda columna de opinión",
-        "Tercera columna de opinión",
-    ],
-    "lo_ultimo": [
-        "Último artículo publicado 1",
-        "Último artículo publicado 2",
-        "Último artículo publicado 3",
-    ],
-    "recomendadas_lv": [
-        "Recomendado lunes a viernes 1",
-        "Recomendado lunes a viernes 2",
-        "Recomendado lunes a viernes 3",
-    ],
-    "recomendadas_domingo": [
-        "Recomendado domingo 1",
-        "Recomendado domingo 2",
-        "Recomendado domingo 3",
-    ],
-    "lo_mas_leido": [
-        "Artículo más leído hoy 1",
-        "Artículo más leído hoy 2",
-        "Artículo más leído hoy 3",
-    ],
-}
 
 @admin.register(HomeLayout)
 class HomeLayoutAdmin(admin.ModelAdmin):
     change_form_template = "homev4/admin_change_form.html"
     list_display = ("name", "publication", "day", "start_time", "end_time", "ends_next_day", "is_manual_override", "modified")
-    list_filter = ("publication", "is_manual_override")
+    list_filter = ("is_manual_override",)
     list_editable = ("is_manual_override",)
     readonly_fields = ("publication", "created", "modified", "manual_override_by", "grid_data")
     fieldsets = (
@@ -64,7 +31,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         ("Override", {"fields": ("is_manual_override", "manual_override_by")}),
         ("Fechas", {"fields": ("created", "modified")}),
     )
-    actions = ["activate_override", "deactivate_override"]
+    actions = []
 
     def change_view(self, request, object_id, form_url="", extra_context=None):
         extra_context = extra_context or {}
@@ -173,14 +140,6 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         #   - list (new): [{key, active}, ...]  — preserves custom drag order
         #   - dict (old): {key: {active: bool}} — migrated to list order on next save
         saved_comps_raw = grid_data.get("componentes", [])
-        def _apply_article_order(placeholders, order):
-            """Reorder placeholder list according to saved index order."""
-            if order and len(order) == len(placeholders):
-                try:
-                    return [placeholders[i] for i in order]
-                except IndexError:
-                    pass
-            return placeholders
 
         if isinstance(saved_comps_raw, list):
             seen_keys = set()
@@ -189,13 +148,12 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                 defn = _COMP_DEF_MAP.get(key)
                 if defn and key not in seen_keys:
                     seen_keys.add(key)
-                    placeholders = COMPONENT_PLACEHOLDER_ARTICLES.get(key, [])
                     result["componentes"].append({
                         "key": key,
                         "label": defn["label"],
                         "description": defn["description"],
                         "active": item.get("active", True),
-                        "articles": _apply_article_order(placeholders, item.get("article_order")),
+                        "articles": _fetch_component_articles(key, saved_ids=item.get("article_ids", [])),
                     })
             # Append any definitions not present in the saved list
             for defn in COMPONENT_DEFINITIONS:
@@ -205,7 +163,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                         "label": defn["label"],
                         "description": defn["description"],
                         "active": True,
-                        "articles": COMPONENT_PLACEHOLDER_ARTICLES.get(defn["key"], []),
+                        "articles": _fetch_component_articles(defn["key"]),
                     })
         else:
             # Old dict format — use fixed definition order
@@ -216,7 +174,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                     "label": defn["label"],
                     "description": defn["description"],
                     "active": saved.get("active", True),
-                    "articles": COMPONENT_PLACEHOLDER_ARTICLES.get(defn["key"], []),
+                    "articles": _fetch_component_articles(defn["key"]),
                 })
 
         return result
@@ -233,15 +191,6 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         )
         return qs.annotate(day_order=day_order).order_by("day_order", "start_time")
 
-    @admin.action(description="Activar override manual")
-    def activate_override(self, request, queryset):
-        queryset.update(is_manual_override=True, manual_override_by=request.user)
-        self.message_user(request, f"{queryset.count()} layout(s) activado(s) como override manual.")
-
-    @admin.action(description="Desactivar override manual")
-    def deactivate_override(self, request, queryset):
-        queryset.update(is_manual_override=False, manual_override_by=None)
-        self.message_user(request, f"{queryset.count()} layout(s) desactivado(s).")
 
     def save_model(self, request, obj, form, change):
         if obj.is_manual_override and not obj.manual_override_by:

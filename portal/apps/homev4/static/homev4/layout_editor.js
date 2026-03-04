@@ -145,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Init: article sorting within each component
     document.querySelectorAll(".comp-articles").forEach(function (container) {
-        makeSortable(container, ".comp-article-row[data-article-index]");
+        makeSortable(container, ".comp-article-row[data-article-id]");
     });
 
     // Build the JSON payload to save
@@ -220,10 +220,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 key: el.dataset.compKey,
                 active: el.querySelector(".comp-active").checked
             };
-            var articleRows = el.querySelectorAll(".comp-article-row[data-article-index]");
+            var articleRows = el.querySelectorAll(".comp-article-row[data-article-id]");
             if (articleRows.length > 0) {
-                comp.article_order = Array.from(articleRows).map(function (ar) {
-                    return parseInt(ar.dataset.articleIndex, 10);
+                comp.article_ids = Array.from(articleRows).map(function (ar) {
+                    return parseInt(ar.dataset.articleId, 10);
                 });
             }
             result.componentes.push(comp);
