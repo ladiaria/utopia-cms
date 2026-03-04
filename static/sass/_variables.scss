@@ -26,6 +26,8 @@ $button-radius: 100px !default;
 $padding-inline: 20px;
 $container-width: 1280px + $padding-inline * 2 !default;
 
+$headerMinHeight: px-to-rem(60px);
+
 // typography
 $sans: "Dialect Gothic A", "Roboto", Helvetica, sans-serif;
 $sans-title: "Review Condensed", "Roboto", Helvetica, sans-serif;
