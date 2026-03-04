@@ -709,24 +709,26 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="none" viewBox="0 0 60 60"><path fill="#000" d="M22.898 38 22 37.102 29.102 30 22 22.898l.898-.898L30 29.102 37.102 22l.898.898L30.898 30 38 37.102l-.898.898L30 30.898z"/></svg>
               </button>
             </div>
-            <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}"
-                      data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}"
-                      data-article-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
-                      data-login-url="{{ SITE_URL_SD }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
-            </section>
+            <div class="main-content">
+              <section id="coral_talk_stream" class="align-center" data-talk-url="{{ TALK_URL }}"
+                        data-talk-auth-token="{{ talk_auth_token }}" data-article-id="{{ article.id }}"
+                        data-article-url="{{ SITE_URL_SD }}{{ article.get_absolute_url }}"
+                        data-login-url="{{ SITE_URL_SD }}{% url 'account-login' %}?next={{ request.path }}#comentarios">
+              </section>
 
-            <div class="talk-login align-center display-hidden">
-              {% if user.is_authenticated %}
-                {% if not is_subscriber %}
+              <div class="talk-login align-center display-hidden">
+                {% if user.is_authenticated %}
+                  {% if not is_subscriber %}
+                    <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+                  {% endif %}
+                {% else %}
                   <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+                  <span class="ld-caption ld-caption-subscribe-to-comment">
+                    ¿Ya tenés suscripción?
+                    <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
+                  </span>
                 {% endif %}
-              {% else %}
-                <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
-                <span class="ld-caption ld-caption-subscribe-to-comment">
-                  ¿Ya tenés suscripción?
-                  <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
-                </span>
-              {% endif %}
+              </div>
             </div>
           </div>
         {% endif %}

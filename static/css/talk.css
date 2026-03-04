@@ -9,7 +9,6 @@
 
 #coral {
   max-width: 25.75rem;
-  padding-right: 24px;
 }
 
 .coral-guidelines-content p {
@@ -30,6 +29,10 @@
 
 select.coral-selectField {
   border: 1px solid var(--palette-grey-lighter);
+}
+
+.coral-rte-content {
+  border-top: 0;
 }
 
 /* new styles */
@@ -71,6 +74,7 @@ select.coral-selectField {
 
 .coral-comment-timestamp span {
   color: #ABABAB;
+  font-weight: 500;
 }
 
 .coral-comment-content {
@@ -116,9 +120,6 @@ main {
   display: none;
 }
 
-.coral-commentForm {
-  border-radius: 0 !important;
-}
 
 .coral-rte-content {
   border-top: 1px solid #cbd1d2;
