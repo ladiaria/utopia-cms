@@ -2,6 +2,9 @@
 #coral {
   --off-black: #000;
   --font-family-sans-serif: "Dialect Gothic A", sans-serif;
+  --font-family-secondary: "Dialect Gothic A", sans-serif;
+  --round-corners: 4px;
+  --palette-grey-lighter: #ABABAB;
 }
 
 #coral {
@@ -19,6 +22,14 @@
 
 .coral-comments .coral-authenticated>div:first-child {
   display: none;
+}
+
+.coral-counter {
+  display: none;
+}
+
+select.coral-selectField {
+  border: 1px solid var(--palette-grey-lighter);
 }
 
 /* new styles */
@@ -46,8 +57,29 @@
   border-bottom-color: var(--off-black) !important;
 }
 
+.coral-comment-username span {
+  font-size: 1rem;
+}
+
 .coral-createComment-submit {
   background-color: var(--off-black) !important;
+  width: min-content;
+  border-radius: 5px;
+  font-size: 1rem;
+  padding: 8px 22px;
+}
+
+.coral-comment-timestamp span {
+  color: #ABABAB;
+}
+
+.coral-comment-content {
+  font-weight: 400;
+}
+
+.coral-comment-actionBar button span {
+  font-weight: 450;
+  color: #727272;
 }
 
 .coral-createComment-submit:disabled {
