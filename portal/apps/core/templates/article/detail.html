@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags signupwall_tags %}
+{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags signupwall_tags compress %}
 
 {% block head_first_content %}
   <!-- Canonical and AMP (if allowed) urls -->
@@ -42,6 +42,14 @@
   {% if TALK_URL and article.allow_comments %}
     <link href="{% static 'sass/article/comments.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
   {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+  {% compress css %}
+    {% if TALK_URL and article.allow_comments %}
+      <link href="{% static 'sass/article/comments.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+    {% endif %}
+  {% endcompress %}
 {% endblock %}
 
 {% block header_scripts %}
