@@ -63,7 +63,6 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         (None, {"fields": ("name", "publication", "day", "start_time", "end_time", "ends_next_day")}),
         ("Override", {"fields": ("is_manual_override", "manual_override_by")}),
         ("Fechas", {"fields": ("created", "modified")}),
-        ("Datos del layout (JSON)", {"fields": ("grid_data",), "classes": ("collapse",)}),
     )
     actions = ["activate_override", "deactivate_override"]
 
@@ -77,6 +76,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["reset_grid_url"] = f"/homev4/reset/{obj.pk}/"
             extra_context["sync_sections_url"] = f"/homev4/sync/{obj.pk}/"
             extra_context["preview_url"] = f"/homev4/preview/{obj.pk}/"
+            extra_context["grid_data_pretty"] = json.dumps(obj.grid_data, indent=2, ensure_ascii=False)
         return super().change_view(request, object_id, form_url, extra_context)
 
     def _build_editor_data(self, grid_data, publication=None):
