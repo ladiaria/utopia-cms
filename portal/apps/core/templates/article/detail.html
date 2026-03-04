@@ -45,11 +45,11 @@
 {% endblock %}
 
 {% block extra_css %}
-  {% compress css %}
-    {% if TALK_URL and article.allow_comments %}
+  {% if TALK_URL and article.allow_comments %}
+    {% compress css %}
       <link href="{% static 'sass/article/comments.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
-    {% endif %}
-  {% endcompress %}
+    {% endcompress %}
+  {% endif %}
 {% endblock %}
 
 {% block header_scripts %}
