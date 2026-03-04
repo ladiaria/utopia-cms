@@ -338,6 +338,7 @@
             storyID: coralStream.getAttribute("data-article-id"),
             storyURL: coralStream.getAttribute("data-article-url"),
             accessToken: coralStream.getAttribute("data-talk-auth-token"),
+            customScrollContainer: qs("#comentarios"),
             events: function (events) {
               events.on("loginPrompt", function () {
                 const loginURL = coralStream.getAttribute("data-login-url");

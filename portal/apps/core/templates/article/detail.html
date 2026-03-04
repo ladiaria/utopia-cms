@@ -704,7 +704,7 @@
         {% if TALK_URL and article.allow_comments %}
           <div id="comentarios" class="closed">
             <div class="upper-content">
-              <p>Comentarios {% if comments_count > 0 %}{{ comments_count }}{% endif %}</p>
+              <p>Comentarios {% if comments_count > 0 %}({{ comments_count }}){% endif %}</p>
               <button class="toggle-comments" aria-label="Ocultar comentarios">
                 <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="none" viewBox="0 0 60 60"><path fill="#000" d="M22.898 38 22 37.102 29.102 30 22 22.898l.898-.898L30 29.102 37.102 22l.898.898L30.898 30 38 37.102l-.898.898L30 30.898z"/></svg>
               </button>
