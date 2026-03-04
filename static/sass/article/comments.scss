@@ -1,9 +1,5 @@
 @import "../variables";
 
-body {
-  background-color: rebeccapurple !important;
-}
-
 #comentarios {
   position: fixed;
   top: $headerMinHeight + px-to-rem(1px);
