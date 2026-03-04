@@ -25,6 +25,8 @@ $max-article-width: px-to-rem(700px);
 }
 
 article#main-article {
+  padding-top: 32px;
+
   p {
     margin: 0;
   }
