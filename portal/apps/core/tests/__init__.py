@@ -6,6 +6,7 @@ from django.apps import apps
 from django.test import TestCase
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.utils.timezone import now
 
 from core.models import Edition, Publication, get_current_edition
 
@@ -54,9 +55,8 @@ class PreCopyImage(base_test_case_class):
 
     def precreate_current_edition(self):
         # Smth similar also happens with the default edition, here we save it before the fixtures are loaded.
-        Edition.objects.create(
-            publication=Publication.objects.create(slug=settings.DEFAULT_PUB)
-        )
+        publication, _ = Publication.objects.get_or_create(slug=settings.DEFAULT_PUB)
+        Edition.objects.get_or_create(publication=publication, date_published=now().date())
 
     def _pre_setup(self, *args, **kwargs):
         precreate_current_edition = kwargs.pop('precreate_current_edition', False)

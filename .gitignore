@@ -26,6 +26,7 @@ cache
 .local_rev_*
 .editorconfig
 .vscode
+.cursorignore
 .idea
 .env*
 .sass-cache
