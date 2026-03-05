@@ -6,15 +6,31 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.cache import never_cache
+from django.views.decorators.cache import cache_control, never_cache
+from django.views.decorators.vary import vary_on_cookie
 
 from core.models import Article, Publication, Section, Category, get_current_edition
 from core.views.masleidos import mas_leidos
 from thedaily.utils import unsubscribed_newsletters
 
+from decorators import decorate_if_no_auth, decorate_if_auth
+
 from .models import HomeLayout
 
 logger = logging.getLogger("homev4")
+
+_cache_maxage = getattr(settings, "HOMEV3_INDEX_CACHE_MAXAGE", 120)
+
+
+def _block_active(block_key, saved_flag):
+    """Return the effective active state for a top-level block.
+    If LAYOUT_BLOCKS_CONFIG defines always_active for the block, that wins.
+    Otherwise falls back to the saved flag from grid_data.
+    """
+    config = LAYOUT_BLOCKS_CONFIG.get(block_key, {})
+    if config.get("always_active") is True:
+        return True
+    return saved_flag
 
 
 # Fixed component definitions — keys must stay stable; label/description can change.
@@ -32,6 +48,14 @@ COMPONENT_DEFINITIONS = [
 _COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
 
 DEFAULT_COMPONENTES = [{"key": d["key"], "active": True} for d in COMPONENT_DEFINITIONS]
+
+# Defines which top-level blocks have a fixed active state that cannot be toggled in the editor.
+LAYOUT_BLOCKS_CONFIG = {
+    "principal":  {"always_active": True},
+    "suplemento": {"always_active": False},
+    "especial":   {"always_active": False},
+
+}
 
 
 def get_default_grid_data():
@@ -200,24 +224,23 @@ def build_home_data(grid_data, publication=None):
 
     # PRINCIPAL
     principal_data = grid_data.get("principal") or {}
-    result["principal_active"] = principal_data.get("active", True)
-    if result["principal_active"]:
-        db_articles = list(edition.top_articles) if edition else []
-        db_by_id = {a.id: a for a in db_articles}
-        saved_ids = principal_data.get("article_ids", [])
-        if saved_ids:
-            ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
-            saved_set = set(saved_ids)
-            for a in db_articles:
-                if a.id not in saved_set:
-                    ordered.append(a)
-            result["principal_articles"] = ordered
-        else:
-            result["principal_articles"] = db_articles
+    result["principal_active"] = _block_active("principal", principal_data.get("active", True))
+    db_articles = list(edition.top_articles) if edition else []
+    db_by_id = {a.id: a for a in db_articles}
+    saved_ids = principal_data.get("article_ids", [])
+    if saved_ids:
+        ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
+        saved_set = set(saved_ids)
+        for a in db_articles:
+            if a.id not in saved_set:
+                ordered.append(a)
+        result["principal_articles"] = ordered
+    else:
+        result["principal_articles"] = db_articles
 
     # SUPLEMENTO
     suplemento_data = grid_data.get("suplemento", {})
-    result["suplemento_active"] = suplemento_data.get("active", True)
+    result["suplemento_active"] = _block_active("suplemento", suplemento_data.get("active", True))
     if result["suplemento_active"]:
         suplemento_ids = suplemento_data.get("article_ids", [])
         if suplemento_ids:
@@ -226,7 +249,7 @@ def build_home_data(grid_data, publication=None):
 
     # ESPECIAL
     especial_data = grid_data.get("especial", {})
-    result["especial_active"] = especial_data.get("active", True)
+    result["especial_active"] = _block_active("especial", especial_data.get("active", True))
     if result["especial_active"]:
         especial_ids = especial_data.get("article_ids", [])
         if especial_ids:
@@ -392,6 +415,9 @@ def _add_auth_context(context, user, articles):
             context["follows"].append(a_id)
 
 
+@decorate_if_auth(decorator=never_cache)
+@decorate_if_no_auth(decorator=vary_on_cookie)
+@decorate_if_no_auth(decorator=cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=_cache_maxage))
 def active_layout(request, publication_slug=None):
     # Resolve publication: explicit slug in URL or the default one from settings.
     if publication_slug:
