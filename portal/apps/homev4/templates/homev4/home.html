@@ -36,19 +36,18 @@
             overflow: hidden;
         }
         .home-section-header {
-            background: #f0f0f0;
-            padding: 10px 16px;
-            border-bottom: 1px solid #e0e0e0;
+            background: #1a1a2e;
+            padding: 8px 16px;
             display: flex;
             align-items: baseline;
             gap: 8px;
         }
         .home-section-header h2 {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #555;
+            color: #fff;
         }
         .home-section-header a { color: inherit; text-decoration: none; }
         .home-section-header a:hover { text-decoration: underline; }
@@ -96,16 +95,43 @@
         }
         .sidebar-block-body { padding: 14px; }
 
-        .comp-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 13px;
+        .comp-block {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            overflow: hidden;
         }
-        .comp-item:last-child { border-bottom: none; padding-bottom: 0; }
-        .comp-label { font-weight: 500; }
+        .comp-block-header {
+            background: #1a1a2e;
+            color: #fff;
+            padding: 7px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        .comp-block-header .comp-desc {
+            font-size: 10px;
+            font-weight: 400;
+            color: #aab;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .comp-block-body { padding: 10px 14px; }
+        .comp-article-list { list-style: none; }
+        .comp-article-item {
+            padding: 7px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .comp-article-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .comp-article-item a { color: #222; text-decoration: none; }
+        .comp-article-item a:hover { color: #417690; }
 
         /* ── No layout ───────────────────────────────── */
         .no-layout {
@@ -246,20 +272,26 @@
     <!-- ── Sidebar ───────────────────────── -->
     <aside class="home-sidebar">
 
-        <!-- COMPONENTES -->
-        {% if home_data.componentes %}
-        <div class="sidebar-block">
-            <div class="sidebar-block-header">Componentes</div>
-            <div class="sidebar-block-body">
-                {% for comp in home_data.componentes %}
-                <div class="comp-item">
-                    <span class="comp-label">{{ comp.label }}</span>
-                    {% if comp.description %}<span class="comp-desc">{{ comp.description }}</span>{% endif %}
-                </div>
-                {% endfor %}
+        <!-- COMPONENTES — one card per component -->
+        {% for comp in home_data.componentes %}
+        <div class="comp-block">
+            <div class="comp-block-header">
+                {{ comp.label }}
+                {% if comp.description %}<span class="comp-desc">{{ comp.description }}</span>{% endif %}
             </div>
+            {% if comp.articles %}
+            <div class="comp-block-body">
+                <ul class="comp-article-list">
+                    {% for article in comp.articles %}
+                    <li class="comp-article-item">
+                        <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
+        {% endfor %}
 
     </aside><!-- .home-sidebar -->
 

@@ -3,11 +3,14 @@ import logging
 
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 
 from core.models import Article, Publication, Section, Category, get_current_edition
+from core.views.masleidos import mas_leidos
+from thedaily.utils import unsubscribed_newsletters
 
 from .models import HomeLayout
 
@@ -180,7 +183,7 @@ def build_home_data(grid_data, publication=None):
       sections: list of dicts — only active ones — each with:
         {type, id, slug, name, row, url, articles}
       componentes: list of dicts — only active ones — each with:
-        {key, label, description}
+        {key, label, description, articles}
     """
     result = {
         "principal_active": False,
@@ -278,7 +281,7 @@ def build_home_data(grid_data, publication=None):
             "articles": articles,
         })
 
-    # COMPONENTES — active ones only, enriched with label and description
+    # COMPONENTES — active ones only, enriched with label, description and articles
     for item in grid_data.get("componentes", []):
         if not item.get("active", True):
             continue
@@ -288,20 +291,159 @@ def build_home_data(grid_data, publication=None):
             "key": key,
             "label": defn.get("label", key),
             "description": defn.get("description", ""),
+            "articles": _fetch_component_articles(key, saved_ids=item.get("article_ids", [])),
         })
 
     return result
 
 
+# Components whose order is always automatic — saved_ids are ignored for these.
+_COMPONENTS_AUTO_ORDER = {"lo_ultimo", "lo_mas_leido", "apuntes_del_dia", "radio"}
+
+
+def _merge_article_order(db_articles, saved_ids):
+    """
+    Return db_articles reordered according to saved_ids, with any new DB
+    articles not in saved_ids appended at the end. Same logic as PRINCIPAL.
+    """
+    if not saved_ids:
+        return db_articles
+    db_by_id = {a.id: a for a in db_articles}
+    ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
+    saved_set = set(saved_ids)
+    for a in db_articles:
+        if a.id not in saved_set:
+            ordered.append(a)
+    return ordered
+
+
+def _fetch_component_articles(key, saved_ids=None):
+    """
+    Return the article list for a given component key.
+    For components not in _COMPONENTS_AUTO_ORDER, saved_ids are used to
+    restore the editorial order (same merge logic as PRINCIPAL).
+
+    Slugs configurable via settings:
+      HOMEV4_OPINION_CATEGORY_SLUG   (default: "opinion")
+      HOMEV4_APUNTES_SECTION_SLUG    (default: "apuntes-del-dia")
+    """
+    if key == "lo_ultimo":
+        return list(Article.published.order_by("-date_published")[:3])
+
+    if key == "lo_mas_leido":
+        # days=1 → day__gt=yesterday → effectively today only
+        try:
+            return mas_leidos(days=1, limit=5)
+        except Exception:
+            logger.exception("_fetch_component_articles: lo_mas_leido failed")
+            return []
+
+    if key == "opinion":
+        slug = getattr(settings, "HOMEV4_OPINION_CATEGORY_SLUG", "opinion")
+        try:
+            category = Category.objects.get(slug=slug)
+            if hasattr(category, "home"):
+                db_articles = list(category.home.articles_ordered()[:2])
+                return _merge_article_order(db_articles, saved_ids)
+        except Category.DoesNotExist:
+            logger.warning("_fetch_component_articles: opinion category slug=%r not found", slug)
+        return []
+
+    if key == "apuntes_del_dia":
+        slug = getattr(settings, "HOMEV4_APUNTES_SECTION_SLUG", "apuntes-del-dia")
+        try:
+            section = Section.objects.get(slug=slug)
+            return list(section.latest(limit=1))
+        except Section.DoesNotExist:
+            logger.warning("_fetch_component_articles: apuntes section slug=%r not found", slug)
+        return []
+
+    # radio: no articles, just a visibility toggle in the layout editor
+    # recomendadas_lv, recomendadas_domingo, newsletter_dia: pending implementation
+    return []
+
+
+def _add_auth_context(context, user, articles):
+    """
+    Populate restricteds, restricteds_allowed, follows in context.
+    Mirrors homev3's ctx_update_article_extradata logic.
+    articles: flat list of all Article objects visible in the home for this user.
+    """
+    user_has_subscriber = hasattr(user, "subscriber")
+    follow_set = set(
+        user.follow_set.filter(
+            content_type=ContentType.objects.get_for_model(Article)
+        ).values_list("object_id", flat=True)
+    )
+    for a in articles:
+        if not a:
+            continue
+        compute_follow = True
+        a_id = a.id
+        if a.is_restricted(True):
+            context["restricteds"].append(a_id)
+            compute_follow = (
+                user_has_subscriber
+                and user.subscriber.is_subscriber(a.main_section.edition.publication.slug)
+            )
+            if compute_follow:
+                context["restricteds_allowed"].append(a_id)
+        if compute_follow and str(a_id) in follow_set:
+            context["follows"].append(a_id)
+
+
 def active_layout(request, publication_slug=None):
+    # Resolve publication: explicit slug in URL or the default one from settings.
     if publication_slug:
         publication = get_object_or_404(Publication, slug=publication_slug)
     else:
         publication = get_default_publication()
+
+    # Get the layout that should be active right now for this publication.
+    # get_active_layout() checks manual overrides first, then day/time schedules.
+    # Returns None if no layout matches — build_home_data handles the empty dict gracefully.
     layout = HomeLayout.get_active_layout(publication)
     grid_data = layout.grid_data if (layout and isinstance(layout.grid_data, dict)) else {}
-    return render(request, "homev4/home.html", {
+
+    # Pre-fetch all content defined by the layout editor into a single dict.
+    # The template only reads from home_data — no DB calls inside the template.
+    home_data = build_home_data(grid_data, publication=publication)
+
+    context = {
         "layout": layout,
         "publication": publication,
-        "home_data": build_home_data(grid_data, publication=publication),
-    })
+        "home_data": home_data,
+    }
+
+    # Each publication can store arbitrary extra template vars in its extra_context
+    # JSONField (e.g. custom flags or URLs specific to that publication).
+    if isinstance(getattr(publication, "extra_context", None), dict):
+        context.update(publication.extra_context)
+
+    user = request.user
+    if user.is_authenticated:
+        # Initialize the three auth lists the base template reads to decide
+        # what to show/hide per article (paywall lock, follow indicator, etc.).
+        context.update({"restricteds": [], "restricteds_allowed": [], "follows": []})
+
+        # Flatten all articles visible in the home so we can evaluate each one.
+        # Principal articles + all active section articles are included.
+        # Component articles are not yet included (pending data source implementation).
+        all_articles = list(home_data.get("principal_articles", []))
+        for sec in home_data.get("sections", []):
+            all_articles.extend(sec.get("articles", []))
+
+        # Populate restricteds / restricteds_allowed / follows in context.
+        _add_auth_context(context, user, all_articles)
+
+        # Unsubscribed newsletters banner: show only if the feature is enabled,
+        # the user has a subscriber profile with an email, and hasn't closed it yet.
+        if (
+            getattr(settings, "HOMEV3_NEWSLETTERS_HEADER_ENABLED", False)
+            and hasattr(user, "subscriber")
+            and user.email
+            and not request.session.get("unsubscribed_nls_notice_closed")
+        ):
+            context["unsubscribed_newsletters"] = unsubscribed_newsletters(user.subscriber)
+
+    return render(request, "homev4/home.html", context)
