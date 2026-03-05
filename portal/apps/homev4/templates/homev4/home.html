@@ -1,0 +1,302 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ publication.name }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; }
+
+        .home-header {
+            background: #1a1a2e; color: #fff; padding: 12px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .home-header h1 { font-size: 20px; font-weight: 600; }
+        .home-header .layout-meta { font-size: 12px; color: #aaa; }
+
+        .home-body {
+            max-width: 1200px;
+            margin: 24px auto;
+            padding: 0 16px;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+        }
+
+        /* ── Main column ─────────────────────────────── */
+        .home-main { min-width: 0; }
+
+        .home-section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .home-section-header {
+            background: #1a1a2e;
+            padding: 8px 16px;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .home-section-header h2 {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #fff;
+        }
+        .home-section-header a { color: inherit; text-decoration: none; }
+        .home-section-header a:hover { text-decoration: underline; }
+        .home-section-body { padding: 16px; }
+
+        /* Article rows */
+        .article-list { list-style: none; }
+        .article-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .article-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .article-item h3 { font-size: 15px; line-height: 1.4; margin-bottom: 4px; }
+        .article-item h3 a { color: #222; text-decoration: none; }
+        .article-item h3 a:hover { color: #417690; }
+        .article-item .deck { font-size: 13px; color: #666; }
+
+        /* Featured (first article in principal) */
+        .article-featured h2 { font-size: 22px; line-height: 1.3; margin-bottom: 6px; }
+        .article-featured h2 a { color: #1a1a2e; text-decoration: none; }
+        .article-featured h2 a:hover { color: #417690; }
+        .article-featured .deck { font-size: 15px; color: #555; }
+        .article-featured { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 2px solid #e0e0e0; }
+
+        .empty-hint { color: #aaa; font-style: italic; font-size: 13px; padding: 12px 0; }
+
+        /* ── Sidebar ─────────────────────────────────── */
+        .home-sidebar { min-width: 0; }
+
+        .sidebar-block {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .sidebar-block-header {
+            background: #1a1a2e;
+            color: #fff;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .sidebar-block-body { padding: 14px; }
+
+        .comp-block {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .comp-block-header {
+            background: #1a1a2e;
+            color: #fff;
+            padding: 7px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        .comp-block-header .comp-desc {
+            font-size: 10px;
+            font-weight: 400;
+            color: #aab;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .comp-block-body { padding: 10px 14px; }
+        .comp-article-list { list-style: none; }
+        .comp-article-item {
+            padding: 7px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .comp-article-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .comp-article-item a { color: #222; text-decoration: none; }
+        .comp-article-item a:hover { color: #417690; }
+
+        /* ── No layout ───────────────────────────────── */
+        .no-layout {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .no-layout h2 { font-size: 20px; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+
+<header class="home-header">
+    <h1>{{ publication.name }}</h1>
+    {% if layout %}
+    <span class="layout-meta">{{ layout.name }} — {{ layout.get_day_display }} {{ layout.start_time|time:"H:i" }}–{{ layout.end_time|time:"H:i" }}</span>
+    {% endif %}
+</header>
+
+{% if not layout %}
+<div class="no-layout">
+    <h2>Sin layout activo</h2>
+    <p>No hay ningún layout configurado para este momento.</p>
+</div>
+{% else %}
+
+<div class="home-body">
+
+    <!-- ── Main column ────────────────────── -->
+    <main class="home-main">
+
+        <!-- PRINCIPAL -->
+        {% if home_data.principal_active %}
+        <section class="home-section">
+            <div class="home-section-header">
+                <h2>Principal</h2>
+            </div>
+            <div class="home-section-body">
+                {% if home_data.principal_articles %}
+                    {% with featured=home_data.principal_articles.0 rest=home_data.principal_articles|slice:"1:" %}
+                    <div class="article-featured">
+                        <h2><a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a></h2>
+                        {% if featured.home_lead or featured.deck %}<p class="deck">{{ featured.home_lead|default:featured.deck }}</p>{% endif %}
+                    </div>
+                    {% if rest %}
+                    <ul class="article-list">
+                        {% for article in rest %}
+                        <li class="article-item">
+                            <h3><a href="{{ article.get_absolute_url }}">{{ article.headline }}</a></h3>
+                            {% if article.deck %}<p class="deck">{{ article.deck }}</p>{% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    {% endwith %}
+                {% else %}
+                    <p class="empty-hint">Sin artículos principales en la edición actual.</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- SUPLEMENTO -->
+        {% if home_data.suplemento_active %}
+        <section class="home-section">
+            <div class="home-section-header">
+                <h2>Suplemento</h2>
+            </div>
+            <div class="home-section-body">
+                {% if home_data.suplemento_articles %}
+                <ul class="article-list">
+                    {% for article in home_data.suplemento_articles %}
+                    <li class="article-item">
+                        <h3><a href="{{ article.get_absolute_url }}">{{ article.headline }}</a></h3>
+                        {% if article.deck %}<p class="deck">{{ article.deck }}</p>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                    <p class="empty-hint">Sin artículos de suplemento.</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- ESPECIAL -->
+        {% if home_data.especial_active %}
+        <section class="home-section">
+            <div class="home-section-header">
+                <h2>Especial</h2>
+            </div>
+            <div class="home-section-body">
+                {% if home_data.especial_articles %}
+                <ul class="article-list">
+                    {% for article in home_data.especial_articles %}
+                    <li class="article-item">
+                        <h3><a href="{{ article.get_absolute_url }}">{{ article.headline }}</a></h3>
+                        {% if article.deck %}<p class="deck">{{ article.deck }}</p>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                    <p class="empty-hint">Sin artículos de especial.</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- SECTIONS / CATEGORIES -->
+        {% for sec in home_data.sections %}
+        <section class="home-section">
+            <div class="home-section-header">
+                <h2>
+                    {% if sec.url %}<a href="{{ sec.url }}">{{ sec.name }}</a>{% else %}{{ sec.name }}{% endif %}
+                </h2>
+            </div>
+            <div class="home-section-body">
+                {% if sec.articles %}
+                <ul class="article-list">
+                    {% for article in sec.articles %}
+                    <li class="article-item">
+                        <h3><a href="{{ article.get_absolute_url }}">{{ article.headline }}</a></h3>
+                        {% if article.deck %}<p class="deck">{{ article.deck }}</p>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="empty-hint">Sin artículos recientes.</p>
+                {% endif %}
+            </div>
+        </section>
+        {% empty %}
+        <p class="empty-hint" style="padding: 20px; text-align: center;">No hay áreas configuradas en este layout.</p>
+        {% endfor %}
+
+    </main><!-- .home-main -->
+
+    <!-- ── Sidebar ───────────────────────── -->
+    <aside class="home-sidebar">
+
+        <!-- COMPONENTES — one card per component -->
+        {% for comp in home_data.componentes %}
+        <div class="comp-block">
+            <div class="comp-block-header">
+                {{ comp.label }}
+                {% if comp.description %}<span class="comp-desc">{{ comp.description }}</span>{% endif %}
+            </div>
+            {% if comp.articles %}
+            <div class="comp-block-body">
+                <ul class="comp-article-list">
+                    {% for article in comp.articles %}
+                    <li class="comp-article-item">
+                        <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+    </aside><!-- .home-sidebar -->
+
+</div><!-- .home-body -->
+{% endif %}
+
+</body>
+</html>

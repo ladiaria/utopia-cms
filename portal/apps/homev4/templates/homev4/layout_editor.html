@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'homev4/gridstack.min.css' %}"/>
+<link rel="stylesheet" href="{% static 'homev4/layout_editor.css' %}"/>
+{% endblock %}
+
+{% block content %}
+<div id="homev4-editor">
+    <div class="editor-header">
+        <h2>{{ layout.name }} &mdash; {{ layout.publication }} @ {{ layout.scheduled_time }}</h2>
+        <div class="editor-actions">
+            <button type="button" id="btn-save" class="button">Save Layout</button>
+            <a href="{% url 'homev4:preview_layout' layout.pk %}" target="_blank" class="button">Preview</a>
+            <a href="{% url 'admin:homev4_homelayout_changelist' %}" class="button">Back to list</a>
+        </div>
+    </div>
+
+    <p class="help-text">Drag the blocks to reorganize the home layout. Changes are saved when you click "Save Layout".</p>
+
+    <div class="grid-container">
+        <div class="grid-stack" id="grid"></div>
+    </div>
+</div>
+
+<div id="save-status" class="save-status" style="display:none;"></div>
+
+<script src="{% static 'homev4/gridstack-all.js' %}"></script>
+<script>
+    window.HOMEV4_DATA = {
+        gridData: {{ grid_data_json|safe }},
+        saveUrl: "{% url 'homev4:save_grid' layout.pk %}",
+        csrfToken: "{{ csrf_token }}",
+    };
+</script>
+<script src="{% static 'homev4/layout_editor.js' %}"></script>
+{% endblock %}
