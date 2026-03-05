@@ -361,7 +361,7 @@
             node.classList.add("active");
           });
         })
-        .catch(function () {});
+        .catch(function () { });
     }
 
     function updateCommentsBorderState() {
@@ -381,7 +381,7 @@
       );
     }
 
-    onAll(".btn-comments", "click", function () {
+    onAll(".btn-comments, .action-bar-comment-btn", "click", function () {
       loadComments();
     });
 
