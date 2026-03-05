@@ -41,10 +41,14 @@
                 <!-- PRINCIPAL: articles sortable by dragging -->
                 <div class="editor-block block-principal">
                     <div class="block-header">
+                        {% if blocks_config.principal.always_active %}
+                        <span class="block-badge badge-principal">PRINCIPAL</span>
+                        {% else %}
                         <label class="block-active-toggle">
                             <input type="checkbox" class="block-active" data-block="principal" {% if editor_data.principal_active %}checked{% endif %}>
                             <span class="block-badge badge-principal">PRINCIPAL</span>
                         </label>
+                        {% endif %}
                         <span class="block-hint">Arrastrá para reordenar los artículos</span>
                     </div>
                     <div class="articles-sortable" id="principal-articles">
@@ -63,10 +67,14 @@
                 <!-- SUPLEMENTO: articles sortable by dragging -->
                 <div class="editor-block block-suplemento">
                     <div class="block-header">
+                        {% if blocks_config.suplemento.always_active %}
+                        <span class="block-badge badge-suplemento">SUPLEMENTO</span>
+                        {% else %}
                         <label class="block-active-toggle">
                             <input type="checkbox" class="block-active" data-block="suplemento" {% if editor_data.suplemento_active %}checked{% endif %}>
                             <span class="block-badge badge-suplemento">SUPLEMENTO</span>
                         </label>
+                        {% endif %}
                         <span class="block-hint">Arrastrá para reordenar los artículos</span>
                     </div>
                     <div class="articles-sortable" id="suplemento-articles">
@@ -85,10 +93,14 @@
                 <!-- ESPECIAL: articles sortable by dragging -->
                 <div class="editor-block block-especial">
                     <div class="block-header">
+                        {% if blocks_config.especial.always_active %}
+                        <span class="block-badge badge-especial">ESPECIAL</span>
+                        {% else %}
                         <label class="block-active-toggle">
                             <input type="checkbox" class="block-active" data-block="especial" {% if editor_data.especial_active %}checked{% endif %}>
                             <span class="block-badge badge-especial">ESPECIAL</span>
                         </label>
+                        {% endif %}
                         <span class="block-hint">Arrastrá para reordenar los artículos</span>
                     </div>
                     <div class="articles-sortable" id="especial-articles">

@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.db.models import Case, IntegerField, Value, When
 
 from .models import HomeLayout
-from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles
+from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles, LAYOUT_BLOCKS_CONFIG
 
 _DAY_ORDER = {
     "lmjv": 0,
@@ -44,6 +44,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["sync_sections_url"] = f"/homev4/sync/{obj.pk}/"
             extra_context["preview_url"] = f"/homev4/preview/{obj.pk}/"
             extra_context["grid_data_pretty"] = json.dumps(obj.grid_data, indent=2, ensure_ascii=False)
+            extra_context["blocks_config"] = LAYOUT_BLOCKS_CONFIG
         return super().change_view(request, object_id, form_url, extra_context)
 
     def _build_editor_data(self, grid_data, publication=None):
