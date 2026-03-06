@@ -57,12 +57,12 @@ class HomeLayout(models.Model):
 
     def clean(self):
         if self.is_manual_override:
-            exists = HomeLayout.objects.filter(
+            conflict = HomeLayout.objects.filter(
                 publication=self.publication, is_manual_override=True
-            ).exclude(pk=self.pk).exists()
-            if exists:
+            ).exclude(pk=self.pk).first()
+            if conflict:
                 raise ValidationError(
-                    {"is_manual_override": "Ya existe un override activo para esta publicación. Desactivalo primero."}
+                    {"is_manual_override": f"Ya existe un override activo para esta publicación: \"{conflict.name}\". Desactivalo primero."}
                 )
 
     def __str__(self):
