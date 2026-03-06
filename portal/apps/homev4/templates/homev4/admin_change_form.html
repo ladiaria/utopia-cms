@@ -57,10 +57,18 @@
                             <span class="drag-handle">⠿</span>
                             <span class="article-num">{{ forloop.counter }}</span>
                             <span class="article-title">{{ article.headline }}</span>
+                            <button type="button" class="picker-remove" title="Quitar">×</button>
                         </div>
                         {% empty %}
                         <div class="empty-hint">No hay artículos en la edición actual</div>
                         {% endfor %}
+                    </div>
+                    <div class="article-picker"
+                         data-target="principal-articles"
+                         data-row-class="article-row"
+                         data-item-selector=".article-row[data-article-id]">
+                        <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                        <div class="picker-results"></div>
                     </div>
                 </div>
 
@@ -79,14 +87,22 @@
                     </div>
                     <div class="articles-sortable" id="suplemento-articles">
                         {% for article in editor_data.suplemento_articles %}
-                        <div class="article-row suplemento-row" draggable="true" data-article-id="{{ article.id }}">
+                        <div class="article-row" draggable="true" data-article-id="{{ article.id }}">
                             <span class="drag-handle">⠿</span>
                             <span class="article-num">{{ forloop.counter }}</span>
                             <span class="article-title">{{ article.headline }}</span>
+                            <button type="button" class="picker-remove" title="Quitar">×</button>
                         </div>
                         {% empty %}
                         <div class="empty-hint">Sin artículos de suplemento</div>
                         {% endfor %}
+                    </div>
+                    <div class="article-picker"
+                         data-target="suplemento-articles"
+                         data-row-class="article-row"
+                         data-item-selector=".article-row[data-article-id]">
+                        <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                        <div class="picker-results"></div>
                     </div>
                 </div>
 
@@ -105,14 +121,22 @@
                     </div>
                     <div class="articles-sortable" id="especial-articles">
                         {% for article in editor_data.especial_articles %}
-                        <div class="article-row especial-row" draggable="true" data-article-id="{{ article.id }}">
+                        <div class="article-row" draggable="true" data-article-id="{{ article.id }}">
                             <span class="drag-handle">⠿</span>
                             <span class="article-num">{{ forloop.counter }}</span>
                             <span class="article-title">{{ article.headline }}</span>
+                            <button type="button" class="picker-remove" title="Quitar">×</button>
                         </div>
                         {% empty %}
                         <div class="empty-hint">Sin artículos de especial</div>
                         {% endfor %}
+                    </div>
+                    <div class="article-picker"
+                         data-target="especial-articles"
+                         data-row-class="article-row"
+                         data-item-selector=".article-row[data-article-id]">
+                        <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                        <div class="picker-results"></div>
                     </div>
                 </div>
 

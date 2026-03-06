@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.db.models import Case, IntegerField, Value, When
 
 from .models import HomeLayout
-from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles, LAYOUT_BLOCKS_CONFIG
+from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles, _fetch_suplemento_articles, LAYOUT_BLOCKS_CONFIG
 
 _DAY_ORDER = {
     "lmjv": 0,
@@ -78,7 +78,11 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         principal_data = grid_data.get("principal") or {}
         saved_ids = principal_data.get("article_ids", [])
         if saved_ids:
-            ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
+            by_id = {a.id: a for a in db_articles}
+            extra_ids = [aid for aid in saved_ids if aid not in by_id]
+            if extra_ids:
+                by_id.update({a.id: a for a in Article.published.filter(id__in=extra_ids)})
+            ordered = [by_id[aid] for aid in saved_ids if aid in by_id]
             saved_set = set(saved_ids)
             for a in db_articles:
                 if a.id not in saved_set:
@@ -87,13 +91,12 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         else:
             result["principal_articles"] = db_articles
 
-        # SUPLEMENTO articles: same merge logic, independent list
-        # TODO: define DB source when the user clarifies which section/edition feeds SUPLEMENTO
-        suplemento_saved_ids = grid_data.get("suplemento", {}).get("article_ids", [])
-        if suplemento_saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=suplemento_saved_ids)}
-            result["suplemento_articles"] = [by_id[aid] for aid in suplemento_saved_ids if aid in by_id]
-        else:
+        # SUPLEMENTO articles: saved_ids if present, else day-based section fallback.
+        try:
+            result["suplemento_articles"] = _fetch_suplemento_articles(
+                grid_data.get("suplemento", {}).get("article_ids", [])
+            )
+        except Exception:
             result["suplemento_articles"] = []
 
         # Sections: up to 3 articles each, respecting saved order if available
