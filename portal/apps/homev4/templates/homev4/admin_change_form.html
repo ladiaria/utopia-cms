@@ -180,14 +180,26 @@
                                         {% endif %}
                                     </span>
                                 </label>
-                                {% if comp.articles %}
-                                <div class="comp-articles">
+                                {% if comp.articles or comp.has_picker %}
+                                <div class="comp-articles" id="comp-articles-{{ comp.key }}">
                                     {% for title in comp.articles %}
-                                    <div class="comp-article-row" draggable="true" data-article-id="{{ title.id }}">
-                                        <span class="drag-handle small-handle">⠿</span>
+                                    <div class="comp-article-row{% if not comp.sortable_articles %} comp-article-static{% endif %}"
+                                         {% if comp.sortable_articles %}draggable="true"{% endif %}
+                                         data-article-id="{{ title.id }}">
+                                        {% if comp.sortable_articles %}<span class="drag-handle small-handle">⠿</span>{% endif %}
                                         <span class="comp-article-title">{{ title.headline }}</span>
+                                        {% if comp.has_picker %}<button type="button" class="picker-remove" title="Quitar">×</button>{% endif %}
                                     </div>
                                     {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if comp.has_picker %}
+                                <div class="article-picker"
+                                     data-target="comp-articles-{{ comp.key }}"
+                                     data-row-class="comp-article-row"
+                                     data-item-selector=".comp-article-row[data-article-id]">
+                                    <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                                    <div class="picker-results"></div>
                                 </div>
                                 {% endif %}
                             </div>
@@ -208,6 +220,7 @@ window.HOMEV4_DATA = {
     saveUrl: "{{ save_grid_url }}",
     previewUrl: "{{ preview_url }}",
     csrfToken: "{{ csrf_token }}",
+    articleSearchUrl: "{{ article_search_url }}",
     componentLabels: {
         {% for comp in editor_data.componentes %}"{{ comp.key }}": "{{ comp.label }}"{% if not forloop.last %},{% endif %}
         {% endfor %}
