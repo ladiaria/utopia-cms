@@ -45,6 +45,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["preview_url"] = f"/homev4/preview/{obj.pk}/"
             extra_context["grid_data_pretty"] = json.dumps(obj.grid_data, indent=2, ensure_ascii=False)
             extra_context["blocks_config"] = LAYOUT_BLOCKS_CONFIG
+            extra_context["article_search_url"] = "/homev4/article-search/"
         return super().change_view(request, object_id, form_url, extra_context)
 
     def _build_editor_data(self, grid_data, publication=None):
@@ -154,6 +155,8 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                         "label": defn["label"],
                         "description": defn["description"],
                         "active": item.get("active", True),
+                        "has_picker": defn.get("has_picker", False),
+                        "sortable_articles": defn.get("sortable_articles", True),
                         "articles": _fetch_component_articles(key, saved_ids=item.get("article_ids", [])),
                     })
             # Append any definitions not present in the saved list
@@ -164,6 +167,8 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                         "label": defn["label"],
                         "description": defn["description"],
                         "active": True,
+                        "has_picker": defn.get("has_picker", False),
+                        "sortable_articles": defn.get("sortable_articles", True),
                         "articles": _fetch_component_articles(defn["key"]),
                     })
         else:
@@ -175,6 +180,8 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                     "label": defn["label"],
                     "description": defn["description"],
                     "active": saved.get("active", True),
+                    "has_picker": defn.get("has_picker", False),
+                    "sortable_articles": defn.get("sortable_articles", True),
                     "articles": _fetch_component_articles(defn["key"]),
                 })
 

@@ -35,14 +35,14 @@ def _block_active(block_key, saved_flag):
 
 # Fixed component definitions — keys must stay stable; label/description can change.
 COMPONENT_DEFINITIONS = [
-    {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": ""},
+    {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área"},
-    {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM"},
+    {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "sortable_articles": False},
     {"key": "radio",                "label": "Radio",                    "description": ""},
-    {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a viernes"},
+    {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a viernes", "has_picker": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": ""},
-    {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos"},
-    {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": ""},
+    {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos",    "has_picker": True},
+    {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": "",                "sortable_articles": False},
 ]
 
 _COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
@@ -179,6 +179,16 @@ def categories_json(request):
         Category.objects.filter(has_newsletter=True).order_by("order").values("id", "name", "slug")
     )
     return JsonResponse(categories, safe=False)
+
+
+@staff_member_required
+def article_search(request):
+    """Return up to 10 published articles matching the ?q= headline search (for the picker widget)."""
+    q = request.GET.get("q", "").strip()
+    if len(q) < 2:
+        return JsonResponse([], safe=False)
+    qs = Article.published.filter(headline__icontains=q).order_by("-date_published")[:10]
+    return JsonResponse([{"id": a.id, "headline": a.headline} for a in qs], safe=False)
 
 
 @never_cache
@@ -381,8 +391,15 @@ def _fetch_component_articles(key, saved_ids=None):
             logger.warning("_fetch_component_articles: apuntes section slug=%r not found", slug)
         return []
 
+    # recomendadas_lv, recomendadas_domingo: fully manual — only saved articles are shown
+    if key in ("recomendadas_lv", "recomendadas_domingo"):
+        if saved_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+            return [by_id[aid] for aid in saved_ids if aid in by_id]
+        return []
+
     # radio: no articles, just a visibility toggle in the layout editor
-    # recomendadas_lv, recomendadas_domingo, newsletter_dia: pending implementation
+    # newsletter_dia: pending implementation
     return []
 
 
