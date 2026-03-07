@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 
@@ -36,7 +37,7 @@ def _block_active(block_key, saved_flag):
 # Fixed component definitions — keys must stay stable; label/description can change.
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
-    {"key": "opinion",              "label": "Opinión",                  "description": "Área"},
+    {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
     {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "sortable_articles": False},
     {"key": "radio",                "label": "Radio",                    "description": ""},
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a viernes", "has_picker": True},
@@ -236,10 +237,13 @@ def build_home_data(grid_data, publication=None):
     principal_data = grid_data.get("principal") or {}
     result["principal_active"] = _block_active("principal", principal_data.get("active", True))
     db_articles = list(edition.top_articles) if edition else []
-    db_by_id = {a.id: a for a in db_articles}
     saved_ids = principal_data.get("article_ids", [])
     if saved_ids:
-        ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
+        by_id = {a.id: a for a in db_articles}
+        extra_ids = [aid for aid in saved_ids if aid not in by_id]
+        if extra_ids:
+            by_id.update({a.id: a for a in Article.published.filter(id__in=extra_ids)})
+        ordered = [by_id[aid] for aid in saved_ids if aid in by_id]
         saved_set = set(saved_ids)
         for a in db_articles:
             if a.id not in saved_set:
@@ -252,10 +256,10 @@ def build_home_data(grid_data, publication=None):
     suplemento_data = grid_data.get("suplemento", {})
     result["suplemento_active"] = _block_active("suplemento", suplemento_data.get("active", True))
     if result["suplemento_active"]:
-        suplemento_ids = suplemento_data.get("article_ids", [])
-        if suplemento_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=suplemento_ids)}
-            result["suplemento_articles"] = [by_id[aid] for aid in suplemento_ids if aid in by_id]
+        try:
+            result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data.get("article_ids", []))
+        except Exception:
+            result["suplemento_articles"] = []
 
     # ESPECIAL
     especial_data = grid_data.get("especial", {})
@@ -330,6 +334,35 @@ def build_home_data(grid_data, publication=None):
     return result
 
 
+# Section slug to load for SUPLEMENTO when no articles are manually picked.
+# Keys are Python weekday integers: 0=Monday, 1=Tuesday, ..., 6=Sunday.
+# Days not listed → SUPLEMENTO stays empty.
+_SUPLEMENTO_SECTION_BY_WEEKDAY = {
+    0: "deporte",   # Monday / Lunes
+    2: "mundo",     # Wednesday / Miércoles
+    3: "economia",  # Thursday / Jueves
+    4: "cultura",   # Friday / Viernes
+}
+
+
+def _fetch_suplemento_articles(saved_ids):
+    """Return SUPLEMENTO articles.
+    Priority: saved_ids (manually picked via picker).
+    Fallback: up to 7 articles from the section mapped to today's weekday.
+    """
+    if saved_ids:
+        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+        return [by_id[aid] for aid in saved_ids if aid in by_id]
+    slug = _SUPLEMENTO_SECTION_BY_WEEKDAY.get(datetime.date.today().weekday())
+    if slug:
+        try:
+            section = Section.objects.get(slug=slug)
+            return list(section.latest(limit=7))
+        except Section.DoesNotExist:
+            pass
+    return []
+
+
 # Components whose order is always automatic — saved_ids are ignored for these.
 _COMPONENTS_AUTO_ORDER = {"lo_ultimo", "lo_mas_leido", "apuntes_del_dia", "radio"}
 
@@ -372,12 +405,14 @@ def _fetch_component_articles(key, saved_ids=None):
             return []
 
     if key == "opinion":
+        if saved_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+            return [by_id[aid] for aid in saved_ids if aid in by_id]
         slug = getattr(settings, "HOMEV4_OPINION_CATEGORY_SLUG", "opinion")
         try:
             category = Category.objects.get(slug=slug)
             if hasattr(category, "home"):
-                db_articles = list(category.home.articles_ordered()[:2])
-                return _merge_article_order(db_articles, saved_ids)
+                return list(category.home.articles_ordered()[:2])
         except Category.DoesNotExist:
             logger.warning("_fetch_component_articles: opinion category slug=%r not found", slug)
         return []

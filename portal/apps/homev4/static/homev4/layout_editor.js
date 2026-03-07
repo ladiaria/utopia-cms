@@ -156,12 +156,13 @@ document.addEventListener("DOMContentLoaded", function () {
     function initRemoveButton(btn, row) {
         btn.addEventListener("click", function (e) {
             e.stopPropagation();
-            var headline = row.querySelector(".comp-article-title");
+            var headline = row.querySelector(".comp-article-title, .article-title");
             log("picker", "removed article", {
                 id: row.dataset.articleId,
                 headline: headline ? headline.textContent.trim() : "?",
             });
             row.remove();
+            renumberArticles();
         });
     }
 
@@ -214,6 +215,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Wire up drag for the new row
         initItemDrag(row, container, itemSelector);
 
+        renumberArticles();
         log("picker", "added article", { id: article.id, headline: article.headline });
     }
 
@@ -223,6 +225,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // rowClass / itemSelector: forwarded to addArticleToPicker
     // picker: the .article-picker wrapper (to find the input when clearing)
     function fetchArticles(q, resultsEl, articlesContainer, rowClass, itemSelector, picker) {
+        resultsEl.innerHTML = "";
+        var loading = document.createElement("div");
+        loading.className = "picker-loading";
+        loading.textContent = "Buscando\u2026";
+        resultsEl.appendChild(loading);
+        resultsEl.style.display = "block";
+
         var url = DATA.articleSearchUrl + "?q=" + encodeURIComponent(q);
         fetch(url, { credentials: "same-origin" })
             .then(function (r) { return r.json(); })
