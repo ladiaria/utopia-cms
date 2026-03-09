@@ -167,6 +167,7 @@ def preview_layout(request, layout_id):
         "layout": layout,
         "publication": layout.publication,
         "home_data": build_home_data(grid_data, publication=layout.publication),
+        "is_portada": True,
     })
 
 
@@ -413,6 +414,7 @@ def active_layout(request, publication_slug=None):
         "layout": layout,
         "publication": publication,
         "home_data": home_data,
+        "is_portada": True,
     }
 
     # Each publication can store arbitrary extra template vars in its extra_context

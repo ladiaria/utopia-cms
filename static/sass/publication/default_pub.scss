@@ -1,0 +1,267 @@
+@import "../variables";
+
+// ─── Variables ────────────────────────────────────────────────────────────────
+$col-gap: 48px;
+$col-width: 284px; // (1280 - 48 * 3) / 4
+$sidebar-width: 284px;
+$breakpoint-mobile: 767px;
+
+$gap-2: 8px;
+$gap-4: 16px;
+$gap-6: 24px;
+$-gap-6: -24px;
+$gap-8: 32px;
+
+$color-divider: #ababab;
+$border-divider: 0.5px solid $color-divider;
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+}
+
+article a {
+  text-decoration: none;
+}
+
+// ─── Home layout ─────────────────────────────────────────────────────────────
+.home {
+  max-width: $container-width;
+  padding-inline: $padding-inline;
+  padding-top: $gap-8;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: 1fr $sidebar-width;
+  column-gap: $col-gap;
+
+  > .main-section,
+  > .sports-section {
+    grid-column: 1;
+  }
+
+  &__sidebar {
+    grid-column: 2;
+    grid-row: 1 / 100;
+    align-self: start;
+    position: sticky;
+    top: 0;
+  }
+}
+
+// ─── Sección principal ────────────────────────────────────────────────────────
+.main-section {
+  display: flex;
+  flex-direction: column;
+  gap: $gap-8;
+
+  // Noticia principal: imagen izquierda (2/3) + texto derecha (1/3)
+  &__featured {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: $col-gap;
+
+    .article__title {
+      font-weight: 450;
+      line-height: px-to-rem(31.2px);
+    }
+
+    .article__section-label {
+      font-size: px-to-rem(14px);
+    }
+  }
+
+  &__featured-image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  &__featured-body {
+    display: flex;
+    flex-direction: column;
+    gap: $gap-2;
+  }
+
+  &__secondary-row,
+  &__tertiary-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $col-gap;
+    article::before {
+      position: absolute;
+      content: "";
+      width: 0.5px;
+      height: 100%;
+      top: 0;
+      background-color: $color-divider;
+      right: $-gap-6;
+    }
+    article:last-child::before {
+      display: none;
+    }
+  }
+
+  // 3 secundarias sin foto
+  &__secondary-row {
+    padding-block: $gap-8;
+    border-top: $border-divider;
+    border-bottom: $border-divider;
+  }
+
+  // 3 terciarias con foto
+  &__tertiary-row {
+    padding-bottom: $gap-8;
+  }
+}
+
+// ─── Artículo genérico ────────────────────────────────────────────────────────
+.article {
+  display: flex;
+  flex-direction: column;
+  gap: $gap-2;
+  position: relative;
+
+  &__section-label {
+    text-transform: uppercase;
+    letter-spacing: 0.96px;
+    font-size: px-to-rem(12px);
+  }
+  &__title {
+    font-family: $serif;
+    font-weight: 400;
+    font-size: px-to-rem(18px);
+    line-height: px-to-rem(24.3px);
+  }
+  &__summary {
+  }
+  &__byline {
+    font-size: px-to-rem(14px);
+  }
+
+  &__image {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    height: auto;
+  }
+}
+
+// ─── Sección Deporte ──────────────────────────────────────────────────────────
+.sports-section {
+  display: flex;
+  flex-direction: column;
+  gap: $gap-6;
+  padding-top: $gap-6;
+  border-top: 2px solid;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $gap-2;
+  }
+
+  // Noticia destacada: imagen izquierda grande + texto derecha
+  &__featured {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: $col-gap;
+  }
+
+  &__featured-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  // 3 noticias menores
+  &__secondary-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $col-gap;
+    padding-top: $gap-6;
+    border-top: 1px solid;
+  }
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: $gap-6;
+
+  &__block {
+    display: flex;
+    flex-direction: column;
+    gap: $gap-4;
+    padding-top: $gap-4;
+    border-top: 2px solid;
+
+    &:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+  }
+
+  &__block-title {
+    font-family: $sans-title;
+    display: flex;
+    gap: 8px;
+  }
+
+  &__apuntes-image {
+    width: 100%;
+    object-fit: cover;
+  }
+
+  &__radio-player {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+// ─── Mobile (≤ 767px) ─────────────────────────────────────────────────────────
+@media (max-width: $breakpoint-mobile) {
+  .home {
+    grid-template-columns: 1fr;
+    column-gap: 0;
+    row-gap: $gap-6;
+
+    > .main-section,
+    > .sports-section {
+      grid-column: 1;
+    }
+
+    &__sidebar {
+      grid-column: 1;
+      grid-row: auto;
+      position: static;
+    }
+  }
+
+  .main-section {
+    &__featured {
+      grid-template-columns: 1fr;
+    }
+    &__secondary-row {
+      grid-template-columns: 1fr;
+    }
+    &__tertiary-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .sports-section {
+    &__featured {
+      grid-template-columns: 1fr;
+    }
+    &__secondary-row {
+      grid-template-columns: 1fr;
+    }
+  }
+}
