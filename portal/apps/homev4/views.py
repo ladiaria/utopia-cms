@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import time
 
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
@@ -21,6 +22,22 @@ from .models import HomeLayout
 logger = logging.getLogger("homev4")
 
 _cache_maxage = getattr(settings, "HOMEV3_INDEX_CACHE_MAXAGE", 120)
+
+
+def _log_timing(view_func):
+    def wrapper(request, *args, **kwargs):
+        t0 = time.perf_counter()
+        response = view_func(request, *args, **kwargs)
+        elapsed = (time.perf_counter() - t0) * 1000
+        logger.warning("active_layout timing: %.1f ms (user_auth=%s)", elapsed, request.user.is_authenticated)
+        return response
+    wrapper.__name__ = view_func.__name__
+    return wrapper
+
+# select_related chain for article queries that feed _add_auth_context.
+# Ensures is_restricted() does not trigger lazy loads (main_section → edition → publication)
+# per article. Update this constant if the chain changes in the Article/ArticleRel models.
+_ARTICLE_AUTH_SELECT_RELATED = "main_section__edition__publication"
 
 
 def _block_active(block_key, saved_flag):
@@ -231,6 +248,7 @@ def build_home_data(grid_data, publication=None):
         "componentes": [],
     }
 
+    _tb = time.perf_counter()
     edition = get_current_edition(publication=publication)
 
     # PRINCIPAL
@@ -242,7 +260,12 @@ def build_home_data(grid_data, publication=None):
         by_id = {a.id: a for a in db_articles}
         extra_ids = [aid for aid in saved_ids if aid not in by_id]
         if extra_ids:
-            by_id.update({a.id: a for a in Article.published.filter(id__in=extra_ids)})
+            # select_related so is_restricted() does not trigger lazy loads per article
+            by_id.update({
+                a.id: a for a in Article.published.filter(id__in=extra_ids).select_related(
+                    _ARTICLE_AUTH_SELECT_RELATED
+                )
+            })
         ordered = [by_id[aid] for aid in saved_ids if aid in by_id]
         saved_set = set(saved_ids)
         for a in db_articles:
@@ -252,6 +275,7 @@ def build_home_data(grid_data, publication=None):
     else:
         result["principal_articles"] = db_articles
 
+    logger.warning("  build: principal=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
     # SUPLEMENTO
     suplemento_data = grid_data.get("suplemento", {})
     result["suplemento_active"] = _block_active("suplemento", suplemento_data.get("active", True))
@@ -261,6 +285,7 @@ def build_home_data(grid_data, publication=None):
         except Exception:
             result["suplemento_articles"] = []
 
+    logger.warning("  build: suplemento=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
     # ESPECIAL
     especial_data = grid_data.get("especial", {})
     result["especial_active"] = _block_active("especial", especial_data.get("active", True))
@@ -270,44 +295,64 @@ def build_home_data(grid_data, publication=None):
             by_id = {a.id: a for a in Article.published.filter(id__in=especial_ids)}
             result["especial_articles"] = [by_id[aid] for aid in especial_ids if aid in by_id]
 
-    # SECTIONS — only active ones
-    for sec_data in grid_data.get("sections", []):
-        if not sec_data.get("active", True):
-            continue
+    logger.warning("  build: especial=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
+    # SECTIONS — only active ones.
+    # Two-pass strategy to avoid N Article queries (one per section):
+    #   Pass 1: resolve section/category objects and collect ordered article IDs per section
+    #           (section.latest() uses raw SQL — unavoidable one query per section).
+    #   Pass 2: single bulk Article.published.filter(id__in=all_ids).select_related(...)
+    #           replaces the N individual re-fetch queries.
+    _active_sec_data = [s for s in grid_data.get("sections", []) if s.get("active", True)]
+    _sec_slugs = [s["slug"] for s in _active_sec_data if s.get("type", "section") == "section" and s.get("slug")]
+    _sec_ids = [
+        s["id"] for s in _active_sec_data
+        if s.get("type", "section") == "section" and not s.get("slug") and s.get("id")
+    ]
+    _cat_ids = [s["id"] for s in _active_sec_data if s.get("type") == "category" and s.get("id")]
+    _sections_by_slug = {s.slug: s for s in Section.objects.filter(slug__in=_sec_slugs)} if _sec_slugs else {}
+    _sections_by_id = {s.pk: s for s in Section.objects.filter(pk__in=_sec_ids)} if _sec_ids else {}
+    _categories_by_id = {c.pk: c for c in Category.objects.filter(pk__in=_cat_ids)} if _cat_ids else {}
+
+    # Pass 1: collect metadata and ordered IDs per section (runs section.latest() per section)
+    _sec_entries = []
+    for sec_data in _active_sec_data:
         sec_type = sec_data.get("type", "section")
         sec_id = sec_data.get("id")
         sec_slug = sec_data.get("slug")
         sec_name = sec_data.get("name", "")
         sec_row = sec_data.get("row", 1)
         saved_ids = sec_data.get("article_ids", [])
-        articles = []
+        ordered_ids = []
         url = ""
 
         if sec_type == "section" and (sec_slug or sec_id):
-            try:
-                section = Section.objects.get(slug=sec_slug) if sec_slug else Section.objects.get(pk=sec_id)
+            section = _sections_by_slug.get(sec_slug) if sec_slug else _sections_by_id.get(sec_id)
+            if section:
                 sec_name = section.name
                 url = section.get_absolute_url()
-                if saved_ids:
-                    by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
-                    articles = [by_id[aid] for aid in saved_ids if aid in by_id]
-                else:
-                    articles = list(section.latest(limit=3))
-            except Section.DoesNotExist:
-                pass
+                ordered_ids = saved_ids if saved_ids else [a.id for a in section.latest(limit=3)]
         elif sec_type == "category" and sec_id:
-            try:
-                category = Category.objects.get(pk=sec_id)
+            category = _categories_by_id.get(sec_id)
+            if category:
                 sec_name = category.name
                 url = f"/{category.slug}/"
                 if saved_ids:
-                    by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
-                    articles = [by_id[aid] for aid in saved_ids if aid in by_id]
+                    ordered_ids = saved_ids
                 elif hasattr(category, "home"):
-                    articles = list(category.home.articles_ordered()[:3])
-            except Category.DoesNotExist:
-                pass
+                    ordered_ids = [a.id for a in category.home.articles_ordered()[:3]]
 
+        _sec_entries.append((sec_type, sec_id, sec_slug, sec_name, sec_row, url, ordered_ids))
+
+    # Pass 2: single bulk Article fetch for all sections combined
+    _all_sec_article_ids = {aid for _, _, _, _, _, _, ids in _sec_entries for aid in ids}
+    _sec_articles_by_id = (
+        {a.id: a for a in Article.published.filter(id__in=_all_sec_article_ids).select_related(
+            _ARTICLE_AUTH_SELECT_RELATED
+        )}
+        if _all_sec_article_ids else {}
+    )
+
+    for sec_type, sec_id, sec_slug, sec_name, sec_row, url, ordered_ids in _sec_entries:
         result["sections"].append({
             "type": sec_type,
             "id": sec_id,
@@ -315,9 +360,10 @@ def build_home_data(grid_data, publication=None):
             "name": sec_name,
             "row": sec_row,
             "url": url,
-            "articles": articles,
+            "articles": [_sec_articles_by_id[aid] for aid in ordered_ids if aid in _sec_articles_by_id],
         })
 
+    logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
     # COMPONENTES — active ones only, enriched with label, description and articles
     for item in grid_data.get("componentes", []):
         if not item.get("active", True):
@@ -331,6 +377,7 @@ def build_home_data(grid_data, publication=None):
             "articles": _fetch_component_articles(key, saved_ids=item.get("article_ids", [])),
         })
 
+    logger.warning("  build: componentes=%.1f ms", (time.perf_counter() - _tb) * 1000)
     return result
 
 
@@ -467,6 +514,7 @@ def _add_auth_context(context, user, articles):
             context["follows"].append(a_id)
 
 
+@_log_timing
 @decorate_if_auth(decorator=never_cache)
 @decorate_if_no_auth(decorator=vary_on_cookie)
 @decorate_if_no_auth(decorator=cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=_cache_maxage))
@@ -485,8 +533,9 @@ def active_layout(request, publication_slug=None):
 
     # Pre-fetch all content defined by the layout editor into a single dict.
     # The template only reads from home_data — no DB calls inside the template.
+    _t0 = time.perf_counter()
     home_data = build_home_data(grid_data, publication=publication)
-
+    logger.warning("active_layout build_home_data: %.1f ms", (time.perf_counter() - _t0) * 1000)
     context = {
         "layout": layout,
         "publication": publication,
@@ -507,13 +556,28 @@ def active_layout(request, publication_slug=None):
         # Flatten all articles visible in the home so we can evaluate each one.
         # Principal articles + all active section articles are included.
         # Component articles are not yet included (pending data source implementation).
-        all_articles = list(home_data.get("principal_articles", []))
+        #
+        # top_articles uses prefetch_related from the ArticleRel perspective, which does
+        # not populate main_section cache on Article instances for direct access.
+        # Re-fetch principal articles by ID with select_related so is_restricted()
+        # does not trigger lazy loads per article.
+        principal_ids = [a.id for a in home_data.get("principal_articles", [])]
+        if principal_ids:
+            principal_by_id = {
+                a.id: a for a in Article.published.filter(id__in=principal_ids).select_related(
+                    _ARTICLE_AUTH_SELECT_RELATED
+                )
+            }
+            all_articles = [principal_by_id[aid] for aid in principal_ids if aid in principal_by_id]
+        else:
+            all_articles = []
         for sec in home_data.get("sections", []):
             all_articles.extend(sec.get("articles", []))
 
         # Populate restricteds / restricteds_allowed / follows in context.
+        _t1 = time.perf_counter()
         _add_auth_context(context, user, all_articles)
-
+        logger.warning("active_layout _add_auth_context: %.1f ms", (time.perf_counter() - _t1) * 1000)
         # Unsubscribed newsletters banner: show only if the feature is enabled,
         # the user has a subscriber profile with an email, and hasn't closed it yet.
         if (
@@ -524,4 +588,7 @@ def active_layout(request, publication_slug=None):
         ):
             context["unsubscribed_newsletters"] = unsubscribed_newsletters(user.subscriber)
 
-    return render(request, "homev4/home.html", context)
+    _t2 = time.perf_counter()
+    response = render(request, "homev4/home.html", context)
+    logger.warning("active_layout render: %.1f ms", (time.perf_counter() - _t2) * 1000)
+    return response
