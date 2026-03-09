@@ -148,3 +148,28 @@ def rr_category_ad(context, ad_zone, ad_category, index=0):
             pass
 
     return to_return
+
+
+@register.inclusion_tag('adzone/ad_tag.html', takes_context=True)
+def render_ad(context, ad_id):
+    """
+    Returns an ad tag for the specified ad_id.
+    Usage:
+    {% load adzone_tags %}
+    {% render_ad ad_id %}
+    """
+    ad = None
+    if ad_id:
+        try:
+            ad = AdBase.objects.get(id=ad_id)
+        except AdBase.DoesNotExist:
+            pass
+        else:
+            # Record a impression for the ad
+            if settings.ADZONE_LOG_AD_IMPRESSIONS and 'from_ip' in context:
+                if from_ip := context.get('from_ip'):
+                    try:
+                        AdImpression.objects.create(ad=ad, impression_date=timezone.now(), source_ip=from_ip)
+                    except Exception:
+                        pass
+    return {'ad': ad}

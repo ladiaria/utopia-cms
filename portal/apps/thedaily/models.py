@@ -767,6 +767,7 @@ class RemainingContent(Model):
 
 
 class MailtrainList(Model):
+    # TODO: replace mailtrain with a better system ASAP
     """
     Exposes a Mailtrain (https://github.com/Mailtrain-org/mailtrain) list as a Newsletter, then users can subscribe or
     unsubscribe to the list in their utopia-cms profiles, generating ajax requests to utopia-crm who acts as gateway

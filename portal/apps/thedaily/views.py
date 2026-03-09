@@ -1402,7 +1402,7 @@ def edit_profile(request, user=None):
             'publication_newsletters': Publication.objects.filter(has_newsletter=True),
             'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
             'newsletters': get_profile_newsletters_ordered(),
-            "mailtrain_lists": MailtrainList.objects.all(),
+            "mailtrain_lists": MailtrainList.objects.all(),  # TODO: @see .models.MailtrainList for task details
             "incomplete_field_count": sum(
                 not bool(value) for value in (
                     user.get_full_name(),

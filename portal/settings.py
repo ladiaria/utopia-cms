@@ -15,7 +15,7 @@ from django.utils.encoding import smart_str, force_str
 django.utils.encoding.smart_text = smart_str
 django.utils.encoding.force_text = force_str
 
-PROJECT_ABSOLUTE_DIR = dirname(abspath(__file__))
+BASE_DIR = PROJECT_ABSOLUTE_DIR = dirname(abspath(__file__))
 PROJECT_NAME = basename(PROJECT_ABSOLUTE_DIR)
 APPS_DIR = join(PROJECT_ABSOLUTE_DIR, "apps")
 if APPS_DIR not in sys.path:
