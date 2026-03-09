@@ -1,22 +1,19 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Dump last N rows (by id) of photologue_photo and related photologue_ladiaria_photoextended
 to SQL files, and pack all involved image files into a .tar for restore by raw SQL.
 
-Usage (from portal directory):
-  python manage.py runscript libs.scripts.dump_photologue_last_n --script-args N [OUT_DIR] [TAR_NAME]
-  python -m libs.scripts.dump_photologue_last_n N [--out-dir DIR] [--tar-name NAME]
+Usage (from portal directory with the virtual environment activated):
+  ./manage.py runscript libs.scripts.dump_photologue_last_n --script-args N [OUT_DIR] [TAR_NAME]
 
 Output:
   - photologue_photo.sql, photologue_ladiaria_photoextended.sql (in out_dir)
-  - dump_photologue_<timestamp>.tar: single archive with the two SQL at root + all image files
-    (photo.image, extended.square_version, extended.last_original_uploaded; paths as in MEDIA)
+  - dump_photologue_<timestamp>.tar: single archive with all image files (photo.image, extended.square_version,
+    extended.last_original_uploaded; paths as in MEDIA).
 
 Restore (MariaDB/MySQL; assumes agency and photographer already loaded, no FK issues):
-  1. Extract the tar (e.g. tar -xvf dump_photologue_*.tar -C /path/to/dir).
-  2. Run: mysql ... < photologue_photo.sql && mysql ... < photologue_ladiaria_photoextended.sql
-  3. Extract the image files into MEDIA_ROOT (they keep their path in the tar).
+  1. Run: mysql ... < photologue_photo.sql && mysql ... < photologue_ladiaria_photoextended.sql
+  2. Extract the image files into MEDIA_ROOT (they keep their path in the tar).
 """
 
 import argparse
@@ -128,7 +125,9 @@ def main():
             f.write(stmt_photo)
         print("Wrote %s (%s rows)" % (sql_photo_path, n_photo))
 
-        stmt_ext, n_ext = dump_table(cursor, "photologue_ladiaria_photoextended", "image_id", photo_ids, order_col="id")
+        stmt_ext, n_ext = dump_table(
+            cursor, "photologue_ladiaria_photoextended", "image_id", photo_ids, order_col="id"
+        )
         sql_ext_path = os.path.join(out_dir, "photologue_ladiaria_photoextended.sql")
         with open(sql_ext_path, "w", encoding="utf-8") as f:
             f.write("-- photologue_ladiaria_photoextended (related to last %s photos)\n" % args.n)
@@ -141,11 +140,9 @@ def main():
     final_tar_name = args.tar_name or ("dump_photologue_%s.tar" % stamp)
     final_tar_path = os.path.join(out_dir, final_tar_name)
     with tarfile.open(final_tar_path, "w") as tar:
-        tar.add(sql_photo_path, arcname=os.path.basename(sql_photo_path))
-        tar.add(sql_ext_path, arcname=os.path.basename(sql_ext_path))
         for abs_path, arcname in sorted(image_paths, key=lambda x: x[1]):
             tar.add(abs_path, arcname=arcname)
-    print("Wrote %s (2 SQL + %s images)" % (final_tar_path, len(image_paths)))
+    print("Wrote %s (%s images)" % (final_tar_path, len(image_paths)))
     return 0
 
 
@@ -162,14 +159,3 @@ def run(*args):
         return main()
     finally:
         sys.argv = orig
-
-
-if __name__ == "__main__":
-    # When run as script, ensure portal is on path (parent of libs)
-    _portal = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    if _portal not in sys.path:
-        sys.path.insert(0, _portal)
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "portal.settings")
-    import django
-    django.setup()
-    sys.exit(main())
