@@ -222,7 +222,6 @@ def preview_layout(request, layout_id):
         "publication": layout.publication,
         "home_data": build_home_data(grid_data, publication=layout.publication),
         "is_portada": True,
-        "HOMEV4_EXTRA_CSS": getattr(settings, "HOMEV4_EXTRA_CSS", []),
     })
 
 
@@ -547,7 +546,6 @@ def active_layout(request, publication_slug=None):
         "publication": publication,
         "home_data": home_data,
         "is_portada": True,
-        "HOMEV4_EXTRA_CSS": getattr(settings, "HOMEV4_EXTRA_CSS", []),
     }
 
     # Each publication can store arbitrary extra template vars in its extra_context
