@@ -1,9 +1,27 @@
 {% extends base_template %}
-{% load static bleach_tags core_tags ldml %}
+{% load static bleach_tags core_tags ldml homev3_tags %}
+
+{% block page_title %}{% publication_title %}{% endblock %}
+
+{% block meta_og_title %}
+  <!-- Open Graph (http://ogp.me) -->
+  <meta property="og:title" content="{% publication_title %}">
+{% endblock %}
+
+{% block json_ld_extra %}
+  "potentialAction": {
+      "@type": "SearchAction",
+      "target": "{{ SITE_URL }}buscar/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+  },
+{% endblock %}
 
 {% block css %}
   {{ block.super }}
   <link href="{% static 'sass/publication/default_pub.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {% for css_file in HOMEV4_EXTRA_CSS %}
+    <link href="{% static css_file %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {% endfor %}
 {% endblock %}
 
 {% block content %}
@@ -37,9 +55,9 @@
         {% endif %}
         <div class="main-section__featured-body">
           <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
-          <h2 class="article__title">
+          <h1 class="article__title">
             <a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a>
-          </h2>
+          </h1>
           {% if featured.home_lead %}
             <p class="article__summary">{{ featured.home_lead }}</p>
           {% elif featured.lead %}
@@ -192,37 +210,8 @@
   <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
   <aside class="home__sidebar sidebar">
     {% for comp in home_data.componentes %}
-    <div class="sidebar__block">
-
-      <div class="sidebar__block-title">
-        <h2>{{ comp.label }}</h2>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
-      </div>
-
-
-      {% if comp.articles %}
-        {% for article in comp.articles %}
-        <article class="article">
-          {% if article.photo and comp.key == "apuntes_del_dia" %}
-            <img
-              class="sidebar__apuntes-image"
-              src="{{ article.photo.get_700w_url }}"
-              width="700"
-              height="{{ article.photo.get_700w_size.1 }}"
-              loading="lazy"
-              alt="{{ article.photo_caption }}"
-            >
-          {% endif %}
-          <h3 class="article__title">
-            <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
-          </h3>
-        </article>
-        {% endfor %}
-      {% endif %}
-
-    </div>
+      {% include comp.sidebar_component_template %}
     {% endfor %}
   </aside>
-
 </div>
 {% endblock %}

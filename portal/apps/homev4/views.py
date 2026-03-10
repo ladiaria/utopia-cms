@@ -35,6 +35,8 @@ def _block_active(block_key, saved_flag):
 
 
 # Fixed component definitions — keys must stay stable; label/description can change.
+_DEFAULT_SIDEBAR_COMPONENT_TEMPLATE = "homev4/sidebar_components/default.html"
+
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
@@ -203,6 +205,7 @@ def preview_layout(request, layout_id):
         "publication": layout.publication,
         "home_data": build_home_data(grid_data, publication=layout.publication),
         "is_portada": True,
+        "HOMEV4_EXTRA_CSS": getattr(settings, "HOMEV4_EXTRA_CSS", []),
     })
 
 
@@ -320,6 +323,7 @@ def build_home_data(grid_data, publication=None):
         })
 
     # COMPONENTES — active ones only, enriched with label, description and articles
+    component_templates = getattr(settings, "HOMEV4_SIDEBAR_COMPONENT_TEMPLATES", {})
     for item in grid_data.get("componentes", []):
         if not item.get("active", True):
             continue
@@ -329,6 +333,7 @@ def build_home_data(grid_data, publication=None):
             "key": key,
             "label": defn.get("label", key),
             "description": defn.get("description", ""),
+            "sidebar_component_template": component_templates.get(key, _DEFAULT_SIDEBAR_COMPONENT_TEMPLATE),
             "articles": _fetch_component_articles(key, saved_ids=item.get("article_ids", [])),
         })
 
@@ -493,6 +498,7 @@ def active_layout(request, publication_slug=None):
         "publication": publication,
         "home_data": home_data,
         "is_portada": True,
+        "HOMEV4_EXTRA_CSS": getattr(settings, "HOMEV4_EXTRA_CSS", []),
     }
 
     # Each publication can store arbitrary extra template vars in its extra_context
