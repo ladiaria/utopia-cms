@@ -19,6 +19,10 @@ _DAY_ORDER = {
 }
 
 
+# Fields that only superusers can modify. Staff users see them as read-only.
+_SCHEDULE_FIELDS = ("name", "day", "start_time", "end_time", "ends_next_day", "is_manual_override")
+
+
 @admin.register(HomeLayout)
 class HomeLayoutAdmin(admin.ModelAdmin):
     change_form_template = "homev4/admin_change_form.html"
@@ -32,6 +36,17 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         ("Fechas", {"fields": ("created", "modified")}),
     )
     actions = []
+
+    def get_list_editable(self, request):
+        if request.user.is_superuser:
+            return ("is_manual_override",)
+        return ()
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(super().get_readonly_fields(request, obj))
+        if not request.user.is_superuser:
+            readonly += [f for f in _SCHEDULE_FIELDS if f not in readonly]
+        return readonly
 
     def change_view(self, request, object_id, form_url="", extra_context=None):
         extra_context = extra_context or {}
