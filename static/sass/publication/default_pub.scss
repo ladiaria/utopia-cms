@@ -7,6 +7,7 @@ $sidebar-width: 284px;
 $breakpoint-mobile: 767px;
 
 $gap-2: 8px;
+$gap-3: 12px;
 $gap-4: 16px;
 $gap-6: 24px;
 $-gap-6: -24px;
@@ -69,6 +70,7 @@ article a {
     .article__title {
       font-weight: 450;
       line-height: px-to-rem(31.2px);
+      font-size: px-to-rem(24px);
     }
 
     .article__section-label {
@@ -124,7 +126,7 @@ article a {
 .article {
   display: flex;
   flex-direction: column;
-  gap: $gap-2;
+  gap: $gap-3;
   position: relative;
 
   &__section-label {
@@ -198,9 +200,9 @@ article a {
   &__block {
     display: flex;
     flex-direction: column;
-    gap: $gap-4;
+    gap: $gap-8;
     padding-top: $gap-4;
-    border-top: 2px solid;
+    border-top: 0.5px solid #000;
 
     &:first-child {
       border-top: none;
