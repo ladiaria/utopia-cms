@@ -329,9 +329,13 @@ def get_app_template(relative_path):
     return template
 
 
-def product_checkout_template(product_slug, steps=False):
+def product_checkout_template(product_slug, steps=False, fallback_template_name=None):
     steps_suffix = "_steps" if steps else ""
-    template = get_app_template(f"market/product{steps_suffix}.html")  # fallback
+    if fallback_template_name:
+        fallback = get_app_template(f"market/products/base_{fallback_template_name}{steps_suffix}.html")
+    else:
+        fallback = get_app_template(f"market/product{steps_suffix}.html")
+    template = fallback
     template_try = get_app_template(f"market/products/{product_slug}{steps_suffix}.html")
     try:
         Engine.get_default().get_template(template_try)
