@@ -1,9 +1,11 @@
 import json
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models import Case, IntegerField, Value, When
+from django.urls import reverse
+from django.utils.html import format_html
 
-from .models import HomeLayout
+from .models import HomeLayout, _DAY_CODE_TO_WEEKDAYS
 from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles, _fetch_suplemento_articles, LAYOUT_BLOCKS_CONFIG
 
 _DAY_ORDER = {
@@ -44,6 +46,9 @@ class HomeLayoutAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
+        if obj is None:
+            # publication must be set when creating a new layout
+            readonly = [f for f in readonly if f != "publication"]
         if not request.user.is_superuser:
             readonly += [f for f in _SCHEDULE_FIELDS if f not in readonly]
         return readonly
@@ -218,9 +223,66 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         return qs.annotate(day_order=day_order).order_by("day_order", "start_time")
 
 
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        # Compute the currently active layout pk per publication so the template
+        # can highlight the active row without extra queries per row.
+        active_pks = []
+        pub_ids = HomeLayout.objects.values_list("publication_id", flat=True).distinct()
+        from core.models import Publication
+        for pub in Publication.objects.filter(pk__in=pub_ids):
+            active = HomeLayout.get_active_layout(pub)
+            if active:
+                active_pks.append(active.pk)
+        extra_context["active_layout_pks"] = active_pks
+        return super().changelist_view(request, extra_context)
+
     def save_model(self, request, obj, form, change):
         if obj.is_manual_override and not obj.manual_override_by:
             obj.manual_override_by = request.user
         if not obj.grid_data:
             obj.grid_data = get_default_grid_data()
         super().save_model(request, obj, form, change)
+        self._warn_if_overlap(request, obj)
+
+    def _warn_if_overlap(self, request, obj):
+        """Show a non-blocking warning if the saved layout overlaps with another scheduled one."""
+        if obj.is_manual_override or not (obj.publication_id and obj.day and obj.start_time and obj.end_time):
+            return
+
+        def to_minutes(t, next_day=False):
+            return t.hour * 60 + t.minute + (1440 if next_day else 0)
+
+        my_weekdays = _DAY_CODE_TO_WEEKDAYS.get(obj.day, set())
+        my_start = to_minutes(obj.start_time)
+        my_end = to_minutes(obj.end_time, obj.ends_next_day)
+
+        others = HomeLayout.objects.filter(
+            publication_id=obj.publication_id, is_manual_override=False,
+        ).exclude(pk=obj.pk)
+
+        for other in others:
+            if not (other.day and other.start_time and other.end_time):
+                continue
+            # Two day codes overlap only if they share at least one real weekday
+            if not (my_weekdays & _DAY_CODE_TO_WEEKDAYS.get(other.day, set())):
+                continue
+            other_start = to_minutes(other.start_time)
+            other_end = to_minutes(other.end_time, other.ends_next_day)
+            # Standard interval overlap: [a, b) overlaps [c, d) iff a < d and c < b
+            if my_start < other_end and other_start < my_end:
+                url = reverse("admin:homev4_homelayout_change", args=[other.pk])
+                self.message_user(
+                    request,
+                    format_html(
+                        'Atención: esta programación se solapa con <a href="{}">{}</a> '
+                        "({} {}–{}). En ese horario ganará la que tenga el inicio más tardío.",
+                        url,
+                        other.name,
+                        other.get_day_display(),
+                        other.start_time.strftime("%H:%M"),
+                        other.end_time.strftime("%H:%M"),
+                    ),
+                    messages.WARNING,
+                )
+                return

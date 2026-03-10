@@ -27,6 +27,12 @@ _WEEKDAY_TO_DAY_CODES = {
     6: ["do"],
 }
 
+# Reverse map: day choice code → set of weekdays it covers
+_DAY_CODE_TO_WEEKDAYS = {}
+for _wd, _codes in _WEEKDAY_TO_DAY_CODES.items():
+    for _code in _codes:
+        _DAY_CODE_TO_WEEKDAYS.setdefault(_code, set()).add(_wd)
+
 
 class HomeLayout(models.Model):
     name = models.CharField("nombre", max_length=100)
@@ -64,6 +70,8 @@ class HomeLayout(models.Model):
                 raise ValidationError(
                     {"is_manual_override": f"Ya existe un override activo para esta publicación: \"{conflict.name}\". Desactivalo primero."}
                 )
+            return
+
 
     def __str__(self):
         override = " [OVERRIDE]" if self.is_manual_override else ""
