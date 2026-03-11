@@ -53,6 +53,7 @@ def _block_active(block_key, saved_flag):
 
 # Fixed component definitions — keys must stay stable; label/description can change.
 _DEFAULT_SIDEBAR_COMPONENT_TEMPLATE = "homev4/sidebar_components/default.html"
+_HOME_TEMPLATE = "homev4/home.html"
 
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
@@ -217,7 +218,8 @@ def preview_layout(request, layout_id):
     """Render the home template for a specific layout (opens in new tab from admin)."""
     layout = get_object_or_404(HomeLayout, pk=layout_id)
     grid_data = layout.grid_data if isinstance(layout.grid_data, dict) else {}
-    return render(request, "homev4/home.html", {
+    home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
+    return render(request, home_template, {
         "layout": layout,
         "publication": layout.publication,
         "home_data": build_home_data(grid_data, publication=layout.publication),
@@ -594,7 +596,8 @@ def active_layout(request, publication_slug=None):
         ):
             context["unsubscribed_newsletters"] = unsubscribed_newsletters(user.subscriber)
 
+    home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
     _t2 = time.perf_counter()
-    response = render(request, "homev4/home.html", context)
+    response = render(request, home_template, context)
     logger.warning("active_layout render: %.1f ms", (time.perf_counter() - _t2) * 1000)
     return response
