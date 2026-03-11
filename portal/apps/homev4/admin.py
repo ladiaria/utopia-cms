@@ -1,10 +1,12 @@
 import json
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models import Case, IntegerField, Value, When
+from django.urls import reverse
+from django.utils.html import format_html
 
-from .models import HomeLayout
-from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles
+from .models import HomeLayout, _DAY_CODE_TO_WEEKDAYS
+from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles, _fetch_suplemento_articles, LAYOUT_BLOCKS_CONFIG
 
 _DAY_ORDER = {
     "lmjv": 0,
@@ -17,6 +19,10 @@ _DAY_ORDER = {
     "sa":   7,
     "do":   8,
 }
+
+
+# Fields that only superusers can modify. Staff users see them as read-only.
+_SCHEDULE_FIELDS = ("name", "day", "start_time", "end_time", "ends_next_day", "is_manual_override")
 
 
 @admin.register(HomeLayout)
@@ -33,6 +39,20 @@ class HomeLayoutAdmin(admin.ModelAdmin):
     )
     actions = []
 
+    def get_list_editable(self, request):
+        if request.user.is_superuser:
+            return ("is_manual_override",)
+        return ()
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(super().get_readonly_fields(request, obj))
+        if obj is None:
+            # publication must be set when creating a new layout
+            readonly = [f for f in readonly if f != "publication"]
+        if not request.user.is_superuser:
+            readonly += [f for f in _SCHEDULE_FIELDS if f not in readonly]
+        return readonly
+
     def change_view(self, request, object_id, form_url="", extra_context=None):
         extra_context = extra_context or {}
         obj = self.get_object(request, object_id)
@@ -44,6 +64,8 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["sync_sections_url"] = f"/homev4/sync/{obj.pk}/"
             extra_context["preview_url"] = f"/homev4/preview/{obj.pk}/"
             extra_context["grid_data_pretty"] = json.dumps(obj.grid_data, indent=2, ensure_ascii=False)
+            extra_context["blocks_config"] = LAYOUT_BLOCKS_CONFIG
+            extra_context["article_search_url"] = "/homev4/article-search/"
         return super().change_view(request, object_id, form_url, extra_context)
 
     def _build_editor_data(self, grid_data, publication=None):
@@ -76,7 +98,11 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         principal_data = grid_data.get("principal") or {}
         saved_ids = principal_data.get("article_ids", [])
         if saved_ids:
-            ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
+            by_id = {a.id: a for a in db_articles}
+            extra_ids = [aid for aid in saved_ids if aid not in by_id]
+            if extra_ids:
+                by_id.update({a.id: a for a in Article.published.filter(id__in=extra_ids)})
+            ordered = [by_id[aid] for aid in saved_ids if aid in by_id]
             saved_set = set(saved_ids)
             for a in db_articles:
                 if a.id not in saved_set:
@@ -85,13 +111,12 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         else:
             result["principal_articles"] = db_articles
 
-        # SUPLEMENTO articles: same merge logic, independent list
-        # TODO: define DB source when the user clarifies which section/edition feeds SUPLEMENTO
-        suplemento_saved_ids = grid_data.get("suplemento", {}).get("article_ids", [])
-        if suplemento_saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=suplemento_saved_ids)}
-            result["suplemento_articles"] = [by_id[aid] for aid in suplemento_saved_ids if aid in by_id]
-        else:
+        # SUPLEMENTO articles: saved_ids if present, else day-based section fallback.
+        try:
+            result["suplemento_articles"] = _fetch_suplemento_articles(
+                grid_data.get("suplemento", {}).get("article_ids", [])
+            )
+        except Exception:
             result["suplemento_articles"] = []
 
         # Sections: up to 3 articles each, respecting saved order if available
@@ -153,6 +178,8 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                         "label": defn["label"],
                         "description": defn["description"],
                         "active": item.get("active", True),
+                        "has_picker": defn.get("has_picker", False),
+                        "sortable_articles": defn.get("sortable_articles", True),
                         "articles": _fetch_component_articles(key, saved_ids=item.get("article_ids", [])),
                     })
             # Append any definitions not present in the saved list
@@ -163,6 +190,8 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                         "label": defn["label"],
                         "description": defn["description"],
                         "active": True,
+                        "has_picker": defn.get("has_picker", False),
+                        "sortable_articles": defn.get("sortable_articles", True),
                         "articles": _fetch_component_articles(defn["key"]),
                     })
         else:
@@ -174,6 +203,8 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                     "label": defn["label"],
                     "description": defn["description"],
                     "active": saved.get("active", True),
+                    "has_picker": defn.get("has_picker", False),
+                    "sortable_articles": defn.get("sortable_articles", True),
                     "articles": _fetch_component_articles(defn["key"]),
                 })
 
@@ -192,9 +223,66 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         return qs.annotate(day_order=day_order).order_by("day_order", "start_time")
 
 
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        # Compute the currently active layout pk per publication so the template
+        # can highlight the active row without extra queries per row.
+        active_pks = []
+        pub_ids = HomeLayout.objects.values_list("publication_id", flat=True).distinct()
+        from core.models import Publication
+        for pub in Publication.objects.filter(pk__in=pub_ids):
+            active = HomeLayout.get_active_layout(pub)
+            if active:
+                active_pks.append(active.pk)
+        extra_context["active_layout_pks"] = active_pks
+        return super().changelist_view(request, extra_context)
+
     def save_model(self, request, obj, form, change):
         if obj.is_manual_override and not obj.manual_override_by:
             obj.manual_override_by = request.user
         if not obj.grid_data:
             obj.grid_data = get_default_grid_data()
         super().save_model(request, obj, form, change)
+        self._warn_if_overlap(request, obj)
+
+    def _warn_if_overlap(self, request, obj):
+        """Show a non-blocking warning if the saved layout overlaps with another scheduled one."""
+        if obj.is_manual_override or not (obj.publication_id and obj.day and obj.start_time and obj.end_time):
+            return
+
+        def to_minutes(t, next_day=False):
+            return t.hour * 60 + t.minute + (1440 if next_day else 0)
+
+        my_weekdays = _DAY_CODE_TO_WEEKDAYS.get(obj.day, set())
+        my_start = to_minutes(obj.start_time)
+        my_end = to_minutes(obj.end_time, obj.ends_next_day)
+
+        others = HomeLayout.objects.filter(
+            publication_id=obj.publication_id, is_manual_override=False,
+        ).exclude(pk=obj.pk)
+
+        for other in others:
+            if not (other.day and other.start_time and other.end_time):
+                continue
+            # Two day codes overlap only if they share at least one real weekday
+            if not (my_weekdays & _DAY_CODE_TO_WEEKDAYS.get(other.day, set())):
+                continue
+            other_start = to_minutes(other.start_time)
+            other_end = to_minutes(other.end_time, other.ends_next_day)
+            # Standard interval overlap: [a, b) overlaps [c, d) iff a < d and c < b
+            if my_start < other_end and other_start < my_end:
+                url = reverse("admin:homev4_homelayout_change", args=[other.pk])
+                self.message_user(
+                    request,
+                    format_html(
+                        'Atención: esta programación se solapa con <a href="{}">{}</a> '
+                        "({} {}–{}). En ese horario ganará la que tenga el inicio más tardío.",
+                        url,
+                        other.name,
+                        other.get_day_display(),
+                        other.start_time.strftime("%H:%M"),
+                        other.end_time.strftime("%H:%M"),
+                    ),
+                    messages.WARNING,
+                )
+                return
