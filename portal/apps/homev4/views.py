@@ -8,6 +8,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.exceptions import TemplateDoesNotExist
+from django.template.loader import get_template
 from django.views.decorators.cache import cache_control, never_cache
 from django.views.decorators.vary import vary_on_cookie
 
@@ -54,6 +56,15 @@ def _block_active(block_key, saved_flag):
 # Fixed component definitions — keys must stay stable; label/description can change.
 _DEFAULT_SIDEBAR_COMPONENT_TEMPLATE = "homev4/sidebar_components/default.html"
 _HOME_TEMPLATE = "homev4/home.html"
+
+
+def _resolve_sidebar_template(key):
+    candidate = f"homev4/sidebar_components/{key}.html"
+    try:
+        get_template(candidate)
+        return candidate
+    except TemplateDoesNotExist:
+        return _DEFAULT_SIDEBAR_COMPONENT_TEMPLATE
 
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
@@ -370,7 +381,6 @@ def build_home_data(grid_data, publication=None):
 
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
     # COMPONENTES — active ones only, enriched with label, description and articles
-    component_templates = getattr(settings, "HOMEV4_SIDEBAR_COMPONENT_TEMPLATES", {})
     for item in grid_data.get("componentes", []):
         if not item.get("active", True):
             continue
@@ -380,7 +390,7 @@ def build_home_data(grid_data, publication=None):
             "key": key,
             "label": defn.get("label", key),
             "description": defn.get("description", ""),
-            "sidebar_component_template": component_templates.get(key, _DEFAULT_SIDEBAR_COMPONENT_TEMPLATE),
+            "sidebar_component_template": _resolve_sidebar_template(key),
             "articles": _fetch_component_articles(key, saved_ids=item.get("article_ids", [])),
         })
 
