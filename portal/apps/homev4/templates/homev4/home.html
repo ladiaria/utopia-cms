@@ -61,16 +61,21 @@
           {% elif featured.lead %}
             <p class="article__summary">{{ featured.lead }}</p>
           {% endif %}
-          {% with authors=featured.get_authors %}
-            {% if authors %}
-              <div class="article__byline">
-                Por
-                {% for author in authors %}
-                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
-                {% endfor %}
-              </div>
-            {% endif %}
-          {% endwith %}
+          <div class="article__footer">
+            {% with authors=featured.get_authors %}
+              {% if authors %}
+                <div class="article__byline">
+                  Por
+                  {% for author in authors %}
+                    <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+            <button class="article__bookmark" aria-label="Guardar en favoritos">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+            </button>
+          </div>
         </div>
       </div>
       {% endwith %}
@@ -87,16 +92,21 @@
           <h3 class="article__title">
             <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
           </h3>
-          {% with authors=article.get_authors %}
-            {% if authors %}
-              <div class="article__byline">
-                Por
-                {% for author in authors %}
-                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
-                {% endfor %}
-              </div>
-            {% endif %}
-          {% endwith %}
+          <div class="article__footer">
+            {% with authors=article.get_authors %}
+              {% if authors %}
+                <div class="article__byline">
+                  Por
+                  {% for author in authors %}
+                    <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+            <button class="article__bookmark" aria-label="Guardar en favoritos">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+            </button>
+          </div>
         </article>
         {% endfor %}
       </div>
@@ -141,25 +151,34 @@
   </section>
   {% endif %}
 
-  <!-- ── Sección Deporte ───────────────────────────────────────────────────── -->
+  <!-- ── Sección Suplemento ───────────────────────────────────────────────── -->
   {% if home_data.suplemento_active %}
-  <section class="sports-section">
-
-    <div class="sports-section__header">
-      <h2>Deporte</h2>
-    </div>
+  <section class="suplemento-section">
 
     {% with articles=home_data.suplemento_articles %}
     {% if articles %}
 
-      {# Noticia destacada: imagen izquierda + cuerpo derecha #}
+      {# Noticia destacada: header + texto izquierda, imagen derecha #}
       {% with featured=articles.0 %}
-      <div class="sports-section__featured">
+      <div class="suplemento-section__featured">
+        <div class="suplemento-section__featured-body">
+          <div class="suplemento-section__header">
+            {# TODO: reemplazar por variable dinámica con el nombre del suplemento #}
+            <h2>Deporte</h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
+          </div>
+          <article class="article">
+            <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
+            <h3 class="article__title">
+              <a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a>
+            </h3>
+          </article>
+        </div>
         {% if featured.photo %}
-          <a href="{{ featured.get_absolute_url }}">
+          <a href="{{ featured.get_absolute_url }}" class="suplemento-section__featured-image">
             <img
-              class="sports-section__featured-image"
-              src="{{ featured.photo.get_700w_url }}"
+              srcset="{{ featured.photo.get_700w_url }} 700w, {{ featured.photo.get_1200w_url }} 1200w"
+              sizes="(min-width: 700px) 616px, 100vw"
               width="700"
               height="{{ featured.photo.get_700w_size.1 }}"
               loading="lazy"
@@ -167,24 +186,13 @@
             >
           </a>
         {% endif %}
-        <article class="article">
-          <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
-          <h3 class="article__title">
-            <a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a>
-          </h3>
-          {% if featured.home_lead %}
-            <p class="article__summary">{{ featured.home_lead }}</p>
-          {% elif featured.lead %}
-            <p class="article__summary">{{ featured.lead }}</p>
-          {% endif %}
-        </article>
       </div>
       {% endwith %}
 
       {# 3 noticias menores #}
       {% with secondary=articles|slice:"1:4" %}
       {% if secondary %}
-      <div class="sports-section__secondary-row">
+      <div class="suplemento-section__secondary-row">
         {% for article in secondary %}
         <article class="article">
           <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
