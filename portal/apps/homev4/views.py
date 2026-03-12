@@ -398,31 +398,39 @@ def build_home_data(grid_data, publication=None):
     return result
 
 
-# Section slug to load for SUPLEMENTO when no articles are manually picked.
+# Source to load for SUPLEMENTO when no articles are manually picked.
 # Keys are Python weekday integers: 0=Monday, 1=Tuesday, ..., 6=Sunday.
+# Values are tuples: ("publication", slug) or ("category", slug).
 # Days not listed → SUPLEMENTO stays empty.
-_SUPLEMENTO_SECTION_BY_WEEKDAY = {
-    0: "deporte",   # Monday / Lunes
-    2: "mundo",     # Wednesday / Miércoles
-    3: "economia",  # Thursday / Jueves
-    4: "cultura",   # Friday / Viernes
+_SUPLEMENTO_SOURCE_BY_WEEKDAY = {
+    0: ("publication", "deporte"),   # Monday / Lunes
+    2: ("category", "mundo"),        # Wednesday / Miércoles
+    3: ("publication", "economia"),  # Thursday / Jueves
+    4: ("category", "cultura"),      # Friday / Viernes
 }
 
 
 def _fetch_suplemento_articles(saved_ids):
     """Return SUPLEMENTO articles.
     Priority: saved_ids (manually picked via picker).
-    Fallback: up to 7 articles from the section mapped to today's weekday.
+    Fallback: up to 7 articles from the publication or category mapped to today's weekday.
     """
     if saved_ids:
         by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
-    slug = _SUPLEMENTO_SECTION_BY_WEEKDAY.get(datetime.date.today().weekday())
-    if slug:
+    source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(datetime.date.today().weekday())
+    if source:
+        source_type, slug = source
         try:
-            section = Section.objects.get(slug=slug)
-            return list(section.latest(limit=7))
-        except Section.DoesNotExist:
+            if source_type == "publication":
+                publication = Publication.objects.get(slug=slug)
+                edition = publication.latest_edition()
+                if edition:
+                    return list(edition.top_articles[:7])
+            elif source_type == "category":
+                category = Category.objects.get(slug=slug)
+                return list(category.home.articles_ordered()[:7])
+        except (Publication.DoesNotExist, Category.DoesNotExist, AttributeError):
             pass
     return []
 
