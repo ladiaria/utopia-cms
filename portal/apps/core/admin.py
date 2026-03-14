@@ -459,12 +459,9 @@ class ArticleEditionInline(TabularInline):
     classes = ["collapse"]
 
 
+"""
+# Example of how to override the AdminMartorWidget class to use a custom js (js not provided)
 class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
-    """
-    Overrided to use a custom js, because we found this error in the upstream project:
-    https://github.com/agusmakmun/django-markdown-editor/pull/217
-    """
-
     @property
     def media(self):
         result = super().media
@@ -472,6 +469,7 @@ class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
         js_files[js_files.index('martor/js/martor.bootstrap.min.js')] = "js/martor/utopiacms.martor.bootstrap.js"
         result._js_lists[1] = js_files
         return result
+"""
 
 
 class ArticleAdminModelForm(ModelForm):
@@ -628,7 +626,8 @@ class ArticleAdmin(AdminLockingBase, VersionAdmin):
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
     change_form_template = "core/templates/admin/core/article/change_form.html"
-    formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
+    # change widget class in next line to UtopiaCmsAdminMartorWidget if you need the customized widget class
+    formfield_overrides = {MartorField: {"widget": AdminMartorWidget}}
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
     list_display = (
