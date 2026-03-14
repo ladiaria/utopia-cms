@@ -21,17 +21,22 @@ if (window.jQuery) {
       $("div.ace_content", main_martor).css("height", set_height + 28 + "px");
       window.dispatchEvent(new Event("resize"));
     };
-    // Semantic: button exists in template. Bootstrap: no button, we add one so Ctrl+F can work with native find.
+    // Semantic: button exists in template, no action needed.
+    // Bootstrap: no button, add them to gain the feature expand that doesn't come by default in the bootstrap theme
     if ($(".main-martor .expand-editor").length === 0) {
+      // create containers for the buttons if they don't exist
       $.each($("div[id^='nav-editor-']"), function() {
         if ($("div.charcounter", this).length === 0) {
           $(this).append($('<div class="charcounter"></div>'));
         }
       });
+      // create the buttons
       $(".martor-field").next("textarea").next("div.charcounter").append(
         $("<span>\u21D3</span>").addClass("expand-editor").attr({title: "Expand editor", ariaLabel: "Expand editor"})
-        .css({float: "right", cursor: "pointer"}).on("click", toggleExpand)
+        .css({float: "right", cursor: "pointer"})
       );
+      // attach click event for all buttons in page, even those added by clicking "new formsets"
+      $(document).on("click", ".main-martor .expand-editor", toggleExpand);
     }
     // Ctrl+F / Cmd+F: let browser default (find) run. Capture phase so we run before Ace; stopPropagation so Ace
     // doesn't consume it; we do NOT preventDefault.

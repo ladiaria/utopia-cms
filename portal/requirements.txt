@@ -21,7 +21,7 @@ django-crispy-forms<2.2
 crispy-forms-materialize
 html2text
 markdownify
-martor
+martor>=1.7.16
 mutagen
 django-cors-headers
 django-user-agents
