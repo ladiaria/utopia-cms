@@ -1,14 +1,17 @@
 if (window.jQuery) {
   $(function(){
+    var expand_labels = {collapse: "Collapse to default height", expand: "Expand editor"};
+    var expand_attrs = {
+      collapse: {title: expand_labels.collapse, ariaLabel: expand_labels.collapse},
+      expand: {title: expand_labels.expand, ariaLabel: expand_labels.expand}
+    };
     var toggleExpand = function () {
       expand_btn = $(this);
       if (expand_btn.hasClass("expanded")) {
-        expand_btn.removeClass("expanded");
-        expand_btn.text("\u21D3");
+        expand_btn.text("\u21D3").removeClass("expanded").attr(expand_attrs.expand);
         var expand = false;
       } else {
-        expand_btn.addClass("expanded");
-        expand_btn.text("\u21D1");
+        expand_btn.text("\u21D1").addClass("expanded").attr(expand_attrs.collapse);
         var expand = true;
       }
       var main_martor = expand_btn.closest(".main-martor");
@@ -32,7 +35,7 @@ if (window.jQuery) {
       });
       // create the buttons
       $(".martor-field").next("textarea").next("div.charcounter").append(
-        $("<span>\u21D3</span>").addClass("expand-editor").attr({title: "Expand editor", ariaLabel: "Expand editor"})
+        $("<span>\u21D3</span>").addClass("expand-editor").attr(expand_attrs.expand)
         .css({float: "right", cursor: "pointer"})
       );
       // attach click event for all buttons in page, even those added by clicking "new formsets"
