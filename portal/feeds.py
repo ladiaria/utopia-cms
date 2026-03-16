@@ -137,6 +137,16 @@ class GoogleNewsAIFeed(Feed):
     def items(self):
         return get_current_feeds()
 
+
+class GoogleNewsAIFeedByDate(GoogleNewsAIFeed):
+    """Same feed as GoogleNewsAIFeed but for a fixed queryset (used for bulk XML generation)."""
+
+    def __init__(self, articles):
+        self._articles = articles
+
+    def items(self):
+        return self._articles
+
     def item_title(self, item):
         return cleanhtml(ldmarkup(item.headline))
 
