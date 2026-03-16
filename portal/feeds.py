@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
+from urllib.parse import quote
 from django.utils.feedgenerator import DefaultFeed, Rss201rev2Feed
 from django.contrib.syndication.views import Feed
 from django.shortcuts import get_object_or_404
@@ -137,7 +138,7 @@ class GoogleNewsAIFeed(Feed):
         media_url = ''
         media_title = ''
         if item.photo and item.photo.image:
-            media_url = '%s://%s%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN, item.photo.image.url)
+            media_url = '%s://%s%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN, quote(item.photo.image.url, safe='/:%'))
             media_title = item.photo.title if hasattr(item.photo, 'title') else ''
         return {
             'content_encoded': ldmarkup(item.body),
