@@ -87,15 +87,36 @@ class GoogleNewsAIFeedGenerator(Rss201rev2Feed):
     """Custom RSS feed generator with namespaces required by Google News AI pilot."""
 
     def rss_attributes(self):
-        attrs = super().rss_attributes()
-        attrs['xmlns:content'] = 'http://purl.org/rss/1.0/modules/content/'
-        attrs['xmlns:dcterms'] = 'http://purl.org/dc/terms/'
-        attrs['xmlns:licensed_news'] = 'https://www.google.com/schemas/rss-licensed-news/'
-        attrs['xmlns:media'] = 'http://search.yahoo.com/mrss/'
-        return attrs
+        # Only include namespaces listed in the Google News AI pilot spec
+        return {
+            'xmlns:content': 'http://purl.org/rss/1.0/modules/content/',
+            'xmlns:dcterms': 'http://purl.org/dc/terms/',
+            'xmlns:licensed_news': 'https://www.google.com/schemas/rss-licensed-news/',
+            'xmlns:media': 'http://search.yahoo.com/mrss/',
+            'version': '2.0',
+        }
+
+    def add_root_elements(self, handler):
+        # Override to skip atom:link which uses the disallowed xmlns:atom namespace
+        handler.addQuickElement('title', self.feed['title'])
+        handler.addQuickElement('link', self.feed['link'])
+        handler.addQuickElement('description', self.feed['description'])
+        if self.feed.get('language'):
+            handler.addQuickElement('language', self.feed['language'])
+        if self.feed.get('lastBuildDate'):
+            handler.addQuickElement('lastBuildDate', self.feed['lastBuildDate'].strftime('%a, %d %b %Y %H:%M:%S %z') if hasattr(self.feed['lastBuildDate'], 'strftime') else self.feed['lastBuildDate'])
 
     def add_item_elements(self, handler, item):
-        super().add_item_elements(handler, item)
+        # Call super but skip categories — we handle them below with the required domain attribute
+        categories = item.get('categories', ())
+        item_without_categories = {k: v for k, v in item.items() if k != 'categories'}
+        super().add_item_elements(handler, item_without_categories)
+        for cat in categories:
+            handler.addQuickElement(
+                'category', cat, {'domain': 'http://cv.iptc.org/newscodes/mediatopic'}
+            )
+        if item.get('licensed_news_genre'):
+            handler.addQuickElement('licensed_news:genre', item['licensed_news_genre'])
         if item.get('content_encoded'):
             handler.addQuickElement('content:encoded', item['content_encoded'])
         if item.get('dcterms_creator'):
@@ -140,12 +161,14 @@ class GoogleNewsAIFeed(Feed):
         if item.photo and item.photo.image:
             media_url = '%s://%s%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN, quote(item.photo.image.url, safe='/:%'))
             media_title = item.photo.title if hasattr(item.photo, 'title') else ''
+        genre = 'Opinion' if item.type == 'OP' else None
         return {
             'content_encoded': ldmarkup(item.body),
             'dcterms_creator': creator,
             'dcterms_modified': item.last_modified.isoformat(),
             'media_content_url': media_url,
             'media_title': media_title,
+            'licensed_news_genre': genre,
         }
 
 
