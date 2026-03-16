@@ -23,7 +23,7 @@ def remove_google_extended_rule(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0060_perplexityapisettings_result_instructions"),
+        ("core", "0061_alter_articleviews_index_together_and_more"),
         ("robots", "__first__"),
         ("sites", "0002_alter_domain_unique"),
     ]
