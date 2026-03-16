@@ -379,8 +379,10 @@ else:
         LatestEditions,
         LatestSupplements,
         LatestArticles,
-        LatestArticles72hs
+        LatestArticles72hs,
+        GoogleNewsAIFeed
     )
+
     urlpatterns += [
         path('feeds/articulos/', LatestArticles(), name='ultimos-articulos-rss'),
         path('feeds/ediciones/', LatestEditions()),
@@ -388,6 +390,7 @@ else:
         re_path(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
         re_path(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
         path('feeds/suplementos/', LatestSupplements()),
+        path('feeds/google-news-ai/', GoogleNewsAIFeed(), name='google-news-ai-rss'),
     ]
 
 if 'debug_toolbar' in settings.INSTALLED_APPS:
