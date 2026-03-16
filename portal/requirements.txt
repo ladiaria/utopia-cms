@@ -3,8 +3,7 @@ Pillow
 bleach
 bleach-whitelist
 django-admin-shortcuts
-# TODO: actstream should be updated and unpinned
-django-activity-stream==1.4.2
+django-activity-stream
 django-bleach==3.0.1
 freezegun
 inflect

@@ -1447,9 +1447,8 @@ def lista_lectura_leer_despues(request):
 @never_cache
 @login_required
 def lista_lectura_favoritos(request):
-    user = request.user
-    favoritos = [favorito.target for favorito in Favorite.objects.for_user(user)]
-    favoritos_count = len(favoritos)
+    favoritos = Article.objects.filter(favorites__user=request.user).distinct()
+    favoritos_count = favoritos.count()
     if is_xhr(request):
         return HttpResponse(favoritos_count)
 
