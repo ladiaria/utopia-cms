@@ -364,13 +364,14 @@ try:
 except (ProgrammingError, Site.DoesNotExist):
     pass
 else:
-    from feeds import ArticlesByJournalist, LatestArticlesByCategory, LatestEditions, LatestSupplements, LatestArticles
+    from feeds import ArticlesByJournalist, LatestArticlesByCategory, LatestEditions, LatestSupplements, LatestArticles, GoogleNewsAIFeed
     urlpatterns += [
         path('feeds/articulos/', LatestArticles(), name='ultimos-articulos-rss'),
         path('feeds/ediciones/', LatestEditions()),
         re_path(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
         re_path(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
         path('feeds/suplementos/', LatestSupplements()),
+        path('feeds/google-news-ai/', GoogleNewsAIFeed(), name='google-news-ai-rss'),
     ]
 
 if 'debug_toolbar' in settings.INSTALLED_APPS:
