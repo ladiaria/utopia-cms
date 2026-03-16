@@ -1211,7 +1211,7 @@ class ArticleBase(Model, CT):
     keywords = CharField(
         'titulín', max_length=45, blank=True, null=True, help_text='Se muestra encima del título en portada.'
     )
-    slug = SlugField('slug', max_length=200)
+    slug = SlugField('slug', max_length=200, db_index=True)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
         'descripción', blank=True, null=True, help_text='Se muestra en la página del artículo debajo del título.'
@@ -2235,12 +2235,12 @@ class ArticleViewedBy(Model):
 
 class ArticleViews(Model):
     article = ForeignKey(Article, on_delete=CASCADE)
-    day = DateField(db_index=True)
+    day = DateField()
     views = PositiveIntegerField(default=0)
 
     class Meta:
         unique_together = ('article', 'day')
-        index_together = [('day', 'views')]
+        index_together = [('day', "article", 'views')]
 
 
 class CategoryHomeArticle(Model):
