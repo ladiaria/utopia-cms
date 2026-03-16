@@ -21,15 +21,19 @@ def mas_leidos(days=1, cover=False, limit=10):
     desde, more_exclude_kwargs = now().date() - timedelta(days), {}
     if cover:
         more_exclude_kwargs['article__sections__slug__in'] = getattr(settings, 'CORE_SATIRICAL_SECTIONS', ())
-    return [
-        Article.objects.get(id=av['article']) for av in ArticleViews.objects.filter(
+    av_list = list(
+        ArticleViews.objects.filter(
             article__is_published=True, day__gt=desde
-        ).exclude(
-            article__slug=''
-        ).exclude(
-            **more_exclude_kwargs
-        ).values('article').annotate(total_views=Sum('views')).order_by('-total_views')[:limit]
-    ]
+        )
+        .exclude(article__slug='')
+        .exclude(**more_exclude_kwargs)
+        .values('article')
+        .annotate(total_views=Sum('views'))
+        .order_by('-total_views')[:limit]
+    )
+    ids = [av['article'] for av in av_list]
+    articles_by_id = {a.id: a for a in Article.objects.filter(id__in=ids)}
+    return [articles_by_id[aid] for aid in ids]
 
 
 def mas_leidos_daily(cover=False, limit=None):
