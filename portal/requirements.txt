@@ -3,7 +3,7 @@ Pillow
 bleach
 bleach-whitelist
 django-admin-shortcuts
-django-activity-stream==1.4.2
+django-activity-stream
 django-bleach==3.0.1
 freezegun
 inflect
@@ -21,7 +21,7 @@ django-crispy-forms<2.2
 crispy-forms-materialize
 html2text
 markdownify
-martor
+martor>=1.7.16
 mutagen
 django-cors-headers
 django-user-agents

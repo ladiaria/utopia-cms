@@ -25,6 +25,7 @@ from django.urls.exceptions import NoReverseMatch
 from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.sitemaps import ping_google
 from django.db import IntegrityError, ProgrammingError, connection
 from django.db.models import (
@@ -1210,7 +1211,7 @@ class ArticleBase(Model, CT):
     keywords = CharField(
         'titulín', max_length=45, blank=True, null=True, help_text='Se muestra encima del título en portada.'
     )
-    slug = SlugField('slug', max_length=200)
+    slug = SlugField('slug', max_length=200, db_index=True)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
         'descripción', blank=True, null=True, help_text='Se muestra en la página del artículo debajo del título.'
@@ -1712,6 +1713,12 @@ class Article(ArticleBase):
         editable=False,
         through='ArticleViewedBy',
         related_name='viewed_articles_%(app_label)s',
+    )
+    favorites = GenericRelation(
+        'favit.Favorite',
+        content_type_field='target_content_type',
+        object_id_field='target_object_id',
+        related_query_name='favorited_articles',
     )
     additional_access = ManyToManyField(
         Publication,
@@ -2228,12 +2235,12 @@ class ArticleViewedBy(Model):
 
 class ArticleViews(Model):
     article = ForeignKey(Article, on_delete=CASCADE)
-    day = DateField(db_index=True)
+    day = DateField()
     views = PositiveIntegerField(default=0)
 
     class Meta:
         unique_together = ('article', 'day')
-        index_together = [('day', 'views')]
+        index_together = [('day', "article", 'views')]
 
 
 class CategoryHomeArticle(Model):
