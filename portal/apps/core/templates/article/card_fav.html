@@ -1,46 +1,46 @@
 {% load bleach_tags core_tags ldml %}
 
-<article class="ld-grid-simple__area u-mb-25">
-  <div class="ld-card ld-card--reg">
-    {% render_toolbar_for article %}
-    {% if article.photo %}
-      <a href="{{ article.get_absolute_url }}">
-        <img class="ld-card__img" src="{{ article.photo.get_700w_url }}" loading="lazy"
-             width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}
-             title="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
-      </a>
-    {% endif %}
-    <div class="ld-card__body">
-      <div class="ld-card__section">
-        {% autoescape off %}{% publication_section article default_pub %}{% endautoescape %}
-        {% include 'article/article_card_lock_tooltip.html' %}
-      </div>
-      <h3 class="ld-card__title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
-        <a href="{{article.get_absolute_url}}">{{ article.headline|ldmarkup|bleach }}</a>
-      </h3>
-      {% if article.home_lead %}
-        <div class="ld-card__intro">{{ article.home_lead|ldmarkup|bleach }}</div>
+{% if article %}
+  <article class="ld-grid-simple__area u-mb-25">
+    <div class="ld-card ld-card--reg">
+      {% render_toolbar_for article %}
+      {% if article.photo %}
+        <a href="{{ article.get_absolute_url }}">
+          <img class="ld-card__img" src="{{ article.photo.get_700w_url }}" loading="lazy"
+              width="700"{% if article.photo_image_file_exists %} height="{{ article.photo.get_700w_size.1 }}"{% endif %}
+              title="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
+        </a>
       {% endif %}
-      <div class="ld-card__byline-wrap">
-        <div class="ld-card__byline">
-          {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo_author %}
-            <div class="ld-card__photoauthor">{{ article.photo_type }}: {{ article.photo_author }}</div>
-          {% endif %}
-          {% with authors=article.get_authors %}
-            {% if authors %}
-              <div class="ld-card__author">
-                {% for author in authors %}
-                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-              </div>
+      <div class="ld-card__body">
+        <div class="ld-card__section">
+          {% autoescape off %}{% publication_section article default_pub %}{% endautoescape %}
+          {% include 'article/article_card_lock_tooltip.html' %}
+        </div>
+        <h3 class="ld-card__title {% if not article.home_lead %}ld-card__title--mb{% endif %}">
+          <a href="{{article.get_absolute_url}}">{{ article.headline|ldmarkup|bleach }}</a>
+        </h3>
+        {% if article.home_lead %}
+          <div class="ld-card__intro">{{ article.home_lead|ldmarkup|bleach }}</div>
+        {% endif %}
+        <div class="ld-card__byline-wrap">
+          <div class="ld-card__byline">
+            {% if CORE_ARTICLE_ENABLE_PHOTO_BYLINE and article.photo_author %}
+              <div class="ld-card__photoauthor">{{ article.photo_type }}: {{ article.photo_author }}</div>
             {% endif %}
-            <div class="ld-card__date">{% if authors %} - {% endif %}{{ article.date_published|date:"j \d\e F \d\e o"|lower }}</div>
-          {% endwith %}
-          {% with a=article %}
-            {% include 'article/article_card_read_later.html' %}
-          {% endwith %}
+            {% with authors=article.get_authors %}
+              {% if authors %}
+                <div class="ld-card__author">
+                  {% for author in authors %}
+                    <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+              <div class="ld-card__date">{% if authors %} - {% endif %}{{ article.date_published|date:"j \d\e F \d\e o"|lower }}</div>
+            {% endwith %}
+            {% include 'article/article_card_read_later.html' with a=article %}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</article>
+  </article>
+{% endif %}

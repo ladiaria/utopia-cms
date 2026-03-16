@@ -25,6 +25,7 @@ from django.urls.exceptions import NoReverseMatch
 from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.sitemaps import ping_google
 from django.db import IntegrityError, ProgrammingError, connection
 from django.db.models import (
@@ -1713,6 +1714,12 @@ class Article(ArticleBase):
         editable=False,
         through='ArticleViewedBy',
         related_name='viewed_articles_%(app_label)s',
+    )
+    favorites = GenericRelation(
+        'favit.Favorite',
+        content_type_field='target_content_type',
+        object_id_field='target_object_id',
+        related_query_name='favorited_articles',
     )
     additional_access = ManyToManyField(
         Publication,
