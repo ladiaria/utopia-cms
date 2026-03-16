@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
 from urllib.parse import quote
-from django.utils.feedgenerator import DefaultFeed, Rss201rev2Feed
+from django.utils.feedgenerator import DefaultFeed, Rss201rev2Feed, rfc2822_date
 from django.contrib.syndication.views import Feed
 from django.shortcuts import get_object_or_404
 
@@ -103,14 +103,12 @@ class GoogleNewsAIFeedGenerator(Rss201rev2Feed):
         handler.addQuickElement('description', self.feed['description'])
         if self.feed.get('language'):
             handler.addQuickElement('language', self.feed['language'])
-        if self.feed.get('lastBuildDate'):
-            handler.addQuickElement('lastBuildDate', self.feed['lastBuildDate'].strftime('%a, %d %b %Y %H:%M:%S %z') if hasattr(self.feed['lastBuildDate'], 'strftime') else self.feed['lastBuildDate'])
+        handler.addQuickElement('lastBuildDate', rfc2822_date(self.latest_post_date()))
 
     def add_item_elements(self, handler, item):
         # Call super but skip categories — we handle them below with the required domain attribute
         categories = item.get('categories', ())
-        item_without_categories = {k: v for k, v in item.items() if k != 'categories'}
-        super().add_item_elements(handler, item_without_categories)
+        super().add_item_elements(handler, {**item, 'categories': []})
         for cat in categories:
             handler.addQuickElement(
                 'category', cat, {'domain': 'http://cv.iptc.org/newscodes/mediatopic'}
