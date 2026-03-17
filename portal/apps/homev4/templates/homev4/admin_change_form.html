@@ -57,6 +57,7 @@
                             <span class="drag-handle">⠿</span>
                             <span class="article-num">{{ forloop.counter }}</span>
                             <span class="article-title">{{ article.headline }}</span>
+                            <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>
                             <button type="button" class="picker-remove" title="Quitar">×</button>
                         </div>
                         {% empty %}
@@ -91,6 +92,7 @@
                             <span class="drag-handle">⠿</span>
                             <span class="article-num">{{ forloop.counter }}</span>
                             <span class="article-title">{{ article.headline }}</span>
+                            <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>
                             <button type="button" class="picker-remove" title="Quitar">×</button>
                         </div>
                         {% empty %}
@@ -125,6 +127,7 @@
                             <span class="drag-handle">⠿</span>
                             <span class="article-num">{{ forloop.counter }}</span>
                             <span class="article-title">{{ article.headline }}</span>
+                            <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>
                             <button type="button" class="picker-remove" title="Quitar">×</button>
                         </div>
                         {% empty %}
@@ -161,15 +164,24 @@
                                 </label>
                                 {% if section.row > 1 %}<span class="row-badge">fila {{ section.row }}</span>{% endif %}
                             </div>
-                            <div class="section-articles section-sortable">
+                            <div class="section-articles section-sortable" id="section-articles-{{ section.slug }}">
                                 {% for article in section.preview_articles %}
                                 <div class="section-article-row" draggable="true" data-article-id="{{ article.id }}">
                                     <span class="drag-handle small-handle">⠿</span>
                                     <span class="section-article-title">{{ article.headline }}</span>
+                                    <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>
+                                    <button type="button" class="picker-remove" title="Quitar">×</button>
                                 </div>
                                 {% empty %}
                                 <div class="empty-hint">Sin artículos recientes</div>
                                 {% endfor %}
+                            </div>
+                            <div class="article-picker"
+                                 data-target="section-articles-{{ section.slug }}"
+                                 data-row-class="section-article-row"
+                                 data-item-selector=".section-article-row[data-article-id]">
+                                <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                                <div class="picker-results"></div>
                             </div>
                         </div>
                         {% empty %}
@@ -212,6 +224,7 @@
                                          data-article-id="{{ title.id }}">
                                         {% if comp.sortable_articles %}<span class="drag-handle small-handle">⠿</span>{% endif %}
                                         <span class="comp-article-title">{{ title.headline }}</span>
+                                        <a class="article-edit-link" href="/admin/core/article/{{ title.id }}/change/" target="_blank" title="Editar artículo">✎</a>
                                         {% if comp.has_picker %}<button type="button" class="picker-remove" title="Quitar">×</button>{% endif %}
                                     </div>
                                     {% endfor %}

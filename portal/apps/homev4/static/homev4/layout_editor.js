@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function initRemoveButton(btn, row) {
         btn.addEventListener("click", function (e) {
             e.stopPropagation();
-            var headline = row.querySelector(".comp-article-title, .article-title");
+            var headline = row.querySelector(".comp-article-title, .article-title, .section-article-title");
             log("picker", "removed article", {
                 id: row.dataset.articleId,
                 headline: headline ? headline.textContent.trim() : "?",
@@ -197,8 +197,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var title = document.createElement("span");
         // Use the title class that matches the row class convention
-        title.className = rowClass === "article-row" ? "article-title" : "comp-article-title";
+        var titleClassMap = { "article-row": "article-title", "section-article-row": "section-article-title" };
+        title.className = titleClassMap[rowClass] || "comp-article-title";
         title.textContent = article.headline;
+
+        var editLink = document.createElement("a");
+        editLink.className = "article-edit-link";
+        editLink.href = "/admin/core/article/" + article.id + "/change/";
+        editLink.target = "_blank";
+        editLink.title = "Editar artículo";
+        editLink.textContent = "✎";
 
         var removeBtn = document.createElement("button");
         removeBtn.type = "button";
@@ -209,6 +217,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         row.appendChild(handle);
         row.appendChild(title);
+        row.appendChild(editLink);
         row.appendChild(removeBtn);
         container.appendChild(row);
 
