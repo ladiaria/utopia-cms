@@ -88,6 +88,8 @@ Priority is given to the "area newsletter" object that may exist with valid vali
 
 The "most read" section ranks articles by view count over configurable periods (e.g. today, last 7 days, last 30 days). The ranking is computed from the **ArticleViews** model, which stores per-article, per-day view counts in the relational database.
 
+By default, both the tab contents (daily/weekly/monthly) and the snippet used on the home page are cached with a TTL in seconds equal to `min(5 * home_cache, 900)`, where `home_cache` is the home page cache max-age (configurable via settings in `HOMEV3_INDEX_CACHE_MAXAGE` variable; default `120s`).
+
 View events are recorded in MongoDB first and then synced into the relational DB:
 
 - Both anonymous and logged-in users increment the per-article counter in Mongo `core_articlevisits` (`$inc` by 1 on each view). This is the source that feeds the "most read" ranking.
