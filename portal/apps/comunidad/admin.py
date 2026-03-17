@@ -114,7 +114,7 @@ class RegistroAdmin(ModelAdmin):
 
 
 class BeneficioAdmin(ModelAdmin):
-    list_display = ('name', 'circuit', 'slug', 'limit', 'quota', 'max_uses')
+    list_display = ('name', 'circuit', 'slug', 'limit', 'quota', 'max_uses', 'whatsapp_template_name')
     list_filter = ('circuit',)
 
 

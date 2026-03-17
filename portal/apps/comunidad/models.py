@@ -101,6 +101,9 @@ class Beneficio(models.Model):
     quota = models.PositiveIntegerField('cupo por suscriptor', default=1)
     slug = models.SlugField(unique=True, null=True, blank=True)
     max_uses = models.PositiveIntegerField('usos máximos', default=1)
+    whatsapp_template_name = models.CharField(
+        'plantilla de WhatsApp', max_length=255, null=True, blank=True,
+    )
 
     def __str__(self):
         return self.name
