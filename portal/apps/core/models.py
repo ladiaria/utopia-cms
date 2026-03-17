@@ -96,6 +96,7 @@ from .utils import (
 )
 from solo.models import SingletonModel
 
+
 logger = logging.getLogger(__name__)
 
 
