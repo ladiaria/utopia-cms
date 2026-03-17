@@ -175,6 +175,7 @@
 
 #homev4-editor .block-area {
     cursor: default;
+    overflow: visible;
 }
 
 #homev4-editor .section-articles {
@@ -378,9 +379,20 @@
     pointer-events: none;
 }
 
+/* ── Article edit link ───────────────────────────────────── */
+#homev4-editor .article-edit-link {
+    margin-left: auto;
+    color: #999;
+    font-size: 14px;
+    text-decoration: none;
+    flex-shrink: 0;
+    line-height: 1;
+}
+#homev4-editor .article-edit-link:hover { color: #417690; }
+
 /* ── Article remove button (picker rows only) ────────────── */
 #homev4-editor .picker-remove {
-    margin-left: auto;
+    margin-left: 4px;
     background: none;
     border: none;
     color: #ccc;
