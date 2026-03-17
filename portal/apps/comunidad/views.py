@@ -190,21 +190,25 @@ class VerifyQRView(TemplateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        if self.registro.used:
-            return self.render_used_registro(request)
+        if self.registro.is_fully_used():
+            return self.render_fully_used_registro(request)
         self.registro.use_registro()
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(
-            {"message": f'Registro para {self.registro.benefit.name} verificado con éxito'}
-        )
+        remaining = self.registro.remaining_uses()
+        msg = f'Registro para {self.registro.benefit.name} verificado con éxito'
+        if remaining > 0:
+            msg += f' (usos restantes: {remaining})'
+        context.update({"message": msg})
         return context
 
-    def render_used_registro(self, request):
+    def render_fully_used_registro(self, request):
+        last_use = self.registro.uses.last()
         message = (
-            f"QR utilizado el día {self.registro.used.strftime('%d/%m/%Y a las %H:%M:%S')}"
+            f"QR ya utilizado {self.registro.uses.count()} vez/veces."
+            f" Último uso: {last_use.used_at.strftime('%d/%m/%Y a las %H:%M:%S')}"
             f" para: {self.registro.benefit.name}"
         )
         context = {'message': message}
@@ -251,9 +255,20 @@ class ScanQRView(FormView):
         original_id = hashids.decode(code)
         try:
             registro = Registro.objects.get(id=original_id[0])
-            registro.use_registro()
-            message = f'QR confirmado con éxito'
-            success = True
+            if registro.is_fully_used():
+                last_use = registro.uses.last()
+                message = (
+                    f'QR ya utilizado {registro.uses.count()} vez/veces.'
+                    f' Último uso: {last_use.used_at.strftime("%d/%m/%Y %H:%M")}'
+                )
+                success = False
+            else:
+                registro.use_registro()
+                remaining = registro.remaining_uses()
+                message = 'QR confirmado con éxito'
+                if remaining > 0:
+                    message += f' (usos restantes: {remaining})'
+                success = True
         except Registro.DoesNotExist:
             message = 'Registro no encontrado'
             success = False
@@ -282,14 +297,19 @@ def check_qr_code(request):
         return JsonResponse({"error": "Código QR inválido"}, status=400)
     try:
         registro = Registro.objects.get(id=original_id[0])
-        if registro.used:
-            # QR utilizado a las 13:40
-            # Cinemateca - sábado 12 de octubre - 14:00
-            msg = f"QR utilizado el día {registro.used.strftime('%d/%m/%Y a las %H:%M:%S')}"
+        if registro.is_fully_used():
+            last_use = registro.uses.last()
+            msg = (
+                f"QR ya utilizado {registro.uses.count()} vez/veces."
+                f" Último uso: {last_use.used_at.strftime('%d/%m/%Y a las %H:%M:%S')}"
+            )
             return JsonResponse(
                 {"error": msg, "benefit": registro.benefit.name},
                 status=400,
             )
-        return JsonResponse({"name": registro.benefit.name})
+        return JsonResponse({
+            "name": registro.benefit.name,
+            "remaining_uses": registro.remaining_uses(),
+        })
     except Registro.DoesNotExist:
         return JsonResponse({"error": "Código QR no encontrado"}, status=404)
