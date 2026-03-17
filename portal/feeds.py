@@ -139,24 +139,6 @@ class GoogleNewsAIFeed(Feed):
     def items(self):
         return get_current_feeds()
 
-
-class GoogleNewsAIFeedByDate(GoogleNewsAIFeed):
-    """Same feed as GoogleNewsAIFeed but for a fixed queryset (used for bulk XML generation)."""
-
-    def __init__(self, articles, include_images=True):
-        self._articles = articles
-        self._include_images = include_images
-
-    def items(self):
-        return self._articles
-
-    def item_extra_kwargs(self, item):
-        kwargs = super().item_extra_kwargs(item)
-        if not self._include_images:
-            kwargs['media_content_url'] = ''
-            kwargs['media_title'] = ''
-        return kwargs
-
     def item_title(self, item):
         return cleanhtml(ldmarkup(item.headline))
 
@@ -190,6 +172,24 @@ class GoogleNewsAIFeedByDate(GoogleNewsAIFeed):
             'media_title': media_title,
             'licensed_news_genre': genre,
         }
+
+
+class GoogleNewsAIFeedByDate(GoogleNewsAIFeed):
+    """Same feed as GoogleNewsAIFeed but for a fixed queryset (used for bulk XML generation)."""
+
+    def __init__(self, articles, include_images=True):
+        self._articles = articles
+        self._include_images = include_images
+
+    def items(self):
+        return self._articles
+
+    def item_extra_kwargs(self, item):
+        kwargs = super().item_extra_kwargs(item)
+        if not self._include_images:
+            kwargs['media_content_url'] = ''
+            kwargs['media_title'] = ''
+        return kwargs
 
 
 site_name = get_site_name()
