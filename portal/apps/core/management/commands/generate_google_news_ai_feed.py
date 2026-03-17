@@ -66,7 +66,7 @@ class Command(BaseCommand):
                 current += timedelta(days=1)
                 continue
 
-            feed_view = GoogleNewsAIFeedByDate(articles)
+            feed_view = GoogleNewsAIFeedByDate(articles, include_images=False)
             feed_obj = feed_view.get_feed(None, request)
 
             filename = f'feed-{current}.xml'

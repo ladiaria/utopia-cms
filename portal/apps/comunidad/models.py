@@ -100,6 +100,7 @@ class Beneficio(models.Model):
     limit = models.PositiveIntegerField('cupo general', null=True, blank=True)
     quota = models.PositiveIntegerField('cupo por suscriptor', default=1)
     slug = models.SlugField(unique=True, null=True, blank=True)
+    max_uses = models.PositiveIntegerField('usos máximos', default=1)
 
     def __str__(self):
         return self.name
@@ -150,14 +151,19 @@ class Registro(models.Model):
     subscriber = models.ForeignKey(
         Subscriber, on_delete=models.CASCADE, verbose_name='suscriptor', null=True, blank=True
     )
+    name = models.CharField(verbose_name='nombre', max_length=255, null=True, blank=True)
     email = models.EmailField(verbose_name='email', null=True, blank=True)
+    phone = models.CharField(verbose_name='celular', max_length=48, null=True, blank=True)
     benefit = models.ForeignKey(Beneficio, on_delete=models.CASCADE, verbose_name='beneficio')
+    dependents = models.PositiveIntegerField(verbose_name='menores a cargo', null=True, blank=True)
+    notes = models.TextField(verbose_name='notas', null=True, blank=True)
     issued = models.DateTimeField(auto_now_add=True, verbose_name='creado')
     used = models.DateTimeField(null=True, blank=True, verbose_name='utilizado')
 
     class Meta:
         permissions = [
             ('verify_registro', 'Can verify registro'),
+            ('export_registro', 'Can export registro data'),
         ]
 
     def subscriber_email(self):
@@ -199,8 +205,17 @@ class Registro(models.Model):
                 raise ValidationError(f"The benefit has reached its overall limit ({self.benefit.limit}).")
 
     def use_registro(self):
-        self.used = timezone.now()
-        self.save(skip_clean=True)
+        use = RegistroUse.objects.create(registro=self)
+        if not self.used:
+            self.used = use.used_at
+            self.save(skip_clean=True)
+        return use
+
+    def remaining_uses(self):
+        return max(0, self.benefit.max_uses - self.uses.count())
+
+    def is_fully_used(self):
+        return self.uses.count() >= self.benefit.max_uses
 
     def save(self, *args, **kwargs):
         skip_clean = kwargs.pop('skip_clean', False)
@@ -248,6 +263,19 @@ class Registro(models.Model):
             return f"{self.subscriber.user.username} - {self.benefit.name}"
         else:
             return f"{self.email} - {self.benefit.name}"
+
+
+class RegistroUse(models.Model):
+    registro = models.ForeignKey(Registro, on_delete=models.CASCADE, verbose_name='registro', related_name='uses')
+    used_at = models.DateTimeField(auto_now_add=True, verbose_name='fecha de uso')
+
+    class Meta:
+        ordering = ['used_at']
+        verbose_name = 'uso de registro'
+        verbose_name_plural = 'usos de registro'
+
+    def __str__(self):
+        return f"{self.registro} - {self.used_at.strftime('%d/%m/%Y %H:%M')}"
 
 
 class Url(models.Model):
