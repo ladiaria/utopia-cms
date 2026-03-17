@@ -78,11 +78,11 @@ def export_registros_csv(modeladmin, request, queryset):
             r.benefit.name,
             r.dependents if r.dependents is not None else '',
             r.notes or '',
-            r.issued,
+            r.issued.strftime('%d/%m/%Y %H:%M:%S') if r.issued else '',
         ]
         for i in range(max_use_cols):
             if i < len(uses):
-                row.append(uses[i].used_at.strftime('%d/%m/%Y %H:%M'))
+                row.append(uses[i].used_at.strftime('%d/%m/%Y %H:%M:%S'))
             else:
                 row.append('')
         row.append(len(uses))

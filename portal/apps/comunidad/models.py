@@ -100,7 +100,10 @@ class Beneficio(models.Model):
     limit = models.PositiveIntegerField('cupo general', null=True, blank=True)
     quota = models.PositiveIntegerField('cupo por suscriptor', default=1)
     slug = models.SlugField(unique=True, null=True, blank=True)
-    max_uses = models.PositiveIntegerField('usos máximos', default=1)
+    max_uses = models.PositiveIntegerField(
+        'días de uso', default=1,
+        help_text='Cantidad de días diferentes en los que se puede utilizar el registro. Un solo uso por día.',
+    )
     whatsapp_template_name = models.CharField(
         'plantilla de WhatsApp', max_length=255, null=True, blank=True,
     )
@@ -213,6 +216,11 @@ class Registro(models.Model):
             self.used = use.used_at
             self.save(skip_clean=True)
         return use
+
+    def used_today(self):
+        from django.utils import timezone
+        today = timezone.localdate()
+        return self.uses.filter(used_at__date=today).exists()
 
     def remaining_uses(self):
         return max(0, self.benefit.max_uses - self.uses.count())
