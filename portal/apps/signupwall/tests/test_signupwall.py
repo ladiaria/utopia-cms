@@ -2,7 +2,7 @@
 from html2text import html2text
 
 from django.conf import settings
-from django.test import TestCase, tag
+from django.test import tag
 from django.test.client import Client
 from django.contrib.auth.models import User
 from django.utils.lorem_ipsum import paragraph
@@ -10,11 +10,12 @@ from django.utils.lorem_ipsum import paragraph
 from libs.scripts.pwclear import pwclear
 from core.models import Publication, Article
 from core.factories import UserFactory
+from core.tests import PreCopyImage
 
 from . import label_content_not_available, label_to_continue_reading, label_exclusive, label_exclusive4u
 
 
-class SignupwallTestCase(TestCase):
+class SignupwallTestCase(PreCopyImage):
     fixtures = ['test']
     http_host_header_param = {'HTTP_HOST': settings.SITE_DOMAIN}
 

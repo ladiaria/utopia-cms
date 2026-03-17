@@ -12,6 +12,7 @@ from pymailcheck import split_email
 from tagging.models import Tag, TaggedItem
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db import IntegrityError, ProgrammingError
 from django.db.models.query import QuerySet
 from django.http import HttpResponseBadRequest
@@ -23,7 +24,7 @@ from core.models import Article
 def get_site_name():
     try:
         return Site.objects.get_current().name
-    except ProgrammingError:
+    except (ProgrammingError, ImproperlyConfigured):
         return settings.SITE_DOMAIN
 
 

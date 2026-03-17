@@ -82,19 +82,6 @@ CRM_API_BASE_URI = 'http://localhost:8000/api/'
 # Set to True to use Google One Tap and forward login_hint, or False to use the default Google OAuth2 backend.
 ENABLE_GOOGLE_ONE_TAP = False
 
-# Add GIGAN to subscription types
-THEDAILY_SUBSCRIPTION_TYPE_CHOICES = (
-    ('DDIGM', 'Suscripción digital'),
-    ('DDIGMFS', 'Suscripción digital + Fin de semana'),
-    ('PAPYDIM', 'Suscripción papel'),
-    ('LDFS', 'la diaria fin de semana'),
-    ('PAPYLAS', 'la diaria lunes a sábados'),
-    ('LENM', 'Revista Lento'),
-    ('LEMONDE', 'Le Monde diplomatique'),
-    ('GIGAN', 'Gigantes'),  # Children's magazine
-)
-
-
 # SMS Registration Settings
 THEDAILY_SMS_MAX_SEND_ATTEMPTS = 5          # Maximum SMS send attempts per email/phone
 THEDAILY_SMS_MAX_VERIFY_ATTEMPTS = 5        # Maximum code verification attempts per code
@@ -125,5 +112,127 @@ SMS_CRM_COUNTRY_CODES = {
 # Twilio Configuration (for international SMS when smart routing is enabled)
 # Get these credentials from: https://console.twilio.com/
 TWILIO_ACCOUNT_SID = ''        # Your Twilio Account SID (e.g., 'ACxxxxx...')
-TWILIO_AUTH_TOKEN = ''           # Your Twilio Auth Token (keep secret!)
-TWILIO_FROM_NUMBER = ''                              # Your Twilio phone number (e.g., '+1234567890')
+TWILIO_AUTH_TOKEN = ''         # Your Twilio Auth Token (keep secret!)
+TWILIO_FROM_NUMBER = ''        # Your Twilio phone number (e.g., '+1234567890')
+
+# CORS Configuration (django-cors-headers)
+# Configure Cross-Origin Resource Sharing to allow some cool dev tools you're using to access resources on this server.
+# IMPORTANT: Only add trusted domains to prevent unauthorized access.
+#
+# For example, for development in localhost:
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",      # Next.js development server
+#     "http://127.0.0.1:3000",      # Alternative localhost
+# ]
+
+# Allow credentials (cookies, authorization headers) to be sent in CORS requests.
+# Required for HttpOnly cookie-based refresh tokens.
+# CORS_ALLOW_CREDENTIALS = True
+
+# Cross-Domain Redirects Configuration
+# Allow redirects to specific domains after login/logout (for SSO)
+# This is required for:
+# 1. Google OAuth login redirects to external domains
+# 2. Login/logout with ?next=https://external-domain parameter
+#
+# Security: Only add trusted domains you control, examples:
+# ALLOWED_REDIRECT_HOSTS = [
+#     'crm.yoogle.com',      # utopia-CRM sibling paired with this utopia-cms
+#     'comments.yoogle.com', # Coral talk site used by articles paired with this utopia-cms
+# ]
+
+# =============================================================================
+# Sentry Error Tracking Configuration
+# =============================================================================
+# Sentry captures and reports errors/exceptions to help with debugging and monitoring.
+# Get your DSN from: https://sentry.io/settings/projects/
+#
+# Enable/disable Sentry error tracking
+# SENTRY_ENABLED = True  # Set to False to disable Sentry completely
+#
+# Sentry DSN (Data Source Name) - KEEP THIS SECRET!
+# Get this from your Sentry project settings: https://sentry.io/settings/[your-org]/projects/[your-project]/keys/
+# SENTRY_DSN = "https://YOUR_KEY@YOUR_SENTRY_INSTANCE.ingest.sentry.io/YOUR_PROJECT_ID"
+#
+# Environment name (for separating errors in Sentry dashboard)
+# Auto-detects based on DEBUG and SITE_DOMAIN:
+#   - DEBUG=True → "development"
+#   - "piques.uy" in domain → "piques" (staging/testing environment)
+#   - Otherwise → "production"
+#
+# You can override this by setting:
+# SENTRY_ENVIRONMENT = "staging"  # or "development", "production", etc.
+#
+# Example configuration (uncomment and fill in your DSN):
+# if DEBUG:
+#     SENTRY_ENVIRONMENT = "development"
+# elif "piques.uy" in SITE_DOMAIN:  # or your testing domain
+#     SENTRY_ENVIRONMENT = "piques"
+# else:
+#     SENTRY_ENVIRONMENT = "production"
+#
+# if SENTRY_ENABLED and SENTRY_DSN:
+#     import sentry_sdk
+#     from sentry_sdk.integrations.django import DjangoIntegration
+#     import os
+#
+#     def before_send(event, hint):
+#         """Hook to filter/modify events before sending to Sentry."""
+#         # Filter out events from bots/crawlers
+#         request = event.get('request', {})
+#         user_agent = request.get('headers', {}).get('User-Agent', '')
+#         bot_patterns = ['bot', 'crawler', 'spider', 'scraper', 'curl', 'wget']
+#         if any(pattern in user_agent.lower() for pattern in bot_patterns):
+#             return None  # Don't send to Sentry
+#
+#         # Remove sensitive data from request body/headers
+#         if 'request' in event and 'data' in event['request']:
+#             sensitive_keys = ['password', 'token', 'secret', 'api_key', 'credit_card']
+#             for key in sensitive_keys:
+#                 if key in event['request']['data']:
+#                     event['request']['data'][key] = '[Filtered]'
+#         return event
+#
+#     sentry_sdk.init(
+#         dsn=SENTRY_DSN,
+#         integrations=[DjangoIntegration()],
+#
+#         # Hook to filter/modify events before sending
+#         before_send=before_send,
+#
+#         # Environment (dev/piques/production) for filtering errors in Sentry dashboard
+#         environment=SENTRY_ENVIRONMENT,
+#
+#         # Release tracking: Links errors to specific git commits for easier debugging.
+#         # To enable this feature, set GIT_COMMIT environment variable before starting Django:
+#         #   export GIT_COMMIT=$(git rev-parse --short HEAD)
+#         # Without it, all errors will show release="utopia-cms@unknown"
+#         # release=f"utopia-cms@{os.getenv('GIT_COMMIT', 'unknown')}",
+#
+#         # Performance monitoring: 0.0 = disabled (Phase 1), 1.0 = track all requests
+#         traces_sample_rate=0.0,
+#
+#         # Send user context automatically: IP address, user agent, HTTP headers, cookies
+#         # Note: This is separate from SentryUserContextMiddleware which adds email, username, subscription info
+#         send_default_pii=True,
+#
+#         # Ignore expected errors that should not be reported to Sentry
+#         ignore_errors=[
+#             KeyboardInterrupt,
+#             # Django common errors that are not bugs
+#             'django.core.exceptions.DisallowedHost',  # Invalid HOST header
+#             'django.http.Http404',  # 404s are expected, not errors
+#             # Network/Connection errors (client-side issues, not server bugs)
+#             'BrokenPipeError',  # Client closed connection
+#             'ConnectionResetError',  # Network reset
+#             'ConnectionAbortedError',  # Connection aborted
+#             'RemoteDisconnected',  # HTTP client disconnected
+#             # Cloudflare errors (CDN/proxy issues, not application bugs)
+#             'CloudFlareError',
+#             'CloudflareError',
+#         ],
+#     )
+#
+# =============================================================================
+# End of Sentry Configuration
+# =============================================================================

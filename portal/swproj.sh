@@ -108,6 +108,10 @@ if $all_conditions_met; then
         echo "Copied local_${swto}${file}settings.py over local${file}settings.py"
     done
     echo -e "\033[32mAll local files switched to '$swto' project correctly.\033[0m"
+    # Call the project-specific hook if it exists
+    if [ -f "./${swto}_swprojhook.sh" ]; then
+        ./${swto}_swprojhook.sh
+    fi
 else
     if $check; then
         echo -e "\033[31mswproj diff detected in\033[0m $compare1 :"

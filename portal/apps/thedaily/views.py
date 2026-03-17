@@ -5,9 +5,8 @@ import os
 from pydoc import locate
 import json
 import requests
-import pymongo
 from functools import wraps
-from datetime import timedelta
+from datetime import timedelta  # TODO: check if can be switched to django.utils.timezone.timedelta
 from dateutil.relativedelta import relativedelta
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlparse, urlencode
@@ -76,6 +75,7 @@ from signupwall.middleware import (
     get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access, number_to_words
 )
 from signupwall.templatetags.signupwall_tags import remaining_articles_content
+from dashboard.conf import MAIN_SECTION_SLUGS, EXCLUDE_PUBLICATION_SLUGS
 
 from .models import (
     Subscriber,
@@ -129,6 +129,7 @@ from .utils import (
     collector_analysis,
     get_app_template,
     subscribe_log,
+    user_read_history,
 )
 from .email_logic import limited_free_article_mail
 from .exceptions import UpdateCrmEx, EmailValidationError
@@ -352,6 +353,24 @@ def nl_category_subscribe(request, slug, hashed_id=None):
 @readerid_assoc
 def login(request, product_slug=None, product_variant=None):
     # next_page value got here will be available in session (TODO: explain how this happen)
+    # TODO: SECURITY - Open Redirect Vulnerability
+    # This function does not validate the 'next' parameter before redirecting.
+    # This allows attackers to redirect users to external malicious sites (phishing).
+    # Solution: Validate redirects with url_has_allowed_host_and_scheme() + ALLOWED_REDIRECT_HOSTS
+    # Example fix:
+    #   from django.utils.http import url_has_allowed_host_and_scheme
+    #   requested_next = request.GET.get('next', request.session.get('next', '/'))
+    #   allowed_hosts = {request.get_host()}
+    #   if hasattr(settings, 'ALLOWED_REDIRECT_HOSTS'):
+    #       allowed_hosts |= set(settings.ALLOWED_REDIRECT_HOSTS)
+    #   if url_has_allowed_host_and_scheme(
+    #       requested_next,
+    #       allowed_hosts=allowed_hosts,
+    #       require_https=request.is_secure(),
+    #   ):
+    #       next_page = requested_next
+    #   else:
+    #       next_page = '/'
     return_param = amp_login_param(request, 'return')
     if return_param:
         # redirect email/google AMP logins (google social auth do not redirect to external urls)
@@ -1146,19 +1165,14 @@ def password_reset(request, user_id=None, hash=None):
         if reset_form.is_valid():
             try:
                 user = reset_form.cleaned_data["user"]
-                if user.is_active:
-                    send_validation_email(
-                        'Recuperación de contraseña',
-                        user,
-                        get_app_template('notifications/password_reset_body.html'),
-                        get_password_validation_url,
-                    )
-                else:
-                    is_subscriber_any = hasattr(user, 'subscriber') and user.subscriber.is_subscriber_any()
-                    notification_template = get_app_template(
-                        'notifications/account_signup%s.html' % ('_subscribed' if is_subscriber_any else '')
-                    )
-                    send_validation_email(account_verify_msg, user, notification_template, get_signup_validation_url)
+                # Send reset email for ALL users (active and inactive)
+                # Inactive users will complete phone verification after choosing password
+                send_validation_email(
+                    'Recuperación de contraseña',
+                    user,
+                    get_app_template('notifications/password_reset_body.html'),
+                    get_password_validation_url,
+                )
             except Exception as exc:
                 error_log(delivery_err + " Detalle: {}".format(str(exc)))
                 ctx['error'] = delivery_err
@@ -1276,6 +1290,24 @@ def password_change(request, user_id=None, hash=None):
     if is_post and password_change_form.is_valid():
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])
+
+        # If user is NOT active (account not fully verified)
+        # they must verify phone before activation
+        if not user.is_active:
+            from django.utils import timezone
+            # Create signup_data for phone verification flow
+            request.session['signup_data'] = {
+                'user_id': user.id,
+                'email': user.email,
+                'user_created': True,
+                'from_password_reset': True,  # Flag to identify this flow
+                'session_created': timezone.now().isoformat(),
+            }
+            request.session.modified = True
+            # Redirect to step 2 (verify phone) - user is NOT logged in
+            return HttpResponseRedirect(reverse('account-signup') + '?step=2')
+
+        # Active user: normal flow (login and redirect)
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
@@ -1370,7 +1402,7 @@ def edit_profile(request, user=None):
             'publication_newsletters': Publication.objects.filter(has_newsletter=True),
             'publication_newsletters_enable_preview': False,  # TODO: Not yet implemented, do it asap
             'newsletters': get_profile_newsletters_ordered(),
-            "mailtrain_lists": MailtrainList.objects.all(),
+            "mailtrain_lists": MailtrainList.objects.all(),  # TODO: @see .models.MailtrainList for task details
             "incomplete_field_count": sum(
                 not bool(value) for value in (
                     user.get_full_name(),
@@ -1415,9 +1447,8 @@ def lista_lectura_leer_despues(request):
 @never_cache
 @login_required
 def lista_lectura_favoritos(request):
-    user = request.user
-    favoritos = [favorito.target for favorito in Favorite.objects.for_user(user)]
-    favoritos_count = len(favoritos)
+    favoritos = Article.objects.filter(favorites__user=request.user).distinct()
+    favoritos_count = favoritos.count()
     if is_xhr(request):
         return HttpResponse(favoritos_count)
 
@@ -1441,25 +1472,9 @@ def lista_lectura_favoritos(request):
 @login_required
 def lista_lectura_historial(request):
     """
-    Returns a paginated view of all articles viewed by the user, ordered by recently viewewd.
-    They are the ones in mongodb that have not been synced yet, union the ones already sinced saved in the model used
-    for this purpose.
+    Returns a paginated view of all articles viewed by the user
     """
-    # start the result set with mongo because these are the most recent viewed.
-    historial, mids = [], []
-    if mongo_db is not None:
-        for a in mongo_db.core_articleviewedby.find({'user': request.user.id}).sort('viewed_at', pymongo.DESCENDING):
-            try:
-                article_id = a['article']
-                historial.append(Article.objects.get(id=article_id))
-                mids.append(article_id)
-            except Article.DoesNotExist:
-                # the article could be removed
-                pass
-    # perform the union with the ones in the model
-    historial += [
-        avb.article for avb in request.user.articleviewedby_set.exclude(article_id__in=mids).order_by('-viewed_at')
-    ]
+    historial = user_read_history(request.user)
     historial_count = len(historial)
     if is_xhr(request):
         return HttpResponse(historial_count)
@@ -1555,13 +1570,11 @@ def update_user_from_crm(request):
         mapped_field = settings.CRM_UPDATE_SUBSCRIBER_FIELDS.get(field)
         if not mapped_field:
             return  # Skip if no field mapping found
-
         # Conversion for boolean fields
         field_value = value
-        if isinstance(getattr(subscriber, mapped_field), bool):
+        if isinstance(getattr(s, mapped_field), bool):
             field_value = value if type(value) is bool else value.lower() in ['true', '1', 'yes']
-
-        setattr(subscriber, mapped_field, field_value)
+        setattr(s, mapped_field, field_value)
 
     def updatesubscriberemail(user, newemail):
         """
@@ -2117,27 +2130,26 @@ def most_read_api(request):
 @permission_classes([HasAPIKey])
 def last_read_api(request):
     """
-    Takes email from POST and get the five latest read articles for the given user
+    Receives an email by POST and returns a json list with the five latest articles and their viewed_at timestamps
+    viewed by the user found with the email provided.
     """
     try:
         email = request.POST['email']
         if not email:
             return HttpResponseForbidden()
-
         user = User.objects.get(email=email)
-
-        # get latest read articles for the user
-        latest_read_articles = user.articleviewedby_set.all().values(
-            'article__headline',
-            'article__url_path',
-            'viewed_at').order_by("-viewed_at")[:5]
-        # formatting the list for CRM
-        articles_list = [{
-            'headline': a['article__headline'],
-            'url': a['article__url_path'],
-            'viewed_at': a['viewed_at'].strftime("%Y-%m-%d %H:%M:%S")
-        } for a in latest_read_articles]
-
+        last_login = (
+            user.last_login.astimezone(timezone.get_current_timezone()).strftime("%Y-%m-%d %H:%M:%S")
+        ) if user.last_login else None
+        return JsonResponse(
+            {
+                'last_read': [
+                    {'headline': a.headline, 'url': a.url_path, 'viewed_at': va.strftime("%Y-%m-%d %H:%M:%S")}
+                    for a, va in user_read_history(user, include_viewed_at=True, limit=5)
+                ],
+                'last_login': last_login,
+            }
+        )
     except KeyError:
         return HttpResponseBadRequest('Parameter missing')
     except ValueError:
@@ -2146,7 +2158,6 @@ def last_read_api(request):
         return JsonResponse({"message": "Usuario no encontrado"}, status=404)
     except MultipleObjectsReturned:
         return JsonResponse({"message": "Multiples usuarios encontrados con el mismo email"}, status=404)
-    return JsonResponse(articles_list, safe=False, status=200)
 
 
 @never_cache
@@ -2155,54 +2166,46 @@ def last_read_api(request):
 @permission_classes([HasAPIKey])
 def read_articles_percentage_api(request):
     """
-    Takes email from POST and get the five latest read articles categories expressed in percentages
-    This take in consideration the articles read in the last 6 months
+    Takes email from POST and get the read articles for the user with that email with categories in percentages
     """
     try:
         email = request.POST['email']
         if not email:
             return HttpResponseForbidden()
-
+        months = int(request.POST.get('months') or "0")
         user = User.objects.get(email=email)
-
-        # get six months ago date
-        six_moths_ago = timezone.datetime.today() - relativedelta(months=+6)
-        # get viewed articles
-        viewed_articles = Article.objects.filter(
-            viewed_by=user, articleviewedby__viewed_at__gt=six_moths_ago).select_related('main_section').distinct()
-        total_articles_count = viewed_articles.count()
-        index_object = dict()
-        category_ids_counts = dict()
-        for article in viewed_articles:
+        # months ago date
+        ago_date = (timezone.datetime.today() - relativedelta(months=+months)) if months else None
+        # get viewed articles from mongodb
+        mongodb_articles = user_read_history(user, mongo_db_only=True, date_from=ago_date)
+        # get viewed articles from relational database
+        filter_kwargs = {"viewed_by": user}
+        if ago_date:
+            filter_kwargs["articleviewedby__viewed_at__gt"] = ago_date
+        rdb_articles = Article.objects.filter(
+            **filter_kwargs
+        ).exclude(id__in=[a.id for a in mongodb_articles]).select_related("main_section").distinct()
+        total_articles, category_ids_counts = mongodb_articles + list(rdb_articles), {}
+        for article in total_articles:
             if article.main_section:
-                if article.main_section.section.slug in getattr(settings, 'DASHBOARD_MAIN_SECTION_SLUGS', []):
-                    index_object['object'] = article.main_section.section
-                    index_object['name'] = article.main_section.section.name
-                    index_object['slug_id'] = 'section-{}'.format(  # noqa
-                        index_object['name'], article.main_section.section.name  # TODO: fix unused arg at possition 1
-                    )
-                elif article.main_section.section and article.main_section.section.category:
-                    index_object['object'] = article.main_section.section.category
-                    index_object['name'] = article.main_section.section.category.name
-                    index_object['slug_id'] = 'category-{}'.format(
-                        str(article.main_section.section.category.name).lower()
-                    )
-                elif (
-                        article.main_section.edition.publication
-                        and article.main_section.edition.publication.slug
-                        not in getattr(settings, "DASHBOARD_EXCLUDE_PUBLICATION_SLUGS", [])
-                ):
-                    index_object['object'] = article.main_section.edition.publication
-                    index_object['name'] = article.main_section.edition.publication.name
-                    index_object['slug_id'] = 'publication-{}'.format(article.main_section.edition.publication.slug)
-                if len(index_object) > 0:
-                    category_viewed_count = category_ids_counts.get(index_object['slug_id'], {'count': 0})
-                    category_viewed_count = category_viewed_count['count'] + 1
-                    category_ids_counts[index_object['slug_id']] = {
-                        'name': index_object['name'],
-                        'count': category_viewed_count,
-                        'category_percentage': category_viewed_count * 100 / total_articles_count
-                    }
+                item_name, item_slug, msection = None, None, article.main_section
+                if msection.section:
+                    if msection.section.slug in MAIN_SECTION_SLUGS:
+                        item_name, item_slug = msection.section.name, f's_{msection.section.slug}'
+                    elif msection.section.category:
+                        item_name, item_slug = msection.section.category.name, f'c_{msection.section.category.slug}'
+                if not item_slug and msection.edition and msection.edition.publication:
+                    publication_slug = msection.edition.publication.slug
+                    if publication_slug not in EXCLUDE_PUBLICATION_SLUGS:
+                        item_name, item_slug = msection.edition.publication.name, f'p_{publication_slug}'
+                if item_slug:
+                    item = category_ids_counts.get(item_slug, {'count': 0, 'name': item_name})
+                    item['count'] += 1
+                    category_ids_counts[item_slug] = item
+        # calculate the percentage of each category
+        total_articles_count = sum(item['count'] for item in category_ids_counts.values())
+        for item in category_ids_counts.values():
+            item['category_percentage'] = item['count'] * 100 / total_articles_count
     except KeyError:
         return HttpResponseBadRequest('Parameter missing')
     except ValueError:

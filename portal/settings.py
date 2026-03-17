@@ -15,7 +15,7 @@ from django.utils.encoding import smart_str, force_str
 django.utils.encoding.smart_text = smart_str
 django.utils.encoding.force_text = force_str
 
-PROJECT_ABSOLUTE_DIR = dirname(abspath(__file__))
+BASE_DIR = PROJECT_ABSOLUTE_DIR = dirname(abspath(__file__))
 PROJECT_NAME = basename(PROJECT_ABSOLUTE_DIR)
 APPS_DIR = join(PROJECT_ABSOLUTE_DIR, "apps")
 if APPS_DIR not in sys.path:
@@ -373,6 +373,7 @@ CELERY_RESULT_EXTENDED = True
 # NOTE: The elasticsearch recommended version to use is 7.*
 #       If your linux distribution doesn't have it, you can use docker to run an specific version (for example 7.17.7).
 #       Follow this guide to do that: https://hub.docker.com/_/elasticsearch
+#       TODO: update, we have fresh info about ElasticSearch
 ELASTICSEARCH_DSL = {}
 ELASTICSEARCH_DSL_AUTOSYNC = False
 SEARCH_ELASTIC_MATCH_PHRASE = False
@@ -584,6 +585,7 @@ PHONENUMBER_DEFAULT_REGION = None
 CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is restricted using basic auth
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 ENABLE_GOOGLE_ONE_TAP = False
+SENTRY_ENABLED = False
 
 # ====================================================================================== visual separator =============
 
@@ -593,7 +595,9 @@ from local_settings import *  # noqa
 
 
 AUTHENTICATION_BACKENDS = (
-    "libs.google_oauth2_backend.CustomGoogleOAuth2" if ENABLE_GOOGLE_ONE_TAP else "social_core.backends.google.GoogleOAuth2",
+    "libs.google_oauth2_backend.CustomGoogleOAuth2"
+    if ENABLE_GOOGLE_ONE_TAP
+    else "social_core.backends.google.GoogleOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 )
 
@@ -609,40 +613,20 @@ if ENABLE_GOOGLE_ONE_TAP:
         "/usuarios/registrate/?step=2.5",
         "/usuarios/registrate/?step=3",
     ]
-    
-    # =============================================================================
-    # Google One Tap Configuration
-    # =============================================================================
-    # These settings are required for Google One Tap authentication to work
-    # properly in browsers with Enhanced Tracking Protection (Firefox, Safari)
-    # and strict Content Security Policies.
-
-    # -----------------------------------------------------------------------------
-    # Third-party Cookie Configuration
-    # -----------------------------------------------------------------------------
-    # Enable cross-site cookie sharing for Google's authentication flow.
-    # Required for One Tap to maintain session state across domains.
-    SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-site session cookies
-    CSRF_COOKIE_SAMESITE = 'None'     # Allow cross-site CSRF cookies
 
     # Allow popups to external domains while maintaining same-origin security
     SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
-    # -----------------------------------------------------------------------------
     # Frame Options Configuration
-    # -----------------------------------------------------------------------------
     # Allow Google to embed authentication iframes in our pages.
     # SAMEORIGIN is more secure than ALLOWALL while still permitting Google's flow.
     X_FRAME_OPTIONS = 'SAMEORIGIN'
 
-    # -----------------------------------------------------------------------------
     # Middleware Configuration
-    # -----------------------------------------------------------------------------
     # Remove XFrameOptionsMiddleware to prevent conflicts with Google One Tap iframes.
     # The middleware would override X_FRAME_OPTIONS and block Google's authentication popup.
     MIDDLEWARE = tuple([
-        m for m in MIDDLEWARE
-        if m not in ["django.middleware.clickjacking.XFrameOptionsMiddleware",]
+        m for m in MIDDLEWARE if m not in ["django.middleware.clickjacking.XFrameOptionsMiddleware"]
     ])
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
@@ -682,6 +666,9 @@ if FREEZE_TIME:
     freezer.start()
 
 ABSOLUTE_URL_OVERRIDES = {"auth.user": SITE_URL + "usuarios/perfil/editar/"}
+
+if "CORE_TEST_EMAIL_KNOWN_GOOD_DOMAIN" not in locals():
+    CORE_TEST_EMAIL_KNOWN_GOOD_DOMAIN = SITE_DOMAIN
 
 # AMP
 CORE_ARTICLE_DETAIL_ENABLE_AMP = "amp_tools" in INSTALLED_APPS

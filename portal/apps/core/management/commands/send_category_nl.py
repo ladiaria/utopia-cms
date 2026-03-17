@@ -393,12 +393,14 @@ class Command(SendNLCommand):
                         #       "kill -[STOP|CONT] <pid>")
                         break
 
-            except (ProgrammingError, OperationalError, StopIteration) as exc:
-                # the connection to databse can be killed, if that is the case print useful log to continue
-                if isinstance(exc, (ProgrammingError, OperationalError)):
+            except (ProgrammingError, OperationalError, StopIteration, KeyboardInterrupt) as exc:
+                # the connection to databse can be killed, or command interrupted by user, if that is the case print
+                # useful log to continue
+                if isinstance(exc, (ProgrammingError, OperationalError, KeyboardInterrupt)):
+                    err_msg = "Interrupted by user" if isinstance(exc, KeyboardInterrupt) else "DB connection error"
                     log.error(
-                        'DB connection error, (%s, %s, %s, %s) was the last delivery attempt' % (
-                            s_user_email if s_id else None, is_subscriber, self.partitions, self.mod
+                        '%s, (%s, %s, %s, %s) was the last delivery attempt' % (
+                            err_msg, s_user_email if s_id else None, is_subscriber, self.partitions, self.mod
                         )
                     )
                 break

@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
+import hashlib
 import os
 from PIL import Image
 
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from photologue.models import Photo, PhotoSize, get_storage_path
+
+from .utils import convert_to_webp
 
 
 class Agency(models.Model):
@@ -65,6 +68,14 @@ class PhotoExtended(models.Model):
     )
     agency = models.ForeignKey(
         Agency, on_delete=models.CASCADE, verbose_name='agencia', related_name='photos', blank=True, null=True
+    )
+    last_original_uploaded = models.ImageField(
+        'última subida original',
+        upload_to=get_storage_path,
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text='Copia del archivo tal como se subió la última vez (solo lectura).',
     )
 
     class Meta:
@@ -131,8 +142,36 @@ class PhotoExtended(models.Model):
         return os.path.basename(self.square_version.path)
 
 
+@receiver(pre_save, sender=Photo)
+def photo_pre_save_store_previous_image(sender, **kwargs):
+    """Store previous image name and content hash so we can tell if the image was replaced (vs plain save).
+    Hash allows detecting same filename but different content (e.g. re-upload in admin)."""
+    instance = kwargs['instance']
+    if instance.pk:
+        try:
+            old = Photo.objects.only('image').get(pk=instance.pk)
+            instance._previous_image_name = old.image.name if old.image else None
+            instance._previous_image_hash = None
+            if old.image and old.image.name:
+                try:
+                    with old.image.open('rb') as f:
+                        instance._previous_image_hash = hashlib.md5(f.read()).hexdigest()
+                except (IOError, OSError):
+                    pass
+        except Photo.DoesNotExist:
+            instance._previous_image_name = None
+            instance._previous_image_hash = None
+    else:
+        instance._previous_image_name = None
+        instance._previous_image_hash = None
+
+
 @receiver(post_save, sender=Photo)
 def photo_post_save_handler(sender, **kwargs):
     instance = kwargs['instance']
+
     if not hasattr(instance, 'extended'):
         PhotoExtended.objects.create(image=instance)
+
+    # Always convert to webp
+    convert_to_webp(instance)

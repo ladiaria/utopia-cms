@@ -52,7 +52,7 @@
           {% if not hide_date_published %}
             {% autoescape off %}{% date_published_verbose tag_cover_article %}{% endautoescape %}
           {% endif %}
-          {% with a=tag_cover_article %}{% include 'article/article_card_read_later.html' %}{% endwith %}
+          {% include 'article/article_card_read_later.html' with a=tag_cover_article %}
         </div>
       </div>
     </div>

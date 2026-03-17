@@ -183,7 +183,7 @@ class JournalistViewSet(viewsets.ModelViewSet):
 
 class HomeArticleViewSet(viewsets.ModelViewSet):
     try:
-        edition = get_current_edition() or get_latest_edition()
+        edition = get_current_edition(quiet=True) or get_latest_edition()
     except Exception:
         edition = None
     try:
@@ -210,7 +210,7 @@ class SubscriberViewSet(viewsets.ModelViewSet):
     queryset = Subscriber.objects.all()
     serializer_class = SubscriberSerializer
     http_method_names = ['get', 'head']
-    filter_fields = ('contact_id',)
+    filterset_fields = ('contact_id',)
 
 
 class DollarExchangeViewSet(viewsets.ModelViewSet):
@@ -226,7 +226,7 @@ router.register(r'publications', PublicationViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'sections', SectionViewSet)
 router.register(r'articles', ArticleViewSet)
-router.register(r'home', HomeArticleViewSet)
+router.register(r'home', HomeArticleViewSet, basename='home-article')
 router.register(r'journalists', JournalistViewSet)
 router.register(r'urls', UrlViewSet)
 router.register(r'subscribers', SubscriberViewSet)
@@ -291,7 +291,10 @@ urlpatterns.extend(
 
         # Rest Framework API
         path('api/', include(router.urls)),
-        path('api/auth/', include('rest_framework.urls', namespace='rest_framework')),
+        path(
+            f'api/{getattr(settings, "PORTAL_URLS_DRF_AUTH_URL_PREFIX", "")}auth/',
+            include('rest_framework.urls', namespace='rest_framework'),
+        ),
 
         # Editions
         path('ediciones/', edition_list, name='edition_list'),
@@ -367,7 +370,8 @@ else:
         LatestEditions,
         LatestSupplements,
         LatestArticles,
-        LatestArticles72hs
+        LatestArticles72hs,
+        GoogleNewsAIFeed,
     )
     urlpatterns += [
         path('feeds/articulos/', LatestArticles(), name='ultimos-articulos-rss'),
@@ -376,6 +380,7 @@ else:
         re_path(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
         re_path(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
         path('feeds/suplementos/', LatestSupplements()),
+        path('feeds/google-news-ai/', GoogleNewsAIFeed(), name='google-news-ai-rss'),
     ]
 
 if 'debug_toolbar' in settings.INSTALLED_APPS:
@@ -393,3 +398,7 @@ if settings.DEBUG:
     # )
 else:
     urlpatterns.append(re_path(r'^.*.css$', TemplateView.as_view(template_name='devnull.html')))
+
+# Radio API URLs (only if JWT is enabled and utopia_cms_radio is installed)
+if getattr(settings, 'JWT_ENABLED', False) and 'utopia_cms_radio' in settings.INSTALLED_APPS:
+    urlpatterns.insert(0, path('', include('utopia_cms_radio.urls', namespace='utopia_cms_radio')))

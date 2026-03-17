@@ -473,11 +473,11 @@ def perplexity_ask(request):
                 raise ValueError("No </think> marker found and content is not valid JSON") from e
 
         # Extract the substring after the marker.
-        json_str = content[idx + len(marker) :].strip()
+        json_str = content[idx + len(marker):].strip()
 
         # Remove markdown code fence markers if present.
         if json_str.startswith("```json"):
-            json_str = json_str[len("```json") :].strip()
+            json_str = json_str[len("```json"):].strip()
         if json_str.startswith("```"):
             json_str = json_str[3:].strip()
         if json_str.endswith("```"):
@@ -600,8 +600,12 @@ def perplexity_ask(request):
             logging.error(f"Unexpected Error: {ex}", exc_info=True)
             response = {"error": True, "message": answer, "status": 500}
             if api_response is not None:
-                answer = api_response.json()["error"]["message"]
-                logging.error(f"API Respuesta: {answer}")
-                response = {"error": True, "message": answer, "status": 500}
+                logging.error(f"API status_code: {api_response.status_code}, body: {api_response.text[:500]}")
+                try:
+                    answer = api_response.json()["error"]["message"]
+                    logging.error(f"API Respuesta: {answer}")
+                    response = {"error": True, "message": answer, "status": 500}
+                except Exception:
+                    pass
         return JsonResponse(response)
     return JsonResponse({"error": True, "message": "Método no permitido."}, status=405)

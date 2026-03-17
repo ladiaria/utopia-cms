@@ -1,7 +1,6 @@
 from time import sleep
 
 from django.conf import settings
-from django.test import TestCase
 from django.test.client import Client
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -9,10 +8,11 @@ from django.utils import timezone
 from libs.scripts.pwclear import pwclear
 from core.models import Article
 from core.factories import UserFactory
+from core.tests import PreCopyImage
 from ..utils import latest_activity
 
 
-class LatestActivityTestCase(TestCase):
+class LatestActivityTestCase(PreCopyImage):
     fixtures = ['test']
     http_host_header_param = {'HTTP_HOST': settings.SITE_DOMAIN}
 

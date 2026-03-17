@@ -6,6 +6,7 @@ from operator import attrgetter
 from urllib.parse import urlencode
 from pydoc import locate
 import requests
+import pymongo
 
 from actstream.models import Follow
 from actstream.registry import check
@@ -24,9 +25,11 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
+from django.utils.timezone import make_aware, utc, get_current_timezone
 
 from libs.utils import crm_rest_api_kwargs
-from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed
+from apps import mongo_db
+from core.models import Category, Publication, ArticleViewedBy, DeviceSubscribed, Article
 from dashboard.models import AudioStatistics
 from signupwall.utils import get_ip
 from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
@@ -246,7 +249,54 @@ def get_profile_newsletters_ordered():
     nl_alpha = [nl_obj for nl_obj in nl_unsorted if nl_obj not in nl_custom_ordered]
     nl_alpha.sort(key=attrgetter("slug"))
     return [nl_obj for nl_obj in nl_custom_ordered if nl_obj] + nl_alpha
-    
+
+
+def user_read_history(user, include_viewed_at=False, limit=None, date_from=None, mongo_db_only=False):
+    """
+    Returns a list of articles or a list tuples (article and viewed_at if requested by arg) ordered by viewed_at.
+    They are the ones in mongodb that have not been synced yet, union the ones already sinced saved in the model used
+    for this purpose. It receives:
+    - The user object
+    - Bool indicating if the viewed_at date is also needed (False by default)
+    - A limit parameter (None by default)
+    - A date_from filter parameter (None by default)
+    - A boolean parameter to indicate if the history should be only from the mongo db (False by default)
+    """
+    # start the result set with mongo because these are the most recent viewed.
+    historial, mids, ctz = [], [], get_current_timezone()
+    if mongo_db is not None:
+        mquery_kwargs = {'user': user.id}
+        if date_from:
+            mquery_kwargs['viewed_at'] = {'$gt': date_from}
+        mquery = mongo_db.core_articleviewedby.find(mquery_kwargs).sort('viewed_at', pymongo.DESCENDING)
+        count = 0
+        for a in mquery:
+            if limit and count >= limit:
+                break
+            try:
+                article_id = a['article']
+                article = Article.objects.get(id=article_id)
+                historial.append(
+                    (article, make_aware(a['viewed_at'], utc).astimezone(ctz)) if include_viewed_at else article
+                )
+                mids.append(article_id)
+                count += 1
+            except Article.DoesNotExist:
+                # the article could be removed
+                pass
+    # perform the union with the ones in the model, if needed
+    if not mongo_db_only and (not limit or limit > count):
+        dbquery = user.articleviewedby_set
+        if date_from:
+            dbquery = dbquery.filter(viewed_at__gt=date_from)
+        dbquery = dbquery.exclude(article_id__in=mids).order_by('-viewed_at')
+        if limit:
+            dbquery = dbquery[:limit - len(mids)]
+        historial += [
+            ((avb.article, avb.viewed_at.astimezone(ctz)) if include_viewed_at else avb.article) for avb in dbquery
+        ]
+    return historial
+
 
 def google_phone_next_page(request, is_new):
     next_page = request.session.pop("next", None)  # allways pop next page from session
@@ -279,9 +329,13 @@ def get_app_template(relative_path):
     return template
 
 
-def product_checkout_template(product_slug, steps=False):
+def product_checkout_template(product_slug, steps=False, fallback_template_name=None):
     steps_suffix = "_steps" if steps else ""
-    template = get_app_template(f"market/product{steps_suffix}.html")  # fallback
+    if fallback_template_name:
+        fallback = get_app_template(f"market/products/base_{fallback_template_name}{steps_suffix}.html")
+    else:
+        fallback = get_app_template(f"market/product{steps_suffix}.html")
+    template = fallback
     template_try = get_app_template(f"market/products/{product_slug}{steps_suffix}.html")
     try:
         Engine.get_default().get_template(template_try)

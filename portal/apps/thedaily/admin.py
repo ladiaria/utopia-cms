@@ -31,8 +31,39 @@ from .utils import collector_analysis
 from .exceptions import UpdateCrmEx
 
 
+class HasEmailFilter(admin.SimpleListFilter):
+    """
+    Filter to show users with or without email address.
+
+    Useful for finding users that:
+    - Have no email (email is None or empty string)
+    - Have email address
+
+    This helps identify users that should not sync to CMS.
+    """
+    title = '¿Tiene email?'
+    parameter_name = 'has_email'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Sí, tiene email'),
+            ('no', 'No tiene email (vacío o nulo)'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            # Users with email (not null and not empty string)
+            return queryset.exclude(email__isnull=True).exclude(email='')
+        elif self.value() == 'no':
+            # Users without email (null or empty string)
+            from django.db.models import Q
+            return queryset.filter(Q(email__isnull=True) | Q(email=''))
+        return queryset
+
+
 class UserAdmin(BaseUserAdmin):
     list_display = ("id", "username", "email", "first_name", "last_name", "is_active", "is_staff")
+    list_filter = (HasEmailFilter,) + BaseUserAdmin.list_filter
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         result = None

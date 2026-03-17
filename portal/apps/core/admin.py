@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from requests.exceptions import ConnectionError
 import json
 from urllib.parse import urljoin
@@ -425,12 +427,9 @@ class ArticleEditionInline(TabularInline):
     classes = ["collapse"]
 
 
+"""
+# Example of how to override the AdminMartorWidget class to use a custom js (js not provided)
 class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
-    """
-    Overrided to use a custom js, because we found this error in the upstream project:
-    https://github.com/agusmakmun/django-markdown-editor/pull/217
-    """
-
     @property
     def media(self):
         result = super().media
@@ -438,6 +437,7 @@ class UtopiaCmsAdminMartorWidget(AdminMartorWidget):
         js_files[js_files.index('martor/js/martor.bootstrap.min.js')] = "js/martor/utopiacms.martor.bootstrap.js"
         result._js_lists[1] = js_files
         return result
+"""
 
 
 class ArticleAdminModelForm(ModelForm):
@@ -594,7 +594,8 @@ class ArticleAdmin(VersionAdmin):
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
     change_form_template = "core/templates/admin/core/article/change_form.html"
-    formfield_overrides = {MartorField: {"widget": UtopiaCmsAdminMartorWidget}}
+    # change widget class in next line to UtopiaCmsAdminMartorWidget if you need the customized widget class
+    formfield_overrides = {MartorField: {"widget": AdminMartorWidget}}
     prepopulated_fields = {'slug': ('headline',)}
     filter_horizontal = ('byline',)
     list_display = (
@@ -778,8 +779,9 @@ class ArticleAdmin(VersionAdmin):
                 super().save_model(request, obj, form, change)
                 self.obj = obj
             except Exception as e:
-                if settings.DEBUG:
-                    print("DEBUG: error in core.admin.ArticleAdmin.save_model: %s" % e)
+                logging.error(f"Error in save_model: {e}", exc_info=True)
+                if hasattr(e, 'errors'):
+                    logging.error(f"Secondary operation failed after DB save: {e.errors}")
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
@@ -1537,12 +1539,15 @@ class ArticleInline2(admin.TabularInline):
     verbose_name_plural = 'Artículos relacionados'
 
 
-from django.db import models
+from django.db import models  # noqa
+
+
 @admin.register(PerplexityAPISettings)
 class PerplexityAPISettingsAdmin(SingletonModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': admin.widgets.AdminTextareaWidget(attrs={'rows': 10, 'cols': 80})},
     }
+
 
 site.unregister(Tag)
 site.unregister(TaggedItem)
