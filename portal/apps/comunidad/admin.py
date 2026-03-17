@@ -42,27 +42,51 @@ def export_registros_csv(modeladmin, request, queryset):
     if not request.user.has_perm('comunidad.export_registro'):
         modeladmin.message_user(request, _("No tenés permiso para exportar registros."))
         return
+
+    registros = list(
+        queryset.select_related('subscriber__user', 'benefit').prefetch_related('uses')
+    )
+
+    # Determine the max number of use columns needed across all selected registros
+    max_use_cols = max(
+        (r.benefit.max_uses for r in registros if r.benefit),
+        default=1,
+    )
+
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="registros.csv"'
     writer = csv.writer(response)
-    writer.writerow([
-            'ID', 'Hash', 'Subscriber', 'Name', 'Email', 'Phone',
-            'Benefit', 'Dependents', 'Notes', 'Issued', 'Used',
-        ])
-    for r in queryset.select_related('subscriber__user', 'benefit'):
-        writer.writerow([
+
+    header = [
+        'ID', 'Hash', 'Subscriber', 'Subscriber Email', 'Name', 'Phone',
+        'Benefit', 'Dependents', 'Notes', 'Issued',
+    ]
+    for i in range(1, max_use_cols + 1):
+        header.append(f'Uso {i}')
+    header.append('Usos totales')
+    writer.writerow(header)
+
+    for r in registros:
+        uses = list(r.uses.all())  # already prefetched, no extra query
+        row = [
             r.id,
             r.generate_hashed_id(),
             r.subscriber.user.username if r.subscriber else '',
-            r.name or '',
             r.subscriber_email() or '',
+            r.name or '',
             r.phone or '',
             r.benefit.name,
             r.dependents if r.dependents is not None else '',
             r.notes or '',
             r.issued,
-            r.used or '',
-        ])
+        ]
+        for i in range(max_use_cols):
+            if i < len(uses):
+                row.append(uses[i].used_at.strftime('%d/%m/%Y %H:%M'))
+            else:
+                row.append('')
+        row.append(len(uses))
+        writer.writerow(row)
     return response
 
 
