@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from django.conf import settings
 from urllib.parse import quote
+
+from django.conf import settings
 from django.utils.feedgenerator import DefaultFeed, Rss201rev2Feed, rfc2822_date
 from django.contrib.syndication.views import Feed
 from django.shortcuts import get_object_or_404
