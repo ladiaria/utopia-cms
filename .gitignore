@@ -1,3 +1,4 @@
+lost+found
 *.log
 *.pyc
 *.mo
@@ -14,8 +15,7 @@ __pycache__
 /portal/bin/pdftoppm
 /portal/bin/pdftops
 /portal/bin/pdftotext
-/portal/media/*
-!/portal/media/fixtures
+/portal/media/
 /portal/static
 /portal/.htaccess
 /portal/.project
