@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-from datetime import timedelta
-
 from django.conf import settings
 from django.contrib.syndication.views import Feed
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
+from django.utils.timezone import localtime, now, timedelta
 from django.utils.feedgenerator import Rss201rev2Feed, rfc2822_date
 
 from libs.utils import get_site_name
@@ -48,7 +46,7 @@ class MinimalImageRSSFeed(Rss201rev2Feed):
 
         pubdate = item.get('pubdate')
         if pubdate:
-            pubdate = timezone.localtime(pubdate)
+            pubdate = localtime(pubdate)
             handler.addQuickElement('pubDate', rfc2822_date(pubdate))
 
         title = item.get('title')
@@ -162,7 +160,7 @@ class LatestArticles72hs(LatestArticles):
         return f"{settings.URL_SCHEME}://{settings.SITE_DOMAIN}/feeds/articulos_rss_72hs.xml"
 
     def items(self):
-        cutoff = timezone.localtime(timezone.now()) - timedelta(hours=72)
+        cutoff = localtime(now()) - timedelta(hours=72)
         return Article.published.filter(date_published__gte=cutoff).order_by('-date_published')
 
 
