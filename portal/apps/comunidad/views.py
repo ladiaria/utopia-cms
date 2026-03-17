@@ -230,6 +230,82 @@ class SendQRByEmailView(RedirectView):
 
 @method_decorator(never_cache, name='dispatch')
 @method_decorator(staff_member_required, name='dispatch')
+class SendQRByWhatsAppView(RedirectView):
+    """
+    View that sends the ticket URL via WhatsApp using the CRM API.
+    Requires the Beneficio to have a whatsapp_template_name configured
+    and the Registro to have a phone number.
+    """
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('admin:comunidad_registro_change', args=[self.kwargs['registro_id']])
+
+    def get(self, request, *args, **kwargs):
+        import requests as http_requests
+        from django.contrib.sites.models import Site
+
+        registro = get_object_or_404(Registro, pk=self.kwargs['registro_id'])
+
+        if not registro.phone:
+            messages.error(request, "El registro no tiene número de teléfono.")
+            return super().get(request, *args, **kwargs)
+
+        benefit = registro.benefit
+        if not benefit or not benefit.whatsapp_template_name:
+            messages.error(request, "El beneficio no tiene plantilla de WhatsApp configurada.")
+            return super().get(request, *args, **kwargs)
+
+        hashed_id = registro.generate_hashed_id()
+        domain = Site.objects.get_current().domain
+        ticket_url = f"https://{domain}{reverse('gigantes-festival-entrada', kwargs={'hashed_id': hashed_id})}"
+
+        phone = registro.phone.strip().replace(" ", "")
+        if phone.startswith("0"):
+            phone = "598" + phone[1:]
+        if phone.startswith("+598"):
+            phone = phone[1:]
+
+        crm_api_uri = getattr(settings, 'CRM_SEND_WHATSAPP_API_URI', None)
+        crm_api_key = getattr(settings, 'CRM_UPDATE_USER_API_KEY', None)
+
+        if not crm_api_uri or not crm_api_key:
+            messages.error(request, "La configuración de la API de WhatsApp no está disponible.")
+            return super().get(request, *args, **kwargs)
+
+        data = {
+            "phone_number": phone,
+            "template_name": benefit.whatsapp_template_name,
+            "parameters": [{"message1": ticket_url}],
+        }
+
+        try:
+            r = http_requests.post(
+                crm_api_uri,
+                json=data,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": "Api-Key " + crm_api_key,
+                },
+            )
+            r.raise_for_status()
+            try:
+                resp_data = r.json()
+                if "error" in str(resp_data).lower():
+                    messages.warning(request, f"WhatsApp enviado con advertencias: {resp_data}")
+                else:
+                    messages.success(request, f"WhatsApp enviado exitosamente a {phone}.")
+            except ValueError:
+                messages.success(request, f"WhatsApp enviado exitosamente a {phone}.")
+        except http_requests.exceptions.HTTPError as e:
+            messages.error(request, f"Error al enviar WhatsApp: {e}")
+        except Exception as e:
+            messages.error(request, f"Error al enviar WhatsApp: {e}")
+
+        return super().get(request, *args, **kwargs)
+
+
+@method_decorator(never_cache, name='dispatch')
+@method_decorator(staff_member_required, name='dispatch')
 class ScanQRView(FormView):
     template_name = "comunidad/scan_qr.html"
     form_class = ScanQRForm
