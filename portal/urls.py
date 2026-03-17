@@ -380,9 +380,8 @@ else:
         LatestSupplements,
         LatestArticles,
         LatestArticles72hs,
-        GoogleNewsAIFeed
+        GoogleNewsAIFeed,
     )
-
     urlpatterns += [
         path('feeds/articulos/', LatestArticles(), name='ultimos-articulos-rss'),
         path('feeds/ediciones/', LatestEditions()),

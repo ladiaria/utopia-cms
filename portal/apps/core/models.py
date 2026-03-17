@@ -1687,7 +1687,7 @@ class ArticleBase(Model, CT):
         ordering = ('-date_published',)
         verbose_name = 'artículo'
         verbose_name_plural = 'artículos'
-        indexes = [Index(fields=['type', 'date_published', 'is_published'])]
+        indexes = [Index(fields=['type', 'date_published', 'is_published']), Index(fields=['is_published', 'slug'])]
 
 
 class Article(ArticleBase):

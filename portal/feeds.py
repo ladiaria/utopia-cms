@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-from datetime import timedelta
+from urllib.parse import quote
 
 from django.conf import settings
-
 from django.contrib.syndication.views import Feed
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from django.utils.feedgenerator import Rss201rev2Feed, rfc2822_date, DefaultFeed
+from django.utils.timezone import localtime, now, timedelta
+from django.utils.feedgenerator import Rss201rev2Feed, rfc2822_date
 
 from libs.utils import get_site_name
 from core.models import Article, get_current_edition, get_current_feeds, Journalist, Section, Supplement, Edition
@@ -90,15 +89,34 @@ class GoogleNewsAIFeedGenerator(Rss201rev2Feed):
     """Custom RSS feed generator with namespaces required by Google News AI pilot."""
 
     def rss_attributes(self):
-        attrs = super().rss_attributes()
-        attrs['xmlns:content'] = 'http://purl.org/rss/1.0/modules/content/'
-        attrs['xmlns:dcterms'] = 'http://purl.org/dc/terms/'
-        attrs['xmlns:licensed_news'] = 'https://www.google.com/schemas/rss-licensed-news/'
-        attrs['xmlns:media'] = 'http://search.yahoo.com/mrss/'
-        return attrs
+        # Only include namespaces listed in the Google News AI pilot spec
+        return {
+            'xmlns:content': 'http://purl.org/rss/1.0/modules/content/',
+            'xmlns:dcterms': 'http://purl.org/dc/terms/',
+            'xmlns:licensed_news': 'https://www.google.com/schemas/rss-licensed-news/',
+            'xmlns:media': 'http://search.yahoo.com/mrss/',
+            'version': '2.0',
+        }
+
+    def add_root_elements(self, handler):
+        # Override to skip atom:link which uses the disallowed xmlns:atom namespace
+        handler.addQuickElement('title', self.feed['title'])
+        handler.addQuickElement('link', self.feed['link'])
+        handler.addQuickElement('description', self.feed['description'])
+        if self.feed.get('language'):
+            handler.addQuickElement('language', self.feed['language'])
+        handler.addQuickElement('lastBuildDate', rfc2822_date(self.latest_post_date()))
 
     def add_item_elements(self, handler, item):
-        super().add_item_elements(handler, item)
+        # Call super but skip categories — we handle them below with the required domain attribute
+        categories = item.get('categories', ())
+        super().add_item_elements(handler, {**item, 'categories': []})
+        for cat in categories:
+            handler.addQuickElement(
+                'category', cat, {'domain': 'http://cv.iptc.org/newscodes/mediatopic'}
+            )
+        if item.get('licensed_news_genre'):
+            handler.addQuickElement('licensed_news:genre', item['licensed_news_genre'])
         if item.get('content_encoded'):
             handler.addQuickElement('content:encoded', item['content_encoded'])
         if item.get('dcterms_creator'):
@@ -121,6 +139,16 @@ class GoogleNewsAIFeed(Feed):
     def items(self):
         return get_current_feeds()
 
+
+class GoogleNewsAIFeedByDate(GoogleNewsAIFeed):
+    """Same feed as GoogleNewsAIFeed but for a fixed queryset (used for bulk XML generation)."""
+
+    def __init__(self, articles):
+        self._articles = articles
+
+    def items(self):
+        return self._articles
+
     def item_title(self, item):
         return cleanhtml(ldmarkup(item.headline))
 
@@ -141,14 +169,18 @@ class GoogleNewsAIFeed(Feed):
         media_url = ''
         media_title = ''
         if item.photo and item.photo.image:
-            media_url = '%s://%s%s' % (settings.URL_SCHEME, settings.SITE_DOMAIN, item.photo.image.url)
+            media_url = '%s://%s%s' % (
+                settings.URL_SCHEME, settings.SITE_DOMAIN, quote(item.photo.image.url, safe='/:%')
+            )
             media_title = item.photo.title if hasattr(item.photo, 'title') else ''
+        genre = 'Opinion' if item.type == 'OP' else None
         return {
             'content_encoded': ldmarkup(item.body),
             'dcterms_creator': creator,
             'dcterms_modified': item.last_modified.isoformat(),
             'media_content_url': media_url,
             'media_title': media_title,
+            'licensed_news_genre': genre,
         }
 
 
@@ -189,7 +221,7 @@ class MinimalImageRSSFeed(Rss201rev2Feed):
 
         pubdate = item.get('pubdate')
         if pubdate:
-            pubdate = timezone.localtime(pubdate)
+            pubdate = localtime(pubdate)
             handler.addQuickElement('pubDate', rfc2822_date(pubdate))
 
         title = item.get('title')
@@ -303,7 +335,7 @@ class LatestArticles72hs(LatestArticles):
         return f"{settings.URL_SCHEME}://{settings.SITE_DOMAIN}/feeds/articulos_rss_72hs.xml"
 
     def items(self):
-        cutoff = timezone.localtime(timezone.now()) - timedelta(hours=72)
+        cutoff = localtime(now()) - timedelta(hours=72)
         return Article.published.filter(date_published__gte=cutoff).order_by('-date_published')
 
 
