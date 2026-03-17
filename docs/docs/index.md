@@ -84,6 +84,17 @@ Featured articles are selected, meaning those that would appear on the publicati
 
 Priority is given to the "area newsletter" object that may exist with valid validity (there is a "valid until" datetime field) for the respective area. If the former is not valid or does not exist, articles from the "area cover" object associated with the respective area are then selected.
 
+## Most read (article views)
+
+The "most read" section ranks articles by view count over configurable periods (e.g. today, last 7 days, last 30 days). The ranking is computed from the **ArticleViews** model, which stores per-article, per-day view counts in the relational database.
+
+View events are recorded in MongoDB first and then synced into the relational DB:
+
+- Both anonymous and logged-in users increment the per-article counter in Mongo `core_articlevisits` (`$inc` by 1 on each view). This is the source that feeds the "most read" ranking.
+- Logged-in users also write to Mongo `core_articleviewedby` (who viewed what and when). This is a separate feature ("viewed by" history/reporting) and is not used to compute the "most read" ranking; the +1 for "most read" already happened via `core_articlevisits`.
+
+Two management commands move that data into the relational DB: **sync_article_views** (feeds ArticleViews and the view counter on Article used for "most read") and **sync_articleviewedby** (feeds the ArticleViewedBy model). Run them with `./manage.py sync_article_views` and `./manage.py sync_articleviewedby` from the portal directory; MongoDB must be configured for the sync to run.
+
 ## Management commands
 
 Like any other Django management command, these commands must be executed calling `manage.py` using the Python executable of the utopia-cms installation virtual environment.
@@ -120,6 +131,22 @@ The command will also copy all images related to the articles beeing dumped to t
   ```
   cp ~/article_dumps/photos/* media/photologue/photos
   ```
+
+### sync_article_views
+
+Syncs article view counters from MongoDB (`core_articlevisits`) into the relational database: updates the **ArticleViews** table (per article and day) and the view counter on **Article**, then resets the counters in Mongo. Used to feed the "most read" ranking. Requires MongoDB to be configured; if not, the command does nothing.
+
+```bash
+./manage.py sync_article_views
+```
+
+### sync_articleviewedby
+
+Moves "article viewed by" records from MongoDB (`core_articleviewedby`) into the **ArticleViewedBy** Django model (relational DB). Used for per-user view history and reporting, not for the "most read" ranking.
+
+```bash
+./manage.py sync_articleviewedby
+```
 
 ## Youtube API
 

@@ -1,14 +1,19 @@
+from json import loads
+
 from django.conf import settings
 from django.db import connection
-from django.views.decorators.cache import never_cache, cache_page
+from django.http import JsonResponse
+from django.views.decorators.cache import cache_page
 from django.utils.timezone import now, timedelta
 
 from decorators import render_response
 
 from core.models import Article, ArticleRel, ArticleViews, Section
+from homev3.views import cache_maxage as homev3_cache_maxage
 
 
 to_response = render_response('core/templates/')
+masleidos_cache_maxage = min(homev3_cache_maxage * 5, 900)
 
 # Table names for raw SQL
 _ARTICLE_TABLE = Article._meta.db_table
@@ -53,9 +58,10 @@ def mas_leidos(days=1, cover=False, limit=10):
         cursor.execute(sql, params)
         rows = cursor.fetchall()
 
-    ids = [row[0] for row in rows]
-    if not ids:
-        return []
+    return [row[0] for row in rows]
+
+
+def get_articles_by_ids(ids):
     articles_by_id = {a.id: a for a in Article.objects.filter(id__in=ids)}
     return [articles_by_id[aid] for aid in ids if aid in articles_by_id]
 
@@ -65,20 +71,28 @@ def mas_leidos_daily(cover=False, limit=None):
     return mas_leidos(days_ago, cover, limit) if limit else mas_leidos(days_ago, cover)
 
 
-@never_cache
-@to_response
-def index(request):
-    return (
-        'masleidos_view.html',
+@cache_page(masleidos_cache_maxage)
+def mas_leidos_fullcontent(request):
+    return JsonResponse(
         {
             'mas_leidos_daily': mas_leidos_daily(),
             'mas_leidos_weekly': mas_leidos(7),
             'mas_leidos_monthly': mas_leidos(30),
-        },
+        }
     )
 
 
-@cache_page(900)
+@to_response
+def index(request):
+    try:
+        full_content_loaded = loads(mas_leidos_fullcontent(request).content)
+        full_content = {k: get_articles_by_ids(v) for k, v in full_content_loaded.items()}
+    except Exception:
+        full_content = {}
+    return 'masleidos_view.html', full_content
+
+
+@cache_page(masleidos_cache_maxage)
 @to_response
 def content(request):
-    return 'masleidos.html', {'masleidos_cover_daily': mas_leidos_daily(True, 5)}
+    return 'masleidos.html', {'masleidos_cover_daily': get_articles_by_ids(mas_leidos_daily(True, 5))}
