@@ -119,45 +119,25 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         except Exception:
             result["suplemento_articles"] = []
 
-        # Sections: up to 3 articles each, respecting saved order if available
-        for sec_data in grid_data.get("sections", []):
+        # Sections: source of truth is Section.objects.filter(in_home=True), ordered by home_order.
+        # grid_data["sections"] provides per-section overrides only: active state and article_ids.
+        _saved_sec_overrides = {s["slug"]: s for s in grid_data.get("sections", []) if s.get("slug")}
+        for section in Section.objects.filter(in_home=True).order_by("home_order"):
+            override = _saved_sec_overrides.get(section.slug, {})
+            saved_ids = override.get("article_ids", [])
             sec_info = {
-                "type": sec_data.get("type", "section"),
-                "id": sec_data.get("id"),
-                "slug": sec_data.get("slug"),
-                "name": sec_data.get("name", ""),
-                "row": sec_data.get("row", 1),
-                "active": sec_data.get("active", True),
+                "type": "section",
+                "id": section.pk,
+                "slug": section.slug,
+                "name": section.name,
+                "active": override.get("active", True),
                 "preview_articles": [],
             }
-            saved_ids = sec_data.get("article_ids", [])
-
-            if sec_info["type"] == "section" and (sec_info["slug"] or sec_info["id"]):
-                try:
-                    section = (
-                        Section.objects.get(slug=sec_info["slug"])
-                        if sec_info["slug"]
-                        else Section.objects.get(pk=sec_info["id"])
-                    )
-                    sec_info["name"] = section.name
-                    if saved_ids:
-                        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
-                        sec_info["preview_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
-                    else:
-                        sec_info["preview_articles"] = list(section.latest(limit=3))
-                except Section.DoesNotExist:
-                    pass
-            elif sec_info["type"] == "category" and sec_info["id"]:
-                try:
-                    category = Category.objects.get(pk=sec_info["id"])
-                    sec_info["name"] = category.name
-                    if saved_ids:
-                        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
-                        sec_info["preview_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
-                    elif hasattr(category, "home"):
-                        sec_info["preview_articles"] = list(category.home.articles_ordered()[:3])
-                except Category.DoesNotExist:
-                    pass
+            if saved_ids:
+                by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+                sec_info["preview_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
+            else:
+                sec_info["preview_articles"] = list(section.latest(limit=3))
             result["sections"].append(sec_info)
 
         # Componentes: merge saved order/active states with fixed definitions.

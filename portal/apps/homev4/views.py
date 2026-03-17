@@ -296,55 +296,29 @@ def build_home_data(grid_data, publication=None):
             result["especial_articles"] = [by_id[aid] for aid in especial_ids if aid in by_id]
 
     logger.warning("  build: especial=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
-    # SECTIONS — only active ones.
+    # SECTIONS — source of truth is Section.objects.filter(in_home=True), ordered by home_order.
+    # grid_data["sections"] provides per-section overrides only: active state and article_ids (picker).
+    # This mirrors how PRINCIPAL works: the DB defines what appears, grid_data only adjusts it.
     # Two-pass strategy to avoid N Article queries (one per section):
-    #   Pass 1: resolve section/category objects and collect ordered article IDs per section
+    #   Pass 1: iterate live DB sections, collect ordered article IDs per section
     #           (section.latest() uses raw SQL — unavoidable one query per section).
     #   Pass 2: single bulk Article.published.filter(id__in=all_ids).select_related(...)
     #           replaces the N individual re-fetch queries.
-    _active_sec_data = [s for s in grid_data.get("sections", []) if s.get("active", True)]
-    _sec_slugs = [s["slug"] for s in _active_sec_data if s.get("type", "section") == "section" and s.get("slug")]
-    _sec_ids = [
-        s["id"] for s in _active_sec_data
-        if s.get("type", "section") == "section" and not s.get("slug") and s.get("id")
-    ]
-    _cat_ids = [s["id"] for s in _active_sec_data if s.get("type") == "category" and s.get("id")]
-    _sections_by_slug = {s.slug: s for s in Section.objects.filter(slug__in=_sec_slugs)} if _sec_slugs else {}
-    _sections_by_id = {s.pk: s for s in Section.objects.filter(pk__in=_sec_ids)} if _sec_ids else {}
-    _categories_by_id = {c.pk: c for c in Category.objects.filter(pk__in=_cat_ids)} if _cat_ids else {}
+    _saved_sec_overrides = {s["slug"]: s for s in grid_data.get("sections", []) if s.get("slug")}
+    _db_sections = list(Section.objects.filter(in_home=True).order_by("home_order"))
 
-    # Pass 1: collect metadata and ordered IDs per section (runs section.latest() per section)
+    # Pass 1
     _sec_entries = []
-    for sec_data in _active_sec_data:
-        sec_type = sec_data.get("type", "section")
-        sec_id = sec_data.get("id")
-        sec_slug = sec_data.get("slug")
-        sec_name = sec_data.get("name", "")
-        sec_row = sec_data.get("row", 1)
-        saved_ids = sec_data.get("article_ids", [])
-        ordered_ids = []
-        url = ""
-
-        if sec_type == "section" and (sec_slug or sec_id):
-            section = _sections_by_slug.get(sec_slug) if sec_slug else _sections_by_id.get(sec_id)
-            if section:
-                sec_name = section.name
-                url = section.get_absolute_url()
-                ordered_ids = saved_ids if saved_ids else [a.id for a in section.latest(limit=3)]
-        elif sec_type == "category" and sec_id:
-            category = _categories_by_id.get(sec_id)
-            if category:
-                sec_name = category.name
-                url = f"/{category.slug}/"
-                if saved_ids:
-                    ordered_ids = saved_ids
-                elif hasattr(category, "home"):
-                    ordered_ids = [a.id for a in category.home.articles_ordered()[:3]]
-
-        _sec_entries.append((sec_type, sec_id, sec_slug, sec_name, sec_row, url, ordered_ids))
+    for _section in _db_sections:
+        _override = _saved_sec_overrides.get(_section.slug, {})
+        if not _override.get("active", True):
+            continue
+        _saved_ids = _override.get("article_ids", [])
+        _ordered_ids = _saved_ids if _saved_ids else [a.id for a in _section.latest(limit=3)]
+        _sec_entries.append((_section, _ordered_ids))
 
     # Pass 2: single bulk Article fetch for all sections combined
-    _all_sec_article_ids = {aid for _, _, _, _, _, _, ids in _sec_entries for aid in ids}
+    _all_sec_article_ids = {aid for _, ids in _sec_entries for aid in ids}
     _sec_articles_by_id = (
         {a.id: a for a in Article.published.filter(id__in=_all_sec_article_ids).select_related(
             _ARTICLE_AUTH_SELECT_RELATED
@@ -352,15 +326,14 @@ def build_home_data(grid_data, publication=None):
         if _all_sec_article_ids else {}
     )
 
-    for sec_type, sec_id, sec_slug, sec_name, sec_row, url, ordered_ids in _sec_entries:
+    for _section, _ordered_ids in _sec_entries:
         result["sections"].append({
-            "type": sec_type,
-            "id": sec_id,
-            "slug": sec_slug,
-            "name": sec_name,
-            "row": sec_row,
-            "url": url,
-            "articles": [_sec_articles_by_id[aid] for aid in ordered_ids if aid in _sec_articles_by_id],
+            "type": "section",
+            "id": _section.pk,
+            "slug": _section.slug,
+            "name": _section.name,
+            "url": _section.get_absolute_url(),
+            "articles": [_sec_articles_by_id[aid] for aid in _ordered_ids if aid in _sec_articles_by_id],
         })
 
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
