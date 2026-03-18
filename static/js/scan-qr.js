@@ -3,6 +3,7 @@
 // --- QR scan callbacks ---
 
 function onScanSuccess(decodedText) {
+  console.log('escaneando');
   const expectedPrefix = SCAN_QR_CONFIG.siteUrl + "comunidad/verify-registro/";
 
   if (!decodedText.startsWith(expectedPrefix)) {
