@@ -239,7 +239,7 @@ handler404 = getattr(settings, 'CUSTOM_HANDLER_404', None)
 handler500 = getattr(settings, 'CUSTOM_HANDLER_500', "homev3.views.custom_500_handler")
 
 urlpatterns = [
-    path('photologue/', include('photologue.urls', namespace='photologue_photologue')),
+    path('photologue/', include('photologue_ladiaria.urls', namespace='photologue_photologue')),
     path('epubparser/', include('epubparser.urls')),
     # Admin
     path('admin/doc/', include('django.contrib.admindocs.urls')),
@@ -271,7 +271,7 @@ urlpatterns.extend(
     [
         # Apps
         path('dashboard/', include('dashboard.urls')),
-        path('fotos/', include('photologue.urls')),
+        path('fotos/', include('photologue_ladiaria.urls')),
         path('genera-la-noticia/', contribute, name='generator-contribute'),
         re_path(r'^robots.txt', include('robots.urls')),
         path('shout/', include('shoutbox.urls')),
