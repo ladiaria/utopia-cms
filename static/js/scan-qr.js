@@ -15,7 +15,7 @@ function onScanSuccess(decodedText) {
 
   document.getElementById("id_code").value = code;
 
-  const benefitName = document.getElementById("benefit-name");
+  const infoContainer = document.getElementById("info-container");
   const submitButton = document.getElementById("submit-button");
 
   $.ajax({
@@ -25,24 +25,25 @@ function onScanSuccess(decodedText) {
       code: code,
       csrfmiddlewaretoken: document.querySelector("[name=csrfmiddlewaretoken]").value,
     },
-    success: function (response) {
-      benefitName.innerText = response.name;
-      benefitName.classList.remove("error");
+    success: function (response) { // Scan que leyó el QR
+      infoContainer.innerText = response.name;
+      infoContainer.classList.remove("error");
       submitButton.disabled = false;
-      submitButton.classList.remove("with-tick");
+      submitButton.classList.remove("hidden");
       document.getElementById("qr-scanned-successfully").innerHTML = "";
     },
-    error: function (xhr) {
+    error: function (xhr) { // Scan con ERror
       const response = JSON.parse(xhr.responseText);
       const errorMessages = {
         404: response.error || "Código QR no encontrado.",
-        400: response.error || "Código QR inválido.",
+        400: response.error || "QR inválido.",
       };
-      benefitName.innerText =
+      infoContainer.innerText =
         errorMessages[xhr.status] || "Ocurrió un error. Por favor, intenta de nuevo.";
-      benefitName.classList.add("error");
+      infoContainer.classList.add("error");
       document.getElementById("qr-scanned-successfully").innerHTML = "";
       document.getElementById("submit-button").disabled = true;
+      document.getElementById("submit-button").classList.add("hidden");
     },
   });
 }
@@ -81,18 +82,33 @@ document.getElementById("scan-qr-form").addEventListener("submit", function (eve
     .then((response) => response.json())
     .then((data) => {
       const messageDiv = document.getElementById("qr-scanned-successfully");
-      const submitBtn = document.getElementById("submit-button");
+      const submitButton = document.getElementById("submit-button");
+      const infoContainer = document.getElementById("info-container");
 
-      if (data.success) {
+      if (data.success) { // QR Confirmado
+        messageDiv.classList.remove("hidden");
         messageDiv.innerText = data.message;
-        messageDiv.classList.remove("error");
-        messageDiv.classList.add("success");
-        submitBtn.disabled = true;
-        submitBtn.classList.add("with-tick");
-      } else {
-        messageDiv.innerText = data.message;
-        messageDiv.classList.remove("success");
-        messageDiv.classList.add("error");
+
+        infoContainer.classList.remove("error");
+        infoContainer.classList.add("hidden");
+
+        submitButton.disabled = true;
+        submitButton.classList.add("with-tick");
+
+        setTimeout(function () {
+          messageDiv.classList.add("hidden");
+          infoContainer.innerText = "Escanear QR de la entrada";
+          infoContainer.classList.remove("hidden");
+          submitButton.disabled = false;
+          submitButton.classList.remove("with-tick");
+          submitButton.classList.add("hidden");
+        }, 1000);
+
+      } else { // QR con error
+        infoContainer.innerText = data.message;
+        infoContainer.classList.add("error");
+
+        submitButton.classList.add("hidden");
       }
     })
     .catch(() => {
