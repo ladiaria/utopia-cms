@@ -1212,7 +1212,7 @@ class ArticleBase(Model, CT):
     keywords = CharField(
         'titulín', max_length=45, blank=True, null=True, help_text='Se muestra encima del título en portada.'
     )
-    slug = SlugField('slug', max_length=200, db_index=True)
+    slug = SlugField('slug', max_length=200)
     url_path = CharField(max_length=512, db_index=True)
     deck = TextField(
         'descripción', blank=True, null=True, help_text='Se muestra en la página del artículo debajo del título.'
