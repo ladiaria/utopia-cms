@@ -55,7 +55,7 @@ function onScanFailure() {
 
 const html5QrCode = new Html5Qrcode("qr-reader");
 html5QrCode.start(
-  { facingMode: "environment" },
+  { facingMode: "environment", aspectRatio: 1.0 },
   { fps: 10, qrbox: { width: 150, height: 150 } },
   onScanSuccess,
   onScanFailure
