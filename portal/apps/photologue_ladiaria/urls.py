@@ -4,6 +4,7 @@ and prevent system crashes.
 """
 import photologue.urls as photologue_urls
 
+from django.conf import settings
 from django.urls import path, re_path
 from django.urls.resolvers import RoutePattern, URLPattern
 
@@ -13,8 +14,9 @@ app_name = photologue_urls.app_name
 
 def get_pl_view_kwargs(photologue_template, **extra):
     """Return kwargs for paginated photologue archive views."""
+    photos_paginate_by = getattr(settings, "PHOTOLOGUE_LADIARIA_PHOTOS_PAGINATE_BY", 28)
     return {
-        'paginate_by': 10 if "gallery" in photologue_template else 28,
+        'paginate_by': 10 if "gallery" in photologue_template else photos_paginate_by,
         'template_name': 'photologue_ladiaria/paginated_archive.html',
         'extra_context': {'photologue_template': photologue_template},
         **extra,
