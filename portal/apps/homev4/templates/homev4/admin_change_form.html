@@ -167,10 +167,10 @@
                             <div class="section-articles section-sortable" id="section-articles-{{ section.slug }}">
                                 {% for article in section.preview_articles %}
                                 <div class="section-article-row" draggable="true" data-article-id="{{ article.id }}">
+                                    <label class="section-replace-radio" title="Marcar para reemplazar"><input type="radio" name="section-replace-{{ section.slug }}"></label>
                                     <span class="drag-handle small-handle">⠿</span>
                                     <span class="section-article-title">{{ article.headline }}</span>
                                     <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>
-                                    <button type="button" class="picker-remove" title="Quitar">×</button>
                                 </div>
                                 {% empty %}
                                 <div class="empty-hint">Sin artículos recientes</div>
@@ -179,7 +179,9 @@
                             <div class="article-picker"
                                  data-target="section-articles-{{ section.slug }}"
                                  data-row-class="section-article-row"
-                                 data-item-selector=".section-article-row[data-article-id]">
+                                 data-item-selector=".section-article-row[data-article-id]"
+                                 data-replace-mode="true">
+                                <div class="section-replace-hint" style="display:none;">Marcá el artículo a reemplazar</div>
                                 <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
                                 <div class="picker-results"></div>
                             </div>
