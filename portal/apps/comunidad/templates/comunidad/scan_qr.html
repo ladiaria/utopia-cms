@@ -12,9 +12,7 @@
 
 {% block content %}
   <h1>Escanear QR</h1>
-  <div class="qr-reader-wrapper">
-    <div id="qr-reader" class="qr-input"></div>
-  </div>
+  <div id="qr-reader" class="qr-input"></div>
   <form action="{% url 'scan_qr' %}" id="scan-qr-form" method="post">
     {% csrf_token %}
     {{ form.code }}
