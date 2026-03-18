@@ -491,11 +491,31 @@
     font-style: italic;
 }
 
+@keyframes homev4-spin {
+    to { transform: rotate(360deg); }
+}
+
 #homev4-editor .picker-loading {
     padding: 6px 8px;
+    display: flex;
+    align-items: center;
+}
+
+#homev4-editor .picker-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ddd;
+    border-top-color: #16a085;
+    border-radius: 50%;
+    animation: homev4-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+#homev4-editor .picker-error {
+    padding: 6px 8px;
     font-size: 11px;
-    color: #aaa;
-    font-style: italic;
+    color: #c0392b;
 }
 
 /* ── Save toast ──────────────────────────────────────────── */
