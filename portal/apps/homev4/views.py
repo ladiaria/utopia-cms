@@ -330,7 +330,7 @@ def build_home_data(grid_data, publication=None):
         if not _override.get("active", True):
             continue
         _saved_ids = _override.get("article_ids", [])
-        _ordered_ids = _saved_ids if _saved_ids else [a.id for a in _section.latest(limit=3)]
+        _ordered_ids = _saved_ids if _saved_ids else [a.id for a in _section.latest(limit=2)]
         _sec_entries.append((_section, _ordered_ids))
 
     # Pass 2: single bulk Article fetch for all sections combined

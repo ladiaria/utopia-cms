@@ -137,7 +137,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                 by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
                 sec_info["preview_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
             else:
-                sec_info["preview_articles"] = list(section.latest(limit=3))
+                sec_info["preview_articles"] = list(section.latest(limit=2))
             result["sections"].append(sec_info)
 
         # Componentes: merge saved order/active states with fixed definitions.
