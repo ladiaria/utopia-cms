@@ -332,7 +332,7 @@ document.addEventListener("DOMContentLoaded", function () {
         resultsEl.innerHTML = "";
         var loading = document.createElement("div");
         loading.className = "picker-loading";
-        loading.textContent = "Buscando\u2026";
+        loading.innerHTML = '<span class="picker-spinner"></span>';
         resultsEl.appendChild(loading);
         resultsEl.style.display = "block";
 
@@ -386,6 +386,12 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch(function (err) {
                 log("picker", "search error", err.message);
+                resultsEl.innerHTML = "";
+                var errEl = document.createElement("div");
+                errEl.className = "picker-error";
+                errEl.textContent = "Error de conexión, intentá de nuevo";
+                resultsEl.appendChild(errEl);
+                resultsEl.style.display = "block";
             });
     }
 
