@@ -1,9 +1,10 @@
 .container {
   width: 100%;
 }
-#qr-reader {
+.qr-reader-wrapper {
   width: 100%;
-  aspect-ratio: 1/1;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
 }
 h1 {
   font-size: 1.5rem;
