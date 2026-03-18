@@ -11,6 +11,7 @@ function onScanSuccess(decodedText) {
     return;
   }
 
+  console.log('sigo escaneando');
   const urlParts = decodedText.split("/");
   const code = urlParts[urlParts.length - 2];
 
@@ -18,6 +19,8 @@ function onScanSuccess(decodedText) {
 
   const infoContainer = document.getElementById("info-container");
   const submitButton = document.getElementById("submit-button");
+
+  console.log(SCAN_QR_CONFIG.checkQrCodeUrl || 'nada');
 
   $.ajax({
     type: "POST",
