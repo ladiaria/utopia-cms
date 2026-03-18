@@ -1,3 +1,5 @@
+@import "../utopia_mixins.scss";
+
 .container {
   width: 100%;
 }
@@ -7,45 +9,58 @@ h1 {
   text-transform: uppercase;
 }
 
+#qr-reader {
+}
+
 form#scan-qr-form {
   padding: 0 20px;
   text-align: center;
 }
 
-form#scan-qr-form input {
-  text-align: center;
-  border: none;
-  font-size: 1.5rem;
-  font-weight: 900;
-  margin-top: 25px;
-  margin-bottom: 0;
-  padding-top: 20px;
-  padding-bottom: 8px;
-  border-top: 1px solid #ddd;
-  height: auto;
-  min-height: 0;
-}
-#benefit-name {
+#info-container {
   text-align: center;
   margin: 0;
+  position: absolute;
+  bottom: 125px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  border: 1px solid #fff;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8px 40px;
+  color: white;
+  font-size: px-to-rem(14px);
+  width: max-content;
+
+  &.hidden {
+    display: none;
+  }
 }
-#benefit-name.error {
-  color: #e61a1a;
-  font-weight: 700;
+
+#info-container.error {
+  background-color: #e61a1a;
+  color: white;
 }
+
 #submit-button {
-  width: 148px;
-  height: 45px;
+  position: absolute;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 15px auto 0;
+  bottom: 175px;
+  border-radius: 8px;
+  font-size: px-to-rem(20px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: px-to-rem(336px);
+  min-height: px-to-rem(44px);
+
+  &.hidden {
+    display: none;
+  }
 }
 #submit-button svg {
   display: none;
-}
-#submit-button:disabled {
-  background-color: #d9d9d9;
 }
 #submit-button.with-tick svg {
   display: inline;
@@ -58,5 +73,13 @@ form#scan-qr-form input {
   text-align: center;
   font-size: 0.75rem;
   font-weight: 700;
-  margin-top: 4px;
+  position: absolute;
+  bottom: 135px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+
+  &.hidden {
+    display: none;
+  }
 }
