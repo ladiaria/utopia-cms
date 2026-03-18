@@ -544,7 +544,7 @@ PWA_SERVICE_WORKER_TEMPLATE = "core/templates/sw/serviceworker.js"
 PWA_SERVICE_WORKER_VERSION = 1
 
 # defaults that will be assigned after local settings import
-COMPRESS_OFFLINE_CONTEXT = {}
+COMPRESS_OFFLINE_CONTEXT = {"photologue_template": "photologue/root.html"}
 SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
