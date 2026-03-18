@@ -546,9 +546,10 @@ document.addEventListener("DOMContentLoaded", function () {
         return result;
     }
 
-    function saveGrid() {
+    function saveGrid(onComplete) {
         if (!DATA || !DATA.saveUrl) {
             showStatus("Error: saveUrl no configurado", "error");
+            if (onComplete) onComplete();
             return;
         }
         var payload = serializeGrid();
@@ -597,14 +598,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 showStatus("Error: " + (resp.error || "?"), "error");
                 log("save", "error response", resp);
             }
+            if (onComplete) onComplete();
         })
         .catch(function (err) {
             showStatus("Error al guardar: " + err.message, "error");
             log("save", "fetch error", err.message);
+            if (onComplete) onComplete();
         });
     }
 
-    document.getElementById("btn-save").addEventListener("click", saveGrid);
+    document.getElementById("btn-save").addEventListener("click", function () { saveGrid(); });
+
+    // Auto-save layout when any Django admin submit button is clicked
+    var adminForm = document.querySelector("#content-main form");
+    if (adminForm) {
+        adminForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var form = this;
+            saveGrid(function () { form.submit(); });
+        });
+    }
 
     function showStatus(message, type) {
         var el = document.getElementById("save-status");
