@@ -53,8 +53,6 @@ function onScanFailure() {
 }
 
 // --- QR reader init ---
-console.log(SCAN_QR_CONFIG.checkQrCodeUrl);
-
 const html5QrCode = new Html5Qrcode("qr-reader");
 html5QrCode.start(
   { facingMode: "environment" },
