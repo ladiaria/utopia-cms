@@ -444,7 +444,13 @@ def _fetch_component_articles(key, saved_ids=None):
     if key == "lo_mas_leido":
         # days=1 → day__gt=yesterday → effectively today only
         try:
-            return mas_leidos(days=1, limit=5)
+            #TODO: @reidel.rodriguez, revisar mas_ledios porque esta lógica la agregué yo para que se me mostrar los artículos en el template.
+            # Antes había;
+            # return mas_leidos(days=1, limit=5)
+
+            ids = mas_leidos(days=1, limit=5)
+            articles = {a.id: a for a in Article.published.filter(id__in=ids)}
+            return [articles[i] for i in ids if i in articles]
         except Exception:
             logger.exception("_fetch_component_articles: lo_mas_leido failed")
             return []
