@@ -3,7 +3,6 @@
 // --- QR scan callbacks ---
 
 function onScanSuccess(decodedText) {
-  console.log('escaneando');
   const expectedPrefix = SCAN_QR_CONFIG.siteUrl + "comunidad/verify-registro/";
 
   if (!decodedText.startsWith(expectedPrefix)) {
@@ -11,7 +10,6 @@ function onScanSuccess(decodedText) {
     return;
   }
 
-  console.log('sigo escaneando');
   const urlParts = decodedText.split("/");
   const code = urlParts[urlParts.length - 2];
 
@@ -19,8 +17,6 @@ function onScanSuccess(decodedText) {
 
   const infoContainer = document.getElementById("info-container");
   const submitButton = document.getElementById("submit-button");
-
-  console.log(SCAN_QR_CONFIG.checkQrCodeUrl || 'nada');
 
   $.ajax({
     type: "POST",
@@ -57,6 +53,7 @@ function onScanFailure() {
 }
 
 // --- QR reader init ---
+console.log(SCAN_QR_CONFIG.checkQrCodeUrl);
 
 const html5QrCode = new Html5Qrcode("qr-reader");
 html5QrCode.start(
