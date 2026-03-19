@@ -405,6 +405,8 @@ def _fetch_source_articles(source_type, slug, limit):
             return list(category.home.articles_ordered()[:limit])
     except (Publication.DoesNotExist, Category.DoesNotExist, AttributeError):
         pass
+    except Exception as e:
+        logger.warning("_fetch_source_articles(%s, %s): %s: %s", source_type, slug, type(e).__name__, e)
     return []
 
 
