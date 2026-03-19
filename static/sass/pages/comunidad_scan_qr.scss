@@ -9,12 +9,13 @@ h1 {
   text-transform: uppercase;
 }
 
-#qr-reader {
-}
-
 form#scan-qr-form {
   padding: 0 20px;
   text-align: center;
+}
+
+#id_code {
+  display: none;
 }
 
 #info-container {
