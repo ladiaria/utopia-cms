@@ -274,6 +274,63 @@ article a {
   }
 }
 
+// ─── Áreas y publicaciones ────────────────────────────────────────────────────
+.home__sections {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: $gap-8;
+}
+
+.home-sections__row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $col-gap;
+  padding-bottom: $gap-8;
+  border-bottom: 1px solid #000;
+
+  & + & {
+    padding-top: $gap-8;
+  }
+}
+
+.home-section {
+  display: flex;
+  flex-direction: column;
+  gap: $gap-6;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $gap-2;
+
+    h2 {
+      font-family: $sans-title;
+      font-weight: 700;
+      font-size: px-to-rem(32px);
+      line-height: 0.87em;
+      letter-spacing: 0.01em;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+  }
+
+  &__articles {
+    display: flex;
+    flex-direction: column;
+    gap: $gap-4;
+  }
+
+  &__divider {
+    border: none;
+    border-top: $border-divider;
+    margin: 0;
+  }
+}
+
 // ─── Mobile (≤ 767px) ─────────────────────────────────────────────────────────
 @media (max-width: $breakpoint-mobile) {
   .home {
@@ -282,7 +339,8 @@ article a {
     row-gap: $gap-6;
 
     > .main-section,
-    > .suplemento-section {
+    > .suplemento-section,
+    > .home__sections {
       grid-column: 1;
     }
 
@@ -317,5 +375,9 @@ article a {
     &__secondary-row {
       grid-template-columns: 1fr;
     }
+  }
+
+  .home-sections__row {
+    grid-template-columns: 1fr;
   }
 }

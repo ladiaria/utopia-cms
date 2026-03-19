@@ -22,6 +22,8 @@
   {% block publication_extra_css %}{% endblock %}
 {% endblock %}
 
+{% block header_classes %}home-header{% endblock %}
+
 {% block content %}
 <div class="home">
 
@@ -37,18 +39,15 @@
       <div class="main-section__featured">
         {% if featured.photo %}
           <a href="{{ featured.get_absolute_url }}">
-            <picture>
-              <source srcset="{{ featured.photo.get_1200w_url }}" media="(min-width: 700px)">
-              <source srcset="{{ featured.photo.get_700w_url }}" media="(min-width: 0)">
-              <img
-                class="main-section__featured-image"
-                data-sizes="auto"
-                width="700"
-                height="{{ featured.photo.get_700w_size.1 }}"
-                title="{{ featured.photo_caption }}"
-                alt="{{ featured.photo_caption }}"
-              >
-            </picture>
+            <img
+              class="main-section__featured-image"
+              srcset="{{ featured.photo.get_700w_url }} 700w, {{ featured.photo.get_1200w_url }} 1200w"
+              sizes="(min-width: 700px) 1200px, 100vw"
+              width="700"
+              height="{{ featured.photo.get_700w_size.1 }}"
+              title="{{ featured.photo_caption }}"
+              alt="{{ featured.photo_caption }}"
+            >
           </a>
         {% endif %}
         <div class="main-section__featured-body">
@@ -204,9 +203,6 @@
       </div>
       {% endif %}
       {% endwith %}
-
-    {% else %}
-      <p class="empty-hint">Sin artículos de deporte.</p>
     {% endif %}
     {% endwith %}
 
@@ -219,5 +215,61 @@
       {% include comp.sidebar_component_template %}
     {% endfor %}
   </aside>
+
+  <!-- ── Áreas y publicaciones ─────────────────────────────────────────────── -->
+  {% if home_data.sections %}
+  <div class="home__sections">
+    {% for section in home_data.sections %}
+      {% if forloop.counter0|divisibleby:3 %}<div class="home-sections__row">{% endif %}
+      <section class="home-section">
+        <div class="home-section__header">
+          <h2 class="home-section__title">
+            <a href="{{ section.url }}">{{ section.name }}</a>
+          </h2>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
+        </div>
+        {% if section.articles %}
+        <div class="home-section__articles">
+          {% with featured=section.articles.0 %}
+          <article class="article">
+            {% if featured.photo %}
+            <a href="{{ featured.get_absolute_url }}">
+              <img
+                class="article__image"
+                srcset="{{ featured.photo.get_small_url }} 350w, {{ featured.photo.get_700w_url }} 700w"
+                sizes="(min-width: 700px) 284px, 100vw"
+                width="700"
+                height="{{ featured.photo.get_700w_size.1 }}"
+                loading="lazy"
+                title="{{ featured.photo_caption }}"
+                alt="{{ featured.photo_caption }}"
+              >
+            </a>
+            {% endif %}
+            <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
+            <h3 class="article__title">
+              <a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a>
+            </h3>
+          </article>
+          {% endwith %}
+          {% if section.articles|length > 1 %}
+          <hr class="home-section__divider">
+          {% with second=section.articles.1 %}
+          <article class="article">
+            <span class="article__section-label">{% autoescape off %}{% publication_section second %}{% endautoescape %}</span>
+            <h3 class="article__title">
+              <a href="{{ second.get_absolute_url }}">{{ second.headline }}</a>
+            </h3>
+          </article>
+          {% endwith %}
+          {% endif %}
+        </div>
+        {% endif %}
+      </section>
+      {% if forloop.counter|divisibleby:3 or forloop.last %}</div>{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}
