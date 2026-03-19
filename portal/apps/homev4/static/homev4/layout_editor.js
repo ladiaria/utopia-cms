@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function initRemoveButton(btn, row) {
         btn.addEventListener("click", function (e) {
             e.stopPropagation();
-            var headline = row.querySelector(".comp-article-title, .article-title");
+            var headline = row.querySelector(".comp-article-title, .article-title, .section-article-title");
             log("picker", "removed article", {
                 id: row.dataset.articleId,
                 headline: headline ? headline.textContent.trim() : "?",
@@ -170,6 +170,101 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".picker-remove").forEach(function (btn) {
         initRemoveButton(btn, btn.closest("[data-article-id]"));
     });
+
+    // Highlight section rows when their replace-radio is checked
+    document.querySelectorAll(".section-replace-radio input[type='radio']").forEach(function (radio) {
+        radio.addEventListener("change", function () {
+            var container = this.closest(".section-articles");
+            if (!container) return;
+            container.querySelectorAll(".section-article-row").forEach(function (r) {
+                r.classList.remove("is-marked-for-replace");
+            });
+            if (this.checked) {
+                this.closest(".section-article-row").classList.add("is-marked-for-replace");
+            }
+        });
+    });
+
+    // ── Section add/replace (ÁREAS Y PUBLICACIONES) ──────────────────────────
+    // Add a new section row (no × button) and wire up its radio.
+    function addArticleToSection(article, container, itemSelector) {
+        var row = document.createElement("div");
+        row.className = "section-article-row";
+        row.draggable = true;
+        row.dataset.articleId = article.id;
+
+        var radioLabel = document.createElement("label");
+        radioLabel.className = "section-replace-radio";
+        radioLabel.title = "Marcar para reemplazar";
+        var radio = document.createElement("input");
+        radio.type = "radio";
+        // Share the same radio group as existing rows in this section
+        var existingRadio = container.querySelector("input[type='radio']");
+        radio.name = existingRadio ? existingRadio.name : "section-replace-" + container.id;
+        radioLabel.appendChild(radio);
+
+        var handle = document.createElement("span");
+        handle.className = "drag-handle small-handle";
+        handle.textContent = "⠿";
+
+        var title = document.createElement("span");
+        title.className = "section-article-title";
+        title.textContent = article.headline;
+
+        var editLink = document.createElement("a");
+        editLink.className = "article-edit-link";
+        editLink.href = "/admin/core/article/" + article.id + "/change/";
+        editLink.target = "_blank";
+        editLink.title = "Editar artículo";
+        editLink.textContent = "✎";
+
+        row.appendChild(radioLabel);
+        row.appendChild(handle);
+        row.appendChild(title);
+        row.appendChild(editLink);
+        container.appendChild(row);
+
+        // Wire up radio highlight
+        radio.addEventListener("change", function () {
+            container.querySelectorAll(".section-article-row").forEach(function (r) {
+                r.classList.remove("is-marked-for-replace");
+            });
+            if (this.checked) this.closest(".section-article-row").classList.add("is-marked-for-replace");
+        });
+
+        initItemDrag(row, container, itemSelector);
+        log("picker", "added article to section", { id: article.id, headline: article.headline });
+    }
+
+    // Replace the radio-marked row with `article`. Returns true on success,
+    // false if no row is marked (caller shows the hint).
+    function replaceArticleInSection(article, container) {
+        var checkedRadio = container.querySelector("input[type='radio']:checked");
+        if (!checkedRadio) return false;
+
+        var row = checkedRadio.closest("[data-article-id]");
+        if (!row) return false;
+
+        // Duplicate check: article already in another slot
+        var existing = container.querySelector("[data-article-id='" + article.id + "']");
+        if (existing && existing !== row) {
+            existing.style.background = "#fffde7";
+            setTimeout(function () { existing.style.background = ""; }, 800);
+            log("picker", "duplicate skipped (replace)", { id: article.id });
+            return true; // close results but don't replace
+        }
+
+        row.dataset.articleId = article.id;
+        var titleEl = row.querySelector(".section-article-title");
+        if (titleEl) titleEl.textContent = article.headline;
+        var editLink = row.querySelector(".article-edit-link");
+        if (editLink) editLink.href = "/admin/core/article/" + article.id + "/change/";
+        checkedRadio.checked = false;
+        row.classList.remove("is-marked-for-replace");
+
+        log("picker", "replaced article in section", { id: article.id, headline: article.headline });
+        return true;
+    }
 
     // ── Article picker ────────────────────────────────────────────────────────
     // article: {id, headline}
@@ -197,8 +292,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var title = document.createElement("span");
         // Use the title class that matches the row class convention
-        title.className = rowClass === "article-row" ? "article-title" : "comp-article-title";
+        var titleClassMap = { "article-row": "article-title", "section-article-row": "section-article-title" };
+        title.className = titleClassMap[rowClass] || "comp-article-title";
         title.textContent = article.headline;
+
+        var editLink = document.createElement("a");
+        editLink.className = "article-edit-link";
+        editLink.href = "/admin/core/article/" + article.id + "/change/";
+        editLink.target = "_blank";
+        editLink.title = "Editar artículo";
+        editLink.textContent = "✎";
 
         var removeBtn = document.createElement("button");
         removeBtn.type = "button";
@@ -209,6 +312,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         row.appendChild(handle);
         row.appendChild(title);
+        row.appendChild(editLink);
         row.appendChild(removeBtn);
         container.appendChild(row);
 
@@ -228,7 +332,7 @@ document.addEventListener("DOMContentLoaded", function () {
         resultsEl.innerHTML = "";
         var loading = document.createElement("div");
         loading.className = "picker-loading";
-        loading.textContent = "Buscando\u2026";
+        loading.innerHTML = '<span class="picker-spinner"></span>';
         resultsEl.appendChild(loading);
         resultsEl.style.display = "block";
 
@@ -245,12 +349,32 @@ document.addEventListener("DOMContentLoaded", function () {
                     resultsEl.style.display = "block";
                     return;
                 }
+                var replaceMode = picker.dataset.replaceMode === "true";
+                var hintEl = replaceMode ? picker.querySelector(".section-replace-hint") : null;
                 articles.forEach(function (a) {
                     var row = document.createElement("div");
                     row.className = "picker-result-row";
                     row.textContent = a.headline;
                     row.addEventListener("click", function () {
-                        addArticleToPicker(a, articlesContainer, rowClass, itemSelector);
+                        if (replaceMode) {
+                            var currentCount = articlesContainer.querySelectorAll("[data-article-id]").length;
+                            if (currentCount < 2) {
+                                // Free slot: just add
+                                addArticleToSection(a, articlesContainer, itemSelector);
+                            } else {
+                                // Full: require a marked radio
+                                var ok = replaceArticleInSection(a, articlesContainer);
+                                if (!ok) {
+                                    if (hintEl) {
+                                        hintEl.style.display = "block";
+                                        setTimeout(function () { hintEl.style.display = "none"; }, 3000);
+                                    }
+                                    return; // keep results open so user can mark a row then retry
+                                }
+                            }
+                        } else {
+                            addArticleToPicker(a, articlesContainer, rowClass, itemSelector);
+                        }
                         resultsEl.innerHTML = "";
                         resultsEl.style.display = "none";
                         var input = picker.querySelector(".picker-search-input");
@@ -262,6 +386,12 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch(function (err) {
                 log("picker", "search error", err.message);
+                resultsEl.innerHTML = "";
+                var errEl = document.createElement("div");
+                errEl.className = "picker-error";
+                errEl.textContent = "Error de conexión, intentá de nuevo";
+                resultsEl.appendChild(errEl);
+                resultsEl.style.display = "block";
             });
     }
 
@@ -292,6 +422,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 timer = setTimeout(function () {
                     fetchArticles(q, resultsEl, articlesContainer, rowClass, itemSelector, picker);
                 }, 300);
+            });
+
+            input.addEventListener("keydown", function (e) {
+                var rows = Array.from(resultsEl.querySelectorAll(".picker-result-row"));
+                if (!rows.length) return;
+                var focused = resultsEl.querySelector(".picker-result-row.picker-focused");
+                var idx = focused ? rows.indexOf(focused) : -1;
+
+                if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    var next = rows[idx + 1] || rows[0];
+                    rows.forEach(function (r) { r.classList.remove("picker-focused"); });
+                    next.classList.add("picker-focused");
+                    next.scrollIntoView({ block: "nearest" });
+                } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    var prev = rows[idx - 1] || rows[rows.length - 1];
+                    rows.forEach(function (r) { r.classList.remove("picker-focused"); });
+                    prev.classList.add("picker-focused");
+                    prev.scrollIntoView({ block: "nearest" });
+                } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (focused) focused.click();
+                } else if (e.key === "Escape") {
+                    resultsEl.innerHTML = "";
+                    resultsEl.style.display = "none";
+                }
             });
 
             // Close results when clicking outside this picker
@@ -389,9 +546,10 @@ document.addEventListener("DOMContentLoaded", function () {
         return result;
     }
 
-    function saveGrid() {
+    function saveGrid(onComplete) {
         if (!DATA || !DATA.saveUrl) {
             showStatus("Error: saveUrl no configurado", "error");
+            if (onComplete) onComplete();
             return;
         }
         var payload = serializeGrid();
@@ -440,14 +598,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 showStatus("Error: " + (resp.error || "?"), "error");
                 log("save", "error response", resp);
             }
+            if (onComplete) onComplete();
         })
         .catch(function (err) {
             showStatus("Error al guardar: " + err.message, "error");
             log("save", "fetch error", err.message);
+            if (onComplete) onComplete();
         });
     }
 
-    document.getElementById("btn-save").addEventListener("click", saveGrid);
+    document.getElementById("btn-save").addEventListener("click", function () { saveGrid(); });
+
+    // Auto-save layout when any Django admin submit button is clicked
+    var adminForm = document.querySelector("#content-main form");
+    if (adminForm) {
+        adminForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var form = this;
+            saveGrid(function () { form.submit(); });
+        });
+    }
 
     function showStatus(message, type) {
         var el = document.getElementById("save-status");

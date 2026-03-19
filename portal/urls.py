@@ -323,8 +323,8 @@ urlpatterns.extend(
         ################################homev4#######################################
         # Homes: domain_slug can be a publication slug or an area (core.Category) slug
         # ROLLBACK: swap comments between the two lines below
-        path('', index, name='home'),          # homev3 (rollback)
-        # path('', active_layout, name='home'),    # homev4
+        #path('', index, name='home'),          # homev3 (rollback)
+        path('', active_layout, name='home'),    # homev4
         #################################homev4######################################
 
         re_path(r'^(?P<domain_slug>[\w-]+)/$', index, name='home'),
