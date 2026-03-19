@@ -1,0 +1,62 @@
+.container {
+  width: 100%;
+}
+h1 {
+  font-size: 1.5rem;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+form#scan-qr-form {
+  padding: 0 20px;
+  text-align: center;
+}
+
+form#scan-qr-form input {
+  text-align: center;
+  border: none;
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin-top: 25px;
+  margin-bottom: 0;
+  padding-top: 20px;
+  padding-bottom: 8px;
+  border-top: 1px solid #ddd;
+  height: auto;
+  min-height: 0;
+}
+#benefit-name {
+  text-align: center;
+  margin: 0;
+}
+#benefit-name.error {
+  color: #e61a1a;
+  font-weight: 700;
+}
+#submit-button {
+  width: 148px;
+  height: 45px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 15px auto 0;
+}
+#submit-button svg {
+  display: none;
+}
+#submit-button:disabled {
+  background-color: #d9d9d9;
+}
+#submit-button.with-tick svg {
+  display: inline;
+  margin-right: 0;
+}
+#submit-button.with-tick span {
+  display: none;
+}
+#qr-scanned-successfully {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 4px;
+}

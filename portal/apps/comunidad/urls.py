@@ -14,6 +14,7 @@ from .views import (
     profile,
     VerifyQRView,
     SendQRByEmailView,
+    SendQRByWhatsAppView,
     ScanQRView,
     check_qr_code,
 )
@@ -39,6 +40,7 @@ urlpatterns = [
     re_path(r'^registro/(?P<beneficio_id>\d+)/(?P<hashed_subscriber_id>[\w]+)/$', add_registro),
     path('verify-registro/<str:hashed_id>/', VerifyQRView.as_view(), name='verify_registro'),
     path('send-qr-by-email/<str:registro_id>/', SendQRByEmailView.as_view(), name='send_qr_by_email'),
+    path('send-qr-by-whatsapp/<str:registro_id>/', SendQRByWhatsAppView.as_view(), name='send_qr_by_whatsapp'),
     path('scan-qr/', ScanQRView.as_view(), name='scan_qr'),
     path('check-qr-code/', check_qr_code, name='check_qr_code'),
 ]

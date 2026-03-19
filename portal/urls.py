@@ -239,7 +239,7 @@ handler404 = getattr(settings, 'CUSTOM_HANDLER_404', None)
 handler500 = getattr(settings, 'CUSTOM_HANDLER_500', "homev3.views.custom_500_handler")
 
 urlpatterns = [
-    path('photologue/', include('photologue.urls', namespace='photologue_photologue')),
+    path('photologue/', include('photologue_ladiaria.urls', namespace='photologue_photologue')),
     path('epubparser/', include('epubparser.urls')),
     # Admin
     path('admin/doc/', include('django.contrib.admindocs.urls')),
@@ -271,7 +271,7 @@ urlpatterns.extend(
     [
         # Apps
         path('dashboard/', include('dashboard.urls')),
-        path('fotos/', include('photologue.urls')),
+        path('fotos/', include('photologue_ladiaria.urls')),
         path('genera-la-noticia/', contribute, name='generator-contribute'),
         re_path(r'^robots.txt', include('robots.urls')),
         path('shout/', include('shoutbox.urls')),
@@ -373,13 +373,23 @@ try:
 except (ProgrammingError, Site.DoesNotExist):
     pass
 else:
-    from feeds import ArticlesByJournalist, LatestArticlesByCategory, LatestEditions, LatestSupplements, LatestArticles
+    from feeds import (
+        ArticlesByJournalist,
+        LatestArticlesByCategory,
+        LatestEditions,
+        LatestSupplements,
+        LatestArticles,
+        LatestArticles72hs,
+        GoogleNewsAIFeed,
+    )
     urlpatterns += [
         path('feeds/articulos/', LatestArticles(), name='ultimos-articulos-rss'),
         path('feeds/ediciones/', LatestEditions()),
+        re_path(r'^feeds/articulos_rss_72hs\.xml$', LatestArticles72hs(), name='articles_rss_72hs'),
         re_path(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
         re_path(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
         path('feeds/suplementos/', LatestSupplements()),
+        path('feeds/google-news-ai/', GoogleNewsAIFeed(), name='google-news-ai-rss'),
     ]
 
 if 'debug_toolbar' in settings.INSTALLED_APPS:

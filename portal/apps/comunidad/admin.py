@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
+import csv
+
 from django.contrib.admin import site, ModelAdmin, TabularInline, SimpleListFilter
+from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
-from .models import SubscriberArticle, Circuito, Socio, Beneficio, Registro, Url as ComunidadUrl, Recommendation
+from .models import (
+    SubscriberArticle, Circuito, Socio, Beneficio, Registro, RegistroUse,
+    Url as ComunidadUrl, Recommendation,
+)
 
 
 class CircuitoAdmin(ModelAdmin):
@@ -32,14 +38,87 @@ class UsedFilter(SimpleListFilter):
         return queryset
 
 
+def export_registros_csv(modeladmin, request, queryset):
+    if not request.user.has_perm('comunidad.export_registro'):
+        modeladmin.message_user(request, _("No tenés permiso para exportar registros."))
+        return
+
+    registros = list(
+        queryset.select_related('subscriber__user', 'benefit').prefetch_related('uses')
+    )
+
+    # Determine the max number of use columns needed across all selected registros
+    max_use_cols = max(
+        (r.benefit.max_uses for r in registros if r.benefit),
+        default=1,
+    )
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="registros.csv"'
+    writer = csv.writer(response)
+
+    header = [
+        'ID', 'Hash', 'Subscriber', 'Subscriber Email', 'Name', 'Phone',
+        'Benefit', 'Dependents', 'Notes', 'Issued',
+    ]
+    for i in range(1, max_use_cols + 1):
+        header.append(f'Uso {i}')
+    header.append('Usos totales')
+    writer.writerow(header)
+
+    for r in registros:
+        uses = list(r.uses.all())  # already prefetched, no extra query
+        row = [
+            r.id,
+            r.generate_hashed_id(),
+            r.subscriber.user.username if r.subscriber else '',
+            r.subscriber_email() or '',
+            r.name or '',
+            r.phone or '',
+            r.benefit.name,
+            r.dependents if r.dependents is not None else '',
+            r.notes or '',
+            r.issued.strftime('%d/%m/%Y %H:%M:%S') if r.issued else '',
+        ]
+        for i in range(max_use_cols):
+            if i < len(uses):
+                row.append(uses[i].used_at.strftime('%d/%m/%Y %H:%M:%S'))
+            else:
+                row.append('')
+        row.append(len(uses))
+        writer.writerow(row)
+    return response
+
+
+export_registros_csv.short_description = _('Exportar registros seleccionados a CSV')
+
+
+class RegistroUseInline(TabularInline):
+    model = RegistroUse
+    readonly_fields = ('used_at',)
+    extra = 0
+
+
 class RegistroAdmin(ModelAdmin):
     change_form_template = 'comunidad/admin/registro/change_form.html'
 
     raw_id_fields = ('subscriber',)
-    list_display = ('id', 'subscriber', 'subscriber_email', 'benefit', 'issued', 'used', 'qr_code_small')
-    readonly_fields = ('qr_code_image', 'issued')
+    inlines = [RegistroUseInline]
+    list_display = (
+        'id', 'hashed_id', 'subscriber', 'name', 'subscriber_email', 'phone',
+        'benefit', 'dependents', 'notes', 'issued', 'used', 'qr_code_small',
+    )
+    readonly_fields = ('qr_code_image', 'hashed_id', 'issued')
     list_filter = ('benefit', UsedFilter)
-    search_fields = ('subscriber__user__email', 'email')
+    search_fields = ('subscriber__user__email', 'email', 'name', 'phone')
+    actions = [export_registros_csv]
+
+    def hashed_id(self, obj):
+        if obj and obj.pk:
+            return obj.generate_hashed_id()
+        return '-'
+
+    hashed_id.short_description = 'Hash ID'
 
     def qr_code_small(self, obj):
         if obj and obj.pk:
@@ -59,7 +138,7 @@ class RegistroAdmin(ModelAdmin):
 
 
 class BeneficioAdmin(ModelAdmin):
-    list_display = ('name', 'circuit', 'slug', 'limit', 'quota')
+    list_display = ('name', 'circuit', 'slug', 'limit', 'quota', 'max_uses', 'whatsapp_template_name')
     list_filter = ('circuit',)
 
 
