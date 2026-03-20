@@ -336,7 +336,8 @@ document.addEventListener("DOMContentLoaded", function () {
         resultsEl.appendChild(loading);
         resultsEl.style.display = "block";
 
-        var url = DATA.articleSearchUrl + "?q=" + encodeURIComponent(q);
+        var sep = DATA.articleSearchUrl.indexOf("?") >= 0 ? "&" : "?";
+        var url = DATA.articleSearchUrl + sep + "q=" + encodeURIComponent(q);
         fetch(url, { credentials: "same-origin" })
             .then(function (r) { return r.json(); })
             .then(function (articles) {

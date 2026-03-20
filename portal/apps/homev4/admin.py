@@ -65,7 +65,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["preview_url"] = f"/homev4/preview/{obj.pk}/"
             extra_context["grid_data_pretty"] = json.dumps(obj.grid_data, indent=2, ensure_ascii=False)
             extra_context["blocks_config"] = LAYOUT_BLOCKS_CONFIG
-            extra_context["article_search_url"] = "/homev4/article-search/"
+            extra_context["article_search_url"] = f"/homev4/article-search/?layout_id={obj.pk}"
         return super().change_view(request, object_id, form_url, extra_context)
 
     def _build_editor_data(self, grid_data, publication=None):
