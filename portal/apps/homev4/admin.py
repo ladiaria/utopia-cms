@@ -119,25 +119,33 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         except Exception:
             result["suplemento_articles"] = []
 
-        # Sections: source of truth is Section.objects.filter(in_home=True), ordered by home_order.
-        # grid_data["sections"] provides per-section overrides only: active state and article_ids.
-        _saved_sec_overrides = {s["slug"]: s for s in grid_data.get("sections", []) if s.get("slug")}
-        for section in Section.objects.filter(in_home=True).order_by("home_order"):
-            override = _saved_sec_overrides.get(section.slug, {})
-            saved_ids = override.get("article_ids", [])
+        # ÁREAS Y PUBLICACIONES: source of truth is grid_data["sections"] merged with _DEFAULT_AREAS.
+        # Areas in _DEFAULT_AREAS not yet in grid_data are appended automatically (same as components).
+        from .views import _fetch_area_articles, _DEFAULT_AREAS
+        saved_areas = grid_data.get("sections", [])
+        saved_area_keys = {(s.get("type"), s.get("slug")) for s in saved_areas}
+        merged_areas = list(saved_areas) + [
+            {"type": a["type"], "slug": a["slug"], "name": a["name"], "active": True, "article_ids": []}
+            for a in _DEFAULT_AREAS if (a["type"], a["slug"]) not in saved_area_keys
+        ]
+        for area in merged_areas:
+            area_type = area.get("type", "section")
+            slug = area.get("slug", "")
+            if not slug:
+                continue
+            saved_ids = area.get("article_ids", [])
             sec_info = {
-                "type": "section",
-                "id": section.pk,
-                "slug": section.slug,
-                "name": section.name,
-                "active": override.get("active", True),
+                "type": area_type,
+                "slug": slug,
+                "name": area.get("name", slug),
+                "active": area.get("active", True),
                 "preview_articles": [],
             }
             if saved_ids:
                 by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
                 sec_info["preview_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
             else:
-                sec_info["preview_articles"] = list(section.latest(limit=2))
+                sec_info["preview_articles"] = _fetch_area_articles(area_type, slug, [])
             result["sections"].append(sec_info)
 
         # Componentes: merge saved order/active states with fixed definitions.

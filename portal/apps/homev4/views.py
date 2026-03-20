@@ -75,6 +75,8 @@ COMPONENT_DEFINITIONS = [
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": ""},
     {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos",    "has_picker": True},
     {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": "",                "sortable_articles": False},
+    {"key": "le_monde",             "label": "Le Monde Diplomatique",    "description": "",                "has_picker": True},
+    {"key": "lento",                "label": "Lento",                    "description": "",                "has_picker": True},
 ]
 
 _COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
@@ -94,16 +96,15 @@ def get_default_grid_data():
     """
     Build the default layout data.
     Format: {principal: {article_ids: []}, suplemento: {article_ids: []},
-             sections: [{type, id, name}, ...], componentes: [{key, active}, ...]}
+             sections: [{type, slug, name, active, article_ids}, ...], componentes: [{key, active}, ...]}
     """
-    sections = Section.objects.filter(in_home=True).order_by("home_order")
     return {
         "principal":  {"active": True, "article_ids": []},
         "suplemento": {"active": True, "article_ids": []},
         "especial":   {"active": True, "article_ids": []},
         "sections": [
-            {"type": "section", "id": s.pk, "slug": s.slug, "name": s.name, "row": 1, "active": True}
-            for s in sections
+            {"type": a["type"], "slug": a["slug"], "name": a["name"], "active": True, "article_ids": []}
+            for a in _DEFAULT_AREAS
         ],
         "componentes": list(DEFAULT_COMPONENTES),
     }
@@ -182,8 +183,8 @@ def sync_sections(request, layout_id):
     componentes = current.get("componentes", {})
 
     new_sections = [
-        {"type": "section", "id": section.pk, "slug": section.slug, "name": section.name, "row": 1, "active": True}
-        for section in Section.objects.filter(in_home=True).order_by("home_order")
+        {"type": a["type"], "slug": a["slug"], "name": a["name"], "active": True, "article_ids": []}
+        for a in _DEFAULT_AREAS
     ]
 
     layout.grid_data = {
@@ -312,44 +313,32 @@ def build_home_data(grid_data, publication=None):
             result["especial_articles"] = [by_id[aid] for aid in especial_ids if aid in by_id]
 
     logger.warning("  build: especial=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
-    # SECTIONS — source of truth is Section.objects.filter(in_home=True), ordered by home_order.
-    # grid_data["sections"] provides per-section overrides only: active state and article_ids (picker).
-    # This mirrors how PRINCIPAL works: the DB defines what appears, grid_data only adjusts it.
-    # Two-pass strategy to avoid N Article queries (one per section):
-    #   Pass 1: iterate live DB sections, collect ordered article IDs per section
-    #           (section.latest() uses raw SQL — unavoidable one query per section).
-    #   Pass 2: single bulk Article.published.filter(id__in=all_ids).select_related(...)
-    #           replaces the N individual re-fetch queries.
-    _saved_sec_overrides = {s["slug"]: s for s in grid_data.get("sections", []) if s.get("slug")}
-    _db_sections = list(Section.objects.filter(in_home=True).order_by("home_order"))
-
-    # Pass 1
-    _sec_entries = []
-    for _section in _db_sections:
-        _override = _saved_sec_overrides.get(_section.slug, {})
-        if not _override.get("active", True):
+    # ÁREAS Y PUBLICACIONES — source of truth is grid_data["sections"] merged with _DEFAULT_AREAS.
+    # Areas in _DEFAULT_AREAS not yet in grid_data are appended automatically (same as components).
+    # Blocks whose (type, slug) matches today's SUPLEMENTO source are hidden (shown there instead).
+    _today_suplemento_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(datetime.date.today().weekday())
+    _saved_areas = grid_data.get("sections", [])
+    _saved_area_keys = {(s.get("type"), s.get("slug")) for s in _saved_areas}
+    _merged_areas = list(_saved_areas) + [
+        {"type": a["type"], "slug": a["slug"], "name": a["name"], "active": True, "article_ids": []}
+        for a in _DEFAULT_AREAS if (a["type"], a["slug"]) not in _saved_area_keys
+    ]
+    for _area in _merged_areas:
+        if not _area.get("active", True):
             continue
-        _saved_ids = _override.get("article_ids", [])
-        _ordered_ids = _saved_ids if _saved_ids else [a.id for a in _section.latest(limit=2)]
-        _sec_entries.append((_section, _ordered_ids))
-
-    # Pass 2: single bulk Article fetch for all sections combined
-    _all_sec_article_ids = {aid for _, ids in _sec_entries for aid in ids}
-    _sec_articles_by_id = (
-        {a.id: a for a in Article.published.filter(id__in=_all_sec_article_ids).select_related(
-            _ARTICLE_AUTH_SELECT_RELATED
-        )}
-        if _all_sec_article_ids else {}
-    )
-
-    for _section, _ordered_ids in _sec_entries:
+        _area_type = _area.get("type", "section")
+        _area_slug = _area.get("slug", "")
+        if not _area_slug:
+            continue
+        # Skip if this area is the current SUPLEMENTO source for today
+        if _today_suplemento_source and (_area_type, _area_slug) == _today_suplemento_source:
+            continue
+        _saved_ids = _area.get("article_ids", [])
         result["sections"].append({
-            "type": "section",
-            "id": _section.pk,
-            "slug": _section.slug,
-            "name": _section.name,
-            "url": _section.get_absolute_url(),
-            "articles": [_sec_articles_by_id[aid] for aid in _ordered_ids if aid in _sec_articles_by_id],
+            "type": _area_type,
+            "slug": _area_slug,
+            "name": _area.get("name", _area_slug),
+            "articles": _fetch_area_articles(_area_type, _area_slug, _saved_ids),
         })
 
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
@@ -382,6 +371,44 @@ _SUPLEMENTO_SOURCE_BY_WEEKDAY = {
     4: ("category", "cultura"),      # Friday / Viernes
 }
 
+# Default area blocks for ÁREAS Y PUBLICACIONES.
+# Each entry defines the source for one block: type + slug.
+# "local" is a special type: fetches 1 article from "colonia" + 1 from "maldonado".
+_DEFAULT_AREAS = [
+    {"type": "category",    "slug": "mundo",      "name": "Mundo"},
+    {"type": "category",    "slug": "cultura",    "name": "Cultura"},
+    {"type": "local",       "slug": "local",      "name": "Local"},
+    {"type": "publication", "slug": "deporte",    "name": "Deporte"},
+    {"type": "publication", "slug": "ambiente",   "name": "Ambiente"},
+    {"type": "publication", "slug": "economia",   "name": "Economía"},
+    {"type": "publication", "slug": "justicia",   "name": "Justicia"},
+    {"type": "publication", "slug": "trabajo",    "name": "Trabajo"},
+    {"type": "publication", "slug": "salud",      "name": "Salud"},
+    {"type": "publication", "slug": "educacion",  "name": "Educación"},
+    {"type": "publication", "slug": "feminismos", "name": "Feminismos"},
+    {"type": "publication", "slug": "ciencia",    "name": "Ciencia"},
+]
+
+
+def _fetch_source_articles(source_type, slug, limit):
+    """Fetch up to `limit` articles from a publication or category source.
+    Shared by SUPLEMENTO and ÁREAS — same fetch logic, different limits.
+    """
+    try:
+        if source_type == "publication":
+            publication = Publication.objects.get(slug=slug)
+            edition = publication.latest_edition()
+            if edition:
+                return list(edition.top_articles[:limit])
+        elif source_type == "category":
+            category = Category.objects.get(slug=slug)
+            return list(category.home.articles_ordered()[:limit])
+    except (Publication.DoesNotExist, Category.DoesNotExist, AttributeError):
+        pass
+    except Exception as e:
+        logger.warning("_fetch_source_articles(%s, %s): %s: %s", source_type, slug, type(e).__name__, e)
+    return []
+
 
 def _fetch_suplemento_articles(saved_ids):
     """Return SUPLEMENTO articles.
@@ -393,19 +420,25 @@ def _fetch_suplemento_articles(saved_ids):
         return [by_id[aid] for aid in saved_ids if aid in by_id]
     source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(datetime.date.today().weekday())
     if source:
-        source_type, slug = source
-        try:
-            if source_type == "publication":
-                publication = Publication.objects.get(slug=slug)
-                edition = publication.latest_edition()
-                if edition:
-                    return list(edition.top_articles[:7])
-            elif source_type == "category":
-                category = Category.objects.get(slug=slug)
-                return list(category.home.articles_ordered()[:7])
-        except (Publication.DoesNotExist, Category.DoesNotExist, AttributeError):
-            pass
+        return _fetch_source_articles(source[0], source[1], limit=7)
     return []
+
+
+def _fetch_area_articles(area_type, slug, saved_ids):
+    """Return articles for an ÁREAS Y PUBLICACIONES block (max 2).
+    Priority: saved_ids (manually picked via picker).
+    Fallback: 2 articles from the category or publication.
+    Special case "local": 1 article from "colonia" + 1 from "maldonado".
+    """
+    if saved_ids:
+        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+        return [by_id[aid] for aid in saved_ids if aid in by_id]
+    if area_type == "local":
+        articles = []
+        for cat_slug in ("colonia", "maldonado"):
+            articles.extend(_fetch_source_articles("category", cat_slug, limit=1))
+        return articles
+    return _fetch_source_articles(area_type, slug, limit=2)
 
 
 # Components whose order is always automatic — saved_ids are ignored for these.
@@ -483,6 +516,13 @@ def _fetch_component_articles(key, saved_ids=None):
             by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
             return [by_id[aid] for aid in saved_ids if aid in by_id]
         return []
+
+    if key in ("le_monde", "lento"):
+        pub_slug = "le-monde-diplomatique" if key == "le_monde" else "lento"
+        if saved_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+            return [by_id[aid] for aid in saved_ids if aid in by_id]
+        return _fetch_source_articles("publication", pub_slug, limit=2)
 
     # radio: no articles, just a visibility toggle in the layout editor
     # newsletter_dia: pending implementation

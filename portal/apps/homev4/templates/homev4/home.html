@@ -136,6 +136,11 @@
           <h3 class="article__title">
             <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
           </h3>
+          <div class="article__footer">
+            <button class="article__bookmark" aria-label="Guardar en favoritos">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+            </button>
+          </div>
         </article>
         {% endfor %}
       </div>
@@ -171,6 +176,11 @@
             <h3 class="article__title">
               <a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a>
             </h3>
+            <div class="article__footer">
+              <button class="article__bookmark" aria-label="Guardar en favoritos">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+              </button>
+            </div>
           </article>
         </div>
         {% if featured.photo %}
@@ -198,6 +208,11 @@
           <h3 class="article__title">
             <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
           </h3>
+          <div class="article__footer">
+            <button class="article__bookmark" aria-label="Guardar en favoritos">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+            </button>
+          </div>
         </article>
         {% endfor %}
       </div>
@@ -250,6 +265,11 @@
             <h3 class="article__title">
               <a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a>
             </h3>
+            <div class="article__footer">
+              <button class="article__bookmark" aria-label="Guardar en favoritos">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+              </button>
+            </div>
           </article>
           {% endwith %}
           {% if section.articles|length > 1 %}
@@ -260,6 +280,11 @@
             <h3 class="article__title">
               <a href="{{ second.get_absolute_url }}">{{ second.headline }}</a>
             </h3>
+            <div class="article__footer">
+              <button class="article__bookmark" aria-label="Guardar en favoritos">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+              </button>
+            </div>
           </article>
           {% endwith %}
           {% endif %}

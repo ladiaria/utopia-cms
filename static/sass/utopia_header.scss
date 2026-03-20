@@ -87,7 +87,6 @@ header {
     grid-template-columns: 1fr auto 1fr;
     width: 100%;
   }
-
   header.home-header & {
     min-height: px-to-rem(54px);
   }
