@@ -267,12 +267,7 @@ def build_home_data(grid_data, publication=None):
                     _ARTICLE_AUTH_SELECT_RELATED
                 )
             })
-        ordered = [by_id[aid] for aid in saved_ids if aid in by_id]
-        saved_set = set(saved_ids)
-        for a in db_articles:
-            if a.id not in saved_set:
-                ordered.append(a)
-        result["principal_articles"] = ordered
+        result["principal_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
     else:
         result["principal_articles"] = db_articles
 
@@ -427,21 +422,6 @@ def _fetch_area_articles(area_type, slug, saved_ids):
 # Components whose order is always automatic — saved_ids are ignored for these.
 _COMPONENTS_AUTO_ORDER = {"lo_ultimo", "lo_mas_leido", "apuntes_del_dia", "radio"}
 
-
-def _merge_article_order(db_articles, saved_ids):
-    """
-    Return db_articles reordered according to saved_ids, with any new DB
-    articles not in saved_ids appended at the end. Same logic as PRINCIPAL.
-    """
-    if not saved_ids:
-        return db_articles
-    db_by_id = {a.id: a for a in db_articles}
-    ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
-    saved_set = set(saved_ids)
-    for a in db_articles:
-        if a.id not in saved_set:
-            ordered.append(a)
-    return ordered
 
 
 def _fetch_component_articles(key, saved_ids=None):
