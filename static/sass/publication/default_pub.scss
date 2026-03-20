@@ -1,5 +1,18 @@
 @import "../variables";
 
+// ─── Utilities ────────────────────────────────────────────────────────────────
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 // ─── Variables ────────────────────────────────────────────────────────────────
 $col-gap: 48px;
 $col-width: 284px; // (1280 - 48 * 3) / 4
@@ -152,16 +165,38 @@ article a {
   gap: $gap-3;
   position: relative;
 
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: $gap-3;
+  }
+
   &__section-label {
     text-transform: uppercase;
     letter-spacing: 0.96px;
     font-size: px-to-rem(12px);
+
+    &--pub {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
   }
   &__title {
     font-family: $serif;
     font-weight: 400;
     font-size: px-to-rem(18px);
     line-height: px-to-rem(24.3px);
+  }
+  &__summary {
+    font-family: $serif;
+  }
+
+  &__opinion-type {
+    font-family: $sans;
+    font-weight: 400;
+    font-size: px-to-rem(14px);
+    line-height: 1em;
   }
   &__footer {
     display: flex;
@@ -270,7 +305,7 @@ article a {
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: $gap-6;
+  gap: $gap-8;
 
   &__block {
     display: flex;
@@ -322,6 +357,10 @@ article a {
   gap: $col-gap;
   padding-bottom: $gap-8;
   border-bottom: 1px solid #000;
+
+  &:last-child {
+    border-bottom: none;
+  }
 
   & + & {
     padding-top: $gap-8;
