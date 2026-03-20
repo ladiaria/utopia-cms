@@ -53,12 +53,12 @@
         <div class="main-section__featured-body">
           <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
           <h1 class="article__title">
-            <a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a>
+            <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
           </h1>
           {% if featured.home_lead %}
-            <p class="article__summary">{{ featured.home_lead }}</p>
+            <p class="article__summary">{{ featured.home_lead|ldmarkup|bleach }}</p>
           {% elif featured.lead %}
-            <p class="article__summary">{{ featured.lead }}</p>
+            <p class="article__summary">{{ featured.lead|ldmarkup|bleach }}</p>
           {% endif %}
           <div class="article__footer">
             {% with authors=featured.get_authors %}
@@ -72,7 +72,7 @@
               {% endif %}
             {% endwith %}
             <button class="article__bookmark" aria-label="Guardar en favoritos">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
             </button>
           </div>
         </div>
@@ -103,7 +103,7 @@
               {% endif %}
             {% endwith %}
             <button class="article__bookmark" aria-label="Guardar en favoritos">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
             </button>
           </div>
         </article>
@@ -134,11 +134,11 @@
           {% endif %}
           <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
           <h3 class="article__title">
-            <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
+            <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
           </h3>
           <div class="article__footer">
             <button class="article__bookmark" aria-label="Guardar en favoritos">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
             </button>
           </div>
         </article>
@@ -174,11 +174,11 @@
           <article class="article">
             <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
             <h3 class="article__title">
-              <a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a>
+              <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
             </h3>
             <div class="article__footer">
               <button class="article__bookmark" aria-label="Guardar en favoritos">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
               </button>
             </div>
           </article>
@@ -206,11 +206,11 @@
         <article class="article">
           <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
           <h3 class="article__title">
-            <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
+            <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
           </h3>
           <div class="article__footer">
             <button class="article__bookmark" aria-label="Guardar en favoritos">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
             </button>
           </div>
         </article>
@@ -263,11 +263,11 @@
             {% endif %}
             <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
             <h3 class="article__title">
-              <a href="{{ featured.get_absolute_url }}">{{ featured.headline }}</a>
+              <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
             </h3>
             <div class="article__footer">
               <button class="article__bookmark" aria-label="Guardar en favoritos">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
               </button>
             </div>
           </article>
@@ -278,11 +278,11 @@
           <article class="article">
             <span class="article__section-label">{% autoescape off %}{% publication_section second %}{% endautoescape %}</span>
             <h3 class="article__title">
-              <a href="{{ second.get_absolute_url }}">{{ second.headline }}</a>
+              <a href="{{ second.get_absolute_url }}">{{ second.headline|ldmarkup|bleach }}</a>
             </h3>
             <div class="article__footer">
               <button class="article__bookmark" aria-label="Guardar en favoritos">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 2.5h10v11l-5-3-5 3v-11Z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
               </button>
             </div>
           </article>
