@@ -609,13 +609,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.getElementById("btn-save").addEventListener("click", function () { saveGrid(); });
 
-    // Auto-save layout when any Django admin submit button is clicked
+    // Auto-save layout when any Django admin submit button is clicked.
+    // Track which button triggered the submit so its name/value is preserved
+    // (Django uses _save/_continue/_addanother to decide where to redirect).
     var adminForm = document.querySelector("#content-main form");
     if (adminForm) {
+        var _clickedBtn = null;
+        adminForm.querySelectorAll("input[type=submit], button[type=submit]").forEach(function (btn) {
+            btn.addEventListener("click", function () { _clickedBtn = btn; });
+        });
         adminForm.addEventListener("submit", function (e) {
             e.preventDefault();
             var form = this;
-            saveGrid(function () { form.submit(); });
+            saveGrid(function () {
+                if (_clickedBtn && _clickedBtn.name) {
+                    var hidden = document.createElement("input");
+                    hidden.type = "hidden";
+                    hidden.name = _clickedBtn.name;
+                    hidden.value = _clickedBtn.value || "1";
+                    form.appendChild(hidden);
+                }
+                form.submit();
+            });
         });
     }
 
