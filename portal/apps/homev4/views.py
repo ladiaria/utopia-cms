@@ -3,6 +3,8 @@ import json
 import logging
 import time
 
+from django.utils import timezone
+
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
@@ -114,6 +116,47 @@ def get_default_publication():
     return Publication.objects.get(slug=settings.DEFAULT_PUB)
 
 
+def _propagate_article_ids(source_layout, source_grid):
+    """
+    Copy article_ids from source_grid to all other layouts of the same publication.
+    Active/inactive flags in each target layout are preserved.
+    Called after save_grid so that all layouts stay in sync.
+    """
+    others = list(HomeLayout.objects.exclude(pk=source_layout.pk).filter(publication=source_layout.publication))
+    if not others:
+        return
+
+    src_top = {
+        block: source_grid.get(block, {}).get("article_ids", [])
+        for block in ("principal", "suplemento", "especial")
+    }
+    src_sections = {s["slug"]: s.get("article_ids", []) for s in source_grid.get("sections", [])}
+    src_componentes = {c["key"]: c.get("article_ids", []) for c in source_grid.get("componentes", [])}
+
+    now = timezone.now()
+    for layout in others:
+        gd = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+
+        for block, ids in src_top.items():
+            block_data = gd.get(block) if isinstance(gd.get(block), dict) else {}
+            block_data["article_ids"] = ids
+            gd[block] = block_data
+
+        for sec in gd.get("sections", []):
+            if sec.get("slug") in src_sections:
+                sec["article_ids"] = src_sections[sec["slug"]]
+
+        for comp in gd.get("componentes", []):
+            if comp.get("key") in src_componentes:
+                comp["article_ids"] = src_componentes[comp["key"]]
+
+        layout.grid_data = gd
+        layout.modified = now
+
+    HomeLayout.objects.bulk_update(others, ["grid_data", "modified"])
+    logger.debug("_propagate_article_ids: synced layout=%d to %d others", source_layout.pk, len(others))
+
+
 def _grid_stats(grid_data):
     """Return a summary dict used both for the save response and for logging."""
     sections = grid_data.get("sections", [])
@@ -141,6 +184,7 @@ def save_grid(request, layout_id):
         layout.save()
         # Re-fetch from DB to confirm the save actually persisted
         layout.refresh_from_db(fields=["grid_data"])
+        _propagate_article_ids(layout, layout.grid_data)
         stats = _grid_stats(layout.grid_data)
         logger.debug(
             "save_grid layout=%d user=%s | principal=%d suplemento=%d "
@@ -216,11 +260,32 @@ def categories_json(request):
 
 @staff_member_required
 def article_search(request):
-    """Return up to 10 published articles matching the ?q= headline search (for the picker widget)."""
+    """Return up to 10 published articles matching the ?q= headline search (for the picker widget).
+    Excludes articles already assigned to any zone of the current layout (?layout_id=).
+    """
     q = request.GET.get("q", "").strip()
     if len(q) < 2:
         return JsonResponse([], safe=False)
-    qs = Article.published.filter(headline__icontains=q).order_by("-date_published")[:10]
+
+    excluded_ids = set()
+    layout_id = request.GET.get("layout_id")
+    if layout_id:
+        try:
+            layout = HomeLayout.objects.get(pk=layout_id)
+            gd = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+            for block in ("principal", "suplemento", "especial"):
+                excluded_ids.update(gd.get(block, {}).get("article_ids", []))
+            for sec in gd.get("sections", []):
+                excluded_ids.update(sec.get("article_ids", []))
+            for comp in gd.get("componentes", []):
+                excluded_ids.update(comp.get("article_ids", []))
+        except HomeLayout.DoesNotExist:
+            pass
+
+    qs = Article.published.filter(headline__icontains=q)
+    if excluded_ids:
+        qs = qs.exclude(id__in=excluded_ids)
+    qs = qs.order_by("-date_published")[:10]
     return JsonResponse([{"id": a.id, "headline": a.headline} for a in qs], safe=False)
 
 
@@ -283,12 +348,7 @@ def build_home_data(grid_data, publication=None):
                     _ARTICLE_AUTH_SELECT_RELATED
                 )
             })
-        ordered = [by_id[aid] for aid in saved_ids if aid in by_id]
-        saved_set = set(saved_ids)
-        for a in db_articles:
-            if a.id not in saved_set:
-                ordered.append(a)
-        result["principal_articles"] = ordered
+        result["principal_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
     else:
         result["principal_articles"] = db_articles
 
@@ -444,21 +504,6 @@ def _fetch_area_articles(area_type, slug, saved_ids):
 # Components whose order is always automatic — saved_ids are ignored for these.
 _COMPONENTS_AUTO_ORDER = {"lo_ultimo", "lo_mas_leido", "apuntes_del_dia", "radio"}
 
-
-def _merge_article_order(db_articles, saved_ids):
-    """
-    Return db_articles reordered according to saved_ids, with any new DB
-    articles not in saved_ids appended at the end. Same logic as PRINCIPAL.
-    """
-    if not saved_ids:
-        return db_articles
-    db_by_id = {a.id: a for a in db_articles}
-    ordered = [db_by_id[aid] for aid in saved_ids if aid in db_by_id]
-    saved_set = set(saved_ids)
-    for a in db_articles:
-        if a.id not in saved_set:
-            ordered.append(a)
-    return ordered
 
 
 def _fetch_component_articles(key, saved_ids=None):

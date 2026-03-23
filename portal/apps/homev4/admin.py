@@ -65,7 +65,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["preview_url"] = f"/homev4/preview/{obj.pk}/"
             extra_context["grid_data_pretty"] = json.dumps(obj.grid_data, indent=2, ensure_ascii=False)
             extra_context["blocks_config"] = LAYOUT_BLOCKS_CONFIG
-            extra_context["article_search_url"] = "/homev4/article-search/"
+            extra_context["article_search_url"] = f"/homev4/article-search/?layout_id={obj.pk}"
         return super().change_view(request, object_id, form_url, extra_context)
 
     def _build_editor_data(self, grid_data, publication=None):
@@ -88,12 +88,8 @@ class HomeLayoutAdmin(admin.ModelAdmin):
 
         edition = get_current_edition(publication=publication)
 
-        # PRINCIPAL articles: DB is source of truth (edition.top_articles with home_top=True).
-        # Saved JSON defines the order. Merge rules:
-        #   - Articles in saved JSON no longer in DB → dropped
-        #   - New DB articles not in saved JSON → appended at end
+        # PRINCIPAL: if saved_ids present, show exactly those (in order); else fall back to edition.top_articles.
         db_articles = list(edition.top_articles) if edition else []
-        db_by_id = {a.id: a for a in db_articles}
 
         principal_data = grid_data.get("principal") or {}
         saved_ids = principal_data.get("article_ids", [])
@@ -102,12 +98,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_ids = [aid for aid in saved_ids if aid not in by_id]
             if extra_ids:
                 by_id.update({a.id: a for a in Article.published.filter(id__in=extra_ids)})
-            ordered = [by_id[aid] for aid in saved_ids if aid in by_id]
-            saved_set = set(saved_ids)
-            for a in db_articles:
-                if a.id not in saved_set:
-                    ordered.append(a)
-            result["principal_articles"] = ordered
+            result["principal_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
         else:
             result["principal_articles"] = db_articles
 
