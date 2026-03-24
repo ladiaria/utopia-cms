@@ -57,6 +57,7 @@ article a {
 
   > .main-section,
   > .suplemento-section,
+  > .especial-section,
   > .home__sections {
     grid-column: 1;
     position: relative;
@@ -298,6 +299,65 @@ article a {
   }
 }
 
+// ─── Sección Especial ─────────────────────────────────────────────────────────
+.especial-section {
+  padding-block: $gap-8;
+  border-bottom: 2px solid;
+
+  // Texto izquierda + foto grande derecha
+  &__featured {
+    display: flex;
+    justify-content: space-between;
+    gap: $gap-6;
+  }
+
+  &__featured-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: $gap-3;
+    flex: 0 0 $col-width;
+
+    .article__title {
+      font-size: px-to-rem(24px);
+      line-height: 1.3em;
+      font-weight: 400;
+    }
+
+    .article__section-label {
+      font-size: px-to-rem(12px);
+      letter-spacing: 0.08em;
+    }
+  }
+
+  &__image-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: $gap-2;
+    flex: 1 1 $col-width * 2 + $col-gap;
+    max-width: $col-width * 2 + $col-gap;
+    a {
+      display: flex;
+    }
+
+    img {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      object-fit: cover;
+      height: auto;
+    }
+  }
+
+  &__caption {
+    font-family: $sans;
+    font-size: px-to-rem(13px);
+    line-height: 1.35em;
+    letter-spacing: 0.01em;
+    color: #7b7b7b;
+    margin: 0;
+  }
+}
+
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 .sidebar {
   display: flex;
@@ -425,6 +485,7 @@ article a {
 
     > .main-section,
     > .suplemento-section,
+    > .especial-section,
     > .home__sections {
       grid-column: 1;
     }
@@ -486,6 +547,17 @@ article a {
         border-bottom: none;
         padding-bottom: 0;
       }
+    }
+  }
+
+  .especial-section {
+    &__featured {
+      flex-direction: column;
+    }
+    &__featured-body,
+    &__image-wrap {
+      flex: 0 0 auto;
+      width: 100%;
     }
   }
 
