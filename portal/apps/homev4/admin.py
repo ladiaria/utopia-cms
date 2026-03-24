@@ -110,6 +110,12 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         except Exception:
             result["suplemento_articles"] = []
 
+        # ESPECIAL articles: resolve saved_ids to Article objects.
+        especial_ids = especial_data.get("article_ids", [])
+        if especial_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=especial_ids)}
+            result["especial_articles"] = [by_id[aid] for aid in especial_ids if aid in by_id]
+
         # ÁREAS Y PUBLICACIONES: source of truth is grid_data["sections"] merged with _DEFAULT_AREAS.
         # Areas in _DEFAULT_AREAS not yet in grid_data are appended automatically (same as components).
         from .views import _fetch_area_articles, _DEFAULT_AREAS
