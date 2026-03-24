@@ -290,11 +290,11 @@ def preview_layout(request, layout_id):
     return render(request, "homev4/home.html", {
         "layout": layout,
         "publication": layout.publication,
-        "home_data": build_home_data(grid_data, publication=layout.publication),
+        "home_data": build_home_data(grid_data, publication=layout.publication, layout=layout),
     })
 
 
-def build_home_data(grid_data, publication=None):
+def build_home_data(grid_data, publication=None, layout=None):
     """
     Pre-fetch all data needed to render the home template from grid_data.
     Returns a single dict with everything ready — the template should not
@@ -303,6 +303,7 @@ def build_home_data(grid_data, publication=None):
     Keys returned:
       principal_active (bool), principal_articles (list of Article),
       suplemento_active (bool), suplemento_articles (list of Article), suplemento_title (str),
+      extra_articles (list of Article — populated on Saturday layouts from FSNewsletter),
       especial_active (bool), especial_articles (list of Article),
       sections: list of dicts — only active ones — each with:
         {type, id, slug, name, row, url, articles}
@@ -315,6 +316,7 @@ def build_home_data(grid_data, publication=None):
         "suplemento_active": False,
         "suplemento_articles": [],
         "suplemento_title": "",
+        "extra_articles": [],
         "especial_active": False,
         "especial_articles": [],
         "sections": [],
@@ -356,6 +358,17 @@ def build_home_data(grid_data, publication=None):
         _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(datetime.date.today().weekday())
         if _today_source:
             result["suplemento_title"] = _area_name_by_source.get((_today_source[0], _today_source[1]), "")
+        # EXTRA: Saturday layouts load extra_articles from FSNewsletter instead of suplemento.
+        if layout is not None and getattr(layout, "day", None) == "sa":
+            try:
+                FSNewsletter = __import__(
+                    "utopia_cms_ladiaria.models", fromlist=["FSNewsletter"]
+                ).FSNewsletter
+                fs_nl = FSNewsletter.objects.get(day=datetime.date.today())
+                result["extra_articles"] = list(fs_nl.extra_articles.order_by("fs_newsletter_extra_articles"))
+                result["suplemento_title"] = "Extra"
+            except Exception:
+                logger.debug("build_home_data: FSNewsletter not available or not found for today")
 
     logger.warning("  build: suplemento=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
     # ESPECIAL
@@ -611,7 +624,7 @@ def active_layout(request, publication_slug=None):
     # Pre-fetch all content defined by the layout editor into a single dict.
     # The template only reads from home_data — no DB calls inside the template.
     _t0 = time.perf_counter()
-    home_data = build_home_data(grid_data, publication=publication)
+    home_data = build_home_data(grid_data, publication=publication, layout=layout)
     logger.warning("active_layout build_home_data: %.1f ms", (time.perf_counter() - _t0) * 1000)
     context = {
         "layout": layout,
