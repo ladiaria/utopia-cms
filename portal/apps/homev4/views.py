@@ -3,6 +3,7 @@ import json
 import logging
 import time
 
+from django.db import transaction
 from django.utils import timezone
 
 from django.conf import settings
@@ -108,7 +109,11 @@ def _propagate_article_ids(source_layout, source_grid):
     Active/inactive flags in each target layout are preserved.
     Called after save_grid so that all layouts stay in sync.
     """
-    others = list(HomeLayout.objects.exclude(pk=source_layout.pk).filter(publication=source_layout.publication))
+    others = list(
+        HomeLayout.objects.select_for_update()
+        .exclude(pk=source_layout.pk)
+        .filter(publication=source_layout.publication)
+    )
     if not others:
         return
 
@@ -166,11 +171,12 @@ def save_grid(request, layout_id):
     try:
         data = json.loads(request.body)
         grid_data = data.get("grid_data", {})
-        layout.grid_data = grid_data
-        layout.save()
-        # Re-fetch from DB to confirm the save actually persisted
-        layout.refresh_from_db(fields=["grid_data"])
-        _propagate_article_ids(layout, layout.grid_data)
+        with transaction.atomic():
+            layout.grid_data = grid_data
+            layout.save()
+            # Re-fetch from DB to confirm the save actually persisted
+            layout.refresh_from_db(fields=["grid_data"])
+            _propagate_article_ids(layout, layout.grid_data)
         stats = _grid_stats(layout.grid_data)
         logger.debug(
             "save_grid layout=%d user=%s | principal=%d suplemento=%d "
