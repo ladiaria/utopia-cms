@@ -318,7 +318,7 @@ def build_home_data(grid_data, publication=None):
 
     Keys returned:
       principal_active (bool), principal_articles (list of Article),
-      suplemento_active (bool), suplemento_articles (list of Article),
+      suplemento_active (bool), suplemento_articles (list of Article), suplemento_title (str),
       especial_active (bool), especial_articles (list of Article),
       sections: list of dicts — only active ones — each with:
         {type, id, slug, name, row, url, articles}
@@ -330,6 +330,7 @@ def build_home_data(grid_data, publication=None):
         "principal_articles": [],
         "suplemento_active": False,
         "suplemento_articles": [],
+        "suplemento_title": "",
         "especial_active": False,
         "especial_articles": [],
         "sections": [],
@@ -360,6 +361,7 @@ def build_home_data(grid_data, publication=None):
 
     logger.warning("  build: principal=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
     # SUPLEMENTO
+    _area_name_by_source = {(a["type"], a["slug"]): a["name"] for a in _DEFAULT_AREAS}
     suplemento_data = grid_data.get("suplemento", {})
     result["suplemento_active"] = _block_active("suplemento", suplemento_data.get("active", True))
     if result["suplemento_active"]:
@@ -367,6 +369,9 @@ def build_home_data(grid_data, publication=None):
             result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data.get("article_ids", []))
         except Exception:
             result["suplemento_articles"] = []
+        _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(datetime.date.today().weekday())
+        if _today_source:
+            result["suplemento_title"] = _area_name_by_source.get((_today_source[0], _today_source[1]), "")
 
     logger.warning("  build: suplemento=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
     # ESPECIAL
@@ -686,6 +691,10 @@ def active_layout(request, publication_slug=None):
 
     home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
     _t2 = time.perf_counter()
-    response = render(request, home_template, context)
+    response = render(request, "homev4/home.html", context)
+    # DEBUG: uncomment to inspect context in the terminal
+    # import pprint
+    # pp = pprint.PrettyPrinter(indent=4)
+    # pp.pprint(context)
     logger.warning("active_layout render: %.1f ms", (time.perf_counter() - _t2) * 1000)
     return response
