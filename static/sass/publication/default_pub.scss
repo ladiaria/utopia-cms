@@ -151,6 +151,85 @@ article a {
   &__tertiary-row {
     padding-bottom: $gap-8;
   }
+
+  // ── Modo "a la tarde" ────────────────────────────────────────────────────────
+  // featured (2 cols) | secondary col (1 col)
+  // featured (cont.)  | secondary col (cont.)
+  // tertiary          | tertiary      | tertiary
+  &--tarde {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+    gap: $col-gap;
+
+    .main-section__featured {
+      grid-column: 1 / 3;
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      gap: $gap-6;
+
+      .article__title {
+        font-size: px-to-rem(28px);
+        line-height: 1.3em;
+        font-weight: 450;
+      }
+    }
+
+    .main-section__featured-image {
+      display: flex;
+      img {
+        width: 100%;
+        aspect-ratio: 3 / 2;
+        object-fit: cover;
+        height: auto;
+      }
+    }
+
+    .main-section__featured-body {
+      gap: $gap-3;
+    }
+
+    .main-section__secondary-row {
+      grid-column: 3;
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding-block: 0;
+      border: none;
+
+      article {
+        display: flex;
+        flex-direction: column;
+        gap: $gap-4;
+        padding-block: $gap-6;
+        border-bottom: $border-divider;
+
+        &:first-child {
+          padding-top: 0;
+        }
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &::before {
+          display: none;
+        }
+
+        .article__image {
+          aspect-ratio: 3 / 2;
+        }
+      }
+    }
+
+    .main-section__tertiary-row {
+      grid-column: 1 / 4;
+      grid-row: 3;
+      border-top: $border-divider;
+      padding-top: $gap-8;
+    }
+  }
 }
 
 // ─── Artículo genérico ────────────────────────────────────────────────────────
@@ -521,6 +600,35 @@ article a {
     }
     &__secondary-row {
       padding-block: $gap-6;
+    }
+
+    &--tarde {
+      grid-template-columns: 1fr;
+
+      .main-section__featured {
+        grid-column: 1;
+        grid-row: auto;
+      }
+
+      .main-section__secondary-row {
+        grid-column: 1;
+        grid-row: auto;
+
+        article {
+          border-bottom: $border-divider;
+          padding-bottom: $gap-6;
+          &:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+          }
+        }
+      }
+
+      .main-section__tertiary-row {
+        grid-column: 1;
+        grid-row: auto;
+        grid-template-columns: 1fr;
+      }
     }
   }
 

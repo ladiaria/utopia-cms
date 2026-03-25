@@ -295,6 +295,15 @@ def article_search(request):
     return JsonResponse([{"id": a.id, "headline": a.headline} for a in qs], safe=False)
 
 
+def _is_tarde_mode(layout):
+    """Return True if the layout's start_time is 15:00 or later."""
+    return (
+        layout is not None
+        and layout.start_time is not None
+        and layout.start_time >= datetime.time(15, 0)
+    )
+
+
 @never_cache
 @staff_member_required
 def preview_layout(request, layout_id):
@@ -306,6 +315,7 @@ def preview_layout(request, layout_id):
         "layout": layout,
         "publication": layout.publication,
         "home_data": build_home_data(grid_data, publication=layout.publication),
+        "tarde_mode": _is_tarde_mode(layout),
         "is_portada": True,
     })
 
@@ -640,6 +650,7 @@ def active_layout(request, publication_slug=None):
         "layout": layout,
         "publication": publication,
         "home_data": home_data,
+        "tarde_mode": _is_tarde_mode(layout),
         "is_portada": True,
     }
 
@@ -691,7 +702,7 @@ def active_layout(request, publication_slug=None):
 
     home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
     _t2 = time.perf_counter()
-    response = render(request, "homev4/home.html", context)
+    response = render(request, home_template, context)
     # DEBUG: uncomment to inspect context in the terminal
     # import pprint
     # pp = pprint.PrettyPrinter(indent=4)

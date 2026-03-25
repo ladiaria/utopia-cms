@@ -1,0 +1,42 @@
+{% load bleach_tags core_tags ldml %}
+
+<div class="main-section__featured">
+  {% if featured.photo %}
+    <a href="{{ featured.get_absolute_url }}" class="main-section__featured-image">
+      <img
+        srcset="{{ featured.photo.get_700w_url }} 700w, {{ featured.photo.get_1200w_url }} 1200w"
+        sizes="(min-width: 700px) 1200px, 100vw"
+        width="700"
+        height="{{ featured.photo.get_700w_size.1 }}"
+        title="{{ featured.photo_caption }}"
+        alt="{{ featured.photo_caption }}"
+      >
+    </a>
+  {% endif %}
+  <div class="main-section__featured-body">
+    <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
+    <h1 class="article__title">
+      <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
+    </h1>
+    {% if featured.home_lead %}
+      <p class="article__summary">{{ featured.home_lead|ldmarkup|bleach }}</p>
+    {% elif featured.lead %}
+      <p class="article__summary">{{ featured.lead|ldmarkup|bleach }}</p>
+    {% endif %}
+    <div class="article__footer">
+      {% with authors=featured.get_authors %}
+        {% if authors %}
+          <div class="article__byline">
+            Por
+            {% for author in authors %}
+              <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      <button class="article__bookmark" aria-label="Guardar en favoritos">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
