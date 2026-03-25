@@ -26,7 +26,7 @@
 
 {% block footer_scripts %}
   {{ block.super }}
-  <script src="{% static 'js/homev4/article-slider.js' %}"></script>
+  <script src="{% static 'js/homev4/article-slider.js' %}?v=1.0"></script>
 {% endblock %}
 
 {% block content %}
@@ -34,7 +34,7 @@
 
   <!-- ── Sección principal ─────────────────────────────────────────────────── -->
   {% if home_data.principal_active %}
-  <section class="main-section{% if False %} main-section--tarde{% endif %}">
+  <section class="main-section{% if tarde_mode %} main-section--tarde{% endif %}">
 
     {% with articles=home_data.principal_articles %}
     {% if articles %}
@@ -43,11 +43,11 @@
         {% include "homev4/main_section/_featured.html" %}
       {% endwith %}
 
-      {% if False %}
+      {% if tarde_mode %}
         {% with secondary=articles|slice:"1:3" %}
           {% include "homev4/main_section/_secondary_tarde.html" %}
         {% endwith %}
-        {% with tertiary=articles|slice:"3:" %}
+        {% with tertiary=articles|slice:"3:6" %}
           {% include "homev4/main_section/_tertiary.html" %}
         {% endwith %}
       {% else %}
@@ -118,26 +118,15 @@
       </div>
       {% endwith %}
 
-      {# 3 noticias menores #}
-      {% with secondary=articles|slice:"1:4" %}
-      {% if secondary %}
-      <div class="suplemento-section__secondary-row">
-        {% for article in secondary %}
-        <article class="article">
-          <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
-          <h3 class="article__title">
-            <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
-          </h3>
-          <div class="article__footer">
-            <button class="article__bookmark" aria-label="Guardar en favoritos">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
-            </button>
-          </div>
-        </article>
-        {% endfor %}
-      </div>
+      {% if articles|length >= 7 %}
+        {% with secondary=articles|slice:"1:7" %}
+          {% include "homev4/suplemento_section/_secondary.html" %}
+        {% endwith %}
+      {% else %}
+        {% with secondary=articles|slice:"1:4" %}
+          {% include "homev4/suplemento_section/_secondary.html" %}
+        {% endwith %}
       {% endif %}
-      {% endwith %}
     {% endif %}
     {% endwith %}
 
