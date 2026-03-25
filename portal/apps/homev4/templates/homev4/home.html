@@ -26,7 +26,9 @@
 
 {% block footer_scripts %}
   {{ block.super }}
-  <script src="{% static 'js/homev4/article-slider.js' %}?v=1.0"></script>
+  {% if not tarde_mode and home_data.principal_articles|length >= 10 or home_data.suplemento_active and home_data.suplemento_articles|length >= 7 %}
+    <script src="{% static 'js/homev4/article-slider.js' %}?v=1.0"></script>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
