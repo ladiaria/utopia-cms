@@ -145,6 +145,51 @@ article a {
     padding-block: $gap-8;
     border-top: $border-divider;
     border-bottom: $border-divider;
+    position: relative;
+    overflow: hidden;
+
+    .article-slider__track {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: $col-gap;
+      transition: transform 0.4s ease;
+      will-change: transform;
+
+      > article {
+        box-sizing: border-box;
+
+        &.article--slider-right-edge { padding-right: 44px; }
+        &.article--slider-left-edge  { padding-left: 44px; }
+      }
+    }
+
+    .article-slider__nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      justify-content: flex-end;
+      width: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .article-slider__btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: $border-divider;
+      border-radius: 50%;
+      background-color: white;
+      cursor: pointer;
+      color: inherit;
+      pointer-events: all;
+    }
+    .article-slider__btn--prev {
+      margin-right: auto;
+    }
   }
 
   // 3 terciarias con foto
@@ -600,6 +645,7 @@ article a {
     }
     &__secondary-row {
       padding-block: $gap-6;
+      overflow: visible;
     }
 
     &--tarde {
