@@ -1,0 +1,11 @@
+{% extends photologue_template %}
+
+{% block css %}
+  {{ block.super }}
+  {% include "photologue_ladiaria/includes/pagination_css.html" %}
+{% endblock %}
+
+{% block content %}
+  {{ block.super }}
+  {% include "photologue_ladiaria/includes/archive_pagination.html" %}
+{% endblock %}

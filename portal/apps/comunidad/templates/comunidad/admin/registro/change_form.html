@@ -3,4 +3,5 @@
 {% block object-tools-items %}
   {{ block.super }}
   <li><a class="button" href="{% url 'send_qr_by_email' original.pk %}">Enviar QR por email</a></li>
+  <li><a class="button" href="{% url 'send_qr_by_whatsapp' original.pk %}">Enviar QR por WhatsApp</a></li>
 {% endblock %}

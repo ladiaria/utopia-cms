@@ -15,7 +15,7 @@ from django.utils.encoding import smart_str, force_str
 django.utils.encoding.smart_text = smart_str
 django.utils.encoding.force_text = force_str
 
-PROJECT_ABSOLUTE_DIR = dirname(abspath(__file__))
+BASE_DIR = PROJECT_ABSOLUTE_DIR = dirname(abspath(__file__))
 PROJECT_NAME = basename(PROJECT_ABSOLUTE_DIR)
 APPS_DIR = join(PROJECT_ABSOLUTE_DIR, "apps")
 if APPS_DIR not in sys.path:
@@ -575,7 +575,7 @@ TESTING_PORT = 8000
 LOCAL_EMAIL_BACKEND_TEST = False
 
 # defaults that will be assigned after local settings import
-COMPRESS_OFFLINE_CONTEXT = {}
+COMPRESS_OFFLINE_CONTEXT = {"photologue_template": "photologue/root.html"}
 SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True

@@ -1,0 +1,66 @@
+// Pagination styles for photologue_ladiaria only.
+// Scoped to .photologue-ladiaria-pagination so it doesn't affect search or other paginations.
+
+@import "../_variables";
+
+.photologue-ladiaria-pagination {
+  text-align: center;
+  margin: 50px 0;
+
+  // Reset container backgrounds and borders
+  .row,
+  .col-lg-12,
+  nav,
+  .pagination {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .row {
+    display: flex;
+    justify-content: center;
+  }
+
+  .col-lg-12 {
+    flex: 0 0 auto;
+  }
+
+  .pagination {
+    margin: 0;
+    text-align: center;
+
+    .page-item {
+      display: inline-block;
+      border-radius: 2px;
+      text-align: center;
+      vertical-align: top;
+      height: 30px;
+      border: none;
+
+      &.disabled {
+        color: $lightGrey-2;
+
+        .page-link {
+          color: inherit;
+          cursor: default;
+        }
+      }
+    }
+
+    .page-link {
+      display: inline-block;
+      font-size: 1.2rem;
+      padding: 0 10px;
+      line-height: 30px;
+      color: $off-black;
+      text-decoration: none;
+      border: none;
+      background: transparent;
+
+      &:hover {
+        color: $off-black-3;
+      }
+    }
+  }
+}

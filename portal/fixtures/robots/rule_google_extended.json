@@ -1,0 +1,14 @@
+[
+{
+  "model": "robots.rule",
+  "fields": {
+    "robot": "Google-Extended",
+    "allowed": [
+      1
+    ],
+    "sites": [
+      1
+    ]
+  }
+}
+]

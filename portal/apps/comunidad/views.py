@@ -190,23 +190,39 @@ class VerifyQRView(TemplateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        if self.registro.used:
-            return self.render_used_registro(request)
+        if self.registro.is_fully_used():
+            return self.render_error(request, self._fully_used_message())
+        if self.registro.used_today():
+            return self.render_error(request, self._used_today_message())
         self.registro.use_registro()
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(
-            {"message": f'Registro para {self.registro.benefit.name} verificado con éxito'}
-        )
+        remaining = self.registro.remaining_uses()
+        msg = f'Registro para {self.registro.benefit.name} verificado con éxito'
+        if remaining > 0:
+            msg += f' (días restantes: {remaining})'
+        context.update({"message": msg})
         return context
 
-    def render_used_registro(self, request):
-        message = (
-            f"QR utilizado el día {self.registro.used.strftime('%d/%m/%Y a las %H:%M:%S')}"
+    def _fully_used_message(self):
+        last_use = self.registro.uses.last()
+        count = self.registro.uses.count()
+        max_uses = self.registro.benefit.max_uses
+        return (
+            f"QR ya utilizado todos los días permitidos ({count}/{max_uses})."
+            f" Último uso: {last_use.used_at.strftime('%d/%m/%Y a las %H:%M:%S')}"
             f" para: {self.registro.benefit.name}"
         )
+
+    def _used_today_message(self):
+        return (
+            f"QR ya utilizado el día de hoy para: {self.registro.benefit.name}."
+            f" Usos: {self.registro.uses.count()}/{self.registro.benefit.max_uses}"
+        )
+
+    def render_error(self, request, message):
         context = {'message': message}
         return render(request, self.template_name, context)
 
@@ -222,6 +238,82 @@ class SendQRByEmailView(RedirectView):
 
     def get_redirect_url(self, *args, **kwargs):
         return reverse('admin:comunidad_registro_change', args=[self.kwargs['registro_id']])
+
+
+@method_decorator(never_cache, name='dispatch')
+@method_decorator(staff_member_required, name='dispatch')
+class SendQRByWhatsAppView(RedirectView):
+    """
+    View that sends the ticket URL via WhatsApp using the CRM API.
+    Requires the Beneficio to have a whatsapp_template_name configured
+    and the Registro to have a phone number.
+    """
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('admin:comunidad_registro_change', args=[self.kwargs['registro_id']])
+
+    def get(self, request, *args, **kwargs):
+        import requests as http_requests
+        from django.contrib.sites.models import Site
+
+        registro = get_object_or_404(Registro, pk=self.kwargs['registro_id'])
+
+        if not registro.phone:
+            messages.error(request, "El registro no tiene número de teléfono.")
+            return super().get(request, *args, **kwargs)
+
+        benefit = registro.benefit
+        if not benefit or not benefit.whatsapp_template_name:
+            messages.error(request, "El beneficio no tiene plantilla de WhatsApp configurada.")
+            return super().get(request, *args, **kwargs)
+
+        hashed_id = registro.generate_hashed_id()
+        domain = Site.objects.get_current().domain
+        ticket_url = f"https://{domain}{reverse('gigantes-festival-entrada', kwargs={'hashed_id': hashed_id})}"
+
+        phone = registro.phone.strip().replace(" ", "")
+        if phone.startswith("0"):
+            phone = "598" + phone[1:]
+        if phone.startswith("+598"):
+            phone = phone[1:]
+
+        crm_api_uri = getattr(settings, 'CRM_SEND_WHATSAPP_API_URI', None)
+        crm_api_key = getattr(settings, 'CRM_UPDATE_USER_API_KEY', None)
+
+        if not crm_api_uri or not crm_api_key:
+            messages.error(request, "La configuración de la API de WhatsApp no está disponible.")
+            return super().get(request, *args, **kwargs)
+
+        data = {
+            "phone_number": phone,
+            "template_name": benefit.whatsapp_template_name,
+            "parameters": [{"message1": ticket_url}],
+        }
+
+        try:
+            r = http_requests.post(
+                crm_api_uri,
+                json=data,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": "Api-Key " + crm_api_key,
+                },
+            )
+            r.raise_for_status()
+            try:
+                resp_data = r.json()
+                if "error" in str(resp_data).lower():
+                    messages.warning(request, f"WhatsApp enviado con advertencias: {resp_data}")
+                else:
+                    messages.success(request, f"WhatsApp enviado exitosamente a {phone}.")
+            except ValueError:
+                messages.success(request, f"WhatsApp enviado exitosamente a {phone}.")
+        except http_requests.exceptions.HTTPError as e:
+            messages.error(request, f"Error al enviar WhatsApp: {e}")
+        except Exception as e:
+            messages.error(request, f"Error al enviar WhatsApp: {e}")
+
+        return super().get(request, *args, **kwargs)
 
 
 @method_decorator(never_cache, name='dispatch')
@@ -251,9 +343,27 @@ class ScanQRView(FormView):
         original_id = hashids.decode(code)
         try:
             registro = Registro.objects.get(id=original_id[0])
-            registro.use_registro()
-            message = f'QR confirmado con éxito'
-            success = True
+            if registro.is_fully_used():
+                last_use = registro.uses.last()
+                message = (
+                    f'QR ya utilizado todos los días permitidos'
+                    f' ({registro.uses.count()}/{registro.benefit.max_uses}).'
+                    f' Último uso: {last_use.used_at.strftime("%d/%m/%Y %H:%M")}'
+                )
+                success = False
+            elif registro.used_today():
+                message = (
+                    f'QR ya utilizado el día de hoy.'
+                    f' Usos: {registro.uses.count()}/{registro.benefit.max_uses}'
+                )
+                success = False
+            else:
+                registro.use_registro()
+                remaining = registro.remaining_uses()
+                message = 'QR confirmado con éxito'
+                if remaining > 0:
+                    message += f' (días restantes: {remaining})'
+                success = True
         except Registro.DoesNotExist:
             message = 'Registro no encontrado'
             success = False
@@ -282,14 +392,29 @@ def check_qr_code(request):
         return JsonResponse({"error": "Código QR inválido"}, status=400)
     try:
         registro = Registro.objects.get(id=original_id[0])
-        if registro.used:
-            # QR utilizado a las 13:40
-            # Cinemateca - sábado 12 de octubre - 14:00
-            msg = f"QR utilizado el día {registro.used.strftime('%d/%m/%Y a las %H:%M:%S')}"
+        if registro.is_fully_used():
+            last_use = registro.uses.last()
+            msg = (
+                f"QR ya utilizado todos los días permitidos"
+                f" ({registro.uses.count()}/{registro.benefit.max_uses})."
+                f" Último uso: {last_use.used_at.strftime('%d/%m/%Y a las %H:%M:%S')}"
+            )
             return JsonResponse(
                 {"error": msg, "benefit": registro.benefit.name},
                 status=400,
             )
-        return JsonResponse({"name": registro.benefit.name})
+        if registro.used_today():
+            return JsonResponse(
+                {
+                    "error": f"QR ya utilizado el día de hoy."
+                    f" Usos: {registro.uses.count()}/{registro.benefit.max_uses}",
+                    "benefit": registro.benefit.name,
+                },
+                status=400,
+            )
+        return JsonResponse({
+            "name": registro.benefit.name,
+            "remaining_uses": registro.remaining_uses(),
+        })
     except Registro.DoesNotExist:
         return JsonResponse({"error": "Código QR no encontrado"}, status=404)

@@ -25,6 +25,7 @@ from django.urls.exceptions import NoReverseMatch
 from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.sitemaps import ping_google
 from django.db import IntegrityError, ProgrammingError, connection
 from django.db.models import (
@@ -94,6 +95,7 @@ from .utils import (
     get_category_template,
 )
 from solo.models import SingletonModel
+
 
 logger = logging.getLogger(__name__)
 
@@ -1685,7 +1687,7 @@ class ArticleBase(Model, CT):
         ordering = ('-date_published',)
         verbose_name = 'artículo'
         verbose_name_plural = 'artículos'
-        indexes = [Index(fields=['type', 'date_published', 'is_published'])]
+        indexes = [Index(fields=['type', 'date_published', 'is_published']), Index(fields=['is_published', 'slug'])]
 
 
 class Article(ArticleBase):
@@ -1712,6 +1714,12 @@ class Article(ArticleBase):
         editable=False,
         through='ArticleViewedBy',
         related_name='viewed_articles_%(app_label)s',
+    )
+    favorites = GenericRelation(
+        'favit.Favorite',
+        content_type_field='target_content_type',
+        object_id_field='target_object_id',
+        related_query_name='favorited_articles',
     )
     additional_access = ManyToManyField(
         Publication,
@@ -2228,12 +2236,12 @@ class ArticleViewedBy(Model):
 
 class ArticleViews(Model):
     article = ForeignKey(Article, on_delete=CASCADE)
-    day = DateField(db_index=True)
+    day = DateField()
     views = PositiveIntegerField(default=0)
 
     class Meta:
         unique_together = ('article', 'day')
-        index_together = [('day', 'views')]
+        index_together = [('day', "article", 'views')]
 
 
 class CategoryHomeArticle(Model):
