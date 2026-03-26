@@ -150,6 +150,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Init: article sorting within each component
     document.querySelectorAll(".comp-articles").forEach(function (container) {
         makeSortable(container, ".comp-article-row[data-article-id]");
+        makeSortable(container, ".newsletter-row[data-newsletter-ref]");
     });
 
     // ── Article remove buttons (for picker-enabled components) ────────────────
@@ -336,8 +337,10 @@ document.addEventListener("DOMContentLoaded", function () {
         resultsEl.appendChild(loading);
         resultsEl.style.display = "block";
 
-        var sep = DATA.articleSearchUrl.indexOf("?") >= 0 ? "&" : "?";
-        var url = DATA.articleSearchUrl + sep + "q=" + encodeURIComponent(q);
+        var isNewsletterMode = picker.dataset.mode === "newsletter";
+        var baseUrl = isNewsletterMode ? (picker.dataset.searchUrl || DATA.newsletterSearchUrl) : DATA.articleSearchUrl;
+        var sep = baseUrl.indexOf("?") >= 0 ? "&" : "?";
+        var url = baseUrl + sep + "q=" + encodeURIComponent(q);
         fetch(url, { credentials: "same-origin" })
             .then(function (r) { return r.json(); })
             .then(function (articles) {
@@ -350,16 +353,57 @@ document.addEventListener("DOMContentLoaded", function () {
                     resultsEl.style.display = "block";
                     return;
                 }
+                var isNewsletterMode = picker.dataset.mode === "newsletter";
                 var replaceMode = picker.dataset.replaceMode === "true";
                 var hintEl = replaceMode ? picker.querySelector(".section-replace-hint") : null;
                 articles.forEach(function (a) {
                     var row = document.createElement("div");
                     row.className = "picker-result-row";
-                    row.textContent = a.headline;
+                    row.textContent = isNewsletterMode ? (a.name + (a.periodicity ? " — " + a.periodicity : "")) : a.headline;
                     row.addEventListener("click", function () {
+                        if (isNewsletterMode) {
+                            var ref = a.type + ":" + a.slug;
+                            var existing = articlesContainer.querySelector("[data-newsletter-ref='" + ref + "']");
+                            if (existing) {
+                                existing.style.background = "#fffde7";
+                                setTimeout(function () { existing.style.background = ""; }, 800);
+                            } else {
+                                var nlRow = document.createElement("div");
+                                nlRow.className = "newsletter-row";
+                                nlRow.draggable = true;
+                                nlRow.dataset.newsletterRef = ref;
+                                var handle = document.createElement("span");
+                                handle.className = "drag-handle small-handle";
+                                handle.textContent = "⠿";
+                                var title = document.createElement("span");
+                                title.className = "comp-article-title";
+                                title.textContent = a.name;
+                                var periodicity = document.createElement("span");
+                                periodicity.className = "comp-desc";
+                                periodicity.textContent = a.periodicity || "";
+                                var removeBtn = document.createElement("button");
+                                removeBtn.type = "button";
+                                removeBtn.className = "picker-remove";
+                                removeBtn.title = "Quitar";
+                                removeBtn.textContent = "×";
+                                initRemoveButton(removeBtn, nlRow);
+                                nlRow.appendChild(handle);
+                                nlRow.appendChild(title);
+                                nlRow.appendChild(periodicity);
+                                nlRow.appendChild(removeBtn);
+                                articlesContainer.appendChild(nlRow);
+                                initItemDrag(nlRow, articlesContainer, ".newsletter-row[data-newsletter-ref]");
+                            }
+                            resultsEl.innerHTML = "";
+                            resultsEl.style.display = "none";
+                            var input = picker.querySelector(".picker-search-input");
+                            if (input) input.value = "";
+                            return;
+                        }
                         if (replaceMode) {
                             var currentCount = articlesContainer.querySelectorAll("[data-article-id]").length;
-                            if (currentCount < 2) {
+                            var maxSlots = parseInt(picker.dataset.maxSlots || "2", 10);
+                            if (currentCount < maxSlots) {
                                 // Free slot: just add
                                 addArticleToSection(a, articlesContainer, itemSelector);
                             } else {
@@ -539,6 +583,12 @@ document.addEventListener("DOMContentLoaded", function () {
             if (articleRows.length > 0) {
                 comp.article_ids = Array.from(articleRows).map(function (ar) {
                     return parseInt(ar.dataset.articleId, 10);
+                });
+            }
+            var newsletterRows = el.querySelectorAll(".newsletter-row[data-newsletter-ref]");
+            if (newsletterRows.length > 0) {
+                comp.newsletter_refs = Array.from(newsletterRows).map(function (nr) {
+                    return nr.dataset.newsletterRef;
                 });
             }
             result.componentes.push(comp);

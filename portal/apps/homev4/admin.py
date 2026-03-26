@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from .models import HomeLayout, _DAY_CODE_TO_WEEKDAYS
-from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles, _fetch_suplemento_articles, LAYOUT_BLOCKS_CONFIG
+from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles, _fetch_suplemento_articles, LAYOUT_BLOCKS_CONFIG, _resolve_newsletter_refs
 
 _DAY_ORDER = {
     "lmjv": 0,
@@ -66,6 +66,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["grid_data_pretty"] = json.dumps(obj.grid_data, indent=2, ensure_ascii=False)
             extra_context["blocks_config"] = LAYOUT_BLOCKS_CONFIG
             extra_context["article_search_url"] = f"/homev4/article-search/?layout_id={obj.pk}"
+            extra_context["newsletter_search_url"] = f"/homev4/newsletter-search/?day={obj.day or ''}"
         return super().change_view(request, object_id, form_url, extra_context)
 
     def _build_editor_data(self, grid_data, publication=None):
@@ -158,40 +159,64 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                 defn = _COMP_DEF_MAP.get(key)
                 if defn and key not in seen_keys:
                     seen_keys.add(key)
-                    result["componentes"].append({
+                    comp_dict = {
                         "key": key,
                         "label": defn["label"],
                         "description": defn["description"],
                         "active": item.get("active", True),
                         "has_picker": defn.get("has_picker", False),
+                        "replace_mode": defn.get("replace_mode", False),
+                        "replace_slots": defn.get("replace_slots", 2),
+                        "newsletter_mode": defn.get("newsletter_mode", False),
                         "sortable_articles": defn.get("sortable_articles", True),
-                        "articles": _fetch_component_articles(key, saved_ids=item.get("article_ids", [])),
-                    })
+                    }
+                    if defn.get("newsletter_mode"):
+                        comp_dict["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
+                        comp_dict["articles"] = []
+                    else:
+                        comp_dict["articles"] = _fetch_component_articles(key, saved_ids=item.get("article_ids", []))
+                    result["componentes"].append(comp_dict)
             # Append any definitions not present in the saved list
             for defn in COMPONENT_DEFINITIONS:
                 if defn["key"] not in seen_keys:
-                    result["componentes"].append({
+                    comp_dict = {
                         "key": defn["key"],
                         "label": defn["label"],
                         "description": defn["description"],
                         "active": True,
                         "has_picker": defn.get("has_picker", False),
+                        "replace_mode": defn.get("replace_mode", False),
+                        "replace_slots": defn.get("replace_slots", 2),
+                        "newsletter_mode": defn.get("newsletter_mode", False),
                         "sortable_articles": defn.get("sortable_articles", True),
-                        "articles": _fetch_component_articles(defn["key"]),
-                    })
+                    }
+                    if defn.get("newsletter_mode"):
+                        comp_dict["newsletters"] = []
+                        comp_dict["articles"] = []
+                    else:
+                        comp_dict["articles"] = _fetch_component_articles(defn["key"])
+                    result["componentes"].append(comp_dict)
         else:
             # Old dict format — use fixed definition order
             for defn in COMPONENT_DEFINITIONS:
                 saved = saved_comps_raw.get(defn["key"], {})
-                result["componentes"].append({
+                comp_dict = {
                     "key": defn["key"],
                     "label": defn["label"],
                     "description": defn["description"],
                     "active": saved.get("active", True),
                     "has_picker": defn.get("has_picker", False),
+                    "replace_mode": defn.get("replace_mode", False),
+                    "replace_slots": defn.get("replace_slots", 2),
+                    "newsletter_mode": defn.get("newsletter_mode", False),
                     "sortable_articles": defn.get("sortable_articles", True),
-                    "articles": _fetch_component_articles(defn["key"]),
-                })
+                }
+                if defn.get("newsletter_mode"):
+                    comp_dict["newsletters"] = _resolve_newsletter_refs(saved.get("newsletter_refs", []))
+                    comp_dict["articles"] = []
+                else:
+                    comp_dict["articles"] = _fetch_component_articles(defn["key"])
+                result["componentes"].append(comp_dict)
 
         return result
 
