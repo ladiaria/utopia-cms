@@ -55,10 +55,7 @@ article a {
   grid-template-columns: 1fr $sidebar-width;
   column-gap: $col-gap;
 
-  > .main-section,
-  > .suplemento-section,
-  > .especial-section,
-  > .home__sections {
+  > section {
     grid-column: 1;
     position: relative;
 
@@ -81,6 +78,18 @@ article a {
   }
 }
 
+// ─── Tipografía compartida: artículo destacado ────────────────────────────────
+%featured-article-title {
+  font-size: px-to-rem(24px);
+  font-weight: 450;
+  line-height: px-to-rem(31.2px);
+}
+
+%featured-article-section-label {
+  font-size: px-to-rem(12px);
+  letter-spacing: 0.08em;
+}
+
 // ─── Sección principal ────────────────────────────────────────────────────────
 .main-section {
   display: flex;
@@ -94,14 +103,10 @@ article a {
     gap: $col-gap;
 
     .article__title {
-      font-weight: 450;
-      font-size: px-to-rem(20px);
-      line-height: 1.35em;
+      @extend %featured-article-title;
     }
-
     .article__section-label {
-      font-size: px-to-rem(12px);
-      letter-spacing: 0.08em;
+      @extend %featured-article-section-label;
     }
 
     .article__byline {
@@ -158,8 +163,12 @@ article a {
       > article {
         box-sizing: border-box;
 
-        &.article--slider-right-edge { padding-right: 44px; }
-        &.article--slider-left-edge  { padding-left: 44px; }
+        &.article--slider-right-edge {
+          padding-right: 44px;
+        }
+        &.article--slider-left-edge {
+          padding-left: 44px;
+        }
       }
     }
 
@@ -213,10 +222,21 @@ article a {
       display: flex;
       flex-direction: column;
       gap: $gap-6;
+      position: relative;
+
+      &::after {
+        content: "";
+        position: absolute;
+        right: -($col-gap / 2);
+        top: 0;
+        bottom: 0;
+        width: 0.5px;
+        background-color: #ababab;
+      }
 
       .article__title {
         font-size: px-to-rem(28px);
-        line-height: 1.3em;
+        line-height: px-to-rem(36.4px);
         font-weight: 450;
       }
     }
@@ -382,6 +402,10 @@ article a {
     padding-bottom: $gap-6;
     border-bottom: 0.5px solid $color-divider;
     justify-content: space-between;
+
+    .article__title {
+      @extend %featured-article-title;
+    }
   }
 
   &__featured-body {
@@ -431,8 +455,12 @@ article a {
       > article {
         box-sizing: border-box;
 
-        &.article--slider-right-edge { padding-right: 44px; }
-        &.article--slider-left-edge  { padding-left: 44px; }
+        &.article--slider-right-edge {
+          padding-right: 44px;
+        }
+        &.article--slider-left-edge {
+          padding-left: 44px;
+        }
       }
     }
 
@@ -461,9 +489,6 @@ article a {
       pointer-events: all;
     }
   }
-  .article__title {
-    font-weight: 450;
-  }
 }
 
 // ─── Sección Especial ─────────────────────────────────────────────────────────
@@ -486,14 +511,10 @@ article a {
     flex: 0 0 $col-width;
 
     .article__title {
-      font-size: px-to-rem(24px);
-      line-height: 1.3em;
-      font-weight: 400;
+      @extend %featured-article-title;
     }
-
     .article__section-label {
-      font-size: px-to-rem(12px);
-      letter-spacing: 0.08em;
+      @extend %featured-article-section-label;
     }
   }
 
@@ -522,6 +543,27 @@ article a {
     letter-spacing: 0.01em;
     color: #7b7b7b;
     margin: 0;
+  }
+}
+
+// ─── Publicidad ───────────────────────────────────────────────────────────────
+// TODO: revisar estos estilos cuando la publicidad se agregue a otras partes del sitio
+#header-pub {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 24px 0 32px;
+  border-top: 1px solid #000;
+  background-color: #fff;
+
+  .ld-caption {
+    color: #81898b;
+    text-align: center;
+    font-family: $sans;
+    font-size: px-to-rem(14px);
+    line-height: px-to-rem(16.52px);
+    letter-spacing: px-to-rem(0.14px);
   }
 }
 
@@ -582,15 +624,15 @@ article a {
   }
 }
 
-// ─── Áreas y publicaciones ────────────────────────────────────────────────────
-.home__sections {
+// ─── Categories and publications ──────────────────────────────────────────────
+.home__blocks {
   grid-column: 1;
   display: flex;
   flex-direction: column;
   padding-top: $gap-8;
 }
 
-.home-sections__row {
+.home-blocks__row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: $col-gap;
@@ -606,7 +648,7 @@ article a {
   }
 }
 
-.home-section {
+.home-block {
   display: flex;
   flex-direction: column;
   gap: $gap-6;
@@ -650,17 +692,21 @@ article a {
     column-gap: 0;
     row-gap: $gap-6;
 
-    > .main-section,
-    > .suplemento-section,
-    > .especial-section,
-    > .home__sections {
+    > section,
+    > div {
       grid-column: 1;
+      min-width: 0;
+
+      &::after {
+        display: none;
+      }
     }
 
     &__sidebar {
       grid-column: 1;
       grid-row: auto;
       position: static;
+      min-width: 0;
     }
   }
 
@@ -697,6 +743,10 @@ article a {
       .main-section__featured {
         grid-column: 1;
         grid-row: auto;
+
+        &::after {
+          display: none;
+        }
       }
 
       .main-section__secondary-row {
@@ -730,6 +780,11 @@ article a {
       flex: 0 0 auto;
       width: 100%;
     }
+    &__featured-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
     &__secondary-row {
       grid-template-columns: 1fr;
       overflow: visible;
@@ -759,7 +814,7 @@ article a {
     }
   }
 
-  .home-sections__row {
+  .home-blocks__row {
     grid-template-columns: 1fr;
   }
 }

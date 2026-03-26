@@ -311,12 +311,15 @@ def preview_layout(request, layout_id):
     layout = get_object_or_404(HomeLayout, pk=layout_id)
     grid_data = layout.grid_data if isinstance(layout.grid_data, dict) else {}
     home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
+    # TODO: review allow_ads logic — wire up is_subscriber once available in context.
+    is_default_pub = layout.publication.slug == getattr(settings, "DEFAULT_PUB", "")
     return render(request, home_template, {
         "layout": layout,
         "publication": layout.publication,
         "home_data": build_home_data(grid_data, publication=layout.publication, layout=layout),
         "tarde_mode": _is_tarde_mode(layout),
         "is_portada": True,
+        "allow_ads": True if is_default_pub else getattr(settings, "HOMEV4_NON_DEFAULT_PUB_ALLOW_ADS", True),
     })
 
 
@@ -659,12 +662,18 @@ def active_layout(request, publication_slug=None):
     _t0 = time.perf_counter()
     home_data = build_home_data(grid_data, publication=publication, layout=layout)
     logger.warning("active_layout build_home_data: %.1f ms", (time.perf_counter() - _t0) * 1000)
+    # TODO: review allow_ads logic — wire up is_subscriber once available in context.
+    if publication_slug:
+        allow_ads = getattr(settings, "HOMEV4_NON_DEFAULT_PUB_ALLOW_ADS", True)
+    else:
+        allow_ads = True
     context = {
         "layout": layout,
         "publication": publication,
         "home_data": home_data,
         "tarde_mode": _is_tarde_mode(layout),
         "is_portada": True,
+        "allow_ads": allow_ads,
     }
 
     # Each publication can store arbitrary extra template vars in its extra_context

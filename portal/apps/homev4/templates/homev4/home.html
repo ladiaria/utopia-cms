@@ -24,13 +24,6 @@
 
 {% block header_classes %}home-header{% endblock %}
 
-{% block footer_scripts %}
-  {{ block.super }}
-  {% if not tarde_mode and home_data.principal_articles|length >= 10 or home_data.suplemento_active and home_data.suplemento_articles|length >= 7 %}
-    <script src="{% static 'js/homev4/article-slider.js' %}?v=1.0"></script>
-  {% endif %}
-{% endblock %}
-
 {% block content %}
 <div class="home">
 
@@ -78,6 +71,11 @@
   </section>
   {% endif %}
 
+  {% block cover_ads %}
+    {% if allow_ads and not is_subscriber %}
+      <section id="header-pub" data-ad-url="{% url 'adzone_ad_content' %}?publication={{ publication.slug }}"></section>
+    {% endif %}
+  {% endblock %}
   <!-- ── Sección Suplemento ───────────────────────────────────────────────── -->
   {% if home_data.suplemento_active %}
   <section class="suplemento-section">
@@ -185,20 +183,20 @@
     {% endfor %}
   </aside>
 
-  <!-- ── Áreas y publicaciones ─────────────────────────────────────────────── -->
+  <!-- ── Categories and publications ─────────────────────────────────────── -->
   {% if home_data.sections %}
-  <div class="home__sections">
+  <div class="home__blocks">
     {% for section in home_data.sections %}
-      {% if forloop.counter0|divisibleby:3 %}<div class="home-sections__row">{% endif %}
-      <section class="home-section">
-        <div class="home-section__header">
-          <h2 class="home-section__title">
+      {% if forloop.counter0|divisibleby:3 %}<div class="home-blocks__row">{% endif %}
+      <section class="home-block">
+        <div class="home-block__header">
+          <h2 class="home-block__title">
             <a href="{{ section.url }}">{{ section.name }}</a>
           </h2>
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
         </div>
         {% if section.articles %}
-        <div class="home-section__articles">
+        <div class="home-block__articles">
           {% with featured=section.articles.0 %}
           <article class="article">
             {% if featured.photo %}
@@ -227,7 +225,7 @@
           </article>
           {% endwith %}
           {% if section.articles|length > 1 %}
-          <hr class="home-section__divider">
+          <hr class="home-block__divider">
           {% with second=section.articles.1 %}
           <article class="article">
             <span class="article__section-label">{% autoescape off %}{% publication_section second %}{% endautoescape %}</span>
@@ -251,4 +249,16 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block footer_scripts %}
+  {{ block.super }}
+
+  {% if not tarde_mode and home_data.principal_articles|length >= 10 or home_data.suplemento_active and home_data.suplemento_articles|length >= 7 %}
+    <script src="{% static 'js/homev4/article-slider.js' %}?v=1.1"></script>
+  {% endif %}
+
+  {% if allow_ads and not is_subscriber %}
+    <script src="{% static 'js/load_ads.js' %}?v=1.0"></script>
+  {% endif %}
 {% endblock %}
