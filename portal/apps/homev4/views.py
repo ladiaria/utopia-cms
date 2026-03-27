@@ -28,6 +28,14 @@ logger = logging.getLogger("homev4")
 
 _cache_maxage = getattr(settings, "HOMEV3_INDEX_CACHE_MAXAGE", 120)
 
+# Newsletters auto-activated on registration — excluded from the newsletter_dia picker.
+_MASIVA_NEWSLETTER_SLUGS = frozenset([
+    ("publication", "ladiaria"),     # A la mañana
+    ("category",    "tarde"),        # A la tarde
+    ("publication", "findesemana"),  # Fin de semana
+    ("category",    "semanal"),      # Resumen semanal
+])
+
 
 def _log_timing(view_func):
     def wrapper(request, *args, **kwargs):
@@ -72,10 +80,10 @@ def _resolve_sidebar_template(key):
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
-    {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "sortable_articles": False},
+    {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "has_picker": True, "replace_mode": True, "replace_slots": 3, "sortable_articles": False},
     {"key": "radio",                "label": "Radio",                    "description": ""},
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a viernes", "has_picker": True},
-    {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": ""},
+    {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
     {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos",    "has_picker": True},
     {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": "",                "sortable_articles": False},
     {"key": "le_monde",             "label": "Le Monde Diplomatique",    "description": "",                "has_picker": True},
@@ -185,6 +193,10 @@ def save_grid(request, layout_id):
     try:
         data = json.loads(request.body)
         grid_data = data.get("grid_data", {})
+        # Strip article_ids from newsletter_mode components — they use newsletter_refs instead.
+        for comp in grid_data.get("componentes", []):
+            if "newsletter_refs" in comp:
+                comp.pop("article_ids", None)
         with transaction.atomic():
             layout.grid_data = grid_data
             layout.save()
@@ -304,19 +316,130 @@ def _is_tarde_mode(layout):
     )
 
 
+# Maps layout day codes to Spanish day-name keywords used to filter newsletter_periodicity.
+# newsletter_periodicity is a free-text field, so we match substrings case-insensitively.
+# Accented and unaccented variants are included to handle inconsistent data entry.
+# Multi-day codes (lv, lmjv) expand to all their individual day names so that a newsletter
+# published on any of those days is considered a match.
+_DAY_CODE_TO_KEYWORDS = {
+    "lu":   ["lunes"],
+    "ma":   ["martes"],
+    "mi":   ["miércoles", "miercoles"],
+    "ju":   ["jueves"],
+    "vi":   ["viernes"],
+    "sa":   ["sábado", "sabado"],
+    "do":   ["domingo"],
+    "lv":   ["lunes", "viernes"],
+    "lmjv": ["lunes", "miércoles", "miercoles", "jueves", "viernes"],
+}
+
+
+@never_cache
+@staff_member_required
+def newsletter_search(request):
+    """Search endpoint for the newsletter_dia picker in the layout editor.
+
+    Returns up to 10 newsletters (Publications + Categories with has_newsletter=True)
+    whose name matches ?q= (min 2 chars). Masiva newsletters are always excluded because
+    they are auto-activated on registration and should not be manually curated.
+
+    Optional ?day= parameter (layout day code, e.g. "ma", "lu") narrows results to
+    newsletters whose newsletter_periodicity field contains any keyword for that day.
+    This relies on _DAY_CODE_TO_KEYWORDS and icontains matching — it works as long as
+    newsletter_periodicity values consistently include the Spanish day name.
+
+    Response shape: [{type, slug, name, periodicity}, ...]
+    """
+    q = request.GET.get("q", "").strip()
+    if len(q) < 2:
+        return JsonResponse([], safe=False)
+    day = request.GET.get("day", "").strip()
+    day_keywords = _DAY_CODE_TO_KEYWORDS.get(day, [])
+    masiva_pub_slugs = {s for t, s in _MASIVA_NEWSLETTER_SLUGS if t == "publication"}
+    masiva_cat_slugs = {s for t, s in _MASIVA_NEWSLETTER_SLUGS if t == "category"}
+
+    def day_filter(qs):
+        # If no day is specified (or unrecognized code), return all results unfiltered.
+        if not day_keywords:
+            return qs
+        from django.db.models import Q
+        q_day = Q()
+        for kw in day_keywords:
+            q_day |= Q(newsletter_periodicity__icontains=kw)
+        return qs.filter(q_day)
+
+    results = []
+    pub_qs = day_filter(Publication.objects.filter(has_newsletter=True, name__icontains=q).exclude(slug__in=masiva_pub_slugs)).order_by("name")[:10]
+    for pub in pub_qs:
+        # Use newsletter_name (the branded name) over the publication name when available.
+        results.append({"type": "publication", "slug": pub.slug, "name": pub.newsletter_name or pub.name, "periodicity": pub.newsletter_periodicity or ""})
+    cat_qs = day_filter(Category.objects.filter(has_newsletter=True, name__icontains=q).exclude(slug__in=masiva_cat_slugs)).order_by("name")[:10]
+    for cat in cat_qs:
+        results.append({"type": "category", "slug": cat.slug, "name": cat.name, "periodicity": cat.newsletter_periodicity or ""})
+    results.sort(key=lambda x: x["name"])
+    return JsonResponse(results[:10], safe=False)
+
+
+def _resolve_newsletter_refs(refs):
+    """Resolve a list of 'type:slug' strings to newsletter dicts {type, slug, name, periodicity}.
+
+    Used by both build_home_data (to enrich newsletter_dia component data) and
+    _build_editor_data in admin.py (to display saved newsletters in the layout editor).
+    Masiva newsletters are silently skipped even if somehow saved in grid_data.
+    Non-existent slugs are also silently skipped.
+    """
+    result = []
+    masiva_pub_slugs = {s for t, s in _MASIVA_NEWSLETTER_SLUGS if t == "publication"}
+    masiva_cat_slugs = {s for t, s in _MASIVA_NEWSLETTER_SLUGS if t == "category"}
+    for ref in refs:
+        try:
+            nl_type, nl_slug = ref.split(":", 1)
+        except ValueError:
+            continue
+        try:
+            if nl_type == "publication" and nl_slug not in masiva_pub_slugs:
+                obj = Publication.objects.get(slug=nl_slug, has_newsletter=True)
+                result.append({"type": "publication", "slug": nl_slug, "name": obj.newsletter_name or obj.name, "periodicity": obj.newsletter_periodicity or ""})
+            elif nl_type == "category" and nl_slug not in masiva_cat_slugs:
+                obj = Category.objects.get(slug=nl_slug, has_newsletter=True)
+                result.append({"type": "category", "slug": nl_slug, "name": obj.name, "periodicity": obj.newsletter_periodicity or ""})
+        except (Publication.DoesNotExist, Category.DoesNotExist):
+            pass
+    return result
+
+
 @never_cache
 @staff_member_required
 def preview_layout(request, layout_id):
-    """Render the home template for a specific layout (opens in new tab from admin)."""
+    """Render the home template for a specific layout (opens in new tab from admin).
+
+    Mirrors the context built by active_layout so the preview accurately reflects
+    what a real visitor would see, including newsletter_dia_nl resolution.
+    The previewing user is treated as unauthenticated for newsletter selection purposes
+    (i.e. the first newsletter in the list is always shown), since the preview is used
+    by editors who want to check the layout, not their own subscription state.
+    """
     layout = get_object_or_404(HomeLayout, pk=layout_id)
     grid_data = layout.grid_data if isinstance(layout.grid_data, dict) else {}
-    home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
+    home_data = build_home_data(grid_data, publication=layout.publication, layout=layout)
+
+    # Resolve newsletter_dia_nl: always show the first newsletter (unauthenticated behavior).
+    newsletter_dia_nl = None
+    for comp in home_data.get("componentes", []):
+        if comp.get("key") == "newsletter_dia":
+            newsletters = comp.get("newsletters", [])
+            if newsletters:
+                newsletter_dia_nl = newsletters[0]
+            break
+
     # TODO: review allow_ads logic — wire up is_subscriber once available in context.
     is_default_pub = layout.publication.slug == getattr(settings, "DEFAULT_PUB", "")
-    return render(request, home_template, {
+    home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
+    return render(request, "homev4/home.html", {
         "layout": layout,
         "publication": layout.publication,
-        "home_data": build_home_data(grid_data, publication=layout.publication, layout=layout),
+        "home_data": home_data,
+        "newsletter_dia_nl": newsletter_dia_nl,
         "tarde_mode": _is_tarde_mode(layout),
         "is_portada": True,
         "allow_ads": True if is_default_pub else getattr(settings, "HOMEV4_NON_DEFAULT_PUB_ALLOW_ADS", True),
@@ -445,13 +568,29 @@ def build_home_data(grid_data, publication=None, layout=None):
             continue
         key = item.get("key", "")
         defn = _COMP_DEF_MAP.get(key, {})
-        result["componentes"].append({
+        comp_entry = {
             "key": key,
             "label": defn.get("label", key),
             "description": defn.get("description", ""),
-            "sidebar_component_template": _resolve_sidebar_template(key),
-            "articles": _fetch_component_articles(key, saved_ids=item.get("article_ids", [])),
-        })
+        }
+        if defn.get("newsletter_mode"):
+            # newsletter_dia: deliver the editor-ordered newsletter list.
+            # The active_layout view resolves which one to actually show per user
+            # and puts it in context["newsletter_dia_nl"].
+            comp_entry["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
+            comp_entry["articles"] = []
+        else:
+            articles = _fetch_component_articles(key, saved_ids=item.get("article_ids", []))
+            if key == "lo_ultimo":
+                # Attach minutes_ago directly to each Article instance so the template
+                # can access article.minutes_ago without changing the articles interface.
+                # Value is an integer (1–59) if published within the last hour, else None.
+                now = timezone.now()
+                for a in articles:
+                    minutes = int((now - a.date_published).total_seconds() / 60)
+                    a.minutes_ago = minutes if minutes <= 59 else None
+            comp_entry["articles"] = articles
+        result["componentes"].append(comp_entry)
 
     logger.warning("  build: componentes=%.1f ms", (time.perf_counter() - _tb) * 1000)
     return result
@@ -539,7 +678,7 @@ def _fetch_area_articles(area_type, slug, saved_ids):
 
 
 # Components whose order is always automatic — saved_ids are ignored for these.
-_COMPONENTS_AUTO_ORDER = {"lo_ultimo", "lo_mas_leido", "apuntes_del_dia", "radio"}
+_COMPONENTS_AUTO_ORDER = {"lo_mas_leido", "apuntes_del_dia", "radio"}
 
 
 
@@ -554,6 +693,9 @@ def _fetch_component_articles(key, saved_ids=None):
       HOMEV4_APUNTES_SECTION_SLUG    (default: "apuntes-del-dia")
     """
     if key == "lo_ultimo":
+        if saved_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+            return [by_id[aid] for aid in saved_ids if aid in by_id]
         return list(Article.published.order_by("-date_published")[:3])
 
     if key == "lo_mas_leido":
@@ -723,6 +865,46 @@ def active_layout(request, publication_slug=None):
             context["unsubscribed_newsletters"] = unsubscribed_newsletters(user.subscriber)
 
     home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
+    # newsletter_dia — resolve which single newsletter to surface to this user.
+    #
+    # The layout editor stores an ordered list of newsletters for each layout
+    # (e.g. "Economía, Justicia" for Monday). The list order is the editorial priority:
+    # position 0 is shown first when the user has none of them active.
+    #
+    # Selection rules (applied in order):
+    #   1. Not authenticated or no subscriber profile → show the first newsletter.
+    #   2. Authenticated, none active               → show the first newsletter.
+    #   3. Authenticated, some active               → show the first one NOT yet active.
+    #   4. Authenticated, all active                → show nothing (newsletter_dia_nl = None).
+    #
+    # The resolved newsletter dict {type, slug, name, periodicity} is placed in
+    # context["newsletter_dia_nl"] so the template can render it directly without
+    # any further DB access or conditional logic.
+    newsletter_dia_nl = None
+    for comp in home_data.get("componentes", []):
+        if comp.get("key") == "newsletter_dia":
+            newsletters = comp.get("newsletters", [])
+            if newsletters:
+                if user.is_authenticated and hasattr(user, "subscriber"):
+                    sub = user.subscriber
+                    # Build a set of "type:slug" strings for all newsletters the user has active.
+                    # sub.newsletters      → ManyToMany to Publication (type="publication")
+                    # sub.category_newsletters → ManyToMany to Category (type="category")
+                    active_refs = (
+                        set("publication:" + slug for slug in sub.newsletters.values_list("slug", flat=True)) |
+                        set("category:" + slug for slug in sub.category_newsletters.values_list("slug", flat=True))
+                    )
+                    for nl in newsletters:
+                        if (nl["type"] + ":" + nl["slug"]) not in active_refs:
+                            newsletter_dia_nl = nl
+                            break
+                    # If all newsletters are active, newsletter_dia_nl stays None (rule 4).
+                else:
+                    # Unauthenticated or no subscriber record: show the first in the list (rule 1).
+                    newsletter_dia_nl = newsletters[0]
+            break
+    context["newsletter_dia_nl"] = newsletter_dia_nl
+
     _t2 = time.perf_counter()
     response = render(request, home_template, context)
     # DEBUG: uncomment to inspect context in the terminal
