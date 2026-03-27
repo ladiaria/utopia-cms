@@ -572,6 +572,7 @@ def build_home_data(grid_data, publication=None, layout=None):
             "key": key,
             "label": defn.get("label", key),
             "description": defn.get("description", ""),
+            "sidebar_component_template": _resolve_sidebar_template(key),
         }
         if defn.get("newsletter_mode"):
             # newsletter_dia: deliver the editor-ordered newsletter list.

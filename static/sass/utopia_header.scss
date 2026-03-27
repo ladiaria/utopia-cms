@@ -212,6 +212,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: -8px; // overlap intencional con el elemento de arriba, por diseño
   img {
     max-width: 180px;
   }
@@ -248,7 +249,7 @@ header {
   width: 100%;
   border-top: 0.5px solid #ababab;
   border-bottom: 0.5px solid #ababab;
-  margin-top: 48px;
+  margin-top: 40px;
   padding: 8px 0;
 
   header.sticky & {
