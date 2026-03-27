@@ -79,10 +79,16 @@ article a {
 }
 
 // ─── Tipografía compartida: artículo destacado ────────────────────────────────
-%featured-article-title {
-  font-size: px-to-rem(24px);
+@mixin featured-article-title($variant: desktop) {
   font-weight: 450;
-  line-height: px-to-rem(31.2px);
+
+  @if $variant == mobile {
+    font-size: px-to-rem(18px);
+    line-height: px-to-rem(24.3px);
+  } @else {
+    font-size: px-to-rem(24px);
+    line-height: px-to-rem(31.2px);
+  }
 }
 
 %featured-article-section-label {
@@ -103,7 +109,7 @@ article a {
     gap: $col-gap;
 
     .article__title {
-      @extend %featured-article-title;
+      @include featured-article-title();
     }
     .article__section-label {
       @extend %featured-article-section-label;
@@ -396,31 +402,40 @@ article a {
     }
   }
 
-  // Noticia destacada: texto izquierda + imagen derecha
+  // Noticia destacada: título + artículo izquierda, imagen derecha (grid)
   &__featured {
-    display: flex;
-    padding-bottom: $gap-6;
-    border-bottom: 0.5px solid $color-divider;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: px-to-rem(288px) 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 0 $col-gap;
 
     .article__title {
-      @extend %featured-article-title;
+      @include featured-article-title();
     }
-  }
 
-  &__featured-body {
-    display: flex;
-    flex-direction: column;
-    gap: 64px;
-    flex: 1 1 px-to-rem(288px);
-    max-width: px-to-rem(288px);
-  }
+    > .suplemento-section__header {
+      grid-column: 1;
+      grid-row: 1;
+    }
 
-  &__featured-image {
-    flex: 1 1 $col-width * 2 + $col-gap;
-    max-width: $col-width * 2 + $col-gap;
-    aspect-ratio: 3 / 2;
-    object-fit: cover;
+    > .suplemento-section__featured-image {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      aspect-ratio: 3 / 2;
+      align-self: start;
+
+      img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+    }
+
+    > .article {
+      grid-column: 1;
+      grid-row: 2;
+      align-self: start;
+    }
   }
 
   // 3 noticias menores
@@ -429,8 +444,10 @@ article a {
     grid-template-columns: repeat(3, 1fr);
     gap: $gap-6;
     padding-top: $gap-6;
+    margin-top: $gap-6;
     position: relative;
     overflow: hidden;
+    border-top: 0.5px solid $color-divider;
 
     article::before {
       position: absolute;
@@ -511,7 +528,7 @@ article a {
     flex: 0 0 $col-width;
 
     .article__title {
-      @extend %featured-article-title;
+      @include featured-article-title();
     }
     .article__section-label {
       @extend %featured-article-section-label;
@@ -714,6 +731,8 @@ article a {
     &__featured {
       grid-template-columns: 1fr;
       gap: $gap-4;
+
+      .article__title { @include featured-article-title(mobile); }
     }
     &__secondary-row,
     &__tertiary-row {
@@ -773,17 +792,25 @@ article a {
 
   .suplemento-section {
     &__featured {
+      display: flex;
       flex-direction: column;
     }
-    &__featured-body,
+    &__header { order: 1; }
     &__featured-image {
-      flex: 0 0 auto;
+      order: 2;
       width: 100%;
+      margin-top: 24px;
+      img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
     }
-    &__featured-image img {
-      width: 100%;
-      height: auto;
-      display: block;
+    &__featured > .article {
+      order: 3;
+      margin-top: 16px;
+
+      .article__title { @include featured-article-title(mobile); }
     }
     &__secondary-row {
       grid-template-columns: 1fr;
@@ -806,6 +833,9 @@ article a {
   .especial-section {
     &__featured {
       flex-direction: column;
+    }
+    &__featured-body {
+      .article__title { @include featured-article-title(mobile); }
     }
     &__featured-body,
     &__image-wrap {
