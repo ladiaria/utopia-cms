@@ -11,6 +11,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.exceptions import TemplateDoesNotExist
+from django.template.loader import get_template
 from django.views.decorators.cache import cache_control, never_cache
 from django.views.decorators.vary import vary_on_cookie
 
@@ -63,6 +65,18 @@ def _block_active(block_key, saved_flag):
 
 
 # Fixed component definitions — keys must stay stable; label/description can change.
+_DEFAULT_SIDEBAR_COMPONENT_TEMPLATE = "homev4/sidebar_components/default.html"
+_HOME_TEMPLATE = "homev4/home.html"
+
+
+def _resolve_sidebar_template(key):
+    candidate = f"homev4/sidebar_components/{key}.html"
+    try:
+        get_template(candidate)
+        return candidate
+    except TemplateDoesNotExist:
+        return _DEFAULT_SIDEBAR_COMPONENT_TEMPLATE
+
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
@@ -293,6 +307,15 @@ def article_search(request):
     return JsonResponse([{"id": a.id, "headline": a.headline} for a in qs], safe=False)
 
 
+def _is_tarde_mode(layout):
+    """Return True if the layout's start_time is 15:00 or later."""
+    return (
+        layout is not None
+        and layout.start_time is not None
+        and layout.start_time >= datetime.time(15, 0)
+    )
+
+
 # Maps layout day codes to Spanish day-name keywords used to filter newsletter_periodicity.
 # newsletter_periodicity is a free-text field, so we match substrings case-insensitively.
 # Accented and unaccented variants are included to handle inconsistent data entry.
@@ -409,11 +432,17 @@ def preview_layout(request, layout_id):
                 newsletter_dia_nl = newsletters[0]
             break
 
+    # TODO: review allow_ads logic — wire up is_subscriber once available in context.
+    is_default_pub = layout.publication.slug == getattr(settings, "DEFAULT_PUB", "")
+    home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
     return render(request, "homev4/home.html", {
         "layout": layout,
         "publication": layout.publication,
         "home_data": home_data,
         "newsletter_dia_nl": newsletter_dia_nl,
+        "tarde_mode": _is_tarde_mode(layout),
+        "is_portada": True,
+        "allow_ads": True if is_default_pub else getattr(settings, "HOMEV4_NON_DEFAULT_PUB_ALLOW_ADS", True),
     })
 
 
@@ -543,6 +572,7 @@ def build_home_data(grid_data, publication=None, layout=None):
             "key": key,
             "label": defn.get("label", key),
             "description": defn.get("description", ""),
+            "sidebar_component_template": _resolve_sidebar_template(key),
         }
         if defn.get("newsletter_mode"):
             # newsletter_dia: deliver the editor-ordered newsletter list.
@@ -672,7 +702,13 @@ def _fetch_component_articles(key, saved_ids=None):
     if key == "lo_mas_leido":
         # days=1 → day__gt=yesterday → effectively today only
         try:
-            return mas_leidos(days=1, limit=5)
+            #TODO: @reidel.rodriguez, revisar mas_ledios porque esta lógica la agregué yo para que se me mostrar los artículos en el template.
+            # Antes había;
+            # return mas_leidos(days=1, limit=5)
+
+            ids = mas_leidos(days=1, limit=5)
+            articles = {a.id: a for a in Article.published.filter(id__in=ids)}
+            return [articles[i] for i in ids if i in articles]
         except Exception:
             logger.exception("_fetch_component_articles: lo_mas_leido failed")
             return []
@@ -769,10 +805,18 @@ def active_layout(request, publication_slug=None):
     _t0 = time.perf_counter()
     home_data = build_home_data(grid_data, publication=publication, layout=layout)
     logger.warning("active_layout build_home_data: %.1f ms", (time.perf_counter() - _t0) * 1000)
+    # TODO: review allow_ads logic — wire up is_subscriber once available in context.
+    if publication_slug:
+        allow_ads = getattr(settings, "HOMEV4_NON_DEFAULT_PUB_ALLOW_ADS", True)
+    else:
+        allow_ads = True
     context = {
         "layout": layout,
         "publication": publication,
         "home_data": home_data,
+        "tarde_mode": _is_tarde_mode(layout),
+        "is_portada": True,
+        "allow_ads": allow_ads,
     }
 
     # Each publication can store arbitrary extra template vars in its extra_context
@@ -821,6 +865,7 @@ def active_layout(request, publication_slug=None):
         ):
             context["unsubscribed_newsletters"] = unsubscribed_newsletters(user.subscriber)
 
+    home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
     # newsletter_dia — resolve which single newsletter to surface to this user.
     #
     # The layout editor stores an ordered list of newsletters for each layout
@@ -862,7 +907,7 @@ def active_layout(request, publication_slug=None):
     context["newsletter_dia_nl"] = newsletter_dia_nl
 
     _t2 = time.perf_counter()
-    response = render(request, "homev4/home.html", context)
+    response = render(request, home_template, context)
     # DEBUG: uncomment to inspect context in the terminal
     # import pprint
     # pp = pprint.PrettyPrinter(indent=4)

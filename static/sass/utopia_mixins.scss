@@ -1,5 +1,26 @@
 $base-font-size: 16px;
 
+@mixin utopia-container {
+  width: 100%;
+  max-width: $container-width;
+  margin: 0 auto;
+  padding: 0 $padding-inline;
+
+  @media #{$medium-and-down} {
+    padding: 0;
+  }
+}
+
+@mixin scroll-navbar {
+  overflow: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @function px-to-rem($px-value) {
   @return ($px-value / $base-font-size) * 1rem;
 }
@@ -31,30 +52,30 @@ $base-font-size: 16px;
 // Animation
 
 @mixin animation($args) {
-    -webkit-animation: $args;
-    -moz-animation: $args;
-    -ms-animation: $args;
-    -o-animation: $args;
-    animation: $args;
+  -webkit-animation: $args;
+  -moz-animation: $args;
+  -ms-animation: $args;
+  -o-animation: $args;
+  animation: $args;
 }
 
 // // Transitions
 
-@mixin transition($args:200ms) {
-    -webkit-transition: $args;
-    -moz-transition: $args;
-    -o-transition: $args;
-    -ms-transition: $args;
-    transition: $args;
+@mixin transition($args: 200ms) {
+  -webkit-transition: $args;
+  -moz-transition: $args;
+  -o-transition: $args;
+  -ms-transition: $args;
+  transition: $args;
 }
 
 // transform
 @mixin transform($args) {
-    -webkit-transform: $args;
-    -moz-transform: $args;
-    -ms-transform: $args;
-    -o-transform: $args;
-    transform: $args;
+  -webkit-transform: $args;
+  -moz-transform: $args;
+  -ms-transform: $args;
+  -o-transform: $args;
+  transform: $args;
 }
 
 @mixin hide-text() {
@@ -64,7 +85,6 @@ $base-font-size: 16px;
   background-color: transparent;
   border: 0;
 }
-
 
 %clearfix {
   &:after {

@@ -4,13 +4,13 @@
 // Variables Materialize
 ///////////////////////////////////////////////////////////////////////////
 
-$primary-color: #6ef9ff !default;
+$primary-color: #b3efff !default;
 $primary-color-accent: #fe5b4c !default;
-$secondary-color: #c2fcff !default;
+$secondary-color: $primary-color !default;
 $color-light-blue: #edf6f5;
-$link-color: #262626 !default;
+$link-color: #000000 !default;
 $link-color-hover: #595959 !default;
-$off-black: #262626 !default;
+$off-black: #000000 !default;
 $off-black-1: #111111 !default;
 $off-black-2: #222222 !default;
 $off-black-3: #434343 !default;
@@ -23,10 +23,15 @@ $grey-3: #e0e0e0;
 $error-color: #e74c3c;
 $button-radius: 100px !default;
 
+$padding-inline: 20px;
+$container-width: 1280px + $padding-inline * 2 !default;
+
+$headerMinHeight: px-to-rem(60px);
+
 // typography
-$sans: Arial, Arial, Helvetica, sans-serif;
-$serif-body: "Roboto", sans-serif;
-$serif-title: "Meta Serif", serif;
+$sans: "Dialect Gothic A", "Roboto", Helvetica, sans-serif;
+$sans-title: "Review Condensed", "Roboto", Helvetica, sans-serif;
+$serif: "Society FullTrial", serif;
 $line-height: 60px;
 $font-size-sm: 20px;
 $font-size-lg: 22px;

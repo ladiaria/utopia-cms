@@ -136,6 +136,55 @@ img {
   }
 }
 
+.ld-grid-4-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+
+  > article {
+    position: relative;
+
+    &::before {
+      position: absolute;
+      content: "";
+      top: 0;
+      bottom: 0;
+      right: -24px;
+      width: 0.5px;
+      background: #ababab;
+    }
+  }
+
+  > article:nth-child(3)::before,
+  > article:nth-child(4) {
+    display: none;
+  }
+
+  @media #{$medium-and-down} {
+    grid-template-columns: repeat(4, 1fr);
+    overflow-x: auto;
+    gap: 16px;
+    -ms-overflow-style: none; // IE and legacy Edge
+    scrollbar-width: none; // Firefox
+
+    &::-webkit-scrollbar {
+      display: none; // Chrome, Safari, Opera
+    }
+
+    > article {
+      width: px-to-rem(284px);
+      position: relative;
+
+      &::before {
+        display: none;
+      }
+    }
+    > article:nth-child(4) {
+      display: flex;
+    }
+  }
+}
+
 .ld-grid-area.area-main {
   grid-area: area-main;
 }
@@ -224,7 +273,6 @@ img {
 }
 
 .ld-card {
-  border: 1px solid #d8d8d8;
   border-radius: 3px;
   transition: all 0.35s ease;
   background-color: white;
@@ -232,11 +280,6 @@ img {
 
   display: flex;
   flex-direction: column;
-
-  &:hover {
-    transition: all 0.15s ease;
-    box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1);
-  }
 
   &__img {
     border-bottom-right-radius: 0;
@@ -256,7 +299,7 @@ img {
   }
 
   &__body {
-    padding: 16px;
+    padding-top: 16px;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -267,12 +310,12 @@ img {
   }
 
   &__title {
-    font-family: "Meta Serif", serif;
+    font-family: $serif;
     width: 100%;
-    font-size: 19px;
+    font-size: px-to-rem(18px);
     line-height: 24px;
     margin: 0 0 5px;
-    font-weight: 500;
+    font-weight: 400;
 
     &--mb {
       margin-bottom: 16px;
@@ -289,7 +332,6 @@ img {
     a {
       text-decoration: none;
       color: $off-black;
-      font-weight: 500;
       &:hover {
         color: lighten($off-black, 10%);
       }
@@ -454,7 +496,7 @@ img {
   &__addtrl {
     position: absolute;
     right: 0;
-    bottom: -3px;
+    bottom: 0;
     cursor: pointer;
     padding: 3px;
     transition: background 0.2s ease-in-out;

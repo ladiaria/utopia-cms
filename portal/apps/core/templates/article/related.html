@@ -1,14 +1,14 @@
 {% load core_tags %}
 
 {% if articles %}
-  <section class="ld-block ld-related" data-nosnippet>
-    <div class="container container--wide container--padded">
-      <div class="section-detail__head">
-        <h2 class="section-detail__title">{% block more_of_label %}Más de {{ section }}{% endblock %}</h2>
-      </div>
-      <div class="ld-grid-simple">
+  <section class="ld-block ld-related article-container" data-nosnippet>
+    <div class="ld-related-inner-container">
+      <h2>{% block more_of_label %}Más de {{ section }}{% endblock %}</h2>
+      <div class="ld-grid-4-3">
         {% for article in articles %}
-          {% render_article_card article=article media=article.home_display card_size="FD" %}
+          {% with hide_date_published=True %}
+            {% render_article_card article=article media=article.home_display card_size="FD"  %}
+          {% endwith %}
         {% endfor %}
       </div>
     </div>
