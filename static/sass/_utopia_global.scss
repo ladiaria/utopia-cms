@@ -18,7 +18,7 @@ button {
   line-height: 0.75rem;
   background-color: transparent;
   color: $off-black;
-  padding: 0.75rem 1.5rem;
+  padding: px-to-rem(10px) px-to-rem(24px);
   border-radius: 5px;
   border: 1px solid $off-black;
   text-align: center;
