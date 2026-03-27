@@ -653,7 +653,7 @@ def _fetch_suplemento_articles(saved_ids):
     Fallback: up to 7 articles from the publication or category mapped to today's weekday.
     """
     if saved_ids:
-        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
     source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(datetime.date.today().weekday())
     if source:
@@ -668,7 +668,7 @@ def _fetch_area_articles(area_type, slug, saved_ids):
     Special case "local": 1 article from "colonia" + 1 from "maldonado".
     """
     if saved_ids:
-        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
     if area_type == "local":
         articles = []
@@ -695,9 +695,9 @@ def _fetch_component_articles(key, saved_ids=None):
     """
     if key == "lo_ultimo":
         if saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
             return [by_id[aid] for aid in saved_ids if aid in by_id]
-        return list(Article.published.order_by("-date_published")[:3])
+        return list(Article.published.select_related(_ARTICLE_AUTH_SELECT_RELATED).order_by("-date_published")[:3])
 
     if key == "lo_mas_leido":
         # days=1 → day__gt=yesterday → effectively today only
@@ -707,7 +707,7 @@ def _fetch_component_articles(key, saved_ids=None):
             # return mas_leidos(days=1, limit=5)
 
             ids = mas_leidos(days=1, limit=5)
-            articles = {a.id: a for a in Article.published.filter(id__in=ids)}
+            articles = {a.id: a for a in Article.published.filter(id__in=ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
             return [articles[i] for i in ids if i in articles]
         except Exception:
             logger.exception("_fetch_component_articles: lo_mas_leido failed")
@@ -715,7 +715,7 @@ def _fetch_component_articles(key, saved_ids=None):
 
     if key == "opinion":
         if saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
             return [by_id[aid] for aid in saved_ids if aid in by_id]
         slug = getattr(settings, "HOMEV4_OPINION_CATEGORY_SLUG", "opinion")
         try:
@@ -738,14 +738,14 @@ def _fetch_component_articles(key, saved_ids=None):
     # recomendadas_lv, recomendadas_domingo: fully manual — only saved articles are shown
     if key in ("recomendadas_lv", "recomendadas_domingo"):
         if saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
             return [by_id[aid] for aid in saved_ids if aid in by_id]
         return []
 
     if key in ("le_monde", "lento"):
         pub_slug = "le-monde-diplomatique" if key == "le_monde" else "lento"
         if saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
             return [by_id[aid] for aid in saved_ids if aid in by_id]
         return _fetch_source_articles("publication", pub_slug, limit=2)
 
@@ -802,6 +802,21 @@ def active_layout(request, publication_slug=None):
 
     # Pre-fetch all content defined by the layout editor into a single dict.
     # The template only reads from home_data — no DB calls inside the template.
+    #
+    # Performance baseline (2026-03-27, user_auth=True, dev):
+    #   Before optimizations: build_home_data ~2066ms, _add_auth_context ~1323ms, render ~1569ms, total ~5256ms
+    #   After optimizations:  build_home_data ~320ms,  _add_auth_context ~10ms,   render ~595ms,  total ~963ms
+    #
+    # Key optimizations applied (commit cf436d7 + 2026-03-27 session):
+    #   - _fetch_suplemento_articles, _fetch_area_articles: added select_related(_ARTICLE_AUTH_SELECT_RELATED)
+    #     so _add_auth_context does not trigger N+1 lazy loads on main_section→edition→publication per article.
+    #   - _fetch_component_articles (lo_ultimo, lo_mas_leido, opinion, recomendadas_*, le_monde, lento):
+    #     added select_related as preventive measure for when components are included in _add_auth_context.
+    #   - apuntes_del_dia: Section.latest() returns RawQuerySet — re-fetched by ID with select_related +
+    #     prefetch_related('photo__extended__photographer', 'byline') to avoid lazy loads in template.
+    #
+    # Remaining bottleneck: render ~595ms — likely publication_section tag and article.photo/byline
+    # on principal/sections articles. Pending: load test with Locust to measure under concurrent users.
     _t0 = time.perf_counter()
     home_data = build_home_data(grid_data, publication=publication, layout=layout)
     logger.warning("active_layout build_home_data: %.1f ms", (time.perf_counter() - _t0) * 1000)
@@ -881,6 +896,7 @@ def active_layout(request, publication_slug=None):
     # The resolved newsletter dict {type, slug, name, periodicity} is placed in
     # context["newsletter_dia_nl"] so the template can render it directly without
     # any further DB access or conditional logic.
+    _t_nl = time.perf_counter()
     newsletter_dia_nl = None
     for comp in home_data.get("componentes", []):
         if comp.get("key") == "newsletter_dia":
@@ -891,9 +907,10 @@ def active_layout(request, publication_slug=None):
                     # Build a set of "type:slug" strings for all newsletters the user has active.
                     # sub.newsletters      → ManyToMany to Publication (type="publication")
                     # sub.category_newsletters → ManyToMany to Category (type="category")
+                    # Both values_list queries are batched in a single round-trip each; union avoids a third query.
                     active_refs = (
-                        set("publication:" + slug for slug in sub.newsletters.values_list("slug", flat=True)) |
-                        set("category:" + slug for slug in sub.category_newsletters.values_list("slug", flat=True))
+                        {"publication:" + slug for slug in sub.newsletters.values_list("slug", flat=True)} |
+                        {"category:" + slug for slug in sub.category_newsletters.values_list("slug", flat=True)}
                     )
                     for nl in newsletters:
                         if (nl["type"] + ":" + nl["slug"]) not in active_refs:
@@ -904,6 +921,7 @@ def active_layout(request, publication_slug=None):
                     # Unauthenticated or no subscriber record: show the first in the list (rule 1).
                     newsletter_dia_nl = newsletters[0]
             break
+    logger.warning("active_layout newsletter_dia: %.1f ms", (time.perf_counter() - _t_nl) * 1000)
     context["newsletter_dia_nl"] = newsletter_dia_nl
 
     _t2 = time.perf_counter()
