@@ -305,27 +305,6 @@ i.material-icons.icon-lo_mas_leido {
   }
 }
 
-.ad_banner a {
-  border: 1px solid #d8d8d8;
-  display: inline-block;
-  max-width: 100%;
-  margin: 0 auto;
-  font-size: 0;
-  border-radius: 0;
-  box-sizing: border-box;
-
-  @media (min-width: 1078px) {
-    max-width: 972px;
-  }
-
-  img,
-  picture {
-    display: block;
-    margin: 0 auto;
-    font-size: 0;
-  }
-}
-
 .ad_banner.desktop-only a img.ad-desktop {
   display: block;
 }
@@ -340,7 +319,6 @@ i.material-icons.icon-lo_mas_leido {
 }
 
 .ad_banner a {
-  border: 1px solid #c1c1c1;
   display: inline-block;
   max-width: 100%;
   margin: 0 auto;
