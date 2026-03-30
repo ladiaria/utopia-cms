@@ -1,0 +1,17 @@
+{% extends "homev4/sidebar_components/default.html" %}
+
+{% block articles %}
+  {% for article in comp.articles %}
+    <article class="article">
+      {% if article.main_section %}
+        <span class="article__section-label">{{ article.main_section.section.name }}</span>
+      {% endif %}
+      <h3 class="article__title">
+        <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
+      </h3>
+      {% if article.minutes_ago %}
+        <span class="article__time-ago">{{ article.minutes_ago }}</span>
+      {% endif %}
+    </article>
+  {% endfor %}
+{% endblock %}

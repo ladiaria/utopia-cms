@@ -553,7 +553,7 @@
     {% block ld_core_scripts %}
       {% if user.is_authenticated %}
         {# used only in pages that show article cards #}
-        <script defer src="{% static 'js/read_later_events.js' %}"></script>
+        <script defer src="{% static 'js/read_later_events.js' %}?v=2.0"></script>
       {% endif %}
 
       {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
