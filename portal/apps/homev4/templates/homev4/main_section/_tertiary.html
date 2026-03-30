@@ -23,9 +23,7 @@
       <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
     </h3>
     <div class="article__footer">
-      <button class="article__bookmark" aria-label="Guardar en favoritos">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
-      </button>
+      {% include "article/article_card_read_later.html" with a=featured prefetched_article_data=True %}
     </div>
   </article>
   {% endfor %}
