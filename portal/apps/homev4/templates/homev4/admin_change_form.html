@@ -3,7 +3,7 @@
 
 {% block extrahead %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'homev4/layout_editor.css' %}"/>
+<link rel="stylesheet" href="{% static 'homev4/layout_editor.css' %}?v={{ layout_editor_css_version }}"/>
 {% endblock %}
 
 {% block after_related_objects %}
@@ -297,7 +297,7 @@ window.HOMEV4_DATA = {
     }
 };
 </script>
-<script src="{% static 'homev4/layout_editor.js' %}"></script>
+<script src="{% static 'homev4/layout_editor.js' %}?v={{ layout_editor_js_version }}"></script>
 {% endif %}
 
 {% if original %}
