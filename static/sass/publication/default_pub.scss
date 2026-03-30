@@ -121,7 +121,7 @@ article a {
     }
   }
 
-  &__featured-image {
+  &__featured-image img {
     width: 100%;
     height: auto;
   }
@@ -434,7 +434,7 @@ article a {
     > .article {
       grid-column: 1;
       grid-row: 2;
-      align-self: start;
+      align-self: center;
     }
   }
 
@@ -642,7 +642,7 @@ article a {
 }
 
 // ─── Categories and publications ──────────────────────────────────────────────
-.home__blocks {
+.home-blocks {
   grid-column: 1;
   display: flex;
   flex-direction: column;
@@ -693,6 +693,10 @@ article a {
     display: flex;
     flex-direction: column;
     gap: $gap-4;
+
+    .article:not(:first-child) .article__image {
+      display: none;
+    }
   }
 
   &__divider {
@@ -708,6 +712,7 @@ article a {
     grid-template-columns: 1fr;
     column-gap: 0;
     row-gap: $gap-6;
+    padding-top: 0;
 
     > section,
     > div {
@@ -728,16 +733,21 @@ article a {
   }
 
   .main-section {
+    gap: 24px;
+
     &__featured {
       grid-template-columns: 1fr;
       gap: $gap-4;
 
-      .article__title { @include featured-article-title(mobile); }
+      .article__title {
+        @include featured-article-title(mobile);
+      }
     }
     &__secondary-row,
     &__tertiary-row {
       grid-template-columns: 1fr;
       gap: $gap-6;
+      padding-bottom: 0;
 
       article::before {
         display: none;
@@ -750,10 +760,15 @@ article a {
         border-bottom: none;
         padding-bottom: 0;
       }
+      article:not(:first-child) .article__image {
+        display: none;
+      }
     }
     &__secondary-row {
       padding-block: $gap-6;
       overflow: visible;
+      border-top: 1px solid $color-divider;
+      border-bottom: 1px solid $color-divider;
     }
 
     &--tarde {
@@ -791,11 +806,14 @@ article a {
   }
 
   .suplemento-section {
+    padding-block: 24px;
     &__featured {
       display: flex;
       flex-direction: column;
     }
-    &__header { order: 1; }
+    &__header {
+      order: 1;
+    }
     &__featured-image {
       order: 2;
       width: 100%;
@@ -810,7 +828,9 @@ article a {
       order: 3;
       margin-top: 16px;
 
-      .article__title { @include featured-article-title(mobile); }
+      .article__title {
+        @include featured-article-title(mobile);
+      }
     }
     &__secondary-row {
       grid-template-columns: 1fr;
@@ -835,7 +855,9 @@ article a {
       flex-direction: column;
     }
     &__featured-body {
-      .article__title { @include featured-article-title(mobile); }
+      .article__title {
+        @include featured-article-title(mobile);
+      }
     }
     &__featured-body,
     &__image-wrap {
@@ -844,7 +866,51 @@ article a {
     }
   }
 
-  .home-blocks__row {
-    grid-template-columns: 1fr;
+  .sidebar {
+    gap: 24px;
+    border-bottom: 1px solid #000;
+    padding-bottom: 24px;
+
+    &__block {
+      padding-top: 24px;
+    }
+  }
+
+  .home-blocks {
+    padding-top: 0;
+
+    &__row {
+      grid-template-columns: 1fr;
+      gap: 24px;
+      padding-bottom: 24px;
+    }
+  }
+
+  .home-block {
+    min-width: 0;
+    padding-bottom: 24px;
+    border-bottom: 0.5px solid #000;
+
+    &__articles {
+      flex-direction: row;
+      overflow-x: auto;
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      .article {
+        flex: 0 0 312px;
+      }
+
+      .article:not(:first-child) .article__image {
+        display: block;
+      }
+
+      hr.home-block__divider {
+        display: none;
+      }
+    }
   }
 }
