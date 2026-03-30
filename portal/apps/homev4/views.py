@@ -82,7 +82,7 @@ COMPONENT_DEFINITIONS = [
     {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
     {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "has_picker": True, "replace_mode": True, "replace_slots": 3, "sortable_articles": False},
     {"key": "radio",                "label": "Radio",                    "description": ""},
-    {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a viernes", "has_picker": True},
+    {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
     {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos",    "has_picker": True},
     {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": "",                "sortable_articles": False},
