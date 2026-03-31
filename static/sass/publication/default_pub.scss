@@ -616,8 +616,10 @@ article a {
   }
 
   &__block-title {
-    display: flex;
-    gap: 8px;
+    a {
+      display: flex;
+      gap: 8px;
+    }
 
     h2 {
       font-family: $sans-title;
@@ -688,10 +690,6 @@ article a {
   gap: $gap-6;
 
   &__header {
-    display: flex;
-    align-items: center;
-    gap: $gap-2;
-
     h2 {
       font-family: $sans-title;
       font-weight: 700;
@@ -703,6 +701,10 @@ article a {
     a {
       text-decoration: none;
       color: inherit;
+      display: flex;
+      display: flex;
+      align-items: center;
+      gap: $gap-2;
     }
   }
 
