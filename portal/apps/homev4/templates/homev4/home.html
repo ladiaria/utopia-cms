@@ -27,20 +27,20 @@
 {% block content %}
 <div class="home">
 
-  <!-- ── Lo último (tarde mobile) ────────────────────────────────────────── -->
-  {% if tarde_mode %}
-    {% for comp in home_data.componentes %}
-      {% if comp.key == "lo_ultimo" %}
-        <div class="lo-ultimo-top">
-          {% include comp.sidebar_component_template %}
-        </div>
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-
   <!-- ── Sección principal ─────────────────────────────────────────────────── -->
   {% if home_data.principal_active %}
   <section class="main-section{% if tarde_mode %} main-section--tarde{% endif %}">
+
+    <!-- ── Lo último (tarde mobile) ────────────────────────────────────────── -->
+    {% if tarde_mode %}
+      {% for comp in home_data.componentes %}
+        {% if comp.key == "lo_ultimo" %}
+          <div class="lo-ultimo-top">
+            {% include comp.sidebar_component_template %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
 
     {% with articles=home_data.principal_articles %}
     {% if articles %}
@@ -99,7 +99,7 @@
       {% with featured=articles.0 %}
       <div class="suplemento-section__featured">
         <div class="suplemento-section__header">
-          <a href="">
+          <a href="{{ suplemento_slug }}">
             <h2>{{ home_data.suplemento_title }}</h2>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
           </a>
@@ -121,9 +121,11 @@
           <h3 class="article__title">
             <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
           </h3>
-          <div class="article__footer">
-            {% include "article/article_card_read_later.html" with a=featured prefetched_article_data=True %}
-          </div>
+          {% if article_card_read_later_enabled and user.is_authenticated %}
+            <div class="article__footer">
+              {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
+            </div>
+          {% endif %}
         </article>
       </div>
       {% endwith %}
@@ -215,7 +217,7 @@
           {% if not forloop.first %}<hr class="home-block__divider">{% endif %}
           <article class="article">
             {% if article.photo %}
-            <a href="{{ article.get_absolute_url }}">
+            <a href="{{ article.get_absolute_url }}" class="article__image-container">
               <img
                 class="article__image"
                 srcset="{{ article.photo.get_small_url }} 350w, {{ article.photo.get_700w_url }} 700w"
