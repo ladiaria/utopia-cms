@@ -1,12 +1,24 @@
+import hashlib
 import json
+import os
 
 from django.contrib import admin, messages
+from django.contrib.staticfiles import finders
 from django.db.models import Case, IntegerField, Value, When
 from django.urls import reverse
 from django.utils.html import format_html
 
 from .models import HomeLayout, _DAY_CODE_TO_WEEKDAYS
 from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles, _fetch_suplemento_articles, LAYOUT_BLOCKS_CONFIG, _resolve_newsletter_refs
+
+def _static_hash(filename):
+    """Return an 8-char MD5 hash of a static file's content for cache busting."""
+    path = finders.find(filename)
+    if path and os.path.exists(path):
+        with open(path, 'rb') as f:
+            return hashlib.md5(f.read()).hexdigest()[:8]
+    return '0'
+
 
 _DAY_ORDER = {
     "lmjv": 0,
@@ -67,6 +79,8 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["blocks_config"] = LAYOUT_BLOCKS_CONFIG
             extra_context["article_search_url"] = f"/homev4/article-search/?layout_id={obj.pk}"
             extra_context["newsletter_search_url"] = f"/homev4/newsletter-search/?day={obj.day or ''}"
+            extra_context["layout_editor_js_version"] = _static_hash('homev4/layout_editor.js')
+            extra_context["layout_editor_css_version"] = _static_hash('homev4/layout_editor.css')
         return super().change_view(request, object_id, form_url, extra_context)
 
     def _build_editor_data(self, grid_data, publication=None):
