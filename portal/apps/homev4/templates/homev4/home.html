@@ -27,6 +27,17 @@
 {% block content %}
 <div class="home">
 
+  <!-- ── Lo último (tarde mobile) ────────────────────────────────────────── -->
+  {% if tarde_mode %}
+    {% for comp in home_data.componentes %}
+      {% if comp.key == "lo_ultimo" %}
+        <div class="lo-ultimo-top">
+          {% include comp.sidebar_component_template %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
   <!-- ── Sección principal ─────────────────────────────────────────────────── -->
   {% if home_data.principal_active %}
   <section class="main-section{% if tarde_mode %} main-section--tarde{% endif %}">
@@ -76,8 +87,9 @@
       <section id="header-pub" data-ad-url="{% url 'adzone_ad_content' %}?publication={{ publication.slug }}"></section>
     {% endif %}
   {% endblock %}
+
   <!-- ── Sección Suplemento ───────────────────────────────────────────────── -->
-  {% if home_data.suplemento_active %}
+  {% if home_data.suplemento_active and home_data.suplemento_articles %}
   <section class="suplemento-section">
 
     {% with articles=home_data.suplemento_articles %}
@@ -87,8 +99,10 @@
       {% with featured=articles.0 %}
       <div class="suplemento-section__featured">
         <div class="suplemento-section__header">
-          <h2>{{ home_data.suplemento_title }}</h2>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
+          <a href="">
+            <h2>{{ home_data.suplemento_title }}</h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
+          </a>
         </div>
         {% if featured.photo %}
           <a href="{{ featured.get_absolute_url }}" class="suplemento-section__featured-image">
@@ -108,9 +122,7 @@
             <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
           </h3>
           <div class="article__footer">
-            <button class="article__bookmark" aria-label="Guardar en favoritos">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
-            </button>
+            {% include "article/article_card_read_later.html" with a=featured prefetched_article_data=True %}
           </div>
         </article>
       </div>
@@ -143,9 +155,7 @@
         <h2 class="article__title">
           <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
         </h2>
-        <button class="article__bookmark" aria-label="Guardar en favoritos">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
-        </button>
+        {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
       </div>
       {% if article.photo %}
       <div class="especial-section__image-wrap">
@@ -177,73 +187,62 @@
   <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
   <aside class="home__sidebar sidebar">
     {% for comp in home_data.componentes %}
-      {% include comp.sidebar_component_template %}
+      {% if tarde_mode and comp.key == "lo_ultimo" %}
+        <div class="lo-ultimo-sidebar">
+          {% include comp.sidebar_component_template %}
+        </div>
+      {% else %}
+        {% include comp.sidebar_component_template %}
+      {% endif %}
     {% endfor %}
   </aside>
 
   <!-- ── Categories and publications ─────────────────────────────────────── -->
   {% if home_data.sections %}
-  <div class="home__blocks">
+  <section class="home-blocks">
     {% for section in home_data.sections %}
       {% if forloop.counter0|divisibleby:3 %}<div class="home-blocks__row">{% endif %}
       <section class="home-block">
         <div class="home-block__header">
-          <h2 class="home-block__title">
-            <a href="{{ section.url }}">{{ section.name }}</a>
-          </h2>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
+          <a href="{% url "home" domain_slug=section.slug %}">
+            <h2 class="home-block__title">{{ section.name }}</h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
+          </a>
         </div>
         {% if section.articles %}
         <div class="home-block__articles">
-          {% with featured=section.articles.0 %}
+          {% for article in section.articles %}
+          {% if not forloop.first %}<hr class="home-block__divider">{% endif %}
           <article class="article">
-            {% if featured.photo %}
-            <a href="{{ featured.get_absolute_url }}">
+            {% if article.photo %}
+            <a href="{{ article.get_absolute_url }}">
               <img
                 class="article__image"
-                srcset="{{ featured.photo.get_small_url }} 350w, {{ featured.photo.get_700w_url }} 700w"
+                srcset="{{ article.photo.get_small_url }} 350w, {{ article.photo.get_700w_url }} 700w"
                 sizes="(min-width: 700px) 284px, 100vw"
                 width="700"
-                height="{{ featured.photo.get_700w_size.1 }}"
+                height="{{ article.photo.get_700w_size.1 }}"
                 loading="lazy"
-                title="{{ featured.photo_caption }}"
-                alt="{{ featured.photo_caption }}"
+                title="{{ article.photo_caption }}"
+                alt="{{ article.photo_caption }}"
               >
             </a>
             {% endif %}
-            <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
+            <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
             <h3 class="article__title">
-              <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
+              <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
             </h3>
             <div class="article__footer">
-              <button class="article__bookmark" aria-label="Guardar en favoritos">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
-              </button>
+              {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
             </div>
           </article>
-          {% endwith %}
-          {% if section.articles|length > 1 %}
-          <hr class="home-block__divider">
-          {% with second=section.articles.1 %}
-          <article class="article">
-            <span class="article__section-label">{% autoescape off %}{% publication_section second %}{% endautoescape %}</span>
-            <h3 class="article__title">
-              <a href="{{ second.get_absolute_url }}">{{ second.headline|ldmarkup|bleach }}</a>
-            </h3>
-            <div class="article__footer">
-              <button class="article__bookmark" aria-label="Guardar en favoritos">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#999" d="M4.13 3c-.616 0-1.125.496-1.125 1.099L3 14l4.5-1.65L12 14V4.1c0-.601-.51-1.1-1.125-1.1zm0 1.1h6.745v8.312L7.5 11.175l-3.374 1.237z"/></svg>
-              </button>
-            </div>
-          </article>
-          {% endwith %}
-          {% endif %}
+          {% endfor %}
         </div>
         {% endif %}
       </section>
       {% if forloop.counter|divisibleby:3 or forloop.last %}</div>{% endif %}
     {% endfor %}
-  </div>
+  </section>
   {% endif %}
 
 </div>

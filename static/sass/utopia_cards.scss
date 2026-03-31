@@ -494,32 +494,17 @@ img {
   }
 
   &__addtrl {
-    position: absolute;
-    right: 0;
-    bottom: 0;
     cursor: pointer;
     padding: 3px;
     transition: background 0.2s ease-in-out;
     border-radius: 100%;
-
-    &:hover {
-      background: #f3f3f3;
-
-      svg path:first-child {
-        fill: #f3f3f3;
-      }
-    }
+    margin-left: auto;
 
     svg {
       display: block;
 
       path {
         transition: background 0.4s ease-in-out;
-      }
-    }
-    &.added {
-      svg path:first-child {
-        fill: #8c8c8c;
       }
     }
   }

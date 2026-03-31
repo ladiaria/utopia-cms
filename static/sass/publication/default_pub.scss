@@ -121,7 +121,7 @@ article a {
     }
   }
 
-  &__featured-image {
+  &__featured-image img {
     width: 100%;
     height: auto;
   }
@@ -129,7 +129,7 @@ article a {
   &__featured-body {
     display: flex;
     flex-direction: column;
-    gap: $gap-4;
+    gap: $gap-3;
   }
 
   &__secondary-row,
@@ -220,7 +220,8 @@ article a {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: auto auto;
-    gap: $col-gap;
+    column-gap: $col-gap;
+    row-gap: $gap-8;
 
     .main-section__featured {
       grid-column: 1 / 3;
@@ -282,6 +283,7 @@ article a {
         }
         &:last-child {
           border-bottom: none;
+          padding-bottom: 0;
         }
 
         &::before {
@@ -434,7 +436,7 @@ article a {
     > .article {
       grid-column: 1;
       grid-row: 2;
-      align-self: start;
+      align-self: center;
     }
   }
 
@@ -614,8 +616,10 @@ article a {
   }
 
   &__block-title {
-    display: flex;
-    gap: 8px;
+    a {
+      display: flex;
+      gap: 8px;
+    }
 
     h2 {
       font-family: $sans-title;
@@ -639,10 +643,25 @@ article a {
     flex-direction: column;
     gap: 24px;
   }
+
+  .article__time-ago {
+    font-size: px-to-rem(14px);
+    line-height: px-to-rem(14px);
+    letter-spacing: px-to-rem(0.14px);
+    margin-top: auto;
+  }
+}
+
+// ─── Lo último (tarde) — show top / hide sidebar on mobile, inverse on desktop ─
+.lo-ultimo-top {
+  display: none;
+}
+.lo-ultimo-sidebar {
+  display: contents;
 }
 
 // ─── Categories and publications ──────────────────────────────────────────────
-.home__blocks {
+.home-blocks {
   grid-column: 1;
   display: flex;
   flex-direction: column;
@@ -671,10 +690,6 @@ article a {
   gap: $gap-6;
 
   &__header {
-    display: flex;
-    align-items: center;
-    gap: $gap-2;
-
     h2 {
       font-family: $sans-title;
       font-weight: 700;
@@ -686,6 +701,10 @@ article a {
     a {
       text-decoration: none;
       color: inherit;
+      display: flex;
+      display: flex;
+      align-items: center;
+      gap: $gap-2;
     }
   }
 
@@ -693,6 +712,10 @@ article a {
     display: flex;
     flex-direction: column;
     gap: $gap-4;
+
+    .article:not(:first-child) .article__image {
+      display: none;
+    }
   }
 
   &__divider {
@@ -708,6 +731,7 @@ article a {
     grid-template-columns: 1fr;
     column-gap: 0;
     row-gap: $gap-6;
+    padding-top: 0;
 
     > section,
     > div {
@@ -728,16 +752,21 @@ article a {
   }
 
   .main-section {
+    gap: 24px;
+
     &__featured {
       grid-template-columns: 1fr;
       gap: $gap-4;
 
-      .article__title { @include featured-article-title(mobile); }
+      .article__title {
+        @include featured-article-title(mobile);
+      }
     }
     &__secondary-row,
     &__tertiary-row {
       grid-template-columns: 1fr;
       gap: $gap-6;
+      padding-bottom: 0;
 
       article::before {
         display: none;
@@ -750,10 +779,15 @@ article a {
         border-bottom: none;
         padding-bottom: 0;
       }
+      article:not(:first-child) .article__image {
+        display: none;
+      }
     }
     &__secondary-row {
       padding-block: $gap-6;
       overflow: visible;
+      border-top: 1px solid $color-divider;
+      border-bottom: 1px solid $color-divider;
     }
 
     &--tarde {
@@ -762,6 +796,11 @@ article a {
       .main-section__featured {
         grid-column: 1;
         grid-row: auto;
+
+        .article__title {
+          font-size: px-to-rem(18px);
+          line-height: px-to-rem(24.3px);
+        }
 
         &::after {
           display: none;
@@ -791,11 +830,14 @@ article a {
   }
 
   .suplemento-section {
+    padding-block: 24px;
     &__featured {
       display: flex;
       flex-direction: column;
     }
-    &__header { order: 1; }
+    &__header {
+      order: 1;
+    }
     &__featured-image {
       order: 2;
       width: 100%;
@@ -810,7 +852,9 @@ article a {
       order: 3;
       margin-top: 16px;
 
-      .article__title { @include featured-article-title(mobile); }
+      .article__title {
+        @include featured-article-title(mobile);
+      }
     }
     &__secondary-row {
       grid-template-columns: 1fr;
@@ -835,7 +879,9 @@ article a {
       flex-direction: column;
     }
     &__featured-body {
-      .article__title { @include featured-article-title(mobile); }
+      .article__title {
+        @include featured-article-title(mobile);
+      }
     }
     &__featured-body,
     &__image-wrap {
@@ -844,7 +890,94 @@ article a {
     }
   }
 
-  .home-blocks__row {
-    grid-template-columns: 1fr;
+  .sidebar {
+    gap: 24px;
+    border-bottom: 1px solid #000;
+    padding-bottom: 24px;
+
+    &__block {
+      padding-top: 24px;
+    }
+  }
+
+  .lo-ultimo-top {
+    display: block;
+    overflow: hidden;
+    border-bottom: $border-divider;
+    padding-bottom: $gap-4;
+
+    .sidebar__block-title {
+      display: none;
+    }
+    .sidebar__articles-container {
+      flex-direction: row;
+      overflow-x: auto;
+      scrollbar-width: none;
+      gap: $gap-4;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      .article {
+        flex: 0 0 256px;
+        border-bottom: none;
+        padding-bottom: 0;
+        border-right: $border-divider;
+        padding-right: $gap-4;
+
+        &:last-child {
+          border-right: none;
+          padding-right: 0;
+        }
+      }
+    }
+  }
+
+  .lo-ultimo-sidebar {
+    display: none;
+  }
+
+  .home-blocks {
+    padding-top: 0;
+
+    &__row {
+      grid-template-columns: 1fr;
+      gap: 24px;
+      padding-bottom: 24px;
+      border-bottom: none;
+
+      & + & {
+        padding-top: 0;
+      }
+    }
+  }
+
+  .home-block {
+    min-width: 0;
+    padding-bottom: 24px;
+    border-bottom: 0.5px solid #000;
+
+    &__articles {
+      flex-direction: row;
+      overflow-x: auto;
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      .article {
+        flex: 0 0 312px;
+      }
+
+      .article:not(:first-child) .article__image {
+        display: block;
+      }
+
+      hr.home-block__divider {
+        display: none;
+      }
+    }
   }
 }
