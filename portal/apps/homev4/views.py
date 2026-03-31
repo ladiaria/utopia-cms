@@ -399,10 +399,10 @@ def _resolve_newsletter_refs(refs):
         try:
             if nl_type == "publication" and nl_slug not in masiva_pub_slugs:
                 obj = Publication.objects.get(slug=nl_slug, has_newsletter=True)
-                result.append({"type": "publication", "slug": nl_slug, "name": obj.newsletter_name or obj.name, "periodicity": obj.newsletter_periodicity or "", "description": obj.description or ""})
+                result.append({"type": "publication", "slug": nl_slug, "name": obj.newsletter_name or obj.name, "periodicity": obj.newsletter_periodicity or "", "tagline": obj.newsletter_tagline or ""})
             elif nl_type == "category" and nl_slug not in masiva_cat_slugs:
                 obj = Category.objects.get(slug=nl_slug, has_newsletter=True)
-                result.append({"type": "category", "slug": nl_slug, "name": obj.name, "periodicity": obj.newsletter_periodicity or "", "description": obj.description or ""})
+                result.append({"type": "category", "slug": nl_slug, "name": obj.name, "periodicity": obj.newsletter_periodicity or "", "tagline": obj.newsletter_tagline or ""})
         except (Publication.DoesNotExist, Category.DoesNotExist):
             pass
     return result
