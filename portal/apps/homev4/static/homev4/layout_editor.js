@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Renumber position indicators after reorder
     function renumberArticles() {
-        ["principal-articles", "suplemento-articles"].forEach(function (containerId) {
+        ["principal-articles", "suplemento-articles", "especial-articles"].forEach(function (containerId) {
             var container = document.getElementById(containerId);
             if (!container) return;
             container.querySelectorAll(".article-num").forEach(function (el, i) {
@@ -291,6 +291,13 @@ document.addEventListener("DOMContentLoaded", function () {
         handle.className = "drag-handle small-handle";
         handle.textContent = "⠿";
 
+        var numEl = null;
+        if (rowClass === "article-row") {
+            numEl = document.createElement("span");
+            numEl.className = "article-num";
+            numEl.textContent = "?";
+        }
+
         var title = document.createElement("span");
         // Use the title class that matches the row class convention
         var titleClassMap = { "article-row": "article-title", "section-article-row": "section-article-title" };
@@ -312,6 +319,7 @@ document.addEventListener("DOMContentLoaded", function () {
         initRemoveButton(removeBtn, row);
 
         row.appendChild(handle);
+        if (numEl) row.appendChild(numEl);
         row.appendChild(title);
         row.appendChild(editLink);
         row.appendChild(removeBtn);
