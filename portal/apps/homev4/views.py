@@ -510,6 +510,7 @@ def build_home_data(grid_data, publication=None, layout=None):
         _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(datetime.date.today().weekday())
         if _today_source:
             result["suplemento_title"] = _area_name_by_source.get((_today_source[0], _today_source[1]), "")
+            result["suplemento_slug"] = _today_source[1]
         # EXTRA: Saturday layouts load extra_articles from FSNewsletter instead of suplemento.
         if layout is not None and getattr(layout, "day", None) == "sa":
             try:
