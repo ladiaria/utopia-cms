@@ -387,8 +387,7 @@ article a {
   display: flex;
   flex-direction: column;
   padding-block: $gap-8;
-  border-top: 2px solid;
-  border-bottom: 2px solid;
+  border-top: 2px solid #000;
 
   &__header {
     display: flex;
@@ -513,7 +512,7 @@ article a {
 // ─── Sección Especial ─────────────────────────────────────────────────────────
 .especial-section {
   padding-block: $gap-8;
-  border-bottom: 2px solid;
+  border-top: 2px solid;
 
   // Texto izquierda + foto grande derecha
   &__featured {
@@ -573,8 +572,12 @@ article a {
   align-items: stretch;
   gap: 8px;
   padding: 24px 0 32px;
-  border-top: 1px solid #000;
+  border-top: 2px solid #000;
   background-color: #fff;
+
+  .ad_banner {
+    display: flex;
+  }
 
   .ld-caption {
     color: #81898b;
@@ -666,6 +669,7 @@ article a {
   display: flex;
   flex-direction: column;
   padding-top: $gap-8;
+  border-top: 2px solid #000;
 }
 
 .home-blocks__row {
@@ -713,7 +717,7 @@ article a {
     flex-direction: column;
     gap: $gap-4;
 
-    .article:not(:first-child) .article__image {
+    .article:not(:first-child) .article__image-container {
       display: none;
     }
   }
@@ -779,7 +783,7 @@ article a {
         border-bottom: none;
         padding-bottom: 0;
       }
-      article:not(:first-child) .article__image {
+      article:not(:first-child) .article__image-container {
         display: none;
       }
     }
@@ -792,10 +796,13 @@ article a {
 
     &--tarde {
       grid-template-columns: 1fr;
+      gap: 0;
 
       .main-section__featured {
         grid-column: 1;
         grid-row: auto;
+        border-top: $border-divider;
+        padding: 16px 0 24px;
 
         .article__title {
           font-size: px-to-rem(18px);
@@ -810,6 +817,8 @@ article a {
       .main-section__secondary-row {
         grid-column: 1;
         grid-row: auto;
+        border-top: $border-divider;
+        padding-block: 24px;
 
         article {
           border-bottom: $border-divider;
@@ -825,6 +834,7 @@ article a {
         grid-column: 1;
         grid-row: auto;
         grid-template-columns: 1fr;
+        padding-top: 24px;
       }
     }
   }
@@ -892,8 +902,8 @@ article a {
 
   .sidebar {
     gap: 24px;
-    border-bottom: 1px solid #000;
-    padding-bottom: 24px;
+    border-top: 2px solid #000;
+    padding-block: 24px;
 
     &__block {
       padding-top: 24px;
@@ -903,8 +913,7 @@ article a {
   .lo-ultimo-top {
     display: block;
     overflow: hidden;
-    border-bottom: $border-divider;
-    padding-bottom: $gap-4;
+    padding-bottom: 16px;
 
     .sidebar__block-title {
       display: none;
@@ -939,7 +948,8 @@ article a {
   }
 
   .home-blocks {
-    padding-top: 0;
+    border-top: 2px solid #000;
+    padding-block: 24px;
 
     &__row {
       grid-template-columns: 1fr;
@@ -971,7 +981,7 @@ article a {
         flex: 0 0 312px;
       }
 
-      .article:not(:first-child) .article__image {
+      .article:not(:first-child) .article__image-container {
         display: block;
       }
 
