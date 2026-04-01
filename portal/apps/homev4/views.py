@@ -143,6 +143,7 @@ def _propagate_article_ids(source_layout, source_grid):
         block: source_grid.get(block, {}).get("article_ids", [])
         for block in ("principal", "suplemento", "especial")
     }
+    src_suplemento_date = source_grid.get("suplemento", {}).get("saved_date")
     src_sections = {s["slug"]: s.get("article_ids", []) for s in source_grid.get("sections", [])}
     src_componentes = {c["key"]: c.get("article_ids", []) for c in source_grid.get("componentes", [])}
 
@@ -153,6 +154,11 @@ def _propagate_article_ids(source_layout, source_grid):
         for block, ids in src_top.items():
             block_data = gd.get(block) if isinstance(gd.get(block), dict) else {}
             block_data["article_ids"] = ids
+            if block == "suplemento":
+                if src_suplemento_date is not None:
+                    block_data["saved_date"] = src_suplemento_date
+                else:
+                    block_data.pop("saved_date", None)
             gd[block] = block_data
 
         for sec in gd.get("sections", []):
@@ -197,6 +203,10 @@ def save_grid(request, layout_id):
         for comp in grid_data.get("componentes", []):
             if "newsletter_refs" in comp:
                 comp.pop("article_ids", None)
+        # Stamp suplemento with today's date so stale manual picks are ignored next day.
+        suplemento_block = grid_data.get("suplemento")
+        if isinstance(suplemento_block, dict):
+            suplemento_block["saved_date"] = timezone.localdate().isoformat()
         with transaction.atomic():
             layout.grid_data = grid_data
             layout.save()
@@ -504,10 +514,13 @@ def build_home_data(grid_data, publication=None, layout=None):
     result["suplemento_active"] = _block_active("suplemento", suplemento_data.get("active", True))
     if result["suplemento_active"]:
         try:
-            result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data.get("article_ids", []))
+            result["suplemento_articles"] = _fetch_suplemento_articles(
+                suplemento_data.get("article_ids", []),
+                suplemento_data.get("saved_date"),
+            )
         except Exception:
             result["suplemento_articles"] = []
-        _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(datetime.date.today().weekday())
+        _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
         if _today_source:
             result["suplemento_title"] = _area_name_by_source.get((_today_source[0], _today_source[1]), "")
             result["suplemento_slug"] = _today_source[1]
@@ -517,7 +530,7 @@ def build_home_data(grid_data, publication=None, layout=None):
                 FSNewsletter = __import__(
                     "utopia_cms_ladiaria.models", fromlist=["FSNewsletter"]
                 ).FSNewsletter
-                fs_nl = FSNewsletter.objects.get(day=datetime.date.today())
+                fs_nl = FSNewsletter.objects.get(day=timezone.localdate())
                 result["extra_articles"] = list(fs_nl.extra_articles.order_by("fs_newsletter_extra_articles"))
                 result["suplemento_title"] = "Extra"
             except Exception:
@@ -537,7 +550,7 @@ def build_home_data(grid_data, publication=None, layout=None):
     # ÁREAS Y PUBLICACIONES — source of truth is grid_data["sections"] merged with _DEFAULT_AREAS.
     # Areas in _DEFAULT_AREAS not yet in grid_data are appended automatically (same as components).
     # Blocks whose (type, slug) matches today's SUPLEMENTO source are hidden (shown there instead).
-    _today_suplemento_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(datetime.date.today().weekday())
+    _today_suplemento_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
     _saved_areas = grid_data.get("sections", [])
     _saved_area_keys = {(s.get("type"), s.get("slug")) for s in _saved_areas}
     _merged_areas = list(_saved_areas) + [
@@ -628,19 +641,33 @@ _DEFAULT_AREAS = [
 ]
 
 
+def _is_before_publishing_time():
+    """Return True if the current time is before today's PUBLISHING_TIME.
+    Used to gate article visibility in automatic fallback blocks (SUPLEMENTO, ÁREAS)
+    so they respect the same 5am cutoff as PRINCIPAL via get_current_edition().
+    """
+    from core.models import get_publishing_datetime
+    return timezone.now() < get_publishing_datetime()
+
+
 def _fetch_source_articles(source_type, slug, limit):
     """Fetch up to `limit` articles from a publication or category source.
     Shared by SUPLEMENTO and ÁREAS — same fetch logic, different limits.
+    Respects PUBLISHING_TIME: before the cutoff, only articles from previous
+    editions/days are returned, matching the behavior of get_current_edition().
     """
     try:
         if source_type == "publication":
             publication = Publication.objects.get(slug=slug)
-            edition = publication.latest_edition()
+            edition = get_current_edition(publication=publication)
             if edition:
                 return list(edition.top_articles[:limit])
         elif source_type == "category":
             category = Category.objects.get(slug=slug)
-            return list(category.home.articles_ordered()[:limit])
+            qs = category.home.articles_ordered()
+            if _is_before_publishing_time():
+                qs = qs.filter(date_published__date__lt=timezone.now().date())
+            return list(qs[:limit])
     except (Publication.DoesNotExist, Category.DoesNotExist, AttributeError):
         pass
     except Exception as e:
@@ -648,15 +675,15 @@ def _fetch_source_articles(source_type, slug, limit):
     return []
 
 
-def _fetch_suplemento_articles(saved_ids):
+def _fetch_suplemento_articles(saved_ids, saved_date=None):
     """Return SUPLEMENTO articles.
-    Priority: saved_ids (manually picked via picker).
+    Priority: saved_ids (manually picked via picker) only when saved_date matches today.
     Fallback: up to 7 articles from the publication or category mapped to today's weekday.
     """
-    if saved_ids:
+    if saved_ids and saved_date == timezone.localdate().isoformat():
         by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
-    source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(datetime.date.today().weekday())
+    source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
     if source:
         return _fetch_source_articles(source[0], source[1], limit=7)
     return []
