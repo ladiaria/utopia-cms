@@ -1,0 +1,130 @@
+@import "../variables";
+@import "../cardv4.scss";
+
+#main-content {
+  padding-block: 32px;
+
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  a {
+    margin: 0;
+  }
+}
+
+.category-grid {
+  @include utopia-container;
+  display: grid;
+  grid-template-columns: repeat(4, $col-width);
+  gap: $col-gap;
+  row-gap: 32px;
+  padding-inline: $padding-inline;
+
+  &__cover {
+    grid-column: 1 / 4;
+  }
+
+  &__secondary {
+    grid-column: 1 / 4;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $col-gap;
+
+    article {
+      position: relative;
+      &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: -($col-gap / 2);
+        height: 100%;
+        width: 0.5px;
+        background-color: #ababab;
+      }
+      &:last-child::after {
+        display: none;
+      }
+    }
+  }
+
+  &__tertiary-group {
+    grid-column: 4;
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    gap: $col-gap;
+    position: relative;
+    &::after {
+      position: absolute;
+      content: "";
+      top: 0;
+      left: -($col-gap / 2);
+      height: 100%;
+      width: 0.5px;
+      background-color: $color-divider;
+    }
+  }
+}
+
+.article-cover {
+  display: flex;
+  flex-direction: row;
+  gap: $col-gap;
+  padding-bottom: 32px;
+  border-bottom: $border-divider;
+
+  &__image-link {
+    flex: 0 0 $col-width * 2 + $col-gap;
+    display: flex;
+    img {
+      margin: 0;
+    }
+  }
+
+  .article {
+    &__body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 284px;
+      flex-shrink: 0;
+    }
+
+    &__title {
+      font-size: px-to-rem(24px);
+      font-weight: 450;
+      line-height: px-to-rem(31.2px);
+      font-family: $serif;
+      a {
+        text-decoration: none;
+      }
+    }
+
+    &__footer {
+      margin-top: 0;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .category-grid {
+    grid-template-columns: 1fr;
+
+    &__cover {
+      grid-column: 1;
+    }
+
+    &__secondary {
+      grid-column: 1;
+    }
+
+    &__tertiary-group {
+      grid-column: 1;
+      grid-row: auto;
+    }
+  }
+}

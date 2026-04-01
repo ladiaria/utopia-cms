@@ -10,6 +10,8 @@
 
 {% block css %}
   <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {# TODO: los estilos del cover grid están en category/detail.scss pero deberían extraerse a un archivo agnóstico (ej: cover_grid.scss) que puedan importar tanto category/detail.scss como este template #}
+  <link href="{% static 'sass/category/detail.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block body_class %}{{ publication.slug }}-pub{% endblock %}
@@ -18,6 +20,7 @@
 
 {% block content %}
 
+  {% comment %}
   {% if publication.is_emergente %}
     <div class="container container--wide">
       <div class="section-detail__head">
@@ -36,8 +39,13 @@
       </div>
     </div>
   {% endif %}
+  {% endcomment %}
 
+  {% include cover_grid_template|default:'category/cover_grid.html' %}
+
+  {% comment %}
   {% render_cover %}
+  {% endcomment %}
 
   {% block after_cover %}{% endblock %}
 
@@ -55,9 +63,14 @@
 
 {% block javascript %}
   {% if allow_mas_leidos %}<script src="{% static 'js/most_read.js' %}"></script>{% endif %}
-  <script type="text/javascript">
-    $(function(){
-      $('#header-pub').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}")
+        .then(function(response) { return response.text(); })
+        .then(function(html) {
+          var el = document.getElementById('header-pub');
+          if (el) el.innerHTML = html;
+        });
     });
   </script>
 {% endblock %}

@@ -475,10 +475,9 @@ img {
   }
 
   &__section {
-    font-size: 12px;
-    line-height: 17px;
+    font-size: px-to-rem(12px);
+    line-height: px-to-rem(14px);
     text-transform: uppercase;
-    margin-bottom: 5px;
     display: flex;
 
     a {
@@ -569,7 +568,6 @@ body.lento-pub .lock-tooltip-content {
   left: 34px;
   top: -8px;
 }
-
 
 .art_count_4,
 .art_count_3,
