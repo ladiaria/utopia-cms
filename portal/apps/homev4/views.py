@@ -628,19 +628,33 @@ _DEFAULT_AREAS = [
 ]
 
 
+def _is_before_publishing_time():
+    """Return True if the current time is before today's PUBLISHING_TIME.
+    Used to gate article visibility in automatic fallback blocks (SUPLEMENTO, ÁREAS)
+    so they respect the same 5am cutoff as PRINCIPAL via get_current_edition().
+    """
+    from core.models import get_publishing_datetime
+    return timezone.now() < get_publishing_datetime()
+
+
 def _fetch_source_articles(source_type, slug, limit):
     """Fetch up to `limit` articles from a publication or category source.
     Shared by SUPLEMENTO and ÁREAS — same fetch logic, different limits.
+    Respects PUBLISHING_TIME: before the cutoff, only articles from previous
+    editions/days are returned, matching the behavior of get_current_edition().
     """
     try:
         if source_type == "publication":
             publication = Publication.objects.get(slug=slug)
-            edition = publication.latest_edition()
+            edition = get_current_edition(publication=publication)
             if edition:
                 return list(edition.top_articles[:limit])
         elif source_type == "category":
             category = Category.objects.get(slug=slug)
-            return list(category.home.articles_ordered()[:limit])
+            qs = category.home.articles_ordered()
+            if _is_before_publishing_time():
+                qs = qs.filter(date_published__date__lt=timezone.now().date())
+            return list(qs[:limit])
     except (Publication.DoesNotExist, Category.DoesNotExist, AttributeError):
         pass
     except Exception as e:
