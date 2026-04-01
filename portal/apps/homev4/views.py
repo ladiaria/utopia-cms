@@ -143,7 +143,6 @@ def _propagate_article_ids(source_layout, source_grid):
         block: source_grid.get(block, {}).get("article_ids", [])
         for block in ("principal", "suplemento", "especial")
     }
-    src_suplemento_date = source_grid.get("suplemento", {}).get("saved_date")
     src_sections = {s["slug"]: s.get("article_ids", []) for s in source_grid.get("sections", [])}
     src_componentes = {c["key"]: c.get("article_ids", []) for c in source_grid.get("componentes", [])}
 
@@ -154,11 +153,6 @@ def _propagate_article_ids(source_layout, source_grid):
         for block, ids in src_top.items():
             block_data = gd.get(block) if isinstance(gd.get(block), dict) else {}
             block_data["article_ids"] = ids
-            if block == "suplemento":
-                if src_suplemento_date is not None:
-                    block_data["saved_date"] = src_suplemento_date
-                else:
-                    block_data.pop("saved_date", None)
             gd[block] = block_data
 
         for sec in gd.get("sections", []):
@@ -203,10 +197,6 @@ def save_grid(request, layout_id):
         for comp in grid_data.get("componentes", []):
             if "newsletter_refs" in comp:
                 comp.pop("article_ids", None)
-        # Stamp suplemento with today's date so stale manual picks are ignored next day.
-        suplemento_block = grid_data.get("suplemento")
-        if isinstance(suplemento_block, dict):
-            suplemento_block["saved_date"] = timezone.localdate().isoformat()
         with transaction.atomic():
             layout.grid_data = grid_data
             layout.save()
@@ -465,7 +455,7 @@ def build_home_data(grid_data, publication=None, layout=None):
     Keys returned:
       principal_active (bool), principal_articles (list of Article),
       suplemento_active (bool), suplemento_articles (list of Article), suplemento_title (str),
-      extra_articles (list of Article — populated on Saturday layouts from FSNewsletter),
+      extra_articles (list of Article — populated on Saturday layouts from grid_data, written by resolve_daily_layouts task),
       especial_active (bool), especial_articles (list of Article),
       sections: list of dicts — only active ones — each with:
         {type, id, slug, name, row, url, articles}
@@ -521,17 +511,13 @@ def build_home_data(grid_data, publication=None, layout=None):
         if _today_source:
             result["suplemento_title"] = _area_name_by_source.get((_today_source[0], _today_source[1]), "")
             result["suplemento_slug"] = _today_source[1]
-        # EXTRA: Saturday layouts load extra_articles from FSNewsletter instead of suplemento.
+        # EXTRA: Saturday layouts load extra_articles from grid_data (written daily by resolve_daily_layouts task).
         if layout is not None and getattr(layout, "day", None) == "sa":
-            try:
-                FSNewsletter = __import__(
-                    "utopia_cms_ladiaria.models", fromlist=["FSNewsletter"]
-                ).FSNewsletter
-                fs_nl = FSNewsletter.objects.get(day=timezone.localdate())
-                result["extra_articles"] = list(fs_nl.extra_articles.order_by("fs_newsletter_extra_articles"))
+            extra_ids = grid_data.get("extra_articles", {}).get("article_ids", [])
+            if extra_ids:
+                by_id = {a.id: a for a in Article.published.filter(id__in=extra_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
+                result["extra_articles"] = [by_id[aid] for aid in extra_ids if aid in by_id]
                 result["suplemento_title"] = "Extra"
-            except Exception:
-                logger.debug("build_home_data: FSNewsletter not available or not found for today")
 
     logger.warning("  build: suplemento=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
     # ESPECIAL
@@ -673,18 +659,13 @@ def _fetch_source_articles(source_type, slug, limit):
 
 
 def _fetch_suplemento_articles(suplemento_data):
-    """Return SUPLEMENTO articles.
-    Priority: saved article_ids only when saved_date matches today.
-    Fallback: up to 7 articles from the publication or category mapped to today's weekday.
+    """Return SUPLEMENTO articles from saved article_ids.
+    Article IDs are written daily by the resolve_daily_layouts Celery task.
     """
     saved_ids = suplemento_data.get("article_ids", [])
-    saved_date = suplemento_data.get("saved_date")
-    if saved_ids and saved_date == timezone.localdate().isoformat():
+    if saved_ids:
         by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
-    source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
-    if source:
-        return _fetch_source_articles(source[0], source[1], limit=7)
     return []
 
 
