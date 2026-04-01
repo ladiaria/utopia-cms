@@ -514,10 +514,7 @@ def build_home_data(grid_data, publication=None, layout=None):
     result["suplemento_active"] = _block_active("suplemento", suplemento_data.get("active", True))
     if result["suplemento_active"]:
         try:
-            result["suplemento_articles"] = _fetch_suplemento_articles(
-                suplemento_data.get("article_ids", []),
-                suplemento_data.get("saved_date"),
-            )
+            result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data)
         except Exception:
             result["suplemento_articles"] = []
         _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
@@ -675,11 +672,13 @@ def _fetch_source_articles(source_type, slug, limit):
     return []
 
 
-def _fetch_suplemento_articles(saved_ids, saved_date=None):
+def _fetch_suplemento_articles(suplemento_data):
     """Return SUPLEMENTO articles.
-    Priority: saved_ids (manually picked via picker) only when saved_date matches today.
+    Priority: saved article_ids only when saved_date matches today.
     Fallback: up to 7 articles from the publication or category mapped to today's weekday.
     """
+    saved_ids = suplemento_data.get("article_ids", [])
+    saved_date = suplemento_data.get("saved_date")
     if saved_ids and saved_date == timezone.localdate().isoformat():
         by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
