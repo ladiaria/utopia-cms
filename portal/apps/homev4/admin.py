@@ -119,10 +119,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
 
         # SUPLEMENTO articles: saved_ids if saved today, else day-based section fallback.
         try:
-            result["suplemento_articles"] = _fetch_suplemento_articles(
-                grid_data.get("suplemento", {}).get("article_ids", []),
-                grid_data.get("suplemento", {}).get("saved_date"),
-            )
+            result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data)
         except Exception:
             result["suplemento_articles"] = []
 
