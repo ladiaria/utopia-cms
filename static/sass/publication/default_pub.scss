@@ -1,4 +1,5 @@
 @import "../variables";
+@import "../cardv4.scss";
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 .visually-hidden {
@@ -12,22 +13,6 @@
   white-space: nowrap;
   border: 0;
 }
-
-// ─── Variables ────────────────────────────────────────────────────────────────
-$col-gap: 48px;
-$col-width: 284px; // (1280 - 48 * 3) / 4
-$sidebar-width: 284px;
-$breakpoint-mobile: 767px;
-
-$gap-2: 8px;
-$gap-3: 12px;
-$gap-4: 16px;
-$gap-6: 24px;
-$-gap-6: -24px;
-$gap-8: 32px;
-
-$color-divider: #ababab;
-$border-divider: 0.5px solid $color-divider;
 
 p,
 h1,
@@ -302,83 +287,6 @@ article a {
       border-top: $border-divider;
       padding-top: $gap-8;
     }
-  }
-}
-
-// ─── Artículo genérico ────────────────────────────────────────────────────────
-.article {
-  display: flex;
-  flex-direction: column;
-  gap: $gap-3;
-  position: relative;
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    gap: $gap-3;
-  }
-
-  &__section-label {
-    text-transform: uppercase;
-    letter-spacing: 0.96px;
-    font-size: px-to-rem(12px);
-
-    &--pub {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-  }
-  &__title {
-    font-family: $serif;
-    font-weight: 400;
-    font-size: px-to-rem(18px);
-    line-height: px-to-rem(24.3px);
-  }
-  &__summary {
-    font-family: $serif;
-    font-size: px-to-rem(15px);
-    font-weight: 300;
-    line-height: 1.35em;
-  }
-
-  &__opinion-type {
-    font-family: $sans;
-    font-weight: 400;
-    font-size: px-to-rem(14px);
-    line-height: 1em;
-  }
-  &__footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: $gap-3;
-    margin-top: auto;
-  }
-
-  &__byline {
-    font-family: $sans;
-    font-size: px-to-rem(14px);
-  }
-
-  &__bookmark {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: #81898b;
-    margin-left: auto;
-  }
-
-  &__image {
-    width: 100%;
-    aspect-ratio: 3 / 2;
-    object-fit: cover;
-    height: auto;
   }
 }
 

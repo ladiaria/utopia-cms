@@ -10,6 +10,7 @@
 
 {% block css %}
   <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/category/detail.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block header_classes %}category-pub-header{% endblock %}
@@ -20,6 +21,8 @@
 
 {% block content %}
 
+  {% include cover_grid_template|default:'category/cover_grid.html' %}
+  {% comment %}
   <section class="ld-grid-main ld-grid-main--two-cols">
     {% if cover_article %}
       <div class="ld-grid-area area-main">
@@ -75,7 +78,6 @@
     {% endif %}
 
     <div class="ld-grid-area area-third">
-
       {% for a in destacados|slice:":5" %}
         <div class="
           ld-card
@@ -134,7 +136,6 @@
       {% endfor %}
 
     </div>
-
     {% for a in destacados|slice:"5:9" %}
       <div class="ld-grid-area ld-grid-area-col area-col-{% cycle 'a' 'b' 'c' 'd' %}">
         <div class="ld-card ld-card--reg ld-card--{{ a.type }}{% block destacados_abcd_extra_class %}{% endblock %}">
@@ -183,7 +184,7 @@
     {% endfor %}
 
   </section>
-
+  {% endcomment %}
   {% block featured_content %}{% endblock %}
 
   {% render_collectionrow as collectionrow %}

@@ -1,0 +1,109 @@
+{% load bleach_tags core_tags static ldml %}
+
+<section class="category-grid">
+
+  <!-- ND: Noticia destacada (cover) -->
+  {% if cover_article %}
+    <div class="category-grid__cover">
+      <article class="article-cover">
+        {% if cover_article.photo_render_allowed %}
+          <a href="{{ cover_article.get_absolute_url }}" class="article-cover__image-link">
+             <img
+                srcset="{{ cover_article.photo.get_700w_url }} 700w, {{ cover_article.photo.get_1200w_url }} 1200w"
+                sizes="(min-width: 700px) 1200px, 100vw"
+                width="700"
+                height="{{ cover_article.photo.get_700w_size.1 }}"
+                title="{{ cover_article.photo_caption }}"
+                alt="{{ cover_article.photo_caption }}"
+                class="article__image"
+              >
+          </a>
+        {% endif %}
+        <div class="article__body">
+          <div class="article__section-label">
+            {% with article=cover_article %}
+              {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
+            {% endwith %}
+          </div>
+          <h2 class="article__title">
+            <a href="{{ cover_article.get_absolute_url }}">{{ cover_article.headline|ldmarkup|bleach }}</a>
+          </h2>
+          {% if cover_article.home_lead or cover_article.lead %}
+            <p class="article__summary">
+              {{ cover_article.home_lead|default:cover_article.lead|ldmarkup|bleach }}
+            </p>
+          {% endif %}
+          <div class="article__footer">
+            {% with authors=cover_article.get_authors %}
+              {% if authors %}
+                <div class="article__byline">
+                  Por
+                  {% for author in authors %}
+                    <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+            {% include "article/article_card_read_later.html" with a=cover_article prefetched_article_data=True %}
+          </div>
+        </div>
+      </article>
+    </div>
+  {% endif %}
+
+  <!-- SA1–SA3: Noticias secundarias (destacados 1–3) -->
+  <div class="category-grid__secondary">
+    {% for a in destacados|slice:":3" %}
+      <article class="article">
+        {% if a.photo_render_allowed %}
+          <a href="{{ a.get_absolute_url }}" class="article__image-link">
+             <img
+                srcset="{{ a.photo.get_small_url }} 350w, {{ a.photo.get_700w_url }} 700w"
+                sizes="(min-width: 700px) 1200px, 100vw"
+                width="700"
+                height="{{ a.photo.get_700w_size.1 }}"
+                title="{{ a.photo_caption }}"
+                alt="{{ a.photo_caption }}"
+                class="article__image"
+              >
+          </a>
+        {% endif %}
+        <div class="article__body">
+          <div class="article__section-label">
+            {% with article=a %}
+              {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
+            {% endwith %}
+          </div>
+          <h2 class="article__title">
+            <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
+          </h2>
+          <div class="article__footer">
+            {% with authors=a.get_authors %}
+              {% if authors %}
+                <div class="article__byline">
+                  Por
+                  {% for author in authors %}
+                    <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+            {% include "article/article_card_read_later.html" with prefetched_article_data=True %}
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+
+  <!-- TA1–TA5: Noticias terciarias (destacados 4–8) -->
+  <div class="category-grid__tertiary-group">
+    {% for a in destacados|slice:"3:8" %}
+      <div class="category-grid__tertiary">
+        <h3 class="ld-card__title">
+          <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
+        </h3>
+      </div>
+    {% endfor %}
+  </div>
+
+</section>
