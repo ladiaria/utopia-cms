@@ -252,7 +252,7 @@
         .then(function(html) {
           if (!html) return;
           document.getElementById('bn-module').innerHTML = html;
-          {# TODO: check if this can be simplified calling notification_close function #}
+          {# TODO: check if this Ícan be simplified calling notification_close function #}
           document.querySelectorAll('.breaking-notice .btn-close').forEach(function(btn) {
             btn.addEventListener('click', function() {
               var notification = btn.closest('.breaking-notice');
