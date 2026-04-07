@@ -52,21 +52,24 @@
   {% endif %}
 
   <!-- SA1–SA3: Noticias secundarias (destacados 1–3) -->
+  {% all_photo_render_allowed destacados|slice:":3" as secondary_all_have_photo %}
   <div class="category-grid__secondary">
     {% for a in destacados|slice:":3" %}
       <article class="article">
         {% if a.photo_render_allowed %}
-          <a href="{{ a.get_absolute_url }}" class="article__image-link">
-             <img
-                srcset="{{ a.photo.get_small_url }} 350w, {{ a.photo.get_700w_url }} 700w"
-                sizes="(min-width: 700px) 1200px, 100vw"
-                width="700"
-                height="{{ a.photo.get_700w_size.1 }}"
-                title="{{ a.photo_caption }}"
-                alt="{{ a.photo_caption }}"
-                class="article__image"
-              >
-          </a>
+          {% if not secondary_images_all_or_nothing or secondary_all_have_photo %}
+            <a href="{{ a.get_absolute_url }}" class="article__image-link">
+               <img
+                  srcset="{{ a.photo.get_small_url }} 350w, {{ a.photo.get_700w_url }} 700w"
+                  sizes="(min-width: 700px) 1200px, 100vw"
+                  width="700"
+                  height="{{ a.photo.get_700w_size.1 }}"
+                  title="{{ a.photo_caption }}"
+                  alt="{{ a.photo_caption }}"
+                  class="article__image"
+                >
+            </a>
+          {% endif %}
         {% endif %}
         <div class="article__body">
           <div class="article__section-label">
