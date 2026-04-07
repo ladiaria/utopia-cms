@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static core_tags homev3_tags %}
+{% load static core_tags homev3_tags compress %}
 
 {% block page_title %}{% publication_title %}{% endblock %}
 
@@ -12,6 +12,7 @@
   <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
   {# TODO: los estilos del cover grid están en category/detail.scss pero deberían extraerse a un archivo agnóstico (ej: cover_grid.scss) que puedan importar tanto category/detail.scss como este template #}
   <link href="{% static 'sass/category/detail.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/components/nl_switch.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block body_class %}{{ publication.slug }}-pub{% endblock %}
@@ -63,8 +64,19 @@
 
 {% block javascript %}
   {% if allow_mas_leidos %}<script src="{% static 'js/most_read.js' %}"></script>{% endif %}
+  {# TODO: Cargar el script sólo si el NL está desactivado #}
+  {% compress js %}
+    <script src="{% static 'js/switch_change_events.js' %}"></script>
+  {% endcompress %}
+  <script>
+  </script>
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Initialize newsletter subscription switches
+      switch_change_events(document.querySelectorAll('.newsletter .newsletter__switch-container'));
+
+      // Load publication header ad content
       fetch("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}")
         .then(function(response) { return response.text(); })
         .then(function(html) {

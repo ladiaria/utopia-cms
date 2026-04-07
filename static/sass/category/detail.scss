@@ -69,17 +69,24 @@
       width: 0.5px;
       background-color: $color-divider;
     }
-    .article::after {
-      content: "";
-      position: absolute;
-      bottom: -($col-gap / 2);
-      left: 0;
-      width: 100%;
-      height: 0.5px;
-      background-color: $color-divider;
-    }
-    .article:last-child::after {
-      display: none;
+    .article {
+      &:first-child {
+        .article__image-link {
+          display: none;
+        }
+      }
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: -($col-gap / 2);
+        left: 0;
+        width: 100%;
+        height: 0.5px;
+        background-color: $color-divider;
+      }
+      &:last-child::after {
+        display: none;
+      }
     }
   }
 }
@@ -125,6 +132,10 @@
   }
 }
 
+.newsletter {
+  display: none;
+}
+
 @media (max-width: 768px) {
   #main-content {
     padding: 0;
@@ -142,21 +153,31 @@
       grid-column: 1;
       grid-template-columns: 1fr;
       padding-bottom: 24px;
-      border-bottom: $border-divider;
+      border-bottom: 0.5px solid #000;
 
-      .article::after {
-        right: unset;
-        left: 0;
-        width: 100%;
-        height: 0.5px;
-        bottom: -24px;
-        top: unset;
+      .article {
+        img {
+          display: none;
+        }
+        &::after {
+          right: unset;
+          left: 0;
+          width: 100%;
+          height: 0.5px;
+          bottom: -24px;
+          top: unset;
+        }
       }
     }
 
     &__tertiary-group {
       grid-column: 1;
       grid-row: auto;
+      .article:first-child {
+        .article__image-link {
+          display: flex;
+        }
+      }
     }
   }
 
@@ -184,6 +205,40 @@
         font-size: px-to-rem(18px);
         line-height: 1.35em;
       }
+    }
+  }
+
+  .newsletter {
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 24px;
+    gap: 12px;
+    border-bottom: 0.5px solid #000;
+
+    &__badge {
+      background: #e3e8ea;
+      padding: 2px;
+      font-family: $sans;
+      font-size: px-to-rem(12px);
+      align-self: flex-start;
+      line-height: px-to-rem(14px);
+      letter-spacing: px-to-rem(0.96px);
+      text-transform: uppercase;
+    }
+    &__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      h2 {
+        font-family: $sans-title;
+        font-size: px-to-rem(24px);
+        font-weight: 700;
+        line-height: px-to-rem(20.88px);
+        letter-spacing: px-to-rem(0.24px);
+      }
+    }
+    &__preview {
+      text-decoration: underline;
     }
   }
 }

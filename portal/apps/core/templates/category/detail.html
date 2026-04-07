@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load bleach_tags core_tags homev3_tags static ldml %}
+{% load bleach_tags core_tags homev3_tags static ldml compress %}
 
 {% block page_title %}{% category_title %}{% endblock %}
 
@@ -11,6 +11,7 @@
 {% block css %}
   <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
   <link href="{% static 'sass/category/detail.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/components/nl_switch.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block header_classes %}category-pub-header{% endblock %}
@@ -244,6 +245,16 @@
 {% endblock %}
 
 {% block javascript %}
+  {# TODO: Cargar el script sólo si el NL está desactivado #}
+  {% compress js %}
+    <script src="{% static 'js/switch_change_events.js' %}"></script>
+  {% endcompress %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      switch_change_events(document.querySelectorAll('.newsletter .newsletter__switch-container'));
+    });
+  </script>
+
   {% if bn_module_published_count %}
   <script>
     document.addEventListener('DOMContentLoaded', function() {
