@@ -343,6 +343,11 @@ def render_toolbar_for(context, toolbar_object):
 
 
 @register.simple_tag
+def all_photo_render_allowed(articles):
+    return all(getattr(a, 'photo_render_allowed', False) for a in articles)
+
+
+@register.simple_tag
 def get_section(section_slug):
     try:
         return Section.objects.get(slug=section_slug)
