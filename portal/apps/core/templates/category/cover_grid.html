@@ -98,11 +98,29 @@
   <!-- TA1–TA5: Noticias terciarias (destacados 4–8) -->
   <div class="category-grid__tertiary-group">
     {% for a in destacados|slice:"3:8" %}
-      <div class="category-grid__tertiary">
+      <article class="article">
+        <span class="article__section-label">
+          {% with article=a %}
+            {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
+          {% endwith %}
+        </span>
         <h3 class="ld-card__title">
           <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
         </h3>
-      </div>
+        <div class="article__footer">
+          {% with authors=a.get_authors %}
+            {% if authors %}
+              <div class="article__byline">
+                Por
+                {% for author in authors %}
+                  <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+          {% include "article/article_card_read_later.html" with prefetched_article_data=True %}
+        </div>
+      </article>
     {% endfor %}
   </div>
 
