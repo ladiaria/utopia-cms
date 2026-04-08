@@ -325,6 +325,11 @@ article a {
     > .suplemento-section__header {
       grid-column: 1;
       grid-row: 1;
+      a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
     }
 
     > .suplemento-section__featured-image {

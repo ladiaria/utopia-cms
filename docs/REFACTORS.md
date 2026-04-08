@@ -1,0 +1,77 @@
+# Future Refactors
+
+This document tracks pending refactors. Each item includes a checkbox — mark it when done.
+Once all items are checked, clean up this document by removing completed entries.
+
+## Checklist
+
+- [ ] Migrate `render_article_card` to `render_card`
+- [ ] Remove `article_card_new.html`
+- [ ] Replace opaque size codes in `render_article_card`
+- [ ] Unify card rendering in the redesign
+- [ ] Clean up `art_count_` class in `section_row.html`
+- [ ] Fix `ld-card__section` inside `article__section-label`
+
+---
+
+## 1. Migrate `render_article_card` to `render_card`
+
+Replace all uses of the old `render_article_card` tag with the new `render_card` tag, which uses
+descriptive `variant=` names instead of opaque size codes.
+
+```django
+{# Old #}
+{% render_article_card article=article media=article.home_display card_size="FN" %}
+
+{# New #}
+{% render_card article=article variant="article_card" %}
+```
+
+Once fully migrated, `render_article_card` can be removed from `core_tags.py`.
+
+---
+
+## 2. Remove `article_card_new.html`
+
+After migrating all `card_size="FN"` usages to `render_card`, `article_card_new.html` becomes
+obsolete and can be deleted.
+
+---
+
+## 3. Replace opaque size codes in `render_article_card`
+
+The existing size codes (`FN`, `FD`, `FF`, `BG`, `MD`, `SM`, `OC`, `FW`) are not self-explanatory.
+As part of the migration to `render_card`, each code should be mapped to a descriptive variant name.
+
+| Code | Template | Suggested variant name |
+|------|----------|------------------------|
+| `FN` | `article_card_new.html` | `article_card` |
+| `FD` | `card_full_detailed.html` | `card_full_detailed` |
+| `FF` | `card_big_new.html` | `card_big_new` |
+| `BG` | `card_big.html` | `card_big` |
+| `MD` | `card_medium.html` | `card_medium` |
+| `SM` | `card_small.html` | `card_small` |
+| `FW` | `card_full.html` | `card_full` |
+| `OC` | `card_big.html` | `card_big` |
+
+---
+
+## 4. Unify card rendering in the redesign
+
+Several places in the redesign render cards item by item instead of using `render_card`.
+These should be refactored to use the tag for consistency.
+
+---
+
+## 5. Clean up `art_count_` class in `section_row.html`
+
+The wrapper `<div class="art_count_{{ art_count }}">` in `section_row.html` is a legacy pattern.
+Evaluate whether it is still used by any CSS or JS and remove it if not.
+
+---
+
+## 6. Fix `ld-card__section` inside `article__section-label`
+
+`publication_section` still outputs markup using the old `ld-card__section` class, which is
+inconsistent with the new `article__*` class naming convention introduced in `article_card.html`.
+The tag output and its CSS should be updated to match the new convention.
