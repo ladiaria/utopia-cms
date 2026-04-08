@@ -152,26 +152,30 @@ a.ld-text-secondary,
 ///////////////////////////////////////////////////////////////////////////
 
 .container {
-  font-size: 16px;
+  font-size: px-to-rem(16px);
   transition: 0.2s ease-out;
+  margin: 0 auto;
+  max-width: $container-width;
+  padding: 0 $padding-inline;
 
-  @media (max-width: 460px) {
-    margin: 0 auto;
-    max-with: 100%;
+  &--mobile-overflow {
+    @media #{$medium-and-down} {
+      padding: 0;
+    }
   }
 
   &--wide {
-    @media (min-width: 601px) {
-      width: 90% !important; // TODO: Refactor new containers, remove !importants
-      max-width: 1170px !important;
+    @media #{$medium-and-up} {
+      width: 90%;
+      max-width: 1170px;
       padding: 0 15px;
     }
   }
 
   // 570px width
   &--narrow {
-    @media (min-width: 600px) {
-      width: 570px !important; // TODO: Fix important.
+    @media #{$medium-and-up} {
+      width: 570px;
       max-width: 570px;
       padding: 0;
       margin: 0 auto;
@@ -448,8 +452,8 @@ a.ladiaria {
 
 .section-detail {
   &__head {
-    padding-top: 25px;
-    margin-bottom: 30px;
+    padding-top: 24px;
+    margin-bottom: 24px;
 
     &.white_text {
       > * {
@@ -735,10 +739,6 @@ a.ladiaria {
 
 // TODO: poner los media queries donde van las reglas
 @media #{$small-and-down} {
-  .container {
-    max-width: 100% !important;
-  }
-
   #main-header {
     .nav-wrapper {
       display: flex;
@@ -847,24 +847,6 @@ a.ladiaria {
         width: auto;
       }
     }
-  }
-}
-
-@media #{$medium-and-up} {
-  .container {
-    max-width: 600px;
-  }
-}
-
-@media #{$large-and-up} {
-  .container {
-    max-width: 700px;
-  }
-}
-
-@media #{$extra-large-and-up} {
-  .container {
-    max-width: 1200px;
   }
 }
 

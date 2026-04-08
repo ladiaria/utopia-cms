@@ -1,11 +1,5 @@
 // Cards and css grid styles.
 
-.container {
-  margin: 0 auto;
-  width: 90%;
-  max-width: 1440px;
-}
-
 img {
   max-width: 100%;
 }
@@ -533,10 +527,6 @@ img {
 .lock-tooltip {
   position: relative;
 
-  .lock {
-    margin-left: 5px;
-  }
-
   .lock-tooltip-content {
     display: none;
     position: absolute;
@@ -567,13 +557,6 @@ img {
 body.lento-pub .lock-tooltip-content {
   left: 34px;
   top: -8px;
-}
-
-.art_count_4,
-.art_count_3,
-.art_count_2,
-.art_count_1 {
-  margin-bottom: 24px;
 }
 
 .card {
