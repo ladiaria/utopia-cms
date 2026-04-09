@@ -44,6 +44,14 @@
 
   {% include cover_grid_template|default:'category/cover_grid.html' %}
 
+  {% block cover_ads %}
+    {% if allow_ads and not is_subscriber %}
+      <section id="header-pub" data-ad-url="{% url 'adzone_ad_content' %}?publication={{ publication.slug }}">
+        <div class="ad_banner"></div>
+      </section>
+    {% endif %}
+  {% endblock %}
+
   {% comment %}
   {% render_cover %}
   {% endcomment %}

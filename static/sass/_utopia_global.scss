@@ -632,6 +632,34 @@ a.ladiaria {
   }
 }
 
+// ─── Publicidad ───────────────────────────────────────────────────────────────
+#header-pub {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 0 $padding-inline 32px;
+  background-color: #fff;
+  max-width: $container-width;
+  width: 100%;
+  margin: 0 auto;
+
+  .ad_banner {
+    display: flex;
+  }
+
+  .ld-caption {
+    padding-top: 24px;
+    border-top: 1px solid #000;
+    color: #81898b;
+    text-align: center;
+    font-family: $sans;
+    font-size: px-to-rem(14px);
+    line-height: px-to-rem(16.52px);
+    letter-spacing: px-to-rem(0.14px);
+  }
+}
+
 @media #{$medium-and-down} {
   .section-detail {
     &__head {
@@ -648,6 +676,9 @@ a.ladiaria {
     &__subtitle {
       font-size: px-to-rem(16px);
     }
+  }
+  #header-pub .ld-caption {
+    padding-top: 16px;
   }
 }
 

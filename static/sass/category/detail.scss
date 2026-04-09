@@ -137,7 +137,20 @@
   display: none;
 }
 
+#header-pub .ad_banner {
+  width: 970px;
+  height: 250px;
+  margin: 0 auto;
+}
+
 @media (max-width: 768px) {
+  #header-pub {
+    padding-bottom: 24px;
+    .ad_banner {
+      width: 300px;
+    }
+  }
+
   #main-content {
     padding: 0;
   }
