@@ -5,7 +5,7 @@ from django.template import Library, Engine, TemplateDoesNotExist, loader
 from django.template.base import Node
 
 from core.models import Section, Publication, Category, get_current_edition
-from core.utils import get_category_template, get_articles_slider_template
+from core.utils import get_category_template
 
 
 register = Library()
@@ -142,72 +142,6 @@ def render_publication_row(context, publication_slug):
             return ''
 
 
-class RenderCategoryRowNode(Node):
-    def __init__(self, category_slug, limit):
-        self.category_slug = category_slug
-        self.limit = limit
-
-    def render(self, context):
-        try:
-            category = Category.objects.get(slug=self.category_slug)
-        except Category.DoesNotExist:
-            return ''
-        else:
-            latest_articles = category.latest_articles()[:self.limit]
-            if latest_articles:
-                flatten_ctx = context.flatten()
-                flatten_ctx.update(
-                    {
-                        'category': category,
-                        # both next entries should be set
-                        'edition': get_current_edition(),
-                        'is_portada': True,
-                        # force a blank first node because top_index should be > 0
-                        'category_destacados': [None] + latest_articles,
-                    }
-                )
-                return loader.render_to_string(get_category_template(category.slug, "category_row"), flatten_ctx)
-            else:
-                return ''
-
-
-class RenderArticlesSliderNode(Node):
-    def __init__(self, context, type, slug, limit):
-        self.type = type
-        self.slug = slug
-        self.limit = limit
-
-    def render(self, context):
-        if self.type == 'category':
-            try:
-                category = Category.objects.get(slug=self.slug)
-            except Category.DoesNotExist:
-                return ""
-            else:
-                latest_articles = category.latest_articles()[:self.limit]
-                flatten_ctx = context.flatten()
-                flatten_ctx.update(
-                    {
-                        'category': category,
-                        'articles': latest_articles,
-                        'edition': get_current_edition(),
-                        'is_portada': True,
-                        'slug': self.slug,
-                        'name': category.name,
-                        'description': category.description,
-                        'art_count': len(latest_articles),
-                    }
-                )
-                try:
-                    return loader.render_to_string(get_articles_slider_template(self.slug), flatten_ctx)
-                except TemplateDoesNotExist:
-                    return loader.render_to_string('articles_slider.html', flatten_ctx)
-        else:
-            # TODO: maybe we can call get_articles_slider_template with a second argument like type="section" and use
-            #       the analogous logic for sections.
-            return ""
-
-
 @register.simple_tag(takes_context=True)
 def render_publication_grid(context, data):
     publication, section_slug, flatten_ctx = data[0], data[3], context.flatten()
@@ -227,15 +161,6 @@ def render_publication_grid(context, data):
         '%s/%s_grid.html' % (settings.HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR, publication.slug), flatten_ctx
     )
 
-
-@register.simple_tag(takes_context=True)
-def render_category_row(context, category_slug, limit=getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT', 4)):
-    return RenderCategoryRowNode(category_slug, limit).render(context)
-
-
-@register.simple_tag(takes_context=True)
-def render_category_slider(context, type, slug, limit=getattr(settings, 'HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT', 4)):
-    return RenderArticlesSliderNode(context, type, slug, limit).render(context)
 
 
 @register.simple_tag(takes_context=True)

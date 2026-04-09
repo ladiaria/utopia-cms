@@ -3,6 +3,8 @@
 This document tracks pending refactors. Each item includes a checkbox — mark it when done.
 Once all items are checked, clean up this document by removing completed entries.
 
+See also [`REDESIGNV4.md`](REDESIGNV4.md) for deploy-time steps related to the v4 redesign.
+
 ## Checklist
 
 - [ ] Migrate `render_article_card` to `render_card`
@@ -11,6 +13,9 @@ Once all items are checked, clean up this document by removing completed entries
 - [ ] Unify card rendering in the redesign
 - [ ] Clean up `art_count_` class in `section_row.html`
 - [ ] Fix `ld-card__section` inside `article__section-label`
+- [ ] Remove cover.html system (see `utopia_cms_ladiaria/docs/redesignv4.md`)
+- [ ] Evaluate and remove `render_collectionrow` from `category/detail.html`
+- [ ] Audit and replace/remove all uses of the `footer-section` class
 
 ---
 
@@ -75,3 +80,28 @@ Evaluate whether it is still used by any CSS or JS and remove it if not.
 `publication_section` still outputs markup using the old `ld-card__section` class, which is
 inconsistent with the new `article__*` class naming convention introduced in `article_card.html`.
 The tag output and its CSS should be updated to match the new convention.
+
+---
+
+## 7. Remove cover.html system (la diaria)
+
+See `utopia_cms_ladiaria/docs/redesignv4.md` for details.
+
+---
+
+## 8. Evaluate and remove `render_collectionrow` from `category/detail.html`
+
+`category/detail.html` lines 189–199 renderizan un bloque de colecciones con `render_collectionrow`.
+Evaluar si el feature de colecciones sigue en uso en el rediseño v4. Si no, eliminar el bloque del
+template y el tag asociado.
+
+---
+
+## 9. Audit and replace/remove all uses of the `footer-section` class
+
+La clase `footer-section` pertenece al diseño viejo. Auditar todos los templates que la usan y
+determinar para cada uno si se elimina o se reemplaza por el equivalente del nuevo diseño.
+
+```bash
+grep -r "footer-section" --include="*.html" .
+```

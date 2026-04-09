@@ -1,7 +1,8 @@
 @import "../variables";
 
-.section-news-wall {
+.frontpage-section.section-news-wall {
   padding-block: 48px;
+  background-color: #f1f4f5;
 
   .container {
     display: grid;
@@ -67,7 +68,7 @@
 }
 
 @media #{$medium-and-down} {
-  .section-news-wall {
+  .frontpage-section.section-news-wall {
     padding-block: 32px;
 
     .container {

@@ -452,8 +452,18 @@ a.ladiaria {
 
 .section-detail {
   &__head {
-    padding-top: 24px;
-    margin-bottom: 24px;
+    padding-top: 32px;
+    margin-bottom: 32px;
+    border-top: 1px solid #000;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
     &.white_text {
       > * {
@@ -493,11 +503,11 @@ a.ladiaria {
   }
 
   &__title {
-    font-family: "Roboto", sans-serif;
-    font-size: 3rem;
-    line-height: 1.1;
+    font-family: $sans-title;
+    font-size: px-to-rem(32px);
+    line-height: px-to-rem(27.84px);
     color: #000;
-    font-weight: bold;
+    font-weight: 700;
     margin: 0;
     -webkit-hyphens: auto;
     -moz-hyphens: auto;
@@ -525,18 +535,14 @@ a.ladiaria {
   }
 
   &__subtitle {
-    font-family: "Roboto", sans-serif;
-    font-size: 18px;
-    line-height: 1.1;
+    font-size: px-to-rem(18px);
+    line-height: normal;
+    letter-spacing: px-to-rem(0.18px);
     color: #000;
-    font-weight: 500;
-    margin: 0 0 24px;
     -webkit-hyphens: auto;
     -moz-hyphens: auto;
     -ms-hyphens: auto;
     hyphens: auto;
-    display: block;
-    margin-top: 8px;
   }
 
   &__sub-cats {
@@ -626,72 +632,22 @@ a.ladiaria {
   }
 }
 
-// Grid for 5 columns in Materialize
-// Usage <div class="col m5ths s6">Column 1</div>
-.s5ths,
-.m5ths,
-.l5ths,
-.xl5ths {
-  margin-left: auto;
-  left: auto;
-  right: auto;
-}
+@media #{$medium-and-down} {
+  .section-detail {
+    &__head {
+      padding-top: 24px;
+      margin-bottom: 24px;
+      gap: 8px;
+    }
 
-.row .col.s5ths {
-  width: 20%;
-}
-
-.row .col.s6ths {
-  width: 16.6666%;
-}
-
-@media #{$medium-and-up} {
-  .row .col.m5ths {
-    width: 20%;
-  }
-}
-
-@media #{$large-and-up} {
-  .row .col.l5ths {
-    width: 20%;
-  }
-}
-
-@media #{$extra-large-and-up} {
-  .row .col.xl5ths {
-    width: 20%;
-  }
-}
-
-// Grid for 4 columns
-.s4ths,
-.m4ths,
-.l4ths,
-.xl4ths {
-  margin-left: auto;
-  left: auto;
-  right: auto;
-}
-
-.row .col.s4ths {
-  width: 25%;
-}
-
-@media #{$medium-and-up} {
-  .row .col.m4ths {
-    width: 25%;
-  }
-}
-
-@media #{$large-and-up} {
-  .row .col.l4ths {
-    width: 25%;
-  }
-}
-
-@media #{$extra-large-and-up} {
-  .row .col.xl4ths {
-    width: 25%;
+    &__title {
+      font-size: px-to-rem(28px);
+      line-height: px-to-rem(24.36px);
+      letter-spacing: px-to-rem(0.28px);
+    }
+    &__subtitle {
+      font-size: px-to-rem(16px);
+    }
   }
 }
 
@@ -1023,18 +979,6 @@ a.ld-link-low {
   .tagline {
     margin-bottom: 40px;
   }
-
-  .footer-section {
-    margin-top: 25px;
-    margin-bottom: 0;
-
-    .ld-btn:first-of-type {
-      margin-bottom: 20px;
-      @media (min-width: 485px) {
-        margin-bottom: 0;
-      }
-    }
-  }
 }
 
 .sections-grid {
@@ -1324,28 +1268,6 @@ nav.subscription_black {
       &:after {
         display: none;
       }
-    }
-  }
-}
-
-// sections footer
-.footer-section {
-  text-align: center;
-  margin-top: $line-height;
-  margin-bottom: 30px;
-
-  .btn {
-    font-size: 14px;
-    font-weight: bold;
-    text-transform: uppercase;
-    padding: 8px 20px;
-  }
-
-  .ld-btn-solid-dark {
-    box-shadow: none;
-
-    &:hover {
-      opacity: 0.8;
     }
   }
 }
