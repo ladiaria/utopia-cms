@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load static bleach_tags core_tags ldml homev3_tags %}
+{% load static bleach_tags core_tags ldml homev3_tags compress %}
 
 {% block page_title %}{% publication_title %}{% endblock %}
 
@@ -84,7 +84,9 @@
 
   {% block cover_ads %}
     {% if allow_ads and not is_subscriber %}
-      <section id="header-pub" data-ad-url="{% url 'adzone_ad_content' %}?publication={{ publication.slug }}"></section>
+      <section id="header-pub" data-ad-url="{% url 'adzone_ad_content' %}?publication={{ publication.slug }}">
+        <div class="ad_banner"></div>
+      </section>
     {% endif %}
   {% endblock %}
 
@@ -258,6 +260,8 @@
   {% endif %}
 
   {% if allow_ads and not is_subscriber %}
-    <script src="{% static 'js/load_ads.js' %}?v=1.0"></script>
+    {% compress js %}
+      <script src="{% static 'js/load_ads.js' %}?v=1.0"></script>
+    {% endcompress %}
   {% endif %}
 {% endblock %}
