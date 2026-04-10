@@ -20,7 +20,7 @@ from django.views.decorators.http import require_POST
 from libs.utils import decode_hashid
 from decorators import render_response
 
-from .models import SubscriberEvento, SubscriberArticle, TopUser, Beneficio, Socio, Registro
+from .models import SubscriberEvento, SubscriberArticle, TopUser, Beneficio, Socio, Registro, AlreadyUsedTodayError, FullyUsedError
 from .forms import ArticleForm, EventoForm, RegistroForm, ScanQRForm
 
 
@@ -190,11 +190,12 @@ class VerifyQRView(TemplateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        if self.registro.is_fully_used():
+        try:
+            self.registro.use_registro()
+        except FullyUsedError:
             return self.render_error(request, self._fully_used_message())
-        if self.registro.used_today():
+        except AlreadyUsedTodayError:
             return self.render_error(request, self._used_today_message())
-        self.registro.use_registro()
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -343,29 +344,28 @@ class ScanQRView(FormView):
         original_id = hashids.decode(code)
         try:
             registro = Registro.objects.get(id=original_id[0])
-            if registro.is_fully_used():
-                last_use = registro.uses.last()
-                message = (
-                    f'QR ya utilizado todos los días permitidos'
-                    f' ({registro.uses.count()}/{registro.benefit.max_uses}).'
-                    f' Último uso: {last_use.used_at.strftime("%d/%m/%Y %H:%M")}'
-                )
-                success = False
-            elif registro.used_today():
-                message = (
-                    f'QR ya utilizado el día de hoy.'
-                    f' Usos: {registro.uses.count()}/{registro.benefit.max_uses}'
-                )
-                success = False
-            else:
-                registro.use_registro()
-                remaining = registro.remaining_uses()
-                message = 'QR confirmado con éxito'
-                if remaining > 0:
-                    message += f' (días restantes: {remaining})'
-                success = True
+            registro.use_registro()
+            remaining = registro.remaining_uses()
+            message = 'QR confirmado con éxito'
+            if remaining > 0:
+                message += f' (días restantes: {remaining})'
+            success = True
         except Registro.DoesNotExist:
             message = 'Registro no encontrado'
+            success = False
+        except AlreadyUsedTodayError:
+            message = (
+                f'QR ya utilizado el día de hoy.'
+                f' Usos: {registro.uses.count()}/{registro.benefit.max_uses}'
+            )
+            success = False
+        except FullyUsedError:
+            last_use = registro.uses.last()
+            message = (
+                f'QR ya utilizado todos los días permitidos'
+                f' ({registro.uses.count()}/{registro.benefit.max_uses}).'
+                f' Último uso: {last_use.used_at.strftime("%d/%m/%Y %H:%M")}'
+            )
             success = False
 
         if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -384,6 +384,7 @@ class ScanQRView(FormView):
 
 @require_POST
 def check_qr_code(request):
+    from django.utils import timezone
     code = request.POST.get('code')
     hashids = Hashids(salt=settings.SECRET_KEY, min_length=8)
     original_id = hashids.decode(code)
@@ -392,29 +393,30 @@ def check_qr_code(request):
         return JsonResponse({"error": "Código QR inválido"}, status=400)
     try:
         registro = Registro.objects.get(id=original_id[0])
-        if registro.is_fully_used():
+        now = timezone.localtime(timezone.now())
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+        total_uses = registro.uses.count()
+        max_uses = registro.benefit.max_uses
+        if total_uses >= max_uses:
             last_use = registro.uses.last()
             msg = (
                 f"QR ya utilizado todos los días permitidos"
-                f" ({registro.uses.count()}/{registro.benefit.max_uses})."
+                f" ({total_uses}/{max_uses})."
                 f" Último uso: {last_use.used_at.strftime('%d/%m/%Y a las %H:%M:%S')}"
             )
-            return JsonResponse(
-                {"error": msg, "benefit": registro.benefit.name},
-                status=400,
-            )
-        if registro.used_today():
+            return JsonResponse({"error": msg, "benefit": registro.benefit.name}, status=400)
+        if registro.uses.filter(used_at__range=(start, end)).exists():
             return JsonResponse(
                 {
-                    "error": f"QR ya utilizado el día de hoy."
-                    f" Usos: {registro.uses.count()}/{registro.benefit.max_uses}",
+                    "error": f"QR ya utilizado el día de hoy. Usos: {total_uses}/{max_uses}",
                     "benefit": registro.benefit.name,
                 },
                 status=400,
             )
         return JsonResponse({
             "name": registro.benefit.name,
-            "remaining_uses": registro.remaining_uses(),
+            "remaining_uses": max_uses - total_uses,
         })
     except Registro.DoesNotExist:
         return JsonResponse({"error": "Código QR no encontrado"}, status=404)

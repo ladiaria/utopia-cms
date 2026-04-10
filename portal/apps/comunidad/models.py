@@ -18,8 +18,18 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from cartelera.models import EventoBase
+
+
 from core.models import Article, ArticleBase
 from thedaily.models import Subscriber
+
+
+class AlreadyUsedTodayError(Exception):
+    pass
+
+
+class FullyUsedError(Exception):
+    pass
 
 
 class SubscriberArticle(ArticleBase):
@@ -211,16 +221,26 @@ class Registro(models.Model):
                 raise ValidationError(f"The benefit has reached its overall limit ({self.benefit.limit}).")
 
     def use_registro(self):
-        use = RegistroUse.objects.create(registro=self)
-        if not self.used:
-            self.used = use.used_at
-            self.save(skip_clean=True)
-        return use
+        with transaction.atomic():
+            registro = Registro.objects.select_for_update().get(pk=self.pk)
+            now = timezone.localtime(timezone.now())
+            start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+            if registro.uses.filter(used_at__range=(start, end)).exists():
+                raise AlreadyUsedTodayError()
+            if registro.uses.count() >= registro.benefit.max_uses:
+                raise FullyUsedError()
+            use = RegistroUse.objects.create(registro=registro)
+            if not registro.used:
+                registro.used = use.used_at
+                registro.save(skip_clean=True)
+            return use
 
     def used_today(self):
-        from django.utils import timezone
-        today = timezone.localdate()
-        return self.uses.filter(used_at__date=today).exists()
+        now = timezone.localtime(timezone.now())
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+        return self.uses.filter(used_at__range=(start, end)).exists()
 
     def remaining_uses(self):
         return max(0, self.benefit.max_uses - self.uses.count())
