@@ -457,6 +457,7 @@ def login(request, product_slug=None, product_variant=None):
                             # the social pipelines will try to finish and an error will be raised regarding to the
                             # conflict between the user that just logged-in and the user that has this "unfinished"
                             # google signin attempt.
+
                             request.session.pop("google-oauth2_state", None)
                             request.session.modified = True
                             # terms and conds acceptance save

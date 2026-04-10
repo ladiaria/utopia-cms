@@ -1,0 +1,33 @@
+{% load bleach_tags core_tags ldml %}
+
+{% if tertiary %}
+<div class="main-section__tertiary-row">
+  {% for article in tertiary %}
+  <article class="article">
+    {% if article.photo %}
+      <a href="{{ article.get_absolute_url }}" class="article__image-container">
+        <img
+          class="article__image"
+          srcset="{{ article.photo.get_small_url }} 350w, {{ article.photo.get_700w_url }} 700w"
+          sizes="(min-width: 700px) 284px, 100vw"
+          width="700"
+          height="{{ article.photo.get_700w_size.1 }}"
+          loading="lazy"
+          title="{{ article.photo_caption }}"
+          alt="{{ article.photo_caption }}"
+        >
+      </a>
+    {% endif %}
+    <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
+    <h3 class="article__title">
+      <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
+    </h3>
+    {% if article_card_read_later_enabled and user.is_authenticated %}
+      <div class="article__footer">
+        {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
+      </div>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+{% endif %}

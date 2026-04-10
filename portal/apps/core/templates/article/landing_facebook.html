@@ -29,9 +29,10 @@
 {% block navbar %}{% with disable_nav=True %}{{ block.super }}{% endwith %}{% endblock %}
 
 {% comment %}
-  Tenemos 2 situaciones que mostrar segun valor de "browser_type":
+  Tenemos 3 situaciones que mostrar segun valor de "browser_type":
   1 - Facebook iOS - Facebook Android - Instagram iOS (browser_type="fb")
   2 - Instagram Android (browser_type="ig_android")
+  3 - X/Twitter iOS - X/Twitter Android (browser_type="twitter")
 {% endcomment %}
 
 {% block content %}
@@ -49,17 +50,14 @@
   {% endcomment %}
   <div class="open-external-browser-container">
     <div class="open-external-browser__header">
-      <p>Abrí la nota en dos simples pasos:</p>
+      <p>Existen dificultades para ingresar con Google dentro de X, por lo que te pedimos que abras la nota en el navegador de tu celular.</p>
     </div>
     <div class="open-external-browser__body">
       <div class="step-row">
-        <svg title="tres puntos" xmlns="http://www.w3.org/2000/svg" width="41" height="41" viewBox="0 0 41 41" fill="none" class="{% if browser_type == 'ig_android' %}vertical-icon{% endif %}">
-          <path d="M1 20.5C1 9.73045 9.73045 1 20.5 1C31.2696 1 40 9.73045 40 20.5C40 31.2696 31.2696 40 20.5 40C9.73045 40 1 31.2696 1 20.5Z" fill="white" stroke="#B7B7B7"/>
-          <path d="M10.5 17.1667C8.66669 17.1667 7.16669 18.6667 7.16669 20.5C7.16669 22.3333 8.66669 23.8333 10.5 23.8333C12.3334 23.8333 13.8334 22.3333 13.8334 20.5C13.8334 18.6667 12.3334 17.1667 10.5 17.1667ZM30.5 17.1667C28.6667 17.1667 27.1667 18.6667 27.1667 20.5C27.1667 22.3333 28.6667 23.8333 30.5 23.8333C32.3334 23.8333 33.8334 22.3333 33.8334 20.5C33.8334 18.6667 32.3334 17.1667 30.5 17.1667ZM20.5 17.1667C18.6667 17.1667 17.1667 18.6667 17.1667 20.5C17.1667 22.3333 18.6667 23.8333 20.5 23.8333C22.3334 23.8333 23.8334 22.3333 23.8334 20.5C23.8334 18.6667 22.3334 17.1667 20.5 17.1667Z" fill="black"/>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 40 40"><path fill="#fff" stroke="#b7b7b7" d="M.5 20C.5 9.23 9.23.5 20 .5S39.5 9.23 39.5 20 30.77 39.5 20 39.5.5 30.77.5 20Z"/><path fill="#000" d="M16.667 30c0 1.833 1.5 3.333 3.333 3.333s3.333-1.5 3.333-3.333-1.5-3.333-3.333-3.333A3.343 3.343 0 0 0 16.667 30m0-20c0 1.833 1.5 3.333 3.333 3.333s3.333-1.5 3.333-3.333-1.5-3.333-3.333-3.333A3.343 3.343 0 0 0 16.667 10m0 10c0 1.833 1.5 3.333 3.333 3.333s3.333-1.5 3.333-3.333-1.5-3.333-3.333-3.333A3.343 3.343 0 0 0 16.667 20"/></svg>
         <div class="step-info">
           <p>Paso 1</p>
-          <p>Ir al menú ubicado en la esquina superior derecha.</p>
+          <p>Ir al menú de opciones.</p>
         </div>
       </div>
       <div class="step-row">

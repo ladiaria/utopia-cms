@@ -282,7 +282,7 @@
 
               {# Performance Monitoring (tracing) - CURRENTLY DISABLED #}
               {# Controls what % of page loads send performance data to Sentry #}
-              {# #}
+
               {# Values: #}
               {#   0.0 = Disabled (current) - Only error tracking, no performance data #}
               {#   0.1 = 10% sample - Good for testing performance monitoring #}
@@ -315,7 +315,7 @@
                 }
 
                 {# === FILTER: BROWSER EXTENSIONS === #}
-                {# Don't report errors from browser extensions (not our code, can't fix) #}
+                {# Don’t report errors from browser extensions (not our code, can‘t fix) #}
                 {# Examples: ad blockers, password managers, translation extensions #}
                 if (hint.originalException && hint.originalException.stack) {
                   const stack = hint.originalException.stack;
@@ -325,7 +325,7 @@
                 }
 
                 {# === FILTER: NETWORK ERRORS === #}
-                {# Don't report network errors (user offline, slow connection, timeout) #}
+                {# Don’t report network errors (user offline, slow connection, timeout) #}
                 {# These are not bugs in our code, just connectivity issues #}
                 if (hint.originalException && hint.originalException.message) {
                   const message = hint.originalException.message.toLowerCase();
@@ -340,15 +340,15 @@
               },
 
               {# === IGNORE ERRORS === #}
-              {# List of error messages/patterns to completely ignore (won't even reach beforeSend) #}
-              {# These are known issues that are not bugs or can't be fixed #}
+              {# List of error messages/patterns to completely ignore (won’t even reach beforeSend) #}
+              {# These are known issues that are not bugs or can’t be fixed #}
               ignoreErrors: [
                 {# Browser extension errors (common when users have many extensions) #}
                 'top.GLOBALS',
                 'canvas.contentDocument',
                 'atomicFindClose',
 
-                {# Facebook SDK errors (third-party, can't fix) #}
+                {# Facebook SDK errors (third-party, can’t fix) #}
                 'fb_xd_fragment',
 
                 {# Network/connectivity errors (not bugs) #}
@@ -436,7 +436,10 @@
 
     <!-- cabezal -->
     {% block navbar %}
-      <header{% if request.signupwall_header %} class="with-article-counter-container {{ request.remaining_articles_word }}-articles"{% endif %}>
+      {% comment %} <header{% if request.signupwall_header %} class="with-article-counter-container {{ request.remaining_articles_word }}-articles"{% endif %}>
+        {% render_header %}
+      </header> {% endcomment %}
+      <header class="{% block header_classes %}{% endblock %}">
         {% render_header %}
       </header>
       {% if PWA_ENABLED %}
@@ -452,7 +455,7 @@
           <span class="title">Activá nuestras notificaciones y<br>enterate antes</span>
           <div class="actions">
             <span class="ut-btn" onclick="return confirmFunction();">Activar</span>
-            <span class="ut-btn ut-btn-outline" style="cursor:pointer;" onclick="return cancelFunction();">No, gracias</span>
+            <span class="ut-btn ut-btn-outline" style="cursor:pointer;" onclick="return cancelFunction();">Ahora no</span>
           </div>
           {# TODO: validate this message with UX because this div can appear again "tomorrow". #}
           {# <span class="notice">Ésta es la única vez que vas a ver este mensaje</span> #}
@@ -475,6 +478,7 @@
         {% endif %}
       {% endif %}
     {% endblock %}
+
 
     <!-- Main -->
     {% block main_open %}<main class="main" id="main-content">{% endblock %}
@@ -522,7 +526,7 @@
       <div id="nav-mobile" class="nav-mobile navbar-fixed">
         <nav>
           <div class="nav-wrapper">
-            <ul class="center row">
+            <ul class="" data-col-numbers="{{ mobile_nav_ths }}">
               {% if is_detail %}
                 {% with mobile_nav_ths=mobile_nav_ths|add:mobile_nav_detail_more %}
                   {% include 'mobile_nav_items.html' %}
@@ -550,12 +554,14 @@
     {% block ld_core_scripts %}
       {% if user.is_authenticated %}
         {# used only in pages that show article cards #}
-        <script defer src="{% static 'js/read_later_events.js' %}"></script>
+        <script defer src="{% static 'js/read_later_events.js' %}?v=2.1"></script>
       {% endif %}
 
       {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
-      <script defer src="{% static 'js/ld.js' %}"></script>
-      <script defer src="{% static 'js/resizeSubnav.js' %}"></script>
+      {% compress js %}
+        <script defer src="{% static 'js/ld.js' %}"></script>
+      {% endcompress %}
+      {% comment %} <script defer src="{% static 'js/resizeSubnav.js' %}"></script> {% endcomment %}
 
       {# Modernizr - Detect CSS Grid #}
       <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>

@@ -26,7 +26,9 @@ function phone_widget(
       }
       const intlTelInput = window.intlTelInput(input, options);
       input.addEventListener("countrychange", function (e) {
-        e.target.value = "";
+        if (e.target.value.indexOf("+") === -1) {
+          e.target.value = "";
+        }
       });
       input.addEventListener("keyup", function (e) {
         let val = intlTelInput.getNumber();

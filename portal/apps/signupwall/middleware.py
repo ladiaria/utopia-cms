@@ -126,6 +126,28 @@ def fb_browser_type(request):
             return True
 
 
+def twitter_browser_type(request):
+    """Detects X (formerly Twitter) in-app browser"""
+    if getattr(settings, 'SIGNUPWALL_X_BROWSERWALL_ENABLED', False):
+        user_agent_string = request.META.get('HTTP_USER_AGENT', '')
+        referer = request.META.get('HTTP_REFERER', '')
+
+        # Method 1: Explicit X identifier in UA (works on some versions)
+        has_twitter_identifier = 'TwitterAndroid' in user_agent_string or 'Twitter for iPhone' in user_agent_string
+
+        # Method 2: iOS Safari View Controller from t.co link (X's URL shortener)
+        is_ios = 'iPhone' in user_agent_string or 'iPad' in user_agent_string
+        is_safari_webview = 'Safari' in user_agent_string and 'Version/' in user_agent_string
+        is_from_x_link = 't.co' in referer
+
+        # Detect X browser: explicit identifier OR (iOS Safari WebView from t.co)
+        is_x_browser = has_twitter_identifier or (is_ios and is_safari_webview and is_from_x_link)
+
+        if is_x_browser:
+            request.fb_browser_type = "twitter"
+            return True
+
+
 class SignupwallMiddleware(MiddlewareMixin):
 
     def anon_articles_visited_count(self, nowval, visitor, credits, debug=False):
@@ -183,6 +205,7 @@ class SignupwallMiddleware(MiddlewareMixin):
         if path_resolved.url_name == 'article_detail':
             try:
                 article = get_article_by_url_path(request.path)
+
                 # ignore AMP-feeding requests by Google, those excluded by settings, and AMP requests in "simulation"
                 excluded = signupwall_exclude(request)
                 ignored = (
@@ -201,10 +224,9 @@ class SignupwallMiddleware(MiddlewareMixin):
                     )
                 if ignored:
                     return
-                elif fb_browser_type(request):
+                elif fb_browser_type(request) or twitter_browser_type(request):
                     # ref_core.views.article.py:153
-                    # ignore also if the browser is facebook-type (article detail will render related info)
-                    # Also same comment of line 218 (that's why elif instead of "or" directly in the "if" part)
+                    # ignore signupwall if the browser is facebook-type or X-type (article detail will render related info)
                     return
             except Article.DoesNotExist:
                 # ignore signupwall for not-found articles (core.views.article.article_detail will redirect if the

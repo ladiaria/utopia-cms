@@ -102,6 +102,7 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "signupwall",
     "homev3",
+    "homev4.apps.Homev4Config",
     "cartelera.config.CarteleraConfig",
     "martor",
     "django_bleach",
@@ -578,6 +579,7 @@ COMPRESS_OFFLINE_CONTEXT = {"photologue_template": "photologue/root.html"}
 SIGNUPWALL_ENABLED = None
 SIGNUPWALL_HEADER_ENABLED = False
 SIGNUPWALL_REMAINING_BANNER_ENABLED = True
+SIGNUPWALL_X_BROWSERWALL_ENABLED = False  # Enable landing page for X in-app browser
 FREEZE_TIME = None
 CRM_UPDATE_USER_CREATE_CONTACT = None
 CORE_ARTICLE_DETAIL_ENABLE_AMP = True  # inserts the meta url for the AMP version article page
@@ -586,6 +588,9 @@ CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is r
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 ENABLE_GOOGLE_ONE_TAP = False
 SENTRY_ENABLED = False
+# Django Admin Locking - prevents concurrent editing conflicts (pessimistic locking)
+# Override to True in local_settings.py to enable
+ADMIN_PAGE_LOCK_ENABLED = False
 
 # ====================================================================================== visual separator =============
 
@@ -630,6 +635,7 @@ if ENABLE_GOOGLE_ONE_TAP:
     ])
 
 SITE_URL_SD = f"{URL_SCHEME}://{SITE_DOMAIN}"  # "SD" stands for "Schema-Domain only", no trial slash.
+SITE_URL = f"{SITE_URL_SD}/"
 SITE_URL = f"{SITE_URL_SD}/"
 CSRF_TRUSTED_ORIGINS = [SITE_URL_SD]
 ROBOTS_SITEMAP_URLS = [SITE_URL + "sitemap.xml"]

@@ -14,16 +14,14 @@
   <h1>Escanear QR</h1>
   <div id="qr-reader" class="qr-input"></div>
   <form action="{% url 'scan_qr' %}" id="scan-qr-form" method="post">
-    {% csrf_token %}
     {{ form.code }}
-    <p id="benefit-name" class="benefit-name"></p>
-    <button type="submit" id="submit-button" class="ut-btn" disabled>
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M4.125 13.125L9.375 18.375L19.875 7.125" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+    {% csrf_token %}
+    <p id="info-container" class="info-container">Escanear QR de la entrada</p>
+    <button type="submit" id="submit-button" class="ut-btn hidden">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="m4.125 13.125 5.25 5.25 10.5-11.25"/></svg>
       <span>Confirmar</span>
     </button>
-    <p id="qr-scanned-successfully"></p>
+    <p id="qr-scanned-successfully" class="hidden"></p>
   </form>
 {% endblock %}
 
@@ -35,7 +33,7 @@
       checkQrCodeUrl: "{% url 'check_qr_code' %}",
     };
   </script>
-  <script src="{% static 'js/scan-qr.js' %}"></script>
+  <script src="{% static 'js/scan-qr.js' %}?v=2.0.2"></script>
 {% endblock javascript %}
 
 {% block footer_block %}{% endblock %}

@@ -1,0 +1,370 @@
+[
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "LMJV · Mañana",
+      "publication": ["ladiaria"],
+      "day": "lmjv",
+      "start_time": "06:00:00",
+      "end_time": "11:00:00",
+      "ends_next_day": false,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": {
+        "principal":  {"active": true,  "article_ids": []},
+        "suplemento": {"active": true,  "article_ids": []},
+        "especial":   {"active": false, "article_ids": []},
+        "sections": [
+          {"type": "category",    "slug": "mundo",      "name": "Mundo",      "active": true, "article_ids": []},
+          {"type": "category",    "slug": "cultura",    "name": "Cultura",    "active": true, "article_ids": []},
+          {"type": "local",       "slug": "local",      "name": "Local",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "deporte",    "name": "Deporte",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ambiente",   "name": "Ambiente",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "economia",   "name": "Economía",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "justicia",   "name": "Justicia",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "trabajo",    "name": "Trabajo",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "salud",      "name": "Salud",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "educacion",  "name": "Educación",  "active": true, "article_ids": []},
+          {"type": "publication", "slug": "feminismos", "name": "Feminismos", "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ciencia",    "name": "Ciencia",    "active": true, "article_ids": []}
+        ],
+        "componentes": [
+          {"key": "apuntes_del_dia",      "active": true},
+          {"key": "opinion",              "active": true},
+          {"key": "lo_ultimo",            "active": false},
+          {"key": "radio",                "active": false},
+          {"key": "recomendadas_lv",      "active": false},
+          {"key": "newsletter_dia",       "active": false},
+          {"key": "recomendadas_domingo", "active": false},
+          {"key": "lo_mas_leido",         "active": false},
+          {"key": "le_monde",             "active": false},
+          {"key": "lento",                "active": false}
+        ]
+      },
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "LMJV · Mediodía",
+      "publication": ["ladiaria"],
+      "day": "lmjv",
+      "start_time": "11:00:00",
+      "end_time": "15:00:00",
+      "ends_next_day": false,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": {
+        "principal":  {"active": true, "article_ids": []},
+        "suplemento": {"active": true, "article_ids": []},
+        "especial":   {"active": true, "article_ids": []},
+        "sections": [
+          {"type": "category",    "slug": "mundo",      "name": "Mundo",      "active": true, "article_ids": []},
+          {"type": "category",    "slug": "cultura",    "name": "Cultura",    "active": true, "article_ids": []},
+          {"type": "local",       "slug": "local",      "name": "Local",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "deporte",    "name": "Deporte",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ambiente",   "name": "Ambiente",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "economia",   "name": "Economía",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "justicia",   "name": "Justicia",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "trabajo",    "name": "Trabajo",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "salud",      "name": "Salud",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "educacion",  "name": "Educación",  "active": true, "article_ids": []},
+          {"type": "publication", "slug": "feminismos", "name": "Feminismos", "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ciencia",    "name": "Ciencia",    "active": true, "article_ids": []}
+        ],
+        "componentes": [
+          {"key": "apuntes_del_dia",      "active": true},
+          {"key": "opinion",              "active": true},
+          {"key": "lo_ultimo",            "active": true},
+          {"key": "radio",                "active": false},
+          {"key": "recomendadas_lv",      "active": true},
+          {"key": "newsletter_dia",       "active": false},
+          {"key": "recomendadas_domingo", "active": true},
+          {"key": "lo_mas_leido",         "active": true},
+          {"key": "le_monde",             "active": true},
+          {"key": "lento",                "active": true}
+        ]
+      },
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "LMJV · Tarde",
+      "publication": ["ladiaria"],
+      "day": "lmjv",
+      "start_time": "15:00:00",
+      "end_time": "06:00:00",
+      "ends_next_day": true,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": {
+        "principal":  {"active": true, "article_ids": []},
+        "suplemento": {"active": true, "article_ids": []},
+        "especial":   {"active": true, "article_ids": []},
+        "sections": [
+          {"type": "category",    "slug": "mundo",      "name": "Mundo",      "active": true, "article_ids": []},
+          {"type": "category",    "slug": "cultura",    "name": "Cultura",    "active": true, "article_ids": []},
+          {"type": "local",       "slug": "local",      "name": "Local",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "deporte",    "name": "Deporte",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ambiente",   "name": "Ambiente",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "economia",   "name": "Economía",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "justicia",   "name": "Justicia",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "trabajo",    "name": "Trabajo",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "salud",      "name": "Salud",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "educacion",  "name": "Educación",  "active": true, "article_ids": []},
+          {"type": "publication", "slug": "feminismos", "name": "Feminismos", "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ciencia",    "name": "Ciencia",    "active": true, "article_ids": []}
+        ],
+        "componentes": [
+          {"key": "apuntes_del_dia",      "active": true},
+          {"key": "opinion",              "active": true},
+          {"key": "lo_ultimo",            "active": true},
+          {"key": "radio",                "active": false},
+          {"key": "recomendadas_lv",      "active": true},
+          {"key": "newsletter_dia",       "active": false},
+          {"key": "recomendadas_domingo", "active": true},
+          {"key": "lo_mas_leido",         "active": true},
+          {"key": "le_monde",             "active": true},
+          {"key": "lento",                "active": true}
+        ]
+      },
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "Martes · Mañana",
+      "publication": ["ladiaria"],
+      "day": "ma",
+      "start_time": "06:00:00",
+      "end_time": "11:00:00",
+      "ends_next_day": false,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": {
+        "principal":  {"active": true,  "article_ids": []},
+        "suplemento": {"active": true,  "article_ids": []},
+        "especial":   {"active": false, "article_ids": []},
+        "sections": [
+          {"type": "category",    "slug": "mundo",      "name": "Mundo",      "active": true, "article_ids": []},
+          {"type": "category",    "slug": "cultura",    "name": "Cultura",    "active": true, "article_ids": []},
+          {"type": "local",       "slug": "local",      "name": "Local",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "deporte",    "name": "Deporte",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ambiente",   "name": "Ambiente",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "economia",   "name": "Economía",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "justicia",   "name": "Justicia",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "trabajo",    "name": "Trabajo",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "salud",      "name": "Salud",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "educacion",  "name": "Educación",  "active": true, "article_ids": []},
+          {"type": "publication", "slug": "feminismos", "name": "Feminismos", "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ciencia",    "name": "Ciencia",    "active": true, "article_ids": []}
+        ],
+        "componentes": [
+          {"key": "apuntes_del_dia",      "active": true},
+          {"key": "opinion",              "active": true},
+          {"key": "lo_ultimo",            "active": false},
+          {"key": "radio",                "active": false},
+          {"key": "recomendadas_lv",      "active": false},
+          {"key": "newsletter_dia",       "active": true},
+          {"key": "recomendadas_domingo", "active": false},
+          {"key": "lo_mas_leido",         "active": false},
+          {"key": "le_monde",             "active": false},
+          {"key": "lento",                "active": false}
+        ]
+      },
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "Martes · Mediodía",
+      "publication": ["ladiaria"],
+      "day": "ma",
+      "start_time": "11:00:00",
+      "end_time": "15:00:00",
+      "ends_next_day": false,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": {
+        "principal":  {"active": true, "article_ids": []},
+        "suplemento": {"active": true, "article_ids": []},
+        "especial":   {"active": true, "article_ids": []},
+        "sections": [
+          {"type": "category",    "slug": "mundo",      "name": "Mundo",      "active": true, "article_ids": []},
+          {"type": "category",    "slug": "cultura",    "name": "Cultura",    "active": true, "article_ids": []},
+          {"type": "local",       "slug": "local",      "name": "Local",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "deporte",    "name": "Deporte",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ambiente",   "name": "Ambiente",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "economia",   "name": "Economía",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "justicia",   "name": "Justicia",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "trabajo",    "name": "Trabajo",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "salud",      "name": "Salud",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "educacion",  "name": "Educación",  "active": true, "article_ids": []},
+          {"type": "publication", "slug": "feminismos", "name": "Feminismos", "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ciencia",    "name": "Ciencia",    "active": true, "article_ids": []}
+        ],
+        "componentes": [
+          {"key": "apuntes_del_dia",      "active": true},
+          {"key": "opinion",              "active": true},
+          {"key": "lo_ultimo",            "active": true},
+          {"key": "radio",                "active": false},
+          {"key": "recomendadas_lv",      "active": true},
+          {"key": "newsletter_dia",       "active": false},
+          {"key": "recomendadas_domingo", "active": true},
+          {"key": "lo_mas_leido",         "active": true},
+          {"key": "le_monde",             "active": true},
+          {"key": "lento",                "active": true}
+        ]
+      },
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "Martes · Tarde",
+      "publication": ["ladiaria"],
+      "day": "ma",
+      "start_time": "15:00:00",
+      "end_time": "06:00:00",
+      "ends_next_day": true,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": {
+        "principal":  {"active": true, "article_ids": []},
+        "suplemento": {"active": true, "article_ids": []},
+        "especial":   {"active": true, "article_ids": []},
+        "sections": [
+          {"type": "category",    "slug": "mundo",      "name": "Mundo",      "active": true, "article_ids": []},
+          {"type": "category",    "slug": "cultura",    "name": "Cultura",    "active": true, "article_ids": []},
+          {"type": "local",       "slug": "local",      "name": "Local",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "deporte",    "name": "Deporte",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ambiente",   "name": "Ambiente",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "economia",   "name": "Economía",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "justicia",   "name": "Justicia",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "trabajo",    "name": "Trabajo",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "salud",      "name": "Salud",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "educacion",  "name": "Educación",  "active": true, "article_ids": []},
+          {"type": "publication", "slug": "feminismos", "name": "Feminismos", "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ciencia",    "name": "Ciencia",    "active": true, "article_ids": []}
+        ],
+        "componentes": [
+          {"key": "apuntes_del_dia",      "active": true},
+          {"key": "opinion",              "active": true},
+          {"key": "lo_ultimo",            "active": true},
+          {"key": "radio",                "active": false},
+          {"key": "recomendadas_lv",      "active": true},
+          {"key": "newsletter_dia",       "active": false},
+          {"key": "recomendadas_domingo", "active": true},
+          {"key": "lo_mas_leido",         "active": true},
+          {"key": "le_monde",             "active": true},
+          {"key": "lento",                "active": true}
+        ]
+      },
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "Sábado · Mañana",
+      "publication": ["ladiaria"],
+      "day": "sa",
+      "start_time": "06:00:00",
+      "end_time": "08:00:00",
+      "ends_next_day": true,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": {
+        "principal":  {"active": true, "article_ids": []},
+        "suplemento": {"active": true, "article_ids": []},
+        "especial":   {"active": true, "article_ids": []},
+        "sections": [
+          {"type": "category",    "slug": "mundo",      "name": "Mundo",      "active": true, "article_ids": []},
+          {"type": "category",    "slug": "cultura",    "name": "Cultura",    "active": true, "article_ids": []},
+          {"type": "local",       "slug": "local",      "name": "Local",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "deporte",    "name": "Deporte",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ambiente",   "name": "Ambiente",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "economia",   "name": "Economía",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "justicia",   "name": "Justicia",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "trabajo",    "name": "Trabajo",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "salud",      "name": "Salud",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "educacion",  "name": "Educación",  "active": true, "article_ids": []},
+          {"type": "publication", "slug": "feminismos", "name": "Feminismos", "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ciencia",    "name": "Ciencia",    "active": true, "article_ids": []}
+        ],
+        "componentes": [
+          {"key": "apuntes_del_dia",      "active": true},
+          {"key": "opinion",              "active": true},
+          {"key": "lo_ultimo",            "active": false},
+          {"key": "radio",                "active": false},
+          {"key": "recomendadas_lv",      "active": true},
+          {"key": "newsletter_dia",       "active": false},
+          {"key": "recomendadas_domingo", "active": true},
+          {"key": "lo_mas_leido",         "active": true},
+          {"key": "le_monde",             "active": true},
+          {"key": "lento",                "active": true}
+        ]
+      },
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "homev4.homelayout",
+    "fields": {
+      "name": "Domingo",
+      "publication": ["ladiaria"],
+      "day": "do",
+      "start_time": "08:00:00",
+      "end_time": "06:00:00",
+      "ends_next_day": true,
+      "is_manual_override": false,
+      "manual_override_by": null,
+      "grid_data": {
+        "principal":  {"active": true, "article_ids": []},
+        "suplemento": {"active": true, "article_ids": []},
+        "especial":   {"active": true, "article_ids": []},
+        "sections": [
+          {"type": "category",    "slug": "mundo",      "name": "Mundo",      "active": true, "article_ids": []},
+          {"type": "category",    "slug": "cultura",    "name": "Cultura",    "active": true, "article_ids": []},
+          {"type": "local",       "slug": "local",      "name": "Local",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "deporte",    "name": "Deporte",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ambiente",   "name": "Ambiente",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "economia",   "name": "Economía",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "justicia",   "name": "Justicia",   "active": true, "article_ids": []},
+          {"type": "publication", "slug": "trabajo",    "name": "Trabajo",    "active": true, "article_ids": []},
+          {"type": "publication", "slug": "salud",      "name": "Salud",      "active": true, "article_ids": []},
+          {"type": "publication", "slug": "educacion",  "name": "Educación",  "active": true, "article_ids": []},
+          {"type": "publication", "slug": "feminismos", "name": "Feminismos", "active": true, "article_ids": []},
+          {"type": "publication", "slug": "ciencia",    "name": "Ciencia",    "active": true, "article_ids": []}
+        ],
+        "componentes": [
+          {"key": "apuntes_del_dia",      "active": true},
+          {"key": "opinion",              "active": true},
+          {"key": "lo_ultimo",            "active": true},
+          {"key": "radio",                "active": false},
+          {"key": "recomendadas_lv",      "active": true},
+          {"key": "newsletter_dia",       "active": false},
+          {"key": "recomendadas_domingo", "active": true},
+          {"key": "lo_mas_leido",         "active": true},
+          {"key": "le_monde",             "active": true},
+          {"key": "lento",                "active": true}
+        ]
+      },
+      "created": "2026-01-01T00:00:00Z",
+      "modified": "2026-01-01T00:00:00Z"
+    }
+  }
+]

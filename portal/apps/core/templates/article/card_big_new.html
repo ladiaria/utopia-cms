@@ -155,15 +155,12 @@
 
     </div>
 
-    <div class="ld-grid-clear"></div>
-
     {% for a in destacados|slice:"6:10" %}
       <div class="ld-grid-area ld-grid-area-col area-col-{% cycle 'a' 'b' 'c' 'd' %}">
         {% include top_article_abcd_template|default:'article/card_top_article_abcd.html' %}
       </div>
     {% endfor %}
 
-    <div class="ld-grid-clear"></div>
 
   </section>
 </div>

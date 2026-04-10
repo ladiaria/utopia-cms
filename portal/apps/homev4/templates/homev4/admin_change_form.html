@@ -1,0 +1,333 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'homev4/layout_editor.css' %}?v={{ layout_editor_css_version }}"/>
+{% endblock %}
+
+{% block after_related_objects %}
+{{ block.super }}
+
+{% if original and editor_data %}
+<fieldset class="module">
+    <h2>Editor de Layout</h2>
+    <div id="homev4-editor">
+
+        <div class="editor-actions">
+            <button type="button" id="btn-save" class="button">Guardar Layout</button>
+            <a href="{{ preview_url }}" target="_blank" class="button btn-preview">
+                Vista previa ↗
+            </a>
+            <a href="{{ sync_sections_url }}"
+               class="button btn-sync"
+               title="Recarga todo desde la DB (se pierde el orden manual guardado)"
+               onclick="return confirm('¿Sincronizar todo desde la DB? Se perderá el orden de artículos guardado.');">
+                Sincronizar Todo
+            </a>
+            {# UX decision: hidden. Remove style to restore. #}
+            <a href="{{ reset_grid_url }}"
+               class="button btn-reset"
+               style="display:none;"
+               onclick="return confirm('¿Resetear TODO el layout? Se perderá el orden de artículos guardado.');">
+                Resetear Layout
+            </a>
+        </div>
+
+        <!-- Two-column layout: left (PRINCIPAL + SUPLEMENTO + ÁREAS) | right (COMPONENTES full height) -->
+        <div class="editor-layout">
+
+            <!-- Left column -->
+            <div class="editor-main">
+
+                <!-- PRINCIPAL: articles sortable by dragging -->
+                <div class="editor-block block-principal">
+                    <div class="block-header">
+                        {% if blocks_config.principal.always_active %}
+                        <span class="block-badge badge-principal">PRINCIPAL</span>
+                        {% else %}
+                        <label class="block-active-toggle">
+                            <input type="checkbox" class="block-active" data-block="principal" {% if editor_data.principal_active %}checked{% endif %}>
+                            <span class="block-badge badge-principal">PRINCIPAL</span>
+                        </label>
+                        {% endif %}
+                        <span class="block-hint">Arrastrá para reordenar los artículos</span>
+                    </div>
+                    <div class="articles-sortable" id="principal-articles">
+                        {% for article in editor_data.principal_articles %}
+                        <div class="article-row" draggable="true" data-article-id="{{ article.id }}">
+                            <span class="drag-handle">⠿</span>
+                            <span class="article-num">{{ forloop.counter }}</span>
+                            <span class="article-title">{{ article.headline }}</span>
+                            <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>
+                            <button type="button" class="picker-remove" title="Quitar">×</button>
+                        </div>
+                        {% empty %}
+                        <div class="empty-hint">No hay artículos en la edición actual</div>
+                        {% endfor %}
+                    </div>
+                    <div class="article-picker"
+                         data-target="principal-articles"
+                         data-row-class="article-row"
+                         data-item-selector=".article-row[data-article-id]">
+                        <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                        <div class="picker-results"></div>
+                    </div>
+                </div>
+
+                <!-- SUPLEMENTO: articles sortable by dragging -->
+                <div class="editor-block block-suplemento">
+                    <div class="block-header">
+                        {% if blocks_config.suplemento.always_active %}
+                        <span class="block-badge badge-suplemento">SUPLEMENTO</span>
+                        {% else %}
+                        <label class="block-active-toggle">
+                            <input type="checkbox" class="block-active" data-block="suplemento" {% if editor_data.suplemento_active %}checked{% endif %}>
+                            <span class="block-badge badge-suplemento">SUPLEMENTO</span>
+                        </label>
+                        {% endif %}
+                        <span class="block-hint">Arrastrá para reordenar los artículos</span>
+                    </div>
+                    <div class="articles-sortable" id="suplemento-articles">
+                        {% for article in editor_data.suplemento_articles %}
+                        <div class="article-row" draggable="true" data-article-id="{{ article.id }}">
+                            <span class="drag-handle">⠿</span>
+                            <span class="article-num">{{ forloop.counter }}</span>
+                            <span class="article-title">{{ article.headline }}</span>
+                            <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>
+                            <button type="button" class="picker-remove" title="Quitar">×</button>
+                        </div>
+                        {% empty %}
+                        <div class="empty-hint">Sin artículos de suplemento</div>
+                        {% endfor %}
+                    </div>
+                    <div class="article-picker"
+                         data-target="suplemento-articles"
+                         data-row-class="article-row"
+                         data-item-selector=".article-row[data-article-id]">
+                        <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                        <div class="picker-results"></div>
+                    </div>
+                </div>
+
+                <!-- ESPECIAL: articles sortable by dragging -->
+                <div class="editor-block block-especial">
+                    <div class="block-header">
+                        {% if blocks_config.especial.always_active %}
+                        <span class="block-badge badge-especial">ESPECIAL</span>
+                        {% else %}
+                        <label class="block-active-toggle">
+                            <input type="checkbox" class="block-active" data-block="especial" {% if editor_data.especial_active %}checked{% endif %}>
+                            <span class="block-badge badge-especial">ESPECIAL</span>
+                        </label>
+                        {% endif %}
+                        <span class="block-hint">Arrastrá para reordenar los artículos</span>
+                    </div>
+                    <div class="articles-sortable" id="especial-articles">
+                        {% for article in editor_data.especial_articles %}
+                        <div class="article-row" draggable="true" data-article-id="{{ article.id }}">
+                            <span class="drag-handle">⠿</span>
+                            <span class="article-num">{{ forloop.counter }}</span>
+                            <span class="article-title">{{ article.headline }}</span>
+                            <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>
+                            <button type="button" class="picker-remove" title="Quitar">×</button>
+                        </div>
+                        {% empty %}
+                        <div class="empty-hint">Sin artículos de especial</div>
+                        {% endfor %}
+                    </div>
+                    <div class="article-picker"
+                         data-target="especial-articles"
+                         data-row-class="article-row"
+                         data-item-selector=".article-row[data-article-id]">
+                        <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                        <div class="picker-results"></div>
+                    </div>
+                </div>
+
+                <!-- ÁREAS Y PUBLICACIONES: sections locked (auto from DB) -->
+                <div class="editor-block block-areas">
+                    <div class="block-header">
+                        <span class="block-badge badge-areas">ÁREAS Y PUBLICACIONES</span>
+                        <span class="block-hint">Configuradas desde el módulo de Secciones</span>
+                    </div>
+                    <div class="sections-grid" id="sections-list">
+                        {% for section in editor_data.sections %}
+                        <div class="editor-block block-area"
+                             data-section-type="{{ section.type }}"
+                             data-section-id="{{ section.id }}"
+                             data-section-slug="{{ section.slug }}"
+                             data-section-name="{{ section.name }}"
+                             data-section-row="{{ section.row }}">
+                            <div class="block-header area-header">
+                                <label class="block-active-toggle">
+                                    <input type="checkbox" class="section-active" {% if section.active %}checked{% endif %}>
+                                    <span class="block-badge badge-area">{{ section.name }}</span>
+                                </label>
+                                {% if section.row > 1 %}<span class="row-badge">fila {{ section.row }}</span>{% endif %}
+                            </div>
+                            <div class="section-articles section-sortable" id="section-articles-{{ section.slug }}">
+                                {% for article in section.preview_articles %}
+                                <div class="section-article-row" draggable="true" data-article-id="{{ article.id }}">
+                                    <label class="section-replace-radio" title="Marcar para reemplazar"><input type="radio" name="section-replace-{{ section.slug }}"></label>
+                                    <span class="drag-handle small-handle">⠿</span>
+                                    <span class="section-article-title">{{ article.headline }}</span>
+                                    <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>
+                                </div>
+                                {% empty %}
+                                <div class="empty-hint">Sin artículos recientes</div>
+                                {% endfor %}
+                            </div>
+                            <div class="article-picker"
+                                 data-target="section-articles-{{ section.slug }}"
+                                 data-row-class="section-article-row"
+                                 data-item-selector=".section-article-row[data-article-id]"
+                                 data-replace-mode="true">
+                                <div class="section-replace-hint" style="display:none;">Marcá el artículo a reemplazar</div>
+                                <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                                <div class="picker-results"></div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="grid-column: 1/-1; padding: 16px; color: #999; font-size: 13px;">
+                            No hay áreas configuradas. Hacé click en "Resetear Layout".
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div><!-- .editor-main -->
+
+            <!-- Right column: COMPONENTES spans full height -->
+            <div class="editor-sidebar">
+                <div class="editor-block block-componentes">
+                    <div class="block-header">
+                        <span class="block-badge badge-componentes">COMPONENTES</span>
+                    </div>
+                    <div class="componentes-list" id="componentes-list">
+                        {% for comp in editor_data.componentes %}
+                        <div class="componente-item" draggable="true" data-comp-key="{{ comp.key }}">
+                            <span class="drag-handle">⠿</span>
+                            <div class="comp-body">
+                                <label class="comp-header">
+                                    <input type="checkbox"
+                                           class="comp-active"
+                                           {% if comp.active %}checked{% endif %}>
+                                    <span class="comp-info">
+                                        <span class="comp-name">{{ comp.label }}</span>
+                                        {% if comp.description %}
+                                        <span class="comp-desc">{{ comp.description }}</span>
+                                        {% endif %}
+                                    </span>
+                                </label>
+                                {% if comp.newsletter_mode %}
+                                <div class="comp-articles" id="comp-articles-{{ comp.key }}">
+                                    {% for nl in comp.newsletters %}
+                                    <div class="newsletter-row" draggable="true" data-newsletter-ref="{{ nl.type }}:{{ nl.slug }}">
+                                        <span class="drag-handle small-handle">⠿</span>
+                                        <span class="comp-article-title">{{ nl.name }}</span>
+                                        <span class="comp-desc">{{ nl.periodicity }}</span>
+                                        <button type="button" class="picker-remove" title="Quitar">×</button>
+                                    </div>
+                                    {% empty %}
+                                    <div class="empty-hint">Sin newsletters configuradas</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="article-picker"
+                                     data-target="comp-articles-{{ comp.key }}"
+                                     data-mode="newsletter"
+                                     data-search-url="{{ newsletter_search_url }}">
+                                    <input type="text" class="picker-search-input" placeholder="Buscar newsletter…" autocomplete="off">
+                                    <div class="picker-results"></div>
+                                </div>
+                                {% elif comp.articles or comp.has_picker %}
+                                <div class="comp-articles{% if comp.replace_mode %} section-articles{% endif %}" id="comp-articles-{{ comp.key }}">
+                                    {% for title in comp.articles %}
+                                    {% if comp.replace_mode %}
+                                    <div class="comp-article-row section-article-row comp-article-static" data-article-id="{{ title.id }}">
+                                        <label class="section-replace-radio" title="Marcar para reemplazar"><input type="radio" name="comp-replace-{{ comp.key }}"></label>
+                                        <span class="section-article-title">{{ title.headline }}</span>
+                                        <a class="article-edit-link" href="/admin/core/article/{{ title.id }}/change/" target="_blank" title="Editar artículo">✎</a>
+                                    </div>
+                                    {% else %}
+                                    <div class="comp-article-row{% if not comp.sortable_articles %} comp-article-static{% endif %}"
+                                         {% if comp.sortable_articles %}draggable="true"{% endif %}
+                                         data-article-id="{{ title.id }}">
+                                        {% if comp.sortable_articles %}<span class="drag-handle small-handle">⠿</span>{% endif %}
+                                        <span class="comp-article-title">{{ title.headline }}</span>
+                                        <a class="article-edit-link" href="/admin/core/article/{{ title.id }}/change/" target="_blank" title="Editar artículo">✎</a>
+                                        {% if comp.has_picker %}<button type="button" class="picker-remove" title="Quitar">×</button>{% endif %}
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if comp.has_picker %}
+                                <div class="article-picker"
+                                     data-target="comp-articles-{{ comp.key }}"
+                                     data-row-class="comp-article-row"
+                                     data-item-selector=".comp-article-row[data-article-id]"
+                                     {% if comp.replace_mode %}data-replace-mode="true" data-max-slots="{{ comp.replace_slots }}"{% endif %}>
+                                    {% if comp.replace_mode %}<div class="section-replace-hint" style="display:none;">Marcá el artículo a reemplazar</div>{% endif %}
+                                    <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                                    <div class="picker-results"></div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div><!-- .editor-sidebar -->
+
+        </div><!-- .editor-layout -->
+
+        <div id="save-status" class="save-status" style="display:none;"></div>
+    </div><!-- #homev4-editor -->
+</fieldset>
+
+<script>
+window.HOMEV4_DATA = {
+    saveUrl: "{{ save_grid_url }}",
+    previewUrl: "{{ preview_url }}",
+    csrfToken: "{{ csrf_token }}",
+    articleSearchUrl: "{{ article_search_url }}",
+    newsletterSearchUrl: "{{ newsletter_search_url }}",
+    componentLabels: {
+        {% for comp in editor_data.componentes %}"{{ comp.key }}": "{{ comp.label }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }
+};
+</script>
+<script src="{% static 'homev4/layout_editor.js' %}?v={{ layout_editor_js_version }}"></script>
+{% endif %}
+
+{% if original %}
+<fieldset class="module collapse" id="fieldset-grid-json">
+    <h2>
+        <a class="collapse-toggle" href="#" id="toggle-grid-json">
+            Datos del layout (JSON)
+            <span id="toggle-grid-json-label"> (Mostrar)</span>
+        </a>
+    </h2>
+    <div id="grid-json-body" style="display:none; padding: 8px 12px;">
+        <pre style="font-size:11px; white-space:pre-wrap; word-break:break-all; background:#f8f8f8; padding:10px; border:1px solid #ddd; border-radius:4px;">{{ grid_data_pretty }}</pre>
+    </div>
+</fieldset>
+<script>
+(function() {
+    var toggle = document.getElementById('toggle-grid-json');
+    var body = document.getElementById('grid-json-body');
+    var label = document.getElementById('toggle-grid-json-label');
+    if (toggle) {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            var hidden = body.style.display === 'none';
+            body.style.display = hidden ? 'block' : 'none';
+            label.textContent = hidden ? ' (Ocultar)' : ' (Mostrar)';
+        });
+    }
+})();
+</script>
+{% endif %}
+{% endblock %}

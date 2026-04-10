@@ -92,6 +92,8 @@ THEDAILY_SMS_CODE_EXPIRY_MINUTES = 2        # Minutes after which SMS code expir
 # SMS Service Configuration (utopia_cms_ladiaria)
 SMS_USE_MOCK = False                        # Set to True for development, False for production
 SMS_API_KEY = 'CRM key here'                # Use same API key as CRM
+SMS_BASE_URL = 'http://localhost:8000'      # CRM base URL (without /api/)
+SMS_TIMEOUT = 30                            # Request timeout in seconds
 SMS_BASE_URL = CRM_API_BASE_URI      # CRM base URL (without /api/)
 SMS_TIMEOUT = 30                            # Request timeout in seconds
 
@@ -140,6 +142,13 @@ TWILIO_FROM_NUMBER = ''        # Your Twilio phone number (e.g., '+1234567890')
 #     'crm.yoogle.com',      # utopia-CRM sibling paired with this utopia-cms
 #     'comments.yoogle.com', # Coral talk site used by articles paired with this utopia-cms
 # ]
+
+# Signupwall Configuration
+# Enable landing page for X in-app browser to guide users to open articles in external browser
+# This solves the "Access blocked" error when users try to login with Google from X's in-app browser
+# Set to True to enable the feature, False to disable it
+# SIGNUPWALL_X_BROWSERWALL_ENABLED = True
+
 
 # =============================================================================
 # Sentry Error Tracking Configuration
@@ -235,4 +244,44 @@ TWILIO_FROM_NUMBER = ''        # Your Twilio phone number (e.g., '+1234567890')
 #
 # =============================================================================
 # End of Sentry Configuration
+# =============================================================================
+
+# =============================================================================
+# Django Admin Locking Configuration
+# =============================================================================
+# Prevents concurrent editing conflicts in Django Admin by locking pages when
+# a user is editing them. When another user tries to edit the same object,
+# they see a warning banner and all fields are disabled (read-only).
+#
+# This solves "Lost Update" race conditions where changes from one user
+# overwrite changes from another user editing the same object simultaneously.
+#
+# Example:
+#   - User A opens an Article → Can edit (lock acquired)
+#   - User B opens same Article → Sees "⚠️ This page is being edited by User A"
+#   - User B's fields are read-only until User A finishes or lock expires
+#
+# Repository: https://github.com/jonasundderwolf/django-admin-locking
+#
+# ADMIN_PAGE_LOCK_ENABLED = True
+#
+# Add django-admin-locking to INSTALLED_APPS
+# INSTALLED_APPS += ('admin_locking',)
+#
+# Lock timeout in minutes (default: 15)
+# After this time of inactivity, locks expire and another user can edit
+# Note: While a page is open, the lock is automatically renewed every 10 seconds
+# ADMIN_LOCKING_TIMEOUT = 10
+#
+# Requirements:
+#   - Redis or Memcached must be running (uses Django's default cache)
+#   - Add to requirements.txt: django-admin-locking==0.10.0
+#
+# Performance impact:
+#   - Each user with an open edit page sends 6 requests/minute (1 every 10s)
+#   - Negligible load: ~10ms per request (Redis GET + SET)
+#   - Example: 50 concurrent editors = 300 requests/min = insignificant CPU usage
+#
+# =============================================================================
+# End of Django Admin Locking Configuration
 # =============================================================================

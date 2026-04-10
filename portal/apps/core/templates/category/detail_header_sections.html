@@ -5,7 +5,7 @@
         {# TODO: document submenu support usage #}
         {% if section.slug not in excluded_slugs %}
           <li{% block page_header_sections_li_attrs %}{% endblock %}>
-            <a class="{% block page_header_sections_li_a_class %}section-detail__header-sub-cat{% endblock %}" href="{{ section.get_absolute_url }}">
+            <a class="{% block page_header_sections_li_a_class %}{% endblock %}" href="{{ section.get_absolute_url }}">
               {{ section.name_in_category_menu|default:section.name }}
             </a>
           </li>

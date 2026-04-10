@@ -21,7 +21,7 @@ function onScanSuccess(decodedText) {
 
   document.getElementById("id_code").value = code;
 
-  const benefitName = document.getElementById("benefit-name");
+  const infoContainer = document.getElementById("info-container");
   const submitButton = document.getElementById("submit-button");
   const messageDiv = document.getElementById("qr-scanned-successfully");
 
@@ -38,12 +38,12 @@ function onScanSuccess(decodedText) {
       code: code,
       csrfmiddlewaretoken: document.querySelector("[name=csrfmiddlewaretoken]").value,
     },
-    success: function (response) {
-      benefitName.innerText = response.name;
-      benefitName.classList.remove("error");
+    success: function (response) { // Scan que leyó el QR
+      infoContainer.innerText = response.name;
+      infoContainer.classList.remove("error");
       submitButton.disabled = false;
     },
-    error: function (xhr) {
+    error: function (xhr) { // Scan con ERror
       const response = JSON.parse(xhr.responseText);
       benefitName.innerText = response.error || "Ocurrió un error. Por favor, intenta de nuevo.";
       benefitName.classList.add("error");
@@ -57,7 +57,6 @@ function onScanFailure() {
 }
 
 // --- QR reader init ---
-
 const html5QrCode = new Html5Qrcode("qr-reader");
 html5QrCode.start(
   { facingMode: "environment" },
@@ -86,7 +85,8 @@ document.getElementById("scan-qr-form").addEventListener("submit", function (eve
     .then((response) => response.json())
     .then((data) => {
       const messageDiv = document.getElementById("qr-scanned-successfully");
-      const submitBtn = document.getElementById("submit-button");
+      const submitButton = document.getElementById("submit-button");
+      const infoContainer = document.getElementById("info-container");
 
       submitBtn.disabled = true;
       submitBtn.classList.remove("with-tick");

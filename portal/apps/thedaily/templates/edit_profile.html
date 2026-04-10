@@ -7,6 +7,11 @@
   <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
 {% endblock %}
 
+{% block css %}
+  <link href="{% static 'sass/pages/_edit-profile.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/components/nl_switch.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
 {% block body_class %}thedaily ld-profile-edit{% endblock %}
 
 {% block page_header %}
@@ -113,7 +118,7 @@
             <span class="bold">Teléfono: </span>
             <span class="value">
               {% if subscriber.phone %}
-                {{ subscriber.phone }}
+                {{ subscriber.phone.as_national }}
               {% else %}
                 sin asignar <span class="needs-attention-icon"></span>
               {% endif %}
@@ -265,8 +270,14 @@
     $(function() {
 
       {% if push_notifications_keys_set %}
-        setNotificationCheckStatus();
-        switch_change_events($('#notificaciones .switch-container'), true);
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        var hasPushSupport = ('Notification' in window) && ('PushManager' in window);
+        if (!isIOS && hasPushSupport) {
+          setNotificationCheckStatus();
+          switch_change_events($('#notificaciones .switch-container'), true);
+        } else {
+          $('#notificaciones').hide();
+        }
       {% endif %}
 
       phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");

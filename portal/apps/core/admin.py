@@ -3,6 +3,7 @@ import logging
 
 from requests.exceptions import ConnectionError
 import json
+import logging
 from urllib.parse import urljoin
 from pydoc import locate
 from kombu.exceptions import OperationalError
@@ -67,6 +68,34 @@ from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
 from .tasks import update_category_home, send_push_notification
 from .utils import update_article_url_in_coral_talk, smart_quotes
+
+
+# ==========================================
+# Django Admin Locking - Conditional Import
+# ==========================================
+# If ADMIN_PAGE_LOCK_ENABLED=True (set in local_settings.py):
+#   - Import AdminLockingMixin from admin_locking (django-admin-locking)
+#   - Use it as base class for Article and Edition admins
+#   - Shows warning banner when another user is editing the same object
+# Otherwise:
+#   - Use empty mixin (no locking functionality)
+if getattr(settings, 'ADMIN_PAGE_LOCK_ENABLED', False):
+    try:
+        from admin_locking.admin import AdminLockingMixin
+        AdminLockingBase = AdminLockingMixin
+    except ImportError:
+        # Library not installed, use empty mixin
+        class AdminLockingBase:
+            """Fallback when django-admin-locking is not available"""
+            pass
+else:
+    # Locking disabled, use empty mixin
+    class AdminLockingBase:
+        """Empty mixin when page locking is disabled"""
+        pass
+# ==========================================
+# END Django Admin Locking Configuration
+# ==========================================
 
 
 class PrintOnlyArticleInline(TabularInline):
@@ -282,7 +311,7 @@ class NoHomeTopArticleInline(EditionBaseArticleInline):
 
 
 @admin.register(Edition, site=site)
-class EditionAdmin(ModelAdmin):
+class EditionAdmin(AdminLockingBase, ModelAdmin):
     fields = ('date_published', 'pdf', 'cover', 'publication')
     list_display = ('edition_pub', 'title', 'pdf', 'cover', 'get_supplements')
     list_filter = ('date_published', 'publication')
@@ -322,6 +351,9 @@ class EditionAdmin(ModelAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         update_category_home()
+
+    class Media:
+        js = ('admin_locking/admin_locking.js', 'js/admin_locking_custom.js')
 
 
 class PortableDocumentFormatPageAdmin(ModelAdmin):
@@ -589,7 +621,7 @@ def get_editions():
 
 
 @admin.register(Article, site=site)
-class ArticleAdmin(VersionAdmin):
+class ArticleAdmin(AdminLockingBase, VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
     actions = ["toggle_published"]
     form = ArticleAdminModelForm
@@ -908,6 +940,8 @@ class ArticleAdmin(VersionAdmin):
     class Media:
         css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
         js = (
+            'admin_locking/admin_locking.js',  # For page locking functionality
+            'js/admin_locking_custom.js',  # Custom positioning + prevents auto-scroll
             'js/jquery.charcounter-orig.js',
             'js/utopiacms_martor_semantic.js',
             'js/utopiacms_martor_fullheight.js',

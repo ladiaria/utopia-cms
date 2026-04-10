@@ -1,0 +1,65 @@
+@import "../variables";
+@import "../utopia_materialize/variables";
+
+#comentarios {
+  position: fixed;
+  top: $headerMinHeight;
+  width: px-to-rem(460px);
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  border-left: 1px solid #ababab;
+  z-index: 1;
+  transition: right 0.5s ease-in-out;
+  overflow-y: auto;
+  z-index: 1;
+
+  &.closed {
+    right: -100%;
+  }
+  .upper-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 1;
+
+    &.with-border-bottom {
+      border-bottom: 0.5px solid #ababab;
+    }
+  }
+  .upper-content p {
+    margin: 0;
+    font-size: px-to-rem(24px);
+    font-weight: 500;
+    padding-left: 24px;
+  }
+
+  .main-content {
+    padding-inline: 24px;
+  }
+
+  @media #{$medium-and-down} {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #ababab;
+    bottom: 65px;
+    top: 35%;
+    transition: top 0.5s ease-in-out;
+
+    &.closed {
+      right: 0;
+      top: 100%;
+    }
+  }
+}
+
+.popup-talk {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background-color: $color-light-blue;
+}

@@ -53,7 +53,14 @@ let rp = function requestPermission(){
   if (('Notification' in window)) {
     Notification.requestPermission(status => {
       console.log('Notification permission status:', status);
-      if(status === 'granted') subscribeUser();
+      if(status === 'granted') {
+        subscribeUser();
+      } else if(status === 'default') {
+        // User dismissed the browser prompt without choosing: treat like "Ahora no"
+        var count = parseInt(localStorage.getItem('push_prompt_dismiss_count') || '0', 10);
+        localStorage.setItem('push_prompt_dismiss_count', count + 1);
+        localStorage.setItem('push_prompt_dismiss_at', Date.now());
+      }
     });
   }
 };
@@ -65,7 +72,6 @@ function unsubscribeUser(){
   .then(subscription => {
     // Always update cookie state, regardless of subscription existence
     setCookie('notifyme', "false", 1);
-    deleteCookie('home_arriving', 1);
 
     if (subscription) {
       subscription_to_delete = subscription;
@@ -78,7 +84,6 @@ function unsubscribeUser(){
     });
     // Also set cookie to false on error
     setCookie('notifyme', "false", 1);
-    deleteCookie('home_arriving', 1);
   }).then(() => {
     updateSubscriptionOnServer(null);
   });
@@ -199,84 +204,58 @@ function subscribeUser() {
   });
 }
 
+var pushPromptShowTimer = null;
+var pushPromptAutoHideTimer = null;
+
 function confirmFunction () {
+  clearTimeout(pushPromptAutoHideTimer);
   rp();
   $('.pwa-prompt').hide();
 }
 
 function cancelFunction () {
+  clearTimeout(pushPromptAutoHideTimer);
   $('.pwa-prompt').hide();
-  setCookie('notifyme', "false", 1);
-  deleteCookie('home_arriving', 1);
+  var count = parseInt(localStorage.getItem('push_prompt_dismiss_count') || '0', 10);
+  localStorage.setItem('push_prompt_dismiss_count', count + 1);
+  localStorage.setItem('push_prompt_dismiss_at', Date.now());
 }
 
 $(function(){
-  navigator.permissions.query({name: 'notifications'}).then(function(result) {
+  // Check device support: must have Notification API, PushManager, and not be iOS
+  if (!('Notification' in window) || !('PushManager' in window)) return;
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent)) return;
 
-    if (result.state == 'granted' || result.state == 'prompt') {
+  // Don't show if permission was denied
+  if (Notification.permission === 'denied') return;
 
-      if (getCookie('notifyme', 1) == null) {
+  // Don't show if already subscribed
+  if (getCookie('notifyme', 1) === 'true') return;
 
-        let now = new Date();
-        const datesAreOnSameDay = (first, second) =>
-          first.getFullYear() === second.getFullYear() &&
-          first.getMonth() === second.getMonth() &&
-          first.getDate() === second.getDate();
+  // Check localStorage dismiss limits (max 3 dismissals)
+  var dismissCount = parseInt(localStorage.getItem('push_prompt_dismiss_count') || '0', 10);
+  if (dismissCount >= 3) return;
 
-        if (window.location.pathname == '/') {
-          if (!getCookie('home_arriving', 1)) {
-            // This is the first time in the home page, then set the moment variable to 1 and the time
-            // variable to current time.
-            setCookie('home_arriving', JSON.stringify({'moment': 1, 'time': now}), 1);
-          } else {
-            // 2nd time or more.
-            let home_arriving_value = JSON.parse(getCookie('home_arriving', 1));
-            if (
-              home_arriving_value.moment == 1 && datesAreOnSameDay(new Date(home_arriving_value.time), now)
-            ) {
-              // 2nd time in the same day, offer to allow notifications only if the NLs header wasn't rendered.
-              if($("#choose-nl-container").length == 0){
-                $('.pwa-prompt').show();
-                setCookie('home_arriving', JSON.stringify({'moment': 2, 'time': now}), 1);
-              }
-            } else {
-              // Neither first nor 2nd in the same day, so, check if last arrived date is +24h ago;
-              // to only offer allow notifications once per day.
-              // TODO: Bug - .getDate() returns day of month (1-31), not timestamp.
-              //       Should be .getTime() instead. Current behavior: always resets when
-              //       day changes, regardless of 24h. Low priority - only affects edge case
-              //       of visits crossing midnight with less than 24h difference.
-              //       Fix: new Date(home_arriving_value.time).getTime() + (24 * 60 * 60 * 1000)
-              if (new Date(home_arriving_value.time).getDate() + (24 * 60 * 60 * 1000) < now.getTime()) {
-                setCookie('home_arriving', JSON.stringify({'moment': 1, 'time': now}), 1);
-              }
-            }
-          }
-        }
-
-        if (
-          getCookie(userName) == 'null'
-          || getCookie('home_arriving', 1) && JSON.parse(getCookie('home_arriving', 1)).moment == 1
-        ) {
-          // TODO: check this condition with UX
-          // If current location contains 'utm_source=newsletter' I got here from NL, so I will show the push
-          // notification offer only if also the homepage was visited once.
-          if (window.location.href.search('utm_source=newsletter') > 0) {
-            let targetDiv = $('.pwa-prompt')
-            if (targetDiv.length) {
-              targetDiv.show();
-              // set home arrived to moment 2 to wait at least 24hs to offer again
-              setCookie('home_arriving', JSON.stringify({'moment': 2, 'time': now}), 1);
-            }
-          }
-        }
-
-      }
-
-    } else {
-      deleteCookie('notifyme', 1);
-      deleteCookie('home_arriving', 1);
+  // Check if 7 days have passed since last dismissal
+  if (dismissCount > 0) {
+    var dismissAt = localStorage.getItem('push_prompt_dismiss_at');
+    if (dismissAt) {
+      var sevenDays = 7 * 24 * 60 * 60 * 1000;
+      if (Date.now() - parseInt(dismissAt, 10) < sevenDays) return;
     }
+  }
 
-  });
+  // Show modal after 20 seconds
+  pushPromptShowTimer = setTimeout(function() {
+    $('.pwa-prompt').show();
+
+    // Auto-hide after another 20 seconds (40s total from page load)
+    pushPromptAutoHideTimer = setTimeout(function() {
+      $('.pwa-prompt').hide();
+      // If user previously dismissed, reset the 7-day timer (don't increment count)
+      if (parseInt(localStorage.getItem('push_prompt_dismiss_count') || '0', 10) > 0) {
+        localStorage.setItem('push_prompt_dismiss_at', Date.now());
+      }
+    }, 20000);
+  }, 20000);
 });

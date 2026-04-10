@@ -272,8 +272,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'report_form_sent': report_form_sent,
         'domain': domain,
         'category': category,
-        'category_signup':
-            domain == 'category' and category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_SIGNUP', ()),
+        'category_signup': domain == 'category'
+        and category.slug in getattr(settings, 'CORE_CATEGORIES_CUSTOM_SIGNUP', ()),
         'section': article.publication_section(),
         'header_display': article.header_display,
         'tag_list': reorder_tag_list(article, get_article_tags(article)),
@@ -282,8 +282,9 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
         "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
         "signupwall_label_exclusive": settings.SIGNUPWALL_LABEL_EXCLUSIVE,
-        'publication_newsletters':
-            Publication.objects.filter(has_newsletter=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL),
+        'publication_newsletters': Publication.objects.filter(has_newsletter=True).exclude(
+            slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL
+        ),
         'date_published_use_main_publication': (
             publication
             and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())
@@ -293,7 +294,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
             "article/audio"
             + ("_subscribers_only" if settings.CORE_ARTICLE_DETAIL_AUDIO_TRANSCRIPT_ONLY_SUBSCRIBERS else "")
             + ".html"
-        )
+        ),
     }
 
     context.update(
@@ -302,7 +303,9 @@ def article_detail(request, year, month, slug, domain_slug=None):
             'favourited': article in [f.target for f in Favorite.objects.for_user(request.user)],
             "signupwall_remaining_banner": settings.SIGNUPWALL_REMAINING_BANNER_ENABLED,
             "restricted_access": has_restricted_access(request.user, article),
-        } if user_is_authenticated else {"signupwall_remaining_banner": settings.SIGNUPWALL_ENABLED}
+        }
+        if user_is_authenticated
+        else {"signupwall_remaining_banner": settings.SIGNUPWALL_ENABLED}
     )  # NOTE: banner is rendered despite of setting for anon users
 
     # This is for adding extra context to the article detail template. For now it's only for logged users
