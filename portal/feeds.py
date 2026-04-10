@@ -162,7 +162,7 @@ class GoogleNewsAIFeed(Feed):
             media_url = '%s://%s%s' % (
                 settings.URL_SCHEME, settings.SITE_DOMAIN, quote(item.photo.image.url, safe='/:%')
             )
-            media_title = item.photo.title if hasattr(item.photo, 'title') else ''
+            media_title = item.photo.caption or ''
         genre = 'Opinion' if item.type == 'OP' else None
         return {
             'content_encoded': ldmarkup(item.body),
