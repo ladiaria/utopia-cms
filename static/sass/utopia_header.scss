@@ -1968,3 +1968,82 @@ body.interior {
     display: block;
   }
 }
+
+.user-menu-container {
+  position: relative;
+}
+
+.popup-user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #c7d0d3;
+  border-radius: 5px;
+  padding: 24px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 280px;
+  z-index: 1002;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+
+  &.is-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  &__account-data {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__email {
+    font-family: $sans;
+    font-weight: 500;
+    font-size: px-to-rem(18px);
+    letter-spacing: px-to-rem(0.18px);
+  }
+
+  &__description {
+    font-family: $serif;
+    line-height: px-to-rem(21.6px);
+    letter-spacing: px-to-rem(0.16px);
+    margin: 0;
+  }
+
+  &__subscribe {
+    font-family: $sans;
+    font-weight: 500;
+    letter-spacing: px-to-rem(0.16px);
+    text-decoration: underline;
+  }
+
+  &__options {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    font-family: $sans;
+    letter-spacing: px-to-rem(0.16px);
+    border-bottom: 0.5px solid #ababab;
+    white-space: nowrap;
+
+    &--logout {
+      font-weight: 500;
+      border-bottom: none;
+    }
+  }
+}
