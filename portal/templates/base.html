@@ -557,7 +557,9 @@
       {% endif %}
 
       {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
-      <script defer src="{% static 'js/ld.js' %}"></script>
+      {% compress js %}
+        <script defer src="{% static 'js/ld.js' %}"></script>
+      {% endcompress %}
       {% comment %} <script defer src="{% static 'js/resizeSubnav.js' %}"></script> {% endcomment %}
 
       {# Modernizr - Detect CSS Grid #}
