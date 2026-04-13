@@ -22,6 +22,21 @@
           {% endif %}
         </div>
       {% else %}
+        {% if is_portada and category and category.newsletter %}
+          <div class="fixed-items">
+            <a class="newsletter-header" href="{% url 'nl-category-subscribe' slug=category.slug %}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.028" d="M11.314 3.085c0-.566-.463-1.028-1.029-1.028H2.058c-.566 0-1.029.462-1.029 1.028m10.285 0v6.17c0 .566-.463 1.03-1.029 1.03H2.058a1.03 1.03 0 0 1-1.029-1.03v-6.17m10.285 0-5.143 3.6-5.142-3.6"/></svg>
+              <span>Recibir newsletter de {{ category }}</span>
+            </a>
+          </div>
+        {% elif is_portada and publication and publication != default_pub and publication.has_newsletter %}
+          <div class="fixed-items">
+            <a class="newsletter-header" href="{% url 'nl-subscribe' %}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.028" d="M11.314 3.085c0-.566-.463-1.028-1.029-1.028H2.058c-.566 0-1.029.462-1.029 1.028m10.285 0v6.17c0 .566-.463 1.03-1.029 1.03H2.058a1.03 1.03 0 0 1-1.029-1.03v-6.17m10.285 0-5.143 3.6-5.142-3.6"/></svg>
+              <span>Recibir newsletter de {{ publication }}</span>
+            </a>
+          </div>
+        {% endif %}
         {% block upper_fixed_items %}{% endblock %}
       {% endif %}
     </div>
@@ -64,19 +79,6 @@
       {% endif %}
     </div>
   </div>
-  {% if article %}
-    <div class="article-mobile-breadcrumb">
-      {% if category %}
-        <a href="{% url 'home' domain_slug=category.slug %}">{{ category }}</a>
-      {% elif publication %}
-        <a href="{% url 'home' domain_slug=publication.slug %}">{{ publication }}</a>
-      {% endif %}
-      {% if section %}
-        <svg xmlns="http://www.w3.org/2000/svg" width="6" height="9" fill="none" viewBox="0 0 6 9"><path stroke="#000" stroke-linejoin="round" stroke-width="1.2" d="m.424 8.424 4-4-4-4"/></svg>
-        <a href="{{ section.get_absolute_url }}">{{ section }}</a>
-      {% endif %}
-    </div>
-  {% endif %}
 
   {# Menú desktop extendido #}
   <div id="nav-principal-full" class="full ld-main-menu js-ld-main-menu">
