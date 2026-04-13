@@ -442,6 +442,9 @@
       <header class="{% block header_classes %}{% endblock %}">
         {% render_header %}
       </header>
+      <div class="header-nav-wrapper">
+        {% block header_navbar %}{% include "navbar.html" %}{% endblock %}
+      </div>
       {% if PWA_ENABLED %}
         <div class="pwa-prompt" style="display:none;">
           <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
