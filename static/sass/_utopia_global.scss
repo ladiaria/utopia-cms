@@ -15,7 +15,7 @@ button {
 
 .btn {
   font-size: 1rem;
-  line-height: 0.75rem;
+  line-height: normal;
   background-color: transparent;
   color: $off-black;
   padding: px-to-rem(10px) px-to-rem(24px);
@@ -27,6 +27,8 @@ button {
     background-color: $off-black;
     color: white;
     border: 1px solid $off-black;
+    font-weight: 450;
+    border: none;
   }
 }
 

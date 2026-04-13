@@ -26,10 +26,8 @@
       {% endif %}
     </div>
     <div class="upper-center-logo-container">
-      <div class="logo-vertical-center-container">
-        <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
-        {% block header_pill %}{% endblock %}
-      </div>
+      <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
+      {% block header_pill %}{% endblock %}
     </div>
     <div class="upper-right-content">
       <a href="{% url 'search' %}" class="search-btn">
@@ -66,10 +64,6 @@
       {% endif %}
     </div>
   </div>
-  <div class="logo-desktop-container{% if publication != default_pub %} publication{% endif %}">
-    <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
-  </div>
-
   {% if article %}
     <div class="article-mobile-breadcrumb">
       {% if category %}
@@ -84,8 +78,7 @@
     </div>
   {% endif %}
 
-  {% block navbar %}{% include "navbar.html" %}{% endblock %}
-
+  {# Menú desktop extendido #}
   <div id="nav-principal-full" class="full ld-main-menu js-ld-main-menu">
     <div class="modal-content">
       <nav class="ld-main-menu__wrap">

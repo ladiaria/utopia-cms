@@ -9,6 +9,21 @@ Los estilos están en `static/sass/utopia_header.scss`.
 
 ---
 
+## Estructura general
+
+El header siempre tiene **2 filas**:
+
+1. **Fila superior** (`.upper-content`): siempre 3 columnas —
+   izquierda | centro | derecha.
+2. **Fila inferior** (`.nav-content`): nav de áreas/secciones (puede estar
+   ausente o colapsada según el tipo de header y el estado).
+
+En el header de portada y áreas/publicaciones, la fila superior aparenta
+ocupar más espacio en estado normal (logo grande, `padding-block` mayor)
+gracias a CSS, sin necesidad de un nodo DOM extra.
+
+---
+
 ## Clases CSS relevantes
 
 | Clase / selector            | Cuándo se aplica                              |
@@ -28,13 +43,14 @@ Los estilos están en `static/sass/utopia_header.scss`.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  menú hamburguesa + fixed items  │        │  search + login/suscribir│
-│                                  │  logo  │                          │
+│  menú hamburguesa + fixed items  │  logo  │  search + login/suscribir│
 │           nav de áreas y publicaciones                               │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-- El logo ocupa la fila central en solitario.
+- El logo está en la columna central de la fila superior, igual que en
+  sticky. En estado normal se ve más grande y la fila tiene más
+  `padding-block`, lo que genera el efecto visual de "logo prominente".
 - `fixed items` proviene de `utopia_cms_ladiaria`.
 
 ### Desktop — sticky (al hacer scroll)
@@ -45,8 +61,8 @@ Los estilos están en `static/sass/utopia_header.scss`.
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-- Colapsa a una sola fila.
-- Desaparece el nav de áreas/publicaciones y los fixed items.
+- El logo reduce su `max-width` y el `padding-block` de la fila colapsa.
+- El nav de áreas/publicaciones y los fixed items desaparecen.
 
 ### Mobile — estado normal
 
@@ -75,8 +91,7 @@ Los estilos están en `static/sass/utopia_header.scss`.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  menú hamburguesa + fixed items  │             │  search + login/susc│
-│                                  │  logo + pill│                     │
+│  menú hamburguesa + fixed items  │  logo + pill  │  search + login/susc│
 │  link a home + nav de secciones del área o publicación              │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -172,43 +187,3 @@ Aplica sobre cualquier tipo de header cuando el usuario abre el menú principal.
 - El fondo del header cambia al color secundario (`$secondary-color`).
 - El botón hamburguesa se reemplaza por el botón de cerrar (✕).
 - El menú `.ld-main-menu` se despliega en pantalla completa debajo del header.
-
----
-
-## Deuda técnica: transición brusca al hacer scroll en la portada
-
-### Problema
-
-Afecta a la **portada** (`header.home-header`) y al **header de áreas y
-publicaciones** (`header.category-pub-header`): ambos tienen estado normal de
-3 filas y estado sticky de 1 fila, y el cambio es abrupto porque la
-implementación usa **dos nodos DOM distintos para el logo** y alterna el layout
-completo entre ellos:
-
-- **Estado normal**: `.logo-desktop-container` (logo grande, fila central)
-  está visible; `.upper-center-logo-container` está oculto (`display: none`).
-- **Estado sticky**: `.logo-desktop-container` pasa a `display: none`;
-  `.upper-center-logo-container` aparece en la columna central de la fila
-  superior.
-
-Como se intercambian con `display: none/flex`, no hay nada que CSS pueda
-animar entre los dos estados.
-
-### Solución propuesta
-
-Refactor acotado que toca `header.html` y `utopia_header.scss`:
-
-1. **Eliminar `.logo-desktop-container`** del template. Queda un único logo:
-   el de `.upper-center-logo-container`, visible siempre.
-
-2. **En estado normal del home**, el logo se ve grande y centrado mediante CSS,
-   no por estar en una fila separada:
-   - `.upper-content` tiene más `padding-block`.
-   - El logo tiene `max-width` mayor (ej: 180px).
-
-3. **Al agregar `.sticky`**, en vez de intercambiar nodos, se transiciona:
-   - `max-width` del logo: 180px → 108px.
-   - `padding-block` de `.upper-content`: colapsa.
-   - `max-height` del nav: colapsa a 0.
-
-4. El JS que agrega la clase `.sticky` no necesita cambios.
