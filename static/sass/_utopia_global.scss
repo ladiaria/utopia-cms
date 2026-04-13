@@ -720,6 +720,10 @@ a.ladiaria {
 
 // TODO: poner los media queries donde van las reglas
 @media #{$small-and-down} {
+  main#main-content {
+    padding-top: 16px;
+  }
+
   #main-header {
     .nav-wrapper {
       display: flex;
