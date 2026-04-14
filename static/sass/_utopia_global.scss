@@ -78,9 +78,7 @@ button {
 }
 
 .ld-text-secondary {
-  color: $grey;
-  font-family: "Roboto", sans-serif;
-  font-size: 16px;
+  color: #44494b;
 }
 
 a.ld-text-secondary,
@@ -874,10 +872,6 @@ a.ladiaria {
   margin: 50px 0;
 }
 
-.form-submit-login {
-  margin-top: 50px;
-}
-
 .btn-register {
   margin-top: 50px;
 
@@ -888,49 +882,39 @@ a.ladiaria {
 }
 
 .ld-btn-google {
-  color: #262626;
-  border: 2px solid $off-black;
-  font-family: "Roboto", sans-serif;
-  font-size: 17px;
-  font-weight: 700;
-  text-transform: uppercase !important;
+  border: 1px solid $off-black;
+  font-weight: 500;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
   vertical-align: middle;
   -webkit-tap-highlight-color: transparent;
-  line-height: 1;
-  height: auto;
+  line-height: normal;
   margin: 0;
-  padding: 14px 23px 14px 52px;
-  border-radius: 100px;
-  display: inline-block;
+  padding: 12px 24px;
+  width: 100%;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background-color: white;
-  background-repeat: no-repeat;
-  background-size: 26px auto;
-  background-position: center left 16px;
-  background-image: url("/static/img/icon-google.svg");
   transition:
     background-color 0.35s ease,
     color 0.35s ease,
     box-shadow 0.35s ease;
+  img {
+    width: 24px;
+    height: 24px;
+  }
 
   &:hover {
     background-color: $off-black;
     color: white;
-    border: none;
-    padding: 16px 25px 16px 54px;
-    background-position: center left 18px;
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3);
   }
   &:active {
     background-color: #4d4f4f;
     border-color: #4d4f4f;
-    border: none;
-    padding: 16px 25px 16px 54px;
-    background-position: center left 18px;
-    transform: translateY(1px);
-    box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.3);
   }
   &:focus {
     background-color: $off-black;
@@ -1183,22 +1167,6 @@ select.browser-default {
 }
 
 /* rebranding forms */
-input:not([type]):focus:not([readonly]),
-input[type="text"]:not(.browser-default):focus:not([readonly]),
-input[type="password"]:not(.browser-default):focus:not([readonly]),
-input[type="email"]:not(.browser-default):focus:not([readonly]),
-input[type="url"]:not(.browser-default):focus:not([readonly]),
-input[type="time"]:not(.browser-default):focus:not([readonly]),
-input[type="date"]:not(.browser-default):focus:not([readonly]),
-input[type="datetime"]:not(.browser-default):focus:not([readonly]),
-input[type="datetime-local"]:not(.browser-default):focus:not([readonly]),
-input[type="tel"]:not(.browser-default):focus:not([readonly]),
-input[type="number"]:not(.browser-default):focus:not([readonly]),
-input[type="search"]:not(.browser-default):focus:not([readonly]),
-textarea.materialize-textarea:focus:not([readonly]) {
-  border-bottom: 1px solid $grey;
-  box-shadow: 0 1px 0 0 $grey;
-}
 [type="radio"] + label::after {
   width: 8px;
   height: 8px;
@@ -1213,9 +1181,6 @@ textarea.materialize-textarea:focus:not([readonly]) {
 [type="radio"].with-gap:checked + label::after {
   background-color: $grey;
   border-color: $grey;
-}
-.input-field label {
-  color: $grey !important;
 }
 .dropdown-content li > a,
 .dropdown-content li > span {
@@ -1250,9 +1215,6 @@ textarea.materialize-textarea:focus:not([readonly]) {
   }
 }
 
-nav.subscription_black {
-  background-color: $off-black;
-}
 /* fix for forms */
 .form-group {
   .btn {
