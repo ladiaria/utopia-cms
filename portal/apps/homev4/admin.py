@@ -108,6 +108,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
 
         principal_data = grid_data.get("principal") or {}
         saved_ids = principal_data.get("article_ids", [])
+        result["principal_is_fallback"] = not bool(saved_ids)
         if saved_ids:
             by_id = {a.id: a for a in db_articles}
             extra_ids = [aid for aid in saved_ids if aid not in by_id]
