@@ -161,6 +161,10 @@ def media_select(parser, token):
     return MediaSelectNode(**kwargs)
 
 
+# TODO: migrate all uses of render_article_card to render_card.
+# New strategy: render_card uses descriptive template names (e.g. "article_card",
+# "article_card_lead") instead of opaque size codes (FN, FD, BG, etc.).
+# render_article_card is kept for backwards compatibility during the migration.
 @register.simple_tag(takes_context=True)
 def render_article_card(context, article, media, card_size, card_type=None, img_load_lazy=True):
     if not article:
@@ -236,6 +240,53 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
     )
     return loader.render_to_string(
         template_override or ('core/templates/%sarticle/%s' % ('amp/' if flatten_ctx.get("amp") else '', template)),
+        flatten_ctx,
+    )
+
+
+@register.simple_tag(takes_context=True)
+def render_card(context, article, variant, media=None, img_load_lazy=True):
+    """
+    Renders an article card using a descriptive variant name.
+    Usage: {% render_card article=article variant="article_card" %}
+           {% render_card article=article variant="article_card_lead" %}
+
+    Supports template overrides via CORE_ARTICLE_DETAIL_TEMPLATE_DIR setting.
+    """
+    if not article:
+        return ""
+
+    card_type = article.type
+
+    template_file = '%s.html' % variant
+    template_override = None
+    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
+    if template_dir:
+        template_try = join(template_dir, "article", template_file)
+        try:
+            Engine.get_default().get_template(template_try)
+        except TemplateDoesNotExist:
+            pass
+        else:
+            template_override = template_try
+
+    if article.photo_render_allowed() and article.photo.extended.is_portrait:
+        card_display = "horizontal"
+    else:
+        card_display = "vertical"
+
+    flatten_ctx = context.flatten()
+    flatten_ctx.update(
+        {
+            'article': article,
+            'media': media or article.home_display,
+            'card_display': card_display,
+            'card_type': card_type,
+            'img_load_lazy': img_load_lazy,
+        }
+    )
+    return loader.render_to_string(
+        template_override or ('core/templates/article/%s' % template_file),
         flatten_ctx,
     )
 
@@ -340,6 +391,11 @@ def render_toolbar_for(context, toolbar_object):
             context.update(params)
             return loader.render_to_string(toolbar_template, context.flatten())
     return ''
+
+
+@register.simple_tag
+def all_photo_render_allowed(articles):
+    return all(a.photo_render_allowed() for a in articles)
 
 
 @register.simple_tag

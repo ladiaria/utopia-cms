@@ -36,11 +36,31 @@ $line-height: 60px;
 $font-size-sm: 20px;
 $font-size-lg: 22px;
 
+// ─── Redesign v4 ────────────────────────────────────────────────────────────────
+$col-gap: 48px;
+$col-gap-mobile: 24px;
+$col-width: 284px; // (1280 - 48 * 3) / 4
+$sidebar-width: 284px;
+$breakpoint-mobile: 767px;
+
+$color-divider: #ababab;
+$border-divider: 0.5px solid $color-divider;
+
+//  sizing variables
+$gap-2: 8px;
+$gap-3: 12px;
+$gap-4: 16px;
+$gap-6: 24px;
+$-gap-6: -24px;
+$gap-8: 32px;
+
 $breakpoints: (
   small: 400px,
   medium: 600px,
   large: 1200px
 );
+
+$medium-and-down: "only screen and (max-width : 767px)" !default;
 
 // Visual height and width adjustments
 $view-full-height: calc(100vh - #{$line-height} * 2); // visual height minus the width of a bar

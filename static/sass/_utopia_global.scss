@@ -9,13 +9,13 @@ button {
   border: none;
 
   &:focus {
-    background-color: #333;
+    background-color: transparent;
   }
 }
 
 .btn {
   font-size: 1rem;
-  line-height: 0.75rem;
+  line-height: normal;
   background-color: transparent;
   color: $off-black;
   padding: px-to-rem(10px) px-to-rem(24px);
@@ -27,6 +27,8 @@ button {
     background-color: $off-black;
     color: white;
     border: 1px solid $off-black;
+    font-weight: 450;
+    border: none;
   }
 }
 
@@ -152,26 +154,30 @@ a.ld-text-secondary,
 ///////////////////////////////////////////////////////////////////////////
 
 .container {
-  font-size: 16px;
+  font-size: px-to-rem(16px);
   transition: 0.2s ease-out;
+  margin: 0 auto;
+  max-width: $container-width;
+  padding: 0 $padding-inline;
 
-  @media (max-width: 460px) {
-    margin: 0 auto;
-    max-with: 100%;
+  &--mobile-overflow {
+    @media #{$medium-and-down} {
+      padding: 0;
+    }
   }
 
   &--wide {
-    @media (min-width: 601px) {
-      width: 90% !important; // TODO: Refactor new containers, remove !importants
-      max-width: 1170px !important;
+    @media #{$medium-and-up} {
+      width: 90%;
+      max-width: 1170px;
       padding: 0 15px;
     }
   }
 
   // 570px width
   &--narrow {
-    @media (min-width: 600px) {
-      width: 570px !important; // TODO: Fix important.
+    @media #{$medium-and-up} {
+      width: 570px;
       max-width: 570px;
       padding: 0;
       margin: 0 auto;
@@ -227,14 +233,6 @@ body {
     font-weight: 800;
     font-size: 20px;
   }
-}
-
-i.material-icons.icon-ahora {
-  font-size: 18px;
-}
-
-i.material-icons.icon-lo_mas_leido {
-  font-size: 20px;
 }
 
 .ld-menu-title {
@@ -448,8 +446,18 @@ a.ladiaria {
 
 .section-detail {
   &__head {
-    padding-top: 25px;
-    margin-bottom: 30px;
+    padding-top: 32px;
+    margin-bottom: 32px;
+    border-top: 1px solid #000;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
     &.white_text {
       > * {
@@ -489,11 +497,11 @@ a.ladiaria {
   }
 
   &__title {
-    font-family: "Roboto", sans-serif;
-    font-size: 3rem;
-    line-height: 1.1;
+    font-family: $sans-title;
+    font-size: px-to-rem(32px);
+    line-height: px-to-rem(27.84px);
     color: #000;
-    font-weight: bold;
+    font-weight: 700;
     margin: 0;
     -webkit-hyphens: auto;
     -moz-hyphens: auto;
@@ -521,18 +529,14 @@ a.ladiaria {
   }
 
   &__subtitle {
-    font-family: "Roboto", sans-serif;
-    font-size: 18px;
-    line-height: 1.1;
+    font-size: px-to-rem(18px);
+    line-height: normal;
+    letter-spacing: px-to-rem(0.18px);
     color: #000;
-    font-weight: 500;
-    margin: 0 0 24px;
     -webkit-hyphens: auto;
     -moz-hyphens: auto;
     -ms-hyphens: auto;
     hyphens: auto;
-    display: block;
-    margin-top: 8px;
   }
 
   &__sub-cats {
@@ -622,72 +626,53 @@ a.ladiaria {
   }
 }
 
-// Grid for 5 columns in Materialize
-// Usage <div class="col m5ths s6">Column 1</div>
-.s5ths,
-.m5ths,
-.l5ths,
-.xl5ths {
-  margin-left: auto;
-  left: auto;
-  right: auto;
-}
+// ─── Publicidad ───────────────────────────────────────────────────────────────
+#header-pub {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 0 $padding-inline 32px;
+  background-color: #fff;
+  max-width: $container-width;
+  width: 100%;
+  margin: 0 auto;
 
-.row .col.s5ths {
-  width: 20%;
-}
+  .ad_banner {
+    display: flex;
+  }
 
-.row .col.s6ths {
-  width: 16.6666%;
-}
-
-@media #{$medium-and-up} {
-  .row .col.m5ths {
-    width: 20%;
+  .ld-caption {
+    padding-top: 24px;
+    border-top: 1px solid #000;
+    color: #81898b;
+    text-align: center;
+    font-family: $sans;
+    font-size: px-to-rem(14px);
+    line-height: px-to-rem(16.52px);
+    letter-spacing: px-to-rem(0.14px);
   }
 }
 
-@media #{$large-and-up} {
-  .row .col.l5ths {
-    width: 20%;
+@media #{$medium-and-down} {
+  .section-detail {
+    &__head {
+      padding-top: 24px;
+      margin-bottom: 24px;
+      gap: 8px;
+    }
+
+    &__title {
+      font-size: px-to-rem(28px);
+      line-height: px-to-rem(24.36px);
+      letter-spacing: px-to-rem(0.28px);
+    }
+    &__subtitle {
+      font-size: px-to-rem(16px);
+    }
   }
-}
-
-@media #{$extra-large-and-up} {
-  .row .col.xl5ths {
-    width: 20%;
-  }
-}
-
-// Grid for 4 columns
-.s4ths,
-.m4ths,
-.l4ths,
-.xl4ths {
-  margin-left: auto;
-  left: auto;
-  right: auto;
-}
-
-.row .col.s4ths {
-  width: 25%;
-}
-
-@media #{$medium-and-up} {
-  .row .col.m4ths {
-    width: 25%;
-  }
-}
-
-@media #{$large-and-up} {
-  .row .col.l4ths {
-    width: 25%;
-  }
-}
-
-@media #{$extra-large-and-up} {
-  .row .col.xl4ths {
-    width: 25%;
+  #header-pub .ld-caption {
+    padding-top: 16px;
   }
 }
 
@@ -735,8 +720,8 @@ a.ladiaria {
 
 // TODO: poner los media queries donde van las reglas
 @media #{$small-and-down} {
-  .container {
-    max-width: 100% !important;
+  main#main-content {
+    padding-top: 16px;
   }
 
   #main-header {
@@ -847,24 +832,6 @@ a.ladiaria {
         width: auto;
       }
     }
-  }
-}
-
-@media #{$medium-and-up} {
-  .container {
-    max-width: 600px;
-  }
-}
-
-@media #{$large-and-up} {
-  .container {
-    max-width: 700px;
-  }
-}
-
-@media #{$extra-large-and-up} {
-  .container {
-    max-width: 1200px;
   }
 }
 
@@ -1040,18 +1007,6 @@ a.ld-link-low {
   }
   .tagline {
     margin-bottom: 40px;
-  }
-
-  .footer-section {
-    margin-top: 25px;
-    margin-bottom: 0;
-
-    .ld-btn:first-of-type {
-      margin-bottom: 20px;
-      @media (min-width: 485px) {
-        margin-bottom: 0;
-      }
-    }
   }
 }
 
@@ -1342,28 +1297,6 @@ nav.subscription_black {
       &:after {
         display: none;
       }
-    }
-  }
-}
-
-// sections footer
-.footer-section {
-  text-align: center;
-  margin-top: $line-height;
-  margin-bottom: 30px;
-
-  .btn {
-    font-size: 14px;
-    font-weight: bold;
-    text-transform: uppercase;
-    padding: 8px 20px;
-  }
-
-  .ld-btn-solid-dark {
-    box-shadow: none;
-
-    &:hover {
-      opacity: 0.8;
     }
   }
 }

@@ -193,6 +193,10 @@
       qsa(".ld-modal").forEach(function (modal) {
         modal.classList.remove("active");
       });
+      const popup = qs(".js-popup-user-menu");
+      const btn = qs(".js-user-menu-toggle");
+      if (popup) popup.classList.remove("is-open");
+      if (btn) btn.setAttribute("aria-expanded", "false");
     });
 
     onAll(".alert-close", "click", function () {
@@ -456,6 +460,25 @@
       const body = this.nextElementSibling;
       if (body && body.classList.contains("collapsible-body")) {
         slideToggle(body);
+      }
+    });
+
+    // user menu popup toggle
+    onAll(".js-user-menu-toggle", "click", function (event) {
+      const popup = qs(".js-popup-user-menu");
+      if (!popup) return;
+      const isOpen = popup.classList.toggle("is-open");
+      this.setAttribute("aria-expanded", String(isOpen));
+      event.stopPropagation();
+    });
+
+    document.addEventListener("click", function (event) {
+      const popup = qs(".js-popup-user-menu");
+      const btn = qs(".js-user-menu-toggle");
+      if (!popup || !popup.classList.contains("is-open")) return;
+      if (!popup.contains(event.target)) {
+        popup.classList.remove("is-open");
+        if (btn) btn.setAttribute("aria-expanded", "false");
       }
     });
 

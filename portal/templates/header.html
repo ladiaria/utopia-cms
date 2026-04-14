@@ -22,24 +22,55 @@
           {% endif %}
         </div>
       {% else %}
+        {% if is_portada and category and category.newsletter %}
+          <div class="fixed-items">
+            <a class="newsletter-header" href="{% url 'nl-category-subscribe' slug=category.slug %}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.028" d="M11.314 3.085c0-.566-.463-1.028-1.029-1.028H2.058c-.566 0-1.029.462-1.029 1.028m10.285 0v6.17c0 .566-.463 1.03-1.029 1.03H2.058a1.03 1.03 0 0 1-1.029-1.03v-6.17m10.285 0-5.143 3.6-5.142-3.6"/></svg>
+              <span>Recibir newsletter de {{ category }}</span>
+            </a>
+          </div>
+        {% elif is_portada and publication and publication != default_pub and publication.has_newsletter %}
+          <div class="fixed-items">
+            <a class="newsletter-header" href="{% url 'nl-subscribe' %}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.028" d="M11.314 3.085c0-.566-.463-1.028-1.029-1.028H2.058c-.566 0-1.029.462-1.029 1.028m10.285 0v6.17c0 .566-.463 1.03-1.029 1.03H2.058a1.03 1.03 0 0 1-1.029-1.03v-6.17m10.285 0-5.143 3.6-5.142-3.6"/></svg>
+              <span>Recibir newsletter de {{ publication }}</span>
+            </a>
+          </div>
+        {% endif %}
         {% block upper_fixed_items %}{% endblock %}
       {% endif %}
     </div>
     <div class="upper-center-logo-container">
-      <div class="logo-vertical-center-container">
-        <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
-        {% block header_pill %}{% endblock %}
-      </div>
+      <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
+      {% block header_pill %}{% endblock %}
     </div>
     <div class="upper-right-content">
       <a href="{% url 'search' %}" class="search-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#181818" d="m15.737 14.48-3.514-3.515a6.816 6.816 0 1 0-1.258 1.257l3.517 3.518a.889.889 0 1 0 1.258-1.258zM1.79 6.82a5.03 5.03 0 1 1 10.061 0 5.03 5.03 0 0 1-10.061 0"/></svg>
       </a>
       {% if user.is_authenticated %}
-        <button class="user-menu-button">
-          <span>{{ user.first_name }}</span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" fill="none" viewBox="0 0 10 6"><path stroke="#ababab" stroke-linecap="round" stroke-linejoin="round" d="m.5.5 4.382 4.382L9.265.5"/></svg>
-        </button>
+        <div class="user-menu-container">
+          <button class="user-menu-button js-user-menu-toggle" aria-expanded="false" aria-controls="popup-user-menu">
+            <span>{{ user.first_name }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" fill="none" viewBox="0 0 10 6"><path stroke="#ababab" stroke-linecap="round" stroke-linejoin="round" d="m.5.5 4.382 4.382L9.265.5"/></svg>
+          </button>
+          <div class="popup-user-menu js-popup-user-menu" id="popup-user-menu" role="dialog" aria-label="Menú de cuenta">
+            <div class="popup-user-menu__account-data">
+              <span class="popup-user-menu__email">{{ user.email }}</span>
+              {% if not is_subscriber_any %}
+                <p class="popup-user-menu__description">El correo electrónico con el que ingresaste tiene acceso limitado a los artículos.</p>
+                <a href="{% url 'subscribe_landing' %}" class="popup-user-menu__subscribe">Suscribite para acceder sin límites</a>
+              {% endif %}
+            </div>
+            <nav class="popup-user-menu__options">
+              <a href="{% url 'edit-profile' %}" class="popup-user-menu__option">Perfil</a>
+              <a href="{% url "lista-lectura-leer-despues" %}" class="popup-user-menu__option">Guardado</a>
+              <a href="https://forms.gle/sSLDboT4wpk6Trh29" target="_blank" rel="noopener noreferrer" class="popup-user-menu__option">Danos tu opinión</a>
+              <a href="https://ayuda.ladiaria.com.uy/" taget="_blank" rel="noopener noreferrer" class="popup-user-menu__option">Ayuda</a>
+              <a href="{% url 'account-logout' %}" class="popup-user-menu__option popup-user-menu__option--logout">Cerrar sesión</a>
+            </nav>
+          </div>
+        </div>
       {% else %}
         <a href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresar</a>
       {% endif %}
@@ -48,26 +79,8 @@
       {% endif %}
     </div>
   </div>
-  <div class="logo-desktop-container{% if publication != default_pub %} publication{% endif %}">
-    <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
-  </div>
 
-  {% if article %}
-    <div class="article-mobile-breadcrumb">
-      {% if category %}
-        <a href="{% url 'home' domain_slug=category.slug %}">{{ category }}</a>
-      {% elif publication %}
-        <a href="{% url 'home' domain_slug=publication.slug %}">{{ publication }}</a>
-      {% endif %}
-      {% if section %}
-        <svg xmlns="http://www.w3.org/2000/svg" width="6" height="9" fill="none" viewBox="0 0 6 9"><path stroke="#000" stroke-linejoin="round" stroke-width="1.2" d="m.424 8.424 4-4-4-4"/></svg>
-        <a href="{{ section.get_absolute_url }}">{{ section }}</a>
-      {% endif %}
-    </div>
-  {% endif %}
-
-  {% block navbar %}{% include "navbar.html" %}{% endblock %}
-
+  {# Menú desktop extendido #}
   <div id="nav-principal-full" class="full ld-main-menu js-ld-main-menu">
     <div class="modal-content">
       <nav class="ld-main-menu__wrap">

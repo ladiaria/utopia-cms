@@ -1,11 +1,5 @@
 // Cards and css grid styles.
 
-.container {
-  margin: 0 auto;
-  width: 90%;
-  max-width: 1440px;
-}
-
 img {
   max-width: 100%;
 }
@@ -475,10 +469,9 @@ img {
   }
 
   &__section {
-    font-size: 12px;
-    line-height: 17px;
+    font-size: px-to-rem(12px);
+    line-height: px-to-rem(14px);
     text-transform: uppercase;
-    margin-bottom: 5px;
     display: flex;
 
     a {
@@ -534,10 +527,6 @@ img {
 .lock-tooltip {
   position: relative;
 
-  .lock {
-    margin-left: 5px;
-  }
-
   .lock-tooltip-content {
     display: none;
     position: absolute;
@@ -568,90 +557,6 @@ img {
 body.lento-pub .lock-tooltip-content {
   left: 34px;
   top: -8px;
-}
-
-.ld-grid-clear {
-  display: none;
-}
-
-.no-cssgrid {
-  .ld-grid-area {
-    margin-bottom: 24px;
-  }
-  @media (min-width: $gridMinWidth) {
-    .ld-grid-area {
-      padding: 0 12px;
-      margin-bottom: 0;
-      float: left;
-    }
-    .area-main {
-      width: 50%;
-    }
-    .ld-grid-main--two-cols .area-main {
-      width: 75%;
-    }
-    .area-second {
-      width: 25%;
-    }
-    .area-third {
-      width: 25%;
-    }
-    .ld-grid-clear {
-      display: block;
-      &:after {
-        content: "";
-        display: table;
-        clear: both;
-        margin-bottom: 24px;
-      }
-    }
-    .ld-grid-area-col {
-      width: 25%;
-      float: left;
-      padding: 0 12px;
-      margin-bottom: 24px;
-    }
-  }
-
-  @media (min-width: $gridMinWidth) and (max-width: 1300px) {
-    .ld-card--sm {
-      padding-right: 0;
-      .ld-card__img-sq {
-        display: none;
-      }
-    }
-  }
-
-  .ld-grid-simple {
-    @media (min-width: 640px) {
-      margin: 0 -12px;
-    }
-    > .ld-grid-simple__area {
-      margin-bottom: 24px;
-      float: left;
-
-      .ld-card {
-        height: 100%;
-        @media (min-width: $gridMinWidth) {
-          margin-bottom: 0;
-        }
-      }
-      @media (min-width: 640px) {
-        width: 50%;
-        padding: 0 12px;
-      }
-      @media (min-width: $gridMinWidth) {
-        width: 25%;
-      }
-    }
-  }
-}
-
-.art_count_4,
-.art_count_3,
-.art_count_2,
-.art_count_1 {
-  margin-bottom: 24px;
 }
 
 .card {

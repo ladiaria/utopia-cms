@@ -1,0 +1,144 @@
+@import "./variables";
+
+// ─── Grillas de cards ─────────────────────────────────────────────────────────
+
+// Base: colapsa a una columna en mobile
+.articles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, $col-width);
+  gap: $col-gap;
+
+  .article::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: -($col-gap / 2);
+    height: 100%;
+    border-right: $border-divider;
+  }
+
+  .article:last-child::after {
+    display: none;
+  }
+}
+
+article a {
+  text-decoration: none;
+}
+
+// ─── Artículo genérico ────────────────────────────────────────────────────────
+.article {
+  display: flex;
+  flex-direction: column;
+  gap: $gap-3;
+  position: relative;
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: $gap-3;
+  }
+
+  &__section-label {
+    text-transform: uppercase;
+    letter-spacing: 0.96px;
+    font-size: px-to-rem(12px);
+    display: flex;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  &__title {
+    font-family: $serif;
+    font-weight: 400;
+    font-size: px-to-rem(18px);
+    line-height: px-to-rem(24.3px);
+  }
+  &__summary {
+    font-family: $serif;
+    font-size: px-to-rem(15px);
+    font-weight: 300;
+    line-height: 1.35em;
+  }
+
+  &__opinion-type {
+    font-family: $sans;
+    font-weight: 400;
+    font-size: px-to-rem(14px);
+    line-height: 1em;
+  }
+  &__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $gap-3;
+    margin-top: auto;
+  }
+
+  &__byline {
+    font-family: $sans;
+    font-size: px-to-rem(14px);
+  }
+
+  &__bookmark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #81898b;
+    margin-left: auto;
+  }
+
+  &__image-link {
+    display: flex;
+  }
+
+  &__image {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    height: auto;
+  }
+}
+
+@media #{$medium-and-down} {
+  .articles-grid {
+    grid-template-columns: 1fr;
+
+    .article::after {
+      top: auto;
+      right: auto;
+      bottom: -($col-gap / 2);
+      height: auto;
+      width: 100%;
+      border-right: none;
+      border-bottom: $border-divider;
+    }
+  }
+  // Variante: scroll horizontal en mobile (el separador sigue siendo vertical)
+  .articles-grid--scroll {
+    display: flex;
+    @include scroll-navbar;
+    overflow-y: visible;
+    gap: 16px;
+
+    .article {
+      flex: 0 0 px-to-rem(312px);
+
+      &:first-child {
+        margin-left: 20px;
+      }
+      &:last-child {
+        margin-right: 20px;
+      }
+    }
+
+    .article::after {
+      display: none;
+    }
+  }
+}

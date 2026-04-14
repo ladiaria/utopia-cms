@@ -233,25 +233,18 @@
   z-index: 1005;
 
   .nav-menu-button {
-    color: $off-black;
     transition: 200ms;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 
     &:hover {
       background: transparent;
     }
 
-    svg {
-      fill: $off-black;
-      width: auto;
-      vertical-align: top;
-      margin: 0 auto 5px auto;
-      display: block;
-    }
-  }
-
-  .main-menu-open & {
-    .nav-menu-button.nav-menu-button-toggle svg path {
-      fill: $link-color;
+    &.active svg path {
+      fill: #000;
     }
   }
 
@@ -289,41 +282,31 @@
         align-items: center;
       }
     }
-
-    i.material-icons {
-      display: block;
-      height: 24px;
-      width: 24px;
-      margin: 0 auto 5px auto;
-      line-height: 1;
-    }
   }
 
   &__num {
     display: inline-block;
-    background: $off-black;
-    color: #fff !important;
-    border: 2px solid #fff;
-    font-size: 12px;
-    line-height: 14px;
-    border-radius: 14px;
-    padding: 0 4px;
+    background: #000;
+    color: #fff;
+    font-size: px-to-rem(11px);
+    border-radius: 50%;
     position: absolute;
-    top: 11px;
+    top: 8px;
     left: 50%;
+    height: 18px;
+    width: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .nav-menu-button.active & {
+      outline: 2px solid white;
+    }
   }
 
   &__icon-text {
     display: block;
-    text-transform: uppercase;
-    font-size: 8px;
-    color: $grey;
-    line-height: 1;
-    font-family: "Roboto", sans-serif;
-
-    @media (min-width: 375px) {
-      font-size: 9px;
-    }
+    font-size: px-to-rem(11px);
+    line-height: normal;
   }
 }
 

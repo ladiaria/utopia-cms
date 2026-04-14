@@ -1,4 +1,5 @@
 @import "../variables";
+@import "../cardv4.scss";
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 .visually-hidden {
@@ -12,22 +13,6 @@
   white-space: nowrap;
   border: 0;
 }
-
-// ─── Variables ────────────────────────────────────────────────────────────────
-$col-gap: 48px;
-$col-width: 284px; // (1280 - 48 * 3) / 4
-$sidebar-width: 284px;
-$breakpoint-mobile: 767px;
-
-$gap-2: 8px;
-$gap-3: 12px;
-$gap-4: 16px;
-$gap-6: 24px;
-$-gap-6: -24px;
-$gap-8: 32px;
-
-$color-divider: #ababab;
-$border-divider: 0.5px solid $color-divider;
 
 p,
 h1,
@@ -305,90 +290,12 @@ article a {
   }
 }
 
-// ─── Artículo genérico ────────────────────────────────────────────────────────
-.article {
-  display: flex;
-  flex-direction: column;
-  gap: $gap-3;
-  position: relative;
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    gap: $gap-3;
-  }
-
-  &__section-label {
-    text-transform: uppercase;
-    letter-spacing: 0.96px;
-    font-size: px-to-rem(12px);
-
-    &--pub {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-  }
-  &__title {
-    font-family: $serif;
-    font-weight: 400;
-    font-size: px-to-rem(18px);
-    line-height: px-to-rem(24.3px);
-  }
-  &__summary {
-    font-family: $serif;
-    font-size: px-to-rem(15px);
-    font-weight: 300;
-    line-height: 1.35em;
-  }
-
-  &__opinion-type {
-    font-family: $sans;
-    font-weight: 400;
-    font-size: px-to-rem(14px);
-    line-height: 1em;
-  }
-  &__footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: $gap-3;
-    margin-top: auto;
-  }
-
-  &__byline {
-    font-family: $sans;
-    font-size: px-to-rem(14px);
-  }
-
-  &__bookmark {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: #81898b;
-    margin-left: auto;
-  }
-
-  &__image {
-    width: 100%;
-    aspect-ratio: 3 / 2;
-    object-fit: cover;
-    height: auto;
-  }
-}
-
 // ─── Sección Suplemento ───────────────────────────────────────────────────────
 .suplemento-section {
   display: flex;
   flex-direction: column;
   padding-block: $gap-8;
-  border-top: 2px solid;
-  border-bottom: 2px solid;
+  border-top: 2px solid #000;
 
   &__header {
     display: flex;
@@ -418,6 +325,11 @@ article a {
     > .suplemento-section__header {
       grid-column: 1;
       grid-row: 1;
+      a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
     }
 
     > .suplemento-section__featured-image {
@@ -513,7 +425,7 @@ article a {
 // ─── Sección Especial ─────────────────────────────────────────────────────────
 .especial-section {
   padding-block: $gap-8;
-  border-bottom: 2px solid;
+  border-top: 2px solid;
 
   // Texto izquierda + foto grande derecha
   &__featured {
@@ -562,27 +474,6 @@ article a {
     letter-spacing: 0.01em;
     color: #7b7b7b;
     margin: 0;
-  }
-}
-
-// ─── Publicidad ───────────────────────────────────────────────────────────────
-// TODO: revisar estos estilos cuando la publicidad se agregue a otras partes del sitio
-#header-pub {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  padding: 24px 0 32px;
-  border-top: 1px solid #000;
-  background-color: #fff;
-
-  .ld-caption {
-    color: #81898b;
-    text-align: center;
-    font-family: $sans;
-    font-size: px-to-rem(14px);
-    line-height: px-to-rem(16.52px);
-    letter-spacing: px-to-rem(0.14px);
   }
 }
 
@@ -666,6 +557,7 @@ article a {
   display: flex;
   flex-direction: column;
   padding-top: $gap-8;
+  border-top: 2px solid #000;
 }
 
 .home-blocks__row {
@@ -713,7 +605,7 @@ article a {
     flex-direction: column;
     gap: $gap-4;
 
-    .article:not(:first-child) .article__image {
+    .article:not(:first-child) .article__image-container {
       display: none;
     }
   }
@@ -725,8 +617,27 @@ article a {
   }
 }
 
+// ─── Cover ad ─────────────────────────────────────────────────────────────────
+#header-pub {
+  padding-inline: 0;
+  .ad_banner {
+    height: 244.33px;
+    margin: 0 auto;
+
+    img {
+      max-width: 100%;
+    }
+  }
+}
+
 // ─── Mobile (≤ 767px) ─────────────────────────────────────────────────────────
 @media (max-width: $breakpoint-mobile) {
+  #header-pub .ad_banner {
+    width: 300px;
+    height: 250px;
+    margin: 0 auto;
+  }
+
   .home {
     grid-template-columns: 1fr;
     column-gap: 0;
@@ -779,7 +690,7 @@ article a {
         border-bottom: none;
         padding-bottom: 0;
       }
-      article:not(:first-child) .article__image {
+      article:not(:first-child) .article__image-container {
         display: none;
       }
     }
@@ -792,10 +703,13 @@ article a {
 
     &--tarde {
       grid-template-columns: 1fr;
+      gap: 0;
 
       .main-section__featured {
         grid-column: 1;
         grid-row: auto;
+        border-top: $border-divider;
+        padding: 16px 0 24px;
 
         .article__title {
           font-size: px-to-rem(18px);
@@ -810,6 +724,8 @@ article a {
       .main-section__secondary-row {
         grid-column: 1;
         grid-row: auto;
+        border-top: $border-divider;
+        padding-block: 24px;
 
         article {
           border-bottom: $border-divider;
@@ -825,6 +741,7 @@ article a {
         grid-column: 1;
         grid-row: auto;
         grid-template-columns: 1fr;
+        padding-top: 24px;
       }
     }
   }
@@ -892,8 +809,8 @@ article a {
 
   .sidebar {
     gap: 24px;
-    border-bottom: 1px solid #000;
-    padding-bottom: 24px;
+    border-top: 2px solid #000;
+    padding-block: 24px;
 
     &__block {
       padding-top: 24px;
@@ -903,8 +820,7 @@ article a {
   .lo-ultimo-top {
     display: block;
     overflow: hidden;
-    border-bottom: $border-divider;
-    padding-bottom: $gap-4;
+    padding-bottom: 16px;
 
     .sidebar__block-title {
       display: none;
@@ -939,7 +855,8 @@ article a {
   }
 
   .home-blocks {
-    padding-top: 0;
+    border-top: 2px solid #000;
+    padding-block: 24px;
 
     &__row {
       grid-template-columns: 1fr;
@@ -971,7 +888,7 @@ article a {
         flex: 0 0 312px;
       }
 
-      .article:not(:first-child) .article__image {
+      .article:not(:first-child) .article__image-container {
         display: block;
       }
 

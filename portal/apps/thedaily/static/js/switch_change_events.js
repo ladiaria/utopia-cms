@@ -64,8 +64,8 @@ function switch_change_events(switches, push_notifications_keys_set, callbackFun
       const slider = switchElement.querySelector(".slider");
       const newsletterUrl = input.getAttribute('data-url');
       slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
-      offLabel.style.display = input.checked ? "none" : "inline-block";
-      onLabel.style.display = input.checked ? "inline-block" : "none";
+      if (offLabel) offLabel.style.display = input.checked ? "none" : "inline-block";
+      if (onLabel) onLabel.style.display = input.checked ? "inline-block" : "none";
       if (input.id == "allow_notification") {
         if (push_notifications_keys_set) {
           handlePushNotificationSwitchChange(switchElement, input.id);
