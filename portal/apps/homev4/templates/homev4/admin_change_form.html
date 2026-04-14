@@ -15,7 +15,7 @@
     <div id="homev4-editor">
 
         <div class="editor-actions">
-            <button type="button" id="btn-save" class="button">Guardar Layout</button>
+            <button type="button" id="btn-save" class="button"{% if not request.user.is_superuser %} style="display:none"{% endif %}>Guardar Layout</button>
             <a href="{{ preview_url }}" target="_blank" class="button btn-preview">
                 Vista previa ↗
             </a>
@@ -53,6 +53,11 @@
                         {% endif %}
                         <span class="block-hint">Arrastrá para reordenar los artículos</span>
                     </div>
+                    {% if editor_data.principal_is_fallback %}
+                    <div class="fallback-notice" id="principal-fallback-notice">
+                        ⚠ Mostrando artículos de la edición actual. Seleccioná artículos para fijar el bloque.
+                    </div>
+                    {% endif %}
                     <div class="articles-sortable" id="principal-articles">
                         {% for article in editor_data.principal_articles %}
                         <div class="article-row" draggable="true" data-article-id="{{ article.id }}">

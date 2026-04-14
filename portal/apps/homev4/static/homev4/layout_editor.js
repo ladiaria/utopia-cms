@@ -153,6 +153,15 @@ document.addEventListener("DOMContentLoaded", function () {
         makeSortable(container, ".newsletter-row[data-newsletter-ref]");
     });
 
+    // ── Fallback notice for PRINCIPAL block ───────────────────────────────────
+    function updatePrincipalFallbackNotice() {
+        var notice = document.getElementById("principal-fallback-notice");
+        if (!notice) return;
+        var container = document.getElementById("principal-articles");
+        var hasArticles = container && container.querySelectorAll(".article-row[data-article-id]").length > 0;
+        notice.style.display = hasArticles ? "none" : "";
+    }
+
     // ── Article remove buttons (for picker-enabled components) ────────────────
     function initRemoveButton(btn, row) {
         btn.addEventListener("click", function (e) {
@@ -164,6 +173,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
             row.remove();
             renumberArticles();
+            updatePrincipalFallbackNotice();
         });
     }
 
@@ -329,6 +339,7 @@ document.addEventListener("DOMContentLoaded", function () {
         initItemDrag(row, container, itemSelector);
 
         renumberArticles();
+        if (container.id === "principal-articles") updatePrincipalFallbackNotice();
         log("picker", "added article", { id: article.id, headline: article.headline });
     }
 
