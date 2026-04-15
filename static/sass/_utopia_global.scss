@@ -7,10 +7,6 @@ button {
   background-color: transparent;
   padding: 0;
   border: none;
-
-  &:focus {
-    background-color: transparent;
-  }
 }
 
 .btn {
@@ -1210,33 +1206,6 @@ select.browser-default {
       background: $primary-color;
       border-color: $primary-color;
       text-decoration: none;
-      box-shadow: rgba(0, 0, 0, 0.29) 0 4px 6px;
-    }
-  }
-}
-
-/* fix for forms */
-.form-group {
-  .btn {
-    color: $off-black !important;
-    box-shadow: rgba(0, 0, 0, 0.29) 0 4px 12px;
-
-    &:hover {
-      text-decoration: none;
-      background-color: $primary-color !important;
-      border-color: $primary-color;
-      box-shadow: rgba(0, 0, 0, 0.29) 0 4px 6px;
-    }
-  }
-  .btn-dark {
-    color: #fff !important;
-    box-shadow: none;
-    background-color: $off-black;
-    border-color: $off-black;
-
-    &:hover {
-      background-color: $off-black !important;
-      border-color: $off-black;
       box-shadow: rgba(0, 0, 0, 0.29) 0 4px 6px;
     }
   }
