@@ -1,41 +1,46 @@
 {% extends base_template %}
-{% load core_tags crispy_forms_tags %}
+{% load static core_tags crispy_forms_tags %}
 
 {% block page_title %}{% title_joinparts 'Ingreso de usuarios' %}{% endblock %}
+
+{% block materialize_forms_css %}{% endblock %}
+
+{% block css %}
+  <link href="{% static 'sass/authorization_pages.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
 
 {% block body_class %}login no-footer{% endblock %}
 
 {% block content %}
   <main class="ld-content">
-    <div class="row">
-      <div class="col s12 m8 offset-m2">
-        <h1 class="ld-title-huge align-center u-mb-60">Ingresá</h1>
+    <h1 class="ld-title-huge align-center">Ingresá</h1>
 
-        <div class="google-auth align-center u-mb-60">
-          <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}" class="ld-btn-google">Ingresá con Google</a>
-        </div>
-
-        <div class="align-center ld-text-secondary">O ingresá con tu email</div>
-
-        <form class="row" method="post" action="{% url 'account-login' %}?next={{ next }}">
-          {% crispy login_form %}
-          <div class="col s12 align-right">
-            <a href="{% url 'account-password_reset' %}" class="underlined">¿Olvidaste tu contraseña?</a>
-          </div>
-          <div class="row">
-            <div class="col align-center s12">
-              <button class="form-submit-login submit ut-btn ut-btn-light ut-btn-l" type="submit">Ingresar</button>
-            </div>
-          </div>
-        </form>
-      </div>
+    <div class="google-auth">
+      <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}" class="ld-btn-google">
+        <img src="{% static "img/icon-google.svg" %}" alt="Logo Google">
+        <span>Ingresá con Google</span>
+      </a>
     </div>
+
+    <p class="align-center">O ingresá con tu email</p>
+
+    <form class="row" method="post" action="{% url 'account-login' %}?next={{ next }}">
+      {% crispy login_form %}
+      <div class="forgot-password">
+        <a href="{% url 'account-password_reset' %}" class="underlined">¿Olvidaste tu contraseña?</a>
+      </div>
+      <div class="">
+        <button class="form-submit-login submit btn btn__dark" type="submit">Ingresar</button>
+      </div>
+    </form>
   </main>
 {% endblock %}
 
 {% block footer_block %}
   {% include 'footer_simple.html' %}
 {% endblock footer_block %}
+
+{% block materialize_scripts %}{% endblock %}
 
 {% block javascript %}
   <script type="text/javascript">

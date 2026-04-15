@@ -54,7 +54,12 @@ header {
 
 .header-container {
   @include utopia-container;
-  padding: 16px 20px 32px;
+  padding: 16px 20px 16px;
+
+  header.category-pub-header &,
+  header.home-header & {
+    padding: 16px 20px 32px;
+  }
 
   header.sticky &,
   body.section-detail,
@@ -175,6 +180,7 @@ header {
   }
 
   @media #{$medium-and-down} {
+    align-items: center;
     body.main-menu-open & {
       grid-template-columns: 1fr auto 1fr;
     }
@@ -220,6 +226,9 @@ header {
       display: none;
     }
     .upper-right-content {
+      a:not(.search-btn) {
+        display: none;
+      }
       header.category-pub-header & {
         display: none;
       }

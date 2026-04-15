@@ -16,6 +16,7 @@ See also [`REDESIGNV4.md`](REDESIGNV4.md) for deploy-time steps related to the v
 - [ ] Remove cover.html system (see `utopia_cms_ladiaria/docs/redesignv4.md`)
 - [ ] Evaluate and remove `render_collectionrow` from `category/detail.html`
 - [ ] Audit and replace/remove all uses of the `footer-section` class
+- [ ] Remove Materialize CSS grid (`row` / `col s12`) from subscribe and login templates
 
 ---
 
@@ -104,4 +105,16 @@ determinar para cada uno si se elimina o se reemplaza por el equivalente del nue
 
 ```bash
 grep -r "footer-section" --include="*.html" .
+```
+
+---
+
+## 10. Remove Materialize CSS grid from subscribe and login templates
+
+Los templates de suscripción y login usan el sistema de grilla de Materialize (`row` / `col s12`).
+Estos wrappers ya no aportan nada en el rediseño y añaden capas innecesarias de HTML.
+Eliminarlos de todos los templates afectados y ajustar el SCSS correspondiente.
+
+```bash
+grep -r "col s12\|class=\"row\"" --include="*.html" portal/apps/thedaily/templates/
 ```

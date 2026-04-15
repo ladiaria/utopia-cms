@@ -1,0 +1,42 @@
+@import "variables";
+
+body {
+  background-color: #f1f4f5;
+}
+
+p {
+  margin: 0;
+}
+
+.ld-content {
+  max-width: px-to-rem(368px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+
+  .google-auth {
+    padding-bottom: 32px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid $color-divider;
+  }
+
+  .forgot-password {
+    padding-top: 8px;
+    text-align: right;
+  }
+  .submit {
+    margin: 0 auto;
+    text-align: center;
+    padding-top: 32px;
+  }
+}
+
+@media #{$medium-and-down} {
+  .ld-content {
+    padding-top: 16px;
+    .google-auth {
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+    }
+  }
+}
