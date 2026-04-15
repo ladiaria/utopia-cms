@@ -376,7 +376,7 @@ class SignupForm(BaseUserForm):
                 + (
                     'next_page',
                     HTML('<div class="align-center">'),
-                    Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
+                    Submit('save', self.initial.get("save", "Crear cuenta"), css_class='btn btn__dark'),
                     HTML('</div>'),
                 )
             )
@@ -447,7 +447,7 @@ class SignupCaptchaForm(SignupForm):
                 'captcha',
                 'next_page',
                 HTML('<div class="align-center">'),
-                Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l'),
+                Submit('save', 'Crear cuenta', css_class='btn btn__dark'),
                 HTML('</div>'),
             )
         )

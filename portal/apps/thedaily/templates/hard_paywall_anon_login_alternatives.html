@@ -4,7 +4,8 @@
   <div class="google-auth align-center">
     <a href="{% url 'social:begin' 'google-oauth2' %}?next={% block hp_anon_social_next %}{{ article.get_absolute_url }}{% endblock %}"
        class="ld-btn-google">
-      ingresar con google
+      <img src="{% static "img/icon-google.svg" %}" alt="Logo Google">
+      <span>ingresar con google</span>
     </a>
   </div>
   {% block hp_anon_after_content %}
