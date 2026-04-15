@@ -353,10 +353,27 @@
   font-style: oblique;
   font-display: swap;
 }
+
 @font-face {
   font-family: "Review Condensed";
   src: url("/static/fonts/ReviewCondensed/ReviewCondensed-Bold.otf") format("opentype");
   font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Review Condensed";
+  src: url("/static/fonts/ReviewCondensed/ReviewCondensed-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Review Condensed";
+  src: url("/static/fonts/ReviewCondensed/ReviewCondensed-Regular.otf") format("opentype");
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }

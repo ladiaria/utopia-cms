@@ -29,7 +29,6 @@ button {
 }
 
 .ld-heading {
-  font-family: "Roboto", sans-serif;
   margin: 10px 0 35px 0;
   font-size: 50px;
   color: #262626;
@@ -37,7 +36,6 @@ button {
 }
 
 .ld-subheading {
-  font-family: "Roboto", sans-serif;
   font-size: 25px;
   margin: 0 0 25px;
   color: #262626;
@@ -45,7 +43,6 @@ button {
 }
 
 .ld-subheading-light {
-  font-family: "Roboto", sans-serif;
   font-size: 24px;
   margin: 0 0 24px;
   color: #262626;
@@ -53,7 +50,6 @@ button {
 }
 
 .ld-body {
-  font-family: "Roboto", sans-serif;
   font-size: 18px;
   color: #262626;
   margin: 0 0 18px;
@@ -84,7 +80,6 @@ a.ld-text-secondary,
 }
 
 .ld-title-big {
-  font-family: "Roboto", sans-serif;
   font-size: 38px;
   font-weight: 500;
   margin: 0 0 25px 0;
@@ -92,7 +87,7 @@ a.ld-text-secondary,
 }
 
 .ld-title {
-  font-family: "Roboto", sans-serif;
+  font-family: $sans-title;
   font-size: 32px;
   font-weight: bold;
   margin: 0 0 35px 0;
@@ -105,8 +100,6 @@ a.ld-text-secondary,
 }
 
 .ld-title-second {
-  font-family: "Roboto", sans-serif;
-  color: $off-black;
   font-size: 22px;
   font-weight: bold;
   margin: 0 0 10px;
@@ -1277,7 +1270,7 @@ blockquote.tiktok-embed {
   text-align: center;
   padding: 20px 0;
   border-bottom: 1px solid #a4a4a4;
-  font-family: "Roboto", sans-serif;
+  font-family: $sans;
 
   .main-title {
     display: block;
