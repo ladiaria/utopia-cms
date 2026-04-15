@@ -115,11 +115,11 @@ body.hard-paywall {
         p.create-account-desc {
           color: #000;
           text-align: center;
-          font-family: "Roboto", sans-serif;
+          font-family: $sans;
           padding: 4px 18px 8px;
         }
         p {
-          font-family: "Roboto", sans-serif;
+          font-family: $sans;
         }
         .create-account-chevron-down-icon {
           margin-bottom: 8px;
@@ -213,7 +213,7 @@ body.hard-paywall {
           h2.sign-in-title,
           h2.sign-up-title {
             font-size: px-to-rem(24px);
-            font-family: "Roboto", sans-serif;
+            font-family: $sans;
             margin: 0;
             padding-bottom: 12px;
             padding-top: 16px;

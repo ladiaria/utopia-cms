@@ -86,7 +86,7 @@
     margin-top: 24px;
 
     > label {
-      font-family: "Roboto", sans-serif;
+      font-family: $sans;
       display: flex;
       gap: 4px;
       align-items: center;
@@ -112,7 +112,7 @@
     }
     p {
       margin: 0 0 10px;
-      font-family: "Roboto", sans-serif;
+      font-family: $sans;
       color: $off-black;
     }
   }

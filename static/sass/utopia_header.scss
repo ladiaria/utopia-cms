@@ -1263,7 +1263,7 @@ body {
   &__title {
     margin: 0 0 15px 0;
     font-size: 14px;
-    font-family: "Roboto", sans-serif;
+    font-family: $sans;
     font-weight: bold;
     color: $off-black;
 
@@ -1456,7 +1456,7 @@ body.frontpage #main-header.nav-down #nav-principal span.nav-menu__pill {
   z-index: 1;
 
   &__title {
-    font-family: "Roboto", sans-serif;
+    font-family: $sans;
     font-size: 50px;
     margin-bottom: 12px;
     margin-top: 0;
@@ -1479,7 +1479,7 @@ main > header {
   background-color: $primary-color;
 
   h1 {
-    font-family: "Roboto", sans-serif;
+    font-family: $sans;
     font-size: 50px;
     margin-bottom: 0;
     margin-top: 5vh;
