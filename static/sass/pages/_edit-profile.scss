@@ -242,8 +242,8 @@ body.ld-profile-edit {
 
 .edit_profile_card {
   background-color: white;
-  border: 1px solid $grey-1;
-  border-radius: 12px;
+  border: 1px solid #e3e8ea;
+  border-radius: 5px;
   padding: 15px;
   margin: 25px 0;
   max-width: 570px;
@@ -418,7 +418,7 @@ body.ld-profile-edit {
   }
 
   &__inner-section {
-    background-color: #f6f5f5;
+    background-color: #f1f4f5;
     border: 1px solid $grey-1;
     border-radius: 6px;
     padding: 16px;
@@ -462,7 +462,7 @@ body.ld-profile-edit {
 
       .title {
         font-weight: 700;
-        font-size: 1.2rem;
+        font-size: px-to-rem(20px);
         margin: 0;
         display: flex;
         flex-wrap: wrap;
@@ -512,7 +512,7 @@ body.ld-profile-edit {
           display: block;
           text-transform: uppercase;
           font-size: 0.9rem;
-          background-color: #e8e6e6;
+          background-color: #e3e8ea;
           width: 100%;
           border-radius: 4px;
           padding: 6px 8px;
