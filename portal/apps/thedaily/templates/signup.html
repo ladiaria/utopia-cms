@@ -11,6 +11,11 @@
 
 {% block materialize_forms_css %}{% endblock %}
 
+{% block css %}
+  {{ block.super }}
+  <link href="{% static 'sass/subscription.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
 {% block extra_css %}
   <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
 {% endblock %}

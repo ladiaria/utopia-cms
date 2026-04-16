@@ -17,6 +17,7 @@ See also [`REDESIGNV4.md`](REDESIGNV4.md) for deploy-time steps related to the v
 - [ ] Evaluate and remove `render_collectionrow` from `category/detail.html`
 - [ ] Audit and replace/remove all uses of the `footer-section` class
 - [ ] Remove Materialize CSS grid (`row` / `col s12`) from subscribe and login templates
+- [ ] Remove all Materialize CSS dependencies from the project
 
 ---
 
@@ -117,4 +118,25 @@ Eliminarlos de todos los templates afectados y ajustar el SCSS correspondiente.
 
 ```bash
 grep -r "col s12\|class=\"row\"" --include="*.html" portal/apps/thedaily/templates/
+```
+
+---
+
+## 11. Remove all Materialize CSS dependencies from the project
+
+Materialize CSS fue el framework de estilos original del proyecto. El rediseño v4 reemplaza su
+sistema de grilla, componentes y utilitarios por CSS propio. Una vez que el rediseño esté completo,
+se deben eliminar todas las dependencias de Materialize:
+
+- Remover las importaciones de Materialize en los archivos SCSS (`@import "utopia_materialize/..."`)
+- Eliminar los bloques `{% block materialize_forms_css %}` y `{% block materialize_scripts %}` de
+  los templates base y sus overrides
+- Remover la app `crispy_forms_materialize` y su template pack de `INSTALLED_APPS` y settings
+- Eliminar los archivos SCSS de `static/sass/utopia_materialize/`
+- Auditar y reemplazar clases de Materialize residuales en templates (`.waves-effect`, `.z-depth-*`,
+  `.input-field`, `.validate`, etc.)
+
+```bash
+grep -r "materialize\|utopia_materialize\|waves-effect\|z-depth\|input-field" \
+  --include="*.html" --include="*.scss" --include="*.py" .
 ```

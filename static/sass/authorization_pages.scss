@@ -4,12 +4,16 @@ body {
   background-color: #f1f4f5;
 }
 
+main#main-content {
+  flex: 1;
+}
+
 p {
   margin: 0;
 }
 
 .ld-content {
-  max-width: px-to-rem(368px);
+  max-width: px-to-rem(390px);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -28,6 +32,47 @@ p {
     margin: 0 auto;
     text-align: center;
     padding-top: 32px;
+  }
+
+  /* Forgot password page */
+  .forgot-password & {
+    .ld-title-huge {
+      padding-bottom: 24px;
+    }
+    > p {
+      padding-bottom: 64px;
+    }
+    #reset_password #div_id_username_or_email {
+      padding-bottom: 64px;
+    }
+    @media #{$medium-and-down} {
+      .ld-title-huge {
+        padding-bottom: 16px;
+      }
+      > p {
+        padding-bottom: 48px;
+      }
+      #reset_password #div_id_username_or_email {
+        padding-bottom: 48px;
+      }
+    }
+  }
+
+  /* Logged out page */
+  .logged-out & {
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    @media #{$medium-and-down} {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      > div {
+        width: max-content;
+      }
+    }
   }
 }
 
