@@ -66,8 +66,11 @@
         {% endcomment %}
         {% block payment_header %}
           {% if not user.is_authenticated and not 'password' in login_form.fields and not signup_form %}
+            <h1 class="payment-container__title">
+              Registrate para acceder a {{ signupwall_max_credits }} artículos gratis
+            </h1>
             <p class="create-account-desc">
-              Registrate para acceder a {{ signupwall_max_credits }} artículos gratis por mes y recibir nuestras newsletters
+              Con tu cuenta gratuita accedés a {{ signupwall_max_credits }} artículos gratis por mes y recibís nuestras newsletters
             </p>
           {% endif %}
         {% endblock %}
@@ -133,13 +136,13 @@
             {% if user.is_authenticated %}
               <form id="hardpw-subscribe" method="post" class="form-{{ planslug }}">
                 {% crispy subscriber_form %}
+                {% if subscription_form %}
+                  {% crispy subscription_form %}{{ subscription_form.media }}
+                {% endif %}
+              </form>
             {% else %}
               {% include 'hard_paywall_anon_forms.html' %}
             {% endif %}
-            {% if subscription_form %}
-              {% crispy subscription_form %}{{ subscription_form.media }}
-            {% endif %}
-            </form>{# tag opened in the if or else(included file) in this div #}
           </div>
           {# Alternativas de login (ej: Google, redes) — solo anónimos en paso de email #}
           {% if not user.is_authenticated and 'password' not in login_form.fields %}

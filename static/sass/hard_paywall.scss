@@ -74,6 +74,7 @@ body.hard-paywall {
           font-family: $serif;
           font-size: px-to-rem(20px);
           font-weight: 450;
+          padding: 0 32px;
         }
 
         &__author {
@@ -100,7 +101,7 @@ body.hard-paywall {
     }
     .payment-column {
       width: 100%;
-      max-width: 360px;
+      max-width: px-to-rem(378px);
 
       @media #{$medium-and-down} {
         margin: 0 auto;
@@ -122,7 +123,7 @@ body.hard-paywall {
           color: #000;
           text-align: center;
           font-family: $sans;
-          padding: 4px 18px 8px;
+          padding-bottom: 48px;
         }
         p {
           font-family: $sans;
@@ -150,10 +151,6 @@ body.hard-paywall {
             padding-bottom: 24px;
           }
           .sign-in-btn-container {
-            border-top: 1px solid #f3f3f3;
-            padding-top: 8px;
-            padding-bottom: 40px;
-
             @media #{$medium-and-down} {
               padding-bottom: 0;
             }
@@ -162,16 +159,21 @@ body.hard-paywall {
           .topspaced {
             margin-top: 25px;
           }
+        }
 
-          .alert-box {
-            background: none;
-            color: #b61616;
-            height: 50px;
-            font-size: 90%;
-            ul {
-              width: 100%;
-            }
-          }
+        p.alert-box {
+          background-color: #ea4444;
+          border: 1px solid #d50000;
+          border-radius: 5px;
+          padding: 16px;
+          color: #fff;
+          font-size: px-to-rem(16px);
+          margin: 16px 0 0;
+        }
+
+        form#hardpw-login:not(.password-login) {
+          border-bottom: 0.5px solid #ababab;
+          padding-bottom: 24px;
         }
 
         form#hardpw-signup {
@@ -196,16 +198,20 @@ body.hard-paywall {
       }
 
       .payment-container {
-        border: 1px solid #828282;
-        box-shadow: 0px 3.676px 14.703px 0px rgba(0, 0, 0, 0.1);
+        border: 0.5px solid #828282;
         position: relative;
-        border-radius: 8px;
+        border-radius: 5px;
         background-color: white;
-        padding-top: 24px;
         text-align: center;
 
         #box-tel-div {
           text-align: initial;
+        }
+
+        &__title {
+          font-family: $sans-title;
+          font-size: px-to-rem(24px);
+          padding-bottom: 16px;
         }
 
         &.anonymous {
@@ -218,15 +224,17 @@ body.hard-paywall {
           h2.sign-in-title,
           h2.sign-up-title {
             font-size: px-to-rem(24px);
-            font-family: $sans;
+            font-family: $sans-title;
             margin: 0;
-            padding-bottom: 12px;
-            padding-top: 16px;
           }
 
           .sign-up-title,
           .advice-text {
             margin-bottom: 16px;
+          }
+
+          .google-auth {
+            width: 100%;
           }
         }
 
