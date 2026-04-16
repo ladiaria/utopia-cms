@@ -6,14 +6,11 @@ body.hard-paywall {
   h1,
   p {
     line-height: normal;
-    font-family: AntennaCond, sans-serif;
+    font-family: $sans;
     margin: 0;
   }
 
   #main-header {
-    @media #{$medium-and-up} {
-      display: none;
-    }
     .subscription_black {
       display: flex;
       align-items: center;
@@ -56,39 +53,48 @@ body.hard-paywall {
 
       &__article-card {
         background-color: white;
-        border-radius: 24px;
-        padding: 32px;
+        border-radius: 5px;
         text-align: center;
         display: flex;
         flex-direction: column;
-        gap: 13px;
+        gap: 12px;
         border: 1px solid #e0e0e0;
 
         img {
-          border-radius: 8px;
+          border-radius: 6px 6px 0 0;
         }
 
         &__section {
+          padding-top: 12px;
           font-size: px-to-rem(14px);
           text-transform: uppercase;
         }
 
         &__title {
-          font-family: "Meta Serif", serif;
+          font-family: $serif;
           font-size: px-to-rem(20px);
-          font-weight: 500;
+          font-weight: 450;
         }
 
         &__author {
-          color: #a4a4a4;
           font-size: px-to-rem(14px);
         }
 
         &__ladiaria-logo {
-          border-top: 1px solid #e0e0e0;
+          position: relative;
           padding: 16px 0;
           display: flex;
           justify-content: center;
+          &::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            width: 329px;
+            height: 0.5px;
+            background-color: #ababab;
+          }
         }
       }
     }
@@ -175,15 +181,14 @@ body.hard-paywall {
 
       &__close-btn {
         position: absolute;
-        top: var(--container-padding-top);
         right: 44px;
-        border-radius: 18px;
-        background: rgba(141, 141, 141, 0.16);
+        border-radius: 5px;
+        background: #e3e8ea;
         display: inline-flex;
-        padding: 4px 16px;
+        padding: 10px 16px;
         justify-content: center;
         align-items: center;
-        gap: 5px;
+        gap: 10px;
 
         @media #{$medium-and-down} {
           display: none;
@@ -204,7 +209,7 @@ body.hard-paywall {
         }
 
         &.anonymous {
-          padding: 40px 0 0;
+          padding: 32px;
 
           @media #{$medium-and-down} {
             padding: 0;
