@@ -20,13 +20,6 @@
   {% block article_column %}
     {% if article %}
       <div class="article-container{% if not user.is_authenticated %} anonymous{% endif %}">
-        {% block article_card_header %}
-          {# Título "Suscribite para continuar leyendo" — solo para usuarios autenticados sin suscripción #}
-          {% if user.is_authenticated %}
-            <h1 class="article-container__title">Suscribite para continuar leyendo este artículo</h1>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="#000" stroke-linecap="round" d="m2 2.5 12 12m0-12-12 12"/></svg>
-          {% endif %}
-        {% endblock %}
         {# Preview del artículo: foto, sección, título y autor #}
         <div class="article-container__article-card">
           {% if article.photo_render_allowed %}
@@ -73,6 +66,12 @@
               Con tu cuenta gratuita accedés a {{ signupwall_max_credits }} artículos gratis por mes y recibís nuestras newsletters
             </p>
           {% endif %}
+          {% block article_card_header %}
+            {# Título "Suscribite para continuar leyendo" — solo para usuarios autenticados sin suscripción #}
+            {% if user.is_authenticated %}
+              <h1 class="payment-container__title">Suscribite por ${% subscriptionprice %} para continuar leyendo</h1>
+            {% endif %}
+          {% endblock %}
         {% endblock %}
 
         {% comment %}
@@ -130,6 +129,7 @@
         Autenticado: form de suscripción (subscriber_form).
         Anónimo: forms de login/registro en hard_paywall_anon_forms.html.
         Nota: el tag <form> se abre dentro del if/else y se cierra al final del div.
+        Este bloque (payment_content) es sobreescrito en la app utopia_cms_ladiaria.
         {% endcomment %}
         {% block payment_content %}
           <div class="payment-container__form-container">

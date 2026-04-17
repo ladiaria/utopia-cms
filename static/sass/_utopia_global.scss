@@ -1195,20 +1195,6 @@ select.browser-default {
   }
 }
 
-#subscribe {
-  .btn {
-    color: $off-black !important;
-    box-shadow: rgba(0, 0, 0, 0.29) 0 4px 12px;
-
-    &:hover {
-      background: $primary-color;
-      border-color: $primary-color;
-      text-decoration: none;
-      box-shadow: rgba(0, 0, 0, 0.29) 0 4px 6px;
-    }
-  }
-}
-
 #div_id_time {
   input[type="radio"] {
     position: relative;

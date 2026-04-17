@@ -23,7 +23,7 @@ body.hard-paywall {
     --container-padding-top: 44px;
     width: 100%;
     display: flex;
-    gap: 40px;
+    gap: 48px;
     justify-content: center;
     padding: var(--container-padding-top) 0;
     max-width: 900px;
@@ -203,6 +203,7 @@ body.hard-paywall {
         border-radius: 5px;
         background-color: white;
         text-align: center;
+        padding: 32px;
 
         #box-tel-div {
           text-align: initial;
@@ -215,8 +216,6 @@ body.hard-paywall {
         }
 
         &.anonymous {
-          padding: 32px;
-
           @media #{$medium-and-down} {
             padding: 0;
           }
@@ -313,18 +312,16 @@ body.hard-paywall {
         }
 
         &__full-price {
-          font-size: px-to-rem(20px);
-          padding-bottom: 10px;
+          padding-bottom: 4px;
         }
 
         &__cancel-advice {
-          color: #eb5757;
-          padding-bottom: 16px;
+          font-size: px-to-rem(12px);
+          color: #fa4f4f;
+          padding-bottom: 24px;
         }
 
         &__form-container {
-          padding: 16px;
-
           img {
             padding-bottom: 20px;
             max-height: 400px;
