@@ -592,8 +592,6 @@ article a {
 
     a {
       text-decoration: none;
-      color: inherit;
-      display: flex;
       display: flex;
       align-items: center;
       gap: $gap-2;
@@ -627,6 +625,9 @@ article a {
     img {
       max-width: 100%;
     }
+  }
+  @media #{$medium-and-down} {
+    padding-bottom: 0;
   }
 }
 
@@ -697,7 +698,7 @@ article a {
     &__secondary-row {
       padding-block: $gap-6;
       overflow: visible;
-      border-top: 1px solid $color-divider;
+      border-top: 0.5px solid $color-divider;
       border-bottom: 1px solid $color-divider;
     }
 
