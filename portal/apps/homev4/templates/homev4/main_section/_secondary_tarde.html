@@ -5,7 +5,7 @@
   {% for article in secondary %}
   <article class="article">
     {% if article.photo %}
-      <a href="{{ article.get_absolute_url }}">
+      <a href="{{ article.get_absolute_url }}" class="article__image-container">
         <img
           class="article__image"
           srcset="{{ article.photo.get_small_url }} 350w, {{ article.photo.get_700w_url }} 700w"

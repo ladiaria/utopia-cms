@@ -731,6 +731,9 @@ article a {
         article {
           border-bottom: $border-divider;
           padding-bottom: $gap-6;
+          .article__image-container {
+            display: none;
+          }
           &:last-child {
             border-bottom: none;
             padding-bottom: 0;
