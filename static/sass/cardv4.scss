@@ -30,7 +30,7 @@ article a {
 .article {
   display: flex;
   flex-direction: column;
-  gap: $gap-3;
+  gap: $gap-2;
   position: relative;
 
   &__body {
