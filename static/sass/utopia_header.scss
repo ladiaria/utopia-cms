@@ -1231,6 +1231,7 @@ body {
   transition: 300ms ease;
   z-index: 1000;
   overflow: auto;
+  scrollbar-width: none;
   font-size: 18px;
   font-weight: 400;
   width: 100%;
@@ -1247,6 +1248,10 @@ body {
   position: fixed;
   padding-bottom: 60px;
   padding-top: 80px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   &.active {
     transition: 300ms ease;
