@@ -510,7 +510,7 @@ def build_home_data(grid_data, publication=None, layout=None):
     result["suplemento_active"] = _block_active("suplemento", suplemento_data.get("active", True))
     if result["suplemento_active"]:
         try:
-            result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data)
+            result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data, exclude_ids=seen_ids)
         except Exception:
             result["suplemento_articles"] = []
         _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
@@ -682,12 +682,15 @@ def _fetch_source_articles(source_type, slug, limit, exclude_ids=None):
     return []
 
 
-def _fetch_suplemento_articles(suplemento_data):
+def _fetch_suplemento_articles(suplemento_data, exclude_ids=None):
     """Return SUPLEMENTO articles from saved article_ids.
     Article IDs are written daily by the resolve_daily_layouts Celery task.
+    When exclude_ids is provided, those article IDs are skipped (deduplication against Principal).
     """
     saved_ids = suplemento_data.get("article_ids", [])
     if saved_ids:
+        if exclude_ids:
+            saved_ids = [aid for aid in saved_ids if aid not in exclude_ids]
         by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
     return []
@@ -971,9 +974,10 @@ def active_layout(request, publication_slug=None):
     return response
 
 
-def _fetch_source_articles_post_5am(source_type, slug, limit):
+def _fetch_source_articles_post_5am(source_type, slug, limit, exclude_ids=None):
     """Like _fetch_source_articles but always uses today's content, ignoring PUBLISHING_TIME.
     Used by the Preview 5am editor to show what will be available after the gate opens.
+    When exclude_ids is provided, those article IDs are skipped (deduplication).
     """
     from core.models import Edition
     today = timezone.localdate()
@@ -982,10 +986,15 @@ def _fetch_source_articles_post_5am(source_type, slug, limit):
             publication = Publication.objects.get(slug=slug)
             edition = Edition.objects.filter(publication=publication, date_published=today).order_by("-date_published").first()
             if edition:
-                return list(edition.top_articles[:limit])
+                articles = list(edition.top_articles)
+                if exclude_ids:
+                    articles = [a for a in articles if a.id not in exclude_ids]
+                return articles[:limit]
         elif source_type == "category":
             category = Category.objects.get(slug=slug)
             qs = category.home.articles_ordered().filter(date_published__date=today)
+            if exclude_ids:
+                qs = qs.exclude(id__in=exclude_ids)
             return list(qs[:limit])
     except Exception as e:
         logger.warning("_fetch_source_articles_post_5am(%s, %s): %s", source_type, slug, e)
@@ -1010,7 +1019,8 @@ def _resolve_today_grid_data(publication):
     grid["principal"] = principal_block
 
     source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(today.weekday())
-    suplemento_ids = [a.id for a in _fetch_source_articles_post_5am(source[0], source[1], limit=7)] if source else []
+    seen_ids = set(principal_ids)
+    suplemento_ids = [a.id for a in _fetch_source_articles_post_5am(source[0], source[1], limit=7, exclude_ids=seen_ids)] if source else []
     suplemento_block = dict(grid.get("suplemento") or {})
     suplemento_block["article_ids"] = suplemento_ids
     grid["suplemento"] = suplemento_block
@@ -1051,8 +1061,9 @@ def build_editor_data(grid_data, publication=None):
     else:
         result["principal_articles"] = db_articles
 
+    seen_ids = {a.id for a in result["principal_articles"]}
     try:
-        result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data)
+        result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data, exclude_ids=seen_ids)
     except Exception:
         result["suplemento_articles"] = []
 
