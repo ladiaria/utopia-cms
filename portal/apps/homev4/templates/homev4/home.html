@@ -255,7 +255,7 @@
   {{ block.super }}
 
   {% if not tarde_mode and home_data.principal_articles|length >= 10 or home_data.suplemento_active and home_data.suplemento_articles|length >= 7 %}
-    <script src="{% static 'js/homev4/article-slider.js' %}?v=1.1"></script>
+    <script src="{% static 'js/homev4/article-slider.js' %}?v=1.2"></script>
   {% endif %}
 
   {% if allow_ads and not is_subscriber %}

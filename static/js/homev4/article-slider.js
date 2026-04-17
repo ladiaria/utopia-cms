@@ -96,6 +96,15 @@
       active = true;
       setWidths();
       goToPage(0, false);
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(setHeight);
+      }
+      articles.forEach(function (article) {
+        Array.prototype.forEach.call(article.querySelectorAll('img'), function (img) {
+          if (!img.complete) img.addEventListener('load', setHeight);
+        });
+      });
     }
 
     function destroy() {
