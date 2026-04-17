@@ -75,7 +75,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["save_grid_url"] = f"/homev4/save/{obj.pk}/"
             extra_context["reset_grid_url"] = f"/homev4/reset/{obj.pk}/"
             extra_context["sync_sections_url"] = f"/homev4/sync/{obj.pk}/"
-            extra_context["preview_url"] = f"/homev4/preview/{obj.pk}/"
+            extra_context["preview_session_url"] = "/homev4/save-preview-session/"
             extra_context["grid_data_pretty"] = json.dumps(obj.grid_data, indent=2, ensure_ascii=False)
             extra_context["blocks_config"] = LAYOUT_BLOCKS_CONFIG
             extra_context["article_search_url"] = f"/homev4/article-search/?layout_id={obj.pk}"

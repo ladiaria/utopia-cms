@@ -508,6 +508,14 @@ class ArticleAdminModelForm(ModelForm):
         self.fields['date_published'].required = False
         self.fields['date_published'].label = ""
 
+    def clean_headline(self):
+        headline = self.cleaned_data.get('headline', '')
+        if len(headline) > 130:
+            raise ValidationError(
+                f'El título no puede tener más de 130 caracteres (tiene {len(headline)}).'
+            )
+        return headline
+
     def clean_tags(self):
         """
         This is a hack to bypass the bug that: 1 tag with spaces is considered as many tags by the lib.
