@@ -4,6 +4,7 @@
 {% block page_title %}{% title_joinparts joinparts_first|default:'Muro de pago' %}{% endblock %}
 
 {% block css %}
+  {{ block.super }}
   <link href="{% static 'sass/hard_paywall.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
@@ -84,12 +85,6 @@
               <div class="payment-container__chip-subscription">
                 <p>{{ default_subscription_type }}</p>
               </div>
-              <div class="payment-container__mobile-header">
-                <p>{% if article %}Suscribite para continuar leyendo este artículo{% else %}{{ default_subscription_type }}{% endif %}</p>
-                <a class="payment-container__close-btn" href="{{ SITE_URL }}" aria-label="Volver al inicio">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="#959595" d="M13.46 12 19 17.54V19h-1.46L12 13.46 6.46 19H5v-1.46L10.54 12 5 6.46V5h1.46L12 10.54 17.54 5H19v1.46z"/></svg>
-                </a>
-              </div>
             {% endif %}
           {% endblock %}
           {% block product_price %}
@@ -114,12 +109,6 @@
             <p class="advice-text">{{ signupwall_max_credits }} artículos gratuitos por mes y recibís gratis nuestras newsletters</p>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="#a4a4a4" d="M7.41 8.58 12 13.17l4.59-4.59L18 10l-6 6-6-6z"/></svg>
           {% else %}
-            <div class="payment-container__mobile-header">
-              <p>Creá tu cuenta o ingresá</p>
-              <a class="payment-container__close-btn" href="{{ SITE_URL }}" aria-label="Volver al inicio">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="#959595" d="M13.46 12 19 17.54V19h-1.46L12 13.46 6.46 19H5v-1.46L10.54 12 5 6.46V5h1.46L12 10.54 17.54 5H19v1.46z"/></svg>
-              </a>
-            </div>
             <p>Ingresá tu email</p>
           {% endif %}
         {% endif %}

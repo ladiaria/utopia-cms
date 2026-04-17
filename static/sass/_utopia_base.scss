@@ -1,10 +1,19 @@
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
 /* Base styles */
 html {
+  box-sizing: border-box;
   font-size: 100%;
   line-height: 1.4;
   height: 100%;
   scroll-behavior: smooth;
   scroll-padding-top: 80px;
+  font-family: $sans;
+  color: $off-black;
 
   @media all and (min-width: 400px) {
     font-size: 100%;
@@ -84,12 +93,6 @@ h5 {
   }
 }
 
-html {
-  font-family: $sans;
-  color: $off-black;
-  height: 100%;
-}
-
 h1,
 h2,
 h3,
@@ -100,15 +103,32 @@ h5 {
 
 a {
   color: $link-color;
+  text-decoration: none;
 
   &:hover {
     color: $link-color-hover;
+    svg [fill]:not([fill="none"]) {
+      fill: $link-color-hover;
+    }
+    svg [stroke]:not([stroke="none"]) {
+      stroke: $link-color-hover;
+    }
   }
 }
-
+button,
+input[type="button"],
+input[type="reset"],
+input[type="submit"] {
+  cursor: pointer;
+}
 ul {
   margin: 0;
   padding: 0;
+  padding-left: 0;
+  list-style-type: none;
+  li {
+    list-style-type: none;
+  }
 }
 
 strong {
@@ -452,22 +472,6 @@ fieldset {
     display: block;
     position: relative;
     top: 5px;
-  }
-}
-
-#terms-conditions-modal {
-  max-width: 90%;
-  width: 600px;
-
-  .content {
-    padding: 20px;
-  }
-  h1 {
-    font-size: px-to-rem(26px);
-
-    @media #{$medium-and-down} {
-      font-size: px-to-rem(22px);
-    }
   }
 }
 

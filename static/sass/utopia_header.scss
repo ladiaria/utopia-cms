@@ -19,7 +19,6 @@ body:has(header.category-pub-header) {
 
 header {
   display: flex;
-  font-family: "Dialect Gothic A";
   background-color: white;
   border-bottom: 0.5px solid #ababab;
   display: flex;
@@ -326,7 +325,6 @@ header {
 
     i {
       height: $navbar-height-mobile;
-      line-height: $navbar-line-height-mobile;
     }
   }
 
@@ -407,7 +405,7 @@ header {
         transition: color 0.3s;
       }
       &.active i {
-        color: $navbar-font-color;
+        color: white;
       }
     }
   }
@@ -1536,13 +1534,6 @@ body.interior {
       width: 90%;
       max-width: 1170px;
     }
-  }
-}
-
-#header-pub {
-  > .container {
-    max-width: 1170px;
-    width: 90%;
   }
 }
 

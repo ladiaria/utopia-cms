@@ -216,10 +216,6 @@ body.hard-paywall {
         }
 
         &.anonymous {
-          @media #{$medium-and-down} {
-            padding: 0;
-          }
-
           h2.sign-in-title,
           h2.sign-up-title {
             font-size: px-to-rem(24px);
@@ -235,10 +231,6 @@ body.hard-paywall {
           .google-auth {
             width: 100%;
           }
-        }
-
-        @media #{$medium-and-down} {
-          padding-top: 0;
         }
 
         &__chip-subscription {
