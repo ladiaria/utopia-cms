@@ -15,9 +15,9 @@
         </a>
         {% else %}
         <button type="button" id="btn-save" class="button"{% if not request.user.is_superuser %} style="display:none"{% endif %}>Guardar Layout</button>
-        <a href="{{ preview_url }}" target="_blank" class="button btn-preview">
+        <button type="button" class="button btn-preview">
             Vista previa ↗
-        </a>
+        </button>
         <a href="{{ sync_sections_url }}"
            class="button btn-sync"
            title="Recarga todo desde la DB (se pierde el orden manual guardado)"
@@ -293,7 +293,7 @@
 <script>
 window.HOMEV4_DATA = {
     saveUrl: "{{ save_grid_url }}",
-    {% if not is_preview_5am %}previewUrl: "{{ preview_url }}",{% endif %}
+    {% if not is_preview_5am %}previewSessionUrl: "{{ preview_session_url }}",{% endif %}
     csrfToken: "{{ csrf_token }}",
     articleSearchUrl: "{{ article_search_url }}",
     newsletterSearchUrl: "{{ newsletter_search_url }}",
