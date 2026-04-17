@@ -191,12 +191,14 @@
   <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
   <aside class="home__sidebar sidebar">
     {% for comp in home_data.componentes %}
-      {% if tarde_mode and comp.key == "lo_ultimo" %}
-        <div class="lo-ultimo-sidebar">
+      {% if comp.no_articles or comp.newsletters or comp.articles %}
+        {% if tarde_mode and comp.key == "lo_ultimo" %}
+          <div class="lo-ultimo-sidebar">
+            {% include comp.sidebar_component_template %}
+          </div>
+        {% else %}
           {% include comp.sidebar_component_template %}
-        </div>
-      {% else %}
-        {% include comp.sidebar_component_template %}
+        {% endif %}
       {% endif %}
     {% endfor %}
   </aside>
