@@ -53,6 +53,7 @@ class HomeLayout(models.Model):
         on_delete=models.SET_NULL, related_name="homev4_overrides",
     )
     grid_data = models.JSONField("datos del layout", default=list, blank=True, help_text="Layout serializado de GridStack")
+    pending_grid_data = models.JSONField("layout pendiente 5am", null=True, blank=True, default=None, help_text="Staging area escrito por el editor Preview 5am. La tarea programada lo mueve a grid_data a las 5am.")
     created = models.DateTimeField("creado", auto_now_add=True)
     modified = models.DateTimeField("modificado", auto_now=True)
 

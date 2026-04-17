@@ -664,9 +664,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     sections: resp.sections_active + "/" + resp.sections_total,
                     componentes_active: compsStr,
                 });
+                document.dispatchEvent(new CustomEvent("homev4:saved"));
             } else {
                 showStatus("Error: " + (resp.error || "?"), "error");
                 log("save", "error response", resp);
+                document.dispatchEvent(new CustomEvent("homev4:saved"));
             }
             if (onComplete) onComplete();
         })

@@ -45,6 +45,7 @@ def resolve_daily_layouts_task():
     is_saturday = timezone.localdate().weekday() == 5
     extra_ids = _resolve_extra_article_ids() if is_saturday else []
 
+    today = timezone.localdate()
     publications = list(
         HomeLayout.objects.values_list("publication", flat=True).distinct()
     )
@@ -58,6 +59,39 @@ def resolve_daily_layouts_task():
             publication = Publication.objects.get(pk=pub_id)
         except Publication.DoesNotExist:
             continue
+
+        # Check if an editor prepared content in advance via the Preview 5am editor.
+        pending_layout = HomeLayout.objects.filter(
+            publication=publication,
+            pending_grid_data__isnull=False,
+        ).first()
+
+        if pending_layout and isinstance(pending_layout.pending_grid_data, dict):
+            pending = pending_layout.pending_grid_data
+            if pending.get("date") == today.isoformat():
+                grid_to_apply = pending["grid"]
+                layout = HomeLayout.get_active_layout(publication) or pending_layout
+                with transaction.atomic():
+                    pending_layout.pending_grid_data = None
+                    pending_layout.save(update_fields=["pending_grid_data"])
+                    layout.grid_data = grid_to_apply
+                    layout.save()
+                    layout.refresh_from_db(fields=["grid_data"])
+                    _propagate_article_ids(layout, layout.grid_data)
+                logger.info(
+                    "resolve_daily_layouts_task: publication=%s — applied pending_grid_data from editor",
+                    publication.slug,
+                )
+                continue
+            else:
+                # Stale pending from a previous day — discard it.
+                pending_layout.pending_grid_data = None
+                pending_layout.save(update_fields=["pending_grid_data"])
+                logger.info(
+                    "resolve_daily_layouts_task: publication=%s — discarded stale pending_grid_data (date=%s)",
+                    publication.slug,
+                    pending.get("date"),
+                )
 
         layout = HomeLayout.get_active_layout(publication)
         if not layout:
