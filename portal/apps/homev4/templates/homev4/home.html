@@ -236,9 +236,6 @@
             <h3 class="article__title">
               <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
             </h3>
-            <div class="article__footer">
-              {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
-            </div>
           </article>
           {% endfor %}
         </div>
