@@ -969,3 +969,309 @@ def active_layout(request, publication_slug=None):
     # pp.pprint(context)
     logger.warning("active_layout render: %.1f ms", (time.perf_counter() - _t2) * 1000)
     return response
+
+
+def _fetch_source_articles_post_5am(source_type, slug, limit):
+    """Like _fetch_source_articles but always uses today's content, ignoring PUBLISHING_TIME.
+    Used by the Preview 5am editor to show what will be available after the gate opens.
+    """
+    from core.models import Edition
+    today = timezone.localdate()
+    try:
+        if source_type == "publication":
+            publication = Publication.objects.get(slug=slug)
+            edition = Edition.objects.filter(publication=publication, date_published=today).order_by("-date_published").first()
+            if edition:
+                return list(edition.top_articles[:limit])
+        elif source_type == "category":
+            category = Category.objects.get(slug=slug)
+            qs = category.home.articles_ordered().filter(date_published__date=today)
+            return list(qs[:limit])
+    except Exception as e:
+        logger.warning("_fetch_source_articles_post_5am(%s, %s): %s", source_type, slug, e)
+    return []
+
+
+def _resolve_today_grid_data(publication):
+    """Return a grid_data dict pre-filled with today's article IDs for principal and suplemento,
+    bypassing the PUBLISHING_TIME gate. Used by the Preview 5am editor.
+    Base structure is taken from the first existing layout of the publication.
+    """
+    from core.models import Edition
+    today = timezone.localdate()
+
+    base_layout = HomeLayout.objects.filter(publication=publication).first()
+    grid = dict(base_layout.grid_data) if base_layout and isinstance(base_layout.grid_data, dict) else get_default_grid_data()
+
+    edition = Edition.objects.filter(publication=publication, date_published=today).order_by("-date_published").first()
+    principal_ids = [a.id for a in edition.top_articles] if edition else []
+    principal_block = dict(grid.get("principal") or {})
+    principal_block["article_ids"] = principal_ids
+    grid["principal"] = principal_block
+
+    source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(today.weekday())
+    suplemento_ids = [a.id for a in _fetch_source_articles_post_5am(source[0], source[1], limit=7)] if source else []
+    suplemento_block = dict(grid.get("suplemento") or {})
+    suplemento_block["article_ids"] = suplemento_ids
+    grid["suplemento"] = suplemento_block
+
+    return grid
+
+
+def build_editor_data(grid_data, publication=None):
+    """Build the editor context dict from grid_data.
+    Standalone version used by both the admin change_view and the Preview 5am view.
+    """
+    principal_data = grid_data.get("principal") or {}
+    suplemento_data = grid_data.get("suplemento", {})
+    especial_data = grid_data.get("especial", {})
+
+    result = {
+        "principal_active": principal_data.get("active", True),
+        "principal_articles": [],
+        "suplemento_active": suplemento_data.get("active", True),
+        "suplemento_articles": [],
+        "especial_active": especial_data.get("active", True),
+        "especial_articles": [],
+        "sections": [],
+        "componentes": [],
+    }
+
+    edition = get_current_edition(publication=publication)
+    db_articles = list(edition.top_articles) if edition else []
+
+    saved_ids = principal_data.get("article_ids", [])
+    result["principal_is_fallback"] = not bool(saved_ids)
+    if saved_ids:
+        by_id = {a.id: a for a in db_articles}
+        extra_ids = [aid for aid in saved_ids if aid not in by_id]
+        if extra_ids:
+            by_id.update({a.id: a for a in Article.published.filter(id__in=extra_ids)})
+        result["principal_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
+    else:
+        result["principal_articles"] = db_articles
+
+    try:
+        result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data)
+    except Exception:
+        result["suplemento_articles"] = []
+
+    especial_ids = especial_data.get("article_ids", [])
+    if especial_ids:
+        by_id = {a.id: a for a in Article.published.filter(id__in=especial_ids)}
+        result["especial_articles"] = [by_id[aid] for aid in especial_ids if aid in by_id]
+
+    saved_areas = grid_data.get("sections", [])
+    saved_area_keys = {(s.get("type"), s.get("slug")) for s in saved_areas}
+    merged_areas = list(saved_areas) + [
+        {"type": a["type"], "slug": a["slug"], "name": a["name"], "active": True, "article_ids": []}
+        for a in _DEFAULT_AREAS if (a["type"], a["slug"]) not in saved_area_keys
+    ]
+    for area in merged_areas:
+        area_type = area.get("type", "section")
+        slug = area.get("slug", "")
+        if not slug:
+            continue
+        saved_ids = area.get("article_ids", [])
+        sec_info = {
+            "type": area_type,
+            "slug": slug,
+            "name": area.get("name", slug),
+            "active": area.get("active", True),
+            "preview_articles": [],
+        }
+        if saved_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
+            sec_info["preview_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
+        else:
+            sec_info["preview_articles"] = _fetch_area_articles(area_type, slug, [])
+        result["sections"].append(sec_info)
+
+    saved_comps_raw = grid_data.get("componentes", [])
+    if isinstance(saved_comps_raw, list):
+        seen_keys = set()
+        for item in saved_comps_raw:
+            key = item.get("key", "")
+            defn = _COMP_DEF_MAP.get(key)
+            if defn and key not in seen_keys:
+                seen_keys.add(key)
+                comp_dict = {
+                    "key": key,
+                    "label": defn["label"],
+                    "description": defn["description"],
+                    "active": item.get("active", True),
+                    "has_picker": defn.get("has_picker", False),
+                    "replace_mode": defn.get("replace_mode", False),
+                    "replace_slots": defn.get("replace_slots", 2),
+                    "newsletter_mode": defn.get("newsletter_mode", False),
+                    "sortable_articles": defn.get("sortable_articles", True),
+                }
+                if defn.get("newsletter_mode"):
+                    comp_dict["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
+                    comp_dict["articles"] = []
+                else:
+                    comp_dict["articles"] = _fetch_component_articles(key, saved_ids=item.get("article_ids", []))
+                result["componentes"].append(comp_dict)
+        for defn in COMPONENT_DEFINITIONS:
+            if defn["key"] not in seen_keys:
+                comp_dict = {
+                    "key": defn["key"],
+                    "label": defn["label"],
+                    "description": defn["description"],
+                    "active": True,
+                    "has_picker": defn.get("has_picker", False),
+                    "replace_mode": defn.get("replace_mode", False),
+                    "replace_slots": defn.get("replace_slots", 2),
+                    "newsletter_mode": defn.get("newsletter_mode", False),
+                    "sortable_articles": defn.get("sortable_articles", True),
+                }
+                if defn.get("newsletter_mode"):
+                    comp_dict["newsletters"] = []
+                    comp_dict["articles"] = []
+                else:
+                    comp_dict["articles"] = _fetch_component_articles(defn["key"])
+                result["componentes"].append(comp_dict)
+    else:
+        for defn in COMPONENT_DEFINITIONS:
+            saved = saved_comps_raw.get(defn["key"], {})
+            comp_dict = {
+                "key": defn["key"],
+                "label": defn["label"],
+                "description": defn["description"],
+                "active": saved.get("active", True),
+                "has_picker": defn.get("has_picker", False),
+                "replace_mode": defn.get("replace_mode", False),
+                "replace_slots": defn.get("replace_slots", 2),
+                "newsletter_mode": defn.get("newsletter_mode", False),
+                "sortable_articles": defn.get("sortable_articles", True),
+            }
+            if defn.get("newsletter_mode"):
+                comp_dict["newsletters"] = _resolve_newsletter_refs(saved.get("newsletter_refs", []))
+                comp_dict["articles"] = []
+            else:
+                comp_dict["articles"] = _fetch_component_articles(defn["key"])
+            result["componentes"].append(comp_dict)
+
+    return result
+
+
+def _static_hash(path):
+    """Return a short hash of the static file content for cache busting."""
+    import hashlib
+    from django.contrib.staticfiles import finders
+    full_path = finders.find(path)
+    if not full_path:
+        return "0"
+    try:
+        with open(full_path, "rb") as f:
+            return hashlib.md5(f.read()).hexdigest()[:8]
+    except OSError:
+        return "0"
+
+
+@never_cache
+@staff_member_required
+def preview_5am(request):
+    """Editor view for preparing tomorrow's home before 5am.
+    Shows today's articles (bypassing the PUBLISHING_TIME gate) so editors can
+    curate the layout in advance. Saves to pending_grid_data instead of grid_data,
+    so the live home is not affected until the Celery task moves it at 5am.
+    """
+    publication = get_default_publication()
+    today = timezone.localdate()
+
+    pending_layout = HomeLayout.objects.filter(
+        publication=publication,
+        pending_grid_data__isnull=False,
+    ).first()
+
+    if pending_layout and isinstance(pending_layout.pending_grid_data, dict):
+        pending = pending_layout.pending_grid_data
+        if pending.get("date") == today.isoformat():
+            grid_data = pending["grid"]
+        else:
+            grid_data = _resolve_today_grid_data(publication)
+    else:
+        grid_data = _resolve_today_grid_data(publication)
+
+    editor_data = build_editor_data(grid_data, publication=publication)
+    has_pending = pending_layout is not None and isinstance(pending_layout.pending_grid_data, dict) and pending_layout.pending_grid_data.get("date") == today.isoformat()
+
+    any_layout = HomeLayout.objects.filter(publication=publication).first()
+    context = {
+        "editor_data": editor_data,
+        "save_grid_url": "/homev4/save-pending/",
+        "article_search_url": f"/homev4/article-search/?layout_id={any_layout.pk}" if any_layout else "/homev4/article-search/",
+        "newsletter_search_url": "/homev4/newsletter-search/",
+        "blocks_config": LAYOUT_BLOCKS_CONFIG,
+        "layout_editor_js_version": _static_hash("homev4/layout_editor.js"),
+        "layout_editor_css_version": _static_hash("homev4/layout_editor.css"),
+        "is_preview_5am": True,
+        "has_pending": has_pending,
+    }
+    return render(request, "homev4/preview_5am.html", context)
+
+
+@never_cache
+@staff_member_required
+def preview_5am_render(request):
+    """Render the home template using pending_grid_data (Preview 5am content) without modifying any layout."""
+    publication = get_default_publication()
+    today = timezone.localdate()
+
+    pending_layout = HomeLayout.objects.filter(
+        publication=publication,
+        pending_grid_data__isnull=False,
+    ).first()
+
+    grid_data = None
+    if pending_layout and isinstance(pending_layout.pending_grid_data, dict):
+        pending = pending_layout.pending_grid_data
+        if pending.get("date") == today.isoformat():
+            grid_data = pending["grid"]
+
+    if grid_data is None:
+        grid_data = _resolve_today_grid_data(publication)
+
+    any_layout = HomeLayout.objects.filter(publication=publication).first()
+    home_data = build_home_data(grid_data, publication=publication, layout=any_layout)
+    home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
+    return render(request, home_template, {
+        "layout": any_layout,
+        "publication": publication,
+        "home_data": home_data,
+        "newsletter_dia_nl": None,
+        "tarde_mode": False,
+        "is_portada": True,
+        "allow_ads": False,
+    })
+
+
+@staff_member_required
+def reset_pending_grid(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+    publication = get_default_publication()
+    HomeLayout.objects.filter(publication=publication).update(pending_grid_data=None)
+    return JsonResponse({"status": "ok"})
+
+
+@staff_member_required
+def save_pending_grid(request):
+    """Save grid_data to pending_grid_data on the first layout of the default publication.
+    Called by the Preview 5am editor. Does not propagate — the Celery task does that at 5am.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+    publication = get_default_publication()
+    try:
+        data = json.loads(request.body)
+        grid_data = data.get("grid_data", {})
+        layout = HomeLayout.objects.filter(publication=publication).first()
+        if not layout:
+            return JsonResponse({"error": "No layout found"}, status=404)
+        layout.pending_grid_data = {"date": timezone.localdate().isoformat(), "grid": grid_data}
+        layout.save(update_fields=["pending_grid_data"])
+        return JsonResponse({"status": "ok"})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)

@@ -353,6 +353,17 @@
     padding: 4px 0;
 }
 
+/* ── Fallback notice ─────────────────────────────────────── */
+#homev4-editor .fallback-notice {
+    font-size: 12px;
+    color: #856404;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    padding: 5px 10px;
+    margin-bottom: 6px;
+}
+
 /* ── Badge especial ──────────────────────────────────────── */
 #homev4-editor .badge-especial { background: #2631ff; }
 

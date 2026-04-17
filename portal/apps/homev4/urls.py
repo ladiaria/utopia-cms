@@ -15,4 +15,8 @@ urlpatterns = [
     path("newsletter-search/", views.newsletter_search, name="newsletter_search"),
     path("active-layout/", views.active_layout, name="active_layout"),
     path("active-layout/<slug:publication_slug>/", views.active_layout, name="active_layout_pub"),
+    path("preview-5am/", views.preview_5am, name="preview_5am"),
+    path("preview-5am-render/", views.preview_5am_render, name="preview_5am_render"),
+    path("save-pending/", views.save_pending_grid, name="save_pending_grid"),
+    path("reset-pending/", views.reset_pending_grid, name="reset_pending_grid"),
 ]

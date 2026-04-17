@@ -9,9 +9,10 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from .models import HomeLayout, _DAY_CODE_TO_WEEKDAYS
-from .views import get_default_grid_data, COMPONENT_DEFINITIONS, _COMP_DEF_MAP, _fetch_component_articles, _fetch_suplemento_articles, LAYOUT_BLOCKS_CONFIG, _resolve_newsletter_refs
+from .views import get_default_grid_data, LAYOUT_BLOCKS_CONFIG, build_editor_data, _static_hash
 
-def _static_hash(filename):
+
+def _static_hash_admin(filename):
     """Return an 8-char MD5 hash of a static file's content for cache busting."""
     path = finders.find(filename)
     if path and os.path.exists(path):
@@ -70,7 +71,7 @@ class HomeLayoutAdmin(admin.ModelAdmin):
         obj = self.get_object(request, object_id)
         if obj:
             grid_data = obj.grid_data if isinstance(obj.grid_data, dict) else get_default_grid_data()
-            extra_context["editor_data"] = self._build_editor_data(grid_data, publication=obj.publication)
+            extra_context["editor_data"] = build_editor_data(grid_data, publication=obj.publication)
             extra_context["save_grid_url"] = f"/homev4/save/{obj.pk}/"
             extra_context["reset_grid_url"] = f"/homev4/reset/{obj.pk}/"
             extra_context["sync_sections_url"] = f"/homev4/sync/{obj.pk}/"
@@ -79,158 +80,9 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             extra_context["blocks_config"] = LAYOUT_BLOCKS_CONFIG
             extra_context["article_search_url"] = f"/homev4/article-search/?layout_id={obj.pk}"
             extra_context["newsletter_search_url"] = f"/homev4/newsletter-search/?day={obj.day or ''}"
-            extra_context["layout_editor_js_version"] = _static_hash('homev4/layout_editor.js')
-            extra_context["layout_editor_css_version"] = _static_hash('homev4/layout_editor.css')
+            extra_context["layout_editor_js_version"] = _static_hash("homev4/layout_editor.js")
+            extra_context["layout_editor_css_version"] = _static_hash("homev4/layout_editor.css")
         return super().change_view(request, object_id, form_url, extra_context)
-
-    def _build_editor_data(self, grid_data, publication=None):
-        from core.models import Article, Section, Category, get_current_edition
-
-        principal_data = grid_data.get("principal") or {}
-        suplemento_data = grid_data.get("suplemento", {})
-        especial_data = grid_data.get("especial", {})
-
-        result = {
-            "principal_active": principal_data.get("active", True),
-            "principal_articles": [],
-            "suplemento_active": suplemento_data.get("active", True),
-            "suplemento_articles": [],
-            "especial_active": especial_data.get("active", True),
-            "especial_articles": [],
-            "sections": [],
-            "componentes": [],
-        }
-
-        edition = get_current_edition(publication=publication)
-
-        # PRINCIPAL: if saved_ids present, show exactly those (in order); else fall back to edition.top_articles.
-        db_articles = list(edition.top_articles) if edition else []
-
-        principal_data = grid_data.get("principal") or {}
-        saved_ids = principal_data.get("article_ids", [])
-        if saved_ids:
-            by_id = {a.id: a for a in db_articles}
-            extra_ids = [aid for aid in saved_ids if aid not in by_id]
-            if extra_ids:
-                by_id.update({a.id: a for a in Article.published.filter(id__in=extra_ids)})
-            result["principal_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
-        else:
-            result["principal_articles"] = db_articles
-
-        # SUPLEMENTO articles: saved_ids if saved today, else day-based section fallback.
-        try:
-            result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data)
-        except Exception:
-            result["suplemento_articles"] = []
-
-        # ESPECIAL articles: resolve saved_ids to Article objects.
-        especial_ids = especial_data.get("article_ids", [])
-        if especial_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=especial_ids)}
-            result["especial_articles"] = [by_id[aid] for aid in especial_ids if aid in by_id]
-
-        # ÁREAS Y PUBLICACIONES: source of truth is grid_data["sections"] merged with _DEFAULT_AREAS.
-        # Areas in _DEFAULT_AREAS not yet in grid_data are appended automatically (same as components).
-        from .views import _fetch_area_articles, _DEFAULT_AREAS
-        saved_areas = grid_data.get("sections", [])
-        saved_area_keys = {(s.get("type"), s.get("slug")) for s in saved_areas}
-        merged_areas = list(saved_areas) + [
-            {"type": a["type"], "slug": a["slug"], "name": a["name"], "active": True, "article_ids": []}
-            for a in _DEFAULT_AREAS if (a["type"], a["slug"]) not in saved_area_keys
-        ]
-        for area in merged_areas:
-            area_type = area.get("type", "section")
-            slug = area.get("slug", "")
-            if not slug:
-                continue
-            saved_ids = area.get("article_ids", [])
-            sec_info = {
-                "type": area_type,
-                "slug": slug,
-                "name": area.get("name", slug),
-                "active": area.get("active", True),
-                "preview_articles": [],
-            }
-            if saved_ids:
-                by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
-                sec_info["preview_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
-            else:
-                sec_info["preview_articles"] = _fetch_area_articles(area_type, slug, [])
-            result["sections"].append(sec_info)
-
-        # Componentes: merge saved order/active states with fixed definitions.
-        # Saved format can be:
-        #   - list (new): [{key, active}, ...]  — preserves custom drag order
-        #   - dict (old): {key: {active: bool}} — migrated to list order on next save
-        saved_comps_raw = grid_data.get("componentes", [])
-
-        if isinstance(saved_comps_raw, list):
-            seen_keys = set()
-            for item in saved_comps_raw:
-                key = item.get("key", "")
-                defn = _COMP_DEF_MAP.get(key)
-                if defn and key not in seen_keys:
-                    seen_keys.add(key)
-                    comp_dict = {
-                        "key": key,
-                        "label": defn["label"],
-                        "description": defn["description"],
-                        "active": item.get("active", True),
-                        "has_picker": defn.get("has_picker", False),
-                        "replace_mode": defn.get("replace_mode", False),
-                        "replace_slots": defn.get("replace_slots", 2),
-                        "newsletter_mode": defn.get("newsletter_mode", False),
-                        "sortable_articles": defn.get("sortable_articles", True),
-                    }
-                    if defn.get("newsletter_mode"):
-                        comp_dict["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
-                        comp_dict["articles"] = []
-                    else:
-                        comp_dict["articles"] = _fetch_component_articles(key, saved_ids=item.get("article_ids", []))
-                    result["componentes"].append(comp_dict)
-            # Append any definitions not present in the saved list
-            for defn in COMPONENT_DEFINITIONS:
-                if defn["key"] not in seen_keys:
-                    comp_dict = {
-                        "key": defn["key"],
-                        "label": defn["label"],
-                        "description": defn["description"],
-                        "active": True,
-                        "has_picker": defn.get("has_picker", False),
-                        "replace_mode": defn.get("replace_mode", False),
-                        "replace_slots": defn.get("replace_slots", 2),
-                        "newsletter_mode": defn.get("newsletter_mode", False),
-                        "sortable_articles": defn.get("sortable_articles", True),
-                    }
-                    if defn.get("newsletter_mode"):
-                        comp_dict["newsletters"] = []
-                        comp_dict["articles"] = []
-                    else:
-                        comp_dict["articles"] = _fetch_component_articles(defn["key"])
-                    result["componentes"].append(comp_dict)
-        else:
-            # Old dict format — use fixed definition order
-            for defn in COMPONENT_DEFINITIONS:
-                saved = saved_comps_raw.get(defn["key"], {})
-                comp_dict = {
-                    "key": defn["key"],
-                    "label": defn["label"],
-                    "description": defn["description"],
-                    "active": saved.get("active", True),
-                    "has_picker": defn.get("has_picker", False),
-                    "replace_mode": defn.get("replace_mode", False),
-                    "replace_slots": defn.get("replace_slots", 2),
-                    "newsletter_mode": defn.get("newsletter_mode", False),
-                    "sortable_articles": defn.get("sortable_articles", True),
-                }
-                if defn.get("newsletter_mode"):
-                    comp_dict["newsletters"] = _resolve_newsletter_refs(saved.get("newsletter_refs", []))
-                    comp_dict["articles"] = []
-                else:
-                    comp_dict["articles"] = _fetch_component_articles(defn["key"])
-                result["componentes"].append(comp_dict)
-
-        return result
 
     def get_queryset(self, request):
         # Cannot call super() here: the parent's get_queryset applies get_ordering()
