@@ -7,7 +7,7 @@ body {
   padding-bottom: $line-height;
   padding-top: 0;
   margin: 0;
-  font-size: $sans;
+  font-family: $sans;
 
   &.hide-mobile-nav {
     #nav-mobile {
