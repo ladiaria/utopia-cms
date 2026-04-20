@@ -96,7 +96,7 @@ header {
     .fixed-items {
       display: flex;
       gap: 24px;
-      a {
+      button {
         display: flex;
         align-items: center;
         gap: 4px;
@@ -108,6 +108,23 @@ header {
         transition: opacity 0.1s ease;
         header.category-pub-header.sticky & {
           opacity: 0;
+        }
+
+        &:disabled {
+          color: #000;
+        }
+
+        &__icon-active {
+          display: none;
+        }
+
+        &--active {
+          .newsletter-header__icon-default {
+            display: none;
+          }
+          .newsletter-header__icon-active {
+            display: inline;
+          }
         }
       }
     }

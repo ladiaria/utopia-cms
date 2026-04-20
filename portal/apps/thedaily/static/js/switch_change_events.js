@@ -2,6 +2,7 @@
 function showNotification(notification) {
   const isError = notification.type === "error";
   const notificationBox = document.querySelector("#edit_profile_notification");
+  if (!notificationBox) return;
   notificationBox.style.display = "flex";
   notificationBox.classList.remove("error");
   if (isError) notificationBox.classList.add("error");
@@ -45,6 +46,34 @@ function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement) {
         revertSwitch(switchHTMLElement)
       }, 250);
     }
+  });
+}
+
+// initialize newsletter header subscribe button
+function nl_header_subscribe_init() {
+  const config = window.NL_HEADER_CONFIG;
+  const btn = document.querySelector('.newsletter-header');
+  if (!config || !btn) return;
+
+  btn.addEventListener('click', function() {
+    const textSpan = btn.querySelector('.newsletter-header__text');
+    if (config.isAnonymous) {
+      if (textSpan) textSpan.textContent = config.anonymousMessage;
+      return;
+    }
+    $.ajax({
+      type: 'POST',
+      url: config.subscribeUrl,
+      data: { [config.dataKey]: true },
+      success: function() {
+        if (textSpan) textSpan.textContent = config.successMessage;
+        btn.classList.add('newsletter-header--active');
+        btn.disabled = true;
+      },
+      error: function() {
+        if (textSpan) textSpan.textContent = 'No se pudo suscribir, intentá de nuevo';
+      }
+    });
   });
 }
 

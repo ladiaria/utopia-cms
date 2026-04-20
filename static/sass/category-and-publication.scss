@@ -1,4 +1,116 @@
 @import "./variables";
+@import "./utopia_mixins";
+
+.cover-newsletter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 24px;
+  border-bottom: 0.5px solid #000;
+
+  @media #{$medium-and-up} {
+    display: none;
+  }
+
+  &__badge {
+    align-self: flex-start;
+    padding: 2px;
+    background-color: #e3e8ea;
+    display: inline-flex;
+
+    span {
+      font-family: $sans;
+      font-size: px-to-rem(12px);
+      line-height: 1.167em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #000;
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__switch {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+    width: 48px;
+    height: 24px;
+
+    input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .cover-newsletter__slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+      border: 1px solid #727272;
+
+      &::before {
+        position: absolute;
+        content: "";
+        width: 21px;
+        height: 21px;
+        top: 0.5px;
+        left: 0.5px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+    }
+
+    input + .cover-newsletter__slider {
+      &::before {
+        border: 1px solid #828282;
+      }
+    }
+
+    input:checked + .cover-newsletter__slider {
+      &::before {
+        transform: translateX(29px);
+        top: 0.5px;
+        left: -4.5px;
+      }
+    }
+
+    input:focus + .cover-newsletter__slider {
+      box-shadow: 0 0 1px #aaa;
+    }
+  }
+
+  &__description {
+    margin: 0;
+  }
+
+  &__preview {
+    font-size: px-to-rem(14px);
+    text-decoration: underline;
+  }
+}
 
 .section-detail {
   &__head {
