@@ -215,6 +215,11 @@ def save_grid(request, layout_id):
             stats["sections_total"],
             stats["componentes_active"],
         )
+        # Keep the preview session in sync with the saved state so that
+        # refreshing /?preview=1 reflects the just-saved grid without
+        # requiring the editor to click "Vista previa" again.
+        request.session["preview_grid_data"] = layout.grid_data
+        request.session["preview_grid_saved"] = True
         return JsonResponse({"status": "ok", **stats})
     except Exception as e:
         import traceback
@@ -408,42 +413,6 @@ def _resolve_newsletter_refs(refs):
     return result
 
 
-@never_cache
-@staff_member_required
-def preview_layout(request, layout_id):
-    """Render the home template for a specific layout (opens in new tab from admin).
-
-    Mirrors the context built by active_layout so the preview accurately reflects
-    what a real visitor would see, including newsletter_dia_nl resolution.
-    The previewing user is treated as unauthenticated for newsletter selection purposes
-    (i.e. the first newsletter in the list is always shown), since the preview is used
-    by editors who want to check the layout, not their own subscription state.
-    """
-    layout = get_object_or_404(HomeLayout, pk=layout_id)
-    grid_data = layout.grid_data if isinstance(layout.grid_data, dict) else {}
-    home_data = build_home_data(grid_data, publication=layout.publication, layout=layout)
-
-    # Resolve newsletter_dia_nl: always show the first newsletter (unauthenticated behavior).
-    newsletter_dia_nl = None
-    for comp in home_data.get("componentes", []):
-        if comp.get("key") == "newsletter_dia":
-            newsletters = comp.get("newsletters", [])
-            if newsletters:
-                newsletter_dia_nl = newsletters[0]
-            break
-
-    # TODO: review allow_ads logic — wire up is_subscriber once available in context.
-    is_default_pub = layout.publication.slug == getattr(settings, "DEFAULT_PUB", "")
-    home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
-    return render(request, "homev4/home.html", {
-        "layout": layout,
-        "publication": layout.publication,
-        "home_data": home_data,
-        "newsletter_dia_nl": newsletter_dia_nl,
-        "tarde_mode": _is_tarde_mode(layout),
-        "is_portada": True,
-        "allow_ads": True if is_default_pub else getattr(settings, "HOMEV4_NON_DEFAULT_PUB_ALLOW_ADS", True),
-    })
 
 
 def build_home_data(grid_data, publication=None, layout=None):
@@ -510,7 +479,7 @@ def build_home_data(grid_data, publication=None, layout=None):
     result["suplemento_active"] = _block_active("suplemento", suplemento_data.get("active", True))
     if result["suplemento_active"]:
         try:
-            result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data)
+            result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data, exclude_ids=seen_ids)
         except Exception:
             result["suplemento_articles"] = []
         _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
@@ -683,12 +652,15 @@ def _fetch_source_articles(source_type, slug, limit, exclude_ids=None):
     return []
 
 
-def _fetch_suplemento_articles(suplemento_data):
+def _fetch_suplemento_articles(suplemento_data, exclude_ids=None):
     """Return SUPLEMENTO articles from saved article_ids.
     Article IDs are written daily by the resolve_daily_layouts Celery task.
+    When exclude_ids is provided, those article IDs are skipped (deduplication against Principal).
     """
     saved_ids = suplemento_data.get("article_ids", [])
     if saved_ids:
+        if exclude_ids:
+            saved_ids = [aid for aid in saved_ids if aid not in exclude_ids]
         by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
     return []
@@ -836,7 +808,16 @@ def active_layout(request, publication_slug=None):
     # get_active_layout() checks manual overrides first, then day/time schedules.
     # Returns None if no layout matches — build_home_data handles the empty dict gracefully.
     layout = HomeLayout.get_active_layout(publication)
-    grid_data = layout.grid_data if (layout and isinstance(layout.grid_data, dict)) else {}
+
+    # Preview mode: staff can open /?preview=1 to see the grid stored in their
+    # session by save_preview_session (triggered by the editor "Vista previa" button)
+    # or by save_grid (triggered by "Guardar Layout"). The real home is never affected
+    # because is_preview requires both the query parameter and staff authentication.
+    is_preview = bool(request.GET.get("preview") and request.user.is_staff)
+    if is_preview and "preview_grid_data" in request.session:
+        grid_data = request.session["preview_grid_data"]
+    else:
+        grid_data = layout.grid_data if (layout and isinstance(layout.grid_data, dict)) else {}
 
     # Pre-fetch all content defined by the layout editor into a single dict.
     # The template only reads from home_data — no DB calls inside the template.
@@ -969,12 +950,33 @@ def active_layout(request, publication_slug=None):
     # pp = pprint.PrettyPrinter(indent=4)
     # pp.pprint(context)
     logger.warning("active_layout render: %.1f ms", (time.perf_counter() - _t2) * 1000)
+
+    if is_preview:
+        # Inject a fixed banner so the editor knows they are looking at a preview.
+        # The message reflects whether the session data came from a save (saved=True)
+        # or from an unsaved editor state pushed by the preview button (saved=False).
+        # The history.replaceState timestamp makes the URL unique on each load so the
+        # service worker cannot serve a stale cached version on the next refresh.
+        # NOTE: refresh still has issues when the SW intercepts before Django — pending fix.
+        saved = request.session.get("preview_grid_saved", False)
+        msg = "Vista previa · contenido guardado ✓" if saved else "Vista previa · cambios sin guardar"
+        banner = (
+            '<div style="position:fixed;top:0;left:0;right:0;z-index:99999;'
+            'background:#417690;color:#fff;padding:8px 16px;'
+            'font-family:sans-serif;font-size:13px;text-align:center;">'
+            + msg + '</div>'
+            '<script>history.replaceState(null,"","/?preview=1&_t="+Date.now());</script>'
+        )
+        content = response.content.decode("utf-8")
+        response.content = content.replace("</body>", banner + "</body>", 1).encode("utf-8")
+
     return response
 
 
-def _fetch_source_articles_post_5am(source_type, slug, limit):
+def _fetch_source_articles_post_5am(source_type, slug, limit, exclude_ids=None):
     """Like _fetch_source_articles but always uses today's content, ignoring PUBLISHING_TIME.
     Used by the Preview 5am editor to show what will be available after the gate opens.
+    When exclude_ids is provided, those article IDs are skipped (deduplication).
     """
     from core.models import Edition
     today = timezone.localdate()
@@ -983,10 +985,15 @@ def _fetch_source_articles_post_5am(source_type, slug, limit):
             publication = Publication.objects.get(slug=slug)
             edition = Edition.objects.filter(publication=publication, date_published=today).order_by("-date_published").first()
             if edition:
-                return list(edition.top_articles[:limit])
+                articles = list(edition.top_articles)
+                if exclude_ids:
+                    articles = [a for a in articles if a.id not in exclude_ids]
+                return articles[:limit]
         elif source_type == "category":
             category = Category.objects.get(slug=slug)
             qs = category.home.articles_ordered().filter(date_published__date=today)
+            if exclude_ids:
+                qs = qs.exclude(id__in=exclude_ids)
             return list(qs[:limit])
     except Exception as e:
         logger.warning("_fetch_source_articles_post_5am(%s, %s): %s", source_type, slug, e)
@@ -1011,7 +1018,8 @@ def _resolve_today_grid_data(publication):
     grid["principal"] = principal_block
 
     source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(today.weekday())
-    suplemento_ids = [a.id for a in _fetch_source_articles_post_5am(source[0], source[1], limit=7)] if source else []
+    seen_ids = set(principal_ids)
+    suplemento_ids = [a.id for a in _fetch_source_articles_post_5am(source[0], source[1], limit=7, exclude_ids=seen_ids)] if source else []
     suplemento_block = dict(grid.get("suplemento") or {})
     suplemento_block["article_ids"] = suplemento_ids
     grid["suplemento"] = suplemento_block
@@ -1052,8 +1060,9 @@ def build_editor_data(grid_data, publication=None):
     else:
         result["principal_articles"] = db_articles
 
+    seen_ids = {a.id for a in result["principal_articles"]}
     try:
-        result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data)
+        result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data, exclude_ids=seen_ids)
     except Exception:
         result["suplemento_articles"] = []
 
@@ -1255,6 +1264,30 @@ def reset_pending_grid(request):
     publication = get_default_publication()
     HomeLayout.objects.filter(publication=publication).update(pending_grid_data=None)
     return JsonResponse({"status": "ok"})
+
+
+@never_cache
+@staff_member_required
+def save_preview_session(request):
+    """Store the current editor grid_data in the session for preview rendering.
+
+    Called by the layout editor "Vista previa" button (layout_editor.js) before
+    opening /?preview=1 in a new tab. active_layout reads preview_grid_data from
+    the session when is_preview=True so the tab shows the unsaved editor state.
+
+    The session key preview_grid_saved controls the banner message:
+      True  → "contenido guardado ✓"   (set here when saved=True, and by save_grid)
+      False → "cambios sin guardar"    (set here when saved=False)
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+    try:
+        data = json.loads(request.body)
+        request.session["preview_grid_data"] = data.get("grid_data", {})
+        request.session["preview_grid_saved"] = bool(data.get("saved", False))
+        return JsonResponse({"ok": True})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
 
 
 @staff_member_required

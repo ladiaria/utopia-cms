@@ -1,6 +1,13 @@
 document.addEventListener("DOMContentLoaded", function () {
     var DATA = window.HOMEV4_DATA;
     var dragSrc = null;
+    // Tracks whether the current editor state matches what is saved in the DB.
+    // Starts true because the editor always loads the saved DB state on first render.
+    // markChanged() sets it to false on any edit; saveGrid() sets it back to true on success.
+    // Used by the preview button to set the correct banner message (saved vs. unsaved).
+    var _gridSaved = true;
+
+    function markChanged() { _gridSaved = false; }
 
     // ── Logging helper ────────────────────────────────────────────────────────
     // Single entry point for all editor events. Category examples: "drag", "toggle", "save", "picker".
@@ -25,6 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         item.addEventListener("dragend", function () {
+            markChanged();
             this.classList.remove("dragging");
             container.querySelectorAll(itemSelector).forEach(function (el) {
                 el.classList.remove("drag-over");
@@ -122,6 +130,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll(TOGGLE_CHECKBOXES).forEach(function (cb) {
             applyActiveState(cb);
             cb.addEventListener("change", function () {
+                markChanged();
                 applyActiveState(this);
                 var block = this.closest(TOGGLE_CONTAINER);
                 var nameEl = block && block.querySelector(".block-badge, .comp-name");
@@ -166,6 +175,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function initRemoveButton(btn, row) {
         btn.addEventListener("click", function (e) {
             e.stopPropagation();
+            markChanged();
             var headline = row.querySelector(".comp-article-title, .article-title, .section-article-title");
             log("picker", "removed article", {
                 id: row.dataset.articleId,
@@ -283,6 +293,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // rowClass: CSS class for the new row (e.g. "comp-article-row", "article-row")
     // itemSelector: drag selector used in initItemDrag (e.g. ".comp-article-row[data-article-id]")
     function addArticleToPicker(article, container, rowClass, itemSelector) {
+        markChanged();
         // Skip duplicates — briefly highlight the existing row instead
         var existing = container.querySelector("[data-article-id='" + article.id + "']");
         if (existing) {
@@ -646,6 +657,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(function (resp) {
             if (resp.status === "ok") {
+                _gridSaved = true;
                 var labels = (DATA && DATA.componentLabels) || {};
                 var activeLabels = (resp.componentes_active || []).map(function (key) {
                     return labels[key] || key;
@@ -680,6 +692,30 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.getElementById("btn-save").addEventListener("click", function () { saveGrid(); });
+
+    // "Vista previa" button: serialize the current editor state, POST it to
+    // save_preview_session so Django stores it in the session, then open /?preview=1
+    // in a new tab. active_layout reads the session and renders with the editor's
+    // current grid_data rather than what is saved in the DB.
+    // NOTE: refreshing the preview tab does not reflect changes made in the editor
+    // after the preview was opened — the session holds the grid from the last
+    // save_preview_session or save_grid call and is not updated until the next click.
+    var btnPreview = document.querySelector(".btn-preview");
+    if (btnPreview && window.HOMEV4_DATA.previewSessionUrl) {
+        btnPreview.addEventListener("click", function () {
+            fetch(window.HOMEV4_DATA.previewSessionUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": window.HOMEV4_DATA.csrfToken
+                },
+                body: JSON.stringify({ grid_data: serializeGrid(), saved: _gridSaved })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function () { window.open("/?preview=1", "_blank"); })
+            .catch(function (err) { log("preview", "error saving session", err.message); });
+        });
+    }
 
     // Auto-save layout when any Django admin submit button is clicked.
     // Track which button triggered the submit so its name/value is preserved
