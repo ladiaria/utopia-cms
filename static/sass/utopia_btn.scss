@@ -105,28 +105,6 @@
       }
     }
 
-    &.ut-btn-light {
-      // outlined light button
-      border-color: white;
-      color: white;
-
-      &:hover {
-        background: white;
-        color: $off-black;
-
-        svg path:not([fill="none"]) {
-          fill: $off-black;
-        }
-      }
-      &:active {
-        background: white;
-        color: $off-black;
-
-        svg path:not([fill="none"]) {
-          fill: $off-black;
-        }
-      }
-    }
     &.disabled {
       cursor: default;
       color: #a4a4a4;

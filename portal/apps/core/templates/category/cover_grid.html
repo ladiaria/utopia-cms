@@ -5,7 +5,8 @@
   <!-- ND: Noticia destacada (cover) -->
   {% if cover_article %}
     <div class="category-grid__cover">
-      <article class="article-cover">
+      <article class="article article-cover">
+        {% render_toolbar_for cover_article %}
         {% if cover_article.photo_render_allowed %}
           <a href="{{ cover_article.get_absolute_url }}" class="article-cover__image-link">
              <img
@@ -56,6 +57,7 @@
   <div class="category-grid__secondary">
     {% for a in destacados|slice:":3" %}
       <article class="article">
+        {% render_toolbar_for a %}
         {% if a.photo_render_allowed %}
           {% if not secondary_images_all_or_nothing or secondary_all_have_photo %}
             <a href="{{ a.get_absolute_url }}" class="article__image-link">
@@ -102,6 +104,7 @@
   <div class="category-grid__tertiary-group">
     {% for a in destacados|slice:"3:8" %}
       <article class="article">
+        {% render_toolbar_for a %}
         <span class="article__section-label">
           {% with article=a %}
             {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}

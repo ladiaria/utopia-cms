@@ -16,25 +16,25 @@
   }
 }
 
-.ut-btn.ut-admin-edit-card,
-a.ut-btn.ut-admin-edit-card {
+.ut-admin-edit-card,
+.ut-admin-edit-card {
   position: absolute;
   right: 15px;
+  top: 15px;
   font-size: 11px;
   padding: 4px 9px 5px;
-  bottom: 15px;
   z-index: 1;
 }
 @media screen and (min-width: 769px) {
-  .ut-btn.ut-admin-edit-card,
-  a.ut-btn.ut-admin-edit-card {
+  .ut-admin-edit-card,
+  .ut-admin-edit-card {
     display: none;
     bottom: initial;
     top: 15px;
   }
 
-  .ut-btn.ut-admin-edit-card:hover,
-  a.ut-btn.ut-admin-edit-card:hover {
+  .ut-admin-edit-card:hover,
+  .ut-admin-edit-card:hover {
     display: block;
   }
 }
@@ -55,8 +55,8 @@ span.ut-btn.ut-admin-order {
   }
 }
 
-*:hover > .ut-btn.ut-admin-edit-card,
-*:hover > a.ut-btn.ut-admin-edit-card {
+*:hover > .ut-admin-edit-card,
+*:hover > .ut-admin-edit-card {
   display: block;
 }
 
