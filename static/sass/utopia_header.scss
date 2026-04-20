@@ -200,6 +200,7 @@ header {
       display: flex;
       justify-content: center;
       align-self: center;
+      align-items: center;
 
       // On the home header in normal (non-sticky) state, the logo is larger.
       // When sticky kicks in, this selector stops matching and the logo
