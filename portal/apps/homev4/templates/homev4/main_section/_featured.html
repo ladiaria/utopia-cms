@@ -1,6 +1,7 @@
 {% load bleach_tags core_tags ldml %}
 
-<div class="main-section__featured">
+<article class="article main-section__featured">
+  {% render_toolbar_for featured %}
   {% if featured.photo %}
     <a href="{{ featured.get_absolute_url }}" class="main-section__featured-image">
       <img
@@ -37,4 +38,4 @@
       {% include "article/article_card_read_later.html" with a=featured prefetched_article_data=True %}
     </div>
   </div>
-</div>
+</article>

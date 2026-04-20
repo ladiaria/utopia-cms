@@ -4,6 +4,7 @@
 <div class="main-section__secondary-row">
   {% for article in secondary %}
   <article class="article">
+    {% render_toolbar_for article %}
     {% if article.photo %}
       <a href="{{ article.get_absolute_url }}" class="article__image-container">
         <img
