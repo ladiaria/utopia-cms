@@ -146,7 +146,7 @@
       document.body.style.left = "";
       document.body.style.right = "";
       document.body.style.width = "";
-      window.scrollTo(0, lockedScrollTop);
+      window.scrollTo({ top: lockedScrollTop, behavior: "instant" });
     }
 
     function setMainMenuState(isOpen) {
