@@ -97,7 +97,8 @@ header {
     .fixed-items {
       display: flex;
       gap: 24px;
-      button {
+      button,
+      a {
         display: flex;
         align-items: center;
         gap: 4px;
@@ -196,6 +197,7 @@ header {
 
     button.user-menu-button {
       gap: 8px;
+      font-weight: 500;
     }
   }
 
