@@ -119,6 +119,7 @@
           </a>
         {% endif %}
         <article class="article">
+          {% render_toolbar_for featured %}
           <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
           <h3 class="article__title">
             <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
@@ -153,7 +154,8 @@
   {% if articles %}
   <section class="especial-section">
     {% with article=articles.0 %}
-    <div class="especial-section__featured">
+    <article class="article especial-section__featured">
+      {% render_toolbar_for article %}
       <div class="especial-section__featured-body">
         <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
         <h2 class="article__title">
@@ -181,7 +183,7 @@
         {% endif %}
       </div>
       {% endif %}
-    </div>
+    </article>
     {% endwith %}
   </section>
   {% endif %}
@@ -220,19 +222,20 @@
           {% for article in section.articles %}
           {% if not forloop.first %}<hr class="home-block__divider">{% endif %}
           <article class="article">
+            {% render_toolbar_for article %}
             {% if article.photo %}
-            <a href="{{ article.get_absolute_url }}" class="article__image-container">
-              <img
-                class="article__image"
-                srcset="{{ article.photo.get_small_url }} 350w, {{ article.photo.get_700w_url }} 700w"
-                sizes="(min-width: 700px) 284px, 100vw"
-                width="700"
-                height="{{ article.photo.get_700w_size.1 }}"
-                loading="lazy"
-                title="{{ article.photo_caption }}"
-                alt="{{ article.photo_caption }}"
-              >
-            </a>
+              <a href="{{ article.get_absolute_url }}" class="article__image-container">
+                <img
+                  class="article__image"
+                  srcset="{{ article.photo.get_small_url }} 350w, {{ article.photo.get_700w_url }} 700w"
+                  sizes="(min-width: 700px) 284px, 100vw"
+                  width="700"
+                  height="{{ article.photo.get_700w_size.1 }}"
+                  loading="lazy"
+                  title="{{ article.photo_caption }}"
+                  alt="{{ article.photo_caption }}"
+                >
+              </a>
             {% endif %}
             <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
             <h3 class="article__title">
