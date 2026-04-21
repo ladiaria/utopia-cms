@@ -111,6 +111,10 @@ header {
           opacity: 0;
         }
 
+        &:hover {
+          color: #595959;
+        }
+
         &:disabled {
           color: #000;
         }
@@ -136,7 +140,6 @@ header {
     align-items: center;
     display: flex;
     gap: 7px;
-    align-items: flex-end;
     align-self: center;
     a {
       display: flex;
@@ -1303,6 +1306,10 @@ body {
   &__close {
     display: flex;
     justify-content: center;
+
+    &:hover svg path {
+      stroke: $link-color-hover;
+    }
 
     &.hidden {
       display: none;
