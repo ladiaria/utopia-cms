@@ -440,6 +440,9 @@
       <header class="{% block header_classes %}{% endblock %}">
         {% render_header %}
       </header>
+      <div class="header-nav-wrapper">
+        {% block header_navbar %}{% include "navbar.html" %}{% endblock %}
+      </div>
       {% if extra_header_template %}
         {% include extra_header_template %}
       {% endif %}
