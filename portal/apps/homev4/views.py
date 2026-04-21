@@ -281,6 +281,7 @@ def categories_json(request):
     return JsonResponse(categories, safe=False)
 
 
+@never_cache
 @staff_member_required
 def article_search(request):
     """Return up to 10 published articles matching the ?q= headline search (for the picker widget).
@@ -303,6 +304,12 @@ def article_search(request):
             for comp in gd.get("componentes", []):
                 excluded_ids.update(comp.get("article_ids", []))
         except HomeLayout.DoesNotExist:
+            pass
+
+    for raw_id in request.GET.get("exclude_ids", "").split(","):
+        try:
+            excluded_ids.add(int(raw_id))
+        except ValueError:
             pass
 
     qs = Article.published.filter(headline__icontains=q)
