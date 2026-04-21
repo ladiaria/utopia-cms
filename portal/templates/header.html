@@ -94,6 +94,6 @@
   </div>
 </div>
 
-{% if extra_header_template %}
-  {% include extra_header_template %}
-{% endif %}
+<div class="header-nav-wrapper">
+  {% block header_navbar %}{% include "navbar.html" %}{% endblock %}
+</div>
