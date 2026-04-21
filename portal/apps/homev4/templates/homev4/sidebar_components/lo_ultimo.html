@@ -1,11 +1,12 @@
 {% extends "homev4/sidebar_components/default.html" %}
-{% load bleach_tags ldml %}
+{% load core_tags bleach_tags ldml %}
 
 {% block more_link %}#{% endblock %}
 
 {% block articles %}
   {% for article in comp.articles %}
     <article class="article">
+      {% render_toolbar_for article %}
       {% if article.main_section %}
         <span class="article__section-label">{{ article.main_section.section.name }}</span>
       {% endif %}

@@ -1,3 +1,5 @@
+{% load core_tags %}
+
 <div class="sidebar__block">
   <div class="sidebar__block-title">
     <a href="{% block more_link %}#{% endblock %}">
@@ -9,6 +11,7 @@
     {% block articles %}
       {% for article in comp.articles %}
         <article class="article">
+          {% render_toolbar_for article %}
           <h3 class="article__title">
             <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
           </h3>
