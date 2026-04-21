@@ -343,6 +343,11 @@ article a {
         height: auto;
         display: block;
       }
+
+      &:hover ~ article.article,
+      &:hover ~ article.article a {
+        color: $link-color-hover;
+      }
     }
 
     > .article {
@@ -430,6 +435,7 @@ article a {
   // Texto izquierda + foto grande derecha
   &__featured {
     display: flex;
+    flex-direction: row;
     justify-content: space-between;
     gap: $gap-6;
   }

@@ -115,12 +115,28 @@ a {
     }
   }
 }
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
 button,
 input[type="button"],
 input[type="reset"],
 input[type="submit"] {
   cursor: pointer;
 }
+
+button {
+  background-color: transparent;
+  padding: 0;
+  border: none;
+  font-size: px-to-rem(16px);
+}
+
 ul {
   margin: 0;
   padding: 0;

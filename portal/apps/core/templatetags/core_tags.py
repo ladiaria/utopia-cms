@@ -388,8 +388,9 @@ def render_toolbar_for(context, toolbar_object):
                             ),
                         }
                     )
-            context.update(params)
-            return loader.render_to_string(toolbar_template, context.flatten())
+            flat_context = context.flatten()
+            flat_context.update(params)
+            return loader.render_to_string(toolbar_template, flat_context)
     return ''
 
 
