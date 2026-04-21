@@ -4,27 +4,27 @@
 {% block page_title %}{% title_joinparts joinparts_first|default:'Muro de pago' %}{% endblock %}
 
 {% block css %}
+  {{ block.super }}
   <link href="{% static 'sass/hard_paywall.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block body_class %}{{ block.super }} hard-paywall{% endblock %}
 
+{% block navbar_a_attrs %}class="header-logo" href="{% url "home" %}"{% endblock %}
+
 {% block content %}
 
+  {% comment %}
+  COLUMNA IZQUIERDA: card del artículo bloqueado
+  Solo se renderiza si hay un artículo en el contexto.
+  {% endcomment %}
   {% block article_column %}
     {% if article %}
       <div class="article-container{% if not user.is_authenticated %} anonymous{% endif %}">
-        {% block article_card_header %}
-          {% if user.is_authenticated %}
-            <h1 class="article-container__title">Suscribite para continuar leyendo este artículo</h1>
-            <svg class="article-container__chevron-down-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M7.41 8.57996L12 13.17L16.59 8.57996L18 9.99996L12 16L6 9.99996L7.41 8.57996Z" fill="#A4A4A4"/>
-            </svg>
-          {% endif %}
-        {% endblock %}
+        {# Preview del artículo: foto, sección, título y autor #}
         <div class="article-container__article-card">
           {% if article.photo_render_allowed %}
-            <img src="{{ article.photo.get_350w_url }}" alt="{{ article.photo_caption }}">
+            <img src="{{ article.photo.get_700w_url }}" alt="{{ article.photo_caption }}">
           {% endif %}
           <p class="article-container__article-card__section">
             {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
@@ -41,38 +41,49 @@
     {% endif %}
   {% endblock %}
 
+  {% comment %}
+  COLUMNA DERECHA: panel de pago / registro / login
+  Siempre visible. Incluye botón de cerrar (vuelve al home).
+  {% endcomment %}
   {% block payment %}
     <div class="{% spaceless %}payment-column{% if not user.is_authenticated %} anonymous{% endif %}
       {% block payment_column_extraclass %}payment-column__phone-subscription{% endblock %}{% endspaceless %}">
       <a class="payment-column__close-btn" href="{% block close_btn_url %}{% url 'home' %}{% endblock %}">Cerrar
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M13.46 12L19 17.54V19H17.54L12 13.46L6.46 19H5V17.54L10.54 12L5 6.46V5H6.46L12 10.54L17.54 5H19V6.46L13.46 12Z" fill="#262626"/>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="#262626" d="M13.46 12 19 17.54V19h-1.46L12 13.46 6.46 19H5v-1.46L10.54 12 5 6.46V5h1.46L12 10.54 17.54 5H19v1.46z"/></svg>
       </a>
-      {% block payment_header %}
-        {% if not user.is_authenticated and not 'password' in login_form.fields and not signup_form %}
-          <p class="create-account-desc">
-            Registrate para acceder a {{ signupwall_max_credits }} artículos gratuitos por mes y recibir nuestras newsletters
-          </p>
-          <svg class="create-account-chevron-down-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M7.41 8.57996L12 13.17L16.59 8.57996L18 9.99996L12 16L6 9.99996L7.41 8.57996Z" fill="#A4A4A4"/>
-          </svg>
-        {% endif %}
-      {% endblock %}
       <div class="payment-container{% if not user.is_authenticated %} anonymous{% endif %}">
+
+        {% comment %}
+        Header del panel.
+        Anónimo en paso 1 (solo email): muestra texto de artículos gratis.
+        En pasos siguientes (password/signup) este bloque queda vacío.
+        {% endcomment %}
+        {% block payment_header %}
+          {% if not user.is_authenticated and not 'password' in login_form.fields and not signup_form %}
+            <h1 class="payment-container__title">
+              Registrate para acceder a {{ signupwall_max_credits }} artículos gratis
+            </h1>
+            <p class="create-account-desc">
+              Con tu cuenta gratuita accedés a {{ signupwall_max_credits }} artículos gratis por mes y recibís nuestras newsletters
+            </p>
+          {% endif %}
+          {% block article_card_header %}
+            {# Título "Suscribite para continuar leyendo" — solo para usuarios autenticados sin suscripción #}
+            {% if user.is_authenticated %}
+              <h1 class="payment-container__title">Suscribite por ${% subscriptionprice %} para continuar leyendo</h1>
+            {% endif %}
+          {% endblock %}
+        {% endblock %}
+
+        {% comment %}
+        Encabezado para usuario AUTENTICADO.
+        Muestra chip con tipo de suscripción, header mobile y precio.
+        {% endcomment %}
         {% if user.is_authenticated %}
           {% block payment_content_header %}
             {% if default_subscription_type %}
               <div class="payment-container__chip-subscription">
                 <p>{{ default_subscription_type }}</p>
-              </div>
-              <div class="payment-container__mobile-header">
-                <p>{% if article %}Suscribite para continuar leyendo este artículo{% else %}{{ default_subscription_type }}{% endif %}</p>
-                <a class="payment-container__close-btn" href="{{ SITE_URL }}" aria-label="Volver al inicio">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M13.46 12L19 17.54V19H17.54L12 13.46L6.46 19H5V17.54L10.54 12L5 6.46V5H6.46L12 10.54L17.54 5H19V6.46L13.46 12Z" fill="#959595"/>
-                  </svg>
-                </a>
               </div>
             {% endif %}
           {% endblock %}
@@ -82,40 +93,47 @@
             {% endif %}
           {% endblock %}
         {% endif %}
+
+        {% comment %}
+        Encabezado para usuario ANÓNIMO.
+        Tres estados posibles según el paso del flujo:
+          1. 'password' en login_form → ya ingresó email, pide contraseña
+          2. signup_form → email no registrado, muestra form de registro
+          3. ninguno de los dos → paso inicial, pide email
+        {% endcomment %}
         {% if not user.is_authenticated %}
           {% if 'password' in login_form.fields %}
             <h2 class="sign-in-title">Ingresá</h2>
           {% elif signup_form %}
             <h2 class="sign-up-title">Creá tu cuenta</h2>
             <p class="advice-text">{{ signupwall_max_credits }} artículos gratuitos por mes y recibís gratis nuestras newsletters</p>
-            <svg class="chevron-down-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M7.41 8.57996L12 13.17L16.59 8.57996L18 9.99996L12 16L6 9.99996L7.41 8.57996Z" fill="#A4A4A4"/>
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="#a4a4a4" d="M7.41 8.58 12 13.17l4.59-4.59L18 10l-6 6-6-6z"/></svg>
           {% else %}
-            <div class="payment-container__mobile-header">
-              <p>Creá tu cuenta o ingresá</p>
-              <a class="payment-container__close-btn" href="{{ SITE_URL }}" aria-label="Volver al inicio">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M13.46 12L19 17.54V19H17.54L12 13.46L6.46 19H5V17.54L10.54 12L5 6.46V5H6.46L12 10.54L17.54 5H19V6.46L13.46 12Z" fill="#959595"/>
-                </svg>
-              </a>
-            </div>
             <p>Ingresá tu email</p>
           {% endif %}
         {% endif %}
+
+        {% comment %}
+        Contenido principal: formularios.
+        Autenticado: form de suscripción (subscriber_form).
+        Anónimo: forms de login/registro en hard_paywall_anon_forms.html.
+        Nota: el tag <form> se abre dentro del if/else y se cierra al final del div.
+        Este bloque (payment_content) es sobreescrito en la app utopia_cms_ladiaria.
+        {% endcomment %}
         {% block payment_content %}
           <div class="payment-container__form-container">
             {% if user.is_authenticated %}
               <form id="hardpw-subscribe" method="post" class="form-{{ planslug }}">
                 {% crispy subscriber_form %}
+                {% if subscription_form %}
+                  {% crispy subscription_form %}{{ subscription_form.media }}
+                {% endif %}
+              </form>
             {% else %}
               {% include 'hard_paywall_anon_forms.html' %}
             {% endif %}
-            {% if subscription_form %}
-              {% crispy subscription_form %}{{ subscription_form.media }}
-            {% endif %}
-            </form>{# tag opened in the if or else(included file) in this div #}
           </div>
+          {# Alternativas de login (ej: Google, redes) — solo anónimos en paso de email #}
           {% if not user.is_authenticated and 'password' not in login_form.fields %}
             {% include 'hard_paywall_anon_login_alternatives.html' %}
           {% endif %}

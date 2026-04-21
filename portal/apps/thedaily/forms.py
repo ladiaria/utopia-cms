@@ -184,8 +184,8 @@ class PreLoginForm(CrispyForm):
             + (
                 Submit(
                     'submit',
-                    'continuar',
-                    css_class='payment-container__anonymous__subscribe ut-btn' + (
+                    'Continuar',
+                    css_class='payment-container__anonymous__subscribe btn btn__dark' + (
                         " topspaced" if not terms_and_conditions_prelogin else ""
                     ),
                 ),
@@ -376,7 +376,7 @@ class SignupForm(BaseUserForm):
                 + (
                     'next_page',
                     HTML('<div class="align-center">'),
-                    Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
+                    Submit('save', self.initial.get("save", "Crear cuenta"), css_class='btn btn__dark'),
                     HTML('</div>'),
                 )
             )
@@ -447,7 +447,7 @@ class SignupCaptchaForm(SignupForm):
                 'captcha',
                 'next_page',
                 HTML('<div class="align-center">'),
-                Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l'),
+                Submit('save', 'Crear cuenta', css_class='btn btn__dark'),
                 HTML('</div>'),
             )
         )
@@ -1025,8 +1025,8 @@ class PasswordResetRequestForm(CrispyForm):
                     title="Nombre de usuario o email.",
                     template='materialize_css_forms/layout/email-login.html',
                 ),
-                HTML('<div class="align-center form-group">'),
-                FormActions(Submit('save', 'Restablecer contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('<div class="align-center">'),
+                Submit('save', 'Restablecer contraseña', css_class='btn btn__dark'),
                 HTML('</div>'),
             )
         )

@@ -4,6 +4,7 @@
 <div class="main-section__secondary-row" data-slider>
   {% for article in secondary %}
   <article class="article{% if secondary|length > 3 %}{% if forloop.counter == 3 %} article--slider-right-edge{% elif forloop.counter == 4 %} article--slider-left-edge{% endif %}{% endif %}">
+    {% render_toolbar_for article %}
     <span class="article__section-label">
       {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
     </span>

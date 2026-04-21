@@ -81,7 +81,7 @@ COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
     {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "has_picker": True, "replace_mode": True, "replace_slots": 3, "sortable_articles": False},
-    {"key": "radio",                "label": "Radio",                    "description": ""},
+    {"key": "radio",                "label": "Radio",                    "description": "",                "no_articles": True},
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
     {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos",    "has_picker": True},
@@ -564,6 +564,7 @@ def build_home_data(grid_data, publication=None, layout=None):
             "label": defn.get("label", key),
             "description": defn.get("description", ""),
             "sidebar_component_template": _resolve_sidebar_template(key),
+            "no_articles": defn.get("no_articles", False),
         }
         if defn.get("newsletter_mode"):
             # newsletter_dia: deliver the editor-ordered newsletter list.

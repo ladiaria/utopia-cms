@@ -5,7 +5,8 @@
   <!-- ND: Noticia destacada (cover) -->
   {% if cover_article %}
     <div class="category-grid__cover">
-      <article class="article-cover">
+      <article class="article article-cover">
+        {% render_toolbar_for cover_article %}
         {% if cover_article.photo_render_allowed %}
           <a href="{{ cover_article.get_absolute_url }}" class="article-cover__image-link">
              <img
@@ -56,6 +57,7 @@
   <div class="category-grid__secondary">
     {% for a in destacados|slice:":3" %}
       <article class="article">
+        {% render_toolbar_for a %}
         {% if a.photo_render_allowed %}
           {% if not secondary_images_all_or_nothing or secondary_all_have_photo %}
             <a href="{{ a.get_absolute_url }}" class="article__image-link">
@@ -98,10 +100,80 @@
     {% endfor %}
   </div>
 
+  {% if category %}
+  <div class="cover-newsletter">
+    <div class="cover-newsletter__badge">
+      <span>Newsletter</span>
+    </div>
+    <div class="cover-newsletter__body">
+      <div class="cover-newsletter__header">
+        <h2 class="cover-newsletter__title">{{ category.name }}</h2>
+        <label class="cover-newsletter__switch">
+          {% if not user.is_anonymous %}
+            <input type="checkbox"
+              id="id_cover_newsletter_{{ category.slug }}"
+              name="{{ category.slug }}"
+              data-url="{% url 'nl-auth-subscribe' nltype='c' nlslug=category.slug %}"
+              data-key="nl_subscribe"
+              data-bouncer="false"
+            >
+          {% endif %}
+          <span class="cover-newsletter__slider slider"></span>
+        </label>
+      </div>
+      {% if category.newsletter_tagline %}
+        <p class="cover-newsletter__description">{{ category.newsletter_tagline }}</p>
+      {% endif %}
+      <a href="{% url 'c-nl-browser-authpreview' slug=category.slug %}" class="cover-newsletter__preview">Previsualizar</a>
+    </div>
+  </div>
+  {% elif publication and publication != default_pub %}
+  <div class="cover-newsletter">
+    <div class="cover-newsletter__badge">
+      <span>Newsletter</span>
+    </div>
+    <div class="cover-newsletter__body">
+      <div class="cover-newsletter__header">
+        <h2 class="cover-newsletter__title">{{ publication.name }}</h2>
+        <label class="cover-newsletter__switch">
+          {% if not user.is_anonymous %}
+            <input type="checkbox"
+              id="id_cover_newsletter_{{ publication.slug }}"
+              name="{{ publication.slug }}"
+              data-url="{% url 'nl-auth-subscribe' nltype='p' nlslug=publication.slug %}"
+              data-key="nl_subscribe"
+              data-bouncer="false"
+            >
+          {% endif %}
+          <span class="cover-newsletter__slider slider"></span>
+        </label>
+      </div>
+      {% if publication.newsletter_tagline %}
+        <p class="cover-newsletter__description">{{ publication.newsletter_tagline }}</p>
+      {% endif %}
+      {% block cover_newsletter_publication_preview %}{% endblock %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- TA1–TA5: Noticias terciarias (destacados 4–8) -->
   <div class="category-grid__tertiary-group">
     {% for a in destacados|slice:"3:8" %}
       <article class="article">
+        {% render_toolbar_for a %}
+        {% if forloop.first and a.photo_render_allowed %}
+          <a href="{{ a.get_absolute_url }}" class="article__image-link">
+            <img
+              srcset="{{ a.photo.get_small_url }} 350w, {{ a.photo.get_700w_url }} 700w"
+              sizes="(min-width: 700px) 1200px, 100vw"
+              width="700"
+              height="{{ a.photo.get_700w_size.1 }}"
+              title="{{ a.photo_caption }}"
+              alt="{{ a.photo_caption }}"
+              class="article__image"
+            >
+          </a>
+        {% endif %}
         <span class="article__section-label">
           {% with article=a %}
             {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}

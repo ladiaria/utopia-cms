@@ -6,14 +6,11 @@ body.hard-paywall {
   h1,
   p {
     line-height: normal;
-    font-family: AntennaCond, sans-serif;
+    font-family: $sans;
     margin: 0;
   }
 
   #main-header {
-    @media #{$medium-and-up} {
-      display: none;
-    }
     .subscription_black {
       display: flex;
       align-items: center;
@@ -26,7 +23,7 @@ body.hard-paywall {
     --container-padding-top: 44px;
     width: 100%;
     display: flex;
-    gap: 40px;
+    gap: 48px;
     justify-content: center;
     padding: var(--container-padding-top) 0;
     max-width: 900px;
@@ -56,45 +53,55 @@ body.hard-paywall {
 
       &__article-card {
         background-color: white;
-        border-radius: 24px;
-        padding: 32px;
+        border-radius: 5px;
         text-align: center;
         display: flex;
         flex-direction: column;
-        gap: 13px;
+        gap: 12px;
         border: 1px solid #e0e0e0;
 
         img {
-          border-radius: 8px;
+          border-radius: 6px 6px 0 0;
         }
 
         &__section {
+          padding-top: 12px;
           font-size: px-to-rem(14px);
           text-transform: uppercase;
         }
 
         &__title {
-          font-family: "Meta Serif", serif;
+          font-family: $serif;
           font-size: px-to-rem(20px);
-          font-weight: 500;
+          font-weight: 450;
+          padding: 0 32px;
         }
 
         &__author {
-          color: #a4a4a4;
           font-size: px-to-rem(14px);
         }
 
         &__ladiaria-logo {
-          border-top: 1px solid #e0e0e0;
+          position: relative;
           padding: 16px 0;
           display: flex;
           justify-content: center;
+          &::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            width: 329px;
+            height: 0.5px;
+            background-color: #ababab;
+          }
         }
       }
     }
     .payment-column {
       width: 100%;
-      max-width: 360px;
+      max-width: px-to-rem(378px);
 
       @media #{$medium-and-down} {
         margin: 0 auto;
@@ -115,11 +122,11 @@ body.hard-paywall {
         p.create-account-desc {
           color: #000;
           text-align: center;
-          font-family: "Roboto", sans-serif;
-          padding: 4px 18px 8px;
+          font-family: $sans;
+          padding-bottom: 48px;
         }
         p {
-          font-family: "Roboto", sans-serif;
+          font-family: $sans;
         }
         .create-account-chevron-down-icon {
           margin-bottom: 8px;
@@ -144,10 +151,6 @@ body.hard-paywall {
             padding-bottom: 24px;
           }
           .sign-in-btn-container {
-            border-top: 1px solid #f3f3f3;
-            padding-top: 8px;
-            padding-bottom: 40px;
-
             @media #{$medium-and-down} {
               padding-bottom: 0;
             }
@@ -156,16 +159,21 @@ body.hard-paywall {
           .topspaced {
             margin-top: 25px;
           }
+        }
 
-          .alert-box {
-            background: none;
-            color: #b61616;
-            height: 50px;
-            font-size: 90%;
-            ul {
-              width: 100%;
-            }
-          }
+        p.alert-box {
+          background-color: #ea4444;
+          border: 1px solid #d50000;
+          border-radius: 5px;
+          padding: 16px;
+          color: #fff;
+          font-size: px-to-rem(16px);
+          margin: 16px 0 0;
+        }
+
+        form#hardpw-login:not(.password-login) {
+          border-bottom: 0.5px solid #ababab;
+          padding-bottom: 24px;
         }
 
         form#hardpw-signup {
@@ -175,15 +183,14 @@ body.hard-paywall {
 
       &__close-btn {
         position: absolute;
-        top: var(--container-padding-top);
         right: 44px;
-        border-radius: 18px;
-        background: rgba(141, 141, 141, 0.16);
+        border-radius: 5px;
+        background: #e3e8ea;
         display: inline-flex;
-        padding: 4px 16px;
+        padding: 10px 16px;
         justify-content: center;
         align-items: center;
-        gap: 5px;
+        gap: 10px;
 
         @media #{$medium-and-down} {
           display: none;
@@ -191,42 +198,39 @@ body.hard-paywall {
       }
 
       .payment-container {
-        border: 1px solid #828282;
-        box-shadow: 0px 3.676px 14.703px 0px rgba(0, 0, 0, 0.1);
+        border: 0.5px solid #828282;
         position: relative;
-        border-radius: 8px;
+        border-radius: 5px;
         background-color: white;
-        padding-top: 24px;
         text-align: center;
+        padding: 32px;
 
         #box-tel-div {
           text-align: initial;
         }
 
+        &__title {
+          font-family: $sans-title;
+          font-size: px-to-rem(24px);
+          padding-bottom: 16px;
+        }
+
         &.anonymous {
-          padding: 40px 0 0;
-
-          @media #{$medium-and-down} {
-            padding: 0;
-          }
-
           h2.sign-in-title,
           h2.sign-up-title {
             font-size: px-to-rem(24px);
-            font-family: "Roboto", sans-serif;
+            font-family: $sans-title;
             margin: 0;
-            padding-bottom: 12px;
-            padding-top: 16px;
           }
 
           .sign-up-title,
           .advice-text {
             margin-bottom: 16px;
           }
-        }
 
-        @media #{$medium-and-down} {
-          padding-top: 0;
+          .google-auth {
+            width: 100%;
+          }
         }
 
         &__chip-subscription {
@@ -300,18 +304,16 @@ body.hard-paywall {
         }
 
         &__full-price {
-          font-size: px-to-rem(20px);
-          padding-bottom: 10px;
+          padding-bottom: 4px;
         }
 
         &__cancel-advice {
-          color: #eb5757;
-          padding-bottom: 16px;
+          font-size: px-to-rem(12px);
+          color: #fa4f4f;
+          padding-bottom: 24px;
         }
 
         &__form-container {
-          padding: 16px;
-
           img {
             padding-bottom: 20px;
             max-height: 400px;

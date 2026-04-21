@@ -13,6 +13,7 @@
   {# TODO: los estilos del cover grid están en category/detail.scss pero deberían extraerse a un archivo agnóstico (ej: cover_grid.scss) que puedan importar tanto category/detail.scss como este template #}
   <link href="{% static 'sass/category/detail.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
   <link href="{% static 'sass/components/nl_switch.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/category-and-publication.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block body_class %}{{ publication.slug }}-pub{% endblock %}
@@ -56,8 +57,6 @@
   {% render_cover %}
   {% endcomment %}
 
-  {% block after_cover %}{% endblock %}
-
   {% for section in featured_sections %}
     {% render_section section %}
   {% endfor %}
@@ -65,6 +64,8 @@
   {% if news_wall_enabled %}
     {% include 'news_wall.html' %}
   {% endif %}
+
+  {% block after_cover %}{% endblock %}
 
   {% include bigphoto_template %}
 
@@ -80,9 +81,17 @@
   </script>
 
   <script>
+    // NL_HEADER_CONFIG is used by nl_header_subscribe_init() for the header newsletter button
+    window.NL_HEADER_CONFIG = {
+      isAnonymous: {{ user.is_anonymous|yesno:"true,false" }},
+      subscribeUrl: "{% url 'nl-auth-subscribe' nltype='p' nlslug=publication.slug %}",
+      dataKey: "nl_subscribe",
+      anonymousMessage: "Iniciá sesión para recibir el newsletter",
+      successMessage: "Newsletter activada"
+    };
     document.addEventListener('DOMContentLoaded', function() {
-      // Initialize newsletter subscription switches
-      switch_change_events(document.querySelectorAll('.newsletter .newsletter__switch-container'));
+      switch_change_events(document.querySelectorAll('.cover-newsletter__switch'));
+      nl_header_subscribe_init();
 
       // Load publication header ad content
       fetch("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}")

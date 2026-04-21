@@ -3,6 +3,11 @@
 
 {% block page_title %}Suscripción a {{ product }}{% title_joinparts '' %}{% endblock %}
 
+{% block css %}
+  {{ block.super }}
+  <link href="{% static 'sass/subscription.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
 {% block extra_css %}
   <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
 {% endblock %}
@@ -23,7 +28,7 @@
   <div class="modal" id="terms-conditions-modal">
     <div class="content">
       {% autoescape off %}{% terms_and_conditions %}{% endautoescape %}
-      <div class="align-center"><a class="ut-btn" onclick="accept_terms_and_conds();">aceptar</a></div>
+      <div class="align-center"><a class="btn btn__dark" onclick="accept_terms_and_conds();">Aaceptar</a></div>
     </div>
   </div>
 {% endblock %}
@@ -89,7 +94,10 @@
                   {% if oauth2_button and not user.is_authenticated %}
                     <div class="row">
                       <div class="col s12 align-center ld-block--sm">
-                        <a href="?auth=google-oauth2" class="ld-btn-google">con Google</a>
+                        <a href="?auth=google-oauth2" class="ld-btn-google">
+                          <img src="{% static "img/icon-google.svg" %}" alt="Logo Google">
+                          <span>con Google</span>
+                        </a>
                       </div>
                     </div>
                     <div class="row">

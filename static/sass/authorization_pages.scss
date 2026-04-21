@@ -1,0 +1,87 @@
+@import "variables";
+
+body {
+  background-color: #f1f4f5;
+}
+
+main#main-content {
+  flex: 1;
+}
+
+p {
+  margin: 0;
+}
+
+.ld-content {
+  max-width: px-to-rem(390px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+
+  .google-auth {
+    padding-bottom: 32px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid $color-divider;
+  }
+
+  .forgot-password {
+    padding-top: 8px;
+    text-align: right;
+  }
+  .submit {
+    margin: 0 auto;
+    text-align: center;
+    padding-top: 32px;
+  }
+
+  /* Forgot password page */
+  .forgot-password & {
+    .ld-title-huge {
+      padding-bottom: 24px;
+    }
+    > p {
+      padding-bottom: 64px;
+    }
+    #reset_password #div_id_username_or_email {
+      padding-bottom: 64px;
+    }
+    @media #{$medium-and-down} {
+      .ld-title-huge {
+        padding-bottom: 16px;
+      }
+      > p {
+        padding-bottom: 48px;
+      }
+      #reset_password #div_id_username_or_email {
+        padding-bottom: 48px;
+      }
+    }
+  }
+
+  /* Logged out page */
+  .logged-out & {
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    @media #{$medium-and-down} {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      > div {
+        width: max-content;
+      }
+    }
+  }
+}
+
+@media #{$medium-and-down} {
+  .ld-content {
+    padding-top: 16px;
+    .google-auth {
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+    }
+  }
+}

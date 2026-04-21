@@ -8,6 +8,11 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: $col-gap;
+
+    &--centered {
+      grid-template-columns: repeat(3, 284px);
+      justify-content: center;
+    }
   }
 }
 

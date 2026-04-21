@@ -1,57 +1,65 @@
 {% load bleach_tags ldml %}
 
 <section class="frontpage-section section-news-wall">
-  <div class="container">
     {# TODO: this loops must be improved for performance, at least exclude those without articles #}
     {% if publication and publication != default_pub %}
 
-      {% for section in publication.section_set.all|slice:":8" %}
-        <div class="news-wall__block">
-          <span class="news-wall__title">
-            <a href="{% url 'section_detail' section_slug=section.slug %}">
-              {{ section.name_in_category_menu|default:section.name }}
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m10 16 4-4-4-4"/></svg>
-            </a>
-          </span>
-          <ul class="news-wall__list">
-            {# TODO: create a template tag for this loop #}
-            {% for article in section.latest3 %}
-              {% if publication in article.publications %}
+      {% with sections=publication.section_set.all|slice:":8" %}
+      <div class="container{% if sections|length == 3 %} container--centered{% endif %}">
+        {% for section in sections %}
+          <div class="news-wall__block">
+            <span class="news-wall__title">
+              <a href="{% url 'section_detail' section_slug=section.slug %}">
+                {{ section.name_in_category_menu|default:section.name }}
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m10 16 4-4-4-4"/></svg>
+              </a>
+            </span>
+            <ul class="news-wall__list">
+              {# TODO: create a template tag for this loop #}
+              {% for article in section.latest3 %}
+                {% if publication in article.publications %}
+                  <li class="news-wall__item">
+                    <a href="{{ article.get_absolute_url }}" class="news-wall__link">
+                      {{ article.headline|ldmarkup|bleach }}
+                    </a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </div>
+        {% endfor %}
+      </div>
+      {% endwith %}
+
+    {% elif category %}
+
+      {% with sections=category.section_set.all|slice:":8" %}
+      <div class="container{% if sections|length == 3 %} container--centered{% endif %}">
+        {% for section in sections %}
+          <div class="news-wall__block">
+            <span class="news-wall__title">
+              <a href="{{ section.get_absolute_url }}">
+                {{ section.name_in_category_menu|default:section.name }}
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m10 16 4-4-4-4"/></svg>
+              </a>
+            </span>
+            <ul class="news-wall__list">
+              {% for article in section.latest3 %}
                 <li class="news-wall__item">
                   <a href="{{ article.get_absolute_url }}" class="news-wall__link">
                     {{ article.headline|ldmarkup|bleach }}
                   </a>
                 </li>
-              {% endif %}
-            {% endfor %}
-          </ul>
-        </div>
-      {% endfor %}
-
-    {% elif category %}
-
-      {% for section in category.section_set.all|slice:":8" %}
-        <div class="news-wall__block">
-          <span class="news-wall__title">
-            <a href="{{ section.get_absolute_url }}">
-              {{ section.name_in_category_menu|default:section.name }}
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m10 16 4-4-4-4"/></svg>
-            </a>
-          </span>
-          <ul class="news-wall__list">
-            {% for article in section.latest3 %}
-              <li class="news-wall__item">
-                <a href="{{ article.get_absolute_url }}" class="news-wall__link">
-                  {{ article.headline|ldmarkup|bleach }}
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+        {% endfor %}
+      </div>
+      {% endwith %}
 
     {% else %}
 
+      <div class="container">
       {% for category in MENU_CATEGORIES.keys %}
         <div class="news-wall__block">
           <span class="news-wall__title">
@@ -91,7 +99,7 @@
           </ul>
         </div>
       {% endfor %}
+      </div>
 
     {% endif %}
-  </div>
 </section>

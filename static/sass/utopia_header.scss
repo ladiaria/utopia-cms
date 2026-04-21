@@ -19,7 +19,6 @@ body:has(header.category-pub-header) {
 
 header {
   display: flex;
-  font-family: "Dialect Gothic A";
   background-color: white;
   border-bottom: 0.5px solid #ababab;
   display: flex;
@@ -54,7 +53,12 @@ header {
 
 .header-container {
   @include utopia-container;
-  padding: 16px 20px 32px;
+  padding: 16px 20px 16px;
+
+  header.category-pub-header &,
+  header.home-header & {
+    padding: 16px 20px 32px;
+  }
 
   header.sticky &,
   body.section-detail,
@@ -92,7 +96,7 @@ header {
     .fixed-items {
       display: flex;
       gap: 24px;
-      a {
+      button {
         display: flex;
         align-items: center;
         gap: 4px;
@@ -104,6 +108,23 @@ header {
         transition: opacity 0.1s ease;
         header.category-pub-header.sticky & {
           opacity: 0;
+        }
+
+        &:disabled {
+          color: #000;
+        }
+
+        &__icon-active {
+          display: none;
+        }
+
+        &--active {
+          .newsletter-header__icon-default {
+            display: none;
+          }
+          .newsletter-header__icon-active {
+            display: inline;
+          }
         }
       }
     }
@@ -175,6 +196,7 @@ header {
   }
 
   @media #{$medium-and-down} {
+    align-items: center;
     body.main-menu-open & {
       grid-template-columns: 1fr auto 1fr;
     }
@@ -195,6 +217,7 @@ header {
       display: flex;
       justify-content: center;
       align-self: center;
+      align-items: center;
 
       // On the home header in normal (non-sticky) state, the logo is larger.
       // When sticky kicks in, this selector stops matching and the logo
@@ -220,6 +243,9 @@ header {
       display: none;
     }
     .upper-right-content {
+      a:not(.search-btn) {
+        display: none;
+      }
       header.category-pub-header & {
         display: none;
       }
@@ -317,7 +343,6 @@ header {
 
     i {
       height: $navbar-height-mobile;
-      line-height: $navbar-line-height-mobile;
     }
   }
 
@@ -398,7 +423,7 @@ header {
         transition: color 0.3s;
       }
       &.active i {
-        color: $navbar-font-color;
+        color: white;
       }
     }
   }
@@ -1106,6 +1131,7 @@ header {
     vertical-align: middle;
     height: 40px;
     width: auto;
+    max-width: 103px;
   }
 }
 
@@ -1223,6 +1249,7 @@ body {
   transition: 300ms ease;
   z-index: 1000;
   overflow: auto;
+  scrollbar-width: none;
   font-size: 18px;
   font-weight: 400;
   width: 100%;
@@ -1240,6 +1267,10 @@ body {
   padding-bottom: 60px;
   padding-top: 80px;
 
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
   &.active {
     transition: 300ms ease;
     opacity: 1;
@@ -1254,7 +1285,7 @@ body {
   &__title {
     margin: 0 0 15px 0;
     font-size: 14px;
-    font-family: "Roboto", sans-serif;
+    font-family: $sans;
     font-weight: bold;
     color: $off-black;
 
@@ -1269,7 +1300,6 @@ body {
 
   &__open,
   &__close {
-    width: 35px;
     display: flex;
     justify-content: center;
 
@@ -1447,7 +1477,7 @@ body.frontpage #main-header.nav-down #nav-principal span.nav-menu__pill {
   z-index: 1;
 
   &__title {
-    font-family: "Roboto", sans-serif;
+    font-family: $sans;
     font-size: 50px;
     margin-bottom: 12px;
     margin-top: 0;
@@ -1470,7 +1500,7 @@ main > header {
   background-color: $primary-color;
 
   h1 {
-    font-family: "Roboto", sans-serif;
+    font-family: $sans;
     font-size: 50px;
     margin-bottom: 0;
     margin-top: 5vh;
@@ -1526,13 +1556,6 @@ body.interior {
       width: 90%;
       max-width: 1170px;
     }
-  }
-}
-
-#header-pub {
-  > .container {
-    max-width: 1170px;
-    width: 90%;
   }
 }
 

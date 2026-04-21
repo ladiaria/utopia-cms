@@ -1,5 +1,5 @@
 @import "../utopia_mixins";
-@import "../utopia_materialize/variables";
+@import "../variables";
 
 body.user-newsletters {
   p,
@@ -10,8 +10,8 @@ body.user-newsletters {
 
   .container {
     width: 100%;
-    max-width: 1132px;
-    padding: 60px 0;
+    max-width: $container-width;
+    padding: 64px $padding-inline;
   }
 
   h1 {
@@ -143,11 +143,7 @@ body.user-newsletters {
 
   .edit_profile_card {
     &__inner-section {
-      box-shadow: 2px 2px 4px 0px rgba(0, 0, 0, 0.25);
       margin: 0;
-      box-sizing: border-box;
-      border: none;
-      outline: 1px solid #d8d8d8;
 
       &:hover {
         box-shadow: none;
@@ -156,7 +152,6 @@ body.user-newsletters {
       &.active {
         box-shadow: none;
         outline: 2px solid #21966a;
-        background-color: white;
       }
       &_header {
         border-bottom: 1px solid #d8d8d8;

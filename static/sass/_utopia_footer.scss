@@ -11,20 +11,15 @@
     grid-template-columns: repeat(5, auto);
   }
 
-  .ut-btn {
-    min-width: 155px;
+  .minimal {
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .ld-main-menu__item--btn {
     margin-bottom: 12px;
-  }
-
-  h6 {
-    font-weight: bold;
-  }
-
-  .row {
-    margin: 0;
   }
 
   a {
@@ -100,14 +95,13 @@
   }
   .footer-legend {
     display: block;
-    font-size: 24px;
-    line-height: 1.2;
-    font-family: AntennaCond, sans-serif;
-    max-width: 870px;
+    font-size: px-to-rem(28px);
+    font-family: $sans-title;
     margin: 0 auto;
+    padding-bottom: 32px;
 
     @media (min-width: 600px) {
-      font-size: 32px;
+      font-size: px-to-rem(32px);
     }
   }
 
@@ -207,11 +201,19 @@
 }
 
 .ld-footer-simple {
-  margin-top: 50px;
+  margin-top: 64px;
   border-top: 1px solid #e8e8e8;
-  padding-top: 20px;
-  background: white;
-  background: transparent;
+  padding-block: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+  p {
+    margin: 0;
+  }
+  @media #{$medium-and-down} {
+    padding-block: 24px;
+  }
 }
 
 // Mobile navbar

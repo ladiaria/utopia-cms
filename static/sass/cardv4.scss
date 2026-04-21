@@ -30,7 +30,7 @@ article a {
 .article {
   display: flex;
   flex-direction: column;
-  gap: $gap-3;
+  gap: $gap-2;
   position: relative;
 
   &__body {
@@ -43,7 +43,6 @@ article a {
     text-transform: uppercase;
     letter-spacing: 0.96px;
     font-size: px-to-rem(12px);
-    display: flex;
     display: flex;
     align-items: center;
     gap: 8px;
