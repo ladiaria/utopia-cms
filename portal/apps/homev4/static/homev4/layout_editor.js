@@ -189,7 +189,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Wire up remove buttons already present in the rendered HTML (saved articles)
     document.querySelectorAll(".picker-remove").forEach(function (btn) {
-        initRemoveButton(btn, btn.closest("[data-article-id]"));
+        initRemoveButton(btn, btn.closest("[data-article-id], [data-newsletter-ref]"));
     });
 
     // Highlight section rows when their replace-radio is checked
@@ -354,12 +354,23 @@ document.addEventListener("DOMContentLoaded", function () {
         log("picker", "added article", { id: article.id, headline: article.headline });
     }
 
+    // Returns all article IDs currently present in the editor DOM (across all pickers/zones).
+    // Used to exclude already-placed articles from search results without requiring a save.
+    function getEditorArticleIds() {
+        var ids = [];
+        document.querySelectorAll("[data-article-id]").forEach(function (el) {
+            var id = parseInt(el.dataset.articleId, 10);
+            if (!isNaN(id)) ids.push(id);
+        });
+        return ids;
+    }
+
     // q: search query string
     // resultsEl: the .picker-results dropdown element
     // articlesContainer: the articles list element to add rows into
     // rowClass / itemSelector: forwarded to addArticleToPicker
     // picker: the .article-picker wrapper (to find the input when clearing)
-    function fetchArticles(q, resultsEl, articlesContainer, rowClass, itemSelector, picker) {
+    function fetchArticles(q, resultsEl, articlesContainer, rowClass, itemSelector, picker, signal) {
         resultsEl.innerHTML = "";
         var loading = document.createElement("div");
         loading.className = "picker-loading";
@@ -371,7 +382,11 @@ document.addEventListener("DOMContentLoaded", function () {
         var baseUrl = isNewsletterMode ? (picker.dataset.searchUrl || DATA.newsletterSearchUrl) : DATA.articleSearchUrl;
         var sep = baseUrl.indexOf("?") >= 0 ? "&" : "?";
         var url = baseUrl + sep + "q=" + encodeURIComponent(q);
-        fetch(url, { credentials: "same-origin" })
+        if (!isNewsletterMode) {
+            var editorIds = getEditorArticleIds();
+            if (editorIds.length) url += "&exclude_ids=" + editorIds.join(",");
+        }
+        fetch(url, { credentials: "same-origin", signal: signal })
             .then(function (r) { return r.json(); })
             .then(function (articles) {
                 resultsEl.innerHTML = "";
@@ -460,6 +475,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 resultsEl.style.display = "block";
             })
             .catch(function (err) {
+                if (err.name === "AbortError") return;
                 log("picker", "search error", err.message);
                 resultsEl.innerHTML = "";
                 var errEl = document.createElement("div");
@@ -486,8 +502,10 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!input || !resultsEl || !articlesContainer) return;
 
             var timer = null;
+            var fetchController = null;
             input.addEventListener("input", function () {
                 clearTimeout(timer);
+                if (fetchController) { fetchController.abort(); fetchController = null; }
                 var q = this.value.trim();
                 if (q.length < 2) {
                     resultsEl.innerHTML = "";
@@ -495,7 +513,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
                 timer = setTimeout(function () {
-                    fetchArticles(q, resultsEl, articlesContainer, rowClass, itemSelector, picker);
+                    fetchController = new AbortController();
+                    fetchArticles(q, resultsEl, articlesContainer, rowClass, itemSelector, picker, fetchController.signal);
                 }, 300);
             });
 
