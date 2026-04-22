@@ -24,25 +24,21 @@
 
 {% block content %}
   <main class="ld-content">
-    <div class="row">
-      <div class="col s12 m10 offset-m1">
-        <h1 class="ld-title-huge align-center">Activación de cuenta</h1>
-        {% if error %}
-          {{ error }}
-        {% elif form %}
-          {% if from_login %}
-            {# Caso 3b: Usuario viene del login con cuenta no activa #}
-            <p><strong>Tu cuenta no está activada.</strong> Revisá tu correo y seguí el enlace para activar tu cuenta.</p>
-            <p>Si no recibiste el email de activación, podés reenviarlo usando el siguiente formulario:</p>
-          {% else %}
-            <p>Si tu cuenta en <i>{{ site.name }}</i> ya fue creada, usando el siguiente formulario enviá el mensaje de activación al email con el que creaste la cuenta:</p>
-          {% endif %}
-          {% crispy form %}
-        {% else %}
-          {% include action_content_template %}
-        {% endif %}
-      </div>
-    </div>
+    <h1 class="ld-title-huge align-center">Activación de cuenta</h1>
+    {% if error %}
+      {{ error }}
+    {% elif form %}
+      {% if from_login %}
+        {# Caso 3b: Usuario viene del login con cuenta no activa #}
+        <p><strong>Tu cuenta no está activada.</strong> Revisá tu correo y seguí el enlace para activar tu cuenta.</p>
+        <p>Si no recibiste el email de activación, podés reenviarlo usando el siguiente formulario:</p>
+      {% else %}
+        <p>Si tu cuenta en <i>{{ site.name }}</i> ya fue creada, usando el siguiente formulario enviá el mensaje de activación al email con el que creaste la cuenta:</p>
+      {% endif %}
+      {% crispy form %}
+    {% else %}
+      {% include action_content_template %}
+    {% endif %}
   </main>
 {% endblock %}
 

@@ -5,7 +5,7 @@
 
 {% block css %}
   {{ block.super }}
-  <link href="{% static 'sass/subscription.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/access_pages.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block extra_css %}
@@ -28,7 +28,7 @@
   <div class="modal" id="terms-conditions-modal">
     <div class="content">
       {% autoescape off %}{% terms_and_conditions %}{% endautoescape %}
-      <div class="align-center"><a class="btn btn__dark" onclick="accept_terms_and_conds();">Aaceptar</a></div>
+      <div class="align-center"><a class="btn btn__dark" id="terms-accept-btn">Aceptar</a></div>
     </div>
   </div>
 {% endblock %}
@@ -38,87 +38,69 @@
   {% if subscription_in_process %}
     {# TODO: try to reproduce this condition and write how to do it #}
     <main class="ld-content">
-      <div class="row">
-        <div class="col s12 m8 offset-m2">
-          {% include 'subscription_in_process.html' %}
-        </div>
-      </div>
+      {% include 'subscription_in_process.html' %}
     </main>
   {% else %}
 
     {% if is_already_subscribed %}
 
       <div id="plans" class="ld-content">
-        <div class="row">
-          <div class="col s12 center-align">
-
-              <div class="row">
-                <div class="col s12 m10 offset-m1 l10 offset-l1 center-align">
-                  <p>
-                    Ya tenés una suscripción activa en <em>{{ product }}</em> relacionada con el usuario con el estas logueado actualmente.
-                  </p>
-                  <p>
-                    Para cambiar tu plan, forma de pago, u otra consulta <a href="{% url 'contact-form' %}">contactanos</a>, y a la brevedad nuestro servicio de atención al cliente se pondrá en contacto contigo.
-                  </p>
-                  <p>Muchas gracias.</p>
-                </div>
-              </div>
-
-          </div>
+        <div class="center-align">
+          <p>
+            Ya tenés una suscripción activa en <em>{{ product }}</em> relacionada con el usuario con el estas logueado actualmente.
+          </p>
+          <p>
+            Para cambiar tu plan, forma de pago, u otra consulta <a href="{% url 'contact-form' %}">contactanos</a>, y a la brevedad nuestro servicio de atención al cliente se pondrá en contacto contigo.
+          </p>
+          <p>Muchas gracias.</p>
         </div>
       </div>
 
     {% else %}
 
       <div class="ld-content">
+        <div class="subscribe-header center-align">
+          {% if planslug %}
+            <h1 class="ld-title-big">Suscripción a {{ product }}</h1>
+            <div class="price">{{ subscription_price }}</div>
+            {% comment "TODO 2nd release: explanation and description new fields" %}
+              <small class="exp"></small>
+              <span class="ld-text-secondary"></span>
+            {% endcomment %}
+          {% endif %}
+        </div>
+        <div>
+          {% if not user.is_authenticated and oauth2_button %}
+            <h2 class="center-align u-mt-50">Creá tu cuenta</h2>
+          {% endif %}
+          <div class="col s12">
+            <form id="subscribe" method="post" class="form-{{ planslug }}">
 
-        <div class="row">
-          <div class="subscribe-header center-align">
-            {% if planslug %}
-              <h1 class="ld-title-big">Suscripción a {{ product }}</h1>
-              <div class="price">{{ subscription_price }}</div>
-              {% comment "TODO 2nd release: explanation and description new fields" %}
-                <small class="exp"></small>
-                <span class="ld-text-secondary"></span>
-              {% endcomment %}
-            {% endif %}
-          </div>
-          <div class="col s12 m8 offset-m2{% if user.is_authenticated %} u-mt-50{% endif %}">
-            <div class="row">
-              {% if not user.is_authenticated and oauth2_button %}
-                <h2 class="center-align u-mt-50">Creá tu cuenta</h2>
+              {% if oauth2_button and not user.is_authenticated %}
+                <div class="row">
+                  <div class="col s12 align-center ld-block--sm">
+                    <a href="?auth=google-oauth2" class="ld-btn-google">
+                      <img src="{% static "img/icon-google.svg" %}" alt="Logo Google">
+                      <span>con Google</span>
+                    </a>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col s12 align-center ld-text-secondary">
+                    O con tu email
+                  </div>
+                </div>
               {% endif %}
-              <div class="col s12">
-                <form id="subscribe" method="post" class="form-{{ planslug }}">
 
-                  {% if oauth2_button and not user.is_authenticated %}
-                    <div class="row">
-                      <div class="col s12 align-center ld-block--sm">
-                        <a href="?auth=google-oauth2" class="ld-btn-google">
-                          <img src="{% static "img/icon-google.svg" %}" alt="Logo Google">
-                          <span>con Google</span>
-                        </a>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col s12 align-center ld-text-secondary">
-                        O con tu email
-                      </div>
-                    </div>
-                  {% endif %}
+              {% crispy subscriber_form %}
 
-                  {% crispy subscriber_form %}
+              {% if subscription_form %}
+                {% crispy subscription_form %}{{ subscription_form.media }}
+              {% endif %}
 
-                  {% if subscription_form %}
-                    {% crispy subscription_form %}{{ subscription_form.media }}
-                  {% endif %}
-
-                </form>
-              </div>
-            </div>
+            </form>
           </div>
         </div>
-
       </div>
 
     {% endif %}
@@ -131,24 +113,25 @@
 
 {% block materialize_scripts %}
   <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
-  <script defer src="{% static 'materialize/js/modal.js' %}"></script>
 {% endblock %}
 
 {% block javascript %}
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
   <script src="{{ intl_tel_input_cdn }}js/intlTelInput.min.js"></script>
   <script src="{% static 'js/phone_widget.js' %}"></script>
-  <script>
-    $(function(){
-      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");
-      $('label[for="id_terms_and_conds_accepted"] a').on("click", function(event){
-        event.preventDefault();
-        $('.modal').modal('open');
-      });
+  <script type="module">
+    import { openModal, closeModal } from "{% static 'js/modal.js' %}";
+
+    phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");
+
+    document.querySelector('label[for="id_terms_and_conds_accepted"] a').addEventListener("click", function(event){
+      event.preventDefault();
+      openModal('terms-conditions-modal');
     });
-    function accept_terms_and_conds(){
-      $('.modal').modal('close');
-      $('#id_terms_and_conds_accepted').prop('checked', true);
-    }
+
+    document.getElementById('terms-accept-btn').addEventListener("click", function(){
+      closeModal('terms-conditions-modal');
+      document.getElementById('id_terms_and_conds_accepted').checked = true;
+    });
   </script>
 {% endblock %}

@@ -18,6 +18,7 @@ See also [`REDESIGNV4.md`](REDESIGNV4.md) for deploy-time steps related to the v
 - [ ] Audit and replace/remove all uses of the `footer-section` class
 - [ ] Remove Materialize CSS grid (`row` / `col s12`) from subscribe and login templates
 - [ ] Remove all Materialize CSS dependencies from the project
+- [ ] Remove `collapsible.js` (Materialize) from access pages
 
 ---
 
@@ -139,4 +140,17 @@ se deben eliminar todas las dependencias de Materialize:
 ```bash
 grep -r "materialize\|utopia_materialize\|waves-effect\|z-depth\|input-field" \
   --include="*.html" --include="*.scss" --include="*.py" .
+```
+
+---
+
+## 12. Remove `collapsible.js` (Materialize) from access pages
+
+`utopia_cms_ladiaria/templates/utopia_cms_ladiaria/subscribe.html` carga `jquery.easing.1.4.js` y
+`collapsible.js` de Materialize para el comportamiento del plan colapsable en la página de
+suscripción. Reemplazar con una implementación nativa (vanilla JS + CSS) y eliminar estas
+dependencias del template.
+
+```bash
+grep -r "collapsible" --include="*.html" --include="*.js" --include="*.scss" .
 ```
