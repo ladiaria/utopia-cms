@@ -104,6 +104,7 @@ h5 {
 a {
   color: $link-color;
   text-decoration: none;
+  cursor: pointer;
 
   &:hover {
     color: $link-color-hover;
@@ -135,6 +136,10 @@ button {
   padding: 0;
   border: none;
   font-size: px-to-rem(16px);
+}
+
+small {
+  font-size: px-to-rem(12px);
 }
 
 ul {
@@ -467,34 +472,6 @@ fieldset {
   &.visibility-on {
     background-image: url(../img/icon-visibility_off.svg);
   }
-}
-
-// terms and conditions
-#div_id_terms_and_conds_accepted {
-  margin: 30px 0 40px;
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-
-  label {
-    height: 22px;
-    line-height: 22px;
-
-    a {
-      text-decoration: underline;
-    }
-  }
-  .error {
-    display: block;
-    position: relative;
-    top: 5px;
-  }
-}
-
-/* Checked checkboxes bg color */
-[type="checkbox"].filled-in:checked + label:after {
-  background-color: $off-black;
-  border-color: $off-black;
 }
 
 // Tabs

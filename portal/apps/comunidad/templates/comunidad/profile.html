@@ -15,18 +15,14 @@
 {% endblock %}
 
 {% block content %}
-  <div class="row">
-    <div class="col s12">
-      {% if user.is_authenticated %}
-        <section class="section">
-          <h2>Perfil</h2>
-          <div class="divider"></div>
-          <section>
-            <h3>Community profile data</h3>
-            <p>empty</p>
-          </section>
-        </section>
-      {% endif %}
-    </div>
-  </div>
+  {% if user.is_authenticated %}
+    <section class="section">
+      <h2>Perfil</h2>
+      <div class="divider"></div>
+      <section>
+        <h3>Community profile data</h3>
+        <p>empty</p>
+      </section>
+    </section>
+  {% endif %}
 {% endblock %}
