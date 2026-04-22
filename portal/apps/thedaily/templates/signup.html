@@ -88,7 +88,7 @@
 
     phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");
 
-    document.querySelector('label[for="id_terms_and_conds_accepted"] a').addEventListener("click", function(event){
+    document.querySelector('label[for="id_terms_and_conds_accepted"] a')?.addEventListener("click", function(event){
       event.preventDefault();
       openModal('terms-conditions-modal');
     });
