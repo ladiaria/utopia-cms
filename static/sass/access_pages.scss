@@ -95,7 +95,7 @@ p {
   }
 }
 
-#terms-conditions-modal {
+.modal-overlay {
   display: none;
   position: fixed;
   inset: 0;
@@ -107,6 +107,10 @@ p {
   &.modal--open {
     display: flex;
   }
+}
+
+#terms-conditions-modal {
+  @extend .modal-overlay;
 
   .content {
     background-color: #fff;
@@ -191,11 +195,6 @@ p {
   }
   small.exp {
     display: block;
-    font-size: 16px;
-    line-height: 22px;
-    font-family: $sans-title;
-    margin-bottom: 5px;
-    font-weight: 400;
   }
   .ld-text-secondary {
     display: block;
@@ -203,10 +202,8 @@ p {
   }
   .cancel {
     display: block;
-    font-size: 16px;
-    line-height: 19px;
-    color: $primary-color-accent;
-    margin-top: 15px;
+    font-size: px-to-rem(14px);
+    color: #fa4f4f;
   }
 }
 
