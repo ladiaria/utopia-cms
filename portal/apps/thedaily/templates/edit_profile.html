@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load static crispy_forms_tags core_tags %}
+{% load static crispy_forms_tags core_tags compress %}
 
 {% block page_title %}{% title_joinparts 'Panel de opciones' %}{% endblock %}
 
@@ -18,20 +18,18 @@
 
 {% block content %}
 
-  <div class="col table-col hide-on-med-and-down">
-    <ul class="section table-of-contents">
-      <li><span class="table-title">Perfil</span></li>
-      <li><a href="#datos">Tus datos</a></li>
-      <li><a href="#suscripciones">Suscripciones</a></li>
-      {% if push_notifications_keys_set %}
-        <li><a href="#notificaciones">Notificaciones Push</a></li>
-      {% endif %}
-      <li><a href="#newsletters">Newsletters</a></li>
-      <li><a href="#ld-comunicaciones">Comunicaciones</a></li>
-      <li><a href="#lista-lectura">Lista de lectura</a></li>
-      <li><a href="#ayuda">Ayuda</a></li>
-    </ul>
-  </div>
+  <ul class="section table-of-contents">
+    <li><span class="table-title">Perfil</span></li>
+    <li><a href="#datos">Tus datos</a></li>
+    <li><a href="#suscripciones">Suscripciones</a></li>
+    {% if push_notifications_keys_set %}
+      <li><a href="#notificaciones">Notificaciones Push</a></li>
+    {% endif %}
+    <li><a href="#newsletters">Newsletters</a></li>
+    <li><a href="#ld-comunicaciones">Comunicaciones</a></li>
+    <li><a href="#lista-lectura">Lista de lectura</a></li>
+    <li><a href="#ayuda">Ayuda</a></li>
+  </ul>
   {% include 'profile/notification_box.html' %}
   <!-- Edit profile modal -->
   <div id="edit_profile_modal" class="edit_profile_modal__background" style="display: none;">
@@ -165,10 +163,9 @@
       </div>
       <p>Accedé a todos los artículos que guardaste para leer después, tus favoritos e historial de visitados.</p>
       <div class="edit_profile_card__footer">
-        <a class="ut-btn ut-btn-outline" href="{% url 'lista-lectura-leer-despues' %}">Ir a lista de lectura
-          <svg width="12" height="16" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7.33333 0V1.33333H9.72667L3.17333 7.88667L4.11333 8.82667L10.6667 2.27333V4.66667H12V0M10.6667 10.6667H1.33333V1.33333H6V0H1.33333C0.593333 0 0 0.6 0 1.33333V10.6667C0 11.0203 0.140476 11.3594 0.390524 11.6095C0.640573 11.8595 0.979711 12 1.33333 12H10.6667C11.0203 12 11.3594 11.8595 11.6095 11.6095C11.8595 11.3594 12 11.0203 12 10.6667V6H10.6667V10.6667Z" fill="#262626"/>
-          </svg>
+        <a class="btn btn--medium" href="{% url 'lista-lectura-leer-despues' %}">
+          <span>Ir a lista de lectura</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="16" fill="none" viewBox="0 0 12 12"><path fill="#262626" d="M7.333 0v1.333h2.394L3.173 7.887l.94.94 6.554-6.554v2.394H12V0m-1.333 10.667H1.333V1.333H6V0H1.333C.593 0 0 .6 0 1.333v9.334A1.333 1.333 0 0 0 1.333 12h9.334A1.334 1.334 0 0 0 12 10.667V6h-1.333z"/></svg>
         </a>
       </div>
     </section>
@@ -202,11 +199,7 @@
         <p>Queremos obtener información sobre tu experiencia con la suscripción.</p>
         <p>Esta pequeña encuesta nos va a servir para evaluar y aplicar cambios en base a tus opiniones y necesidades.</p>
         <div class="edit_profile_card__inner-section_footer">
-          <a class="link" href="{{ poll_url }}" rel="noreferrer noopener">Completar encuesta
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M7.33333 0V1.33333H9.72667L3.17333 7.88667L4.11333 8.82667L10.6667 2.27333V4.66667H12V0M10.6667 10.6667H1.33333V1.33333H6V0H1.33333C0.593333 0 0 0.6 0 1.33333V10.6667C0 11.0203 0.140476 11.3594 0.390524 11.6095C0.640573 11.8595 0.979711 12 1.33333 12H10.6667C11.0203 12 11.3594 11.8595 11.6095 11.6095C11.8595 11.3594 12 11.0203 12 10.6667V6H10.6667V10.6667Z" fill="#A4A4A4"/>
-            </svg>
-          </a>
+          <a class="link" href="{{ poll_url }}" rel="noreferrer noopener">Completar encuesta</a>
         </div>
       </div>
       {% endif %}
@@ -219,11 +212,7 @@
           <p>Queremos tener un sitio web accesible para todas las personas. Si encontrás alguna dificultad para utilizar el sitio web podés reportar el problema y obtener ayuda en nuestra página de contacto.</p>
         </div>
         <div class="edit_profile_card__inner-section_footer">
-          <a class="link" href="/accesibilidad/">Más información
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M7.33333 0V1.33333H9.72667L3.17333 7.88667L4.11333 8.82667L10.6667 2.27333V4.66667H12V0M10.6667 10.6667H1.33333V1.33333H6V0H1.33333C0.593333 0 0 0.6 0 1.33333V10.6667C0 11.0203 0.140476 11.3594 0.390524 11.6095C0.640573 11.8595 0.979711 12 1.33333 12H10.6667C11.0203 12 11.3594 11.8595 11.6095 11.6095C11.8595 11.3594 12 11.0203 12 10.6667V6H10.6667V10.6667Z" fill="#A4A4A4"/>
-            </svg>
-          </a>
+          <a class="link" href="/accesibilidad/">Más información</a>
         </div>
       </div>
     </section>
@@ -240,10 +229,12 @@
     {% endif %}
     <script src="{% static 'js/push_notifications_editprofile.js' %}"></script>
   {% endif %}
-  <script src="{% static 'js/switch_change_events.js' %}"></script>
   <script src="{{ intl_tel_input_cdn }}js/intlTelInput.min.js"></script>
-  <script src="{% static 'js/edit_profile.js' %}"></script>
-  <script src="{% static 'js/phone_widget.js' %}"></script>
+  {% compress js %}
+    <script src="{% static 'js/switch_change_events.js' %}"></script>
+    <script src="{% static 'js/edit_profile.js' %}"></script>
+    <script src="{% static 'js/phone_widget.js' %}"></script>
+  {% endcompress %}
   <script>
 
     {% if push_notifications_keys_set %}
