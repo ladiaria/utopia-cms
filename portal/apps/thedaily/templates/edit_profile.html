@@ -14,12 +14,7 @@
 
 {% block body_class %}thedaily ld-profile-edit{% endblock %}
 
-{% block page_header %}
-  <div class="main nav-extended">
-    <h1 class="nav-extended__title">Perfil</h1>
-    <div class="nav-extended__tagline">Panel de opciones de tu cuenta.</div>
-  </div>
-{% endblock %}
+{% block page_header %}{% endblock %}
 
 {% block content %}
 
@@ -71,10 +66,8 @@
         <h2 class="title">Tus datos</h2>
         {% if incomplete_field_count %}
           <span class="title-notification warning">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M2.16667 0.5H13.8333C14.2754 0.5 14.6993 0.675595 15.0118 0.988155C15.3244 1.30072 15.5 1.72464 15.5 2.16667V13.8333C15.5 14.2754 15.3244 14.6993 15.0118 15.0118C14.6993 15.3244 14.2754 15.5 13.8333 15.5H2.16667C1.72464 15.5 1.30072 15.3244 0.988155 15.0118C0.675595 14.6993 0.5 14.2754 0.5 13.8333V2.16667C0.5 1.72464 0.675595 1.30072 0.988155 0.988155C1.30072 0.675595 1.72464 0.5 2.16667 0.5ZM8.83333 8.83333V3.83333H7.16667V8.83333H8.83333ZM8.83333 12.1667V10.5H7.16667V12.1667H8.83333Z" fill="#EDA314"/>
-            </svg>
-            {{ incomplete_field_count }} datos incompletos
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path fill="#000" d="M4.167 2.5h11.666A1.666 1.666 0 0 1 17.5 4.167v11.666a1.666 1.666 0 0 1-1.667 1.667H4.167A1.667 1.667 0 0 1 2.5 15.833V4.167A1.667 1.667 0 0 1 4.167 2.5m6.666 8.333v-5H9.167v5zm0 3.334V12.5H9.167v1.667z"/></svg>
+            {{ incomplete_field_count }} dato{{ incomplete_field_count|pluralize:"s" }} incompleto{{ incomplete_field_count|pluralize:"s" }}
           </span>
         {% endif %}
       </div>
@@ -83,13 +76,13 @@
           <p class="edit_profile_card__subtitle_name">{{ subscriber.get_full_name }}</p>
           {% if subscriber.contact_id %}
             <p class="edit_profile_card__subtitle_identification">
-              <span class="bold">Número de {{ id_number_label|default:'identificación' }}:</span> {{ subscriber.contact_id }}
+              <strong>Número de {{ id_number_label|default:'identificación' }}:</strong> {{ subscriber.contact_id }}
             </p>
           {% endif %}
         </div>
         <div class="edit_profile_card__body profile-data">
           <p class="edit_profile_card__body_line">
-            <span class="bold">Documento de identidad: </span>
+            <strong>Documento de identidad: </strong>
             <span class="value">
               {% if subscriber.document %}
                 {{ subscriber.document }}
@@ -99,7 +92,7 @@
             </span>
           </p>
           <p class="edit_profile_card__body_line">
-            <span class="bold">Email: </span>
+            <strong>Email: </strong>
             <span class="value">
               {% if user.email %}
                 {{ user.email }}
@@ -115,7 +108,7 @@
             </span>
           </p>
           <p class="edit_profile_card__body_line">
-            <span class="bold">Teléfono: </span>
+            <strong>Teléfono: </strong>
             <span class="value">
               {% if subscriber.phone %}
                 {{ subscriber.phone.as_national }}
@@ -125,7 +118,7 @@
             </span>
           </p>
           <p class="edit_profile_card__body_line">
-            <span class="bold">Dirección: </span>
+            <strong>Dirección: </strong>
             <span class="value">
               {% if subscriber.address %}
                 {{ subscriber.address }}
@@ -145,7 +138,7 @@
             </form>
           {% else %}
             <p class="edit_profile_card__body_line">
-              <span class="bold">Tu cuenta de usuario está asociada a tu cuenta de Google</span>
+              <strong>Tu cuenta de usuario está asociada a tu cuenta de Google</strong>
             </p>
           {% endif %}
         {% elif not google_oauth2_multiple %}
@@ -157,10 +150,9 @@
       </div>
       <div class="edit_profile_card__footer">
         <a href="{% url 'account-password_change' %}">Cambiar contraseña</a>
-        <button id="edit_profile_btn" class="ut-btn ut-btn-outline">Editar
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11.8067 3.69335C12.0667 3.43335 12.0667 3.00002 11.8067 2.75335L10.2467 1.19335C10 0.933352 9.56667 0.933352 9.30667 1.19335L8.08 2.41335L10.58 4.91335M0 10.5V13H2.5L9.87333 5.62002L7.37333 3.12002L0 10.5Z" fill="#262626"/>
-          </svg>
+        <button id="edit_profile_btn" class="btn">
+          <span>Editar</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path fill="#262626" d="M11.807 3.693a.664.664 0 0 0 0-.94l-1.56-1.56a.664.664 0 0 0-.94 0L8.08 2.413l2.5 2.5M0 10.5V13h2.5l7.373-7.38-2.5-2.5z"/></svg>
         </button>
       </div>
     </section>

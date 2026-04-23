@@ -5,38 +5,6 @@
 body.ld-profile-edit {
   overflow-x: unset !important;
 
-  .nav-extended {
-    padding: 16px;
-
-    h1 {
-      font-size: 36px;
-    }
-
-    &__tagline {
-      font-size: 0.9rem;
-    }
-
-    @media screen and (min-width: 620px) {
-      padding: 16px calc(15% + 10px);
-
-      h1 {
-        font-size: 42px;
-      }
-
-      &__tagline {
-        font-size: 1rem;
-      }
-    }
-
-    @media screen and (min-width: 993px) {
-      padding: 50px 0 50px 400px;
-
-      h1 {
-        font-size: 50px;
-      }
-    }
-  }
-
   .ld-block {
     margin: 0 0 100px;
   }
@@ -56,13 +24,6 @@ body.ld-profile-edit {
     margin-bottom: 150px;
   }
   #datos {
-    margin-bottom: 30px;
-    margin-top: 30px;
-
-    @media screen and (min-width: 993px) {
-      margin-top: 50px;
-    }
-
     fieldset {
       input,
       .select-wrapper {
@@ -117,18 +78,21 @@ body.ld-profile-edit {
 
   .profile-container {
     display: grid;
-    grid-template-columns: 350px auto;
+    grid-template-columns: 284px auto;
+    max-width: $container-width;
+    padding: 0 $padding-inline;
+    margin: 0 auto;
+    padding-top: 32px;
 
-    @media screen and (max-width: 992px) {
+    @media #{$medium-and-down} {
       grid-template-columns: 1fr;
     }
   }
 
   .profile-sections-container {
-    background-color: #f9f8f8;
     width: 100%;
     margin: 0 auto;
-    padding: 8px;
+    border-left: 0.5px solid $color-divider;
 
     @media #{$medium-and-up} {
       padding-left: 15%;
@@ -140,29 +104,10 @@ body.ld-profile-edit {
     }
   }
 
-  // Profile menú
-  .table-col {
-    // min-width: 165px;
-    // float: left;
-    margin-left: 50px;
-    padding-top: 70px;
-
-    @media (min-width: 1160px) {
-      margin-left: 80px;
-    }
-
-    a.active {
-      background: #f3f3f3;
-      width: 90%;
-      border-top-right-radius: 12px;
-      border-bottom-right-radius: 12px;
-    }
-  }
-
   .table-title {
-    font-size: 16px;
     display: block;
-    padding-bottom: 10px;
+    font-weight: 500;
+    padding-bottom: 16px;
   }
 
   .ld-profile-row {
@@ -206,7 +151,7 @@ body.ld-profile-edit {
 // navigation
 .table-of-contents {
   position: relative;
-  width: 270px; // When table-of-contents is pinned is set to position: fixed, so we need a fixed width;
+  width: 284px; // When table-of-contents is pinned is set to position: fixed, so we need a fixed width;
   padding: 0;
   margin: 0;
 
@@ -220,63 +165,44 @@ body.ld-profile-edit {
   }
   a {
     display: inline-block;
-    font-weight: 300;
-    color: $off-black;
-    padding: 8px 0 8px 16px;
-    line-height: 1.5rem;
-    letter-spacing: 0.4;
+    padding: 8px 24px;
     display: inline-block;
-    border-left: 2px solid $grey-1;
+    border-left: 2px solid #c7d0d3;
     outline: none;
 
     &:hover {
-      color: lighten($off-black, 20%);
-      border-left-color: $off-black;
+      color: #81898b;
+      border-left-color: #000000b5;
     }
     &.active {
       font-weight: 500;
-      border-left-color: $off-black;
+      border-left-color: #000;
     }
   }
 }
 
 .edit_profile_card {
   background-color: white;
-  border: 1px solid #e3e8ea;
-  border-radius: 5px;
-  padding: 15px;
-  margin: 25px 0;
-  max-width: 570px;
-
-  @media #{$medium-and-down} {
-    margin: 25px 0;
-    max-width: none;
-    padding: 8px;
-  }
-
-  .bold {
-    font-weight: 700;
-  }
-  .italic {
-    font-style: italic;
-  }
-
-  .ut-btn svg {
-    margin-right: 0;
-    margin-left: 6px;
-  }
+  border-bottom: 1px solid #000;
+  padding: 32px 0;
+  max-width: px-to-rem(616px);
 
   &:first-child {
-    // TODO : Verify if this is necessary
-    margin-top: 50px;
+    padding-top: 0;
+  }
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  @media #{$medium-and-down} {
+    padding: 24px 0;
   }
 
   &__header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    border-bottom: 1px solid #f3f3f3;
-    padding-bottom: 5px;
+    padding-bottom: 24px;
 
     @media #{$medium-and-down} {
       position: sticky;
@@ -287,99 +213,53 @@ body.ld-profile-edit {
     }
 
     .title {
-      margin: 0;
-      font-size: 2.1rem;
+      font-family: $sans-title;
+      font-size: px-to-rem(32px);
     }
 
     .title-notification {
       display: flex;
       align-items: center;
+      gap: 8px;
       border-radius: 4px;
-      font-weight: 600;
-      padding: 5px 10px;
-
-      @media screen and (max-width: 992px) {
-        font-size: 0.9rem;
-        align-self: center;
-      }
-
-      svg {
-        margin-right: 5px;
-      }
+      padding: 6px 8px;
 
       &.warning {
-        background-color: #fef5de;
+        background-color: #fab04f;
       }
-    }
-
-    .edit-btn {
-      align-self: center;
-      border: none;
-      background-color: transparent;
-      border-radius: 50px;
-      padding: 12px 16px;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-
-      svg {
-        margin-left: 10px;
-      }
-
-      &.active {
-        background-color: #f3f3f3;
-      }
-    }
-
-    & + .edit_profile_card__inner-section {
-      margin-top: 15px;
     }
   }
 
   &__subtitle {
-    font-size: 1.5rem;
-    font-weight: 500;
-
     &_name {
-      margin: 10px 0 5px;
+      padding-bottom: 12px;
+      font-size: px-to-rem(24px);
+      font-weight: 500;
     }
 
     &_identification {
-      display: inline-block;
-      font-size: 1rem;
-      font-weight: 400;
-      background-color: #f3f3f3;
+      display: inline-flex;
+      gap: 10px;
+      background-color: #e3e8ea;
       border-radius: 2px;
-      padding: 5px 10px;
-      margin: 5px 0 20px;
+      padding: 4px 8px;
     }
   }
 
   &__body {
-    border: 1px solid $grey-1;
-    border-radius: 6px;
-    padding: 15px 10px;
+    margin-top: 16px;
+    border-top: 0.5px solid #ababab;
+    border-bottom: 0.5px solid #ababab;
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 
     &_line {
       display: flex;
+      gap: 10px;
       flex-wrap: wrap;
-
-      span:first-child {
-        margin-right: 5px;
-      }
-
-      a {
-        text-decoration: none;
-      }
-
-      &:first-child {
-        margin-top: 0;
-        margin-right: 5px;
-      }
-
-      &:last-child {
-        margin-bottom: 0;
-      }
+      padding-block: 4px;
 
       &.google-disconnect {
         align-items: center;
@@ -418,30 +298,28 @@ body.ld-profile-edit {
   }
 
   &__inner-section {
-    background-color: #f1f4f5;
-    border: 1px solid $grey-1;
-    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 0.5px solid #ababab;
+    border-radius: 5px;
     padding: 16px;
-    margin-bottom: 15px;
+    margin-bottom: 24px;
 
     &:last-child {
       margin-bottom: 0;
     }
 
     &.danger {
-      border: 1px solid #eeb2b2;
-      background-color: #fbf4f4;
+      border: 1px solid #d50000;
+      background-color: #fee;
 
       .edit_profile_card__inner-section_body p {
         display: flex;
         align-items: center;
-        font-weight: 700;
-        margin-bottom: 10px;
-        padding-left: 10px;
+        font-weight: 500;
+        gap: 8px;
 
-        svg {
-          margin-right: 10px;
-        }
         span {
           flex: 1;
         }
@@ -457,8 +335,6 @@ body.ld-profile-edit {
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid $grey-1;
-      padding-bottom: 10px;
 
       .title {
         font-weight: 700;
@@ -482,16 +358,13 @@ body.ld-profile-edit {
       }
 
       .price {
-        background-color: white;
-        border-radius: 11px;
-        padding: 10px;
       }
 
       &.subscriptions {
         border-bottom: none;
 
         .title {
-          font-size: 1.5rem;
+          font-family: $sans-title;
         }
       }
 
@@ -552,17 +425,9 @@ body.ld-profile-edit {
     justify-content: space-between;
     align-items: center;
 
-    a {
+    a:not(.btn) {
       text-transform: uppercase;
       text-decoration: underline;
-    }
-
-    .ut-btn {
-      margin-left: auto;
-
-      .text-normal {
-        font-weight: 400;
-      }
     }
 
     &-link {
@@ -695,10 +560,6 @@ body.ld-profile-edit {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 1.6rem;
-      font-weight: 700;
-      border-bottom: 1px solid #f3f3f3;
-      margin-bottom: 15px;
 
       #edit_profile_modal__close_btn {
         background: none;

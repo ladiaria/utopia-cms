@@ -5,14 +5,7 @@
 {% block page_description %}Los suscriptores tienen perfil web que es solo visible para la comunidad de suscritores de la diaria.{% endblock %}
 {% block body_class %}profile{% endblock %}
 
-{% block page_header %}
-  <header class="nav-extended main">
-    <div class="nav-wrapper container">
-      <h1 class="section-title">Comunidad la diaria</h1>
-      <div class="tagline mini">Perfil de usuario.</div>
-    </div>
-  </header>
-{% endblock %}
+{% block page_header %}{% endblock %}
 
 {% block content %}
   {% if user.is_authenticated %}
