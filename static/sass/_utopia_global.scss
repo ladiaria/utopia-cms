@@ -52,6 +52,10 @@ body {
   &__light {
     background-color: white;
   }
+
+  &--medium {
+    font-weight: 500;
+  }
 }
 
 .visually-hidden {

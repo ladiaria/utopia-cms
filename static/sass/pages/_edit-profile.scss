@@ -80,12 +80,12 @@ body.ld-profile-edit {
     display: grid;
     grid-template-columns: 284px auto;
     max-width: $container-width;
-    padding: 0 $padding-inline;
     margin: 0 auto;
-    padding-top: 32px;
+    padding: 32px $padding-inline 64px;
 
     @media #{$medium-and-down} {
       grid-template-columns: 1fr;
+      padding: 16px 20px 32px;
     }
   }
 
@@ -93,14 +93,11 @@ body.ld-profile-edit {
     width: 100%;
     margin: 0 auto;
     border-left: 0.5px solid $color-divider;
+    padding-left: 48px;
 
-    @media #{$medium-and-up} {
-      padding-left: 15%;
-      padding-right: 15%;
-    }
-
-    @media #{$large-and-up} {
-      padding-left: 50px;
+    @media #{$medium-and-down} {
+      border-left: none;
+      padding-left: 0;
     }
   }
 
@@ -154,9 +151,11 @@ body.ld-profile-edit {
   width: 284px; // When table-of-contents is pinned is set to position: fixed, so we need a fixed width;
   padding: 0;
   margin: 0;
+  position: sticky;
+  top: px-to-rem(103px);
 
-  &.fixed {
-    position: fixed;
+  @media #{$medium-and-down} {
+    display: none;
   }
 
   li {
@@ -192,17 +191,48 @@ body.ld-profile-edit {
   }
   &:last-child {
     padding-bottom: 0;
+    border-bottom: none;
   }
 
-  @media #{$medium-and-down} {
-    padding: 24px 0;
+  &#ayuda {
+    .edit_profile_card__inner-section {
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+      padding: 0 0 16px;
+      margin-bottom: 16px;
+      gap: 16px;
+
+      &:first-child {
+        padding-top: 0;
+      }
+      &:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      &_header .title {
+        font-weight: 500;
+      }
+    }
+  }
+
+  &#lista-lectura {
+    .edit_profile_card__footer {
+      justify-content: flex-end;
+    }
   }
 
   &__header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     padding-bottom: 24px;
+
+    &--with-description {
+      padding-bottom: 16px;
+    }
 
     @media #{$medium-and-down} {
       position: sticky;
@@ -244,6 +274,11 @@ body.ld-profile-edit {
       border-radius: 2px;
       padding: 4px 8px;
     }
+  }
+
+  &__description {
+    font-size: px-to-rem(18px);
+    padding-bottom: 24px;
   }
 
   &__body {
@@ -289,12 +324,6 @@ body.ld-profile-edit {
       background-color: #efd198;
       margin-left: 5px;
     }
-
-    @media screen and (max-width: 992px) {
-      &.profile-data {
-        background-color: #f6f5f5;
-      }
-    }
   }
 
   &__inner-section {
@@ -305,6 +334,10 @@ body.ld-profile-edit {
     border-radius: 5px;
     padding: 16px;
     margin-bottom: 24px;
+
+    &--secondary {
+      background-color: #f1f4f5;
+    }
 
     &:last-child {
       margin-bottom: 0;
@@ -404,13 +437,8 @@ body.ld-profile-edit {
 
       .link {
         display: inline-block;
-        color: #262626;
-        text-transform: uppercase;
         text-decoration: underline;
         cursor: pointer;
-        font-size: 0.9rem;
-        margin-top: 15px;
-        padding-left: 8px;
 
         svg {
           margin-left: 5px;
@@ -420,7 +448,7 @@ body.ld-profile-edit {
   }
 
   &__footer {
-    margin-top: 20px;
+    margin-top: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -452,6 +480,15 @@ body.ld-profile-edit {
         margin: 10px;
         padding-left: 0;
       }
+    }
+  }
+  @media #{$medium-and-down} {
+    padding: 24px 0;
+    &__header .title {
+      font-size: px-to-rem(28px);
+    }
+    .title-notification {
+      font-size: px-to-rem(14px);
     }
   }
 }
@@ -666,15 +703,15 @@ body.ld-profile-edit {
 
   .label-text {
     font-weight: 700;
-    font-size: 0.9rem;
     text-align: right;
     margin-right: 8px;
+    color: #81898b;
 
     &.on {
       color: #219653;
 
       &.disabled {
-        color: #a4a4a4;
+        color: #81898b;
       }
     }
   }
