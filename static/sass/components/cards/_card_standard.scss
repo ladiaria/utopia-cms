@@ -1,0 +1,75 @@
+.ld-card-standard {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: $col-gap;
+  padding: $gap-8 0;
+  border-top: $border-divider;
+
+  &:last-of-type {
+    border-bottom: $border-divider;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: $gap-3;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    font-size: px-to-rem(12px);
+    text-transform: uppercase;
+  }
+
+  &__title {
+    font-family: $serif;
+    font-size: px-to-rem(18px);
+    line-height: px-to-rem(23.4px);
+    font-weight: 400;
+    margin: 0;
+
+    a {
+      text-decoration: none;
+      color: $off-black;
+
+      &:hover {
+        color: lighten($off-black, 10%);
+      }
+    }
+  }
+
+  &__img-link {
+    flex-shrink: 0;
+    width: $col-width;
+    height: 189px;
+    overflow: hidden;
+    display: block;
+  }
+
+  &__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  @media #{$medium-and-down} {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: $gap-4;
+    padding: 0 0 $gap-6;
+    border-top: none;
+    border-bottom: $border-divider;
+
+    &__img-link {
+      width: 100%;
+      height: 233px;
+    }
+  }
+}

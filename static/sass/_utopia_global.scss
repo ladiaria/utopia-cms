@@ -679,7 +679,7 @@ a.ladiaria {
 
     &.interior {
       .container {
-        width: 700px;
+        width: 616px;
         max-width: 100%;
       }
       .footer-portada {
@@ -951,14 +951,27 @@ select.browser-default {
 .pagination {
   margin: 50px 0;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 
   li {
     &.active {
       background-color: $off-black;
+      a {
+        color: white;
+        padding: 8px;
+      }
     }
 
     &.disabled {
       color: $lightGrey-2;
+
+      a {
+        cursor: default;
+        pointer-events: none;
+      }
 
       svg {
         fill: $lightGrey-2;
