@@ -1,3 +1,4 @@
+import copy
 import datetime
 import json
 import logging
@@ -147,8 +148,12 @@ def _propagate_article_ids(source_layout, source_grid):
     src_componentes = {c["key"]: c.get("article_ids", []) for c in source_grid.get("componentes", [])}
 
     now = timezone.now()
+    old_grids = {}
     for layout in others:
-        gd = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+        old_grids[layout.pk] = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+        # Deep copy so mutations to gd's nested dicts do not corrupt old_grids,
+        # which is used later as the "before" state in _write_audit_log.
+        gd = copy.deepcopy(old_grids[layout.pk])
 
         for block, ids in src_top.items():
             block_data = gd.get(block) if isinstance(gd.get(block), dict) else {}
@@ -167,6 +172,10 @@ def _propagate_article_ids(source_layout, source_grid):
         layout.modified = now
 
     HomeLayout.objects.bulk_update(others, ["grid_data", "modified"])
+    # Audit each propagated layout separately so the log shows which sibling layouts
+    # were affected and what changed, distinguishable from the source layout's own entry.
+    for layout in others:
+        _write_audit_log(layout, old_grids[layout.pk], layout.grid_data, "propagation")
     logger.debug("_propagate_article_ids: synced layout=%d to %d others", source_layout.pk, len(others))
 
 
@@ -185,6 +194,43 @@ def _grid_stats(grid_data):
     }
 
 
+def _write_audit_log(layout, old_grid, new_grid, triggered_by, user=None):
+    """Write one AuditLog entry per block whose article_ids changed between old_grid and new_grid.
+    All entries from a single call share the same save_id so they can be grouped.
+    """
+    import uuid
+    from .models import HomeLayoutAuditLog
+    old_grid = old_grid if isinstance(old_grid, dict) else {}
+    new_grid = new_grid if isinstance(new_grid, dict) else {}
+    entries = []
+    save_id = uuid.uuid4()
+
+    for block in ("principal", "suplemento", "especial"):
+        before = list(old_grid.get(block, {}).get("article_ids", []))
+        after = list(new_grid.get(block, {}).get("article_ids", []))
+        if before != after:
+            entries.append(HomeLayoutAuditLog(layout=layout, save_id=save_id, triggered_by=triggered_by, user=user, block_key=block, ids_before=before, ids_after=after))
+
+    old_secs = {s["slug"]: list(s.get("article_ids", [])) for s in old_grid.get("sections", []) if s.get("slug")}
+    new_secs = {s["slug"]: list(s.get("article_ids", [])) for s in new_grid.get("sections", []) if s.get("slug")}
+    for slug in sorted(set(old_secs) | set(new_secs)):
+        before = old_secs.get(slug, [])
+        after = new_secs.get(slug, [])
+        if before != after:
+            entries.append(HomeLayoutAuditLog(layout=layout, save_id=save_id, triggered_by=triggered_by, user=user, block_key="sections:" + slug, ids_before=before, ids_after=after))
+
+    old_comps = {c["key"]: list(c.get("article_ids", [])) for c in old_grid.get("componentes", []) if c.get("key")}
+    new_comps = {c["key"]: list(c.get("article_ids", [])) for c in new_grid.get("componentes", []) if c.get("key")}
+    for key in sorted(set(old_comps) | set(new_comps)):
+        before = old_comps.get(key, [])
+        after = new_comps.get(key, [])
+        if before != after:
+            entries.append(HomeLayoutAuditLog(layout=layout, save_id=save_id, triggered_by=triggered_by, user=user, block_key="componentes:" + key, ids_before=before, ids_after=after))
+
+    if entries:
+        HomeLayoutAuditLog.objects.bulk_create(entries)
+
+
 @staff_member_required
 def save_grid(request, layout_id):
     if request.method != "POST":
@@ -197,12 +243,15 @@ def save_grid(request, layout_id):
         for comp in grid_data.get("componentes", []):
             if "newsletter_refs" in comp:
                 comp.pop("article_ids", None)
+        # Capture state before save so audit log can compute the diff per block.
+        old_grid = layout.grid_data if isinstance(layout.grid_data, dict) else {}
         with transaction.atomic():
             layout.grid_data = grid_data
             layout.save()
             # Re-fetch from DB to confirm the save actually persisted
             layout.refresh_from_db(fields=["grid_data"])
             _propagate_article_ids(layout, layout.grid_data)
+            _write_audit_log(layout, old_grid, layout.grid_data, "editor", user=request.user)
         stats = _grid_stats(layout.grid_data)
         logger.debug(
             "save_grid layout=%d user=%s | principal=%d suplemento=%d "
@@ -420,23 +469,151 @@ def _resolve_newsletter_refs(refs):
     return result
 
 
+# Keys whose article_ids are never auto-resolved by resolve_layout_grid_data.
+# Dynamic: fetched fresh at request time in build_home_data.
+# Manual-only: no fallback exists (editor curation only).
+_RESOLVE_SKIP_KEYS = frozenset({
+    "lo_ultimo", "lo_mas_leido", "apuntes_del_dia",
+    "radio", "newsletter_dia", "recomendadas_lv", "recomendadas_domingo",
+})
+
+
+def _merge_principal_article_ids(current_ids, edition_ids):
+    """Insert new articles from edition_ids into current_ids at their edition index.
+
+    Articles already in current_ids keep their saved position (editor curation preserved).
+    New articles (present in edition but absent from current) are inserted at
+    min(edition_index, len(result)) so top_position is respected even when the
+    current list is shorter than the edition index.
+    """
+    current_set = set(current_ids)
+    result = list(current_ids)
+    for edition_idx, article_id in enumerate(edition_ids):
+        if article_id not in current_set:
+            insert_at = min(edition_idx, len(result))
+            result.insert(insert_at, article_id)
+            current_set.add(article_id)
+    return result
+
+
+def _clear_fallback_blocks(grid_data):
+    """Clear article_ids from sections and fallback components so resolve_layout_grid_data
+    re-fetches them fresh and the dedup cascade removes articles already in principal.
+
+    Only touches blocks that have an automatic fallback source:
+    - sections (all areas — editors curate via source systems, not the layout editor)
+    - opinion, le_monde, lento (category-based fallback)
+
+    Never touches: principal (merged separately), suplemento/extra_articles (5am task),
+    especial (manual), _RESOLVE_SKIP_KEYS (dynamic or manual-only).
+    Active/inactive flags are preserved.
+    """
+    import copy as _copy
+    gd = _copy.deepcopy(grid_data) if isinstance(grid_data, dict) else {}
+    for section in gd.get("sections", []):
+        section["article_ids"] = []
+    _FALLBACK_COMP_KEYS = {"opinion", "le_monde", "lento"}
+    for comp in gd.get("componentes", []):
+        if comp.get("key") in _FALLBACK_COMP_KEYS:
+            comp["article_ids"] = []
+    return gd
+
+
+def resolve_layout_grid_data(grid_data, publication=None, layout=None):
+    """Return a resolved copy of grid_data where every static block has article_ids populated.
+
+    Blocks with existing article_ids (manually curated) are preserved unchanged.
+    For blocks with empty article_ids, fallback queries run in deduplication priority order:
+      Principal → Suplemento → Especial → Recomendadas → Áreas → opinion / le_monde / lento
+
+    Blocks in _RESOLVE_SKIP_KEYS are intentionally left as-is:
+    - Dynamic (lo_ultimo, lo_mas_leido, apuntes_del_dia): always fetched fresh at request time.
+    - Manual-only (recomendadas_*, radio, newsletter_dia): no automatic fallback.
+
+    Used by build_home_data (safety net) and by the refresh-home-layouts Celery task
+    (pre-computation on article creation so request-time resolution is mostly a no-op).
+    """
+    import copy as _copy
+    resolved = _copy.deepcopy(grid_data) if isinstance(grid_data, dict) else get_default_grid_data()
+    seen_ids = set()
+
+    # 1. PRINCIPAL
+    principal = resolved.setdefault("principal", {"active": True, "article_ids": []})
+    p_ids = principal.get("article_ids") or []
+    if not p_ids:
+        edition = get_current_edition(publication=publication)
+        p_ids = [a.id for a in edition.top_articles] if edition else []
+        principal["article_ids"] = p_ids
+    seen_ids.update(p_ids)
+
+    # 2. SUPLEMENTO
+    suplemento = resolved.setdefault("suplemento", {"active": True, "article_ids": []})
+    s_ids = suplemento.get("article_ids") or []
+    if not s_ids:
+        source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+        if source:
+            articles = _fetch_source_articles(source[0], source[1], limit=7, exclude_ids=seen_ids)
+            s_ids = [a.id for a in articles]
+            suplemento["article_ids"] = s_ids
+    seen_ids.update(s_ids)
+
+    # Extra articles (Saturday) — written by resolve_daily_layouts, not auto-computed here
+    if layout is not None and getattr(layout, "day", None) == "sa":
+        seen_ids.update(resolved.get("extra_articles", {}).get("article_ids", []))
+
+    # 3. ESPECIAL — purely manual, just accumulate into seen_ids
+    seen_ids.update(resolved.get("especial", {}).get("article_ids", []))
+
+    # 4. RECOMENDADAS — purely manual, accumulate before processing Áreas (active only)
+    for comp in resolved.get("componentes", []):
+        if comp.get("key") in ("recomendadas_lv", "recomendadas_domingo") and comp.get("active", True):
+            seen_ids.update(comp.get("article_ids", []))
+
+    # 5. ÁREAS — merge defaults not yet in sections, then resolve fallback with full seen_ids
+    today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+    existing_keys = {(s.get("type"), s.get("slug")) for s in resolved.get("sections", [])}
+    for da in _DEFAULT_AREAS:
+        if (da["type"], da["slug"]) not in existing_keys:
+            resolved.setdefault("sections", []).append(
+                {"type": da["type"], "slug": da["slug"], "name": da["name"], "active": True, "article_ids": []}
+            )
+    for area in resolved.get("sections", []):
+        if not area.get("active", True):
+            continue
+        area_type = area.get("type", "section")
+        slug = area.get("slug", "")
+        if not slug or (today_source and (area_type, slug) == today_source):
+            continue
+        a_ids = area.get("article_ids") or []
+        if not a_ids:
+            articles = _fetch_area_articles(area_type, slug, [], exclude_ids=seen_ids)
+            a_ids = [a.id for a in articles]
+            area["article_ids"] = a_ids
+        seen_ids.update(a_ids)
+
+    # 6. OTHER COMPONENTS: opinion, le_monde, lento (skip dynamic and manual-only keys)
+    for comp in resolved.get("componentes", []):
+        key = comp.get("key", "")
+        if key in _RESOLVE_SKIP_KEYS or not comp.get("active", True):
+            continue
+        c_ids = comp.get("article_ids") or []
+        if not c_ids:
+            articles = _fetch_component_articles(key, exclude_ids=seen_ids)
+            c_ids = [a.id for a in articles]
+            comp["article_ids"] = c_ids
+        seen_ids.update(c_ids)
+
+    return resolved
 
 
 def build_home_data(grid_data, publication=None, layout=None):
     """
     Pre-fetch all data needed to render the home template from grid_data.
-    Returns a single dict with everything ready — the template should not
-    need to hit the database or do any lookups.
+    Calls resolve_layout_grid_data first so all static blocks have article_ids populated
+    with the correct deduplication order. The template reads only from the returned dict.
 
-    Keys returned:
-      principal_active (bool), principal_articles (list of Article),
-      suplemento_active (bool), suplemento_articles (list of Article), suplemento_title (str),
-      extra_articles (list of Article — populated on Saturday layouts from grid_data, written by resolve_daily_layouts task),
-      especial_active (bool), especial_articles (list of Article),
-      sections: list of dicts — only active ones — each with:
-        {type, id, slug, name, row, url, articles}
-      componentes: list of dicts — only active ones — each with:
-        {key, label, description, articles}
+    Dynamic blocks (lo_ultimo, lo_mas_leido, apuntes_del_dia) are always fetched fresh
+    at request time and excluded from the pre-resolved static_ids set.
     """
     result = {
         "principal_active": False,
@@ -444,6 +621,7 @@ def build_home_data(grid_data, publication=None, layout=None):
         "suplemento_active": False,
         "suplemento_articles": [],
         "suplemento_title": "",
+        "suplemento_slug": "",
         "extra_articles": [],
         "especial_active": False,
         "especial_articles": [],
@@ -452,109 +630,87 @@ def build_home_data(grid_data, publication=None, layout=None):
     }
 
     _tb = time.perf_counter()
-    edition = get_current_edition(publication=publication)
+    resolved = resolve_layout_grid_data(grid_data, publication=publication, layout=layout)
+    logger.warning("  build: resolve=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
-    # Deduplication: seen_ids accumulates article IDs from higher-priority blocks
-    # so that lower-priority fallback queries can exclude them.
-    # Priority order: Principal > Suplemento > Especial > Recomendadas > Lo último > Áreas.
-    seen_ids = set()
+    # Tracks IDs of all static articles so dynamic blocks (lo_ultimo) can exclude them.
+    static_ids = set()
 
     # PRINCIPAL
-    principal_data = grid_data.get("principal") or {}
+    principal_data = resolved.get("principal") or {}
     result["principal_active"] = _block_active("principal", principal_data.get("active", True))
-    db_articles = list(edition.top_articles) if edition else []
-    saved_ids = principal_data.get("article_ids", [])
-    if saved_ids:
-        by_id = {a.id: a for a in db_articles}
-        extra_ids = [aid for aid in saved_ids if aid not in by_id]
-        if extra_ids:
-            # select_related so is_restricted() does not trigger lazy loads per article
-            by_id.update({
-                a.id: a for a in Article.published.filter(id__in=extra_ids).select_related(
-                    _ARTICLE_AUTH_SELECT_RELATED
-                )
-            })
-        result["principal_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
-    else:
-        result["principal_articles"] = db_articles
-    seen_ids.update(a.id for a in result["principal_articles"])
-
+    p_ids = principal_data.get("article_ids", [])
+    if p_ids:
+        by_id = {a.id: a for a in Article.published.filter(id__in=p_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
+        result["principal_articles"] = [by_id[aid] for aid in p_ids if aid in by_id]
+    static_ids.update(a.id for a in result["principal_articles"])
     logger.warning("  build: principal=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
+
     # SUPLEMENTO
     _area_name_by_source = {(a["type"], a["slug"]): a["name"] for a in _DEFAULT_AREAS}
-    suplemento_data = grid_data.get("suplemento", {})
+    suplemento_data = resolved.get("suplemento", {})
     result["suplemento_active"] = _block_active("suplemento", suplemento_data.get("active", True))
     if result["suplemento_active"]:
-        try:
-            result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data, exclude_ids=seen_ids)
-        except Exception:
-            result["suplemento_articles"] = []
+        s_ids = suplemento_data.get("article_ids", [])
+        if s_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=s_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
+            result["suplemento_articles"] = [by_id[aid] for aid in s_ids if aid in by_id]
         _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
         if _today_source:
             result["suplemento_title"] = _area_name_by_source.get((_today_source[0], _today_source[1]), "")
             result["suplemento_slug"] = _today_source[1]
-        # EXTRA: Saturday layouts load extra_articles from grid_data (written daily by resolve_daily_layouts task).
         if layout is not None and getattr(layout, "day", None) == "sa":
-            extra_ids = grid_data.get("extra_articles", {}).get("article_ids", [])
+            extra_ids = resolved.get("extra_articles", {}).get("article_ids", [])
             if extra_ids:
                 by_id = {a.id: a for a in Article.published.filter(id__in=extra_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
                 result["extra_articles"] = [by_id[aid] for aid in extra_ids if aid in by_id]
                 result["suplemento_title"] = "Extra"
-
-    seen_ids.update(a.id for a in result["suplemento_articles"])
-    seen_ids.update(a.id for a in result["extra_articles"])
-
+    static_ids.update(a.id for a in result["suplemento_articles"])
+    static_ids.update(a.id for a in result["extra_articles"])
     logger.warning("  build: suplemento=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
+
     # ESPECIAL
-    especial_data = grid_data.get("especial", {})
+    especial_data = resolved.get("especial", {})
     result["especial_active"] = _block_active("especial", especial_data.get("active", True))
     if result["especial_active"]:
-        especial_ids = especial_data.get("article_ids", [])
-        if especial_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=especial_ids)}
-            result["especial_articles"] = [by_id[aid] for aid in especial_ids if aid in by_id]
-
-    seen_ids.update(a.id for a in result["especial_articles"])
-
+        e_ids = especial_data.get("article_ids", [])
+        if e_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=e_ids)}
+            result["especial_articles"] = [by_id[aid] for aid in e_ids if aid in by_id]
+    static_ids.update(a.id for a in result["especial_articles"])
     logger.warning("  build: especial=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
-    # ÁREAS Y PUBLICACIONES — source of truth is grid_data["sections"] merged with _DEFAULT_AREAS.
-    # Areas in _DEFAULT_AREAS not yet in grid_data are appended automatically (same as components).
-    # Blocks whose (type, slug) matches today's SUPLEMENTO source are hidden (shown there instead).
-    _today_suplemento_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
-    _saved_areas = grid_data.get("sections", [])
-    _saved_area_keys = {(s.get("type"), s.get("slug")) for s in _saved_areas}
-    _merged_areas = list(_saved_areas) + [
-        {"type": a["type"], "slug": a["slug"], "name": a["name"], "active": True, "article_ids": []}
-        for a in _DEFAULT_AREAS if (a["type"], a["slug"]) not in _saved_area_keys
-    ]
-    for _area in _merged_areas:
-        if not _area.get("active", True):
-            continue
-        _area_type = _area.get("type", "section")
-        _area_slug = _area.get("slug", "")
-        if not _area_slug:
-            continue
-        # Skip if this area is the current SUPLEMENTO source for today
-        if _today_suplemento_source and (_area_type, _area_slug) == _today_suplemento_source:
-            continue
-        _saved_ids = _area.get("article_ids", [])
-        result["sections"].append({
-            "type": _area_type,
-            "slug": _area_slug,
-            "name": _area.get("name", _area_slug),
-            "articles": _fetch_area_articles(_area_type, _area_slug, _saved_ids, exclude_ids=seen_ids),
-        })
 
+    # ÁREAS Y PUBLICACIONES — resolved dict already has all default areas merged and article_ids populated
+    _today_suplemento_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+    for area in resolved.get("sections", []):
+        if not area.get("active", True):
+            continue
+        area_type = area.get("type", "section")
+        slug = area.get("slug", "")
+        if not slug or (_today_suplemento_source and (area_type, slug) == _today_suplemento_source):
+            continue
+        a_ids = area.get("article_ids", [])
+        if a_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=a_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
+            articles = [by_id[aid] for aid in a_ids if aid in by_id]
+        else:
+            articles = []
+        result["sections"].append({
+            "type": area_type,
+            "slug": slug,
+            "name": area.get("name", slug),
+            "articles": articles,
+        })
+        static_ids.update(a.id for a in articles)
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
-    # Add recomendadas IDs to seen_ids before processing lo_ultimo.
-    for item in grid_data.get("componentes", []):
-        key = item.get("key", "")
-        if key in ("recomendadas_lv", "recomendadas_domingo") and item.get("active", True):
-            seen_ids.update(item.get("article_ids", []))
+    # Recomendadas IDs into static_ids so lo_ultimo excludes them
+    for item in resolved.get("componentes", []):
+        if item.get("key") in ("recomendadas_lv", "recomendadas_domingo") and item.get("active", True):
+            static_ids.update(item.get("article_ids", []))
 
-    # COMPONENTES — active ones only, enriched with label, description and articles
-    for item in grid_data.get("componentes", []):
+    # COMPONENTES — active ones only
+    for item in resolved.get("componentes", []):
         if not item.get("active", True):
             continue
         key = item.get("key", "")
@@ -567,22 +723,24 @@ def build_home_data(grid_data, publication=None, layout=None):
             "no_articles": defn.get("no_articles", False),
         }
         if defn.get("newsletter_mode"):
-            # newsletter_dia: deliver the editor-ordered newsletter list.
-            # The active_layout view resolves which one to actually show per user
-            # and puts it in context["newsletter_dia_nl"].
             comp_entry["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
             comp_entry["articles"] = []
-        else:
-            articles = _fetch_component_articles(key, saved_ids=item.get("article_ids", []), exclude_ids=seen_ids)
+        elif key in ("lo_ultimo", "lo_mas_leido", "apuntes_del_dia"):
+            # Dynamic: always fetched fresh; lo_ultimo excludes all static blocks via static_ids
+            articles = _fetch_component_articles(key, saved_ids=item.get("article_ids", []), exclude_ids=static_ids)
             if key == "lo_ultimo":
-                # Attach minutes_ago directly to each Article instance so the template
-                # can access article.minutes_ago without changing the articles interface.
-                # Value is an integer (1–59) if published within the last hour, else None.
                 now = timezone.now()
                 for a in articles:
                     minutes = int((now - a.date_published).total_seconds() / 60)
                     a.minutes_ago = minutes if minutes <= 59 else None
             comp_entry["articles"] = articles
+        else:
+            c_ids = item.get("article_ids", [])
+            if c_ids:
+                by_id = {a.id: a for a in Article.published.filter(id__in=c_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
+                comp_entry["articles"] = [by_id[aid] for aid in c_ids if aid in by_id]
+            else:
+                comp_entry["articles"] = []
         result["componentes"].append(comp_entry)
 
     logger.warning("  build: componentes=%.1f ms", (time.perf_counter() - _tb) * 1000)
@@ -1036,15 +1194,21 @@ def _resolve_today_grid_data(publication):
 
 def build_editor_data(grid_data, publication=None):
     """Build the editor context dict from grid_data.
-    Standalone version used by both the admin change_view and the Preview 5am view.
+    Calls resolve_layout_grid_data so all static blocks have article_ids populated with
+    the correct deduplication order — same logic used by build_home_data.
+    Used by both the admin change_view and the Preview 5am view.
     """
-    principal_data = grid_data.get("principal") or {}
-    suplemento_data = grid_data.get("suplemento", {})
-    especial_data = grid_data.get("especial", {})
+    resolved = resolve_layout_grid_data(grid_data, publication=publication)
+
+    principal_data = resolved.get("principal") or {}
+    suplemento_data = resolved.get("suplemento", {})
+    especial_data = resolved.get("especial", {})
 
     result = {
         "principal_active": principal_data.get("active", True),
         "principal_articles": [],
+        # True when grid_data had no saved article_ids for principal (editor sees fallback state)
+        "principal_is_fallback": not bool((grid_data or {}).get("principal", {}).get("article_ids")),
         "suplemento_active": suplemento_data.get("active", True),
         "suplemento_articles": [],
         "especial_active": especial_data.get("active", True),
@@ -1053,43 +1217,31 @@ def build_editor_data(grid_data, publication=None):
         "componentes": [],
     }
 
-    edition = get_current_edition(publication=publication)
-    db_articles = list(edition.top_articles) if edition else []
+    # PRINCIPAL
+    p_ids = principal_data.get("article_ids", [])
+    if p_ids:
+        by_id = {a.id: a for a in Article.published.filter(id__in=p_ids)}
+        result["principal_articles"] = [by_id[aid] for aid in p_ids if aid in by_id]
 
-    saved_ids = principal_data.get("article_ids", [])
-    result["principal_is_fallback"] = not bool(saved_ids)
-    if saved_ids:
-        by_id = {a.id: a for a in db_articles}
-        extra_ids = [aid for aid in saved_ids if aid not in by_id]
-        if extra_ids:
-            by_id.update({a.id: a for a in Article.published.filter(id__in=extra_ids)})
-        result["principal_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
-    else:
-        result["principal_articles"] = db_articles
+    # SUPLEMENTO
+    s_ids = suplemento_data.get("article_ids", [])
+    if s_ids:
+        by_id = {a.id: a for a in Article.published.filter(id__in=s_ids)}
+        result["suplemento_articles"] = [by_id[aid] for aid in s_ids if aid in by_id]
 
-    seen_ids = {a.id for a in result["principal_articles"]}
-    try:
-        result["suplemento_articles"] = _fetch_suplemento_articles(suplemento_data, exclude_ids=seen_ids)
-    except Exception:
-        result["suplemento_articles"] = []
+    # ESPECIAL
+    e_ids = especial_data.get("article_ids", [])
+    if e_ids:
+        by_id = {a.id: a for a in Article.published.filter(id__in=e_ids)}
+        result["especial_articles"] = [by_id[aid] for aid in e_ids if aid in by_id]
 
-    especial_ids = especial_data.get("article_ids", [])
-    if especial_ids:
-        by_id = {a.id: a for a in Article.published.filter(id__in=especial_ids)}
-        result["especial_articles"] = [by_id[aid] for aid in especial_ids if aid in by_id]
-
-    saved_areas = grid_data.get("sections", [])
-    saved_area_keys = {(s.get("type"), s.get("slug")) for s in saved_areas}
-    merged_areas = list(saved_areas) + [
-        {"type": a["type"], "slug": a["slug"], "name": a["name"], "active": True, "article_ids": []}
-        for a in _DEFAULT_AREAS if (a["type"], a["slug"]) not in saved_area_keys
-    ]
-    for area in merged_areas:
+    # ÁREAS — resolved dict already has all default areas merged and article_ids populated
+    for area in resolved.get("sections", []):
         area_type = area.get("type", "section")
         slug = area.get("slug", "")
         if not slug:
             continue
-        saved_ids = area.get("article_ids", [])
+        a_ids = area.get("article_ids", [])
         sec_info = {
             "type": area_type,
             "slug": slug,
@@ -1097,38 +1249,44 @@ def build_editor_data(grid_data, publication=None):
             "active": area.get("active", True),
             "preview_articles": [],
         }
-        if saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids)}
-            sec_info["preview_articles"] = [by_id[aid] for aid in saved_ids if aid in by_id]
-        else:
-            sec_info["preview_articles"] = _fetch_area_articles(area_type, slug, [])
+        if a_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=a_ids)}
+            sec_info["preview_articles"] = [by_id[aid] for aid in a_ids if aid in by_id]
         result["sections"].append(sec_info)
 
-    saved_comps_raw = grid_data.get("componentes", [])
+    # COMPONENTES — all defined components in order; dynamic blocks fetch fresh since
+    # resolve_layout_grid_data intentionally leaves their article_ids empty
+    saved_comps_raw = resolved.get("componentes", [])
     if isinstance(saved_comps_raw, list):
         seen_keys = set()
         for item in saved_comps_raw:
             key = item.get("key", "")
             defn = _COMP_DEF_MAP.get(key)
-            if defn and key not in seen_keys:
-                seen_keys.add(key)
-                comp_dict = {
-                    "key": key,
-                    "label": defn["label"],
-                    "description": defn["description"],
-                    "active": item.get("active", True),
-                    "has_picker": defn.get("has_picker", False),
-                    "replace_mode": defn.get("replace_mode", False),
-                    "replace_slots": defn.get("replace_slots", 2),
-                    "newsletter_mode": defn.get("newsletter_mode", False),
-                    "sortable_articles": defn.get("sortable_articles", True),
-                }
-                if defn.get("newsletter_mode"):
-                    comp_dict["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
-                    comp_dict["articles"] = []
+            if not defn or key in seen_keys:
+                continue
+            seen_keys.add(key)
+            comp_dict = {
+                "key": key,
+                "label": defn["label"],
+                "description": defn["description"],
+                "active": item.get("active", True),
+                "has_picker": defn.get("has_picker", False),
+                "replace_mode": defn.get("replace_mode", False),
+                "replace_slots": defn.get("replace_slots", 2),
+                "newsletter_mode": defn.get("newsletter_mode", False),
+                "sortable_articles": defn.get("sortable_articles", True),
+            }
+            if defn.get("newsletter_mode"):
+                comp_dict["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
+                comp_dict["articles"] = []
+            else:
+                c_ids = item.get("article_ids", [])
+                if c_ids:
+                    by_id = {a.id: a for a in Article.published.filter(id__in=c_ids)}
+                    comp_dict["articles"] = [by_id[aid] for aid in c_ids if aid in by_id]
                 else:
-                    comp_dict["articles"] = _fetch_component_articles(key, saved_ids=item.get("article_ids", []))
-                result["componentes"].append(comp_dict)
+                    comp_dict["articles"] = _fetch_component_articles(key)
+            result["componentes"].append(comp_dict)
         for defn in COMPONENT_DEFINITIONS:
             if defn["key"] not in seen_keys:
                 comp_dict = {
