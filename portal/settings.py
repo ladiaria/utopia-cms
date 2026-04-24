@@ -365,6 +365,8 @@ CELERY_TASK_ROUTES = {
     "update-category-home": {"queue": "upd_category_home"},
     "update-article-urls": {"queue": "upd_articles_url"},
     "send-push-notification": {"queue": "concurrent_tasks"},
+    "resolve-daily-layouts": {"queue": "concurrent_tasks"},
+    "refresh-home-layouts": {"queue": "concurrent_tasks"},
 }
 CELERY_TASK_QUEUES = []  # will be populated after local settings imports
 CELERY_RESULT_EXTENDED = True

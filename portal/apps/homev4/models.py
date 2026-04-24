@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -128,3 +130,32 @@ class HomeLayout(models.Model):
             candidates.append(layout)
 
         return candidates[0] if candidates else None
+
+
+class HomeLayoutAuditLog(models.Model):
+    TRIGGERED_BY_CHOICES = [
+        ("editor", "Editor"),
+        ("celery:5am", "Tarea 5am"),
+        ("celery:refresh", "Tarea refresh"),
+        ("propagation", "Propagación"),
+    ]
+
+    layout = models.ForeignKey(HomeLayout, on_delete=models.CASCADE, related_name="audit_logs", verbose_name="layout")
+    save_id = models.UUIDField("ID de guardado", db_index=True)
+    timestamp = models.DateTimeField("fecha", auto_now_add=True, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, verbose_name="usuario",
+    )
+    triggered_by = models.CharField("origen", max_length=20, choices=TRIGGERED_BY_CHOICES)
+    block_key = models.CharField("bloque", max_length=50, db_index=True)
+    ids_before = models.JSONField("IDs anteriores", default=list)
+    ids_after = models.JSONField("IDs nuevos", default=list)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        verbose_name = "registro de auditoría"
+        verbose_name_plural = "registros de auditoría"
+
+    def __str__(self):
+        return f"{self.timestamp:%Y-%m-%d %H:%M} | {self.block_key} | {self.triggered_by}"

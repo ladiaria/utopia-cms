@@ -68,6 +68,11 @@ from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
 from .tasks import update_category_home, send_push_notification
 from .utils import update_article_url_in_coral_talk, smart_quotes
+try:
+    from homev4.tasks import refresh_home_layouts as _refresh_home_layouts
+except ImportError:
+    # homev4 is optional — if not installed, layout refresh is simply skipped.
+    _refresh_home_layouts = None
 
 
 # ==========================================
@@ -351,6 +356,8 @@ class EditionAdmin(AdminLockingBase, ModelAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         update_category_home()
+        if _refresh_home_layouts:
+            _refresh_home_layouts()
 
     class Media:
         js = ('admin_locking/admin_locking.js', 'js/admin_locking_custom.js')
@@ -412,6 +419,8 @@ class SectionAdmin(ModelAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         update_category_home()
+        if _refresh_home_layouts:
+            _refresh_home_layouts()
 
 
 class ArticleExtensionInline(TabularInline):
@@ -895,6 +904,8 @@ class ArticleAdmin(AdminLockingBase, VersionAdmin):
 
         # TODO: check if code below may be called also from the model save method
         update_category_home()
+        if _refresh_home_layouts:
+            _refresh_home_layouts()
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         """
