@@ -417,10 +417,6 @@ a.skip-main:active {
   }
 }
 
-article a {
-  text-decoration: underline;
-}
-
 p {
   a {
     text-decoration: underline;
@@ -470,15 +466,5 @@ fieldset {
 
   &.visibility-on {
     background-image: url(../img/icon-visibility_off.svg);
-  }
-}
-
-// Tabs
-.tabs {
-  li.tab {
-    font-weight: bold;
-    .active {
-      font-size: 125%;
-    }
   }
 }
