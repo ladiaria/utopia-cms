@@ -485,12 +485,6 @@ a.ladiaria {
 
 @media #{$medium-and-down} {
   .section-detail {
-    &__head {
-      padding-top: 24px;
-      margin-bottom: 24px;
-      gap: 8px;
-    }
-
     &__title {
       font-size: px-to-rem(28px);
       line-height: px-to-rem(24.36px);
@@ -949,24 +943,32 @@ select.browser-default {
 
 /* rebranding pagination */
 .pagination {
-  margin: 50px 0;
+  margin: 48px 0;
   text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
 
   li {
+    &:first-child a,
+    &:last-child a {
+      padding: 0;
+    }
+    a {
+      padding: 8px 12px;
+      display: flex;
+      line-height: normal;
+    }
     &.active {
       background-color: $off-black;
       a {
         color: white;
-        padding: 8px;
       }
     }
 
     &.disabled {
-      color: $lightGrey-2;
+      color: #81898b;
 
       a {
         cursor: default;
@@ -974,7 +976,7 @@ select.browser-default {
       }
 
       svg {
-        fill: $lightGrey-2;
+        fill: #81898b;
       }
     }
   }
@@ -1002,6 +1004,12 @@ select.browser-default {
       svg path + path {
         fill: #a4a4a4;
       }
+    }
+  }
+  @media #{$medium-and-down} {
+    gap: 16px;
+    li a {
+      font-size: px-to-rem(18px);
     }
   }
 }

@@ -203,6 +203,7 @@ header {
 
   @media #{$medium-and-down} {
     align-items: center;
+    min-height: px-to-rem(32px);
     body.main-menu-open & {
       grid-template-columns: 1fr auto 1fr;
     }
