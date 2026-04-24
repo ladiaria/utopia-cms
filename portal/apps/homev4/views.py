@@ -633,7 +633,8 @@ def build_home_data(grid_data, publication=None, layout=None):
     resolved = resolve_layout_grid_data(grid_data, publication=publication, layout=layout)
     logger.warning("  build: resolve=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
-    # Tracks IDs of all static articles so dynamic blocks (lo_ultimo) can exclude them.
+    # IDs excluded from "Lo último": principal, suplemento, especial, recomendadas.
+    # Areas are intentionally NOT excluded — an article in Deporte can still appear in Lo último.
     static_ids = set()
 
     # PRINCIPAL
@@ -701,7 +702,6 @@ def build_home_data(grid_data, publication=None, layout=None):
             "name": area.get("name", slug),
             "articles": articles,
         })
-        static_ids.update(a.id for a in articles)
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
     # Recomendadas IDs into static_ids so lo_ultimo excludes them
