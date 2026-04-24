@@ -487,7 +487,6 @@ a.ladiaria {
   .section-detail {
     &__title {
       font-size: px-to-rem(28px);
-      line-height: px-to-rem(24.36px);
       letter-spacing: px-to-rem(0.28px);
     }
     &__subtitle {
@@ -675,6 +674,7 @@ a.ladiaria {
       .container {
         width: 616px;
         max-width: 100%;
+        padding: 0;
       }
       .footer-portada {
         .container {
