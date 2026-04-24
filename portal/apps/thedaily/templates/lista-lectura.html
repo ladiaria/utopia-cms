@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load static favit_tags thedaily_tags %}
+{% load static favit_tags thedaily_tags ldml bleach_tags %}
 
 {% block page_title %}
   {% if leer_despues != None %}
@@ -71,7 +71,7 @@
                 <span class="ll-card__section">{{ article.main_section.section.name }}</span>
               {% endif %}
               <h3 class="ll-card__title">
-                <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
+                <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
               </h3>
               <div class="ll-card__footer">
                 {% with authors=article.get_authors %}
@@ -107,7 +107,7 @@
                 <span class="ll-card__section">{{ article.main_section.section.name }}</span>
               {% endif %}
               <h3 class="ll-card__title">
-                <a href="{{ article.get_absolute_url }}">{{ article.headline }}</a>
+                <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
               </h3>
               <div class="ll-card__footer">
                 {% with authors=article.get_authors %}
