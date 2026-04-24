@@ -142,6 +142,7 @@ body.ld-profile-edit {
   margin: 0;
   position: sticky;
   top: px-to-rem(103px);
+  align-self: flex-start;
 
   @media #{$medium-and-down} {
     display: none;
@@ -184,6 +185,9 @@ body.ld-profile-edit {
   }
 
   &#ayuda {
+    border-bottom: none;
+    padding-bottom: 0;
+
     .edit_profile_card__inner-section {
       border-radius: 0;
       border-left: none;
@@ -210,6 +214,16 @@ body.ld-profile-edit {
   &#lista-lectura {
     .edit_profile_card__footer {
       justify-content: flex-end;
+    }
+  }
+
+  &#logout {
+    a {
+      font-size: px-to-rem(20px);
+      font-weight: 500;
+    }
+    @media #{$medium-and-up} {
+      display: none;
     }
   }
 
@@ -478,6 +492,10 @@ body.ld-profile-edit {
   }
   @media #{$medium-and-down} {
     padding: 24px 0;
+    &#ayuda {
+      border-bottom: 1px solid #000;
+      padding-bottom: 24px;
+    }
     &__header {
       .title {
         font-size: px-to-rem(28px);

@@ -72,7 +72,7 @@
           <p class="edit_profile_card__subtitle_name">{{ subscriber.get_full_name }}</p>
           {% if subscriber.contact_id %}
             <p class="edit_profile_card__subtitle_identification">
-              <strong>Número de {{ id_number_label|default:'identificación' }}:</strong> {{ subscriber.contact_id }}
+              <strong>Identificador Digital (ID):</strong> {{ subscriber.contact_id }}
             </p>
           {% endif %}
         </div>
@@ -213,6 +213,9 @@
           <a class="link" href="/accesibilidad/">Más información</a>
         </div>
       </div>
+    </section>
+    <section id="logout" class="edit_profile_card">
+      <a href="{% url "account-logout" %}" class="">Cerrar sesión</a>
     </section>
   </div>
 
