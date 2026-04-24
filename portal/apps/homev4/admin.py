@@ -8,7 +8,7 @@ from django.db.models import Case, IntegerField, Value, When
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import HomeLayout, _DAY_CODE_TO_WEEKDAYS
+from .models import HomeLayout, HomeLayoutAuditLog, _DAY_CODE_TO_WEEKDAYS
 from .views import get_default_grid_data, LAYOUT_BLOCKS_CONFIG, build_editor_data, _static_hash
 
 
@@ -160,3 +160,30 @@ class HomeLayoutAdmin(admin.ModelAdmin):
                     messages.WARNING,
                 )
                 return
+
+
+@admin.register(HomeLayoutAuditLog)
+class HomeLayoutAuditLogAdmin(admin.ModelAdmin):
+    list_display = ("timestamp", "short_save_id", "layout", "user", "triggered_by", "block_key", "ids_before", "ids_after")
+    list_filter = ("triggered_by", "block_key", ("layout", admin.RelatedOnlyFieldListFilter))
+    search_fields = ("block_key", "user__username", "save_id")
+    date_hierarchy = "timestamp"
+    ordering = ("-timestamp",)
+
+    def short_save_id(self, obj):
+        return str(obj.save_id)[:8]
+    short_save_id.short_description = "save ID"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return True
+        return request.user.groups.filter(name="Layout Editors").exists()
