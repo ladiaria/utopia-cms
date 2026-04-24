@@ -1,0 +1,32 @@
+{% load bleach_tags core_tags ldml %}
+
+<article class="article ld-card-standard">
+  {% render_toolbar_for article %}
+
+  <div class="ld-card-standard__text">
+    <div class="ld-card-standard__section">
+      {% block article_section %}
+        {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
+      {% endblock %}
+      {% include 'article/article_card_lock_tooltip.html' %}
+    </div>
+    <h3 class="ld-card-standard__title">
+      <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
+    </h3>
+    {% include 'article/article_card_read_later.html' with a=article %}
+  </div>
+
+  {% if not article_card_hide_photo and article.photo_render_allowed %}
+    <a class="ld-card-standard__img-link" href="{{ article.get_absolute_url }}">
+      <img
+        class="ld-card-standard__img"
+        src="{{ article.photo.get_700w_url }}"
+        width="700"
+        height="{{ article.photo.get_700w_size.1 }}"
+        {% if img_load_lazy %}loading="lazy"{% endif %}
+        title="{{ article.photo_caption }}"
+        alt="{{ article.photo_caption }}"
+      >
+    </a>
+  {% endif %}
+</article>
