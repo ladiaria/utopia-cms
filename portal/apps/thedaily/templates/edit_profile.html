@@ -35,11 +35,9 @@
   <div id="edit_profile_modal" class="edit_profile_modal__background" style="display: none;">
     <div class="edit_profile_modal__container">
       <div class="edit_profile_modal__container__header">
-        <p>Editá tu información</p>
+        <h2>Editá tu información</h2>
         <button id="edit_profile_modal__close_btn" aria-label="Close button" type="button">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19.3327 2.54666L17.4527 0.666664L9.99935 8.12L2.54602 0.666664L0.666016 2.54666L8.11935 10L0.666016 17.4533L2.54602 19.3333L9.99935 11.88L17.4527 19.3333L19.3327 17.4533L11.8793 10L19.3327 2.54666Z" fill="#262626"/>
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path fill="#262626" d="m19.333 2.547-1.88-1.88L9.999 8.12 2.546.667l-1.88 1.88L8.119 10 .666 17.453l1.88 1.88 7.453-7.453 7.454 7.453 1.88-1.88L11.879 10z"/></svg>
         </button>
       </div>
       <form action="{% url 'edit-profile' %}" method="post" id="user_form">
@@ -50,7 +48,7 @@
         </div>
         <div class="edit_profile_modal__container__footer">
           <div class="edit_profile_modal__container__footer-btn_container">
-            <input class="ut-btn" type="submit" id="submit-id-save_changes" value="Guardar cambios" name="save_changes"/>
+            <input class="btn btn__dark" type="submit" id="submit-id-save_changes" value="Guardar cambios" name="save_changes"/>
           </div>
         </div>
       </form>
