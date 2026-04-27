@@ -175,7 +175,7 @@ urlpatterns = [
 
     re_path(r'^nlunsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nlunsubscribe, name="nlunsubscribe"),
     path('nlsubscribe/', nl_subscribe, name="nl-subscribe"),  # can be useful if a "next" session variable was set
-    re_path(r'^nlsubscribe/(?P<nltype>[pcm])\.(?P<nlslug>\w+)/$', nl_auth_subscribe, name="nl-auth-subscribe"),
+    re_path(r'^nlsubscribe/(?P<nltype>[pcm])\.(?P<nlslug>[\w-]+)/$', nl_auth_subscribe, name="nl-auth-subscribe"),
     re_path(r'^nlsubscribe/c/(?P<slug>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
     re_path(r'^nlsubscribe/c/(?P<slug>\w+)/(?P<hashed_id>\w+)/$', nl_category_subscribe, name="nl-category-subscribe"),
     re_path(r'^nlsubscribe/(?P<publication_slug>\w+)/(?P<hashed_id>\w+)/$', nl_subscribe, name="nl-subscribe"),
