@@ -633,7 +633,8 @@ def build_home_data(grid_data, publication=None, layout=None):
     resolved = resolve_layout_grid_data(grid_data, publication=publication, layout=layout)
     logger.warning("  build: resolve=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
-    # Tracks IDs of all static articles so dynamic blocks (lo_ultimo) can exclude them.
+    # IDs excluded from "Lo último": principal, suplemento, especial, recomendadas.
+    # Areas are intentionally NOT excluded — an article in Deporte can still appear in Lo último.
     static_ids = set()
 
     # PRINCIPAL
@@ -701,7 +702,6 @@ def build_home_data(grid_data, publication=None, layout=None):
             "name": area.get("name", slug),
             "articles": articles,
         })
-        static_ids.update(a.id for a in articles)
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
     # Recomendadas IDs into static_ids so lo_ultimo excludes them
@@ -1254,6 +1254,14 @@ def build_editor_data(grid_data, publication=None):
             sec_info["preview_articles"] = [by_id[aid] for aid in a_ids if aid in by_id]
         result["sections"].append(sec_info)
 
+    # IDs already placed in principal/suplemento/especial — used to exclude them from lo_ultimo
+    # preview, mirroring the same deduplication that build_home_data applies at request time.
+    editor_static_ids = (
+        {a.id for a in result["principal_articles"]}
+        | {a.id for a in result["suplemento_articles"]}
+        | {a.id for a in result["especial_articles"]}
+    )
+
     # COMPONENTES — all defined components in order; dynamic blocks fetch fresh since
     # resolve_layout_grid_data intentionally leaves their article_ids empty
     saved_comps_raw = resolved.get("componentes", [])
@@ -1285,7 +1293,9 @@ def build_editor_data(grid_data, publication=None):
                     by_id = {a.id: a for a in Article.published.filter(id__in=c_ids)}
                     comp_dict["articles"] = [by_id[aid] for aid in c_ids if aid in by_id]
                 else:
-                    comp_dict["articles"] = _fetch_component_articles(key)
+                    comp_dict["articles"] = _fetch_component_articles(
+                        key, exclude_ids=editor_static_ids if key == "lo_ultimo" else None
+                    )
             result["componentes"].append(comp_dict)
         for defn in COMPONENT_DEFINITIONS:
             if defn["key"] not in seen_keys:
@@ -1304,7 +1314,9 @@ def build_editor_data(grid_data, publication=None):
                     comp_dict["newsletters"] = []
                     comp_dict["articles"] = []
                 else:
-                    comp_dict["articles"] = _fetch_component_articles(defn["key"])
+                    comp_dict["articles"] = _fetch_component_articles(
+                        defn["key"], exclude_ids=editor_static_ids if defn["key"] == "lo_ultimo" else None
+                    )
                 result["componentes"].append(comp_dict)
     else:
         for defn in COMPONENT_DEFINITIONS:
@@ -1324,7 +1336,9 @@ def build_editor_data(grid_data, publication=None):
                 comp_dict["newsletters"] = _resolve_newsletter_refs(saved.get("newsletter_refs", []))
                 comp_dict["articles"] = []
             else:
-                comp_dict["articles"] = _fetch_component_articles(defn["key"])
+                comp_dict["articles"] = _fetch_component_articles(
+                    defn["key"], exclude_ids=editor_static_ids if defn["key"] == "lo_ultimo" else None
+                )
             result["componentes"].append(comp_dict)
 
     return result

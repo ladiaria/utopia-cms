@@ -97,6 +97,17 @@
 #homev4-editor .area-header {
     padding: 5px 8px;
     background: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#homev4-editor .area-position-badge {
+    font-size: 11px;
+    font-weight: bold;
+    color: #aaa;
+    margin-right: 5px;
+    flex-shrink: 0;
 }
 
 #homev4-editor .block-badge {

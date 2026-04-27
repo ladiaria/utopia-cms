@@ -148,6 +148,29 @@ def resolve_daily_layouts_task():
         )
 
 
+def _sort_sections_by_recency(grid_data):
+    """Sort grid_data["sections"] in-place by the date_published of each section's
+    first article, most recent first. Sections without articles keep their current position.
+    Uses a single query for all first-article IDs to avoid N+1.
+    """
+    import datetime
+    from core.models import Article
+
+    sections = grid_data.get("sections", [])
+    first_ids = [s["article_ids"][0] for s in sections if s.get("article_ids")]
+    if not first_ids:
+        return
+
+    dates = dict(
+        Article.objects.filter(pk__in=first_ids).values_list("id", "date_published")
+    )
+    min_date = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+    sections.sort(
+        key=lambda s: dates.get(s["article_ids"][0], min_date) if s.get("article_ids") else min_date,
+        reverse=True,
+    )
+
+
 @celery_app.task(name="refresh-home-layouts")
 def refresh_home_layouts_task():
     """
@@ -194,6 +217,11 @@ def refresh_home_layouts_task():
 
         # Step 3: re-resolve — fills cleared blocks with dedup against updated principal.
         resolved = resolve_layout_grid_data(gd, publication=publication, layout=layout)
+
+        # Step 4: sort sections by the date_published of their first article (most recent first).
+        # Pre-computing the order here so the FE receives sections already sorted — zero
+        # sorting cost at request time.
+        _sort_sections_by_recency(resolved)
 
         with transaction.atomic():
             layout.grid_data = resolved
