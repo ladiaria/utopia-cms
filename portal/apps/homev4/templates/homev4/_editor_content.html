@@ -167,6 +167,7 @@
                         <div class="block-header area-header">
                             <label class="block-active-toggle">
                                 <input type="checkbox" class="section-active" {% if section.active %}checked{% endif %}>
+                                <span class="area-position-badge" title="Posición al servir">#{{ forloop.counter }}</span>
                                 <span class="block-badge badge-area">{{ section.name }}</span>
                             </label>
                             {% if section.row > 1 %}<span class="row-badge">fila {{ section.row }}</span>{% endif %}
