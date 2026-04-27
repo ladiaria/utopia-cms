@@ -519,19 +519,20 @@ def _clear_fallback_blocks(grid_data):
     return gd
 
 
-def resolve_layout_grid_data(grid_data, publication=None, layout=None):
+def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_populated=False):
     """Return a resolved copy of grid_data where every static block has article_ids populated.
 
-    Blocks with existing article_ids (manually curated) are preserved unchanged.
     For blocks with empty article_ids, fallback queries run in deduplication priority order:
       Principal → Suplemento → Especial → Recomendadas → Áreas → opinion / le_monde / lento
+
+    dedup_populated=True also filters already-populated article_ids against higher-priority
+    blocks' seen_ids, removing cross-block duplicates from saved data. Use this only when
+    persisting (e.g. the pre_save signal) — not for display, so the editor always reflects
+    the raw JSON state.
 
     Blocks in _RESOLVE_SKIP_KEYS are intentionally left as-is:
     - Dynamic (lo_ultimo, lo_mas_leido, apuntes_del_dia): always fetched fresh at request time.
     - Manual-only (recomendadas_*, radio, newsletter_dia): no automatic fallback.
-
-    Used by build_home_data (safety net) and by the refresh-home-layouts Celery task
-    (pre-computation on article creation so request-time resolution is mostly a no-op).
     """
     import copy as _copy
     resolved = _copy.deepcopy(grid_data) if isinstance(grid_data, dict) else get_default_grid_data()
@@ -555,14 +556,24 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None):
             articles = _fetch_source_articles(source[0], source[1], limit=7, exclude_ids=seen_ids)
             s_ids = [a.id for a in articles]
             suplemento["article_ids"] = s_ids
+    else:
+        if dedup_populated:
+            # Remove IDs already placed in higher-priority blocks (principal).
+            s_ids = [i for i in s_ids if i not in seen_ids]
+            suplemento["article_ids"] = s_ids
     seen_ids.update(s_ids)
 
     # Extra articles (Saturday) — written by resolve_daily_layouts, not auto-computed here
     if layout is not None and getattr(layout, "day", None) == "sa":
         seen_ids.update(resolved.get("extra_articles", {}).get("article_ids", []))
 
-    # 3. ESPECIAL — purely manual, just accumulate into seen_ids
-    seen_ids.update(resolved.get("especial", {}).get("article_ids", []))
+    # 3. ESPECIAL — purely manual; accumulate into seen_ids (dedup_populated filters against them)
+    especial = resolved.setdefault("especial", {"active": True, "article_ids": []})
+    e_ids = especial.get("article_ids") or []
+    if dedup_populated:
+        e_ids = [i for i in e_ids if i not in seen_ids]
+        especial["article_ids"] = e_ids
+    seen_ids.update(e_ids)
 
     # 4. RECOMENDADAS — purely manual, accumulate before processing Áreas (active only)
     for comp in resolved.get("componentes", []):
@@ -589,6 +600,11 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None):
             articles = _fetch_area_articles(area_type, slug, [], exclude_ids=seen_ids)
             a_ids = [a.id for a in articles]
             area["article_ids"] = a_ids
+        else:
+            if dedup_populated:
+                # Remove IDs already placed in higher-priority blocks.
+                a_ids = [i for i in a_ids if i not in seen_ids]
+                area["article_ids"] = a_ids
         seen_ids.update(a_ids)
 
     # 6. OTHER COMPONENTS: opinion, le_monde, lento (skip dynamic and manual-only keys)
@@ -601,6 +617,11 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None):
             articles = _fetch_component_articles(key, exclude_ids=seen_ids)
             c_ids = [a.id for a in articles]
             comp["article_ids"] = c_ids
+        else:
+            if dedup_populated:
+                # Remove IDs already placed in higher-priority blocks.
+                c_ids = [i for i in c_ids if i not in seen_ids]
+                comp["article_ids"] = c_ids
         seen_ids.update(c_ids)
 
     return resolved
