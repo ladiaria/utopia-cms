@@ -1205,12 +1205,34 @@ def _fetch_extra_article_ids_for_preview(today):
 def _resolve_today_grid_data(publication):
     """Return a grid_data dict pre-filled with today's article IDs for principal and suplemento,
     bypassing the PUBLISHING_TIME gate. Used by the Preview 5am editor.
-    Base structure is taken from the first existing layout of the publication.
+
+    Base structure (which blocks are active/inactive, sections, componentes) comes from
+    the layout that will actually be active at the next 5am — the same layout the Celery
+    task will write to. This way Pablo sees exactly which blocks are on/off without having
+    to guess, and the editor automatically adapts if the schedule changes.
+
+    "Next 5am" logic:
+      - 00:00–04:59 → 5am of today   (Pablo is working on the upcoming morning)
+      - 05:00–23:59 → 5am of tomorrow (today's 5am already passed)
     """
+    import datetime as _dt
     from core.models import Edition
     today = timezone.localdate()
+    now_time = timezone.localtime().time()
 
-    base_layout = HomeLayout.objects.filter(publication=publication).first()
+    publishing_hour, publishing_minute = [int(x) for x in settings.PUBLISHING_TIME.split(":")]
+    publishing_time = _dt.time(publishing_hour, publishing_minute)
+
+    # Determine the weekday for the NEXT 5am so get_active_layout simulates the
+    # moment the Celery task runs, not the moment Pablo opens the editor.
+    if now_time < publishing_time:
+        # Still before 5am — next publishing is today's 5am.
+        target_weekday = today.weekday()
+    else:
+        # Already past 5am — next publishing is tomorrow's 5am.
+        target_weekday = (today.weekday() + 1) % 7
+
+    base_layout = HomeLayout.get_active_layout(publication, at_time=publishing_time, at_weekday=target_weekday)
     grid = dict(base_layout.grid_data) if base_layout and isinstance(base_layout.grid_data, dict) else get_default_grid_data()
 
     # On weekends (Saturday=5, Sunday=6) the home shows the "Fin de semana" edition
