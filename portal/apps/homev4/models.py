@@ -84,46 +84,59 @@ class HomeLayout(models.Model):
         return f"{self.name} ({self.publication} — {day_label} {start}–{end}){override}"
 
     @classmethod
-    def get_active_layout(cls, publication):
-        """Return the active layout for the current day and time."""
-        # Manual override takes priority
+    def get_active_layout(cls, publication, at_time=None, at_weekday=None):
+        """Return the active layout for the given time and weekday.
+
+        at_time (datetime.time): evaluate as if it were this time. Defaults to now.
+        at_weekday (int 0-6): evaluate as if it were this weekday. Defaults to now.
+
+        Pass both to simulate a future or past moment — e.g. the Preview 5am editor
+        calls this with at_time=05:00 and the weekday of the next publishing date so
+        it shows exactly the layout the Celery task will find when it runs.
+        """
+        # Manual override takes priority regardless of time.
         manual = cls.objects.filter(publication=publication, is_manual_override=True).first()
         if manual:
             return manual
 
-        now = timezone.localtime()
-        current_time = now.time()
-        current_weekday = now.weekday()
-        matching_days = _WEEKDAY_TO_DAY_CODES.get(current_weekday, [])
+        # Default to the current local time when no simulation is requested.
+        if at_time is None or at_weekday is None:
+            now = timezone.localtime()
+            if at_time is None:
+                at_time = now.time()
+            if at_weekday is None:
+                at_weekday = now.weekday()
 
-        # Also check previous day's layouts that end_next_day and haven't ended yet
-        prev_weekday = (current_weekday - 1) % 7
+        matching_days = _WEEKDAY_TO_DAY_CODES.get(at_weekday, [])
+
+        # Also check the previous day's layouts that cross midnight and are still active.
+        prev_weekday = (at_weekday - 1) % 7
         prev_matching_days = _WEEKDAY_TO_DAY_CODES.get(prev_weekday, [])
 
         candidates = []
 
-        # Layouts from today that have already started
+        # Layouts from the target day that have already started by at_time.
         today_candidates = cls.objects.filter(
             publication=publication,
             is_manual_override=False,
             day__in=matching_days,
-            start_time__lte=current_time,
+            start_time__lte=at_time,
         ).order_by("-start_time")
 
         for layout in today_candidates:
             if layout.ends_next_day:
-                # Starts today, ends tomorrow: active from start_time until midnight
+                # Starts on target day, ends tomorrow: active from start_time until midnight.
                 candidates.append(layout)
-            elif layout.end_time is None or current_time <= layout.end_time:
+            elif layout.end_time is None or at_time <= layout.end_time:
                 candidates.append(layout)
 
-        # Layouts from yesterday that cross midnight and are still active
+        # Layouts from the previous day that cross midnight and are still active at at_time.
         prev_candidates = cls.objects.filter(
             publication=publication,
             is_manual_override=False,
             day__in=prev_matching_days,
             ends_next_day=True,
-            end_time__gt=current_time,
+            end_time__gt=at_time,
         )
 
         for layout in prev_candidates:

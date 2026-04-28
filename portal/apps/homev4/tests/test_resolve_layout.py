@@ -24,6 +24,7 @@ from unittest.mock import MagicMock, patch
 from django.test import SimpleTestCase
 
 from homev4.apps import _deduplicate_grid_data
+from homev4.models import HomeLayout
 from homev4.tasks import _sort_sections_by_recency
 from homev4.views import build_home_data, resolve_layout_grid_data
 
@@ -702,12 +703,15 @@ class ResolveTodayGridDataExtraArticlesTest(SimpleTestCase):
              patch("homev4.views._fetch_extra_article_ids_for_preview",
                    return_value=list(extra_article_ids or [])):
 
-            # HomeLayout.objects.filter → base layout
-            mock_hl.objects.filter.return_value.first.return_value = mock_layout
+            # get_active_layout(publication, at_time=..., at_weekday=...) → base layout
+            mock_hl.get_active_layout.return_value = mock_layout
             # Publication.objects.filter(slug="findesemana").first() → a mock pub (weekend path)
             mock_pub.objects.filter.return_value.first.return_value = MagicMock()
             mock_tz.localdate.return_value = date
-            # Edition.objects.filter(...).order_by(...).first() → mock_edition (both weekday and weekend paths)
+            # localtime().time() must be a real time so the < publishing_time comparison works.
+            # Use 01:00 (before 5am) so target_weekday = date.weekday() (same-day 5am path).
+            mock_tz.localtime.return_value.time.return_value = datetime.time(1, 0)
+            # Edition.objects.filter(...).order_by(...).first() → mock_edition
             mock_ed.objects.filter.return_value.order_by.return_value.first.return_value = mock_edition
 
             return _resolve_today_grid_data(MagicMock())
@@ -816,9 +820,12 @@ class ResolveTodayGridDataWeekendEditionTest(SimpleTestCase):
              patch("core.models.Edition") as mock_ed, \
              patch("homev4.views._fetch_extra_article_ids_for_preview", return_value=[]):
 
-            mock_hl.objects.filter.return_value.first.return_value = mock_layout
+            # get_active_layout(publication, at_time=..., at_weekday=...) → base layout
+            mock_hl.get_active_layout.return_value = mock_layout
             mock_pub.objects.filter.return_value.first.return_value = MagicMock() if fds_pub_exists else None
             mock_tz.localdate.return_value = date
+            # localtime().time() must be a real time so the < publishing_time comparison works.
+            mock_tz.localtime.return_value.time.return_value = datetime.time(1, 0)
             # edition_articles=None simulates no edition found (first() returns None)
             first_val = mock_edition if edition_articles is not None else None
             mock_ed.objects.filter.return_value.order_by.return_value.first.return_value = first_val
@@ -859,3 +866,163 @@ class ResolveTodayGridDataWeekendEditionTest(SimpleTestCase):
         result, mock_pub, _ = self._run(_MONDAY, edition_articles=[1, 2])
         mock_pub.objects.filter.assert_not_called()
         self.assertEqual(result["principal"]["article_ids"], [1, 2])
+
+
+class ResolveNextPublishingWeekdayTest(SimpleTestCase):
+    """
+    Tests that _resolve_today_grid_data passes the correct at_weekday to
+    get_active_layout so Pablo always sees the layout for the NEXT 5am,
+    not the one currently active.
+
+    Rule:
+      before 5am  → next 5am is today    → at_weekday = today.weekday()
+      at/after 5am → next 5am is tomorrow → at_weekday = (today.weekday() + 1) % 7
+
+    Bugs to watch for:
+      - Passing today.weekday() after 5am → Pablo edits tomorrow's home using
+        today's layout structure (wrong blocks active/inactive).
+      - Passing (today + 1) before 5am → Pablo sees tomorrow's structure while
+        preparing for today's 5am (wrong blocks).
+      - Forgetting the modulo 7 wrap on Sunday → at_weekday=7 (invalid).
+    """
+
+    def _get_call_kwargs(self, date, now_time):
+        """Run _resolve_today_grid_data and return kwargs passed to get_active_layout."""
+        from homev4.views import _resolve_today_grid_data
+
+        mock_layout = MagicMock()
+        mock_layout.grid_data = {}
+        mock_edition = MagicMock()
+        mock_edition.top_articles = []
+
+        with patch("homev4.views.HomeLayout") as mock_hl, \
+             patch("homev4.views.Publication"), \
+             patch("homev4.views.timezone") as mock_tz, \
+             patch("homev4.views._fetch_source_articles_post_5am", return_value=[]), \
+             patch("core.models.Edition") as mock_ed, \
+             patch("homev4.views._fetch_extra_article_ids_for_preview", return_value=[]):
+
+            mock_hl.get_active_layout.return_value = mock_layout
+            mock_tz.localdate.return_value = date
+            mock_tz.localtime.return_value.time.return_value = now_time
+            mock_ed.objects.filter.return_value.order_by.return_value.first.return_value = mock_edition
+
+            _resolve_today_grid_data(MagicMock())
+            _, kwargs = mock_hl.get_active_layout.call_args
+
+        return kwargs
+
+    def test_before_5am_targets_todays_weekday(self):
+        """At 01:00 on Monday, the next 5am is Monday → at_weekday=0."""
+        kwargs = self._get_call_kwargs(_MONDAY, datetime.time(1, 0))
+        self.assertEqual(kwargs["at_weekday"], _MONDAY.weekday())
+
+    def test_after_5am_targets_tomorrows_weekday(self):
+        """At 10:00 on Monday, the next 5am is Tuesday → at_weekday=1."""
+        kwargs = self._get_call_kwargs(_MONDAY, datetime.time(10, 0))
+        self.assertEqual(kwargs["at_weekday"], (_MONDAY.weekday() + 1) % 7)
+
+    def test_at_exactly_5am_targets_tomorrow(self):
+        """At exactly 05:00, today's 5am is not strictly 'before' → next is tomorrow."""
+        kwargs = self._get_call_kwargs(_MONDAY, datetime.time(5, 0))
+        self.assertEqual(kwargs["at_weekday"], (_MONDAY.weekday() + 1) % 7)
+
+    def test_sunday_after_5am_wraps_to_monday(self):
+        """At 10:00 on Sunday (weekday=6), next 5am is Monday → at_weekday=0 (modulo wrap)."""
+        kwargs = self._get_call_kwargs(_SUNDAY, datetime.time(10, 0))
+        self.assertEqual(kwargs["at_weekday"], 0)
+
+    def test_publishing_time_always_passed_as_at_time(self):
+        """at_time is always PUBLISHING_TIME (05:00) regardless of when Pablo opens the editor."""
+        for now_time in [datetime.time(1, 0), datetime.time(10, 0), datetime.time(23, 59)]:
+            with self.subTest(now_time=now_time):
+                kwargs = self._get_call_kwargs(_MONDAY, now_time)
+                self.assertEqual(kwargs["at_time"], datetime.time(5, 0))
+
+
+class GetActiveLayoutAtTimeTest(SimpleTestCase):
+    """
+    Tests for HomeLayout.get_active_layout with explicit at_time / at_weekday.
+
+    The key contract: when at_time and at_weekday are provided, the DB filter
+    uses those values instead of timezone.localtime(). This lets callers simulate
+    any future moment (e.g. 5am of a given weekday) without mocking the clock.
+
+    Bugs to watch for:
+      - Ignoring at_time and using now.time() → Preview 5am editor shows the
+        wrong layout when opened at night (e.g. 11pm layout instead of 5am layout).
+      - Ignoring at_weekday and using now.weekday() → wrong layout on day boundaries
+        (e.g. Sunday night showing Monday's layout instead of Sunday's 5am layout).
+      - Manual override not returned → ignoring the explicit admin override.
+    """
+
+    def _call(self, at_time, at_weekday, manual=None, today_layouts=None, prev_layouts=None):
+        """Call get_active_layout with fully mocked DB. Returns (result, mock_objects)."""
+        mock_pub = MagicMock()
+        today_layouts = today_layouts or []
+        prev_layouts = prev_layouts or []
+
+        with patch("homev4.models.HomeLayout.objects") as mock_objects:
+            # Separate querysets per filter call pattern.
+            manual_qs = MagicMock()
+            manual_qs.first.return_value = manual
+
+            today_qs = MagicMock()
+            today_qs.order_by.return_value = iter(today_layouts)
+
+            prev_qs = MagicMock()
+            prev_qs.__iter__ = MagicMock(return_value=iter(prev_layouts))
+
+            def filter_side(**kwargs):
+                if kwargs.get("is_manual_override") is True:
+                    return manual_qs
+                elif "ends_next_day" in kwargs:
+                    return prev_qs
+                return today_qs
+
+            mock_objects.filter.side_effect = filter_side
+            result = HomeLayout.get_active_layout(mock_pub, at_time=at_time, at_weekday=at_weekday)
+
+        return result, mock_objects
+
+    def test_manual_override_wins_regardless_of_at_time(self):
+        """Manual override is returned even when at_time and at_weekday are provided."""
+        mock_manual = MagicMock()
+        result, _ = self._call(datetime.time(5, 0), 0, manual=mock_manual)
+        self.assertEqual(result, mock_manual)
+
+    def test_at_time_used_for_start_time_filter(self):
+        """The today-candidates query uses at_time for start_time__lte, not localtime()."""
+        mock_layout = MagicMock()
+        mock_layout.ends_next_day = False
+        mock_layout.end_time = None
+        _, mock_objects = self._call(datetime.time(5, 0), 0, today_layouts=[mock_layout])
+
+        today_filter_calls = [
+            c for c in mock_objects.filter.call_args_list
+            if c.kwargs.get("start_time__lte") is not None
+        ]
+        self.assertTrue(today_filter_calls, "No filter call with start_time__lte found")
+        self.assertTrue(
+            any(c.kwargs["start_time__lte"] == datetime.time(5, 0) for c in today_filter_calls),
+            "start_time__lte was not set to at_time=05:00",
+        )
+
+    def test_no_matching_layout_returns_none(self):
+        """Returns None when no layouts match the given at_time/at_weekday."""
+        result, _ = self._call(datetime.time(5, 0), 0, today_layouts=[], prev_layouts=[])
+        self.assertIsNone(result)
+
+    def test_defaults_to_localtime_when_no_args(self):
+        """Calling without at_time/at_weekday reads timezone.localtime() — no crash."""
+        mock_pub = MagicMock()
+        with patch("homev4.models.HomeLayout.objects") as mock_objects, \
+             patch("homev4.models.timezone") as mock_tz:
+            mock_tz.localtime.return_value.time.return_value = datetime.time(10, 0)
+            mock_tz.localtime.return_value.weekday.return_value = 0
+            mock_objects.filter.return_value.first.return_value = None
+            mock_objects.filter.return_value.order_by.return_value = iter([])
+            mock_objects.filter.return_value.__iter__ = MagicMock(return_value=iter([]))
+            result = HomeLayout.get_active_layout(mock_pub)
+        # Must not raise; result is None because no layouts matched.
+        self.assertIsNone(result)
