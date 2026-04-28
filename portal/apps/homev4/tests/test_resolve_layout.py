@@ -672,6 +672,9 @@ class DeduplicateSignalTest(SimpleTestCase):
 # A known Saturday: weekday()=5 → extra_articles resolved from FSNewsletter
 _SATURDAY = datetime.date(2026, 4, 25)  # weekday()=5
 
+# The Sunday of the same weekend — shares the "Fin de semana" edition (date_published=Saturday)
+_SUNDAY = datetime.date(2026, 4, 26)  # weekday()=6
+
 
 class ResolveTodayGridDataExtraArticlesTest(SimpleTestCase):
     """
@@ -692,14 +695,19 @@ class ResolveTodayGridDataExtraArticlesTest(SimpleTestCase):
         mock_edition.top_articles = []
 
         with patch("homev4.views.HomeLayout") as mock_hl, \
+             patch("homev4.views.Publication") as mock_pub, \
              patch("homev4.views.timezone") as mock_tz, \
              patch("homev4.views._fetch_source_articles_post_5am", return_value=[]), \
              patch("core.models.Edition") as mock_ed, \
              patch("homev4.views._fetch_extra_article_ids_for_preview",
                    return_value=list(extra_article_ids or [])):
 
+            # HomeLayout.objects.filter → base layout
             mock_hl.objects.filter.return_value.first.return_value = mock_layout
+            # Publication.objects.filter(slug="findesemana").first() → a mock pub (weekend path)
+            mock_pub.objects.filter.return_value.first.return_value = MagicMock()
             mock_tz.localdate.return_value = date
+            # Edition.objects.filter(...).order_by(...).first() → mock_edition (both weekday and weekend paths)
             mock_ed.objects.filter.return_value.order_by.return_value.first.return_value = mock_edition
 
             return _resolve_today_grid_data(MagicMock())
@@ -760,3 +768,94 @@ class PropagateArticleIdsExtraTest(SimpleTestCase):
         )
         self.assertFalse(result["extra_articles"]["active"])
         self.assertEqual(result["extra_articles"]["article_ids"], [10])
+
+
+class ResolveTodayGridDataWeekendEditionTest(SimpleTestCase):
+    """
+    Tests for the weekend edition selection in _resolve_today_grid_data.
+
+    On Saturday (weekday=5) and Sunday (weekday=6) there is no "la diaria" edition —
+    the home principal block must come from the "Fin de semana" edition (publication
+    slug "findesemana").  The edition is created once per weekend with
+    date_published=Saturday and shared through Sunday, so the query uses
+    .order_by("-date_published").first() WITHOUT a date_published=today filter
+    (a strict date filter would miss the Saturday edition when opening the editor
+    on Sunday).
+
+    On weekdays the query filters by both publication=ladiaria and date_published=today.
+    The findesemana publication is never queried on weekdays.
+
+    Bugs to watch for:
+    - Using date_published=today on Sunday → edition not found → empty principal.
+    - Querying ladiaria on weekends → edition not found → empty principal.
+    - Querying findesemana on weekdays → stale weekend articles in the weekday home.
+    """
+
+    def _run(self, date, edition_articles=None, fds_pub_exists=True):
+        """
+        Run _resolve_today_grid_data with all DB calls mocked.
+
+        edition_articles: list of article IDs the mock edition exposes via top_articles.
+                          None means the edition query returns None (no edition found).
+        fds_pub_exists:   whether Publication.objects.filter(slug="findesemana").first()
+                          returns a publication object (True) or None (False).
+        Returns (grid_data, mock_pub, mock_ed) so callers can assert on call args.
+        """
+        from homev4.views import _resolve_today_grid_data
+
+        mock_layout = MagicMock()
+        mock_layout.grid_data = {}
+
+        mock_edition = MagicMock()
+        mock_edition.top_articles = [_art(i) for i in (edition_articles or [])]
+
+        with patch("homev4.views.HomeLayout") as mock_hl, \
+             patch("homev4.views.Publication") as mock_pub, \
+             patch("homev4.views.timezone") as mock_tz, \
+             patch("homev4.views._fetch_source_articles_post_5am", return_value=[]), \
+             patch("core.models.Edition") as mock_ed, \
+             patch("homev4.views._fetch_extra_article_ids_for_preview", return_value=[]):
+
+            mock_hl.objects.filter.return_value.first.return_value = mock_layout
+            mock_pub.objects.filter.return_value.first.return_value = MagicMock() if fds_pub_exists else None
+            mock_tz.localdate.return_value = date
+            # edition_articles=None simulates no edition found (first() returns None)
+            first_val = mock_edition if edition_articles is not None else None
+            mock_ed.objects.filter.return_value.order_by.return_value.first.return_value = first_val
+
+            return _resolve_today_grid_data(MagicMock()), mock_pub, mock_ed
+
+    def test_saturday_fetches_findesemana_edition(self):
+        """On Saturday, principal_ids come from the most recent findesemana edition."""
+        result, mock_pub, _ = self._run(_SATURDAY, edition_articles=[10, 20, 30])
+        self.assertEqual(result["principal"]["article_ids"], [10, 20, 30])
+        # Must resolve the findesemana publication, not assume the ladiaria publication
+        mock_pub.objects.filter.assert_called_once_with(slug="findesemana")
+
+    def test_sunday_fetches_findesemana_edition(self):
+        """On Sunday, principal_ids also come from findesemana (no date_published=today filter).
+        The edition has date_published=Saturday; a strict date=Sunday filter would miss it."""
+        result, mock_pub, _ = self._run(_SUNDAY, edition_articles=[40, 50])
+        self.assertEqual(result["principal"]["article_ids"], [40, 50])
+        mock_pub.objects.filter.assert_called_once_with(slug="findesemana")
+
+    def test_saturday_findesemana_pub_missing_gives_empty_principal(self):
+        """If the findesemana publication row doesn't exist, principal is empty — no crash.
+        Regression guard: Publication.objects.filter().first() returning None must be
+        handled gracefully (the edition query is skipped via 'if fds_pub else None')."""
+        result, _, _ = self._run(_SATURDAY, fds_pub_exists=False)
+        self.assertEqual(result["principal"]["article_ids"], [])
+
+    def test_saturday_no_findesemana_edition_gives_empty_principal(self):
+        """If findesemana pub exists but has no editions yet, principal is empty — no crash.
+        Happens if Pablo hasn't created the weekend edition when the editor is first opened."""
+        result, _, _ = self._run(_SATURDAY, edition_articles=None, fds_pub_exists=True)
+        self.assertEqual(result["principal"]["article_ids"], [])
+
+    def test_weekday_does_not_query_findesemana(self):
+        """On weekdays, findesemana publication is never queried — only ladiaria is used.
+        Regression guard: the weekday >= 5 branch must not accidentally fire on weekdays,
+        which would inject stale weekend articles into the weekday home."""
+        result, mock_pub, _ = self._run(_MONDAY, edition_articles=[1, 2])
+        mock_pub.objects.filter.assert_not_called()
+        self.assertEqual(result["principal"]["article_ids"], [1, 2])

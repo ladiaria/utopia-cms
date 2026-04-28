@@ -1213,7 +1213,21 @@ def _resolve_today_grid_data(publication):
     base_layout = HomeLayout.objects.filter(publication=publication).first()
     grid = dict(base_layout.grid_data) if base_layout and isinstance(base_layout.grid_data, dict) else get_default_grid_data()
 
-    edition = Edition.objects.filter(publication=publication, date_published=today).order_by("-date_published").first()
+    # On weekends (Saturday=5, Sunday=6) the home shows the "Fin de semana" edition
+    # (publication slug "findesemana"), not "la diaria". There is no "ladiaria" edition
+    # on weekends, so filtering by publication=ladiaria would return None every time.
+    # The "Fin de semana" edition is created once per weekend with date_published=Saturday
+    # and kept unchanged through Sunday — so we fetch the most recent one without
+    # filtering by today's date (a date=Sunday filter would miss the Saturday edition).
+    # On weekdays we filter by date_published=today to get exactly today's edition;
+    # no 5am gate is applied here because this function is only called from the
+    # Preview 5am editor, which is explicitly designed to bypass that gate.
+    weekday = today.weekday()
+    if weekday >= 5:
+        fds_pub = Publication.objects.filter(slug="findesemana").first()
+        edition = Edition.objects.filter(publication=fds_pub).order_by("-date_published").first() if fds_pub else None
+    else:
+        edition = Edition.objects.filter(publication=publication, date_published=today).order_by("-date_published").first()
     principal_ids = [a.id for a in edition.top_articles] if edition else []
     principal_block = dict(grid.get("principal") or {})
     principal_block["article_ids"] = principal_ids
