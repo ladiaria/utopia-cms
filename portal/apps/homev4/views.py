@@ -142,7 +142,7 @@ def _propagate_article_ids(source_layout, source_grid):
 
     src_top = {
         block: source_grid.get(block, {}).get("article_ids", [])
-        for block in ("principal", "suplemento", "especial")
+        for block in ("principal", "suplemento", "especial", "extra_articles")
     }
     src_sections = {s["slug"]: s.get("article_ids", []) for s in source_grid.get("sections", [])}
     src_componentes = {c["key"]: c.get("article_ids", []) for c in source_grid.get("componentes", [])}
@@ -205,7 +205,7 @@ def _write_audit_log(layout, old_grid, new_grid, triggered_by, user=None):
     entries = []
     save_id = uuid.uuid4()
 
-    for block in ("principal", "suplemento", "especial"):
+    for block in ("principal", "suplemento", "especial", "extra_articles"):
         before = list(old_grid.get(block, {}).get("article_ids", []))
         after = list(new_grid.get(block, {}).get("article_ids", []))
         if before != after:
@@ -1186,6 +1186,22 @@ def _fetch_source_articles_post_5am(source_type, slug, limit, exclude_ids=None):
     return []
 
 
+def _fetch_extra_article_ids_for_preview(today):
+    """Fetch extra article IDs from FSNewsletter for the given date.
+    Returns [] if the model is unavailable or no FSNewsletter exists for today.
+    Isolated into its own function so tests can patch homev4.views._fetch_extra_article_ids_for_preview
+    directly instead of having to intercept builtins.__import__.
+    """
+    try:
+        FSNewsletter = __import__(
+            "utopia_cms_ladiaria.models", fromlist=["FSNewsletter"]
+        ).FSNewsletter
+        fs_nl = FSNewsletter.objects.get(day=today)
+        return [a.id for a in fs_nl.extra_articles.order_by("fs_newsletter_extra_articles")]
+    except Exception:
+        return []
+
+
 def _resolve_today_grid_data(publication):
     """Return a grid_data dict pre-filled with today's article IDs for principal and suplemento,
     bypassing the PUBLISHING_TIME gate. Used by the Preview 5am editor.
@@ -1209,6 +1225,15 @@ def _resolve_today_grid_data(publication):
     suplemento_block = dict(grid.get("suplemento") or {})
     suplemento_block["article_ids"] = suplemento_ids
     grid["suplemento"] = suplemento_block
+
+    # On Saturdays populate extra_articles from FSNewsletter so the Preview 5am editor
+    # shows Pablo the correct content before he saves the pending grid.
+    if today.weekday() == 5:
+        extra_ids = _fetch_extra_article_ids_for_preview(today)
+        if extra_ids:
+            extra_block = dict(grid.get("extra_articles") or {})
+            extra_block["article_ids"] = extra_ids
+            grid["extra_articles"] = extra_block
 
     return grid
 

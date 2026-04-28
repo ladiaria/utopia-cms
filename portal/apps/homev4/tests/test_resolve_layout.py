@@ -667,3 +667,96 @@ class DeduplicateSignalTest(SimpleTestCase):
         _, kwargs = mock_resolve.call_args
         self.assertTrue(kwargs.get("dedup_populated"),
                         "Signal must pass dedup_populated=True to resolve_layout_grid_data")
+
+
+# A known Saturday: weekday()=5 → extra_articles resolved from FSNewsletter
+_SATURDAY = datetime.date(2026, 4, 25)  # weekday()=5
+
+
+class ResolveTodayGridDataExtraArticlesTest(SimpleTestCase):
+    """
+    Tests for extra_articles resolution in _resolve_today_grid_data on Saturdays.
+
+    On Saturday the function must query FSNewsletter and populate extra_articles
+    so the Preview 5am editor shows Pablo the correct content before he saves
+    the pending_grid_data.
+    """
+
+    def _run(self, date, extra_article_ids=None):
+        from homev4.views import _resolve_today_grid_data
+
+        mock_layout = MagicMock()
+        mock_layout.grid_data = {}
+
+        mock_edition = MagicMock()
+        mock_edition.top_articles = []
+
+        with patch("homev4.views.HomeLayout") as mock_hl, \
+             patch("homev4.views.timezone") as mock_tz, \
+             patch("homev4.views._fetch_source_articles_post_5am", return_value=[]), \
+             patch("core.models.Edition") as mock_ed, \
+             patch("homev4.views._fetch_extra_article_ids_for_preview",
+                   return_value=list(extra_article_ids or [])):
+
+            mock_hl.objects.filter.return_value.first.return_value = mock_layout
+            mock_tz.localdate.return_value = date
+            mock_ed.objects.filter.return_value.order_by.return_value.first.return_value = mock_edition
+
+            return _resolve_today_grid_data(MagicMock())
+
+    def test_saturday_with_fsnewsletter_populates_extra_articles(self):
+        """On Saturday, extra_articles is resolved from FSNewsletter when it exists."""
+        result = self._run(_SATURDAY, extra_article_ids=[10, 20, 30])
+        self.assertEqual(result.get("extra_articles", {}).get("article_ids"), [10, 20, 30])
+
+    def test_saturday_fsnewsletter_missing_no_error(self):
+        """On Saturday, if FSNewsletter doesn't exist (helper returns []) extra_articles is not set."""
+        result = self._run(_SATURDAY, extra_article_ids=[])
+        self.assertFalse(result.get("extra_articles", {}).get("article_ids"))
+
+    def test_non_saturday_does_not_resolve_extra_articles(self):
+        """On non-Saturday days, extra_articles is not resolved."""
+        result = self._run(_MONDAY)
+        self.assertNotIn("extra_articles", result)
+
+
+class PropagateArticleIdsExtraTest(SimpleTestCase):
+    """Tests that _propagate_article_ids includes extra_articles when syncing sibling layouts."""
+
+    def _run_propagate(self, source_grid, sibling_grid_data):
+        from homev4.views import _propagate_article_ids
+
+        source_layout = MagicMock()
+        source_layout.pk = 1
+
+        sibling = MagicMock()
+        sibling.pk = 2
+        sibling.grid_data = sibling_grid_data
+
+        with patch("homev4.views.HomeLayout") as mock_hl, \
+             patch("homev4.views.timezone"), \
+             patch("homev4.views._write_audit_log"):
+
+            mock_hl.objects.select_for_update.return_value \
+                .exclude.return_value.filter.return_value = [sibling]
+
+            _propagate_article_ids(source_layout, source_grid)
+
+        return sibling.grid_data
+
+    def test_extra_articles_propagated_to_sibling(self):
+        """extra_articles IDs from source_grid are copied to sibling layouts."""
+        result = self._run_propagate(
+            source_grid={"extra_articles": {"article_ids": [10, 20]}},
+            sibling_grid_data={"extra_articles": {"active": True, "article_ids": []}},
+        )
+        self.assertEqual(result["extra_articles"]["article_ids"], [10, 20])
+
+    def test_extra_articles_preserves_sibling_active_flag(self):
+        """Propagation only overwrites article_ids — the sibling's active flag is preserved."""
+        result = self._run_propagate(
+            source_grid={"extra_articles": {"article_ids": [10]}},
+            sibling_grid_data={"extra_articles": {"active": False, "article_ids": []}},
+        )
+        self.assertFalse(result["extra_articles"]["active"])
+        self.assertEqual(result["extra_articles"]["article_ids"], [10])
