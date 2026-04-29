@@ -15,7 +15,9 @@
     </a>
   {% endif %}
   <div class="main-section__featured-body">
-    <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
+    {% block featured_label %}
+      <span class="article__section-label">{% autoescape off %}{% render_hierarchy featured %}{% endautoescape %}</span>
+    {% endblock %}
     <h1 class="article__title">
       <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
     </h1>

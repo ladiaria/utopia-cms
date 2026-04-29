@@ -22,7 +22,7 @@
           {% endif %}
         </div>
       {% else %}
-        {% if is_portada and category and category.newsletter %}
+        {% if is_portada and category and category.newsletter or is_portada and category and category.has_newsletter %}
           <div class="fixed-items">
             <button type="button" class="newsletter-header">
               <svg class="newsletter-header__icon-default" xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.028" d="M11.314 3.085c0-.566-.463-1.028-1.029-1.028H2.058c-.566 0-1.029.462-1.029 1.028m10.285 0v6.17c0 .566-.463 1.03-1.029 1.03H2.058a1.03 1.03 0 0 1-1.029-1.03v-6.17m10.285 0-5.143 3.6-5.142-3.6"/></svg>
@@ -52,11 +52,11 @@
       </a>
       {% if user.is_authenticated %}
         <div class="user-menu-container">
-          <button class="user-menu-button js-user-menu-toggle" aria-expanded="false" aria-controls="popup-user-menu">
+          <button class="user-menu-button" data-activates="popup-user-menu" aria-expanded="false" aria-controls="popup-user-menu">
             <span>{{ user.first_name }}</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" fill="none" viewBox="0 0 10 6"><path stroke="#ababab" stroke-linecap="round" stroke-linejoin="round" d="m.5.5 4.382 4.382L9.265.5"/></svg>
           </button>
-          <div class="popup-user-menu js-popup-user-menu" id="popup-user-menu" role="dialog" aria-label="Menú de cuenta">
+          <div class="popup-user-menu" id="popup-user-menu" role="dialog" aria-label="Menú de cuenta">
             <div class="popup-user-menu__account-data">
               <span class="popup-user-menu__email">{{ user.email }}</span>
               {% if not is_subscriber_any %}

@@ -6,12 +6,6 @@
   font-size: px-to-rem(16px);
   padding-bottom: 32px;
 
-  &:after {
-    content: "";
-    display: table;
-    clear: both;
-  }
-
   &--white {
     background-color: white;
   }

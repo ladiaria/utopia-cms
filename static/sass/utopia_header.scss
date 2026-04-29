@@ -214,7 +214,7 @@ header {
     }
 
     .upper-left-content {
-      min-height: unset;
+      min-height: px-to-rem(32px);
       .fixed-items {
         display: none;
       }
@@ -1286,7 +1286,11 @@ body {
   }
 
   header.home-header:not(.sticky) & {
-    top: px-to-rem(75px);
+    top: px-to-rem(120px);
+
+    @media #{$medium-and-down} {
+      top: px-to-rem(75px);
+    }
   }
 
   &__title {
